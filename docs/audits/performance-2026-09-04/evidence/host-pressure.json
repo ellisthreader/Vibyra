@@ -1,0 +1,9 @@
+{
+  "atUtc": "2026-09-04T21:23:31.751151+00:00",
+  "note": "Concurrent unrelated applications and builds active; point-in-time host pressure, not app attribution",
+  "pressure": {
+    "cpu": "some avg10=2.80 avg60=2.84 avg300=1.81 total=1498959456\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+    "io": "some avg10=43.15 avg60=58.27 avg300=69.14 total=11015869694\nfull avg10=30.41 avg60=41.47 avg300=52.37 total=8814240260",
+    "memory": "some avg10=0.54 avg60=6.45 avg300=9.08 total=1698003775\nfull avg10=0.25 avg60=4.63 avg300=6.92 total=1417245588"
+  }
+}

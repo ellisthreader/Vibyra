@@ -50,3 +50,14 @@ domain index, focused note, and local skill. Keep routing notes compact, mark
 long research/spec files as deep references, and update skills when durable
 workflow instructions change.
 ```
+
+For personal or real-world questions about Ellis:
+
+```text
+Read `Vibyra/99 Meta/Ellis AI Mind/Ellis AI Mind.md`, then
+`Vibyra/99 Meta/Ellis AI Mind/Books And Real-World Decisions.md`. Answer from
+the one or two most relevant lenses in The Psychology of Money, The Millionaire
+Fastlane, The Hard Thing About Hard Things, and Shoe Dog. Lead with practical
+advice, use only confirmed personal facts, include the main downside, and do not
+force business or hustle framing where it does not fit.
+```

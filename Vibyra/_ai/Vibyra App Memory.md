@@ -1,5 +1,8 @@
 # Vibyra App Memory
 
+Current phone/Host preview: `mobile/`. See [[App/Phone Companion Onboarding]]
+for first-run setup and the Desktop WIP entry. Root `src/` is the legacy client.
+
 Scope: shared Expo React Native product client in `src/`, with the native phone
 app as the primary surface and React Native Web as its browser runtime.
 

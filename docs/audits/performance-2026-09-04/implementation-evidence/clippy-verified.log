@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling vibyra-desktop v0.1.0 (/home/ellis/Desktop/Vibyra/desktop-tauri/src-tauri)
+    Checking vibyra-core v0.1.0 (/home/ellis/Desktop/Vibyra/desktop-tauri/src-tauri/crates/vibyra-core)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3m 30s

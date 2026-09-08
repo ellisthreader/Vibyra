@@ -1,0 +1,12 @@
+{
+  "version": "0.4.4",
+  "scenario": "First terminal clipboard paste, immediately followed by Return",
+  "observedInputLengths": [
+    0,
+    2006
+  ],
+  "emptyEnterPrecededPaste": true,
+  "pasteArrivedAfterAdditionalEnter": true,
+  "sourceClipboardHandlerUnchangedSince043": true,
+  "regressionStatus": "Unresolved; baseline warm immediate-paste repetitions did not reproduce"
+}

@@ -1,0 +1,1502 @@
+[
+  {
+    "file": "assets/app-BIw8iEPi.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-Yrgo3tEG.js",
+      "assets/app-q0Jbqjc4.js",
+      "assets/app-q0Jbqjc4.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 5425,
+    "gzipBytes": 1768,
+    "modules": [
+      {
+        "id": "resources/js/app.jsx",
+        "renderedLength": 8872
+      }
+    ]
+  },
+  {
+    "file": "assets/app-q0Jbqjc4.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 0,
+    "gzipBytes": 20,
+    "modules": [
+      {
+        "id": "resources/css/app.css",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/marketing-22v6oJXL.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 0,
+    "gzipBytes": 20,
+    "modules": [
+      {
+        "id": "resources/css/marketing.css",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/marketing-D2Eo7zqH.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-Yrgo3tEG.js",
+      "assets/marketing-22v6oJXL.js",
+      "assets/marketing-22v6oJXL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 164085,
+    "gzipBytes": 53065,
+    "modules": [
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/node/create-projection-node.mjs",
+        "renderedLength": 39032
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/drag/VisualElementDragControls.mjs",
+        "renderedLength": 13422
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/VisualElement.mjs",
+        "renderedLength": 11020
+      },
+      {
+        "id": "resources/js/marketing/HeroTerminalWindow.jsx",
+        "renderedLength": 9800
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/spring.mjs",
+        "renderedLength": 9034
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/JSAnimation.mjs",
+        "renderedLength": 7578
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/animation-state.mjs",
+        "renderedLength": 7036
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/pan/PanSession.mjs",
+        "renderedLength": 6675
+      },
+      {
+        "id": "resources/js/marketing/HeroStageShowcase.jsx",
+        "renderedLength": 5490
+      },
+      {
+        "id": "resources/js/marketing/Pricing.jsx",
+        "renderedLength": 5134
+      },
+      {
+        "id": "resources/js/marketing/HeroScrollStory.jsx",
+        "renderedLength": 4559
+      },
+      {
+        "id": "resources/js/marketing/HeroScrollVideo.jsx",
+        "renderedLength": 4311
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/index.mjs",
+        "renderedLength": 3907
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/utils/use-visual-element.mjs",
+        "renderedLength": 3815
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/AsyncMotionValueAnimation.mjs",
+        "renderedLength": 3683
+      },
+      {
+        "id": "resources/js/marketing/Nav.jsx",
+        "renderedLength": 3643
+      },
+      {
+        "id": "resources/js/marketing/sections/SimpleOverview.jsx",
+        "renderedLength": 3621
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/KeyframesResolver.mjs",
+        "renderedLength": 3582
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/NativeAnimation.mjs",
+        "renderedLength": 3431
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/DOMKeyframesResolver.mjs",
+        "renderedLength": 3372
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/components/AnimatePresence/index.mjs",
+        "renderedLength": 3230
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/track.mjs",
+        "renderedLength": 3063
+      },
+      {
+        "id": "resources/js/marketing/Faq.jsx",
+        "renderedLength": 3049
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/layout/MeasureLayout.mjs",
+        "renderedLength": 2995
+      },
+      {
+        "id": "resources/js/marketing/Closing.jsx",
+        "renderedLength": 2889
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/value/use-scroll.mjs",
+        "renderedLength": 2880
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/components/AnimatePresence/PopChild.mjs",
+        "renderedLength": 2828
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/delta-apply.mjs",
+        "renderedLength": 2742
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/interfaces/visual-element-target.mjs",
+        "renderedLength": 2714
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/drag/utils/constraints.mjs",
+        "renderedLength": 2628
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/index.mjs",
+        "renderedLength": 2536
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/complex/index.mjs",
+        "renderedLength": 2511
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/mix/complex.mjs",
+        "renderedLength": 2430
+      },
+      {
+        "id": "resources/js/marketing/ui.jsx",
+        "renderedLength": 2274
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/dom/parse-transform.mjs",
+        "renderedLength": 2245
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/utils/use-visual-state.mjs",
+        "renderedLength": 2237
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/shared/stack.mjs",
+        "renderedLength": 2223
+      },
+      {
+        "id": "resources/js/marketing/HeroBeam.jsx",
+        "renderedLength": 2211
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/interfaces/motion-value.mjs",
+        "renderedLength": 2094
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/press/index.mjs",
+        "renderedLength": 1987
+      },
+      {
+        "id": "resources/js/marketing/heroTerminalData.js",
+        "renderedLength": 1967
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/delta-calc.mjs",
+        "renderedLength": 1937
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/inertia.mjs",
+        "renderedLength": 1929
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/frameloop/batcher.mjs",
+        "renderedLength": 1886
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/components/AnimatePresence/PresenceChild.mjs",
+        "renderedLength": 1873
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/animation/mix-values.mjs",
+        "renderedLength": 1852
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/hover.mjs",
+        "renderedLength": 1843
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/interfaces/visual-element-variant.mjs",
+        "renderedLength": 1828
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/viewport/index.mjs",
+        "renderedLength": 1785
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/value/use-transform.mjs",
+        "renderedLength": 1757
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/resize/handle-element.mjs",
+        "renderedLength": 1673
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/animation/exit.mjs",
+        "renderedLength": 1609
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/utils/unit-conversion.mjs",
+        "renderedLength": 1583
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/html/utils/build-transform.mjs",
+        "renderedLength": 1579
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/delta-remove.mjs",
+        "renderedLength": 1575
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/interpolate.mjs",
+        "renderedLength": 1520
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/offsets/index.mjs",
+        "renderedLength": 1511
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/utils/get-timeline.mjs",
+        "renderedLength": 1459
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/utils/offset-to-range.mjs",
+        "renderedLength": 1423
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/styles/transform.mjs",
+        "renderedLength": 1356
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/frameloop/render-step.mjs",
+        "renderedLength": 1325
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/html/use-props.mjs",
+        "renderedLength": 1303
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/utils/build-attrs.mjs",
+        "renderedLength": 1284
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/pan/index.mjs",
+        "renderedLength": 1245
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/info.mjs",
+        "renderedLength": 1223
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/maps/number.mjs",
+        "renderedLength": 1183
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/mix/color.mjs",
+        "renderedLength": 1166
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/viewport/observers.mjs",
+        "renderedLength": 1144
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/NativeAnimationExtended.mjs",
+        "renderedLength": 1137
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/html/HTMLVisualElement.mjs",
+        "renderedLength": 1128
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/SVGVisualElement.mjs",
+        "renderedLength": 1128
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/viewport/index.mjs",
+        "renderedLength": 1128
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/html/utils/build-styles.mjs",
+        "renderedLength": 1094
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/definitions.mjs",
+        "renderedLength": 1087
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/can-animate.mjs",
+        "renderedLength": 1086
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/press/utils/keyboard.mjs",
+        "renderedLength": 1054
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/css-variables-conversion.mjs",
+        "renderedLength": 1016
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/on-scroll-handler.mjs",
+        "renderedLength": 1006
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/press.mjs",
+        "renderedLength": 1004
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/offsets/inset.mjs",
+        "renderedLength": 1002
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/keyframes.mjs",
+        "renderedLength": 969
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/supports/waapi.mjs",
+        "renderedLength": 966
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/utils/use-motion-ref.mjs",
+        "renderedLength": 951
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/motion-values.mjs",
+        "renderedLength": 948
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/drag/index.mjs",
+        "renderedLength": 936
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/utils/filter-props.mjs",
+        "renderedLength": 933
+      },
+      {
+        "id": "resources/js/marketing/App.jsx",
+        "renderedLength": 926
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/cubic-bezier.mjs",
+        "renderedLength": 902
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/utils/valid-prop.mjs",
+        "renderedLength": 893
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/color/hsla-to-rgba.mjs",
+        "renderedLength": 881
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/resolve-variants.mjs",
+        "renderedLength": 876
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/utils.mjs",
+        "renderedLength": 864
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/dom/DOMVisualElement.mjs",
+        "renderedLength": 851
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/interfaces/visual-element.mjs",
+        "renderedLength": 845
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/focus.mjs",
+        "renderedLength": 831
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/resize/handle-window.mjs",
+        "renderedLength": 828
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/styles/scale-box-shadow.mjs",
+        "renderedLength": 808
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/components/create-proxy.mjs",
+        "renderedLength": 808
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/start-waapi-animation.mjs",
+        "renderedLength": 807
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/utils/map.mjs",
+        "renderedLength": 796
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/use-composed-ref.mjs",
+        "renderedLength": 794
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/use-render.mjs",
+        "renderedLength": 791
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/complex/filter.mjs",
+        "renderedLength": 788
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/offsets/offset.mjs",
+        "renderedLength": 780
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/node/HTMLProjectionNode.mjs",
+        "renderedLength": 779
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/animation/index.mjs",
+        "renderedLength": 773
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/utils/make-none-animatable.mjs",
+        "renderedLength": 754
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/attach-animation.mjs",
+        "renderedLength": 754
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/default-transitions.mjs",
+        "renderedLength": 752
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/is-css-variable.mjs",
+        "renderedLength": 739
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/offsets/edge.mjs",
+        "renderedLength": 727
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/gestures/hover.mjs",
+        "renderedLength": 719
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/conversion.mjs",
+        "renderedLength": 712
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/get-variant-context.mjs",
+        "renderedLength": 697
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/subscription-manager.mjs",
+        "renderedLength": 687
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/numbers/units.mjs",
+        "renderedLength": 678
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/setters.mjs",
+        "renderedLength": 677
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/components/AnimatePresence/use-presence.mjs",
+        "renderedLength": 666
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/color/hex.mjs",
+        "renderedLength": 661
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/utils/has-transform.mjs",
+        "renderedLength": 651
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/use-in-view.mjs",
+        "renderedLength": 630
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/svg/use-props.mjs",
+        "renderedLength": 615
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/resolve-elements.mjs",
+        "renderedLength": 604
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/reduced-motion/index.mjs",
+        "renderedLength": 603
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/color/utils.mjs",
+        "renderedLength": 588
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/value/use-combine-values.mjs",
+        "renderedLength": 578
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/press/utils/is-keyboard-accessible.mjs",
+        "renderedLength": 575
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/calc-child-stagger.mjs",
+        "renderedLength": 569
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/utils/measure.mjs",
+        "renderedLength": 569
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/easing/map-easing.mjs",
+        "renderedLength": 565
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/maps/transform.mjs",
+        "renderedLength": 547
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/color/index.mjs",
+        "renderedLength": 543
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/color/rgba.mjs",
+        "renderedLength": 536
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/utils/camel-case-attrs.mjs",
+        "renderedLength": 535
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/html/utils/scrape-motion-values.mjs",
+        "renderedLength": 533
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/easing/supported.mjs",
+        "renderedLength": 530
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/styles/scale-border-radius.mjs",
+        "renderedLength": 529
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/utils/scrape-motion-values.mjs",
+        "renderedLength": 529
+      },
+      {
+        "id": "resources/js/marketing/motion.jsx",
+        "renderedLength": 525
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/utils/create-generator-easing.mjs",
+        "renderedLength": 517
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/copy.mjs",
+        "renderedLength": 504
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/get-final.mjs",
+        "renderedLength": 491
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/transform.mjs",
+        "renderedLength": 491
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/will-change/add-will-change.mjs",
+        "renderedLength": 484
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/MotionContext/create.mjs",
+        "renderedLength": 482
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/utils/path.mjs",
+        "renderedLength": 474
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/utils/flat-tree.mjs",
+        "renderedLength": 473
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/color/hsla.mjs",
+        "renderedLength": 472
+      },
+      {
+        "id": "__vite-optional-peer-dep:@emotion/is-prop-valid:framer-motion",
+        "renderedLength": 468
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/maps/defaults.mjs",
+        "renderedLength": 460
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/drag/state/set-active.mjs",
+        "renderedLength": 456
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/utils/setup.mjs",
+        "renderedLength": 447
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/node/DocumentProjectionNode.mjs",
+        "renderedLength": 442
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/utils/unsupported-easing.mjs",
+        "renderedLength": 441
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/attach-function.mjs",
+        "renderedLength": 436
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/WithPromise.mjs",
+        "renderedLength": 432
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/is-transition-defined.mjs",
+        "renderedLength": 428
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/index.mjs",
+        "renderedLength": 428
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/scroll/observe.mjs",
+        "renderedLength": 425
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/keys-transform.mjs",
+        "renderedLength": 423
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/value/use-motion-value.mjs",
+        "renderedLength": 419
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/MotionContext/utils.mjs",
+        "renderedLength": 416
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/utils/linear.mjs",
+        "renderedLength": 412
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/styles/scale-correction.mjs",
+        "renderedLength": 411
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/utils/calc-duration.mjs",
+        "renderedLength": 409
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/animatable-none.mjs",
+        "renderedLength": 409
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/delay.mjs",
+        "renderedLength": 389
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/frameloop/sync-time.mjs",
+        "renderedLength": 382
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/utils/is-browser-color.mjs",
+        "renderedLength": 382
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/drivers/frame.mjs",
+        "renderedLength": 381
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/html/utils/render.mjs",
+        "renderedLength": 378
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/svg/lowercase-elements.mjs",
+        "renderedLength": 375
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/is-animatable.mjs",
+        "renderedLength": 368
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/utils/apply-generator.mjs",
+        "renderedLength": 363
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/geometry/models.mjs",
+        "renderedLength": 362
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/get-value-transition.mjs",
+        "renderedLength": 347
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/utils/render.mjs",
+        "renderedLength": 347
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/load-features.mjs",
+        "renderedLength": 346
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/components/AnimatePresence/utils.mjs",
+        "renderedLength": 345
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/is-controlling-variants.mjs",
+        "renderedLength": 341
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/shallow-compare.mjs",
+        "renderedLength": 340
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/replace-transition-type.mjs",
+        "renderedLength": 337
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/animate/single-value.mjs",
+        "renderedLength": 337
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/create-visual-element.mjs",
+        "renderedLength": 328
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/utils/is-svg-component.mjs",
+        "renderedLength": 324
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/resolve-transition.mjs",
+        "renderedLength": 323
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/offsets/fill.mjs",
+        "renderedLength": 322
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/complex/mask.mjs",
+        "renderedLength": 322
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/supports/scroll-timeline.mjs",
+        "renderedLength": 318
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/reduced-motion/use-reduced-motion.mjs",
+        "renderedLength": 316
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/utils/velocity.mjs",
+        "renderedLength": 312
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/resolve-dynamic-variants.mjs",
+        "renderedLength": 311
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/mix/visibility.mjs",
+        "renderedLength": 310
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/supports/linear-easing.mjs",
+        "renderedLength": 310
+      },
+      {
+        "id": "resources/js/marketing/Hero.jsx",
+        "renderedLength": 304
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/is-forced-motion-value.mjs",
+        "renderedLength": 300
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/value/use-computed.mjs",
+        "renderedLength": 293
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/events/event-info.mjs",
+        "renderedLength": 290
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/events/add-dom-event.mjs",
+        "renderedLength": 288
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/utils/is-none.mjs",
+        "renderedLength": 287
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/numbers/index.mjs",
+        "renderedLength": 285
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/frameloop/frame.mjs",
+        "renderedLength": 279
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/utils/is-primary-pointer.mjs",
+        "renderedLength": 270
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/utils/can-use-native-timeline.mjs",
+        "renderedLength": 270
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/variant-props.mjs",
+        "renderedLength": 268
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/distance.mjs",
+        "renderedLength": 267
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/html/use-html-visual-state.mjs",
+        "renderedLength": 263
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/array.mjs",
+        "renderedLength": 260
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/utils/is-node-or-child.mjs",
+        "renderedLength": 260
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/gestures.mjs",
+        "renderedLength": 255
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/use-motion-value-event.mjs",
+        "renderedLength": 255
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/mix/index.mjs",
+        "renderedLength": 254
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/time-conversion.mjs",
+        "renderedLength": 253
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/dimensions.mjs",
+        "renderedLength": 243
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/ease.mjs",
+        "renderedLength": 241
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/back.mjs",
+        "renderedLength": 238
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/single-color-regex.mjs",
+        "renderedLength": 238
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/utils/fill-wildcards.mjs",
+        "renderedLength": 233
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/svg/use-svg-visual-state.mjs",
+        "renderedLength": 228
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/use-constant.mjs",
+        "renderedLength": 227
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/MotionConfigContext.mjs",
+        "renderedLength": 227
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/events/add-pointer-event.mjs",
+        "renderedLength": 227
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/color-regex.mjs",
+        "renderedLength": 224
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/optimized-appear/data-id.mjs",
+        "renderedLength": 221
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/supports/memo.mjs",
+        "renderedLength": 220
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/drag.mjs",
+        "renderedLength": 220
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/keys-position.mjs",
+        "renderedLength": 219
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/offsets/presets.mjs",
+        "renderedLength": 218
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/memo.mjs",
+        "renderedLength": 215
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/velocity-per-second.mjs",
+        "renderedLength": 215
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/utils/is-bezier-definition.mjs",
+        "renderedLength": 215
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/utils/is-easing-array.mjs",
+        "renderedLength": 212
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/dom/style-set.mjs",
+        "renderedLength": 212
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/modifiers/mirror.mjs",
+        "renderedLength": 211
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/border-radius.mjs",
+        "renderedLength": 211
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/progress.mjs",
+        "renderedLength": 208
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/optimized-appear/get-appear-id.mjs",
+        "renderedLength": 208
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/is-html-element.mjs",
+        "renderedLength": 208
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/find.mjs",
+        "renderedLength": 208
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/is-animation-controls.mjs",
+        "renderedLength": 208
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/is-ref-object.mjs",
+        "renderedLength": 208
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/get-as-type.mjs",
+        "renderedLength": 207
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/offsets/default.mjs",
+        "renderedLength": 203
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/utils/accelerated-values.mjs",
+        "renderedLength": 203
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/frameloop/order.mjs",
+        "renderedLength": 201
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/html/utils/create-render-state.mjs",
+        "renderedLength": 201
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/dom/scroll/utils/is-element-tracking.mjs",
+        "renderedLength": 201
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/drag/state/is-active.mjs",
+        "renderedLength": 198
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/circ.mjs",
+        "renderedLength": 196
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/animations.mjs",
+        "renderedLength": 195
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/generators/utils/is-generator.mjs",
+        "renderedLength": 194
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/frameloop/microtask.mjs",
+        "renderedLength": 194
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/utils/make-animation-instant.mjs",
+        "renderedLength": 193
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/get-context-window.mjs",
+        "renderedLength": 192
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/use-isomorphic-effect.mjs",
+        "renderedLength": 191
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/dom/utils/camel-to-dash.mjs",
+        "renderedLength": 191
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/reduced-motion/state.mjs",
+        "renderedLength": 190
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/anticipate.mjs",
+        "renderedLength": 187
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/components/motion/feature-bundle.mjs",
+        "renderedLength": 187
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/keyframes/offsets/time.mjs",
+        "renderedLength": 185
+      },
+      {
+        "id": "resources/js/marketing.jsx",
+        "renderedLength": 185
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/utils/resolve-motion-value.mjs",
+        "renderedLength": 183
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/is-svg-svg-element.mjs",
+        "renderedLength": 182
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/Feature.mjs",
+        "renderedLength": 182
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/components/motion/proxy.mjs",
+        "renderedLength": 180
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/animation/waapi/easing/cubic-bezier.mjs",
+        "renderedLength": 179
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/render/svg/utils/create-render-state.mjs",
+        "renderedLength": 179
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/will-change/is.mjs",
+        "renderedLength": 176
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/is-svg-element.mjs",
+        "renderedLength": 174
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/easing/modifiers/reverse.mjs",
+        "renderedLength": 171
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/resize/index.mjs",
+        "renderedLength": 171
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/is-variant-label.mjs",
+        "renderedLength": 171
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/node/state.mjs",
+        "renderedLength": 168
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/svg/utils/is-svg-tag.mjs",
+        "renderedLength": 167
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/features/layout.mjs",
+        "renderedLength": 167
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/clamp.mjs",
+        "renderedLength": 164
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/PresenceContext.mjs",
+        "renderedLength": 163
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/MotionContext/index.mjs",
+        "renderedLength": 163
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/SwitchLayoutGroupContext.mjs",
+        "renderedLength": 163
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/mix/number.mjs",
+        "renderedLength": 162
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/utils/each-axis.mjs",
+        "renderedLength": 158
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/utils/is-motion-value.mjs",
+        "renderedLength": 155
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/utils/is-keyframes-target.mjs",
+        "renderedLength": 154
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/is-numerical-string.mjs",
+        "renderedLength": 152
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/LazyContext.mjs",
+        "renderedLength": 152
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/context/LayoutGroupContext.mjs",
+        "renderedLength": 151
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/motion/utils/symbol.mjs",
+        "renderedLength": 147
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/pipe.mjs",
+        "renderedLength": 145
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/projection/utils/compare-by-depth.mjs",
+        "renderedLength": 143
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/is-object.mjs",
+        "renderedLength": 142
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/mix/immediate.mjs",
+        "renderedLength": 141
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/float-regex.mjs",
+        "renderedLength": 137
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/auto.mjs",
+        "renderedLength": 137
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/stats/buffer.mjs",
+        "renderedLength": 137
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/is-zero-value-string.mjs",
+        "renderedLength": 136
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/sanitize.mjs",
+        "renderedLength": 135
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/gestures/press/utils/state.mjs",
+        "renderedLength": 134
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/utils/is-nullish.mjs",
+        "renderedLength": 133
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/dom/is-css-var.mjs",
+        "renderedLength": 129
+      },
+      {
+        "id": "node_modules/framer-motion/dist/es/utils/is-browser.mjs",
+        "renderedLength": 128
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/render/store.mjs",
+        "renderedLength": 128
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/test.mjs",
+        "renderedLength": 127
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/value/types/int.mjs",
+        "renderedLength": 125
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/errors.mjs",
+        "renderedLength": 118
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/noop.mjs",
+        "renderedLength": 118
+      },
+      {
+        "id": "node_modules/motion-utils/dist/es/global-config.mjs",
+        "renderedLength": 104
+      },
+      {
+        "id": "node_modules/motion-dom/dist/es/utils/supports/flags.mjs",
+        "renderedLength": 104
+      },
+      {
+        "id": "node_modules/motion/dist/es/react.mjs",
+        "renderedLength": 84
+      }
+    ]
+  },
+  {
+    "file": "assets/portal-Ci-8Tqlr.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-Yrgo3tEG.js",
+      "assets/portal-CmMt2Ngy.js",
+      "assets/portal-CmMt2Ngy.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 25827,
+    "gzipBytes": 9077,
+    "modules": [
+      {
+        "id": "resources/js/portal/pages/AuthPage.jsx",
+        "renderedLength": 4565
+      },
+      {
+        "id": "resources/js/portal/components/WhatsNew.jsx",
+        "renderedLength": 4157
+      },
+      {
+        "id": "resources/js/portal/pages/AccountPage.jsx",
+        "renderedLength": 3311
+      },
+      {
+        "id": "resources/js/portal/components/LinuxDownloadCard.jsx",
+        "renderedLength": 2910
+      },
+      {
+        "id": "resources/js/portal/pages/BillingPage.jsx",
+        "renderedLength": 2845
+      },
+      {
+        "id": "resources/js/portal/pages/DownloadsPage.jsx",
+        "renderedLength": 2796
+      },
+      {
+        "id": "resources/js/portal/components/PortalShell.jsx",
+        "renderedLength": 2409
+      },
+      {
+        "id": "resources/js/portal/api.js",
+        "renderedLength": 2371
+      },
+      {
+        "id": "resources/js/portal/pages/BillingStatusPage.jsx",
+        "renderedLength": 2367
+      },
+      {
+        "id": "resources/js/portal/components/PlanCard.jsx",
+        "renderedLength": 2356
+      },
+      {
+        "id": "resources/js/portal/components/MacDownloadCard.jsx",
+        "renderedLength": 1950
+      },
+      {
+        "id": "resources/js/portal/session/WebsiteSessionProvider.jsx",
+        "renderedLength": 1804
+      },
+      {
+        "id": "resources/js/portal/components/PlatformRow.jsx",
+        "renderedLength": 1556
+      },
+      {
+        "id": "resources/js/portal/components/ProviderIcon.jsx",
+        "renderedLength": 1548
+      },
+      {
+        "id": "resources/js/portal/providerAuth.js",
+        "renderedLength": 1363
+      },
+      {
+        "id": "resources/js/portal/components/UpdatesItself.jsx",
+        "renderedLength": 1342
+      },
+      {
+        "id": "resources/js/portal/navigation.js",
+        "renderedLength": 1259
+      },
+      {
+        "id": "resources/js/portal/components/DownloadCard.jsx",
+        "renderedLength": 1158
+      },
+      {
+        "id": "resources/js/portal/PortalApp.jsx",
+        "renderedLength": 1092
+      },
+      {
+        "id": "resources/js/portal/platform.js",
+        "renderedLength": 885
+      },
+      {
+        "id": "resources/js/portal/components/BetaBanner.jsx",
+        "renderedLength": 617
+      },
+      {
+        "id": "resources/js/portal/components/Notice.jsx",
+        "renderedLength": 294
+      },
+      {
+        "id": "resources/js/portal.jsx",
+        "renderedLength": 185
+      }
+    ]
+  },
+  {
+    "file": "assets/portal-CmMt2Ngy.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 0,
+    "gzipBytes": 20,
+    "modules": [
+      {
+        "id": "resources/css/portal.css",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/jsx-runtime-Yrgo3tEG.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 190420,
+    "gzipBytes": 59349,
+    "modules": [
+      {
+        "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+        "renderedLength": 453153
+      },
+      {
+        "id": "node_modules/react/cjs/react.production.js",
+        "renderedLength": 15178
+      },
+      {
+        "id": "node_modules/scheduler/cjs/scheduler.production.js",
+        "renderedLength": 9037
+      },
+      {
+        "id": "node_modules/react-dom/cjs/react-dom.production.js",
+        "renderedLength": 5713
+      },
+      {
+        "id": "\u0000rolldown/runtime.js",
+        "renderedLength": 1740
+      },
+      {
+        "id": "node_modules/react/cjs/react-jsx-runtime.production.js",
+        "renderedLength": 871
+      },
+      {
+        "id": "node_modules/react-dom/client.js",
+        "renderedLength": 473
+      },
+      {
+        "id": "node_modules/react-dom/index.js",
+        "renderedLength": 468
+      },
+      {
+        "id": "node_modules/react/jsx-runtime.js",
+        "renderedLength": 200
+      },
+      {
+        "id": "node_modules/scheduler/index.js",
+        "renderedLength": 188
+      },
+      {
+        "id": "node_modules/react/index.js",
+        "renderedLength": 176
+      }
+    ]
+  },
+  {
+    "file": "assets/app-ty2jjwFV.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 61713,
+    "gzipBytes": 10962
+  },
+  {
+    "file": "assets/marketing-DmmY3po-.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 56213,
+    "gzipBytes": 11199
+  },
+  {
+    "file": "assets/portal-CjRG5qfw.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 15009,
+    "gzipBytes": 3620
+  }
+]

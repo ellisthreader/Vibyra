@@ -1,0 +1,12 @@
+
+  [30;42;1m PASS [39;49;22m[39m Tests\Unit\CreditCalculatorTest[39m
+  [32;1m✓[39;22m[90m [39m[90mcurrent claude models use pinned slugs and conservative fallback ra[39m[90m…[39m [90m0.78s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdynamic openrouter slugs resolve as billable models[39m[90m                 [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90mdynamic model estimates include request price and conservative safe[39m[90m…[39m [90m0.01s[39m  
+  [32;1m✓[39;22m[90m [39m[90mincomplete dynamic pricing is premium and uses default fallback[39m[90m     [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90musage estimate excludes reservation safety margin[39m[90m                   [39m [90m0.02s[39m  
+  [32;1m✓[39;22m[90m [39m[90mterminal output budget reduces only the output needed to fit balanc[39m[90m…[39m [90m0.02s[39m  
+
+  [90mTests:[39m    [32;1m6 passed[39;22m[90m (74 assertions)[39m
+  [90mDuration:[39m [39m12.28s[39m
+

@@ -68,6 +68,7 @@ function exactMatch(history: NotificationItem[], input: NotificationInput, now: 
 function burstMatch(history: NotificationItem[], input: NotificationInput, now: number) {
   const head = history[0];
   if (!head || head.kind !== input.kind) return undefined;
+  if (head.inputRejected || input.inputRejected) return undefined;
   return now - head.at <= BURST_MS ? head : undefined;
 }
 

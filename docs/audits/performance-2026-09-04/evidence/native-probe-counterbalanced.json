@@ -1,0 +1,1941 @@
+{
+  "elapsedSeconds": 60.47570848464966,
+  "exitBeforeCleanup": null,
+  "complete": true,
+  "clockTicksPerSecond": 100,
+  "samples": [
+    {
+      "elapsed": 1.0524446964263916,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 0,
+          "rssBytes": 0
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 2.084400177001953,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 0,
+          "rssBytes": 806912
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 3.10701847076416,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 0,
+          "rssBytes": 1273856
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 4.126192331314087,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 0,
+          "rssBytes": 2973696
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 5.144578456878662,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 1,
+          "rssBytes": 4583424
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 6.187819004058838,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 4,
+          "rssBytes": 7229440
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 7.234712600708008,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 9,
+          "rssBytes": 45379584
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 8.266204595565796,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 9,
+          "rssBytes": 45850624
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 9.286425590515137,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 9,
+          "rssBytes": 46243840
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 10.305330753326416,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 11,
+          "rssBytes": 59723776
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 11.324724435806274,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 15,
+          "rssBytes": 67264512
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 12.374547958374023,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 15,
+          "rssBytes": 67403776
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 13.395385026931763,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 16,
+          "rssBytes": 70660096
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 14.414444208145142,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 17,
+          "rssBytes": 81108992
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 15.468934059143066,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 21,
+          "rssBytes": 84566016
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 16.497365951538086,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 22,
+          "rssBytes": 90341376
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 17.559712171554565,
+      "processes": [
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 25,
+          "rssBytes": 97898496
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 18.610247135162354,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 26,
+          "rssBytes": 99647488
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 19.665761947631836,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 27,
+          "rssBytes": 100982784
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 20.71237874031067,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 27,
+          "rssBytes": 101113856
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 21.778184413909912,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 28,
+          "rssBytes": 110485504
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 22.830462217330933,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 29,
+          "rssBytes": 111517696
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 23.867276430130005,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 29,
+          "rssBytes": 113102848
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 24.920676469802856,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 30,
+          "rssBytes": 122818560
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 25.96764612197876,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 31,
+          "rssBytes": 123604992
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41484288
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 27.010069131851196,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 31,
+          "rssBytes": 130121728
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 28.04512619972229,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 31,
+          "rssBytes": 130412544
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 29.09566044807434,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42307584
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 33,
+          "rssBytes": 130863104
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 30.13126039505005,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42438656
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 33,
+          "rssBytes": 131018752
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 31.18739104270935,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42438656
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 35,
+          "rssBytes": 138227712
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 32.25406527519226,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42438656
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 46,
+          "rssBytes": 173469696
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 33.305123805999756,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42438656
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 52,
+          "rssBytes": 188784640
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 41644032
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 34.34009146690369,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 45584384
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 55,
+          "rssBytes": 192684032
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 6,
+          "rssBytes": 48488448
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 35.40590739250183,
+      "processes": [
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 25,
+          "rssBytes": 196333568
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 63,
+          "rssBytes": 217493504
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50094080
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 36.44428038597107,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 1,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 91,
+          "rssBytes": 255909888
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706104,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1724416
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 79,
+          "rssBytes": 227569664
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50094080
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 37.50297212600708,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 1,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 266,
+          "rssBytes": 296722432
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1724416
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 108,
+          "rssBytes": 228102144
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 0,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50094080
+        }
+      ],
+      "phase": "startup"
+    },
+    {
+      "elapsed": 44.223984241485596,
+      "processes": [
+        {
+          "pid": 707554,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 745,
+          "rssBytes": 299503616
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 231,
+          "rssBytes": 232468480
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "focus-paced"
+    },
+    {
+      "elapsed": 45.28217315673828,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 790,
+          "rssBytes": 302510080
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 246,
+          "rssBytes": 232468480
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 707733,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "focus-paced"
+    },
+    {
+      "elapsed": 46.36900305747986,
+      "processes": [
+        {
+          "pid": 707939,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 832,
+          "rssBytes": 312340480
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 259,
+          "rssBytes": 232730624
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "focus-paced"
+    },
+    {
+      "elapsed": 47.44459319114685,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 882,
+          "rssBytes": 310566912
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 708075,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 273,
+          "rssBytes": 233123840
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "focus-paced"
+    },
+    {
+      "elapsed": 48.48060607910156,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 708262,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 708263,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 928,
+          "rssBytes": 312766464
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 708264,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 708265,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1830912
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 286,
+          "rssBytes": 233353216
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "focus-paced"
+    },
+    {
+      "elapsed": 49.5599250793457,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1002,
+          "rssBytes": 321728512
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 306,
+          "rssBytes": 233877504
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "focus-paced"
+    },
+    {
+      "elapsed": 50.610695123672485,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1111,
+          "rssBytes": 310927360
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 334,
+          "rssBytes": 233877504
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 708536,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1900544
+        },
+        {
+          "pid": 708537,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 708538,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 708539,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 51.679126501083374,
+      "processes": [
+        {
+          "pid": 708736,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 708737,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1830912
+        },
+        {
+          "pid": 708738,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1231,
+          "rssBytes": 308400128
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 363,
+          "rssBytes": 234270720
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        },
+        {
+          "pid": 708735,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1830912
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 52.81381583213806,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1352,
+          "rssBytes": 307695616
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 708886,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1880064
+        },
+        {
+          "pid": 708887,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1896448
+        },
+        {
+          "pid": 708888,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1822720
+        },
+        {
+          "pid": 708889,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 392,
+          "rssBytes": 234270720
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 53.9496693611145,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1467,
+          "rssBytes": 311537664
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 421,
+          "rssBytes": 234663936
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 709067,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 709069,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1826816
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 55.04271483421326,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1595,
+          "rssBytes": 316059648
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 454,
+          "rssBytes": 235057152
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 709451,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 709452,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 56.29697299003601,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1707,
+          "rssBytes": 314253312
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 481,
+          "rssBytes": 235319296
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 709593,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 709594,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1884160
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 57.34099340438843,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1828,
+          "rssBytes": 308281344
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 510,
+          "rssBytes": 235712512
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        },
+        {
+          "pid": 709743,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 709744,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 58.477222204208374,
+      "processes": [
+        {
+          "pid": 709954,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1900544
+        },
+        {
+          "pid": 709955,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1942,
+          "rssBytes": 310411264
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 537,
+          "rssBytes": 236105728
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    },
+    {
+      "elapsed": 59.562663316726685,
+      "processes": [
+        {
+          "pid": 706054,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 704010,
+          "name": "WebKitWebProces",
+          "cpuTicks": 2057,
+          "rssBytes": 304861184
+        },
+        {
+          "pid": 706058,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 706063,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706070,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706098,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1855488
+        },
+        {
+          "pid": 703157,
+          "name": "vibyra-probe",
+          "cpuTicks": 567,
+          "rssBytes": 236498944
+        },
+        {
+          "pid": 706110,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 706124,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1708032
+        },
+        {
+          "pid": 710103,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 710104,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 703838,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 7,
+          "rssBytes": 50225152
+        }
+      ],
+      "phase": "all-visible"
+    }
+  ],
+  "kind": "Minified production frontend, debug native binary, isolated XDG and unavailable keyring, auto graphics"
+}

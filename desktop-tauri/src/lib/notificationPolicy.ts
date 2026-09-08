@@ -33,6 +33,9 @@ function channelFor(prefs: NotificationPrefs, kind: NotificationKind): Notificat
 }
 
 export function shouldShow(prefs: NotificationPrefs | null, input: NotificationInput): boolean {
+  // Rejected keyboard input must not become silent data loss. This bypasses
+  // only in-app visibility; sound and OS escalation still honor preferences.
+  if (input.inputRejected) return true;
   if (!prefs) return true;
   if (!prefs.enabled) return false;
   return channelFor(prefs, input.kind) !== "off";

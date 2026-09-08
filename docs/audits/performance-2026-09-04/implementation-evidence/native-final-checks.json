@@ -1,0 +1,46 @@
+[
+  {
+    "log": "fmt-final.log",
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "src-tauri/Cargo.toml",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 15.057859940999947
+  },
+  {
+    "log": "clippy-verified.log",
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "src-tauri/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 210.75369806499998
+  },
+  {
+    "log": "native-verified.log",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "src-tauri/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "exit": 0,
+    "seconds": 255.47596545400006
+  }
+]

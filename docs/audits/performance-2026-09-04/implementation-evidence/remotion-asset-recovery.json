@@ -1,0 +1,22 @@
+[
+  {
+    "path": "remotion/public/desktop-multi-terminal.png",
+    "originalSource": "backend/public/media/homepage/desktop-multi-terminal.png",
+    "restoredBytes": 2
+  },
+  {
+    "path": "remotion/public/vibyra-mark.png",
+    "originalSource": "backend/public/vibyra-cobalt.png",
+    "restoredBytes": 5
+  },
+  {
+    "path": "remotion/public/desktop-model-picker.png",
+    "originalSource": "backend/public/media/homepage/desktop-model-picker.png",
+    "restoredBytes": 2
+  },
+  {
+    "path": "remotion/public/desktop-memory-voice.png",
+    "originalSource": "backend/public/media/homepage/desktop-memory-voice.png",
+    "restoredBytes": 2
+  }
+]

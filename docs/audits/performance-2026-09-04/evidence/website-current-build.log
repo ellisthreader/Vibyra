@@ -1,0 +1,31 @@
+vite v8.2.1 building client environment for production...
+[2Ktransforming...✓ 50 modules transformed.
+✗ Build failed in 45.31s
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+Build failed with 1 error:
+
+[plugin @tailwindcss/vite:generate:build] /home/ellis/Desktop/Vibyra/backend/resources/css/marketing.css
+Error: Can't resolve './marketing/home-responsive.css' in '/home/ellis/Desktop/Vibyra/backend/resources/css'
+    at finishWithoutResolve (/home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/Resolver.js:909:18)
+    at /home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/Resolver.js:1001:14
+    at /home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/Resolver.js:1080:5
+    at eval (eval at create (/home/ellis/Desktop/Vibyra/backend/node_modules/tapable/lib/HookCodeFactory.js:31:10), <anonymous>:15:1)
+    at /home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/Resolver.js:1080:5
+    at eval (eval at create (/home/ellis/Desktop/Vibyra/backend/node_modules/tapable/lib/HookCodeFactory.js:31:10), <anonymous>:27:1)
+    at /home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/DescriptionFilePlugin.js:97:43
+    at /home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/Resolver.js:1080:5
+    at eval (eval at create (/home/ellis/Desktop/Vibyra/backend/node_modules/tapable/lib/HookCodeFactory.js:31:10), <anonymous>:15:1)
+    at /home/ellis/Desktop/Vibyra/backend/node_modules/enhanced-resolve/lib/Resolver.js:1080:5
+    at aggregateBindingErrorsIntoJsError (file:///home/ellis/Desktop/Vibyra/backend/node_modules/rolldown/dist/shared/error-BzLGqhSQ.mjs:48:18)
+    at unwrapBindingResult (file:///home/ellis/Desktop/Vibyra/backend/node_modules/rolldown/dist/shared/error-BzLGqhSQ.mjs:18:128)
+    at #build (file:///home/ellis/Desktop/Vibyra/backend/node_modules/rolldown/dist/shared/rolldown-I5b6h5Km.mjs:132:34)
+    at async buildEnvironment (file:///home/ellis/Desktop/Vibyra/backend/node_modules/vite/dist/node/chunks/node.js:33730:66)
+    at async Object.build (file:///home/ellis/Desktop/Vibyra/backend/node_modules/vite/dist/node/chunks/node.js:34150:19)
+    at async file:///tmp/vibyra-performance-audit-20260904-KNtjVg/build_assets_current.mjs:11:1 {
+  errors: [Getter/Setter]
+}
+
+Node.js v22.23.2

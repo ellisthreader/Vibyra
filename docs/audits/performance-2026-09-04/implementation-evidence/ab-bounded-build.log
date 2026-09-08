@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on artifact directory
+   Compiling vibyra-core v0.1.0 (/tmp/vibyra-perf-final-20260905-ve27rxj1/ab-native/crates/vibyra-core)
+   Compiling vibyra-desktop v0.1.0 (/tmp/vibyra-perf-final-20260905-ve27rxj1/ab-native)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 50s

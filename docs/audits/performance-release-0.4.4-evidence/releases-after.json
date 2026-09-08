@@ -1,0 +1,72 @@
+{
+  "ok": true,
+  "releases": [
+    {
+      "platform": "windows",
+      "architecture": "",
+      "label": "Vibyra for Windows",
+      "version": "0.4.4",
+      "filename": "Vibyra-Desktop-0.4.4-x64-setup.exe",
+      "sizeBytes": 8162117,
+      "sha256": "9277516d04a90b9e8c14137f15d909d8c9cc7b3d6d5535b548e4db1ddb5cce41",
+      "minimumSystemVersion": "",
+      "available": true,
+      "downloadUrl": "/downloads/windows"
+    },
+    {
+      "platform": "linux",
+      "architecture": "",
+      "label": "Vibyra for Linux",
+      "version": "0.4.4",
+      "filename": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+      "sizeBytes": 99105272,
+      "sha256": "e4b0205ea74c3b44d89c15a1aa43801801513395859bf916e52b464f1710a3ea",
+      "minimumSystemVersion": "",
+      "available": true,
+      "downloadUrl": "/downloads/linux"
+    },
+    {
+      "platform": "linux-deb",
+      "architecture": "",
+      "label": "Vibyra for Debian/Ubuntu",
+      "version": "0.4.4",
+      "filename": "Vibyra-Desktop-0.4.4-amd64.deb",
+      "sizeBytes": 11356796,
+      "sha256": "2bfe385be6f16fb2f296ec365daab236b08d7fc10ae6b7b4331356311db76d93",
+      "minimumSystemVersion": "",
+      "available": true,
+      "downloadUrl": "/downloads/linux-deb"
+    },
+    {
+      "platform": "macos",
+      "label": "Vibyra for macOS",
+      "available": false,
+      "variants": [
+        {
+          "platform": "macos-arm64",
+          "architecture": "arm64",
+          "label": "Vibyra for macOS (Apple Silicon)",
+          "version": "",
+          "filename": "",
+          "sizeBytes": 0,
+          "sha256": "",
+          "minimumSystemVersion": "12.0",
+          "available": false,
+          "downloadUrl": "/downloads/macos-arm64"
+        },
+        {
+          "platform": "macos-x64",
+          "architecture": "x64",
+          "label": "Vibyra for macOS (Intel)",
+          "version": "",
+          "filename": "",
+          "sizeBytes": 0,
+          "sha256": "",
+          "minimumSystemVersion": "12.0",
+          "available": false,
+          "downloadUrl": "/downloads/macos-x64"
+        }
+      ]
+    }
+  ]
+}

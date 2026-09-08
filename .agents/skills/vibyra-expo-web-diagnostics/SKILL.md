@@ -36,6 +36,24 @@ If the response is `500` with `Content-Type: application/json`, fix the reported
 
 ## Missing Module Checks
 
+For `unsupported file type: undefined` naming an image, inspect its actual
+bytes before clearing Metro caches or changing MIME handling. A PNG must begin
+with `89 50 4e 47 0d 0a 1a 0a`; a `.png` suffix and a passing typecheck do not
+prove that it is decodable. Compare the failing asset with HEAD to establish
+whether the corruption predates the task, then validate sibling assets with an
+image decoder. Restore known-good originals; editing only a damaged signature
+does not prove the rest of the file is intact. Keep PNGs binary in Git and rerun
+the production Expo web export after repair. The 2026-09-04 audit reproduced
+this failure in `src/assets/vibyra-cobalt.png`; see
+`docs/audits/performance-2026-09-04/report.md` for the evidence scope.
+
+For carriage-return loss, accept byte restoration only when every original PNG
+chunk CRC and a full pixel decode pass, and normalizing the repaired CRLF bytes
+reproduces the damaged input exactly. Check duplicated assets in `remotion/public`
+as well as app/backend folders. Git binary attributes alone do not prevent a
+tool from corrupting bytes. `desktop-tauri` and audit fixtures under `docs/` must
+stay outside Metro's source crawl; `docs/audits` is also excluded from app tsc.
+
 For `UnableToResolveError`, inspect the exact import path and confirm the file exists with a supported extension.
 
 For translation failures, check `src/context/translations.ts` against the files in `src/context/i18n/`:
@@ -60,6 +78,18 @@ already handles Stripe.
 
 Verify the focused hook tests, run `npm run typecheck`, and export Expo web.
 Search the generated bundle to confirm the native module name is absent.
+
+## Replacement Phone Surface
+
+Resolve the source directory before applying SDK or auth instructions. The
+replacement Host client is `mobile/` (SDK 57); the root `src/` client is legacy
+(SDK 54). The legacy Expo Go/auth rules below apply only to root `src/`.
+Use `App/Phone Companion Onboarding.md` for the replacement's first-run/WIP
+flow. It uses Host approval without an account gate. Hosted HTTPS rejects
+local ws links before enrollment; use a provisioned wss route, native phone,
+or local HTTP web. Do not remove this guard to hide mixed-content failures.
+For browser interaction checks, wait for React Native Web's selected state
+before asserting dependent navigation results; a click can precede its commit.
 
 ## Expo Server Checks
 
@@ -124,10 +154,11 @@ the LAN iOS bundle returns `200 application/javascript`.
 Do not trust `/status` alone when several Expo projects are running. Resolve
 the listener command line and confirm the manifest's `extra.expoClient.name`,
 SDK, main module, and LAN bundle host belong to Vibyra. Use a free explicit
-port instead of stopping another project's Metro server. `metro.config.js`
-excludes Vibyra's desktop app, backend/vendor, vault, and large `tmp/` trees from
-the mobile file-map crawl; preserve those exclusions so a cleared cache does
-not spend minutes scanning tens of thousands of non-mobile files.
+port instead of stopping another project's Metro server. Check the actual
+`metro.config.js` block list against the current desktop directory name:
+excluding `desktop` does not exclude `desktop-tauri`. Preserve backend, vault,
+and temporary-tree exclusions. Verify the corrected crawl boundary and export
+before attributing startup delays to Metro; host disk pressure also matters.
 
 ## Auth Fetch Failures
 

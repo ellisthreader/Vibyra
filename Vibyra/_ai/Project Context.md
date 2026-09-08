@@ -1,5 +1,8 @@
 # Project Context
 
+Current phone/Host preview: `mobile/`. See [[App/Phone Companion Onboarding]]
+for first-run setup and the Desktop WIP entry. Root `src/` is the legacy client.
+
 Vibyra is a mobile command center for AI software workflows running on the user's own machine.
 
 ## Current Shape

@@ -1,0 +1,13 @@
+{
+  "checked_utc": "2026-09-04T21:28:47.726813+00:00",
+  "source_root": "/home/ellis/.config/vibyra-desktop/terminal-worktrees/vibyra-1a062ef22f2-0",
+  "head": "287bfa0016dab9fb2f54701cc96c6696837d92f0",
+  "source_commit": "4abe89647205ce9bfb2e94c892b50112a3939f41",
+  "source_diff": " Vibyra/_ai/Desktop/Desktop Updates.md | 37 +++++++++++++++++++++++++++++++++++\n 1 file changed, 37 insertions(+)\n",
+  "source_status": "",
+  "local_cli_versions": {
+    "codex": "0.153.2",
+    "claude": "2.1.261"
+  },
+  "rendering": "Current React components and bundled styles/fonts, synthetic stores and mocked IPC, Chrome CDP, not a signed-in Tauri provider journey."
+}

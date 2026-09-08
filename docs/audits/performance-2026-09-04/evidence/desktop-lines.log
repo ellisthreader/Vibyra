@@ -1,0 +1,5 @@
+
+Generated/vendor exclusions:
+EXCLUDED	592	desktop-tauri/src/assets/providerLogos.js
+
+Tauri desktop first-party files over 200 lines: 0

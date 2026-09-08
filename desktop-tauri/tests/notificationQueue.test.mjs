@@ -14,6 +14,21 @@ import { timeoutFor } from "../src/lib/notificationTiers.ts";
 
 const EMPTY = { history: [], visible: [] };
 
+test("rejected input retains its warning beside performance bursts and replaces repeats", () => {
+  const performance = { kind: "performance", tier: "risk", title: "High CPU" };
+  const rejected = { ...performance, title: "Terminal input was not sent", inputRejected: true, replaceKey: "input:1" };
+  const first = enqueue(EMPTY, performance, 1, 0);
+  const warning = enqueue(first, rejected, 2, 1);
+  assert.equal(warning.item.title, rejected.title);
+  assert.equal(warning.history.length, 2);
+  const later = enqueue(warning, performance, 3, 2);
+  assert.equal(later.history.find((item) => item.inputRejected)?.title, rejected.title);
+  const repeated = enqueue(later, rejected, 4, 3);
+  assert.equal(repeated.history.length, later.history.length);
+  assert.equal(repeated.item.id, warning.item.id);
+  assert.equal(repeated.item.title, rejected.title);
+});
+
 function input(overrides = {}) {
   return {
     kind: "agent",

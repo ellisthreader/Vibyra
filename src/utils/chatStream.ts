@@ -11,14 +11,14 @@ export function streamChatText(
   }
   const chunks = text.match(/\S+\s*|\s+/g) ?? [text];
   let index = 0;
+  let partial = "";
   let cancelled = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const tick = () => {
     if (cancelled) return;
-    index += 1;
+    partial += chunks[index++];
     const done = index >= chunks.length;
-    const partial = chunks.slice(0, index).join("");
     onUpdate(done ? partial : `${partial}${TYPING_CURSOR}`, done);
     if (done) return;
     timer = setTimeout(tick, 15 + Math.random() * 30);

@@ -7,6 +7,7 @@ use App\Http\Controllers\VibyraAppController;
 use App\Http\Controllers\VibyraDesktopController;
 use App\Http\Controllers\WebsiteAuthController;
 use App\Http\Controllers\WebsiteBillingController;
+use App\Http\Controllers\WebsiteDownloadsController;
 use App\Http\Controllers\WebsiteProviderAuthController;
 use App\Http\Middleware\PublicCommunityCache;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -24,8 +25,9 @@ Route::view('/signup', 'portal');
 Route::view('/billing', 'portal');
 Route::view('/billing/success', 'portal');
 Route::view('/billing/cancel', 'portal');
-Route::view('/downloads', 'portal');
-Route::view('/account/downloads', 'portal');
+Route::view('/downloads', 'downloads');
+Route::view('/account/downloads', 'downloads');
+Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'catalog']);
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
 Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])
     ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
@@ -116,6 +118,7 @@ Route::delete('/api/account/sessions/{sessionId}', [VibyraAppController::class, 
 Route::delete('/api/account', [VibyraAppController::class, 'deleteAccount']);
 Route::get('/api/session', [VibyraAppController::class, 'session']);
 Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
+Route::post('/api/session/state/delta', [VibyraAppController::class, 'saveStateDelta']);
 Route::post('/api/reports', [VibyraAppController::class, 'submitDesktopReport'])->middleware('throttle:5,10');
 Route::get('/api/project-memory/{projectId}', [VibyraAppController::class, 'projectMemory']);
 Route::post('/api/project-memory/{projectId}/entries', [VibyraAppController::class, 'addProjectMemory']);

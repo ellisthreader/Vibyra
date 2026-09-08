@@ -4,7 +4,6 @@ import AuthPage from "./pages/AuthPage.jsx";
 import BillingPage from "./pages/BillingPage.jsx";
 import BillingStatusPage from "./pages/BillingStatusPage.jsx";
 import AccountPage from "./pages/AccountPage.jsx";
-import DownloadsPage from "./pages/DownloadsPage.jsx";
 
 function PortalRoute() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
@@ -13,7 +12,6 @@ function PortalRoute() {
   if (path === "/billing/success") return <BillingStatusPage status="success" />;
   if (path === "/billing/cancel") return <BillingStatusPage status="cancel" />;
   if (path === "/billing") return <BillingPage />;
-  if (path === "/downloads" || path === "/account/downloads") return <DownloadsPage />;
   return <AccountPage />;
 }
 

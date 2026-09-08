@@ -1,0 +1,115 @@
+.walkthrough-bottom { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-top: 14px; }
+.walkthrough-bottom .walkthrough-caption { padding: 0; text-align: left; min-height: 0; }
+.tour-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex: none; min-height: 44px; padding: 9px 12px; border: 1px solid #dce2ed; background: #f4f6fb; border-radius: 6px; color: #315bd8 !important; font-size: 12px !important; font-weight: 700 !important; }
+.tour-trigger:hover { border-color: #93a9e4; background: #eaf0ff; }
+.tour-dialog { width: min(1180px, calc(100% - 48px)); max-width: none; max-height: calc(100dvh - 48px); margin: auto; padding: 0; border: 1px solid #b8c3d8; border-radius: 16px; background: #f7f8fa; color: var(--home-ink); box-shadow: 0 40px 100px #040a2860; overflow: hidden; }
+.tour-dialog::backdrop { background: #0b102dcc; backdrop-filter: blur(7px); }
+.tour-shell { display: flex; flex-direction: column; max-height: calc(100dvh - 50px); }
+.tour-header { display: flex; align-items: center; gap: 25px; padding: 14px 26px; border-bottom: 1px solid var(--home-line); }
+.tour-header .brand { font-size: 23px; }
+.tour-header .brand img { width: 26px; }
+.tour-heading-label { font-family: var(--home-mono); color: #626a78; font-size: 10px; letter-spacing: .09em; }
+.tour-close { margin-left: auto; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; border: 1px solid #d4dbe7; background: white; flex: none; }
+.tour-close:hover { background: #e7ecf5; }
+.tour-navigation { padding: 15px 26px 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.tour-tabs { display: flex; gap: 5px; }
+.tour-tabs button { min-height: 44px; display: flex; align-items: center; gap: 9px; padding: 10px 16px; background: transparent; border: 1px solid transparent; border-radius: 6px; font-size: 13px; font-weight: 700; color: #626a78; }
+.tour-tabs button > span { font-family: var(--home-mono); font-size: 10px; font-weight: 400; }
+.tour-tabs button[aria-selected='true'] { background: #e7edfc; border-color: #c7d3ef; color: #315bd8; }
+.tour-example-label { font-size: 11px; color: #626a78; }
+.tour-body { display: grid; grid-template-columns: 240px 1fr; align-items: start; gap: 28px; overflow: auto; overscroll-behavior: contain; padding: 26px; min-height: 0; }
+.tour-story { padding-top: 12px; }
+.tour-story h2 { font-size: 31px; line-height: 1.16; }
+.tour-story p { margin-top: 18px; color: #626a78; font-size: 14px; line-height: 1.8; }
+.tour-story .tour-detail { border-top: 1px solid var(--home-line); padding-top: 20px; font-size: 12px; margin-top: 28px; }
+.tour-demo { min-width: 0; background: #0e0f12; color: #e0e4ec; border: 1px solid #3c4558; border-radius: 9px; padding: 8px; height: 520px; }
+.tour-demo .terminal-heading, .tour-demo .mini-browser { height: 38px; font-size: 10px; }
+.tour-demo .terminal-content { font-size: 11px; padding: 12px; }
+.tour-demo .terminal-file { font-size: 10px; flex-wrap: wrap; }
+.tour-demo .terminal-file b { display: none; }
+.tour-demo .terminal-status { font-size: 8px; padding-block: 6px; }
+.tour-demo .terminal-status > span:last-child { display: none; }
+.tour-demo .terminal-input { font-size: 10px; padding-block: 8px; }
+.tour-demo .terminal-tests { flex-wrap: wrap; gap: 2px 12px; }
+.tour-demo .mini-browser > span:nth-child(2) { font-size: 8px; }
+.tour-demo .orbit-app-content { padding: 20px; }
+.tour-demo .orbit-app-nav > strong { font-size: 17px; }
+.tour-demo .orbit-app-nav > span { font-size: 9px; }
+.tour-demo .orbit-eyebrow, .tour-demo .orbit-week > span { font-size: 8px; }
+.tour-demo .orbit-app .orbit-title { font-size: 34px; }
+.tour-demo .orbit-app-subtitle, .tour-demo .orbit-week b { font-size: 11px; }
+.tour-demo .orbit-habit { padding: 12px; margin-top: 13px; }
+.tour-demo .orbit-habit > div strong { font-size: 10px; }
+.tour-demo .orbit-habit > div span { font-size: 9px; }
+.tour-demo .orbit-streak { margin-top: 16px; }
+.tour-demo .orbit-streak > span { font-size: 8px; }
+.tour-demo .orbit-streak > strong { font-size: 10px; }
+.tour-demo .terminal-preview .orbit-streak { display: none; }
+.tour-demo .preview-demo-toolbar { height: 56px; font-size: 11px; gap: 10px; }
+.tour-demo .preview-demo-toolbar button { min-height: 44px; padding-inline: 12px; font-size: 11px; gap: 7px; }
+.tour-demo .preview-viewport { height: calc(100% - 74px); }
+.tour-demo .preview-viewport-phone { width: 240px; }
+.tour-demo .preview-viewport-phone .orbit-app-content { padding: 12px 15px; }
+.tour-demo .preview-viewport-phone .orbit-app .orbit-title { font-size: 28px; }
+.tour-demo .preview-viewport-phone .orbit-habit { margin-top: 9px; padding: 9px; }
+.tour-demo .review-file-list { width: 29%; padding: 14px 8px; font-size: 10px; }
+.tour-demo .review-file-list > span { flex-wrap: wrap; padding-block: 12px; }
+.tour-demo .review-file-list > span b { display: none; }
+.tour-demo .review-file-list .review-eyebrow { font-size: 8px; }
+.tour-demo .review-isolated > strong { font-size: 11px; }
+.tour-demo .review-isolated > p { font-size: 10px; }
+.tour-demo .review-code-head { font-size: 11px; padding-block: 15px; }
+.tour-demo .review-code pre { overflow: auto; font-size: 10px; line-height: 2; }
+.tour-demo .review-code code { min-width: max-content; padding-inline: 12px; }
+.tour-demo .review-summary { font-size: 11px; margin-block: 20px; }
+.tour-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 26px; border-top: 1px solid var(--home-line); }
+.tour-footer > span { font-size: 12px; color: #626a78; }
+@media (max-width: 1000px) {
+  .tour-body { grid-template-columns: 1fr; gap: 22px; }
+  .tour-story { display: flex; align-items: center; gap: 35px; padding: 0; }
+  .tour-story > div { flex: 1; }
+  .tour-story h2 { font-size: 28px; }
+  .tour-story p { margin-top: 10px; }
+  .tour-story .tour-detail { flex: 0 0 32%; border: 0; border-left: 1px solid var(--home-line); padding: 0 0 20px 25px; margin: 0; }
+  .tour-demo { height: 500px; }
+}
+@media (max-width: 580px) {
+  .walkthrough-bottom { flex-direction: column; gap: 10px; padding: 14px 6px 3px; }
+  .walkthrough-bottom .walkthrough-caption { text-align: center; font-size: 11px; }
+  .tour-trigger { width: 100%; }
+  .tour-dialog { width: calc(100% - 20px); max-height: calc(100dvh - 20px); border-radius: 12px; }
+  .tour-shell { max-height: calc(100dvh - 22px); }
+  .tour-header { padding: 10px 14px; }
+  .tour-heading-label, .tour-example-label { display: none; }
+  .tour-navigation { padding: 10px 12px 0; }
+  .tour-tabs { width: 100%; }
+  .tour-tabs button { flex: 1; justify-content: center; padding-inline: 8px; gap: 6px; font-size: 12px; }
+  .tour-body { padding: 18px 14px; gap: 20px; }
+  .tour-story { display: block; }
+  .tour-story h2 { font-size: 27px; }
+  .tour-story p { font-size: 13px; }
+  .tour-story .tour-detail { border: 0; padding: 0; margin-top: 12px; font-size: 11px; }
+  .tour-demo { height: 520px; padding: 5px; }
+  .tour-demo .terminal-layout { display: block; }
+  .tour-demo .terminal-stack { height: 100%; }
+  .tour-demo .terminal-preview { display: none; }
+  .tour-demo .terminal-content { font-size: 12px; }
+  .tour-demo .terminal-file { font-size: 11px; }
+  .tour-demo .terminal-heading { font-size: 12px; }
+  .tour-demo .preview-demo-toolbar { height: auto; padding: 8px; flex-direction: column; }
+  .tour-demo .preview-demo-toolbar > div { width: 100%; }
+  .tour-demo .preview-demo-toolbar button { flex: 1; justify-content: center; font-size: 12px; }
+  .tour-demo .preview-viewport { height: calc(100% - 100px); width: calc(100% - 16px); }
+  .tour-demo .preview-viewport-phone { width: min(210px, calc(100% - 42px)); }
+  .tour-demo .preview-viewport .orbit-app-content { display: block; padding: 12px; }
+  .tour-demo .preview-viewport .orbit-app .orbit-title { font-size: 29px; }
+  .tour-demo .preview-viewport .orbit-streak { display: none; }
+  .tour-demo .review-demo { display: block; overflow: auto; }
+  .tour-demo .review-file-list { width: 100%; padding: 10px; }
+  .tour-demo .review-file-list > span { padding-block: 5px; font-size: 11px; }
+  .tour-demo .review-isolated { display: none; }
+  .tour-demo .review-code pre { font-size: 10px; }
+  .tour-footer { padding: 12px 14px; }
+  .tour-footer > span { display: none; }
+  .tour-footer .action { width: 100%; }
+}

@@ -28,6 +28,12 @@ website, Expo browser client, and native phone app.
 
 ## Focused Notes
 
+- Agent Mode source authority, permission/runtime audit boundaries and evidence:
+  `Desktop/Agent Mode Audit Boundaries.md`
+- Whole-software performance evidence, safe native probes, and current input
+  ordering: `Performance Audit Workflow.md`
+- Whole-PC lag, unexpected app termination, systemd-oomd, and safe build-cache
+  cleanup: `Desktop/Linux Memory Pressure And Storage.md`
 - App launch, terminal rail, source ownership, and checks:
   `Desktop/Rust Tauri Desktop.md`
 - One-time personalized post-auth welcome, account scoping, motion, source
@@ -50,6 +56,8 @@ website, Expo browser client, and native phone app.
 - Titlebar rebuild, the stage split that replaced the Terminals/Preview mode,
   and why `terminalsVisible()` is the native flush budget:
   `Desktop/Project Stage And Titlebar.md`
+- Current floating right dock, its three titlebar size controls, and the
+  active-size close rule: `Desktop/Project Dock.md`
 - Real microphone level for the F8 HUD, the dBFS mapping that makes it
   readable, and why the renderer never opens a microphone:
   `Desktop/Dictation Level Meter.md`

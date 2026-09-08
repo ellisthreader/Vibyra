@@ -71,6 +71,16 @@ test("the cue is silent until prefs load, and honours volume and the channel", (
   assert.equal(cueFor(prefs(), item({ cue: "blip" })), "blip");
 });
 
+test("rejected terminal input stays visible when optional notices are muted", () => {
+  const rejected = item({ kind: "performance", tier: "risk", inputRejected: true, cue: "none", osEligible: false });
+  for (const muted of [prefs({ enabled: false }), prefs({}, "off")]) {
+    assert.equal(shouldShow(muted, rejected), true);
+    assert.equal(cueFor(muted, rejected), "none");
+    assert.equal(escalates(muted, rejected), false);
+    assert.equal(shouldShow(muted, item({ kind: "performance", tier: "risk" })), false);
+  }
+});
+
 test("each rung of the escalation matrix blocks on its own", () => {
   assert.equal(escalates(prefs(), item()), true);
   assert.equal(escalates(prefs({ enabled: false }), item()), false);

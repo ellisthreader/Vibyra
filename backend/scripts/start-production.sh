@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 role="${VIBYRA_PROCESS_ROLE:-all}"
-port="${PORT:-8000}"
 run_migrations="${VIBYRA_RUN_MIGRATIONS:-1}"
 scheduler_pid=""
 web_pid=""
@@ -30,11 +30,6 @@ if [[ "$run_migrations" == "1" && ( "$role" == "all" || "$role" == "web" ) ]]; t
   php artisan migrate --force
 fi
 
-start_web() {
-  php -d upload_max_filesize=8M -d post_max_size=48M \
-    artisan serve --host=0.0.0.0 --port="$port"
-}
-
 cleanup() {
   trap - EXIT
   for pid in "$web_pid" "$scheduler_pid"; do
@@ -51,8 +46,7 @@ cleanup() {
 
 case "$role" in
   web)
-    exec php -d upload_max_filesize=8M -d post_max_size=48M \
-      artisan serve --host=0.0.0.0 --port="$port"
+    exec bash scripts/start-production-web.sh
     ;;
   worker)
     exec php artisan queue:work \
@@ -69,7 +63,7 @@ case "$role" in
     trap 'exit 143' TERM
     php artisan schedule:work &
     scheduler_pid="$!"
-    start_web &
+    bash scripts/start-production-web.sh &
     web_pid="$!"
     set +e
     wait -n "$web_pid" "$scheduler_pid"

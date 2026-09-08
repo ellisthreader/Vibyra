@@ -1,0 +1,17 @@
+
+> vibyra-desktop-tauri@0.2.8 lines
+> node ../scripts/check-desktop-lines.mjs
+
+
+Generated/vendor exclusions:
+EXCLUDED	592	desktop-tauri/src/assets/providerLogos.js
+
+Tauri desktop first-party files over 200 lines: 0
+
+> vibyra-desktop-tauri@0.2.8 check:dead-code
+> knip --include files,dependencies,exports,unlisted,unresolved
+
+
+> vibyra-desktop-tauri@0.2.8 typecheck
+> tsc --noEmit
+

@@ -1,0 +1,92 @@
+[
+  {
+    "path": "backend/public/media/vibyra-launch-film-poster.png",
+    "ok": true,
+    "restoredBytes": 12,
+    "sha256": "566af7d1ef9e1f5cd4251edcf6fc0bad3e2aebb84c8c87b2ed872a02d7aee123",
+    "width": 1920,
+    "height": 1080,
+    "chunks": 87
+  },
+  {
+    "path": "backend/public/media/homepage/mobile-vibyra-auth.png",
+    "ok": true,
+    "restoredBytes": 4,
+    "sha256": "aa64e8647b858066f20a8d0c8c85616fd26bec2c145d664686c479bef42c5c03",
+    "width": 390,
+    "height": 844,
+    "chunks": 58
+  },
+  {
+    "path": "backend/public/media/homepage/desktop-welcome-review.png",
+    "ok": true,
+    "restoredBytes": 3,
+    "sha256": "b150ead273fe751fa3bc58586245ed09a5cad6cb9f5145ba13cc58dc23b333f5",
+    "width": 1360,
+    "height": 820,
+    "chunks": 59
+  },
+  {
+    "path": "backend/public/media/homepage/vibyra-cobalt-stage.png",
+    "ok": true,
+    "restoredBytes": 18,
+    "sha256": "f04cf2ae7aaafe9ae598eea96cf73ef9c0969777cef6e4576e4a3a620f671038",
+    "width": 1672,
+    "height": 941,
+    "chunks": 28
+  },
+  {
+    "path": "backend/public/media/homepage/desktop-memory-voice.png",
+    "ok": true,
+    "restoredBytes": 2,
+    "sha256": "39bb17d66a918663a3d6a503088fdd23cdb55e7e66c99e9ddd8daf3ead03f38e",
+    "width": 1936,
+    "height": 1048,
+    "chunks": 8
+  },
+  {
+    "path": "backend/public/media/homepage/desktop-model-picker.png",
+    "ok": true,
+    "restoredBytes": 2,
+    "sha256": "8f0046ee547367066d6f4e620fef1731d4464e7f077c8b43e4cd5dee6f0b7b91",
+    "width": 1936,
+    "height": 1048,
+    "chunks": 8
+  },
+  {
+    "path": "backend/public/media/homepage/desktop-model-catalog-v2.png",
+    "ok": true,
+    "restoredBytes": 4,
+    "sha256": "9445394d33e1da3e9a305711443ea7c9521b41bb70dac1071deca4f89d1b8fc5",
+    "width": 1418,
+    "height": 802,
+    "chunks": 37
+  },
+  {
+    "path": "backend/public/media/homepage/connected-workspace-editorial.png",
+    "ok": true,
+    "restoredBytes": 16,
+    "sha256": "a99e157a51e3dc92adae3b75c36ea12a0628e1642cb79e3b3663bef0a6120f1e",
+    "width": 1717,
+    "height": 916,
+    "chunks": 26
+  },
+  {
+    "path": "backend/public/media/homepage/desktop-multi-terminal.png",
+    "ok": true,
+    "restoredBytes": 2,
+    "sha256": "cabd80b5dc9ecdd5d2fba93d4d48df84d7764582833bbe3135275246b361f3aa",
+    "width": 1196,
+    "height": 788,
+    "chunks": 7
+  },
+  {
+    "path": "backend/public/media/homepage/phone-review-editorial.png",
+    "ok": true,
+    "restoredBytes": 17,
+    "sha256": "5bd48cedea8b899b9a028e3ff9b867bc559107d100d88e2a10edc656608faa19",
+    "width": 1672,
+    "height": 941,
+    "chunks": 27
+  }
+]

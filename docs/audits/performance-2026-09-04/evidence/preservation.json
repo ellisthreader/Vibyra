@@ -1,0 +1,30 @@
+{
+  "atUtc": "2026-09-04T21:36:15.613709+00:00",
+  "baselineHead": "b36fc0ab017dd816979cd4c3fbb869210377d30d",
+  "selectedFilesHashed": 1758,
+  "selectedFilesChangedDuringAudit": [
+    {
+      "path": "backend/resources/js/marketing/marketing.source.test.mjs",
+      "status": "changed"
+    },
+    {
+      "path": "backend/resources/css/marketing.css",
+      "status": "changed"
+    },
+    {
+      "path": "backend/resources/views/marketing.blade.php",
+      "status": "changed"
+    }
+  ],
+  "limits": "Selected source/config inventory excludes JSX and generated/dependency/media trees; git status/diff additionally identified concurrent marketing App.jsx and newly added homepage files. This is not whole-filesystem integrity certification.",
+  "auditAuthoredScope": [
+    "docs/audits/performance-2026-09-04/",
+    ".agents/skills/VibyraOptimse/SKILL.md",
+    ".agents/skills/vibyra-expo-web-diagnostics/SKILL.md",
+    "Vibyra/_ai/Performance Audit Workflow.md",
+    "Vibyra/_ai/Context Map.md",
+    "Vibyra/_ai/Vibyra Desktop Memory.md"
+  ],
+  "productionSourceEditedByAudit": false,
+  "existingWorkReverted": false
+}

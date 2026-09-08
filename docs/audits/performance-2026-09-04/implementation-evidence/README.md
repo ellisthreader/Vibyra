@@ -1,0 +1,19 @@
+# Implementation evidence
+
+These files support the [implementation report](../implementation.md). They contain synthetic fixtures and dated local results, not production telemetry or a certification of every user journey.
+
+- `mobile-verified.log`, `desktop-verified.log` and `backend-verified.log` are the final saved functional suites for their implementation changes. Older `stage2`/`stage3` files document intermediate iterations; do not use an earlier native run as proof of the final writer.
+- `source-fingerprints.json` records the source revision accompanying the earlier saved results. `source-fingerprints-final.json` records the final implementation. The writer, production timeout and rejected-input notification policy were refined afterward and receive separate final validation.
+- `persistence-bench.json` measures a 100-change burst using actual normalization code. It excludes secure/public storage latency and phone rendering.
+- `sync-bench.json` compares the legacy full response, compact full save and delta path in one warm Laravel/SQLite fixture. Large state rows still incur database and JSON processing costs.
+- `watcher-bench.json` records actual Linux inotify counts and event delivery using the implementation. The original comparison is in `../evidence/watcher-bench.json`.
+- `assets-final.json` covers 134 PNGs with signature, chunk CRC and full decode checks. Recovery evidence identifies exact byte restoration; `remotion-frame.png` is an actual rendered still.
+- `production-runtime.json` and `laravel-fpm.json` cover local Nginx/FPM operation and an isolated real Laravel API respectively. Runtime binaries were extracted into scratch space; they were not installed on the host.
+- `preservation-check.json` records that pre-existing desktop diffs were retained during implementation. The final preservation check covers the resumed turn. Concurrent marketing and other workspace work is outside this change's performance claims.
+- `validation-summary.json` indexes functional, static, build and runtime checks. `native-final-checks.json`, `desktop-final-checks.json` and `production-final-checks.json` describe the final checks more precisely.
+
+`methods/` preserves the scripts used to obtain evidence. They are dated harnesses with local absolute checkout/scratch paths and dependency assumptions, not portable CI entry points. Copy a harness to a fresh short scratch directory and adjust paths before reuse. The HTTP fixtures require isolated extracted Nginx/PHP-FPM binaries; the Laravel fixture must use a fresh SQLite file. The native comparison requires frozen native sources, two binaries differing only in the writer, the same minified diagnostic frontend, a real local display, isolated XDG directories and blocked real provider/keyring access. Do not run fixtures against production accounts or databases.
+
+Temporary executables and the original scratch directory were cleared by a machine restart between turns. Saved source, logs, JSON measurements and this evidence directory survived. Final native checks and the final server check were rebuilt/rerun after that restart. Raw databases, real credentials, host settings and diagnostic executables are intentionally not included.
+
+The first rebuilt comparison failed an executable-integrity check: preserving an older source timestamp caused Cargo to reuse the baseline writer, producing identical binaries. `native-ab-builds-cached-attempt.json` records that invalid attempt; **no performance conclusion uses it**. The corrected build script refreshes the copied source timestamp and requires distinct executable hashes before comparison. The shared diagnostic frontend was frozen before the final notification refinement; the successful input path is identical, and the changed failure-only notification behavior is covered separately by the final frontend suite/build.

@@ -815,3 +815,11 @@ The full postmortem of the incident behind all of this — how the app
 promoted itself into the broken mode, why there was no way back, and the
 binding never-again rules — is the permanent record in
 [[Incident - GPU Mode One Character Behind]].
+
+## 2026-08-31 — "Laggy arrows at codex's startup prompt" was focus, not latency
+
+Reported: codex's update / trust prompt at launch barely reacts to ↑/↓, clicking the numbers does nothing. Reproduced on a real WebKitGTK webview (Xephyr `:99` + `dbus-run-session` + scratch `XDG_CONFIG_HOME`, private cargo target dir). Key→paint once focused: 15–55 ms on the DOM renderer — rendering exonerated. Codex itself answers arrows in ~2 ms in a raw PTY and never enables mouse mode at its prompts, so click-to-select is impossible in any terminal.
+
+Cause: spawning set the store's `focusedId` but never moved DOM focus to xterm's textarea, and the bottom anchor slides `.xterm` to the pane floor so most of a fresh pane is bare host — a click there blurred the terminal instead of focusing it. Fix: `src/lib/terminalFocus.ts` (`paneTakesKeyboard`, `requestKeyboardHandoff`, `clickNeedsTerminalFocus`) used by `TerminalView` on mount/mousedown; `terminalSpawnActions` requests the handoff so a launched pane takes the keyboard even from the picker's search box, while a plain remount never steals from an input the user is typing in. Tests: `tests/terminalFocus.test.mjs`.
+
+Left alone: dismissing the New-terminal picker without launching returns focus to the "+" button (`useModalFocus` restores the opener) — arrows go nowhere until a pane is clicked. xterm.js 6 does a full-viewport refresh on every `?2026l` codex emits; measured harmless here.

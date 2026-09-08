@@ -9,6 +9,8 @@ const ignoredRoots = [
   "Vibyra",
   "backend",
   "desktop",
+  "desktop-tauri",
+  "docs",
   "tmp"
 ];
 

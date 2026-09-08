@@ -42,6 +42,23 @@ For frontend work, review the plan against the relevant frontend/design skill be
 - Prefer tabs, icon buttons, menus, and subtle status dots over dashboards of controls.
 - Verify desktop and narrow screenshots when practical.
 
+For Vibyra marketing, compare the current branch with the public release
+metadata before describing the product. If the published tag is newer, inspect
+its relevant source with `git show`; preserve the active dirty checkout. Treat
+phone client code, a working desktop pairing server, and public store access as
+separate claims. See `Vibyra/_ai/Marketing/Marketing Website.md` for ownership
+and the browser checks for responsive layouts, interactive states and pricing
+failure/retry. Keep plans API-backed rather than inventing fallback prices.
+
+Keep real marketing controls outside scaled product illustrations on narrow
+screens. Offer a readable expanded tour when a miniature cannot explain the
+workflow. Verify dialog keyboard looping, Escape/backdrop dismissal, restored
+focus and page scrolling, including short landscape viewports. Scrollable code
+examples must be keyboard focusable. Check text readability visually in addition
+to automated contrast checks; the `scripts/marketing/verify-tour.mjs` helper
+covers the expanded workspace tour. Native-dialog close assertions should wait
+for DOM removal; role locators stop matching before React cleanup completes.
+
 ## Completion
 
 End with the concrete files changed, checks run, and any memory/skill updates made. If tests or screenshots were not run, say why.

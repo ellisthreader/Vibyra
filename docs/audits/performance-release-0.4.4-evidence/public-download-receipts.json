@@ -1,0 +1,17 @@
+[
+  {
+    "platform": "windows",
+    "sizeBytes": 8162117,
+    "sha256": "9277516d04a90b9e8c14137f15d909d8c9cc7b3d6d5535b548e4db1ddb5cce41"
+  },
+  {
+    "platform": "linux",
+    "sizeBytes": 99105272,
+    "sha256": "e4b0205ea74c3b44d89c15a1aa43801801513395859bf916e52b464f1710a3ea"
+  },
+  {
+    "platform": "linux-deb",
+    "sizeBytes": 11356796,
+    "sha256": "2bfe385be6f16fb2f296ec365daab236b08d7fc10ae6b7b4331356311db76d93"
+  }
+]

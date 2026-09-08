@@ -1,0 +1,26 @@
+[
+  {
+    "log": "desktop-final-static.log",
+    "command": [
+      "bash",
+      "-c",
+      "npm run lines && npm run check:dead-code && npm run typecheck"
+    ],
+    "exit": 0,
+    "seconds": 30.859242259999974
+  },
+  {
+    "log": "fmt-final-check.log",
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "src-tauri/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 0.347112068999877
+  }
+]

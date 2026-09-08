@@ -1,0 +1,45 @@
+{
+  "runs": [
+    {
+      "writer": "baseline",
+      "order": "all-visible,focus-paced",
+      "focusedP50ms": 9,
+      "focusedP95ms": 22,
+      "allVisibleP50ms": 38,
+      "allVisibleP95ms": 63,
+      "dropped": 0
+    },
+    {
+      "writer": "bounded",
+      "order": "all-visible,focus-paced",
+      "focusedP50ms": 9,
+      "focusedP95ms": 16,
+      "allVisibleP50ms": 40,
+      "allVisibleP95ms": 64,
+      "dropped": 0
+    },
+    {
+      "writer": "bounded",
+      "order": "focus-paced,all-visible",
+      "focusedP50ms": 10,
+      "focusedP95ms": 20,
+      "allVisibleP50ms": 35,
+      "allVisibleP95ms": 54.0,
+      "dropped": 0
+    },
+    {
+      "writer": "baseline",
+      "order": "focus-paced,all-visible",
+      "focusedP50ms": 9,
+      "focusedP95ms": 16,
+      "allVisibleP50ms": 33,
+      "allVisibleP95ms": 48,
+      "dropped": 0
+    }
+  ],
+  "totalMarkers": 800,
+  "totalDropped": 0,
+  "measurement": "Input delivered to xterm through the next animation frame after parse, not physical input-to-photon",
+  "host": "Other processes and builds active; load averages recorded in raw results",
+  "interpretation": "Focused p95 ranges overlap; memory admission is bounded without observed input loss. This sample does not prove statistical equivalence or zero regression across systems."
+}

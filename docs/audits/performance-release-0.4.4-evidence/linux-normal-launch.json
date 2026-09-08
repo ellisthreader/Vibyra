@@ -1,0 +1,33 @@
+{
+  "artifact": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+  "freshProfile": true,
+  "display": ":1",
+  "loadStart": [
+    15.1708984375,
+    8.21826171875,
+    5.55078125
+  ],
+  "mainWindowVisibleMs": 11533.688454000185,
+  "idleSeconds": 12.010501876000035,
+  "cpuPercent": 50.53910371663457,
+  "rssSumBytes": 486969344,
+  "processes": [
+    {
+      "name": "Vibyra",
+      "rss": 199450624
+    },
+    {
+      "name": "WebKitNetworkProcess",
+      "rss": 49897472
+    },
+    {
+      "name": "WebKitWebProcess",
+      "rss": 237621248
+    }
+  ],
+  "loadEnd": [
+    9.84765625,
+    7.603515625,
+    5.4306640625
+  ]
+}

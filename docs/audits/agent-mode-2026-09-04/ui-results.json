@@ -1,0 +1,150 @@
+{
+  "measures": [
+    {
+      "name": "dashboard-dark",
+      "width": 1440,
+      "height": 900,
+      "bodyWidth": 1440,
+      "text": "Vibyra · Agent　　Audit fixture — current components, synthetic data\nDashboard\nDecisions\n1\nRoutines\nSkills\nTEAMMATES\nRelease reviewer\nClaude Code\nResearch assistant\nCodex\nAgent\n\nWhat needs you, what is running, and what happens next.\n\nNew teammate\nWAITING\n1\nNeeds your answer\nRUNNING\n0\nIdle\nSCHEDULED\n1\nChecked just now\nTEAMMATES\n2\nEach with its own memory\nWAITING FOR YOU\n1\nPUBLISH\nRelease reviewer\npublishes to\ngit push origin release-review\njust now\ngit push origin release-review\n\nThis one is asked every time — an answer now does not cover the next one.\n\nDeny\nApprove\nWORKING NOW\nNothing is running\n\nA turn you send, a routine that fires, or a handoff from another teammate will show here.\n\nNEXT SCHEDULED\nRoutines\nMorning release review\nDaily at 09:00 · Europe/London\njust now",
+      "overflow": [
+        {
+          "class": "agent-main",
+          "width": 1204,
+          "scrollWidth": 1204,
+          "height": 854,
+          "scrollHeight": 854
+        }
+      ]
+    },
+    {
+      "name": "chat-dark",
+      "width": 1440,
+      "height": 900,
+      "bodyWidth": 1440,
+      "text": "Vibyra · Agent　　Audit fixture — current components, synthetic data\nDashboard\nDecisions\n1\nRoutines\nSkills\nTEAMMATES\nRelease reviewer\nClaude Code\nResearch assistant\nCodex\nNew chat\nAudit the latest release\njust now\nReview deployment checklist\njust now\nRelease reviewer\nClaude Code 2.1.258\nIdle\nChats\nSkills\nSettings\n\nReview this release and prepare a pull request.\n\nRUN\ngit diff --stat\n1.0s\nOutput\n\nI reviewed the changes and prepared the release summary.\n\nThe targeted tests passed.\nThe pull request draft is ready to review.\n\nPublishing needs your approval below.\n\nclaude\n4.0s\n12k in · 870 out\n$0.180\nCOPY\nRETRY\nEDIT & RESEND\nPUBLISH\nRelease reviewer\npublishes to\ngit push origin release-review\njust now\ngit push origin release-review\n\nThis one is asked every time — an answer now does not cover the next one.\n\nDeny\nApprove\n\nRelease reviewer can reach 1 folder, 1 writable.\n\nACCESS\nPlan\nStandard\nFull access\nSend",
+      "overflow": [
+        {
+          "class": "agent-main",
+          "width": 1204,
+          "scrollWidth": 1204,
+          "height": 854,
+          "scrollHeight": 854
+        },
+        {
+          "class": "agent-head",
+          "width": 964,
+          "scrollWidth": 964,
+          "height": 46,
+          "scrollHeight": 46
+        },
+        {
+          "class": "chat-surface",
+          "width": 964,
+          "scrollWidth": 964,
+          "height": 807,
+          "scrollHeight": 807
+        },
+        {
+          "class": "composer",
+          "width": 964,
+          "scrollWidth": 964,
+          "height": 174,
+          "scrollHeight": 174
+        }
+      ]
+    },
+    {
+      "name": "chat-minimum",
+      "width": 960,
+      "height": 600,
+      "bodyWidth": 960,
+      "text": "Vibyra · Agent　　Audit fixture — current components, synthetic data\nDashboard\nDecisions\n1\nRoutines\nSkills\nTEAMMATES\nRelease reviewer\nClaude Code\nResearch assistant\nCodex\nNew chat\nAudit the latest release\njust now\nReview deployment checklist\njust now\nRelease reviewer\nClaude Code 2.1.258\nIdle\nChats\nSkills\nSettings\n\nReview this release and prepare a pull request.\n\nRUN\ngit diff --stat\n1.0s\nOutput\n\nI reviewed the changes and prepared the release summary.\n\nThe targeted tests passed.\nThe pull request draft is ready to review.\n\nPublishing needs your approval below.\n\nclaude\n4.0s\n12k in · 870 out\n$0.180\nCOPY\nRETRY\nEDIT & RESEND\nPUBLISH\nRelease reviewer\npublishes to\ngit push origin release-review\njust now\ngit push origin release-review\n\nThis one is asked every time — an answer now does not cover the next one.\n\nDeny\nApprove\n\nRelease reviewer can reach 1 folder, 1 writable.\n\nACCESS\nPlan\nStandard\nFull access\nSend",
+      "overflow": [
+        {
+          "class": "agent-main",
+          "width": 724,
+          "scrollWidth": 724,
+          "height": 554,
+          "scrollHeight": 554
+        },
+        {
+          "class": "agent-head",
+          "width": 484,
+          "scrollWidth": 484,
+          "height": 46,
+          "scrollHeight": 46
+        },
+        {
+          "class": "chat-surface",
+          "width": 484,
+          "scrollWidth": 484,
+          "height": 507,
+          "scrollHeight": 507
+        },
+        {
+          "class": "composer",
+          "width": 484,
+          "scrollWidth": 484,
+          "height": 174,
+          "scrollHeight": 174
+        }
+      ]
+    },
+    {
+      "name": "settings-light",
+      "width": 1440,
+      "height": 900,
+      "bodyWidth": 1440,
+      "text": "Vibyra · Agent　　Audit fixture — current components, synthetic data\nDashboard\nDecisions\n1\nRoutines\nSkills\nTEAMMATES\nRelease reviewer\nClaude Code\nResearch assistant\nCodex\nRelease reviewer\nClaude Code 2.1.258\nIdle\nChats\nSkills\nSettings\nIDENTITY\nName\nHow it appears in the rail and in every card it raises.\nBrief\nInjected ahead of every turn in every chat this teammate owns. Saved when you leave the field.\nDefault access\nWhat a new turn may do unless you narrow it in the composer. Publishing, spending and secrets ask at every level.\nPlan only\nStandard\nFull access\nModel\nLeave empty for the CLI's own default.\nEffort\nHow long it thinks before answering.\nDefault\nLow\nMedium\nHigh\nPLACES\n\nNothing outside these folders is readable or writable, whatever a prompt asks for. Removing one takes effect on the next turn and the next routine run.\n\n/audit/project\nRelease workspace\nREAD & WRITE\nRemove\nAdd a folder to read\nAdd a folder it may change\nMEMORY\nLearning from its own work\nWhether it may extract facts and rules from a finished turn, and who commits them.\nOff — never extracts anything\nSuggest — everything waits for you\nAutomatic — facts commit, rules ask\nHow much reaches a prompt\nA prompt budget, not a size limit. What does not fit is still stored and still searchable. Pinned entries are always included.\n1,000 characters\n2,000 characters\n4,000 characters\n8,000 characters\n16,000 characters\nWHAT IT KNOWS\n\nNothing yet. Add something below, or let it learn from its own work.\n\nAdd\nWORKING WITH OTHERS\nAccepts handoffs from other teammates\nA handoff can never widen what this teammate may do — its turn is built from its own brief, folders and access level. One asking it to publish, spend or delete becomes a decision for you.\nMay run scheduled routines\nTurning this off stops the routines it already has, not only new ones.\nPause all teammate messages, app-wide\nEvery handoff between any two teammates is refused while this is on.\nRELEASE REVIEWER MAY HAND WORK TO\nResearch assistant\nReview changes, verify evidence, and prepare a useful report. Ask before publishing.\nARCHIVE OR DELETE\nArchive Release reviewer\nHides it from the rail without losing anything. Its routines stop.\nArchive\nDelete Release reviewer\nRemoves its chats, memory, routines and its own folder. Decisions it asked for stay in the record.\nDelete…",
+      "overflow": [
+        {
+          "class": "agent-main",
+          "width": 1204,
+          "scrollWidth": 1204,
+          "height": 854,
+          "scrollHeight": 854
+        },
+        {
+          "class": "agent-head",
+          "width": 1204,
+          "scrollWidth": 1204,
+          "height": 46,
+          "scrollHeight": 46
+        }
+      ]
+    },
+    {
+      "name": "routines-light",
+      "width": 960,
+      "height": 600,
+      "bodyWidth": 960,
+      "text": "Vibyra · Agent　　Audit fixture — current components, synthetic data\nDashboard\nDecisions\n1\nRoutines\nSkills\nTEAMMATES\nRelease reviewer\nClaude Code\nResearch assistant\nCodex\nRoutines\n\nA routine opens a fresh chat each time it runs, as the teammate that owns it. They run while Vibyra is open; a run missed because the app was closed is skipped, never caught up in a burst.\n\nNew routine\nPause every routine\nStops the clock for all of them at once. Each keeps its own schedule.\nSCHEDULED\n1\nR\nMorning release review\nRelease reviewer · Daily at 09:00 · Europe/London · Plan only\nNo runs yet\nNext just now\nRun now\nPause\nEdit\n\nVibyra looks once a minute while it is open. Last checked 10:25 PM.",
+      "overflow": [
+        {
+          "class": "agent-main",
+          "width": 724,
+          "scrollWidth": 724,
+          "height": 554,
+          "scrollHeight": 554
+        }
+      ]
+    },
+    {
+      "name": "empty-dark",
+      "width": 1440,
+      "height": 900,
+      "bodyWidth": 1440,
+      "text": "Vibyra · Agent　　Audit fixture — current components, synthetic data\nDashboard\nDecisions\n1\nRoutines\nSkills\nTEAMMATES\n\nA teammate keeps its own brief, memory, skills and folders across every chat.\n\nNew teammate\nAgent\n\nA teammate is a persistent agent with its own brief, memory, skills and folders. Every chat you have with it shares them.\n\nNo teammates yet\n\nCreate one and it keeps a brief you write once, learns between conversations, and can be given folders, skills and a schedule.\n\nNew teammate",
+      "overflow": [
+        {
+          "class": "agent-main",
+          "width": 1204,
+          "scrollWidth": 1204,
+          "height": 854,
+          "scrollHeight": 854
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

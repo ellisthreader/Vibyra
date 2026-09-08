@@ -1,0 +1,31 @@
+     Locking 74 packages to latest compatible versions
+    Blocking waiting for file lock on build directory
+   Compiling proc-macro2 v1.0.107
+   Compiling bitflags v2.13.1
+   Compiling log v0.4.34
+   Compiling inotify v0.11.5
+   Compiling quote v1.0.47
+   Compiling syn v2.0.119
+   Compiling syn v3.0.4
+   Compiling thiserror-impl v1.0.69
+   Compiling serde_core v1.0.229
+   Compiling thiserror v1.0.69
+   Compiling mio v1.2.2
+   Compiling notify-types v2.1.0
+   Compiling smallvec v1.15.2
+   Compiling parking_lot_core v0.9.12
+   Compiling notify v8.2.0
+   Compiling nix v0.28.0
+   Compiling filedescriptor v0.8.3
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling memchr v2.8.3
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling portable-pty v0.9.0
+   Compiling notify-debouncer-full v0.5.0
+   Compiling thiserror v2.0.20
+   Compiling parking_lot v0.12.5
+   Compiling vibyra-core v0.1.0 (/home/ellis/Desktop/Vibyra/desktop-tauri/src-tauri/crates/vibyra-core)
+   Compiling vibyra-audit-harness v0.0.0 (/tmp/vibyra-performance-audit-20260904-KNtjVg/core-harness)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 23s

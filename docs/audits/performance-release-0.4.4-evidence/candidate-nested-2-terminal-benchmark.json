@@ -1,0 +1,116 @@
+{
+  "label": "candidate-nested-2",
+  "display": "Xephyr nested X11 on actual i7-6700K Linux PC",
+  "cpuScope": "Native app and WebKit descendants; excludes nested X server",
+  "load": [
+    1.1240234375,
+    1.78662109375,
+    2.94970703125
+  ],
+  "runs": [
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 257.7806490007788,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 258.3062459998473,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 253.49390100018354,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 231.9019650003611,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 150.01790599944798,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 230.60504700060847,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 242.07755200040992,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 241.68281099991873,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 233.39580899937573,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 127,
+      "injectionToPtyReadMs": 239.62742599997,
+      "exact": true
+    },
+    {
+      "mode": "paste",
+      "characters": 2006,
+      "injectionToPtyReadMs": 556.9959129998097,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 5,
+      "injectionToPtyReadMs": 113.0591800001639,
+      "exact": true
+    },
+    {
+      "mode": "typing",
+      "characters": 132,
+      "injectionToPtyReadMs": 430.1537190003728,
+      "exact": true
+    }
+  ],
+  "burstLines": 5000,
+  "idleSeconds": 15.09305329200015,
+  "idleCpuPercentOneCore": 3.3790379596043376,
+  "rssBytes": 616284160,
+  "processes": {
+    "135671": {
+      "name": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+      "cpu": 0.29,
+      "rss": 1343488
+    },
+    "135719": {
+      "name": "Vibyra",
+      "cpu": 4.2299999999999995,
+      "rss": 231219200
+    },
+    "135825": {
+      "name": "WebKitNetworkProcess",
+      "cpu": 0.11,
+      "rss": 65212416
+    },
+    "135850": {
+      "name": "WebKitWebProcess",
+      "cpu": 18.98,
+      "rss": 318509056
+    }
+  }
+}

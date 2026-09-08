@@ -1,0 +1,51 @@
+.downloads-page .download-hero { padding-block: 86px 76px; text-align: center; }
+.downloads-page .download-hero h1 { font-size: clamp(52px, 5.3vw, 76px); letter-spacing: -.06em; line-height: 1.1; font-weight: 700; }
+.downloads-page .download-hero h1 > span { color: var(--home-cobalt); }
+.downloads-page .download-hero-description { max-width: 520px; margin: 20px auto 0; color: var(--home-muted); font-size: 18px; line-height: 1.7; text-wrap: balance; }
+.downloads-page .download-hero-meta { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 23px; font-size: 13px; line-height: 1.7; color: #626a78; }
+.downloads-page .download-release-label { white-space: nowrap; }
+.downloads-page .download-eyebrow { display: flex; align-items: center; gap: 10px; font-family: var(--home-mono); font-size: 10px; letter-spacing: .09em; color: #586885; }
+.downloads-page .download-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 22px; margin-bottom: 25px; }
+.downloads-page .download-section-heading h2 { font-size: 24px; letter-spacing: -.04em; }
+.downloads-page .download-section-heading > p { font-size: 13px; color: var(--home-muted); }
+.downloads-page .download-platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 17px; }
+.downloads-page .download-platform { display: flex; flex-direction: column; padding: 28px; background: #fff; border: 1px solid #d9dfe9; border-radius: 10px; min-width: 0; transition: border-color .18s, box-shadow .18s; }
+.downloads-page .download-platform:hover { border-color: #a9b9d9; box-shadow: 0 10px 22px #34466708; }
+.downloads-page .download-platform-recommended { background: #f5f7ff; border-color: #8ca3e5; box-shadow: inset 0 3px #315bd8; }
+.downloads-page .download-platform-unavailable { background: #f0f2f6; }
+.downloads-page .download-platform-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; }
+.downloads-page .download-os-icon { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 12px; border: 1px solid #e3e7ef; background: #fafbfe; }
+.downloads-page .download-os-icon img { width: 31px; height: 31px; object-fit: contain; }
+.downloads-page .download-os-linux img { width: 36px; height: 37px; }
+.downloads-page .download-os-macos { background: #20252f; border-color: #20252f; }
+.downloads-page .download-os-macos img { width: 28px; height: 31px; }
+.downloads-page .download-recommended, .downloads-page .download-soon { font-family: var(--home-mono); font-size: 9px; letter-spacing: .04em; color: #315bd8; }
+.downloads-page .download-soon { color: #53627a; }
+.downloads-page .download-platform > h3 { margin-top: 22px; font-size: 25px; line-height: 1.3; font-weight: 700; letter-spacing: -.045em; }
+.downloads-page .download-platform > p { margin-top: 7px; color: #626d80; font-size: 13px; }
+.downloads-page .download-platform-actions { padding-top: 27px; flex: 1; }
+.downloads-page .download-package + .download-package { margin-top: 20px; }
+.downloads-page .download-package .action { display: flex; justify-content: space-between; width: 100%; min-height: 47px; gap: 12px; font-size: 13px; padding-inline: 16px; }
+.downloads-page .download-package > p { font-size: 11px; color: #626d80; margin-top: 10px; }
+.downloads-page .download-package > span { display: flex; align-items: center; gap: 8px; font-family: var(--home-mono); font-size: 10px; color: #5b6a85; margin-top: 4px; }
+.downloads-page .download-package > span > i { font-style: normal; }
+.downloads-page .download-install-link { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 24px; padding-top: 18px; border-top: 1px solid #dce3ef; font-size: 12px; font-weight: 700; color: #4a6090 !important; }
+.downloads-page .download-install-link:hover { color: #315bd8 !important; }
+.downloads-page .download-unavailable-copy { display: flex; align-items: start; gap: 13px; border: 1px solid #d6deeb; padding: 18px; border-radius: 7px; }
+.downloads-page .download-unavailable-copy > svg { color: #637ca9; margin-top: 2px; }
+.downloads-page .download-unavailable-copy > p { color: #53627a; font-size: 13px; line-height: 1.8; }
+.downloads-page .download-beta-note { display: flex; align-items: center; gap: 24px; padding: 23px 0; border-bottom: 1px solid var(--home-line); }
+.downloads-page .download-beta-note > span { flex: none; font-family: var(--home-mono); font-size: 9px; letter-spacing: .05em; color: #4c628d; }
+.downloads-page .download-beta-note > p { font-size: 12px; color: var(--home-muted); }
+.downloads-page .download-error { display: flex; flex-direction: column; align-items: center; gap: 15px; text-align: center; padding: 45px 25px; min-height: 350px; border: 1px solid #d9dfe9; border-radius: 10px; background: #fff; }
+.downloads-page .download-error > svg { color: #5879bd; }
+.downloads-page .download-error h3 { font-size: 23px; font-weight: 700; letter-spacing: -.03em; }
+.downloads-page .download-error p { font-size: 14px; color: var(--home-muted); }
+.downloads-page .download-error button { margin-top: 10px; }
+.downloads-page .download-loading-grid { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 17px; }
+.downloads-page .download-loading-grid > div { height: 464px; padding: 28px; border: 1px solid #d9dfe9; background: #fff; border-radius: 10px; }
+.downloads-page .download-loading-grid > div > span { display: block; width: 54px; height: 54px; border-radius: 12px; background: #e6ebf4; }
+.downloads-page .download-loading-grid > div > i { display: block; height: 20px; width: 46%; margin-top: 24px; background: #eef1f7; border-radius: 4px; }
+.downloads-page .download-loading-grid > div > i + i { width: 80%; height: 11px; margin-top: 14px; }
+.downloads-page .download-loading-grid > div > b { display: block; height: 47px; margin-top: 34px; background: #edf1f9; border-radius: 6px; }
+.downloads-page .download-loading-label { position: absolute; inset: auto 0 23px; text-align: center; font-size: 12px; color: #626d80; }

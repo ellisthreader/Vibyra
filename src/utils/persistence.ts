@@ -1,5 +1,7 @@
 import { RememberedDesktop } from "../types/domain";
-import { LevelProgress } from "./appApiTypes";
+import type { PersistedSession, PersistedUser } from "./persistenceTypes";
+export type { PersistedSession, PersistedUser } from "./persistenceTypes";
+import { invalidatePendingPersistence } from "./latestPersistenceTask";
 import { readStorageItem, writeStorageItem } from "./nativeStorage";
 import { normalizeLevelProgress } from "./persistenceLevel";
 import { createSecretSessionPersistence } from "./persistenceSecrets";
@@ -10,44 +12,6 @@ const protectedPersistence = createSecretSessionPersistence({
   read: () => readStorageItem(SESSION_KEY),
   write: (value) => writeStorageItem(SESSION_KEY, value)
 }, secretStorage);
-
-export type PersistedSession = {
-  authToken: string;
-  installId: string;
-  onboardingComplete: boolean;
-  pcSetupComplete: boolean;
-  pcSetupSkipped: boolean;
-  selectedChatModel: string;
-  rememberedDesktops: RememberedDesktop[];
-  user: PersistedUser | null;
-};
-
-export type PersistedUser = {
-  id: number;
-  name: string;
-  email: string;
-  plan: string;
-  planBillingCycle: "monthly" | "annual";
-  planRenewsAt: string | null;
-  creditsBalance: number;
-  creditsUsed: number;
-  dailyCreditsUsed: number;
-  dailyCreditsCap: number;
-  dailyCreditsResetAt: string | null;
-  burstCreditsUsed: number;
-  burstCreditsCap: number;
-  burstCreditsResetAt: string | null;
-  burstWindowHours: number;
-  weeklyCreditsUsed: number;
-  weeklyCreditsCap: number;
-  weeklyCreditsResetAt: string | null;
-  monthlyCredits: number;
-  allowedModelTiers: string[];
-  level?: LevelProgress;
-  onboardingComplete: boolean;
-  rememberedDesktops: RememberedDesktop[];
-  appState?: Record<string, unknown>;
-};
 
 export function createEmptyPersistedSession(): PersistedSession {
   return {
@@ -84,9 +48,18 @@ export async function savePersistedSession(session: PersistedSession) {
   });
 }
 
-export const clearPersistedSecrets = () => protectedPersistence.clearAllSecrets();
-export const clearPersistedAuthToken = () => protectedPersistence.clearAuthToken();
-export const clearPersistedDesktopTokens = () => protectedPersistence.clearDesktopTokens();
+export const clearPersistedSecrets = () => {
+  invalidatePendingPersistence();
+  return protectedPersistence.clearAllSecrets();
+};
+export const clearPersistedAuthToken = () => {
+  invalidatePendingPersistence();
+  return protectedPersistence.clearAuthToken();
+};
+export const clearPersistedDesktopTokens = () => {
+  invalidatePendingPersistence();
+  return protectedPersistence.clearDesktopTokens();
+};
 
 export const normalizePersistedUser = (value: unknown): PersistedUser | null => normalizeUser(value);
 

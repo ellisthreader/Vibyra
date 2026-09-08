@@ -1,6 +1,6 @@
 ---
 name: vibyra-obsidian
-description: Keep Vibyra Obsidian memory accurate before, during, and after repo work. Use when working in this repo on code, architecture, workflows, permissions, routes, debugging, or durable project decisions, especially when changes should be recorded in Vibyra/_ai so future sessions do not rediscover them.
+description: Keep Vibyra Obsidian memory accurate before, during, and after repo work, and route Ellis-specific personal questions through the vault's personalisation hub. Use for code, architecture, workflows, permissions, debugging, durable decisions, or personal real-world guidance that depends on stored context.
 metadata:
   short-description: Maintain Vibyra Obsidian memory
 ---
@@ -38,6 +38,31 @@ Before topic-specific work, check `.agents/skills/` for a matching local skill
 and read it. Treat relevant skills as active instructions for the task.
 
 For memory/skill audits, also read `Vibyra/_ai/Memory And Skills Optimization.md`.
+
+### Personal And Real-World Questions
+
+When the prompt concerns Ellis's personal life, money, career, business choices,
+leadership, relationships, motivation, or a realistic real-world trade-off,
+read `Vibyra/99 Meta/Ellis AI Mind/Ellis AI Mind.md` and then
+`Vibyra/99 Meta/Ellis AI Mind/Books And Real-World Decisions.md`. This personal
+route replaces the app/desktop/backend domain step unless the question also
+depends on Vibyra source or live state. Use only confirmed personal facts, let
+the current message override memory, and apply the smallest relevant set of
+book lenses rather than mentioning all four mechanically.
+
+### Release Provenance
+
+For missing changes after publication, resolve the public release and CI SHA,
+then inspect the feature worktree's tracked diff and untracked source files.
+A merged branch tip does not include dirty worktree changes. Read implementation
+status notes in that worktree and distinguish local validation from packaged
+release evidence. Route findings to `Desktop/Desktop Updates.md`; never infer
+publication from a completion note, version bump, or branch ancestry alone.
+For an all-work inventory, include registered worktrees, refreshed remote refs,
+open PRs and stashes; compare actual untracked files as well as tracked diffs.
+Check older alternatives against release source before labeling them missing:
+cherry-picks, refactors and replaced UI create false positives. Separate local
+prototypes and planned capabilities from implemented release candidates.
 
 ### Prompt Transcript Audits
 
@@ -96,6 +121,7 @@ only the routing/context fact to Obsidian.
 - Backend/cloud index: `Vibyra/_ai/Vibyra Backend Memory.md`
 - Focused app facts: the relevant file under `Vibyra/_ai/App/`
 - Generated run summaries: `Vibyra/_ai/Runs/` only when a run note is explicitly useful
+- Ellis personalisation: `Vibyra/99 Meta/Ellis AI Mind/`
 
 Prefer the smallest focused note that future sessions will naturally read. Keep index notes short and move feature-specific details to focused notes.
 
@@ -124,3 +150,22 @@ Memory notes should be compact, factual, and future-facing:
 - Name the source files or modules future agents should inspect first.
 - Avoid blaming previous sessions or narrating the chat.
 - Avoid long changelogs. Durable architecture beats exhaustive history.
+
+### Publishing integrated desktop and phone work
+
+Use `docs/releases/0.6.0-publication.md` as the cross-surface release ledger.
+A successful desktop workflow supplies signed artifacts; it does not deploy
+backend metadata or publish a phone binary. Keep one exact source SHA per
+artifact set, verify remote hashes before staged metadata and deployment, and
+test an older updater client after cutover. Preserve active user workspaces.
+For the standalone phone client, inspect the actual EAS upload archive:
+`mobile/src/generated` must be present, while backend data and local logs must
+be absent. Native store signing, hosted web delivery and standalone Host
+previews are separate evidence. Record their state in `Desktop/Release 0.6.0.md`.
+
+For temporary Railway publication access, this CLI version discovers registration
+candidates under `~/.ssh` even when `ssh keys add --key` receives a path elsewhere.
+A zero exit status saying all local keys are registered does not prove the new
+key was registered. Verify its fingerprint in `railway ssh keys list`, use a
+uniquely named temporary key, and remove that registration and private material
+after publication. Never print private keys or provider credentials.

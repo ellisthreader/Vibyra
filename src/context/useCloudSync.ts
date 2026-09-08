@@ -2,6 +2,9 @@ import { useEffect, useRef } from "react";
 import { LogEvent, Project, RememberedDesktop } from "../types/domain";
 import { appApiRequest, BackendOfflineError, isAppSessionExpiredError } from "../utils/appApi";
 import { createPersistableAppState } from "./appStatePersistence";
+import { createCloudStateTransport } from "../utils/cloudStateTransport";
+import { AppApiError } from "../utils/appApiErrors";
+import { createPersistenceWriteQueue } from "../utils/persistenceWriteQueue";
 
 const FAILURE_COOLDOWN_MS = 30000;
 
@@ -54,11 +57,14 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
   } = snapshot;
 
   const nextAttemptAtRef = useRef(0);
+  const transportRef = useRef(createCloudStateTransport((path, body, token) =>
+    appApiRequest(path, { method: "POST", body }, token, { background: true })
+  ));
   const cooldownLoggedRef = useRef(false);
-  const inFlightPayloadsRef = useRef(new Set<string>());
+  const lastQueuedPayloadRef = useRef("");
   const lastSyncedPayloadRef = useRef("");
   const latestPayloadKeyRef = useRef("");
-  const syncChainRef = useRef<Promise<void>>(Promise.resolve());
+  const syncQueueRef = useRef(createPersistenceWriteQueue<() => Promise<void>>((work) => work()));
   const mountedRef = useRef(true);
   const activeAuthTokenRef = useRef(authenticated ? authToken : "");
   const logsRef = useRef(logs);
@@ -104,10 +110,12 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
       });
       const payloadKey = `${authToken}\u0000${body}`;
       latestPayloadKeyRef.current = payloadKey;
-      if (payloadKey === lastSyncedPayloadRef.current || inFlightPayloadsRef.current.has(payloadKey)) return;
-      inFlightPayloadsRef.current.add(payloadKey);
+      if (payloadKey === lastSyncedPayloadRef.current || payloadKey === lastQueuedPayloadRef.current) return;
+      lastQueuedPayloadRef.current = payloadKey;
 
-      syncChainRef.current = syncChainRef.current.catch(() => undefined).then(async () => {
+      // Keep one in-flight save and one replaceable pending snapshot, even
+      // during the network cooldown. Stale histories must not accumulate.
+      void syncQueueRef.current.save(async () => {
         while (
           mountedRef.current
           && activeAuthTokenRef.current === authToken
@@ -119,16 +127,17 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
           if (!mountedRef.current || activeAuthTokenRef.current !== authToken || latestPayloadKeyRef.current !== payloadKey) return;
 
           try {
-            await appApiRequest("/api/session/state", {
-              method: "POST",
-              body
-            }, authToken, { background: true });
+            await transportRef.current(body, authToken);
             lastSyncedPayloadRef.current = payloadKey;
             nextAttemptAtRef.current = 0;
             cooldownLoggedRef.current = false;
           } catch (error: unknown) {
             if (isAppSessionExpiredError(error)) {
               onSessionExpiredRef.current?.();
+              return;
+            }
+            if (error instanceof AppApiError && error.status === 409) {
+              logsRef.current.appendLog("Saved on this device. Cloud changes conflict with this edit; no cloud data was overwritten.", "Account", "warning");
               return;
             }
             nextAttemptAtRef.current = Date.now() + FAILURE_COOLDOWN_MS;
@@ -140,8 +149,6 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
             }
           }
         }
-      }).finally(() => {
-        inFlightPayloadsRef.current.delete(payloadKey);
       });
     }, 700);
 

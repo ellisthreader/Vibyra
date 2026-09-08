@@ -1,0 +1,31 @@
+[
+  {
+    "log": "desktop-verified.log",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "exit": 0,
+    "seconds": 3.5533975139999256
+  },
+  {
+    "log": "desktop-final-static.log",
+    "command": [
+      "bash",
+      "-c",
+      "npm run lines && npm run check:dead-code && npm run typecheck"
+    ],
+    "exit": 0,
+    "seconds": 16.689668632999883
+  },
+  {
+    "log": "desktop-final-build.log",
+    "command": [
+      "node",
+      "/tmp/vibyra-perf-final-20260905-ve27rxj1/build_assets.mjs",
+      "desktop"
+    ],
+    "exit": 0,
+    "seconds": 3.109383375999869
+  }
+]

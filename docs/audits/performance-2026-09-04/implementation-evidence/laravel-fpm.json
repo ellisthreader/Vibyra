@@ -1,0 +1,9 @@
+{
+  "authenticatedRead": true,
+  "unauthenticatedRejected": true,
+  "compactSave": true,
+  "deltaAndReplay": true,
+  "exactWhitespace": true,
+  "conflictPreservedRemote": true,
+  "externalRoutesBlocked": true
+}

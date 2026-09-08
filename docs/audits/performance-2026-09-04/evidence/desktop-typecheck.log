@@ -1,0 +1,4 @@
+
+> vibyra-desktop-tauri@0.2.8 typecheck
+> tsc --noEmit
+

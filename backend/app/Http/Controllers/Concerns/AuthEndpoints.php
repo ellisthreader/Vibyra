@@ -128,38 +128,6 @@ trait AuthEndpoints
         ]);
     }
 
-    public function saveState(Request $request): JsonResponse
-    {
-        $user = $this->authenticatedUser($request);
-
-        if ($request->has('onboardingComplete')) {
-            $user->onboarding_complete = (bool) $request->input('onboardingComplete');
-        }
-
-        if ($request->has('rememberedDesktops')) {
-            $user->remembered_desktops = $this->normalizeRememberedDesktops($request->input('rememberedDesktops'));
-        }
-
-        if ($request->has('appState') && is_array($request->input('appState'))) {
-            $incoming = $request->input('appState');
-            $existing = is_array($user->app_state) ? $user->app_state : [];
-            $incomingMemories = is_array($incoming['projectMemories'] ?? null) ? $incoming['projectMemories'] : [];
-            $existingMemories = is_array($existing['projectMemories'] ?? null) ? $existing['projectMemories'] : [];
-            $merged = array_replace($existing, $incoming);
-            $merged['projectMemories'] = $this->mergeProjectMemoriesState($incomingMemories, $existingMemories);
-            $user->app_state = $merged;
-        }
-
-        if ($user->isDirty()) {
-            $user->save();
-        }
-
-        return $this->json([
-            'ok' => true,
-            'user' => $this->userPayload($user),
-        ]);
-    }
-
     public function completeOnboarding(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);

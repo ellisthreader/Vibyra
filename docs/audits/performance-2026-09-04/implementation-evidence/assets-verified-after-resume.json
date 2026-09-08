@@ -1,0 +1,945 @@
+{
+  "method": "PNG signature, every chunk CRC, Pillow verify and full pixel decode",
+  "checked": 134,
+  "failed": [],
+  "assets": [
+    {
+      "path": "src/assets/persona-icons/app-builder.png",
+      "ok": true,
+      "sha256": "4c7d8cbf86a6dcf9c49004bb77ebc76e8f3614cae1c5949108e8d7af600e494d",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/product-developer.png",
+      "ok": true,
+      "sha256": "ff343d843cce154df612e25e4750b17b2baf0a1b2c7d51d203e6546605dd0d2f",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/side-project-builder.png",
+      "ok": true,
+      "sha256": "19c75338a6ce60b5a9311ea2ef9b996a3c75deb520e6544a167e60dc810546d4",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/idea-explorer.png",
+      "ok": true,
+      "sha256": "7489cd534e811d157fa5271f3354a9ab75950c4a5113f846f39cc8e73b00563f",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/power-engineer.png",
+      "ok": true,
+      "sha256": "0822518c10e6cde006f594a9eacb8596e81615659916dce737d1d5456dd03ae7",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/workflow-automator.png",
+      "ok": true,
+      "sha256": "421097e558569cac2e4b90630af28c8e4a2c570b9125ce411cdbd0f3f645b8e1",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/hobby-builder.png",
+      "ok": true,
+      "sha256": "f6daed9ad9f2abf771ac4892ca1499bed98f4c188fc8a9c7cda93988d598fe50",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/learning-builder.png",
+      "ok": true,
+      "sha256": "d005e828ebc4627b33544da81d65d04b064f068fd8a68a24856590661ab5ecf1",
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/welcome-setup-background.png",
+      "ok": true,
+      "sha256": "049045ee3cf0143dcddcd076db23e3d6cfee7cb31c565fceff963a098796e0d2",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/home-ready-build.png",
+      "ok": true,
+      "sha256": "c1af4f4d9068111ddd41eb12459870db941c4b866818e0a114e8a37e5726efa1",
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "path": "src/assets/result-background.png",
+      "ok": true,
+      "sha256": "777de72cf9bd8e5df12f3f062bea71d23340fa89725fb3dd3c622836e85e7555",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/vibyra.png",
+      "ok": true,
+      "sha256": "976cbc32def4958335d9a4552e3ce758326819761b3d96078d7a1edd16a71b7f",
+      "width": 515,
+      "height": 375
+    },
+    {
+      "path": "src/assets/onboarding-quiz-background.png",
+      "ok": true,
+      "sha256": "8a596956fd40c0585a5b9ee1aaa74b17bef8d02ac9bb31819202410f33dc4732",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/front-page-nebula.png",
+      "ok": true,
+      "sha256": "4fde0b43c8602ca9a3b56c50498ce2a7401bb7ca72f098ae007f4ee11aff2ba3",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/welcome-connect-background.png",
+      "ok": true,
+      "sha256": "bcf1205b714adad9d79c0cec0d7f9e86e89c27ffa2d92a36e94e9d053b3810c0",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/onboarding-pricing-background.png",
+      "ok": true,
+      "sha256": "95ef2125552282e7cdeeb19d2dc2105a5aa842e2ff7f9f2ba3637b814a36ae8b",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/community-hero-glow-transparent.png",
+      "ok": true,
+      "sha256": "cc4e3b0bfdf9e03a6ea3caab6dd60ffe00659772d2b7951bbdd54e54dd474fa4",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "path": "src/assets/Front.png",
+      "ok": true,
+      "sha256": "4fde0b43c8602ca9a3b56c50498ce2a7401bb7ca72f098ae007f4ee11aff2ba3",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/plan-icons/builder.png",
+      "ok": true,
+      "sha256": "6e5b4ff929fab2e25102b3d2d015347b4ca38a8b4f8c89a8f200feafb5242e24",
+      "width": 240,
+      "height": 240
+    },
+    {
+      "path": "src/assets/plan-icons/starter.png",
+      "ok": true,
+      "sha256": "94a9d8e49641765539251a60d76bea8d1591de302fe8f57e14dbe5c3925fa9d7",
+      "width": 240,
+      "height": 240
+    },
+    {
+      "path": "src/assets/plan-icons/pro.png",
+      "ok": true,
+      "sha256": "100cfdb73c5ec682094d9ebb2723ab1e7fa8be00742f7e9e46c0d21a995c8533",
+      "width": 240,
+      "height": 240
+    },
+    {
+      "path": "src/assets/ai-chat-glyph.png",
+      "ok": true,
+      "sha256": "5e88153a0f392cf068302c2a33ad4c2e2a240331c79a286c1fe3891c26d7db81",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "src/assets/projects-folders-hero-glow-transparent.png",
+      "ok": true,
+      "sha256": "eec9c30261a8c5444304c3e34f724d4574103ce337f45bcd1fd2d5cbbe3996aa",
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "path": "src/assets/vibyra-cobalt.png",
+      "ok": true,
+      "sha256": "3b42e62dfc3c49c584763f1e62491925b7fcc8ff535a0ecddbe8b70026ec26c5",
+      "width": 1029,
+      "height": 750
+    },
+    {
+      "path": "src/assets/ai-chat-background.png",
+      "ok": true,
+      "sha256": "5a7b8f9ff9e34d4a4d71b6c31a8db806b0149d877ba6e4a2133b92d72b1c75fe",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/projects-folders-hero.png",
+      "ok": true,
+      "sha256": "e90d9073fe9930f20f49067fce62d31fd330f44c40bd5bdea81a972615083188",
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "path": "src/assets/ai-chat-glyph-cutout.png",
+      "ok": true,
+      "sha256": "f0c04c6469d40c623c773194543fcb77437860a65755f230d65c4150f0ebfda8",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "src/assets/onboarding-moment-background.png",
+      "ok": true,
+      "sha256": "6af3d5c80bc119bd7028a470e3185171a2600bd7ba39b06a0d9936fefd68cbe8",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/identity-icons/student.png",
+      "ok": true,
+      "sha256": "14e9587b0c585cc001e5adeb76a7c5bc1aa7fb2c87d4300776da5fcfc0f178b6",
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/identity-icons/beginner.png",
+      "ok": true,
+      "sha256": "e4643e3dcd2190d9f82fe0bfe8c6791c950bd1920e6c50cc9cf25bd4b6c4e404",
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/identity-icons/founder-freelancer.png",
+      "ok": true,
+      "sha256": "dd75d4213ce8fa80f9a81b896142379c1ae3381b8c44063427e8e5c5d1ab38f8",
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/identity-icons/developer.png",
+      "ok": true,
+      "sha256": "fe093a4e7bbaade5f0a1e584067b40aee79776d95f8e2254348e5ba8a4e9d469",
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/projects-folders-hero-glow.png",
+      "ok": true,
+      "sha256": "cf3779ed79aae4d8381e391594592f1d0d6a52bc47bb9d670323f3c851769cb2",
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "path": "src/assets/chat-build-ai-hero.png",
+      "ok": true,
+      "sha256": "b2ddcb7364415d787b0b849f40c2446d87ddd65f27027ff6d1a6cabaf311ea8d",
+      "width": 636,
+      "height": 492
+    },
+    {
+      "path": "src/assets/frequency-background.png",
+      "ok": true,
+      "sha256": "0b0d569f5ff4d5cc03c806a0769bf3c2ea90f0ca4ba498e735cf644187948da9",
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/moment-icons/devices.png",
+      "ok": true,
+      "sha256": "cc662d757669b149153fc7b788b90d26a0d808f58e80e54fccb32e26e4c69b82",
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/identity.png",
+      "ok": true,
+      "sha256": "a758c22a517fce397467b8698e427359dfceb9f015860c65561d09a47a787123",
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/frequency.png",
+      "ok": true,
+      "sha256": "fb3758e10b40ba3d1e1bec60a6d06207c85cc37681c8aa2fd39ea7d918c33227",
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/intent.png",
+      "ok": true,
+      "sha256": "4599e62099928537dd62a6146a9c953f8ff14ed00cf93581695c9ed1977d00a9",
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/device-sync-hero.png",
+      "ok": true,
+      "sha256": "3f191efe67a1ee254a7a26900c4cf370530d5a3cb00023c946f20967bfba1e5c",
+      "width": 980,
+      "height": 720
+    },
+    {
+      "path": "src/assets/moment-icons/depth.png",
+      "ok": true,
+      "sha256": "0e4fb66ad4abc6f4a3ea6f65933e2c5a80096baeec0bbd89cd0065efb1d07861",
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/BG-transparent-vibyra.png",
+      "ok": true,
+      "sha256": "a1ad3818b04ef8a75eedda23f9203667444e87d811e515934f9fe033c37bfea6",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "src/assets/billing-plans/builder.png",
+      "ok": true,
+      "sha256": "214a167c61b2763f82aae0f0453fd085928c961074429633da823a122fa394e0",
+      "width": 1586,
+      "height": 992
+    },
+    {
+      "path": "src/assets/billing-plans/free-card.png",
+      "ok": true,
+      "sha256": "8086b1f644e0dc221a9a9711955cb35d24895881f370b4bf76bc178c6ac6f1fb",
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/billing-plans/free.png",
+      "ok": true,
+      "sha256": "3ef1744e0e20bb0bcfb214aa9e8524f67328d96c5cc81c2135327953417269ee",
+      "width": 1587,
+      "height": 991
+    },
+    {
+      "path": "src/assets/billing-plans/starter-card.png",
+      "ok": true,
+      "sha256": "4fc6c6ae68025afbee2afd7ace5a10418658638616392e651e7a1db93682cc02",
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/billing-plans/starter.png",
+      "ok": true,
+      "sha256": "8425c11d60ab0d691876dec4ba4485902cacd63eb3d56eb78199dc55e557f515",
+      "width": 1586,
+      "height": 992
+    },
+    {
+      "path": "src/assets/billing-plans/pro.png",
+      "ok": true,
+      "sha256": "875aaa20b60e65902f14323dcb99c6d717c471a37dd174b9caa257519528b4d8",
+      "width": 1586,
+      "height": 992
+    },
+    {
+      "path": "src/assets/billing-plans/builder-card.png",
+      "ok": true,
+      "sha256": "8eaf03e75d0bd6170551dea0cc7aa6b762f2e6349b056b7579441a522dea2f5f",
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/billing-plans/pro-card.png",
+      "ok": true,
+      "sha256": "5db7ba19f3b2dc2bb3bf247823e4cd7e236e4792f8a5345de57c1d1a7df29df0",
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/BG-transparent.png",
+      "ok": true,
+      "sha256": "a129c17c2b2227b51328c4209c32f56a0ea19b7c173268d0e5f2d66af5a381d7",
+      "width": 870,
+      "height": 780
+    },
+    {
+      "path": "src/assets/ai-chat-glyph-focused.png",
+      "ok": true,
+      "sha256": "662cc2753925f8b71cb6a8ca930a1b0f80d1c8cb517a01f7e448dec42f34cd36",
+      "width": 895,
+      "height": 895
+    },
+    {
+      "path": "src/assets/onboarding-icons/steady.png",
+      "ok": true,
+      "sha256": "36dfb195bbac9c1558dcdb913396215c2f684215651a2b9eace028a6329fa4e9",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/app-website.png",
+      "ok": true,
+      "sha256": "a661fe6ee54de3e3f1e985ea0d0a527b2ef95794d9c14ab720e77f7e5ec86c7d",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/light.png",
+      "ok": true,
+      "sha256": "3c630401fc5a42d94e161f32c720c01374d235de43bd6f1a68b3431c7a601bc7",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/computer-edits.png",
+      "ok": true,
+      "sha256": "7e66a533e29d4702f43094afa04d3f5ddc884ebc38c65d8d042911efb2aacaf4",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/automation.png",
+      "ok": true,
+      "sha256": "4c0c7bcd3dfa7c994d2c19dc8ead4f768c88b23d756ebca0390122bedf932883",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/few-times-week.png",
+      "ok": true,
+      "sha256": "ac664bfe365dd35ec4fbf5f46175a6459f104b58ad4cae4590a9c67314b6db3b",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/work.png",
+      "ok": true,
+      "sha256": "175badb234c27726d2f0cf5c9b8c0425e7c88b22b569b9530001ed7e3a0e5df6",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/side-project.png",
+      "ok": true,
+      "sha256": "995fb483b2994d59766c3064e435b945e3ff63761e821cb789599b025c09a07b",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/every-day.png",
+      "ok": true,
+      "sha256": "a1e1c3e9767d471b05fba9e6f0268a6f50e23a6757ad28134b1b77f55f80a8da",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/anywhere.png",
+      "ok": true,
+      "sha256": "c992f1c470c8078c0faba8dc782dd631bea791a4e33a56c2b089fd899c6e4dc0",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/occasionally.png",
+      "ok": true,
+      "sha256": "4999b5172027d482cff0743aea38ec472d4d25f706ce54aecff25f1d3c4da734",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/rarely.png",
+      "ok": true,
+      "sha256": "80e5583da1edf9cfc6109782bbafee08d49ae0079b53bbd086fe3db56b03917c",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/phone-first.png",
+      "ok": true,
+      "sha256": "2b5fd286f2652c630561c32fc5f3d7096c7b30ee98f581118741274ac70ab6a5",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/learning.png",
+      "ok": true,
+      "sha256": "905d0bc37cb202b31f9e1393275c3b117deed0b4df4131338735d592d9c6f49b",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/heavy.png",
+      "ok": true,
+      "sha256": "2cff87b95914dceb944609938cd077eb53af41037d1df88af1d3e82329fdaa4e",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/exploring.png",
+      "ok": true,
+      "sha256": "9ba5eb9eeae3d2c98b16580d534539c7348b74b1e9749c031ecc8fbd0d92bdbb",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/phone-computer.png",
+      "ok": true,
+      "sha256": "66aa5a490f80c9f808bc1801750e3261b2d28193652d5861c97ac1eee93e652a",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/max.png",
+      "ok": true,
+      "sha256": "5733a1f2778315841ef9caf9aa549b7ad7d9d98516109ebe4f18d63d2dcb50d7",
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "desktop-tauri/src/assets/vibyra-cobalt.png",
+      "ok": true,
+      "sha256": "92fc09ff673b2b1404aa3770a8911dd3cbe2bee06845bece61020a41d9c4a6ef",
+      "width": 160,
+      "height": 117
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.8-fast.png",
+      "ok": true,
+      "sha256": "d98a2abf8bba7db8b6f326b20667f7d34cc195e679e9f4007288133f22099cc1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-2.5-flash.png",
+      "ok": true,
+      "sha256": "a910e29e99900fa1d887c3fcb38bd3b32782714a530e4d05f7c9e31d3f5ded61",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-5-fast.png",
+      "ok": true,
+      "sha256": "27c65eac3f67759f193a19eaaa4c943b14607bf06f3d49c25f17a5ca0b1eb20d",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.6-sol.png",
+      "ok": true,
+      "sha256": "b6dca76263c707359def3f1ad07b6221544e192d1347af9409b877366045ea90",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-2.5-pro.png",
+      "ok": true,
+      "sha256": "de5e55f9248f6fee041a4ba3eef6e57ee442041ec4959372935d7d6d2758c657",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-3.1-flash-lite.png",
+      "ok": true,
+      "sha256": "8b6971cdde2f6399995d33f05665f87921e78a427d125cf64985725e87e6193c",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.5.png",
+      "ok": true,
+      "sha256": "5034ac7301073683aa97cec2013615a2adad66873f171aa1fbbaab2ac10ee5bc",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-haiku-4.5.png",
+      "ok": true,
+      "sha256": "0186211382fd93fd72d73d731b747a6bd24b7ccc32d3be05c2da9467028fbe1f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.1.png",
+      "ok": true,
+      "sha256": "0f4e08c833ef2c10d60f1a3d5de6945e5a9da2855d89957135deda7a8f95d0e2",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.png",
+      "ok": true,
+      "sha256": "2373af73d11781115a8165fac565d018852732e894ed3d0b6422a6e76402188d",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-2.5-flash-lite.png",
+      "ok": true,
+      "sha256": "8de0272450c877ca2d00c6df57389f9f069a115eb11c73f3f14d93bd9b277e13",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.5.png",
+      "ok": true,
+      "sha256": "0144417104540644887be2182b75f3d678d6e33fe8ea240c4e87b0bedc045515",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.7.png",
+      "ok": true,
+      "sha256": "5ee2c60104ebd215d6a958a48f778324fe96d05a993718fed619c44e84cab731",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-sonnet-5.png",
+      "ok": true,
+      "sha256": "681b185ece8ab51b86c1570b845a67d1d281290c9569b052e788c92c24449f2f",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-sonnet-4.5.png",
+      "ok": true,
+      "sha256": "0f935048b3a312e2e0c231b293a2a1b2c95e0f0cfcc17316bea0b6eaf7d77731",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.6-luna.png",
+      "ok": true,
+      "sha256": "40d6d5b6ecfa54120b4e5e931b6b456fdbf9ab91e2ebaa1bc7637c5b08aa6645",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.8.png",
+      "ok": true,
+      "sha256": "c93880e7eb2488accc8ad9c8025f7c25c6b072c5278ec42b0b663521a3a998f7",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-fable-5.png",
+      "ok": true,
+      "sha256": "f0f93957187dfa1c19931c87a037a5476942750f0f15c10563717d7d4f900415",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.7-fast.png",
+      "ok": true,
+      "sha256": "c5823970658f0faead246c028d3935e411cd3fc84aa7b32a97f817b77307b042",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.4.png",
+      "ok": true,
+      "sha256": "91cc36ffc0ca43d21b34950a333449ad90ec77e5bcdc877e001eb542238ca1fe",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-3.1-pro.png",
+      "ok": true,
+      "sha256": "f796bab8a6aed2d398c244207b20c68eafed24a326571b11b636c7ab5da5312a",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5-codex.png",
+      "ok": true,
+      "sha256": "6c4943200791aea85e5ad673b830fbe5dd5ab0162ac81edb4faebd4810e971d1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.6-terra.png",
+      "ok": true,
+      "sha256": "2fde271f5ababa7e7ea87a996ed221ec41fb8c036446336829ad6d8b993700f6",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-sonnet-4.6.png",
+      "ok": true,
+      "sha256": "2d832f39efa1dd164a092e91f2e8dd9f5f02b32eba314ea023046edc65b0ffe7",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.4-mini.png",
+      "ok": true,
+      "sha256": "5814ac5a19ce3f62453445b26a66e4b285643396ae4b6d697e4ae51d24d9c8fd",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.6.png",
+      "ok": true,
+      "sha256": "065434376259b0c80cb6f153ac692ac5fdbeee4aaa3d0de6a5112346bebfce5e",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-3.5-flash.png",
+      "ok": true,
+      "sha256": "54cc21153866d6999d975f3aa35f4a8d76ecf5f2bd67d3b2bc21ea49828b3be2",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-5.png",
+      "ok": true,
+      "sha256": "343a6f793e2f4203515d3f94c0d944c8a5a9fae1630fad79cc57908c6d28462c",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square89x89Logo.png",
+      "ok": true,
+      "sha256": "9250e590e33dd837a19cf2cda8dfda49fa07ceabfca91527390ec0d9380fe75f",
+      "width": 89,
+      "height": 89
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/StoreLogo.png",
+      "ok": true,
+      "sha256": "165fa36591e9f009647c7c917ce4671c8a93295f2327a8873bd7bab2cc7d1829",
+      "width": 50,
+      "height": 50
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/128x128.png",
+      "ok": true,
+      "sha256": "d6ace496e06844c4994a196366af8635fb5eb2f7134f0b300f5c04666b9ef3e2",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square44x44Logo.png",
+      "ok": true,
+      "sha256": "5c6f7d8a02c4e40980c56a9c8478b83d01a82aced9d9355b1ca15436494ee5c6",
+      "width": 44,
+      "height": 44
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square150x150Logo.png",
+      "ok": true,
+      "sha256": "68d085ea0c1606774382a9904e9a93b2a50b28f45455a2407f9bb3000fda11b3",
+      "width": 150,
+      "height": 150
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square107x107Logo.png",
+      "ok": true,
+      "sha256": "0987f301ea3717963c1ed6884c1f8000b9817bc091dbf1496e0444b6d6cab52d",
+      "width": 107,
+      "height": 107
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/128x128@2x.png",
+      "ok": true,
+      "sha256": "d5bd2b3dced28e6cda3852d85ea2f4ae7b44fa59ee022f85a891c594fe713fbf",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square310x310Logo.png",
+      "ok": true,
+      "sha256": "0ebc77232598a73ff8a9d6091f5864a1b94f844605da52aa2186ecc265cd078a",
+      "width": 310,
+      "height": 310
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square30x30Logo.png",
+      "ok": true,
+      "sha256": "e3a51e5c40ce8b8ee1ba5cd68c5992de0c468e4f9534f66ae2de8354ca826b5a",
+      "width": 30,
+      "height": 30
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square142x142Logo.png",
+      "ok": true,
+      "sha256": "954bdd7400f47fcefd543c655d63a54a8264f039a044667d8a2fa060e55c302f",
+      "width": 142,
+      "height": 142
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/icon.png",
+      "ok": true,
+      "sha256": "e2b7836efb55a49a779e33278dc60d95d0e7c3bc4859ece9be5b4b6ffa38d724",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/32x32.png",
+      "ok": true,
+      "sha256": "6622318992d07ed83d56cd1f5bcde4e9abbf397f85e84eab1a43b09731f56647",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square284x284Logo.png",
+      "ok": true,
+      "sha256": "bc50939f4e9d0b7eabf346500e979ef0cc4f0922bb95b40691a081f0d1683dbb",
+      "width": 284,
+      "height": 284
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/64x64.png",
+      "ok": true,
+      "sha256": "383da6b82439d501bf0dcebc8c334b6e2246ffaf7cf5dfd946e4a1048e697cec",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square71x71Logo.png",
+      "ok": true,
+      "sha256": "2214d11a71d43691849fa0b12a45e193d0ec38ed19ea1d8831d7a283bb7fe8bf",
+      "width": 71,
+      "height": 71
+    },
+    {
+      "path": "remotion/public/desktop-multi-terminal.png",
+      "ok": true,
+      "sha256": "cabd80b5dc9ecdd5d2fba93d4d48df84d7764582833bbe3135275246b361f3aa",
+      "width": 1196,
+      "height": 788
+    },
+    {
+      "path": "remotion/public/vibyra-mark.png",
+      "ok": true,
+      "sha256": "3b42e62dfc3c49c584763f1e62491925b7fcc8ff535a0ecddbe8b70026ec26c5",
+      "width": 1029,
+      "height": 750
+    },
+    {
+      "path": "remotion/public/desktop-model-picker.png",
+      "ok": true,
+      "sha256": "8f0046ee547367066d6f4e620fef1731d4464e7f077c8b43e4cd5dee6f0b7b91",
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "remotion/public/desktop-memory-voice.png",
+      "ok": true,
+      "sha256": "39bb17d66a918663a3d6a503088fdd23cdb55e7e66c99e9ddd8daf3ead03f38e",
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "backend/public/vibyra.png",
+      "ok": true,
+      "sha256": "3e939f0782dd1891df2195122c359bb8401e724855ebf40ca2e09389d2819a03",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "backend/public/media/releases/vibyra-0.1.7-report.png",
+      "ok": true,
+      "sha256": "f9cb2e1094b0db918e4a51fbd6be805919ca4830277a46e6522fe5208d4bcb76",
+      "width": 620,
+      "height": 500
+    },
+    {
+      "path": "backend/public/media/releases/vibyra-0.1.7-workspace.png",
+      "ok": true,
+      "sha256": "bf4eabb411f510bb364be4e5d6ee75508a5f00fe3556a8ecbc63e3fe8233715e",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "path": "backend/public/media/vibyra-launch-film-poster.png",
+      "ok": true,
+      "sha256": "566af7d1ef9e1f5cd4251edcf6fc0bad3e2aebb84c8c87b2ed872a02d7aee123",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "path": "backend/public/media/marketing/vibyra-social.png",
+      "ok": true,
+      "sha256": "d129caeb82855b7b50a4b4ec433909c7ca30146e3b8b4a66b768aa5a73fe6030",
+      "width": 1200,
+      "height": 630
+    },
+    {
+      "path": "backend/public/media/homepage/phone-review-editorial.png",
+      "ok": true,
+      "sha256": "5bd48cedea8b899b9a028e3ff9b867bc559107d100d88e2a10edc656608faa19",
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-multi-terminal.png",
+      "ok": true,
+      "sha256": "cabd80b5dc9ecdd5d2fba93d4d48df84d7764582833bbe3135275246b361f3aa",
+      "width": 1196,
+      "height": 788
+    },
+    {
+      "path": "backend/public/media/homepage/connected-workspace-editorial.png",
+      "ok": true,
+      "sha256": "a99e157a51e3dc92adae3b75c36ea12a0628e1642cb79e3b3663bef0a6120f1e",
+      "width": 1717,
+      "height": 916
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-catalog-v2.png",
+      "ok": true,
+      "sha256": "9445394d33e1da3e9a305711443ea7c9521b41bb70dac1071deca4f89d1b8fc5",
+      "width": 1418,
+      "height": 802
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-picker.png",
+      "ok": true,
+      "sha256": "8f0046ee547367066d6f4e620fef1731d4464e7f077c8b43e4cd5dee6f0b7b91",
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-memory-voice.png",
+      "ok": true,
+      "sha256": "39bb17d66a918663a3d6a503088fdd23cdb55e7e66c99e9ddd8daf3ead03f38e",
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "backend/public/media/homepage/vibyra-cobalt-stage.png",
+      "ok": true,
+      "sha256": "f04cf2ae7aaafe9ae598eea96cf73ef9c0969777cef6e4576e4a3a620f671038",
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-welcome-review.png",
+      "ok": true,
+      "sha256": "b150ead273fe751fa3bc58586245ed09a5cad6cb9f5145ba13cc58dc23b333f5",
+      "width": 1360,
+      "height": 820
+    },
+    {
+      "path": "backend/public/media/homepage/mobile-vibyra-auth.png",
+      "ok": true,
+      "sha256": "aa64e8647b858066f20a8d0c8c85616fd26bec2c145d664686c479bef42c5c03",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "backend/public/vibyra-mark.png",
+      "ok": true,
+      "sha256": "976cbc32def4958335d9a4552e3ce758326819761b3d96078d7a1edd16a71b7f",
+      "width": 515,
+      "height": 375
+    },
+    {
+      "path": "backend/public/vibyra-cobalt.png",
+      "ok": true,
+      "sha256": "3b42e62dfc3c49c584763f1e62491925b7fcc8ff535a0ecddbe8b70026ec26c5",
+      "width": 1029,
+      "height": 750
+    }
+  ]
+}

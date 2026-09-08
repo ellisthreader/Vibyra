@@ -1,0 +1,28 @@
+nginx: the configuration file /tmp/vibyra-web.W0Yyr8qO/nginx.conf syntax is ok
+nginx: configuration file /tmp/vibyra-web.W0Yyr8qO/nginx.conf test is successful
+2026/09/05 11:58:06 [error] 28878#28878: *31 access forbidden by rule, client: 127.0.0.1, server: _, request: "GET /.secret HTTP/1.1", host: "127.0.0.1:52495"
+irective is ignored when FPM is not running as root
+[05-Sep-2026 11:58:04] NOTICE: fpm is running, pid 28872
+[05-Sep-2026 11:58:04] NOTICE: ready to handle connections
+[05-Sep-2026 11:58:04] NOTICE: systemd monitor interval set to 10000ms
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:04 +0100] "GET /up HTTP/1.1" 200 56 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:06 +0100] "GET /slow HTTP/1.1" 200 40 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:06 +0100] "GET /private.php HTTP/1.1" 404 162 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:06 +0100] "GET /.secret HTTP/1.1" 403 162 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:06 +0100] "GET /private.php/path HTTP/1.1" 404 162 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:11:58:06 +0100] "POST /api/session HTTP/1.1" 200 71 "-" "Python-urllib/3.12"
+[05-Sep-2026 11:58:06] NOTICE: Finishing ...
+[05-Sep-2026 11:58:06] NOTICE: exiting, bye-bye!
+127.0.0.1 - - [05/Sep/2026:11:58:06 +0100] "GET /asset.js HTTP/1.1" 200 22 "-" "Python-urllib/3.12"

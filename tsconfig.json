@@ -12,6 +12,7 @@
     "backend/storage",
     "backend/vendor",
     "backend/node_modules",
+    "docs/audits",
     "node_modules",
     "tmp"
   ]

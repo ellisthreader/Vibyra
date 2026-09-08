@@ -1,11 +1,18 @@
 use std::path::Path;
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{sync_channel, SyncSender};
+use std::sync::Arc;
+use std::thread::JoinHandle;
 
-use notify::{EventKind, RecursiveMode};
-use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, RecommendedCache};
+use notify::{Event, EventKind, Watcher};
 use serde::Serialize;
 
 use crate::error::{CoreError, CoreResult};
+
+#[path = "watch_tree.rs"]
+mod tree;
+#[path = "watch_worker.rs"]
+mod worker;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FsChange {
@@ -13,37 +20,18 @@ pub struct FsChange {
     pub kind: String,
 }
 
-/// Build/VCS churn is never user content; a `cargo build` alone can emit
-/// thousands of events under `target/` that would each cross IPC.
-const IGNORED_DIRS: [&str; 10] = [
-    "node_modules",
-    "vendor",
-    ".git",
-    ".vibyra-agent",
-    "target",
-    "dist",
-    "build",
-    ".next",
-    ".expo",
-    ".venv",
-];
-
-/// Caps one batch's payload; consumers treat a batch as "something changed",
-/// so completeness past this point buys nothing.
-const MAX_CHANGES_PER_BATCH: usize = 128;
-
 fn ignored(path: &Path) -> bool {
-    path.components().any(|component| {
-        matches!(component, std::path::Component::Normal(name)
-            if IGNORED_DIRS.iter().any(|dir| *name == **dir))
+    path.components().any(|part| {
+        matches!(part, std::path::Component::Normal(name)
+            if ["node_modules", "vendor", ".git", ".vibyra-agent", "target",
+                "dist", "build", ".next", ".expo", ".venv"].iter().any(|item| name == *item))
     })
 }
 
-/// Recursive, debounced filesystem watcher for the workspace root.
-/// Events are coalesced in Rust (300 ms) so a `cargo build` or `npm install`
-/// storm becomes a handful of IPC messages instead of thousands.
 pub struct WorkspaceWatcher {
-    _debouncer: Debouncer<notify::RecommendedWatcher, RecommendedCache>,
+    stop: Arc<AtomicBool>,
+    wake: SyncSender<Option<Event>>,
+    worker: Option<JoinHandle<()>>,
     pub root: String,
 }
 
@@ -52,81 +40,69 @@ impl WorkspaceWatcher {
         root: &str,
         on_changes: impl Fn(Vec<FsChange>) + Send + 'static,
     ) -> CoreResult<Self> {
-        let path = Path::new(root);
-        if !path.is_dir() {
+        let root_path = Path::new(root).to_path_buf();
+        if !root_path.is_dir() {
             return Err(CoreError::InvalidPath(format!("not a directory: {root}")));
         }
-        let mut debouncer = new_debouncer(
-            Duration::from_millis(300),
-            None,
-            move |result: DebounceEventResult| {
-                let Ok(events) = result else { return };
-                let mut seen = std::collections::HashSet::new();
-                let mut changes = Vec::new();
-                'outer: for event in events {
-                    let kind = match event.event.kind {
-                        EventKind::Create(_) => "create",
-                        EventKind::Remove(_) => "remove",
-                        EventKind::Modify(_) => "modify",
-                        _ => continue,
-                    };
-                    for event_path in &event.event.paths {
-                        if ignored(event_path) || !seen.insert(event_path.clone()) {
-                            continue;
-                        }
-                        changes.push(FsChange {
-                            path: event_path.to_string_lossy().into_owned(),
-                            kind: kind.to_string(),
-                        });
-                        if changes.len() >= MAX_CHANGES_PER_BATCH {
-                            break 'outer;
-                        }
+        let (tx, rx) = sync_channel(256);
+        let stop = Arc::new(AtomicBool::new(false));
+        let overflow = Arc::new(AtomicBool::new(false));
+        let callback_tx = tx.clone();
+        let callback_overflow = Arc::clone(&overflow);
+        let callback_root = root_path.clone();
+        let mut watcher = notify::RecommendedWatcher::new(
+            move |result: notify::Result<Event>| match result {
+                Ok(event)
+                    if matches!(
+                        event.kind,
+                        EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_)
+                    ) =>
+                {
+                    if event
+                        .paths
+                        .iter()
+                        .all(|path| ignored(path.strip_prefix(&callback_root).unwrap_or(path)))
+                    {
+                        return;
+                    }
+                    if callback_tx.try_send(Some(event)).is_err() {
+                        callback_overflow.store(true, Ordering::Release);
                     }
                 }
-                if !changes.is_empty() {
-                    on_changes(changes);
+                Err(_) => {
+                    callback_overflow.store(true, Ordering::Release);
                 }
+                _ => {}
             },
+            notify::Config::default(),
         )
-        .map_err(|e| CoreError::Watch(e.to_string()))?;
-        debouncer
-            .watch(path, RecursiveMode::Recursive)
-            .map_err(|e| CoreError::Watch(e.to_string()))?;
+        .map_err(|error| CoreError::Watch(error.to_string()))?;
+        let mut tree = tree::RegisteredTree::new(root_path);
+        tree.refresh(&mut watcher)
+            .map_err(|error| CoreError::Watch(error.to_string()))?;
+        let worker_stop = Arc::clone(&stop);
+        let worker = std::thread::Builder::new()
+            .name("vibyra-workspace-watch".into())
+            .spawn(move || worker::run(watcher, tree, rx, worker_stop, overflow, on_changes))?;
         Ok(Self {
-            _debouncer: debouncer,
+            stop,
+            wake: tx,
+            worker: Some(worker),
             root: root.to_string(),
         })
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::mpsc;
-
-    #[test]
-    fn filters_build_directories() {
-        assert!(ignored(Path::new("/repo/node_modules/pkg/index.js")));
-        assert!(ignored(Path::new("/repo/vendor/composer/autoload.php")));
-        assert!(ignored(Path::new("/repo/.vibyra-agent/runs/latest.txt")));
-        assert!(ignored(Path::new("/repo/target/debug/app")));
-        assert!(ignored(Path::new("/repo/.git/objects/ab")));
-        assert!(!ignored(Path::new("/repo/src/main.rs")));
-        assert!(!ignored(Path::new("/repo/targeted/file.txt")));
-    }
-
-    #[test]
-    fn reports_created_files() {
-        let tmp = tempfile::tempdir().unwrap();
-        let (tx, rx) = mpsc::channel();
-        let watcher = WorkspaceWatcher::start(tmp.path().to_str().unwrap(), move |changes| {
-            let _ = tx.send(changes);
-        })
-        .unwrap();
-        std::thread::sleep(Duration::from_millis(100));
-        std::fs::write(tmp.path().join("new-file.txt"), "hello").unwrap();
-        let changes = rx.recv_timeout(Duration::from_secs(5)).unwrap();
-        assert!(changes.iter().any(|c| c.path.contains("new-file.txt")));
-        drop(watcher);
+impl Drop for WorkspaceWatcher {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        let _ = self.wake.try_send(None);
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
     }
 }
+
+#[cfg(test)]
+#[path = "watch_tests.rs"]
+mod tests;

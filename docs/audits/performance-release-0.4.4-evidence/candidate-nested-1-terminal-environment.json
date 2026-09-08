@@ -1,0 +1,11 @@
+{
+  "appImageVariablesPresent": [
+    "APPIMAGE_EXTRACT_AND_RUN"
+  ],
+  "staleMountPathsPresent": {
+    "PATH": false,
+    "LD_LIBRARY_PATH": false,
+    "XDG_DATA_DIRS": false,
+    "GSETTINGS_SCHEMA_DIR": false
+  }
+}

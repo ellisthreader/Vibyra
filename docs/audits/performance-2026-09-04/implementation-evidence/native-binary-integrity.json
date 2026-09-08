@@ -1,0 +1,12 @@
+[
+  {
+    "kind": "baseline",
+    "binarySha256": "451ed779f8397f2ed1e0515920ff27df704925be48fb56a4d3630ed7d403093e",
+    "nativeAdmissionErrorPresent": false
+  },
+  {
+    "kind": "bounded",
+    "binarySha256": "3af963908fcf63665b33e61008ac2d4f2f8ce92afe98c2c6c1803b90edcd18bc",
+    "nativeAdmissionErrorPresent": true
+  }
+]

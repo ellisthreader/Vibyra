@@ -1,0 +1,8 @@
+Vibyra credential migration deferred: operating-system credential store is unavailable: Platform secure storage failure: DBus error: Failed to connect to socket /tmp/vibyra-performance-audit-20260904-KNtjVg/native-profile/absent-bus: No such file or directory
+model watch: fetch failed: error sending request for url (https://openrouter.ai/api/v1/models?supported_parameters=tools)
+[probe] PROBE-START
+[probe] PHASE all-visible
+[probe] {"phase":"all-visible","echo":{"n":40,"mean":27.100000000000115,"p50":24.00000000000182,"p95":48,"max":140},"parse":{"n":40,"mean":27.200000000000045,"p50":25,"p95":48,"max":140},"paint":{"n":40,"mean":29.724999999999955,"p50":26,"p95":50,"max":164},"dropped":0,"frames":{"n":366,"mean":23.147540983606557,"p50":22,"p95":37,"max":100}}
+[probe] PHASE focus-paced
+[probe] {"phase":"focus-paced","echo":{"n":40,"mean":0.7249999999998181,"p50":0,"p95":3,"max":4},"parse":{"n":40,"mean":0.9499999999998181,"p50":1,"p95":4,"max":4},"paint":{"n":40,"mean":7.549999999999727,"p50":7,"p95":15,"max":16},"dropped":0,"frames":{"n":467,"mean":17.29122055674518,"p50":16,"p95":30,"max":108}}
+[probe] PROBE-COMPLETE

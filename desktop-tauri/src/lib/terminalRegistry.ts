@@ -17,6 +17,7 @@ import {
   type BottomAnchorState,
 } from "./terminalBottomAnchor";
 import { attachTerminalClipboard } from "./terminalClipboard";
+import { reportTerminalInputFailure } from "./terminalInputNotice";
 import { attachRenderer } from "./xtermRenderer";
 import { themeFor } from "./xtermTheme";
 
@@ -103,7 +104,7 @@ export function mountTerminal(
   term.loadAddon(new WebLinksAddon());
   term.open(container);
   attachTerminalRenderer(term, container);
-  attachTerminalClipboard(term);
+  attachTerminalClipboard(term, container);
 
   // Guards the onScroll handler against re-entry while the write callback is
   // already anchoring (scrollToBottom fires onScroll synchronously).
@@ -119,7 +120,7 @@ export function mountTerminal(
   term.onData((data) => {
     clearAttention(id);
     sessionInputReceived(id, data);
-    void writeTerminal(id, data).catch(() => {});
+    void writeTerminal(id, data).catch((error) => reportTerminalInputFailure(id, error));
   });
   term.onResize(({ rows, cols }) => void resizeTerminal(id, rows, cols).catch(() => {}));
   term.onScroll(() => {

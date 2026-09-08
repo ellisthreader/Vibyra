@@ -1,0 +1,150 @@
+{
+  "baseline-1": {
+    "artifact": "Vibyra-0.4.3.AppImage",
+    "freshProfile": true,
+    "display": ":1",
+    "loadStart": [
+      1.697265625,
+      2.66064453125,
+      4.9248046875
+    ],
+    "mainWindowVisibleMs": 5654.674195000098,
+    "idleSeconds": 12.009288902999742,
+    "cpuPercent": 79.10543310875835,
+    "rssSumBytes": 508809216,
+    "processes": [
+      {
+        "name": "Vibyra-0.4.3.AppImage",
+        "rss": 1392640
+      },
+      {
+        "name": "Vibyra",
+        "rss": 206827520
+      },
+      {
+        "name": "WebKitNetworkProcess",
+        "rss": 51593216
+      },
+      {
+        "name": "WebKitWebProcess",
+        "rss": 248995840
+      }
+    ],
+    "loadEnd": [
+      1.34130859375,
+      2.484375,
+      4.79296875
+    ]
+  },
+  "candidate-1": {
+    "artifact": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+    "freshProfile": true,
+    "display": ":1",
+    "loadStart": [
+      1.34130859375,
+      2.484375,
+      4.79296875
+    ],
+    "mainWindowVisibleMs": 5705.036878000101,
+    "idleSeconds": 12.009480063999945,
+    "cpuPercent": 42.79952148309778,
+    "rssSumBytes": 495726592,
+    "processes": [
+      {
+        "name": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+        "rss": 1429504
+      },
+      {
+        "name": "Vibyra",
+        "rss": 203317248
+      },
+      {
+        "name": "WebKitNetworkProcess",
+        "rss": 51970048
+      },
+      {
+        "name": "WebKitWebProcess",
+        "rss": 239009792
+      }
+    ],
+    "loadEnd": [
+      1.94677734375,
+      2.541015625,
+      4.74951171875
+    ]
+  },
+  "candidate-2": {
+    "artifact": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+    "freshProfile": true,
+    "display": ":1",
+    "loadStart": [
+      1.94677734375,
+      2.541015625,
+      4.74951171875
+    ],
+    "mainWindowVisibleMs": 1824.7906369997509,
+    "idleSeconds": 12.009742393999659,
+    "cpuPercent": 43.631243935906774,
+    "rssSumBytes": 504897536,
+    "processes": [
+      {
+        "name": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+        "rss": 1396736
+      },
+      {
+        "name": "Vibyra",
+        "rss": 204500992
+      },
+      {
+        "name": "WebKitNetworkProcess",
+        "rss": 51871744
+      },
+      {
+        "name": "WebKitWebProcess",
+        "rss": 247128064
+      }
+    ],
+    "loadEnd": [
+      2.54638671875,
+      2.63671875,
+      4.732421875
+    ]
+  },
+  "baseline-2": {
+    "artifact": "Vibyra-0.4.3.AppImage",
+    "freshProfile": true,
+    "display": ":1",
+    "loadStart": [
+      2.54638671875,
+      2.63671875,
+      4.732421875
+    ],
+    "mainWindowVisibleMs": 1820.8614609998222,
+    "idleSeconds": 12.00869337999984,
+    "cpuPercent": 39.13831298105859,
+    "rssSumBytes": 516304896,
+    "processes": [
+      {
+        "name": "Vibyra-0.4.3.AppImage",
+        "rss": 1417216
+      },
+      {
+        "name": "Vibyra",
+        "rss": 207409152
+      },
+      {
+        "name": "WebKitNetworkProcess",
+        "rss": 52797440
+      },
+      {
+        "name": "WebKitWebProcess",
+        "rss": 254681088
+      }
+    ],
+    "loadEnd": [
+      2.2177734375,
+      2.5517578125,
+      4.64794921875
+    ]
+  }
+}

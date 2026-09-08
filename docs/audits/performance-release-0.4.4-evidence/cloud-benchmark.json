@@ -1,0 +1,174 @@
+{
+  "timestamp": "2026-09-05T15:37:55.246Z",
+  "backendSource": "7a00633",
+  "clientSource": "7a00633",
+  "environment": "Actual Linux PC; local Docker Nixpacks image; SQLite; loopback; no network shaping; concurrent unrelated workloads",
+  "workload": "Edit final text of one existing message; three alternating full and delta samples per size; state readback after every save; byte counts are uncompressed HTTP body bytes, excluding headers/TLS",
+  "results": [
+    {
+      "threads": 1,
+      "messagesPerThread": 80,
+      "messageCharacters": 2000,
+      "runs": [
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 129.27175499999998,
+          "path": "/api/session/state",
+          "requestBytes": 161889,
+          "responseBytes": 170322,
+          "elapsedMs": 128.805475
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 207.28887900000007,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 204.7020530000001
+        },
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 274.2767939999999,
+          "path": "/api/session/state",
+          "requestBytes": 161889,
+          "responseBytes": 170322,
+          "elapsedMs": 273.7967000000001
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 212.639089,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 211.95707599999992
+        },
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 231.46676200000002,
+          "path": "/api/session/state",
+          "requestBytes": 161889,
+          "responseBytes": 170322,
+          "elapsedMs": 230.9678980000001
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 105.71916400000009,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 104.95071699999994
+        }
+      ]
+    },
+    {
+      "threads": 10,
+      "messagesPerThread": 80,
+      "messageCharacters": 2000,
+      "runs": [
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 367.0811050000002,
+          "path": "/api/session/state",
+          "requestBytes": 1618422,
+          "responseBytes": 1626855,
+          "elapsedMs": 355.7906170000001
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 169.89320399999997,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 164.37369100000024
+        },
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 296.332265,
+          "path": "/api/session/state",
+          "requestBytes": 1618422,
+          "responseBytes": 1626855,
+          "elapsedMs": 293.74403600000005
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 240.40017099999977,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 236.21230000000014
+        },
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 627.9204590000004,
+          "path": "/api/session/state",
+          "requestBytes": 1618422,
+          "responseBytes": 1626855,
+          "elapsedMs": 625.6365420000002
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 344.59015200000067,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 340.88155299999926
+        }
+      ]
+    },
+    {
+      "threads": 40,
+      "messagesPerThread": 80,
+      "messageCharacters": 2000,
+      "runs": [
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 2405.9171380000007,
+          "path": "/api/session/state",
+          "requestBytes": 6473562,
+          "responseBytes": 6481995,
+          "elapsedMs": 2367.028547000001
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 270.09047199999986,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 252.40606200000002
+        },
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 642.162382999999,
+          "path": "/api/session/state",
+          "requestBytes": 6473562,
+          "responseBytes": 6481995,
+          "elapsedMs": 633.109348
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 392.7007730000005,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 365.2167269999991
+        },
+        {
+          "mode": "legacy-full",
+          "totalClientMs": 712.4414190000007,
+          "path": "/api/session/state",
+          "requestBytes": 6473562,
+          "responseBytes": 6481995,
+          "elapsedMs": 698.3964059999998
+        },
+        {
+          "mode": "negotiated-delta",
+          "totalClientMs": 340.4709729999995,
+          "path": "/api/session/state/delta",
+          "requestBytes": 4259,
+          "responseBytes": 27,
+          "elapsedMs": 316.507665000001
+        }
+      ]
+    }
+  ]
+}

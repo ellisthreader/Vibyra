@@ -1,0 +1,49 @@
+{
+  "projectId": "4e292f83-b6e3-4556-a1db-69a39a2be3b2",
+  "serviceId": "17d27bf4-6506-4545-93e3-221065d921b0",
+  "environmentId": "8d678e46-a6f9-43a7-b192-3da614d82471",
+  "deploymentId": "dd118a0c-b5fe-40de-999d-7dad865d87f7",
+  "status": "SUCCESS",
+  "imageDigest": "sha256:8294338f2b3b222f7538c873ae645ebf7ec4459f82a90776d200c9668adfc72c",
+  "rootDirectory": "/backend",
+  "manifest": {
+    "build": {
+      "buildCommand": null,
+      "buildEnvironment": "V3",
+      "builder": "NIXPACKS",
+      "dockerfilePath": null,
+      "nixpacksConfigPath": "/backend/nixpacks.toml",
+      "nixpacksPlan": null,
+      "watchPatterns": []
+    },
+    "deploy": {
+      "cronSchedule": null,
+      "drainingSeconds": null,
+      "healthcheckPath": "/up",
+      "healthcheckTimeout": 300,
+      "ipv6EgressEnabled": false,
+      "limitOverride": null,
+      "multiRegionConfig": {
+        "europe-west4-drams3a": {
+          "numReplicas": 1
+        }
+      },
+      "numReplicas": 1,
+      "overlapSeconds": null,
+      "preDeployCommand": [
+        "php artisan migrate --force"
+      ],
+      "preDeployTimeoutSeconds": null,
+      "region": null,
+      "registryCredentials": null,
+      "requiredMountPath": null,
+      "restartPolicyMaxRetries": 10,
+      "restartPolicyType": "ON_FAILURE",
+      "runtime": "V2",
+      "sleepApplication": false,
+      "startCommand": "bash scripts/start-production.sh",
+      "useLegacyStacker": false
+    }
+  },
+  "releaseSource": "4abe89647205ce9bfb2e94c892b50112a3939f41"
+}

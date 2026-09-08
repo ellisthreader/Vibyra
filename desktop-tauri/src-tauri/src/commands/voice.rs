@@ -1,6 +1,5 @@
-use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -12,19 +11,10 @@ use super::voice_level::spawn_level_meter;
 use crate::ai_usage::{voice_cost_usd, AiCall};
 use crate::state::AppState;
 
-/// A running `arecord` capture (raw S16LE 16 kHz mono → WAV-wrapped on stop).
-pub struct VoiceRecording {
-    child: Child,
-    path: PathBuf,
-    /// Cleared when the capture ends, which is what stops the level meter.
-    metering: Arc<AtomicBool>,
-}
-
-impl VoiceRecording {
-    fn end_metering(&self) {
-        self.metering.store(false, Ordering::Relaxed);
-    }
-}
+pub use super::voice_recording::VoiceRecording;
+use super::voice_recording::SAMPLE_RATE;
+pub(super) use super::voice_recording::{BYTES_PER_SECOND, MAX_RECORDING_SECONDS};
+static RECORDING_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,13 +24,6 @@ pub struct VoiceStatus {
 }
 
 pub const VOICE_MODEL: &str = "whisper-1";
-
-const SAMPLE_RATE: u32 = 16_000;
-pub(super) const BYTES_PER_SECOND: usize = SAMPLE_RATE as usize * 2;
-/// Whisper is billed by the minute, so a recorder that never stopped — a stuck
-/// key, a crashed UI — is the expensive failure here. Audio past this point is
-/// discarded before it is ever uploaded.
-pub(super) const MAX_RECORDING_SECONDS: usize = 120;
 
 #[tauri::command]
 pub async fn voice_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
@@ -56,11 +39,16 @@ pub async fn voice_start(app: AppHandle, state: State<'_, AppState>) -> Result<(
     // Checked before the microphone opens: being refused after speaking a
     // whole sentence is a worse experience than being told up front.
     state.usage.budget_available(state.ai_limits())?;
-    let path = std::env::temp_dir().join(format!("vibyra-voice-{}.raw", std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "vibyra-voice-{}-{}.raw",
+        std::process::id(),
+        RECORDING_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+    ));
     let _ = std::fs::remove_file(&path);
     let mut command = Command::new("arecord");
     command
         .args(["-q", "-f", "S16_LE", "-r", "16000", "-c", "1", "-t", "raw"])
+        .args(["--duration", &MAX_RECORDING_SECONDS.to_string()])
         .arg(&path)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -91,15 +79,15 @@ pub async fn voice_stop(
     let Some(mut recording) = state.voice.lock().take() else {
         return Ok(None);
     };
-    recording.end_metering();
-    let _ = recording.child.kill();
-    let _ = recording.child.wait();
-    let raw = std::fs::read(&recording.path).unwrap_or_default();
-    let _ = std::fs::remove_file(&recording.path);
-
+    recording.stop();
     if discard {
         return Ok(None);
     }
+    let raw = recording
+        .read_bounded()
+        .map_err(|error| format!("could not read recording: {error}"))?;
+    drop(recording);
+
     // Anything under ~0.4 s is a stray key tap, not speech. Rejecting it here
     // also keeps a jammed hotkey from spending a paid call per keypress.
     if raw.len() < BYTES_PER_SECOND * 2 / 5 {
@@ -163,12 +151,7 @@ async fn transcribe(wav: Vec<u8>, key: String) -> Result<String, String> {
 }
 
 fn stop_recorder(state: &State<'_, AppState>) {
-    if let Some(mut recording) = state.voice.lock().take() {
-        recording.end_metering();
-        let _ = recording.child.kill();
-        let _ = recording.child.wait();
-        let _ = std::fs::remove_file(&recording.path);
-    }
+    drop(state.voice.lock().take());
 }
 
 /// Minimal RIFF/WAVE header around raw S16LE PCM.

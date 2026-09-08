@@ -36,6 +36,7 @@ class VibyraAppController extends Controller
     use AccountVerificationEndpoints;
     use AutoModelRouteEndpoint;
     use AuthEndpoints;
+    use \App\Http\Controllers\Concerns\SessionStateEndpoints;
     use AuthRecoveryEndpoints;
     use ChatEndpoint;
     use ChatLearningFeedback;

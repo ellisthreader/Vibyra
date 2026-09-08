@@ -1,0 +1,89 @@
+vite v8.2.1 building client environment for production...
+[2Ktransforming...✓ 475 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/index.html                                                       1.36 kB │ gzip:     0.47 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/jetbrains-mono-vietnamese-wght-normal-Bt-aOZkq.woff2      7.50 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/jetbrains-mono-greek-wght-normal-Bw9x6K1M.woff2           9.00 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2              10.25 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2               11.23 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gemini-3.5-flash-DiEqQM5m.png                            11.27 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gemini-2.5-pro-coPRydOZ.png                              11.77 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2       12.10 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/vibyra-cobalt-Cebnih3s.png                               12.38 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gemini-2.5-flash-DrFJBmek.png                            12.52 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gemini-3.1-pro-_6e7E5wV.png                              12.66 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gemini-3.1-flash-lite-9b_W5rm0.png                       12.70 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gemini-2.5-flash-lite-ChQS_hvo.png                       12.72 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2      15.19 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-haiku-4.5-CKIN1vSl.png                            15.74 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/.vite/manifest.json                                             18.19 kB │ gzip:     2.28 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2                18.74 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2                   18.99 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4-DW9NdRd_.png                               19.75 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5.6-luna-BoS-rwQc.png                                22.08 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-sonnet-4.6-BE4fmwvn.png                           23.95 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-fable-5-BurVbMBf.png                              24.27 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.5-DI7AkVaQ.png                             24.51 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.7-fast-BEm8sp9I.png                        24.56 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.8-fast-DN4myyvM.png                        24.97 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.7-COXv4mgi.png                             25.54 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-sonnet-5-clqtbqo9.png                             25.80 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.1-lBA6SQy0.png                             25.84 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2            25.96 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.8-DcuDYEq1.png                             26.23 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5.6-terra-lnQQN4Rk.png                               27.04 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-4.6-D-hVTazV.png                             27.49 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-sonnet-4.5-DSzmfnwI.png                           27.68 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5.4-mini-C1JrTwGG.png                                30.29 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-5-fast-Cvl4Az-G.png                          33.23 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/claude-opus-5-GfZKT9KR.png                               33.74 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5.5-C2bwCKmg.png                                     34.12 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5-codex-CcmwB976.png                                 36.01 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5.4-pQ1gFNWo.png                                     38.73 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2          40.40 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/gpt-5.6-sol-SPjDsx2u.png                                 43.13 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2                   48.25 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2               85.06 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/auth-space-loop-poster-BiJjKnBd.webp                    127.73 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/index-VQkyzxvF.css                                      166.00 kB │ gzip:    32.01 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/agentStore-DAPL54_Z.js                                    0.21 kB │ gzip:     0.17 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/react-BxBun4Wg.js                                         0.65 kB │ gzip:     0.39 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/FilePreviewModal-vjWwMPRL.js                              0.97 kB │ gzip:     0.47 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/useModalFocus-C-7N3-2K.js                                 1.07 kB │ gzip:     0.56 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/LaunchApprovalModal-CI_9cg3_.js                           1.89 kB │ gzip:     0.85 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/app-DXWohDGi.js                                           2.90 kB │ gzip:     1.17 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/ProbeScreen-C7HOXjza.js                                   3.14 kB │ gzip:     1.62 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/perf-HLH8nPeE.js                                          3.56 kB │ gzip:     1.43 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/Icons-dIMAZxil.js                                         3.79 kB │ gzip:     1.24 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/AgentPickerModal-uWVBpjyO.js                              4.78 kB │ gzip:     1.87 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/HomeView-BBN5TebM.js                                      7.36 kB │ gzip:     2.71 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/voiceStore--e6hrfyK.js                                    8.27 kB │ gzip:     3.30 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/jsx-runtime-Cltr0gcK.js                                   8.43 kB │ gzip:     3.21 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/ReportModal-Br91TKS9.js                                   9.36 kB │ gzip:     2.81 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/workspaceStore-DCawV-0I.js                               11.91 kB │ gzip:     4.68 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/CommandPalette-BLwnR3OA.js                               15.86 kB │ gzip:     6.17 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/ScreenshotEditor-C6RRu-mT.js                             17.29 kB │ gzip:     5.79 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/projectStore-B6rFsS4L.js                                 19.51 kB │ gzip:     7.04 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/SettingsModal-BAXQJVfB.js                                56.81 kB │ gzip:    16.29 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/addon-webgl-BIS_RUUN.js                                 113.60 kB │ gzip:    31.08 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/modelCatalogStore-AY31vxSj.js                           188.66 kB │ gzip:    51.02 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/index-Bal1nNY7.js                                       207.02 kB │ gzip:    66.50 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/settingsStore-P2y1FQXq.js                               355.57 kB │ gzip:    92.56 kB
+../../../../../tmp/vibyra-perf-final-20260905-ve27rxj1/desktop-probe-dist/assets/AuthBackdropVideo-vJdgv-uo.js                         3,688.51 kB │ gzip: 2,776.40 kB
+
+✓ built in 12.04s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[33m[PLUGIN_TIMINGS] [0mYour build spent 78% of 12.0s inside plugin hooks (9.4s).
+Measured inside the callback, so queue time is excluded and time the callback itself awaited is not:
+  - vite:css-post renderChunk (14%, 1.7s, 24 calls)
+Those rows are 14% of the build; the rest of the 78% is below.
+Not measurable — 2 hooks whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:asset load (31 calls)
+  - vite:css transform (120 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+

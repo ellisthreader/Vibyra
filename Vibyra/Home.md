@@ -24,6 +24,7 @@ One place to navigate every project, responsibility, reference, and daily note.
 - [[01 Projects/RelayClarity/RelayClarity Memory|RelayClarity Memory]] - scoped memory for the RelayClarity project
 - [[01 Projects/Hong Kong Express/HKE Memory|HKE Memory]] - scoped memory for Hong Kong Express
 - [[99 Meta/Meta|Meta]] - vault inventory, coding memory, prompting profile
+- [[99 Meta/Ellis AI Mind/Ellis AI Mind|Ellis AI Mind]] - personal and real-world decision routing
 - [[04 Archive/Archive|Archive]] - inactive material and backups
 
 ## Active Projects
@@ -67,4 +68,3 @@ GROUP BY file.link
 3. Use `02 Areas` for ongoing responsibilities and `03 Resources` for reusable knowledge.
 4. Put unprocessed notes in `00 Inbox`; do not create loose notes at the vault root.
 5. Archive instead of deleting when a project becomes inactive.
-

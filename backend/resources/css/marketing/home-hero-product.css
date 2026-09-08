@@ -1,0 +1,135 @@
+/* Keep the product legible and integrated with the hero's single art composition. */
+.hero-showcase .walkthrough { padding: 8px; background: #181a20d9; border: 1px solid #596786; border-radius: 16px; box-shadow: 0 0 0 1px #7f9fe510, 0 -8px 70px -35px #5b7cfa, 0 35px 90px #0006; }
+.hero-showcase .product-stage { height: auto; padding: 0; background: transparent; border-radius: 10px; }
+.hero-showcase .product-stage .desktop-device { position: relative; top: auto; left: auto; width: 100%; transform: none; border: 1px solid #343b4c; border-radius: 10px; box-shadow: none; }
+.hero-showcase .product-stage .device-titlebar { height: 43px; background: #15171d; padding-inline: 18px; }
+.hero-showcase .product-stage .device-titlebar .brand { font-size: 16px; gap: 7px; }
+.hero-showcase .product-stage .device-titlebar .brand img { width: 21px; height: 17px; }
+.hero-showcase .product-stage .device-project { font-size: 10px; color: #a6adba; }
+.hero-showcase .product-stage .device-body { height: 490px; }
+.hero-showcase .product-stage .demo-rail { width: 48px; padding-top: 20px; gap: 20px; }
+.hero-showcase .product-stage .workspace-toolbar { height: 46px; padding-inline: 15px; }
+.hero-showcase .product-stage .workspace-toolbar > span { font-size: 12px; }
+.hero-showcase .product-stage .workspace-project-muted { font-size: 10px; }
+.hero-showcase .product-stage .workspace-toolbar .workspace-mode { font-size: 10px; padding: 6px 10px; }
+.hero-showcase .product-stage .workspace-content { padding-inline: 12px; }
+.hero-showcase .product-stage .workspace-status { padding: 10px 15px; font-size: 8px; }
+.hero-showcase .product-stage .terminal-layout { gap: 12px; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.hero-showcase .product-stage .terminal-stack { gap: 10px; min-height: 0; }
+.hero-showcase .product-stage .demo-terminal { min-height: 0; }
+.hero-showcase .product-stage .demo-terminal:nth-child(2) .terminal-input { display: none; }
+.hero-showcase .product-stage .terminal-preview { display: flex; flex-direction: column; min-height: 0; }
+.hero-showcase .product-stage .terminal-preview .mini-browser { flex: none; }
+.hero-showcase .product-stage .terminal-preview .orbit-app { flex: 1; min-height: 0; height: auto; }
+.hero-showcase .product-stage .terminal-heading, .hero-showcase .product-stage .mini-browser { height: 34px; font-size: 10px; }
+.hero-showcase .product-stage .terminal-content { padding: 12px; font-size: 10px; line-height: 1.7; }
+.hero-showcase .product-stage .terminal-request { padding: 7px 10px; margin-bottom: 10px; }
+.hero-showcase .product-stage .terminal-file { font-size: 9px; gap: 5px; }
+.hero-showcase .product-stage .terminal-result { display: none; }
+.hero-showcase .product-stage .terminal-input { font-size: 9px; padding: 7px; }
+.hero-showcase .product-stage .terminal-status { font-size: 7px; padding-bottom: 6px; }
+.hero-showcase .product-stage .mini-browser > span:nth-child(2) { font-size: 8px; }
+.hero-showcase .product-stage .orbit-app-nav { padding: 14px 22px; }
+.hero-showcase .product-stage .orbit-app-nav > strong { font-size: 17px; }
+.hero-showcase .product-stage .orbit-app-nav > span { font-size: 8px; }
+.hero-showcase .product-stage .terminal-preview .orbit-app-content { padding: 22px 30px; max-width: 430px; }
+.hero-showcase .product-stage .orbit-eyebrow { font-size: 7px; }
+.hero-showcase .product-stage .terminal-preview .orbit-app .orbit-title { font-size: 37px; }
+.hero-showcase .product-stage .orbit-app-subtitle { font-size: 10px; }
+.hero-showcase .product-stage .orbit-week > span { font-size: 7px; }
+.hero-showcase .product-stage .orbit-week b { font-size: 10px; }
+.hero-showcase .product-stage .orbit-habit { padding: 10px; }
+.hero-showcase .product-stage .orbit-habit > div strong { font-size: 10px; }
+.hero-showcase .product-stage .orbit-habit > div span { font-size: 8px; }
+.hero-showcase .product-stage .orbit-streak { display: none; }
+.hero-showcase .product-stage .preview-demo-toolbar { font-size: 10px; height: 39px; }
+.hero-showcase .product-stage .preview-demo-toolbar button { font-size: 10px; min-height: 28px; }
+.hero-showcase .product-stage .review-file-list { font-size: 9px; }
+.hero-showcase .product-stage .review-file-list .review-eyebrow { font-size: 8px; }
+.hero-showcase .product-stage .review-code pre { font-size: 10px; }
+.hero-showcase .product-stage .review-code-head, .hero-showcase .product-stage .review-summary { font-size: 10px; }
+.hero-showcase .walkthrough-controls { background: #181a20; padding: 0 21px 10px; border-radius: 0 0 8px 8px; }
+.hero-showcase .walkthrough-tabs { border-color: #343944; }
+.hero-showcase .walkthrough-tabs button { color: #a6adba; font-size: 13px; padding-block: 19px; }
+.hero-showcase .walkthrough-tabs button[aria-selected='true'] { color: #f5f7fa; }
+.hero-showcase .walkthrough-tabs button[aria-selected='true']::after { background: #7490ff; }
+.hero-showcase .walkthrough-tabs button[aria-selected='true'] .tab-number { color: #91a9ff; }
+.hero-showcase .tab-number { color: #a6adba; font-size: 9px; }
+.hero-showcase .walkthrough-caption { color: #a6adba; font-size: 11px; }
+.hero-showcase .tour-trigger { background: #20232a; border-color: #3d4658; color: #d7e1ff !important; }
+.hero-showcase .tour-trigger:hover { background: #2b2f38; border-color: #7a8baa; }
+@media (min-width: 1600px) {
+  .hero-showcase .product-stage .device-body { height: 510px; }
+  .hero-showcase .product-stage .terminal-content { font-size: 11px; }
+  .hero-showcase .product-stage .terminal-file { font-size: 10px; }
+}
+@media (max-width: 1150px) {
+  .hero-showcase .product-stage .device-body { height: 475px; }
+  .hero-showcase .product-stage .terminal-content { font-size: 9px; }
+  .hero-showcase .product-stage .terminal-file { font-size: 8px; }
+  .hero-showcase .product-stage .terminal-preview .orbit-app-content { padding: 20px; }
+  .hero-showcase .product-stage .terminal-preview .orbit-app .orbit-title { font-size: 32px; }
+}
+@media (max-width: 800px) {
+  .hero-showcase .product-stage .device-body { height: 485px; }
+  .hero-showcase .product-stage .demo-rail { display: none; }
+  .hero-showcase .product-stage .terminal-status > span:last-child { display: none; }
+  .hero-showcase .walkthrough-controls { padding-inline: 13px; }
+  .hero-showcase .walkthrough-tabs button { gap: 8px; font-size: 12px; }
+  .hero-showcase .walkthrough-tabs button svg { margin-left: 0; }
+  .hero-showcase .walkthrough-bottom { gap: 12px; }
+  .hero-showcase .walkthrough-caption { font-size: 10px; }
+}
+@media (max-width: 700px) {
+  .hero-showcase .product-stage .device-body { height: 390px; }
+  .hero-showcase .product-stage .terminal-layout { grid-template-columns: 1fr; }
+  .hero-showcase .product-stage .terminal-preview, .hero-showcase .product-stage .demo-terminal:nth-child(2) { display: none; }
+  .hero-showcase .product-stage .terminal-content { font-size: 12px; padding: 15px; }
+  .hero-showcase .product-stage .terminal-file { font-size: 11px; margin-top: 4px; }
+  .hero-showcase .product-stage .terminal-result { display: block; margin-top: 12px !important; }
+  .hero-showcase .product-stage .terminal-heading { font-size: 11px; height: 35px; }
+  .hero-showcase .product-stage .terminal-input { font-size: 10px; padding-block: 9px; }
+  .hero-showcase .product-stage .terminal-status { font-size: 8px; }
+  .hero-showcase .product-stage .preview-demo-toolbar { font-size: 9px; padding-inline: 8px; }
+  .hero-showcase .product-stage .preview-demo-toolbar button { padding-inline: 6px; font-size: 9px; }
+  .hero-showcase .product-stage .review-isolated { display: none; }
+  .hero-showcase .product-stage .review-file-list { width: 32%; padding-inline: 4px; }
+  .hero-showcase .product-stage .review-file-list > span { gap: 3px; font-size: 7px; }
+  .hero-showcase .product-stage .review-file-list > span b { display: none; }
+  .hero-showcase .product-stage .review-code pre { overflow: auto; font-size: 9px; }
+  .hero-showcase .product-stage .review-code code { padding-inline: 10px; }
+}
+@media (max-width: 580px) {
+  .hero-showcase .walkthrough { padding: 5px; border-radius: 12px; }
+  .hero-showcase .product-stage .device-titlebar { padding-inline: 12px; height: 38px; }
+  .hero-showcase .product-stage .device-titlebar .brand { font-size: 13px; }
+  .hero-showcase .product-stage .device-project { font-size: 8px; }
+  .hero-showcase .product-stage .window-controls { display: none; }
+  .hero-showcase .product-stage .workspace-toolbar { height: 41px; padding-inline: 10px; }
+  .hero-showcase .product-stage .workspace-toolbar > span { font-size: 11px; }
+  .hero-showcase .product-stage .workspace-project-muted { display: none; }
+  .hero-showcase .product-stage .workspace-toolbar .workspace-mode { font-size: 8px; padding: 4px 7px; }
+  .hero-showcase .product-stage .workspace-content { padding-inline: 7px; }
+  .hero-showcase .product-stage .workspace-status { padding: 8px 10px; font-size: 7px; gap: 8px; }
+  .hero-showcase .product-stage .workspace-status > span:nth-child(2) { display: none; }
+  .hero-showcase .product-stage .terminal-content { font-size: 10px; padding: 11px; }
+  .hero-showcase .product-stage .terminal-file { font-size: 9px; }
+  .hero-showcase .product-stage .terminal-result { margin-top: 10px !important; }
+  .hero-showcase .product-stage .device-body { height: 375px; }
+  .hero-showcase .walkthrough-tabs button { font-size: 10px; gap: 5px; padding-block: 15px; }
+  .hero-showcase .walkthrough-tabs button svg { display: none; }
+  .hero-showcase .walkthrough-bottom { flex-direction: column; text-align: center; padding-top: 14px; gap: 12px; }
+  .hero-showcase .walkthrough-caption { text-align: center; font-size: 11px; min-height: 36px; }
+  .hero-showcase .tour-trigger { width: 100%; }
+  .hero-showcase .walkthrough-controls { padding: 0 10px 10px; }
+  .hero-showcase .product-stage .preview-demo-toolbar > span { font-size: 8px; gap: 4px; }
+  .hero-showcase .product-stage .preview-demo-toolbar button { gap: 3px; font-size: 8px; padding-inline: 3px; }
+  .hero-showcase .product-stage .preview-demo-toolbar svg { width: 11px; }
+  .hero-showcase .product-stage .preview-viewport .orbit-app-content { display: block; padding: 14px 20px; }
+  .hero-showcase .product-stage .preview-viewport .orbit-habit { margin-top: 9px; }
+  .hero-showcase .product-stage .review-file-list { display: none; }
+  .hero-showcase .product-stage .review-code pre { font-size: 9px; }
+}
+@media (max-width: 380px) {
+  .hero-showcase .product-stage .device-body { height: 420px; }
+}

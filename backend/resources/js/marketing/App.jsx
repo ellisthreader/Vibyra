@@ -1,29 +1,28 @@
 import React from "react";
-import Nav from "./Nav.jsx";
-import Hero from "./Hero.jsx";
-import SimpleOverview from "./sections/SimpleOverview.jsx";
-import Pricing from "./Pricing.jsx";
-import Faq from "./Faq.jsx";
-import { FinalCta, Footer } from "./Closing.jsx";
+import { HomeNav, HomeFooter } from "./home/Navigation.jsx";
+import Hero from "./home/Hero.jsx";
+import Desktop from "./home/Desktop.jsx";
+import Mobile from "./home/Mobile.jsx";
+import Control from "./home/Control.jsx";
+import Plans from "./home/Plans.jsx";
+import Questions from "./home/Questions.jsx";
 
 export default function App() {
-  return (
-    <>
-      <a
-        href="#main"
-        className="absolute -top-12 left-4 z-[100] rounded-lg bg-violet px-4 py-2.5 text-white transition-all focus:top-3"
-      >
-        Skip to content
-      </a>
-      <Nav />
-      <main id="main">
-        <Hero />
-        <SimpleOverview />
-        <Pricing />
-        <Faq />
-        <FinalCta />
-      </main>
-      <Footer />
-    </>
-  );
+    return (
+        <div className="marketing-home marketing-home-cinematic">
+            <a className="skip-link" href="#main">
+                Skip to content
+            </a>
+            <HomeNav />
+            <main id="main">
+                <Hero />
+                <Desktop />
+                <Mobile />
+                <Control />
+                <Plans />
+                <Questions />
+            </main>
+            <HomeFooter />
+        </div>
+    );
 }
