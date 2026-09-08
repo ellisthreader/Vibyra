@@ -46,3 +46,11 @@ npm run app:dev
 
 On Linux, install the GTK/WebKit build dependencies first with
 `desktop-tauri/scripts/setup-linux.sh`.
+
+## Mobile setup
+
+The sole mobile app is `mobile/`, with the “Build from your pocket.” welcome.
+Run `npm ci --prefix mobile`, `bash host/scripts/build-wasm.sh`, then
+`npm run phone` from root. Root `src/` and its Expo configuration are retired;
+never launch an older worktree merely because its app has the same name.
+See `Vibyra/_ai/App/iOS Remote Workspace.md` and the Expo diagnostics skill.

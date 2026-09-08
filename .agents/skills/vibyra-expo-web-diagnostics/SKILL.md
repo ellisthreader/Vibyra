@@ -1,164 +1,71 @@
 ---
 name: vibyra-expo-web-diagnostics
-description: Diagnose Vibyra Expo/mobile web failures, especially AppEntry.bundle 500s, strict MIME type application/json script errors, Metro UnableToResolveError messages, missing i18n modules, localhost 8081/8082 server issues, and signup/login "Could not reach Vibyra" fetch failures.
+description: Diagnose Vibyra mobile Expo Go and web startup, native bundle failures, wrong-version launches, account discovery, and mobile API reachability.
 ---
 
-# Vibyra Expo Web Diagnostics
+# Vibyra Expo Diagnostics
 
-Use this skill when the Vibyra Expo app fails to load in the browser, the console reports `AppEntry.bundle` 500, strict MIME type refusal because the bundle is `application/json`, Metro says `UnableToResolveError`, or auth/signup/login reports "Could not reach Vibyra" / `failed to fetch`.
+## Source and memory
 
-For a healthy Expo runtime that fails only inside Desktop Test or phone
-Preview, use `vibyra-preview-diagnostics`; keep this skill focused on Metro,
-module resolution, Expo web startup, and backend reachability.
+Read the memory protocol, Context Map, Project Context, Vibyra App Memory and
+`App/iOS Remote Workspace.md` before exploring. The sole mobile app is
+`mobile/` (SDK 57), starting at **Build from your pocket.** The old root Expo
+client and older companion welcome screen are retired. Do not reconstruct them.
+Settings > Show welcome again returns to the first screen.
 
-## Required Memory Reads
+If the expected UI is missing, inspect the running listener's working directory
+and the checkout's dirty/untracked mobile files. The confirmed latest app was
+preserved from `/home/ellis/Desktop/Vibyra-iOS/mobile`; a release commit or
+serving-worktree name alone did not include that work. Verify actual files.
 
-Before broad source exploration, read:
+## Launch
 
-- `Vibyra/_ai/Memory Protocol.md`
-- `Vibyra/_ai/Context Map.md`
-- `Vibyra/_ai/Project Context.md`
-- `Vibyra/_ai/Vibyra App Memory.md`
-- `Vibyra/_ai/App/Navigation UI.md` for app load/UI issues, or `Vibyra/_ai/App/Cloud Sync.md` for auth/backend reachability.
-- `Vibyra/_ai/Runbook.md`
-
-## Bundle 500 Rule
-
-When the browser says a script was refused because its MIME type is `application/json`, do not debug MIME headers first. Metro is returning a JSON error payload instead of JavaScript.
-
-Fetch the bundle body and read the real error:
+From the repository root:
 
 ```bash
-curl -i 'http://localhost:8082/node_modules/expo/AppEntry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable'
+npm ci --prefix mobile
+bash host/scripts/build-wasm.sh
+npm run phone
 ```
 
-If the response is `500` with `Content-Type: application/json`, fix the reported Metro error. After the fix, verify the same bundle URL returns `200` and `Content-Type: application/javascript`.
+The asset preflight needs `host/generated/noise/vibyra_transport_bg.wasm`.
+The build script pins Rust 1.97.1 and wasm-bindgen 0.2.127. Root start/dev/web/ios
+commands delegate to mobile; there is no root Expo project.
 
-## Missing Module Checks
+Check existing listeners before choosing a port. For an alternate port, run
+`npx expo start --go --lan --port <port>` in mobile after building assets.
+Use `--go` explicitly because expo-dev-client is also installed. Keep Metro
+running outside bounded launch commands (detached with logs under `/tmp`).
+Never stop another project's listener merely to reuse its port.
 
-For `UnableToResolveError`, inspect the exact import path and confirm the file exists with a supported extension.
+If Expo Go asks for CLI sign-in, check `expo whoami` in mobile first. Preserve
+an existing matching account and restart an offline Metro online before
+investigating account discovery. CLI identity alone does not prove the phone's
+server list is updated. Direct LAN access is a separate verification path.
 
-For translation failures, check `src/context/translations.ts` against the files in `src/context/i18n/`:
+Before sharing a QR, use the active default-route LAN IPv4 and verify:
 
-```bash
-rg --files src/context/i18n
-sed -n '1,80p' src/context/translations.ts
-```
+1. `/status` returns `packager-status:running`.
+2. The iOS manifest is 200 and identifies the intended project/SDK/LAN host.
+3. Its native `launchAsset.url` is 200 JavaScript; warm this bundle first.
 
-Each imported locale module must exist and export the matching symbol. Example: `import { pt } from "./i18n/pt"` requires `src/context/i18n/pt.ts` with `export const pt`.
+## Failures
 
-If Metro still reports a module missing after the file exists, restart the Expo server. The running dependency graph can stay stale after a resolver miss.
+A bundle returned as application/json is usually a Metro error, not a MIME
+configuration problem. Fetch its body and fix the reported import/asset failure.
+For corrupt raster assets, validate the bytes and decoder output before clearing
+caches. A file extension does not prove the data is valid.
 
-## Native Modules On Web
-
-For `Cannot find native module 'ExpoIap'` or similar errors, catching a failed
-call after a top-level native import is too late because Expo web resolves the
-module while loading the bundle. Keep the native hook in `.ts` and add a
-platform-specific `.web.ts` implementation. Web purchase flows should use the
-existing Stripe checkout path or a deliberate no-op when the owning component
-already handles Stripe.
-
-Verify the focused hook tests, run `npm run typecheck`, and export Expo web.
-Search the generated bundle to confirm the native module name is absent.
-
-## Expo Server Checks
-
-Check which Expo processes are already running before starting another server:
-
-```bash
-ps -eo pid,cmd
-curl -I http://localhost:8081
-curl -I http://localhost:8082
-```
-
-If Expo asks interactively to switch ports, start the intended port explicitly:
-
-```bash
-npx expo start --web --port 8082
-```
-
-Do not leave a needed dev server stopped. If you kill an Expo process to clear stale Metro state, restart it and verify the browser URL and bundle URL.
-
-## Desktop Test Preview
-
-When the desktop Test tab selects an Expo project, inspect
-`desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package_profile.rs`,
-`detect.rs`, `manager.rs`, and `process.rs`.
-The resolver must prefer a verified Metro runtime over a generic root
-`index.html`; large monorepos can contain stale placeholder HTML and nested
-Laravel markers that are not the selected app.
-
-Reuse an existing Expo port only when the served `<title>` matches the selected
-project's `app.json` or package identity and its `AppEntry.bundle` returns
-JavaScript. If no matching Metro server exists, the Test flow should expose the
-allowlisted `npm run <script> -- --host lan --port <port>` plan and run it only
-after the visible confirmation.
-
-When an Expo package also has wrapper scripts such as `start: npm run dev` or a
-shell-based `dev` command that starts backend plus Expo, the dedicated Expo web
-profile must win before generic project-script detection. Launch the Expo
-`web`/`start`/`dev` script directly with an explicit free `--port`; do not run
-the wrapper, restart a live backend, or allow an interactive port prompt.
-
-If no browser runtime is available, return a specific detected reason.
-Distinguish package-only folders, unrecognized package scripts, and non-web
-Python/CLI apps instead of returning one generic failure or showing a Start
-button that cannot succeed.
-
-## Auth Fetch Failures
-
-For signup/login "Could not reach Vibyra" or `failed to fetch`, verify the Laravel backend before changing auth code.
-
-The root `.env` `EXPO_PUBLIC_API_URL` should point to the dev machine on port `8000`, and Laravel must be listening:
-
-```bash
-curl -I http://127.0.0.1:8000/api/skills
-curl -I http://192.168.1.109:8000/api/skills
-```
-
-Start the backend with:
-
-```bash
-npm run backend
-```
-
-or run Laravel and Expo together with:
-
-```bash
-npm run dev
-```
-
-Only inspect `src/utils/appApi.ts`, `src/context/AppContext.tsx`, and `backend/routes/web.php` after backend liveness is proven.
-
-Native Vibyra Desktop auth is independent of Expo web. Inspect
-`desktop-tauri/src-tauri/src/account_api.rs` and `account_auth.rs`: production
-defaults to the Railway HTTPS API, `VIBYRA_DESKTOP_API_URL` is restricted to
-loopback or HTTPS, and the renderer receives only a safe account snapshot.
-Transient native API failures retry once with a bounded timeout; persistent
-failures must describe the account service as unreachable without claiming the
-whole desktop has lost network connectivity.
+Keep native-only modules behind platform variants. Browser pairing keys stay
+memory-only; native trust uses SecureStore. Do not weaken trust or approval
+checks to make a preview work. For account failures inspect
+`mobile/src/account/` and the configured `extra.apiUrl`; account APIs and Host
+pairing are separate paths. Host pairing does not require an account.
 
 ## Verification
 
-For bundle fixes:
-
-```bash
-curl -I 'http://localhost:8082/node_modules/expo/AppEntry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable'
-```
-
-Expected:
-
-- `HTTP/1.1 200 OK`
-- `Content-Type: application/javascript; charset=UTF-8`
-
-For auth reachability:
-
-```bash
-curl -I http://127.0.0.1:8000/api/skills
-```
-
-Expected:
-
-- `HTTP/1.1 200 OK`
-
-After durable fixes, update the focused app memory note or `Vibyra/_ai/Runbook.md`.
+Run `npm run check:mobile`, `npm --prefix mobile run export`, and the focused
+browser or Host UI harness when appropriate. `scripts/mobile-entrypoints.test.mjs`
+prevents the retired root app and a second mobile welcome screen from returning.
+Physical-phone acceptance and native store signing require separate evidence.
+Update `App/iOS Remote Workspace.md` for durable launch or diagnostic findings.

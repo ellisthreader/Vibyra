@@ -61,18 +61,28 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-      - name: Install locked dependencies
-        run: npm ci
-      - name: Audit npm dependencies
-        run: npm audit --audit-level=high
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install mobile dependencies
+        run: npm ci --prefix mobile
+      - name: Audit mobile dependencies
+        run: npm audit --prefix mobile --audit-level=high
+      - name: Install Host Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal
+      - name: Build bundled transport
+        run: bash host/scripts/build-wasm.sh
       - name: Check Expo dependency alignment
+        working-directory: mobile
         run: npx expo install --check
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Run mobile tests
-        run: node --test $(find src -name '*.test.mjs' -print | sort)
+      - name: Validate mobile source and tests
+        run: npm run check:mobile
+      - name: Export iOS and web
+        run: npm --prefix mobile run export
+      - name: Test Host
+        run: cargo +1.97.1 test --locked --manifest-path host/Cargo.toml --workspace
+      - name: Reject retired mobile entry points
+        run: node --test scripts/mobile-entrypoints.test.mjs
   backend:
     name: Backend checks
     runs-on: ubuntu-latest

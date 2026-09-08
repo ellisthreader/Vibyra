@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -204,13 +205,17 @@ export function auditReleaseRepository(root = defaultRoot) {
   let app;
   let eas;
   try {
-    app = readJson(root, "app.json");
-    eas = readJson(root, "eas.json");
+    const mobileRoot = path.join(root, "mobile");
+    const cli = path.join(mobileRoot, "node_modules/expo/bin/cli");
+    app = JSON.parse(execFileSync(process.execPath, [cli, "config", "--type", "public", "--json"], {
+      cwd: mobileRoot, encoding: "utf8", timeout: 30000, stdio: ["ignore", "pipe", "pipe"]
+    }));
+    eas = readJson(root, "mobile/eas.json");
   } catch (error) {
     return [fail("release.config.parse", `Cannot parse release configuration: ${error.message}`)];
   }
 
-  const expo = app.expo ?? {};
+  const expo = app.expo ?? app;
   const androidBuild = buildPropertiesAndroid(expo);
   results.push(
     androidBuild.usesCleartextTraffic === false
@@ -225,7 +230,7 @@ export function auditReleaseRepository(root = defaultRoot) {
   );
 
   results.push(
-    typeof expo.ios?.config?.usesNonExemptEncryption === "boolean"
+    typeof (expo.ios?.config?.usesNonExemptEncryption ?? expo.ios?.infoPlist?.ITSAppUsesNonExemptEncryption) === "boolean"
       ? pass("release.ios.export", "Expo export-compliance configuration is explicit.")
       : fail(
           "release.ios.export",

@@ -2,13 +2,13 @@ version: 2
 
 updates:
   - package-ecosystem: npm
-    directory: /
+    directory: /mobile
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
     groups:
-      root-dependencies:
+      mobile-dependencies:
         patterns: ["*"]
 
   - package-ecosystem: npm
