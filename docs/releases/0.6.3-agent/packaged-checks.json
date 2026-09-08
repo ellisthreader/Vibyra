@@ -1,0 +1,14 @@
+{
+  "source": "99ec76c895430d63fc09c776b0906d432eb15e49",
+  "package": "signed 0.6.3 Debian executable, extracted for isolated execution",
+  "accountVerification": "loopback fixture",
+  "providerExecution": "real authenticated CLIs",
+  "existingTeammatesReopened": true,
+  "priorChatsReopened": true,
+  "pausedStatePreservedDuringEdit": true,
+  "weekdayScheduleSaved": true,
+  "scheduledRoutineStatus": "completed",
+  "routineContextVerified": true,
+  "deniedWriteKeptOriginalFile": true,
+  "windowsInteractiveProviderJourney": "not run; CI installation and launch are separate"
+}

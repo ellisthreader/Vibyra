@@ -1,9 +1,8 @@
 # Desktop Updates
 
-Latest delivery: [[Desktop/Release 0.6.1]] covers phone onboarding, Desktop WIP
-setup, signed Windows/Linux packages and hosted web verification.
-
-Latest publication and remaining delivery gaps: [[Release 0.6.0]].
+Latest delivery: [[Desktop/Release 0.6.3]] covers Agent teammate reliability,
+routine schedules, signed Windows/Linux publication and a verified old-client
+upgrade. Earlier cross-surface delivery: [[Desktop/Release 0.6.1]].
 
 How a published release reaches Vibyra at launch and while a workspace is
 already open.

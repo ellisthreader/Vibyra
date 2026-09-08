@@ -81,3 +81,15 @@ search `Agent Mode As Built.md`; it is a deep reference, not a completion claim.
 - Native WebKit fixtures and real-provider core journeys are distinct from
   signed-in packaged desktop acceptance. See the dated reliability report and
   `.agents/skills/VibyraOptimse/SKILL.md` for repeatable checks and delivery limits.
+
+## Routine wire regression (8 September 2026)
+
+Native acceptance of the unpublished 0.6.2 candidate reproduced daily routine
+creation failing with missing `minute_of_day`. Serde enum `rename_all` only
+renamed the variants. Published 0.6.3 explicitly emits `minuteOfDay` and
+accepts legacy `minute_of_day` for both daily and weekday schedules.
+Start with `routines/schedule.rs` and the core `tests/routine_wire.rs` target.
+The regression tests cover renderer create/edit/reopen and old saved shapes;
+mocked React IPC cannot detect this mismatch. Publication evidence belongs in
+`docs/releases/0.6.3-agent-publication.md`; publication and updater acceptance
+are recorded in [[Release 0.6.3]].

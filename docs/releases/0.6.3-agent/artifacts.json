@@ -1,0 +1,27 @@
+{
+  "source": "99ec76c895430d63fc09c776b0906d432eb15e49",
+  "ciRun": 34225371322,
+  "artifacts": [
+    {
+      "bundle": "windows",
+      "version": "0.6.3",
+      "filename": "Vibyra-Desktop-0.6.3-x64-setup.exe",
+      "sizeBytes": 8441495,
+      "sha256": "7ec571df3234ff40b1b030331ec461f8cb1c80fb01b48643d1a9eec7c5dec232"
+    },
+    {
+      "bundle": "appimage",
+      "version": "0.6.3",
+      "filename": "Vibyra-Desktop-0.6.3-x86_64.AppImage",
+      "sizeBytes": 99437048,
+      "sha256": "3150e1342c970b7f553170f4eeab3a78d4c2fee60e5f93d4172a870e697bda9c"
+    },
+    {
+      "bundle": "deb",
+      "version": "0.6.3",
+      "filename": "Vibyra-Desktop-0.6.3-amd64.deb",
+      "sizeBytes": 11716452,
+      "sha256": "70d70288322e4b840cf4d66ebe1c0e66556fe1b80360668f0d9a2a1f56e7ebd8"
+    }
+  ]
+}
