@@ -13,3 +13,6 @@ node-v*-linux-x64.tar.xz
 # Signed CI artifacts pulled down for a publish. Never commit these:
 # one release set is ~119 MB and this repo is public.
 release-set/
+
+# Mac installer and updater output, including validation-only builds.
+release-macos/

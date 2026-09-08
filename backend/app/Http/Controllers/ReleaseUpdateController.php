@@ -48,7 +48,8 @@ class ReleaseUpdateController extends Controller
             return $this->upToDate();
         }
 
-        $release = (array) config("releases.platforms.{$platform}", []);
+        $isMac = str_starts_with($platform, 'macos-');
+        $release = (array) config($isMac ? "macos-updates.{$platform}" : "releases.platforms.{$platform}", []);
         if ($release === []) {
             return $this->upToDate();
         }
@@ -82,7 +83,7 @@ class ReleaseUpdateController extends Controller
             'version' => $version,
             'notes' => (string) ($release['notes'] ?? ''),
             'pub_date' => $this->pubDate($release),
-            'url' => url("/downloads/{$platform}"),
+            'url' => url("/downloads/{$platform}".($isMac ? '/update' : '')),
             'signature' => $signature,
         ]);
     }

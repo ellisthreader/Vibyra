@@ -1,5 +1,8 @@
 # Desktop Updates
 
+For Apple Silicon/Intel installers and their separate update archives, read
+[[Mac Downloads]].
+
 Latest delivery: [[Desktop/Release 0.6.3]] covers Agent teammate reliability,
 routine schedules, signed Windows/Linux publication and a verified old-client
 upgrade. Earlier cross-surface delivery: [[Desktop/Release 0.6.1]].

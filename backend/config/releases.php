@@ -60,6 +60,7 @@ return [
             'size_bytes' => (int) env('VIBYRA_MACOS_ARM64_RELEASE_SIZE', 0),
             'sha256' => env('VIBYRA_MACOS_ARM64_RELEASE_SHA256', ''),
             'minimum_system_version' => env('VIBYRA_MACOS_ARM64_MINIMUM_SYSTEM_VERSION', '12.0'),
+            'notarized' => (bool) env('VIBYRA_MACOS_ARM64_NOTARIZED', false),
             // Minisign signature of the artifact above, emitted as a .sig
             // file by `tauri build`. Empty means "do not offer this as an
             // in-app update" — the desktop app would reject it anyway.
@@ -78,6 +79,7 @@ return [
             'size_bytes' => (int) env('VIBYRA_MACOS_X64_RELEASE_SIZE', 0),
             'sha256' => env('VIBYRA_MACOS_X64_RELEASE_SHA256', ''),
             'minimum_system_version' => env('VIBYRA_MACOS_X64_MINIMUM_SYSTEM_VERSION', '12.0'),
+            'notarized' => (bool) env('VIBYRA_MACOS_X64_NOTARIZED', false),
             // Minisign signature of the artifact above, emitted as a .sig
             // file by `tauri build`. Empty means "do not offer this as an
             // in-app update" — the desktop app would reject it anyway.

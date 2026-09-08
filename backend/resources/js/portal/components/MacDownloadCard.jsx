@@ -15,7 +15,11 @@ export default function MacDownloadCard({ release, recommended }) {
     <PlatformRow
       platform='macos'
       name='macOS'
-      meta={available.length ? 'Choose the chip inside your Mac' : 'In preparation — coming soon'}
+      meta={available.length
+        ? available.some(({ platform }) => variants[platform].notarized === false)
+          ? 'Mac beta — first launch needs approval in macOS settings'
+          : 'Choose the chip inside your Mac'
+        : 'In preparation — coming soon'}
       recommended={recommended}
       disabled={!available.length}
     >
@@ -36,6 +40,8 @@ export default function MacDownloadCard({ release, recommended }) {
           </a>;
         })}
       </div>}
+      {available.some(({ platform }) => variants[platform].notarized === false) &&
+        <a href='/downloads#setup'>Mac beta first-launch instructions</a>}
     </PlatformRow>
   );
 }

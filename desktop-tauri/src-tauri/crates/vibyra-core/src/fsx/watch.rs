@@ -40,7 +40,9 @@ impl WorkspaceWatcher {
         root: &str,
         on_changes: impl Fn(Vec<FsChange>) + Send + 'static,
     ) -> CoreResult<Self> {
-        let root_path = Path::new(root).to_path_buf();
+        // FSEvents reports canonical paths (e.g. /private/var, not /var).
+        let root_path = std::fs::canonicalize(root)
+            .map_err(|error| CoreError::InvalidPath(format!("{root}: {error}")))?;
         if !root_path.is_dir() {
             return Err(CoreError::InvalidPath(format!("not a directory: {root}")));
         }

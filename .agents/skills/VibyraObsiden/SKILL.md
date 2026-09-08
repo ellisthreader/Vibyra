@@ -50,6 +50,12 @@ depends on Vibyra source or live state. Use only confirmed personal facts, let
 the current message override memory, and apply the smallest relevant set of
 book lenses rather than mentioning all four mechanically.
 
+For Mac publication, read `Desktop/Mac Downloads.md` and the implementation
+branch's `docs/releases/macos-publication.md`. Verify a real DMG for each Mac
+architecture and a separate signed `.app.tar.gz` updater. Ad-hoc test builds
+are not notarized releases; require native install/launch evidence and distinguish
+feature gaps from package availability before claiming Windows/Linux parity.
+
 ### Prompt Transcript Audits
 
 When auditing `Vibyra/Prompt Transcripts.md`:
