@@ -26,6 +26,9 @@ pub struct Config {
     /// Show a fresh, single-use two-minute pairing invitation at startup.
     #[arg(long)]
     pub pair: bool,
+    /// Let nearby phones find this Host using Bonjour. Requires a LAN listener.
+    #[arg(long)]
+    pub discover: bool,
 }
 
 impl Config {

@@ -83,7 +83,9 @@ impl Journal {
                 metadata.status = "interrupted".into();
             }
             let session = Session::restored(metadata, owner, request);
-            if interrupted { self.save(&session)?; }
+            if interrupted {
+                self.save(&session)?;
+            }
             sessions.insert(session.meta.id.clone(), session);
         }
         Ok(sessions)
