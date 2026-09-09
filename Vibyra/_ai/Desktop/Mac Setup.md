@@ -59,3 +59,20 @@ For the Mac 0.1.8 UI and session lifecycle changes, see
 `desktop-tauri/scripts/install-macos.command` to install the verified existing
 bundle and launch it. This is useful when the agent building the update runs
 inside Vibyra itself; never kill that active workspace to complete installation.
+
+## Mac update publication
+
+The 0.1.8 candidate is on `release/macos-0.1.8-experience`. Its Mac packaging
+workflow builds both architectures and requires Apple signing/notarization
+credentials plus the existing Tauri signing key before release builds.
+At the September 9 publication check, GitHub had only the Tauri private-key
+secret; no Apple signing identity was installed locally. Railway deployment
+access was not configured here. Both live Mac update routes returned 204 and
+the download catalogue marked both Mac architectures unavailable. Source push
+is complete; no Mac update has been published.
+
+Keep DMG download metadata separate from signed `.app.tar.gz` updater metadata.
+The newer `release/0.6.3-macos` backend implements this separation; the older
+local `main` backend expects DMGs in its shared release config. Check the live
+backend contract before setting feed variables. Never replace the existing
+Tauri key to work around missing access: installed clients trust its public key.
