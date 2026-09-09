@@ -92,7 +92,7 @@ jobs:
         run: |
           app=src-tauri/target/release/bundle/macos/Vibyra.app
           codesign --verify --deep --strict "$app"
-          codesign -d --entitlements - "$app" > /tmp/vibyra-entitlements.plist
+          codesign -d --entitlements - --xml "$app" > /tmp/vibyra-entitlements.plist
           /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' /tmp/vibyra-entitlements.plist | grep -qx true
           /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
           "$app/Contents/MacOS/Vibyra" &
@@ -129,3 +129,12 @@ jobs:
             desktop-tauri/release/${{ steps.version.outputs.output }}.sig
           if-no-files-found: error
           retention-days: 30
+
+      - name: Preserve packages if a final packaging check fails
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-macos-unverified-${{ matrix.label }}-${{ github.sha }}
+          path: desktop-tauri/release/*
+          if-no-files-found: ignore
+          retention-days: 7
