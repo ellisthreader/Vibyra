@@ -1,12 +1,14 @@
+pub mod address;
 mod backend;
 #[cfg(test)]
 mod tests;
 
+use address::{connection_address, default_address};
 use backend::DesktopBackend;
 use parking_lot::Mutex;
 use serde_json::{json, Value};
 use std::{
-    net::{Ipv4Addr, SocketAddr, UdpSocket},
+    net::SocketAddr,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -45,7 +47,7 @@ impl PhoneConnection {
         if self.host.is_some() {
             return Err("Phone connection is already enabled".into());
         }
-        let address = private_address(address)?;
+        let address = connection_address(address)?;
         let host = EmbeddedHost::start(
             self.path.clone(),
             SocketAddr::from((address, 4319)),
@@ -89,31 +91,4 @@ fn save(path: &Path, enabled: bool, address: &str) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
     std::fs::rename(temporary, path.join("connection.json")).map_err(|e| e.to_string())
-}
-fn private_address(value: &str) -> Result<Ipv4Addr, String> {
-    let ip: Ipv4Addr = value
-        .trim()
-        .parse()
-        .map_err(|_| "Enter this Mac's private IPv4 address")?;
-    let bytes = ip.octets();
-    if ip.is_private()
-        || ip.is_loopback()
-        || ip.is_link_local()
-        || (bytes[0] == 100 && (64..=127).contains(&bytes[1]))
-    {
-        Ok(ip)
-    } else {
-        Err("Use this Mac's Wi-Fi or private VPN address".into())
-    }
-}
-fn default_address() -> String {
-    UdpSocket::bind("0.0.0.0:0")
-        .and_then(|s| {
-            s.connect("192.0.2.1:9")?;
-            s.local_addr()
-        })
-        .ok()
-        .map(|a| a.ip().to_string())
-        .filter(|a| private_address(a).is_ok())
-        .unwrap_or_default()
 }

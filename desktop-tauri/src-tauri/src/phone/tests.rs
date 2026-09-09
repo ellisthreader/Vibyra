@@ -1,4 +1,4 @@
-use super::{backend::DesktopBackend, private_address};
+use super::{address::connection_address as private_address, backend::DesktopBackend};
 use serde_json::json;
 use std::{
     sync::Arc,

@@ -33,7 +33,7 @@ pub fn phone_invite(state: State<'_, AppState>) -> Result<String, String> {
     let phone = state.phone.lock();
     phone
         .host()?
-        .invite(&format!("ws://{}:4319", phone.address))
+        .invite(&crate::phone::address::pairing_url(&phone.address)?)
 }
 
 #[tauri::command]
@@ -44,4 +44,9 @@ pub fn phone_answer(state: State<'_, AppState>, id: String, approve: bool) -> Re
 #[tauri::command]
 pub fn phone_revoke(state: State<'_, AppState>, id: String) -> Result<(), String> {
     state.phone.lock().host()?.revoke(&id)
+}
+
+#[tauri::command]
+pub fn phone_detect_address() -> String {
+    crate::phone::address::default_address()
 }

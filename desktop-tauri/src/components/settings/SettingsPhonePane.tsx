@@ -53,7 +53,12 @@ export function SettingsPhonePane() {
         </SettingRow>
         <SettingRow label="Mac network address" hint="Use the same Wi-Fi or your private VPN. Keep this Mac awake with Vibyra running." stack>
           <input className="input" aria-label="Mac network address" value={address} disabled={status?.enabled || busy}
-            placeholder="192.168.1.20" onChange={e => setAddress(e.target.value)} spellCheck={false} />
+            placeholder="IPv4 or IPv6 address" onChange={e => setAddress(e.target.value)} spellCheck={false} />
+          {!status?.enabled && <button className="btn" disabled={busy} onClick={() => void action(async () => {
+            const detected = await invoke<string>("phone_detect_address");
+            if (!detected) throw new Error("No reachable network address found. Connect this Mac to Wi-Fi or your private VPN.");
+            setAddress(detected);
+          })}>Use current network</button>}
         </SettingRow>
       </div>
     </SettingsBlock>

@@ -1,4 +1,5 @@
 use crate::{backend::Backend, direct, discovery, identity::Identity, instance, state::Shared};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use serde_json::{json, Value};
 use std::{
     collections::{BTreeMap, HashSet},
@@ -59,7 +60,7 @@ impl EmbeddedHost {
                     };
                     tokio::select! {
                         _ = receiver => {},
-                        _ = direct::serve(listener, state) => {},
+                        _ = direct::serve_with_policy(listener, state, true) => {},
                     }
                 });
             })
@@ -72,7 +73,22 @@ impl EmbeddedHost {
         })
     }
     pub fn invite(&self, url: &str) -> Result<String, String> {
-        self.shared.invite(Some(url))
+        let uri = self.shared.invite(Some(url))?;
+        if self.address.is_ipv4() {
+            return Ok(uri);
+        }
+        // The phone keeps public ws endpoints blocked. This explicit marker is
+        // only emitted by the embedded listener with its IPv6 LAN peer filter.
+        let encoded = uri
+            .strip_prefix("vibyra://pair?data=")
+            .ok_or("Invalid invitation")?;
+        let bytes = URL_SAFE_NO_PAD.decode(encoded).map_err(|e| e.to_string())?;
+        let mut payload: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        payload["network"] = json!("lan");
+        Ok(format!(
+            "vibyra://pair?data={}",
+            URL_SAFE_NO_PAD.encode(payload.to_string())
+        ))
     }
     pub fn answer(&self, id: &str, approve: bool) -> Result<(), String> {
         self.shared.answer(id, approve)

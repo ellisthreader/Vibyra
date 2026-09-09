@@ -12,6 +12,7 @@ mod discovery;
 mod identity;
 mod instance;
 mod invitation;
+mod peer_policy;
 mod relay;
 mod state;
 #[cfg(test)]

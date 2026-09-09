@@ -7,6 +7,7 @@ mod embedded;
 mod identity;
 mod instance;
 mod invitation;
+mod peer_policy;
 mod state;
 
 pub use backend::Backend;

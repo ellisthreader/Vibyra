@@ -17,6 +17,7 @@ use super::{
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
         phone::phone_status,
+        phone::phone_detect_address,
         phone::phone_configure,
         phone::phone_invite,
         phone::phone_answer,

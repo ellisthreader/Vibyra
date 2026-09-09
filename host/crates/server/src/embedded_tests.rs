@@ -32,14 +32,27 @@ impl Backend for ViewBackend {
 
 #[tokio::test]
 async fn actual_socket_pairing_reconnect_revocation_and_shutdown() {
+    verify_socket("127.0.0.1:0").await;
+}
+
+#[tokio::test]
+async fn ipv6_socket_pairing_reconnect_revocation_and_shutdown() {
+    verify_socket("[::1]:0").await;
+}
+
+async fn verify_socket(bind: &str) {
     let dir = tempfile::tempdir().unwrap();
     let host = EmbeddedHost::start(
         dir.path().to_owned(),
-        "127.0.0.1:0".parse().unwrap(),
+        bind.parse().unwrap(),
         Arc::new(ViewBackend::default()),
     )
     .unwrap();
-    let url = format!("ws://127.0.0.1:{}", host.status()["port"]);
+    let ip = bind.parse::<std::net::SocketAddr>().unwrap().ip();
+    let url = format!(
+        "ws://{}",
+        std::net::SocketAddr::new(ip, host.status()["port"].as_u64().unwrap() as u16)
+    );
     let invitation = host.invite(&url).unwrap();
     let payload: Value = serde_json::from_slice(
         &URL_SAFE_NO_PAD
@@ -47,6 +60,9 @@ async fn actual_socket_pairing_reconnect_revocation_and_shutdown() {
             .unwrap(),
     )
     .unwrap();
+    if ip.is_ipv6() {
+        assert_eq!(payload["network"], "lan");
+    }
     let key = generate_keypair().unwrap();
     let id = hex::encode(&key[32..]);
     for round in 0..2 {
@@ -128,7 +144,7 @@ async fn actual_socket_pairing_reconnect_revocation_and_shutdown() {
     assert!(connect_async(&url).await.is_err());
     let restarted = EmbeddedHost::start(
         dir.path().to_owned(),
-        "127.0.0.1:0".parse().unwrap(),
+        bind.parse().unwrap(),
         Arc::new(ViewBackend::default()),
     )
     .unwrap();
