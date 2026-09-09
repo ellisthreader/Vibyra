@@ -57,6 +57,10 @@ For frontend work, review the plan against the relevant frontend/design skill be
   Use the isolated native fixture manifest (`mobile/scripts/serve-native-conversation.mjs`)
   for simulator design checks instead of swapping the shared App.tsx entry.
 - Hide settings until requested.
+- For iOS sidebar work, read `Vibyra/_ai/App/iOS Sidebar.md`. Paint the rail to
+  both screen edges and inset its content/footer; keep all chat lists in the
+  scrolling area. Verify both themes, short viewports and Reduce Motion with
+  `mobile/scripts/verify-drawer-ui.mjs`, plus the isolated native drawer fixture.
 - For iOS credit/economy plans, verify the maintained mobile purchase integration
   and actual inference payer before reusing historical billing notes. Review grant
   rollover, trial enforcement and uncertain-cost settlement in backend source;
@@ -64,6 +68,11 @@ For frontend work, review the plan against the relevant frontend/design skill be
   billing economics audit before shipping changed allowances or prices.
 - Prefer tabs, icon buttons, menus, and subtle status dots over dashboards of controls.
 - Verify desktop and narrow screenshots when practical.
+- For transparent UI artwork, verify actual alpha and inspect both light/dark
+  composites; a PNG extension or a dark preview is not proof of transparency.
+  Keep artwork unboxed when a seamless sheet is requested, use explicit image
+  dimensions with contain, and verify the primary action stays visible on a
+  compact viewport. Inspect wide modal geometry as well as its child bounds.
 - For “match the latest Linux version” requests, verify release branches rather
   than assuming `main` is the newest desktop. Record the exact visual reference
   and distinguish a frontend adaptation from importing that release's features.
@@ -92,6 +101,12 @@ For frontend work, review the plan against the relevant frontend/design skill be
   chooses an ad-hoc Mac beta update, retain mandatory Tauri signature checking
   and verify the Mac code signature; do not block solely on Apple Developer
   credentials or describe that build as notarized. See Desktop/Mac Setup.
+
+- For Desktop-to-iPhone connection work, use the shared encrypted Host transport
+  and inspect Desktop/iPhone Connection. Keep viewing separate from command
+  authority; verify real existing-PTY output, pairing approval, reconnect,
+  revocation and shutdown. Validate the exact release checkout because the
+  desktop format gate traverses Host path dependencies, including optional ones.
 
 ## Completion
 

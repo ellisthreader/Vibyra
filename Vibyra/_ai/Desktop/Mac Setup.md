@@ -33,10 +33,10 @@ the packaged purpose string and `codesign -d --entitlements :-` when changing
 Mac native audio. Recording permission is requested only on the user action.
 
 `.github/workflows/desktop-release.yml` includes native Apple Silicon and Intel
-Mac jobs. They build signed `.app.tar.gz` updater artifacts, verify Developer ID
-acceptance/notarization and smoke-test launch before upload. Apple signing and
-notarization secrets plus the Tauri update key are required for notarized distribution;
-adding the jobs does not publish a release to the backend update feed.
+Mac jobs. The chosen beta workflow builds Tauri-authenticated, ad-hoc signed
+`.app.tar.gz` artifacts and smoke-tests native launch. It does not establish
+Developer ID acceptance or Apple notarization. CI alone does not publish an
+update; verify the live backend feeds and real archive signatures afterward.
 
 The local `plan` skill requires checking the actual installed version, signature
 and launch when updating an installed app. Validate frontend build/tests and
@@ -119,3 +119,6 @@ The updater checks shortly after opening the workspace and every 20 minutes.
 The update banner offers Download, then Restart now; no manual Check for
 Updates button exists. The active local host stays on 0.1.7 until the user
 installs/restarts. Do not terminate the agent's host to force installation.
+
+Mac 0.1.9 adds the live, view-only iPhone connection and supersedes 0.1.8 on
+both Mac updater feeds. See [[iPhone Connection]] for setup and release evidence.
