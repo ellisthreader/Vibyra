@@ -4,7 +4,12 @@ import { fsReadPreview, onFsChanged } from "../ipc/fs";
 import { useNotificationStore } from "./notificationStore";
 import {
   clampCompanionWidth,
+  restoreCompanionSize,
+  saveCompanionSize,
+  type CompanionSize,
   restoreCompanionTab,
+  restoreCompanionOpen,
+  saveCompanionOpen,
   restoreCompanionWidth,
   saveCompanionTab,
   saveCompanionWidth,
@@ -17,11 +22,13 @@ export type ProjectMode = "terminals" | "preview";
 export type SettingsSectionId =
   | "profile"
   | "general"
+  | "performance"
   | "notifications"
   | "ai"
   | "integrations"
   | "agents"
-  | "shortcuts";
+  | "shortcuts"
+  | "phone";
 
 /** Routes a failure into the notification system as a sticky app error. */
 function reportProblem(message: string | null): void {
@@ -46,6 +53,7 @@ interface WorkspaceStore {
   companionOpen: boolean;
   companionTab: CompanionTab;
   companionWidth: number;
+  companionSize: CompanionSize;
   /** Bumped on every debounced fs change batch; tree nodes refetch on it. */
   fsVersion: number;
   preview: FilePreview | null;
@@ -60,6 +68,7 @@ interface WorkspaceStore {
   toggleCompanion: () => void;
   setCompanionTab: (tab: CompanionTab) => void;
   setCompanionWidth: (width: number) => void;
+  setCompanionSize: (size: CompanionSize) => void;
   setProjectMode: (mode: ProjectMode) => void;
   openPreview: (path: string) => Promise<void>;
   closePreview: () => void;
@@ -73,9 +82,10 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   settingsSection: "general",
   agentPickerOpen: false,
   paletteOpen: false,
-  companionOpen: true,
+  companionOpen: restoreCompanionOpen(),
   companionTab: restoreCompanionTab(),
   companionWidth: restoreCompanionWidth(),
+  companionSize: restoreCompanionSize(),
   fsVersion: 0,
   preview: null,
 
@@ -100,17 +110,30 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
 
   setSettingsSection: (settingsSection) => set({ settingsSection }),
 
-  openAgentPicker: () => set({ agentPickerOpen: true }),
+  openAgentPicker: () => set((state) => {
+    if (state.companionSize === "full") saveCompanionOpen(false);
+    return { agentPickerOpen: true, projectMode: "terminals", companionOpen: state.companionSize === "full" ? false : state.companionOpen };
+  }),
 
   closeAgentPicker: () => set({ agentPickerOpen: false }),
 
   setPaletteOpen: (open) => set({ paletteOpen: open }),
 
-  toggleCompanion: () => set((state) => ({ companionOpen: !state.companionOpen })),
+  toggleCompanion: () => set((state) => {
+    saveCompanionOpen(!state.companionOpen);
+    return { companionOpen: !state.companionOpen };
+  }),
 
   setCompanionTab: (tab) => {
+    saveCompanionOpen(true);
     saveCompanionTab(tab);
     set({ companionTab: tab, companionOpen: true });
+  },
+
+  setCompanionSize: (size) => {
+    saveCompanionOpen(true);
+    saveCompanionSize(size);
+    set({ companionSize: size, companionOpen: true });
   },
 
   setCompanionWidth: (width) => {

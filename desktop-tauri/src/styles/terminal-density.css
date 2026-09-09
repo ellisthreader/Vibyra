@@ -1,0 +1,93 @@
+/*
+ * How much frame a pane is allowed, at each density the grid can pick.
+ *
+ * Comfortable is what a pane has always had. The tighter sets buy terminal
+ * lines back from the chrome once the grid is crowded — at three rows a 44px
+ * header is a sixth of the pane. Every number here is spent again in
+ * `src/lib/paneChrome.ts`, which is what lets the layout predict the grid
+ * xterm will build; change one and the other must follow.
+ */
+
+.grid--comfortable {
+  --grid-gap: 8px;
+  --grid-pad: 8px;
+  --pane-header-h: 44px;
+  --pane-header-pad: 0 6px 0 10px;
+  --term-pad: 8px 2px 4px 10px;
+  --pane-title-size: 13px;
+  --pane-state-size: 11px;
+  --pane-btn: 30px;
+}
+
+.grid--compact {
+  --grid-gap: 6px;
+  --grid-pad: 6px;
+  --pane-header-h: 34px;
+  --pane-header-pad: 0 4px 0 8px;
+  --term-pad: 6px 2px 2px 8px;
+  --pane-title-size: 12px;
+  --pane-state-size: 10.5px;
+  --pane-btn: 26px;
+}
+
+.grid--dense {
+  --grid-gap: 4px;
+  --grid-pad: 4px;
+  --pane-header-h: 26px;
+  --pane-header-pad: 0 3px 0 6px;
+  --term-pad: 4px 2px 2px 6px;
+  --pane-title-size: 11.5px;
+  --pane-state-size: 10px;
+  --pane-btn: 22px;
+}
+
+.grid--compact .pane,
+.grid--dense .pane {
+  border-radius: 8px;
+}
+
+.grid--compact .icon-btn,
+.grid--dense .icon-btn {
+  width: var(--pane-btn);
+  height: var(--pane-btn);
+}
+
+/*
+ * At dense the header has room for the mark, the name and the state, or for
+ * the buttons — not both. The name is what tells the panes apart, so the
+ * buttons wait for the pointer.
+ */
+.grid--dense .pane__actions {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.grid--dense .pane:hover .pane__actions,
+.grid--dense .pane:focus-within .pane__actions,
+.grid--dense .pane--focused .pane__actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * Past six panes no single pane is large enough to notice on its own, so the
+ * one that is waiting on you says so with the whole frame rather than a word
+ * in an 11px header.
+ */
+.pane--attn {
+  box-shadow: inset -1px -1px 0 var(--line-soft), 0 0 0 1px var(--amber);
+}
+
+.pane--attn .pane__header {
+  background: color-mix(in srgb, var(--amber) 12%, var(--rail));
+}
+
+/*
+ * Once the rows hit their floor the stage scrolls rather than shaving lines
+ * off every terminal. The gutter is reserved either way so that starting to
+ * scroll cannot narrow the panes and change the layout that caused it.
+ */
+.grid--scrolls {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}

@@ -1,21 +1,26 @@
 import { useEffect } from "react";
 
-import { useNotificationPrefs } from "../state/settingsStore";
+import { useNotificationPrefs, useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { activityFor, type ActivityState } from "./activity";
 import { detectTransitions, type SessionPhase } from "./activityTransitions";
 import { notifyActivityTransitions } from "./notificationTriggers";
+import { activityTickMs } from "./performanceMode";
 import { windowIsFocused } from "./windowFocus";
-
-const ACTIVITY_TICK_MS = 1_500;
 
 /**
  * Derives coarse activity (working / idle / attention) on a slow tick so the
  * high-rate output flushes never touch React state. `applyActivity` diffs the
  * map before setting, so a quiet workspace re-renders nothing.
+ *
+ * Performance mode halves the rate; the cadence lives in `performanceMode.ts`
+ * so the trade-off against `activity.ts`'s windows is stated in one place.
  */
 export function useActivityTicker(): void {
   const idleEnabled = useNotificationPrefs().agentIdleEnabled;
+  const tickMs = activityTickMs(
+    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+  );
   useEffect(() => {
     // Phase state lives in the closure, not React: the ticker runs whether or
     // not anything re-renders, and an edge missed by a render is an edge lost.
@@ -36,7 +41,7 @@ export function useActivityTicker(): void {
       });
       phases = result.phases;
       if (result.transitions.length > 0) notifyActivityTransitions(result.transitions);
-    }, ACTIVITY_TICK_MS);
+    }, tickMs);
     return () => clearInterval(timer);
-  }, [idleEnabled]);
+  }, [idleEnabled, tickMs]);
 }

@@ -1,0 +1,67 @@
+.phone-connection { display: grid; gap: 24px; }
+.phone-connection__hint { color: var(--muted); font-size: 12px; line-height: 1.65; margin: 0 0 12px; }
+.phone-connection__error { color: var(--danger, #d15353); font-size: 13px; overflow-wrap: anywhere; }
+.phone-connection__invite { display: grid; gap: 10px; margin-top: 14px; }
+.phone-connection__invite textarea { width: 100%; resize: vertical; font-size: 11px; }
+.phone-connection__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px; }
+.phone-connection__device { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.phone-connection__device strong { font-size: 13px; }
+.phone-connection__device p { margin: 4px 0 0; }
+
+/* The one line that answers "is my phone going to see this Mac?" */
+.phone-state {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px 2px 4px;
+}
+.phone-state strong { display: block; color: var(--text); font-size: 12.5px; font-weight: 690; }
+.phone-state p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.phone-state__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.phone-state--live .phone-state__dot { background: var(--ok, #35b37e); }
+.phone-state--waiting .phone-state__dot { background: var(--warn, #d9a441); }
+.phone-state__dot--new { animation: phone-state-pulse 1.2s ease-out 1; }
+@keyframes phone-state-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok, #35b37e) 60%, transparent); }
+  100% { box-shadow: 0 0 0 9px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-state__dot--new { animation: none; }
+}
+
+/* The approval prompt, shown wherever the person happens to be working. */
+.phone-approval { width: min(460px, 92vw); }
+.phone-approval__body {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px 18px 16px;
+}
+.phone-approval__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-control);
+  color: var(--accent-2);
+  background: var(--accent-soft);
+}
+.phone-approval__body strong { display: block; color: var(--text); font-size: 12.5px; font-weight: 690; }
+.phone-approval__body p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.phone-approval__key { font-size: 10px; overflow-wrap: anywhere; opacity: 0.75; }
+.phone-approval__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.phone-approval__actions .btn { min-height: 32px; padding-inline: 13px; }

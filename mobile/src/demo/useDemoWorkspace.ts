@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
-import type { Session, ThemePreference } from '../ui/types';
+import type { Account, Session, ThemePreference } from '../ui/types';
 import { approvals, conversations, demoDiff, demoFile, projects, sessions, type DemoMessage, type DemoWorkspace } from './data';
 
-export function useDemoWorkspace({ themePreference, setTheme, exitDemo }: {
-  themePreference: ThemePreference; setTheme: (value: ThemePreference) => void; exitDemo: () => void;
+export function useDemoWorkspace({ account, themePreference, setTheme, exitDemo }: {
+  account: Account | null; themePreference: ThemePreference; setTheme: (value: ThemePreference) => void; exitDemo: () => void;
 }): DemoWorkspace {
   const [items, setItems] = useState(sessions);
   const [selected, select] = useState<string | null>(null);
@@ -17,9 +17,11 @@ export function useDemoWorkspace({ themePreference, setTheme, exitDemo }: {
     demo: true, status: 'connected', error: null, host: { id: 'demo-host', name: 'Studio Mac', platform: 'macOS · Example computer' },
     projects, sessions: items, devices: [{ id: 'demo-phone', name: 'Your iPhone', current: true }], approvals: decisions,
     selectedSessionId: selected, output: selected ? outputs[selected] ?? terminalIntro : '', themePreference, messages: selected ? threads[selected] ?? [] : [],
-    onboarding: { status: 'complete', mode: null }, account: null,
+    onboarding: { status: 'complete', mode: null }, account,
     actions: {
       setTheme, exitDemo, connect: async () => { throw new Error('Leave the demo to connect your own computer.'); },
+      // Nothing was saved for the demo account, so logging out is exactly leaving the sample workspace.
+      logOut: account ? async () => { exitDemo(); } : undefined,
       disconnect: exitDemo, refresh: async () => {}, resize: () => {}, selectSession: select,
       createSession: async (projectId, kind, title) => {
         const id = `demo-new-${++serial.current}`;

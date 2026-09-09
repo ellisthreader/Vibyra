@@ -1,9 +1,9 @@
 //! Standalone probe for the X11 capture path used by capture_screen.
-use x11rb::connection::Connection;
-use x11rb::protocol::randr::ConnectionExt as _;
-use x11rb::protocol::xproto::{ConnectionExt as _, ImageFormat};
-
+#[cfg(target_os = "linux")]
 fn main() {
+    use x11rb::connection::Connection;
+    use x11rb::protocol::randr::ConnectionExt as _;
+    use x11rb::protocol::xproto::{ConnectionExt as _, ImageFormat};
     let (conn, screen_num) = match x11rb::connect(None) {
         Ok(v) => v,
         Err(e) => {
@@ -43,4 +43,9 @@ fn main() {
         Ok(Err(e)) => println!("get_image reply error: {e}"),
         Err(e) => println!("get_image request error: {e}"),
     }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn main() {
+    eprintln!("This probe requires Linux and X11.");
 }

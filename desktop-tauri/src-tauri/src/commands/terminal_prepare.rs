@@ -51,7 +51,7 @@ pub fn prepare(
         credential_env_names(),
     );
     if !agent.spec.custom {
-        select_launch_account(&mut spec, &agent.spec.id, request.account_id.as_deref());
+        select_launch_account(&mut spec, &agent.spec.id, request.account_id.as_deref())?;
     }
     configure_launch(&mut spec, &request)?;
     Ok(PreparedSession {
@@ -69,6 +69,20 @@ fn resolve_cwd(
     match request.workspace_mode.as_deref().unwrap_or("shared") {
         "shared" => Ok(source_cwd),
         "safe" => {
+            if request.resume.unwrap_or(false) {
+                if let Some(saved) = request.resume_cwd.clone() {
+                    let saved = canonical_directory(Some(saved))?.ok_or_else(|| {
+                        CoreError::InvalidPath("The saved workspace is unavailable".into())
+                    })?;
+                    let root = worktrees_root.canonicalize()?;
+                    if !Path::new(&saved).starts_with(root) {
+                        return Err(CoreError::InvalidPath(
+                            "Saved workspace is outside Vibyra's worktrees".into(),
+                        ));
+                    }
+                    return Ok(Some(saved));
+                }
+            }
             let source = source_cwd.ok_or_else(|| {
                 CoreError::InvalidPath("Safe mode needs a project folder".to_string())
             })?;
@@ -84,3 +98,7 @@ fn resolve_cwd(
         ))),
     }
 }
+
+#[cfg(test)]
+#[path = "terminal_prepare_tests.rs"]
+mod tests;

@@ -1,54 +1,43 @@
 import { create } from "zustand";
-
 import { confirmClose } from "../ipc/session";
 import { saveSessionNow } from "../lib/sessionPersistence";
 import { useTerminalStore } from "./terminalStore";
 
 interface CloseGuardStore {
-  /** Titles of the panes still running; empty while the prompt is closed. */
   prompting: string[];
   closing: boolean;
-  /** Called when Rust vetoes a close and hands the decision to the UI. */
+  error: string | null;
   request: () => Promise<void>;
   confirm: () => Promise<void>;
+  forceClose: () => Promise<void>;
   cancel: () => void;
-}
-
-function runningTitles(): string[] {
-  return useTerminalStore
-    .getState()
-    .panes.filter((pane) => pane.status === "running")
-    .map((pane) => pane.customTitle || pane.osc || pane.title);
-}
-
-/** Saves the full session, then releases Rust's veto so the window can shut. */
-async function saveAndClose(): Promise<void> {
-  // Save failures are swallowed on purpose: losing the session is bad, but
-  // trapping the user in a window they cannot close is worse.
-  await saveSessionNow(true).catch(() => {});
-  await confirmClose().catch(() => {});
 }
 
 export const useCloseGuardStore = create<CloseGuardStore>((set, get) => ({
   prompting: [],
   closing: false,
-
+  error: null,
   request: async () => {
-    if (get().closing) return;
-    const running = runningTitles();
-    if (running.length === 0) {
-      set({ closing: true });
-      await saveAndClose();
-      return;
-    }
-    set({ prompting: running });
+    if (get().closing || get().prompting.length) return;
+    const running = useTerminalStore.getState().panes.filter((p) => p.status === "running")
+      .map((p) => p.customTitle || p.osc || p.title);
+    if (!running.length) { await get().confirm(); return; }
+    set({ prompting: running, error: null });
   },
-
   confirm: async () => {
     if (get().closing) return;
-    set({ closing: true });
-    await saveAndClose();
+    set({ closing: true, error: null });
+    try {
+      await saveSessionNow(true);
+      await confirmClose();
+    } catch {
+      set({ closing: false, error: "Your workspace could not be saved. Try again, or keep Vibyra open and check the available disk space." });
+    }
   },
-
-  cancel: () => set({ prompting: [] }),
+  forceClose: async () => {
+    set({ closing: true });
+    try { await confirmClose(); }
+    catch { set({ closing: false, error: "Vibyra could not quit. Please try again." }); }
+  },
+  cancel: () => set({ prompting: [], error: null }),
 }));

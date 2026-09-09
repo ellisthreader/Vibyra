@@ -3,9 +3,11 @@ import { useEffect } from "react";
 import { perfSample, type PerfSample } from "../ipc/perf";
 import { rendererPolicy } from "../ipc/render";
 import { useNotificationStore } from "../state/notificationStore";
+import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { initialGuardState, nextGuardState } from "./perfGuard";
 import { judge, type PerfWindow } from "./perfPolicy";
+import { perfWatchEnabled } from "./performanceMode";
 import { startDriftSampler } from "./perfSampler";
 import { windowIsFocused } from "./windowFocus";
 
@@ -27,12 +29,20 @@ function workingPaneCount(): number {
  * Watches for the machine getting into trouble and says so at most a few times
  * a session.
  *
- * The 1 Hz drift tick is the primary signal and always runs; the native sample
- * is polled on demand — and only while the user is here or an agent is
- * streaming — so a backgrounded window costs nothing.
+ * The 1 Hz drift tick is the primary signal; the native sample is polled on
+ * demand — and only while the user is here or an agent is streaming — so a
+ * backgrounded window costs nothing.
+ *
+ * The whole watch is off in Performance mode. Its advice is "turn things off
+ * to go faster", which that mode has already done, and the 1 Hz timer alone
+ * would keep the main thread from ever settling. See `performanceMode.ts`.
  */
 export function usePerfWatch(): void {
+  const enabled = perfWatchEnabled(
+    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+  );
   useEffect(() => {
+    if (!enabled) return;
     const startedAt = Date.now();
     let guard = initialGuardState();
     let native: PerfSample | null = null;
@@ -86,5 +96,5 @@ export function usePerfWatch(): void {
       stopped = true;
       stop();
     };
-  }, []);
+  }, [enabled]);
 }

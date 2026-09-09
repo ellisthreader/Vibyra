@@ -4,10 +4,11 @@ import { useTheme } from '../theme';
 import { Icon, IconButton } from './primitives';
 
 export function Composer({ value, onChange, onSend, disabled, shell, demo = false, compact = false,
-  contextLabel, onContext, onReview }: {
+  contextLabel, onContext, onReview, onStop, working = false }: {
   value: string; onChange: (value: string) => void; onSend: (value: string) => Promise<boolean>;
   disabled: boolean; shell: boolean; demo?: boolean; compact?: boolean;
   contextLabel?: string; onContext?: () => void; onReview?: () => void;
+  working?: boolean; onStop?: () => void;
 }) {
   const { colors, dark } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -40,12 +41,12 @@ export function Composer({ value, onChange, onSend, disabled, shell, demo = fals
             {onContext && <Icon name="chevron-down" size={11} color={colors.muted} />}
           </Pressable>
         </View>}
-        <Pressable onPress={() => void send()} disabled={!ready} accessibilityRole="button"
-          accessibilityLabel={shell ? 'Send command and Enter' : 'Send prompt and Enter'}
-          aria-disabled={!ready} aria-busy={sending} accessibilityState={{ disabled: !ready, busy: sending }}
+        <Pressable onPress={() => working ? onStop?.() : void send()} disabled={working ? !onStop : !ready} accessibilityRole="button"
+          accessibilityLabel={working ? 'Stop current task' : shell ? 'Send command and Enter' : 'Send prompt and Enter'}
+          aria-disabled={working ? !onStop : !ready} aria-busy={sending} accessibilityState={{ disabled: working ? !onStop : !ready, busy: sending }}
           style={({ pressed }) => [s.send, { backgroundColor: ready ? colors.action : colors.elevated,
             opacity: pressed ? 0.65 : 1 }]}>
-          {sending ? <ActivityIndicator color={colors.muted} /> :
+          {working ? <Icon name="stop" size={18} color={colors.text} /> : sending ? <ActivityIndicator color={colors.muted} /> :
             <Icon name="arrow-up" size={23} color={ready ? colors.onAction : colors.muted} />}
         </Pressable>
       </View>

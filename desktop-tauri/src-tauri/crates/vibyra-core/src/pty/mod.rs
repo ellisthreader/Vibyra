@@ -114,3 +114,5 @@ pub struct SessionInfo {
     pub alive: bool,
     pub exit_code: Option<i32>,
 }
+
+mod remote;

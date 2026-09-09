@@ -1,17 +1,20 @@
-use std::path::PathBuf;
-use std::process::{Child, Command, Stdio};
-
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use vibyra_core::agents::program_in_path;
 
 use crate::ai_usage::{voice_cost_usd, AiCall};
 use crate::state::AppState;
 
-/// A running `arecord` capture (raw S16LE 16 kHz mono → WAV-wrapped on stop).
-pub struct VoiceRecording {
-    child: Child,
-    path: PathBuf,
+#[cfg(target_os = "macos")]
+#[path = "voice_capture_macos.rs"]
+mod capture;
+#[cfg(not(target_os = "macos"))]
+#[path = "voice_capture_process.rs"]
+mod capture;
+pub use capture::VoiceRecording;
+
+pub(super) struct CapturedAudio {
+    pub raw: Vec<u8>,
+    pub sample_rate: u32,
 }
 
 #[derive(Serialize)]
@@ -23,17 +26,10 @@ pub struct VoiceStatus {
 
 pub const VOICE_MODEL: &str = "whisper-1";
 
-const SAMPLE_RATE: u32 = 16_000;
-const BYTES_PER_SECOND: usize = SAMPLE_RATE as usize * 2;
-/// Whisper is billed by the minute, so a recorder that never stopped — a stuck
-/// key, a crashed UI — is the expensive failure here. Audio past this point is
-/// discarded before it is ever uploaded.
-const MAX_RECORDING_SECONDS: usize = 120;
-
 #[tauri::command]
 pub async fn voice_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
     Ok(VoiceStatus {
-        recorder: program_in_path("arecord"),
+        recorder: capture::available(),
         key_configured: state.openai_key().is_some(),
     })
 }
@@ -43,23 +39,12 @@ pub async fn voice_start(state: State<'_, AppState>) -> Result<(), String> {
     stop_recorder(&state);
     // Checked before the microphone opens: being refused after speaking a
     // whole sentence is a worse experience than being told up front.
+    if state.openai_key().is_none() {
+        return Err("Add your OpenAI API key in Settings › Vibyra AI to use dictation.".into());
+    }
     state.usage.budget_available(state.ai_limits())?;
-    let path = std::env::temp_dir().join(format!("vibyra-voice-{}.raw", std::process::id()));
-    let _ = std::fs::remove_file(&path);
-    let mut command = Command::new("arecord");
-    command
-        .args(["-q", "-f", "S16_LE", "-r", "16000", "-c", "1", "-t", "raw"])
-        .arg(&path)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    // ALSA resolves its plugins through the loader, and the AppImage points
-    // that at its own bundle — record in the user's environment instead.
-    vibyra_core::launch_env::sanitize_command(&mut command);
-    let child = command
-        .spawn()
-        .map_err(|e| format!("could not start recording: {e}"))?;
-    *state.voice.lock() = Some(VoiceRecording { child, path });
+    let recording = super::run_blocking(VoiceRecording::start).await?;
+    *state.voice.lock() = Some(recording);
     Ok(())
 }
 
@@ -68,20 +53,20 @@ pub async fn voice_stop(
     state: State<'_, AppState>,
     discard: bool,
 ) -> Result<Option<String>, String> {
-    let Some(mut recording) = state.voice.lock().take() else {
+    let Some(recording) = state.voice.lock().take() else {
         return Ok(None);
     };
-    let _ = recording.child.kill();
-    let _ = recording.child.wait();
-    let raw = std::fs::read(&recording.path).unwrap_or_default();
-    let _ = std::fs::remove_file(&recording.path);
-
     if discard {
+        drop(recording);
         return Ok(None);
     }
+    let audio = super::run_blocking(move || recording.finish()).await?;
+    let raw = audio.raw;
+    let bytes_per_second = audio.sample_rate as usize * 2;
+
     // Anything under ~0.4 s is a stray key tap, not speech. Rejecting it here
     // also keeps a jammed hotkey from spending a paid call per keypress.
-    if raw.len() < BYTES_PER_SECOND * 2 / 5 {
+    if raw.len() < bytes_per_second * 2 / 5 {
         return Err("No speech heard".to_string());
     }
 
@@ -89,13 +74,13 @@ pub async fn voice_stop(
         "Add your OpenAI API key in Settings › Vibyra AI to use dictation.".to_string()
     })?;
 
-    let raw = &raw[..raw.len().min(BYTES_PER_SECOND * MAX_RECORDING_SECONDS)];
-    let seconds = raw.len() as f64 / BYTES_PER_SECOND as f64;
+    let raw = &raw[..raw.len().min(bytes_per_second * 120)];
+    let seconds = raw.len() as f64 / bytes_per_second as f64;
     let permit = state
         .usage
         .reserve(AiCall::Voice, state.ai_limits(), voice_cost_usd(seconds))?;
 
-    let wav = wrap_wav(raw, SAMPLE_RATE, 1);
+    let wav = wrap_wav(raw, audio.sample_rate, 1);
     let text = transcribe(wav, key.trim().to_string()).await?;
     permit.finish_voice(seconds);
     let text = text.trim().to_string();
@@ -142,11 +127,8 @@ async fn transcribe(wav: Vec<u8>, key: String) -> Result<String, String> {
 }
 
 fn stop_recorder(state: &State<'_, AppState>) {
-    if let Some(mut recording) = state.voice.lock().take() {
-        let _ = recording.child.kill();
-        let _ = recording.child.wait();
-        let _ = std::fs::remove_file(&recording.path);
-    }
+    // Drop stops capture and releases platform resources, including on discard.
+    drop(state.voice.lock().take());
 }
 
 /// Minimal RIFF/WAVE header around raw S16LE PCM.

@@ -115,6 +115,8 @@ export interface Settings {
   aiHourlyCallCap: number;
   aiDailySpendCapUsd: number;
   aiMonthlySpendCapUsd: number;
+  /** Strips the app to what the work needs. See lib/performanceMode.ts. */
+  performanceMode: boolean;
   persistTerminalScrollback: boolean;
   /** Toasts, sounds and system notifications. See notificationTypes.ts. */
   notifications: NotificationPrefs;

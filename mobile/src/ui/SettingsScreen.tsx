@@ -41,7 +41,8 @@ export function SettingsScreen({ workspace }: { workspace: WorkspaceModel }) {
           <SettingRow title="Account" icon="person-circle-outline" value={workspace.account.email}
             expanded={expanded === 'account'} onPress={() => toggle('account')} />
           {expanded === 'account' && <View style={s.detail}>
-            <Hint>{workspace.account.name ? `${workspace.account.name} · ` : ''}{workspace.account.plan} plan. Your chats stay with this account.</Hint>
+            <Hint>{workspace.demo ? 'Sample account for trying Vibyra. Nothing here is stored and no computer is connected.'
+              : `${workspace.account.name ? `${workspace.account.name} · ` : ''}${workspace.account.plan} plan. Your chats stay with this account.`}</Hint>
             <Pressable accessibilityRole="button" accessibilityLabel="Log out" aria-disabled={busy} accessibilityState={{ disabled: busy, busy }}
               disabled={busy} onPress={() => void run(() => workspace.actions.logOut!())} style={s.logOut}>
               <Icon name="log-out-outline" size={19} color={colors.error} />

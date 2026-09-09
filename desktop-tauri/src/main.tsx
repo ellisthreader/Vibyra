@@ -31,6 +31,7 @@ import "./styles/launch-settings.css";
 import "./styles/launch-controls.css";
 import "./styles/launch-model-picker.css";
 import "./styles/launch-approval.css";
+import "./styles/phone-connection.css";
 import "./styles/workspace.css";
 import "./styles/workspace.part-02.css";
 import "./styles/workspace.part-03.css";
@@ -62,6 +63,7 @@ import "./styles/modals.part-02.css";
 import "./styles/modals.part-03.css";
 import "./styles/modals.part-04.css";
 import "./styles/terminal-suspended.css";
+import "./styles/terminal-density.css";
 import "./styles/settings-ai.css";
 import "./styles/settings-ai.part-02.css";
 import "./styles/settings-integrations.css";
@@ -80,13 +82,22 @@ import "./styles/settings-graphics.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
 
+import "./styles/interface-layout.css";
+import "./styles/project-tools.css";
+
+// Last: Performance mode overrides motion, blur and elevation across every
+// sheet above, so it has to win the specificity ties.
+import "./styles/performance.css";
+
 import App from "./App";
 import { installAppDropGuard } from "./lib/terminalDrop";
 import { initRendererPolicy } from "./lib/xtermRenderer";
+import { isMac } from "./lib/platform";
+
+document.documentElement.dataset.platform = isMac ? "mac" : "desktop";
 
 // Resolves long before the first terminal can mount (post sign-in).
 void initRendererPolicy();
 installAppDropGuard();
 
 createRoot(document.getElementById("root")!).render(<App />);
-

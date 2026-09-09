@@ -1,3 +1,4 @@
+import { useWorkspaceStore } from "./workspaceStore";
 import { create } from "zustand";
 
 import { loadTerminalSession } from "../ipc/session";
@@ -11,7 +12,7 @@ import type { PaneState, TerminalStore } from "./terminalStoreTypes";
 export type { PaneState } from "./terminalStoreTypes";
 
 export function paneLabel(pane: PaneState): string {
-  return pane.customTitle || pane.osc || pane.title;
+  return pane.customTitle || pane.title;
 }
 
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
@@ -19,16 +20,18 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   focusedId: null,
   zoomedId: null,
   activity: {},
+  sessionReady: false,
+  relaunching: [],
+  relaunchErrors: {},
   ...terminalLifecycleActions(set, get),
 
   // Runs once at startup. Restored panes are suspended: their output is shown
   // but no process is launched until the user resumes one, so reopening the
   // app never spends money or takes an action on its own.
   restoreSession: async () => {
-    if (get().panes.length > 0) return;
-    const session = await loadTerminalSession().catch(() => null);
-    if (!session?.panes.length) return;
-    set({ panes: toPaneStates(session) });
+    if (get().sessionReady) return;
+    const session = await loadTerminalSession();
+    set({ panes: get().panes.length ? get().panes : toPaneStates(session), sessionReady: true });
   },
 
   toggleZoom: (id) => {
@@ -55,8 +58,17 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
 
   setFocus: (id) => {
+    const workspace = useWorkspaceStore.getState();
+    workspace.setProjectMode("terminals");
+    if (workspace.companionOpen && workspace.companionSize === "full") workspace.toggleCompanion();
     get().markFocused(id);
-    getTerminal(id)?.term.focus();
+    const pane = get().panes.find((p) => p.id === id);
+    if (get().zoomedId !== null && get().zoomedId !== id) get().toggleZoom(id);
+    if (pane?.visibility === "hibernated" && pane.status === "running") void get().wake(id);
+    window.requestAnimationFrame(() => {
+      if (pane?.status === "running") getTerminal(id)?.term.focus();
+      else document.querySelector<HTMLButtonElement>(`[data-pane-id="${id}"] .pane-recovery .btn`)?.focus();
+    });
   },
 
   markFocused: (id) => {

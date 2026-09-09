@@ -1,26 +1,4 @@
-//! Whether the conversation a pane wants to resume still exists.
-//!
-//! Vibyra pins a conversation id when a Claude pane launches (`--session-id`)
-//! and names that same id when the pane is resumed (`--resume`). The gap
-//! between the two is a pane that was opened and closed without a word being
-//! typed: Claude writes no transcript until the first message, so the id names
-//! nothing, and `--resume` answers `No conversation found with session ID: …`
-//! and exits 1 rather than opening an empty chat. Restoring a workspace then
-//! greets the user with an error where their pane should be.
-//!
-//! No CLI answers "does this conversation exist", so this reads where Claude
-//! keeps them and lets the frontend decide before it asks.
-//!
-//! The two flags are exact complements, which is what makes one check enough
-//! — against claude 2.1.238, on the same id:
-//!
-//! | transcript | `--resume <id>`               | `--session-id <id>`      |
-//! |------------|-------------------------------|--------------------------|
-//! | present    | continues it                  | `Session ID … in use`, 1 |
-//! | missing    | `No conversation found …`, 1  | starts one under that id |
-//!
-//! So a pane whose conversation is gone is not merely spared an error: it is
-//! relaunched under the very id it already owned, and the next resume works.
+//! Account-scoped checks before handing a saved conversation ID to its CLI.
 
 use std::path::{Path, PathBuf};
 
@@ -43,14 +21,20 @@ impl ConversationStore {
     ///
     /// `None` means there is nowhere to look, which for this question is the
     /// same as finding nothing.
-    pub fn detect(account_id: Option<&str>) -> Self {
+    pub fn detect(agent: &str, account_id: Option<&str>) -> Self {
         let account = account_id.unwrap_or(crate::provider_auth_home::DEFAULT_ACCOUNT);
         let config = crate::provider_auth_registry::Registry::load()
-            .home("claude", account)
+            .home(agent, account)
             .map(|home| home.credentials_dir())
             .ok();
         Self {
-            projects: config.map(|dir| dir.join("projects")),
+            projects: config.map(|dir| {
+                dir.join(if agent == "codex" {
+                    "sessions"
+                } else {
+                    "projects"
+                })
+            }),
         }
     }
 
@@ -64,12 +48,11 @@ impl ConversationStore {
 
     /// Whether `agent` could still resume the conversation `session` names.
     ///
-    /// Only Claude both accepts an id at launch and resumes by it, so only
-    /// Claude's answer comes off disk. Every other agent resumes by recency
-    /// and ignores the id entirely — they have no id that can go missing, so
-    /// the honest answer for them is yes.
+    /// Claude and Codex have known account-scoped transcript layouts. Other
+    /// providers validate their IDs themselves when resumed; no recency guess
+    /// is substituted here.
     pub fn resumable(&self, agent: &str, session: &str) -> bool {
-        if agent != "claude" {
+        if !matches!(agent, "claude" | "codex") {
             return true;
         }
         // The id becomes a file name below, so it is held to a plain UUID for
@@ -78,9 +61,13 @@ impl ConversationStore {
         if validate_session_id(session).is_err() {
             return false;
         }
-        self.projects
-            .as_deref()
-            .is_some_and(|projects| holds(projects, session))
+        self.projects.as_deref().is_some_and(|projects| {
+            if agent == "codex" {
+                holds_codex(projects, session, 0)
+            } else {
+                holds(projects, session)
+            }
+        })
     }
 }
 
@@ -100,8 +87,8 @@ fn holds(projects: &Path, session: &str) -> bool {
         .any(|entry| entry.path().join(&transcript).is_file())
 }
 
-/// Asked before a suspended pane is resumed, so Vibyra can start it fresh
-/// rather than hand the agent an id that will kill it.
+/// Check before resuming. Missing history leaves the saved pane visible with
+/// an explicit New chat option; it never silently changes conversations.
 #[tauri::command]
 pub async fn agent_conversation_resumable(
     agent_id: String,
@@ -109,7 +96,32 @@ pub async fn agent_conversation_resumable(
     account_id: Option<String>,
 ) -> Result<bool, String> {
     run_blocking(move || {
-        Ok(ConversationStore::detect(account_id.as_deref()).resumable(&agent_id, &session_id))
+        Ok(ConversationStore::detect(&agent_id, account_id.as_deref())
+            .resumable(&agent_id, &session_id))
     })
     .await
+}
+
+/// Codex rollouts live under sessions/year/month/day. Ignore symlinked trees.
+fn holds_codex(root: &Path, session: &str, depth: usize) -> bool {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
+        if kind.is_file()
+            && entry
+                .file_name()
+                .to_string_lossy()
+                .ends_with(&format!("-{session}.jsonl"))
+        {
+            return true;
+        }
+        if kind.is_dir() && depth < 3 && holds_codex(&entry.path(), session, depth + 1) {
+            return true;
+        }
+    }
+    false
 }

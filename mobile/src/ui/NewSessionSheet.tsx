@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme';
-import { Button, EmptyState, Hint, Icon, type IconName } from './primitives';
+import { Button, EmptyState, Hint, Icon } from './primitives';
 import { Sheet } from './Sheet';
 import { useAction } from './useAction';
-import { setDraftForScope } from './useDraft';
+import { computerAgents as kinds } from './agents';
 import type { SessionKind, WorkspaceModel } from './types';
 
-const kinds: { id: SessionKind; label: string; short: string; icon: IconName }[] = [
-  { id: 'claude', label: 'Claude Code', short: 'Claude', icon: 'sparkles-outline' },
-  { id: 'codex', label: 'Codex', short: 'Codex', icon: 'code-slash-outline' },
-  { id: 'shell', label: 'Terminal', short: 'Terminal', icon: 'terminal-outline' },
-];
-export function NewSessionSheet({ visible, workspace, initialProjectId, initialKind = 'claude', initialPrompt, onCreated, onClose }: {
-  visible: boolean; workspace: WorkspaceModel; initialProjectId?: string; initialKind?: SessionKind;
-  initialPrompt?: string; onCreated?: () => void; onClose: () => void;
+// Reached only from the Projects list, where picking the folder is the point.
+// The home composer sends without ever opening this sheet.
+export function NewSessionSheet({ visible, workspace, initialProjectId, initialKind = 'claude', onClose }: {
+  visible: boolean; workspace: WorkspaceModel; initialProjectId?: string; initialKind?: SessionKind; onClose: () => void;
 }) {
   const { colors } = useTheme();
   const [projectId, setProjectId] = useState(initialProjectId ?? '');
@@ -30,11 +26,8 @@ export function NewSessionSheet({ visible, workspace, initialProjectId, initialK
     wasVisible.current = visible;
   }, [visible, initialProjectId, initialKind, workspace.projects]);
   const create = async () => {
-    const name = title.trim() || `${kinds.find(item => item.id === kind)!.label} ${kind === 'shell' ? 'terminal' : 'chat'}`;
-    if (await run(async () => {
-      const session = await workspace.actions.createSession(projectId, kind, name);
-      if (session && initialPrompt) setDraftForScope(`${workspace.host?.id}:${session.projectId}:${session.id}`, initialPrompt);
-    })) { setTitle(''); onCreated?.(); onClose(); }
+    const name = title.trim() || `${kinds.find(item => item.kind === kind)!.name} ${kind === 'shell' ? 'terminal' : 'chat'}`;
+    if (await run(() => workspace.actions.createSession(projectId, kind, name))) { setTitle(''); onClose(); }
   };
   return <Sheet visible={visible} title="New chat" onClose={onClose}>
     {workspace.projects.length === 0 ? <EmptyState icon="folder-outline" title="No shared projects"
@@ -54,20 +47,16 @@ export function NewSessionSheet({ visible, workspace, initialProjectId, initialK
             color={projectId === project.id ? colors.accent : colors.border} />
         </Pressable>)}</View>
       <Text style={[s.section, { color: colors.text }]}>Open with</Text>
-      <View style={s.kinds}>{kinds.map(item => <Pressable key={item.id} accessibilityRole="radio"
-        accessibilityLabel={item.label} aria-checked={kind === item.id} aria-disabled={busy} accessibilityState={{ checked: kind === item.id, disabled: busy }}
-        disabled={busy} onPress={() => setKind(item.id)} style={[s.kind, { borderColor: kind === item.id ? colors.text : colors.border,
-          backgroundColor: kind === item.id ? colors.elevated : 'transparent' }]}>
-        <Icon name={item.icon} size={22} color={kind === item.id ? colors.text : colors.muted} />
+      <View style={s.kinds}>{kinds.map(item => <Pressable key={item.kind} accessibilityRole="radio"
+        accessibilityLabel={item.name} aria-checked={kind === item.kind} aria-disabled={busy} accessibilityState={{ checked: kind === item.kind, disabled: busy }}
+        disabled={busy} onPress={() => setKind(item.kind)} style={[s.kind, { borderColor: kind === item.kind ? colors.text : colors.border,
+          backgroundColor: kind === item.kind ? colors.elevated : 'transparent' }]}>
+        <Icon name={item.icon} size={22} color={kind === item.kind ? colors.text : colors.muted} />
         <Text style={[s.kindText, { color: colors.text }]}>{item.short}</Text>
       </Pressable>)}</View>
       <TextInput value={title} onChangeText={setTitle} placeholder={kind === 'shell' ? 'Terminal name (optional)' : 'Chat name (optional)'}
         placeholderTextColor={colors.muted} accessibilityLabel="Session name" maxLength={120} editable={!busy}
         style={[s.input, { color: colors.text, borderColor: colors.border }]} />
-      {initialPrompt && <View style={[s.draft, { backgroundColor: colors.elevated }]}>
-        <Text style={[s.draftLabel, { color: colors.muted }]}>Your draft</Text>
-        <Text numberOfLines={3} style={[s.draftText, { color: colors.text }]}>{initialPrompt}</Text>
-      </View>}
       {error && <Hint error>{error}</Hint>}
       <Button title={kind === 'shell' ? 'Open terminal' : 'Create chat'} icon="arrow-forward" busy={busy}
         disabled={!workspace.projects.some(project => project.id === projectId) || workspace.status !== 'connected'} onPress={() => void create()} />
@@ -87,5 +76,4 @@ const s = StyleSheet.create({
   kindText: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
   input: { minHeight: 53, fontSize: 15, borderRadius: 14, padding: 16, borderWidth: StyleSheet.hairlineWidth },
   note: { fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: -3 },
-  draft: { borderRadius: 13, padding: 14, gap: 7 }, draftLabel: { fontSize: 12 }, draftText: { fontSize: 14, lineHeight: 21 },
 });

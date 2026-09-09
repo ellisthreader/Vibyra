@@ -2,6 +2,7 @@ import { refreshAccount, restoreAccount, restoreOnboarding } from '../account/ac
 import { parsePairing, type Pairing } from '../transport/pairing';
 import type { WorkspaceStore } from './WorkspaceStore';
 import type { HostState, SavedConnection } from './types';
+import { restoreConversation } from './conversationContinuity';
 
 function withoutInvite(pairing: Pairing): Pairing {
   const { invite: _invite, expiresAt: _expires, ...remembered } = pairing; return remembered;
@@ -39,7 +40,11 @@ async function open(store: WorkspaceStore, pairing: Pairing) {
   const epoch = store.epoch;
   const previous = store.saved;
   const same = previous?.pairing.hostId === pairing.hostId && previous.pairing.publicKey === pairing.publicKey;
-  store.update({ status: pairing.invite && !same ? 'pairing' : 'connecting', error: null, host: null });
+  if (!same) { store.clearSession(); store.update({ projects: [], sessions: [], conversationAvailable: false }); }
+  // A nearby connection carries no invitation, but a computer that has not seen
+  // this phone before still holds it while its owner approves.
+  const awaitsApproval = Boolean(pairing.invite || pairing.nearby) && !same;
+  store.update({ status: awaitsApproval ? 'pairing' : 'connecting', error: null, host: null });
   try {
     const privateKey = same ? previous!.privateKey : await store.deps.rpc.createKeypair();
     store.assertCurrent(epoch);
@@ -54,6 +59,7 @@ async function open(store: WorkspaceStore, pairing: Pairing) {
     store.saved.host = result.host;
     await store.deps.storage.write('connection', JSON.stringify(store.saved));
     store.assertCurrent(epoch); store.update({ status: 'connected', error: null });
+    await restoreConversation(store);
   } catch (error) {
     if (store.current(epoch)) {
       store.disconnect(); store.update({ status: 'error', host: store.saved?.host ?? {
@@ -65,6 +71,7 @@ async function open(store: WorkspaceStore, pairing: Pairing) {
 }
 export async function forget(store: WorkspaceStore) {
   store.disconnect();
+  store.clearSession(); store.update({ projects: [], sessions: [], conversationAvailable: false });
   await store.deps.storage.delete('connection');
   store.saved = null; store.creates.clear(); await store.persistCreates();
   await store.deps.storage.delete('pending-creates'); store.update({ host: null, error: null });

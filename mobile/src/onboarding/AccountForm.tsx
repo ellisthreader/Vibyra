@@ -1,9 +1,12 @@
-import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Keyboard, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
-import { Button, Hint, Icon, type IconName } from '../ui/primitives';
+import { Button, Hint, Icon } from '../ui/primitives';
 import { useAction } from '../ui/useAction';
 import type { WorkspaceModel } from '../ui/types';
+import type { AccountProvider } from '../account/accountApi';
+import { ProviderButtons } from './ProviderButtons';
+import { AccountEmailFields } from './AccountEmailFields';
 
 export type AccountMode = 'signup' | 'login';
 export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary, continueLabel = 'Continue' }: {
@@ -11,14 +14,33 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
   reason?: string; secondary?: ReactNode; continueLabel?: string;
 }) {
   const { colors } = useTheme();
-  const { busy, error, run } = useAction();
+  const { busy, error, run, clearError } = useAction();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [reveal, setReveal] = useState(false);
+  const [provider, setProvider] = useState<AccountProvider | null>(null);
+  const attempt = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; attempt.current?.abort(); }; }, []);
+  const switchMode = () => { setPassword(''); clearError(); onMode(mode === 'signup' ? 'login' : 'signup'); };
   const submit = async () => {
+    if (busy) return;
     const action = mode === 'signup' ? workspace.actions.signUp : workspace.actions.logIn;
     if (!action) return;
-    if (await run(() => action(email, password))) { setPassword(''); onDone(); }
+    Keyboard.dismiss();
+    if (await run(() => action(email, password)) && mounted.current) { setPassword(''); onDone(); }
+  };
+  const social = async (selected: AccountProvider) => {
+    if (busy || attempt.current) return;
+    const controller = new AbortController(); attempt.current = controller;
+    setProvider(selected); Keyboard.dismiss();
+    let completed = false;
+    await run(async () => {
+      if (!workspace.actions.providerLogIn) throw new Error('Provider sign-in is unavailable. Please use email.');
+      try { completed = await workspace.actions.providerLogIn(selected, controller.signal); }
+      catch (error) { if (!controller.signal.aborted) throw error; }
+    });
+    attempt.current = null; setProvider(null);
+    if (completed && !controller.signal.aborted) { setPassword(''); onDone(); }
   };
   if (workspace.account) return <View style={s.form}>
     {reason && <Hint>{reason}</Hint>}
@@ -36,50 +58,51 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
   </View>;
   return <View style={s.form}>
     {reason && <Hint>{reason}</Hint>}
-    <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Field icon="mail-outline">
-        <TextInput accessibilityLabel="Email" value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor={colors.muted}
-          autoCapitalize="none" autoCorrect={false} keyboardType="email-address" inputMode="email" textContentType="emailAddress"
-          autoComplete="email" editable={!busy} returnKeyType="next" style={[s.input, { color: colors.text }]} />
-      </Field>
-      <View style={[s.divider, { backgroundColor: colors.border }]} />
-      <Field icon="lock-closed-outline">
-        <TextInput accessibilityLabel="Password" value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={colors.muted}
-          secureTextEntry={!reveal} autoCapitalize="none" autoCorrect={false} editable={!busy} returnKeyType="go"
-          textContentType={mode === 'signup' ? 'newPassword' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'password'}
-          onSubmitEditing={() => void submit()} style={[s.input, { color: colors.text }]} />
-        <Pressable accessibilityRole="button" accessibilityLabel={reveal ? 'Hide password' : 'Show password'} onPress={() => setReveal(!reveal)} style={s.reveal}>
-          <Icon name={reveal ? 'eye-off-outline' : 'eye-outline'} size={19} color={colors.muted} />
-        </Pressable>
-      </Field>
+    <ProviderButtons busy={busy} active={provider} onPress={selected => void social(selected)} />
+    {provider && <View style={s.pending}>
+      <Hint>Finish signing in with {provider === 'apple' ? 'Apple' : 'Google'}.</Hint>
+      <Pressable accessibilityRole="button" accessibilityLabel="Cancel sign-in" onPress={() => attempt.current?.abort()} style={s.cancel}>
+        <Text style={{ color: colors.accent }}>Cancel</Text>
+      </Pressable>
+    </View>}
+    <View style={s.separator}>
+      <View style={[s.rule, { backgroundColor: colors.border }]} />
+      <Text style={[s.separatorText, { color: colors.muted }]}>or continue with email</Text>
+      <View style={[s.rule, { backgroundColor: colors.border }]} />
     </View>
-    {error ? <Hint error>{error}</Hint> : mode === 'signup' && <Hint>At least 8 characters.</Hint>}
-    <View style={[s.glowButton, { shadowColor: colors.accent }]}>
-      <Button title={mode === 'signup' ? 'Create account' : 'Log in'} busy={busy} disabled={!email.trim() || !password} onPress={() => void submit()} />
-    </View>
-    {secondary}
+    <AccountEmailFields key={mode} mode={mode} email={email} password={password} onEmail={setEmail} onPassword={setPassword}
+      busy={busy} onSubmit={() => void submit()} />
+    {error && <View accessibilityRole="alert" style={[s.error, { backgroundColor: colors.errorSoft }]}>
+      <Icon name="alert-circle-outline" size={19} color={colors.error} /><View style={s.errorText}><Hint error>{error}</Hint></View>
+    </View>}
+    <Button title={mode === 'signup' ? 'Create account' : 'Log in'} busy={busy && !provider} disabled={busy || !email.trim() || !password}
+      onPress={() => void submit()} />
     <View style={s.switch}>
       <Text style={[s.switchText, { color: colors.muted }]}>{mode === 'signup' ? 'Already have an account?' : 'New to Vibyra?'}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={mode === 'signup' ? 'Log in' : 'Create an account'} disabled={busy}
-        onPress={() => onMode(mode === 'signup' ? 'login' : 'signup')} style={s.switchLink}>
+        accessibilityState={{ disabled: busy }} aria-disabled={busy} onPress={switchMode} style={s.switchLink}>
         <Text style={[s.switchLinkText, { color: colors.accent }]}>{mode === 'signup' ? 'Log in' : 'Create an account'}</Text>
       </Pressable>
     </View>
+    <Text style={[s.legal, { color: colors.muted }]}>By continuing, you agree to our{' '}
+      <Text accessibilityRole="link" onPress={() => { void Linking.openURL('https://vibyra.app/legal/terms'); }}
+        style={s.legalLink}>Terms</Text> and{' '}
+      <Text accessibilityRole="link" onPress={() => { void Linking.openURL('https://vibyra.app/legal/privacy'); }}
+        style={s.legalLink}>Privacy Policy</Text>.</Text>
+    {secondary}
   </View>;
 }
-function Field({ icon, children }: { icon: IconName; children: ReactNode }) {
-  const { colors } = useTheme();
-  return <View style={s.field}><Icon name={icon} size={19} color={colors.muted} />{children}</View>;
-}
 const s = StyleSheet.create({
-  form: { gap: 14 },
-  group: { borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  field: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16, paddingRight: 6 },
-  input: { flex: 1, fontSize: 16, paddingVertical: 14, minHeight: 56 }, divider: { height: StyleSheet.hairlineWidth, marginLeft: 47 },
-  reveal: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  glowButton: { shadowOpacity: 0.35, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 5, borderRadius: 18 },
-  switch: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44 },
-  switchText: { fontSize: 14 }, switchLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 2 }, switchLinkText: { fontSize: 14, fontWeight: '600' },
+  form: { gap: 16 }, separator: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 2 },
+  rule: { height: StyleSheet.hairlineWidth, flex: 1 }, separatorText: { fontSize: 12 },
+  pending: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
+  cancel: { minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' },
+  error: { flexDirection: 'row', gap: 8, padding: 12, borderRadius: 12, alignItems: 'flex-start' }, errorText: { flex: 1 },
+  switch: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 5, minHeight: 44, marginTop: -6 },
+  switchText: { fontSize: 14 }, switchLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 3 },
+  switchLinkText: { fontSize: 14, fontWeight: '600' },
+  legal: { fontSize: 12, lineHeight: 18, textAlign: 'center', maxWidth: 300, alignSelf: 'center', marginTop: -6 },
+  legalLink: { textDecorationLine: 'underline' },
   signedIn: { flexDirection: 'row', alignItems: 'center', gap: 13, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, padding: 14 },
   avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' }, avatarText: { fontSize: 17, fontWeight: '700' },
   signedInText: { flex: 1, gap: 2 }, signedInTitle: { fontSize: 15, fontWeight: '600' }, signedInEmail: { fontSize: 13 },

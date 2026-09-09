@@ -45,8 +45,7 @@ export function runNotificationAction(action: NotificationAction): void {
       hibernateIdleTerminals();
       return;
     case "openGraphicsSettings":
-      // The graphics card lives inside the General pane, not a section of its own.
-      workspace.openSettingsSection("general");
+      workspace.openSettingsSection("performance");
       return;
     case "openAiSettings":
       workspace.openSettingsSection("ai");

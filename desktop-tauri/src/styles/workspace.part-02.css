@@ -8,7 +8,7 @@
 .term-view {
   position: absolute;
   inset: 0;
-  padding: 8px 2px 4px 10px;
+  padding: var(--term-pad, 8px 2px 4px 10px);
 }
 
 .term-host {

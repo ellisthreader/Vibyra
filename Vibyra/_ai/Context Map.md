@@ -59,6 +59,7 @@ must not be used as current source ownership.
 - Post-auth welcome: `Desktop/Rust Tauri First Welcome.md`
 - Account auth and session storage: `Desktop/Tauri Account Authentication.md`
 - Terminal performance and WebKit compositing: `Desktop/Tauri Terminal Performance Overhaul.md`
+- Settings > Performance and the cross-platform Performance mode: `Desktop/Performance Mode.md`
 - Terminal panes, provider routing, launch settings: `Desktop/AI Terminals.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
 - Workspace Preview: `Desktop/Projects And Preview.md`

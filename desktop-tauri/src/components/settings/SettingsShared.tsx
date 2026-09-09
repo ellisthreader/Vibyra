@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import type { Settings } from "../../types";
 
@@ -18,10 +18,11 @@ export function SettingRow({
   stack?: boolean;
   children: ReactNode;
 }) {
+  const id = useId();
   return (
-    <div className={stack ? "setting-row setting-row--stack" : "setting-row"}>
+    <div role="group" aria-labelledby={`${id}-label`} className={stack ? "setting-row setting-row--stack" : "setting-row"}>
       <div className="setting-row__text">
-        <span className="setting-row__label">{label}</span>
+        <span id={`${id}-label`} className="setting-row__label">{label}</span>
         {hint ? <span className="setting-row__hint">{hint}</span> : null}
       </div>
       <div className="setting-row__control">{children}</div>

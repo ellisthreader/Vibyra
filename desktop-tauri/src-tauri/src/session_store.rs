@@ -32,6 +32,7 @@ pub struct PersistedPane {
     pub permission_mode: String,
     pub reasoning_effort: Option<String>,
     pub source_cwd: Option<String>,
+    pub resume_cwd: Option<String>,
     pub workspace_mode: String,
     pub accent: String,
     pub snapshot: Option<String>,

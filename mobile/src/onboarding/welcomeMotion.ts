@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
+import { useReducedMotion } from '../ui/useReducedMotion';
 
 // Staggered fade-up for `count` groups. Reduced-motion users get the finished state at once.
 export function useEntrance(count: number) {
@@ -26,20 +27,18 @@ export function useDrift({ period, dx, dy, grow = 1.08, opacity = 1 }: {
   period: number; dx: number; dy: number; grow?: number; opacity?: number;
 }) {
   const value = useRef(new Animated.Value(0)).current;
+  const reduced = useReducedMotion();
   useEffect(() => {
-    let loop: Animated.CompositeAnimation | undefined;
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().then(reduced => {
-      if (!active || reduced) return;
-      const ease = Easing.inOut(Easing.sin);
-      loop = Animated.loop(Animated.sequence([
-        Animated.timing(value, { toValue: 1, duration: period / 2, easing: ease, useNativeDriver: true }),
-        Animated.timing(value, { toValue: 0, duration: period / 2, easing: ease, useNativeDriver: true }),
-      ]));
-      loop.start();
-    }).catch(() => {});
-    return () => { active = false; loop?.stop(); };
-  }, [value, period]);
+    value.setValue(0);
+    if (reduced) return;
+    const ease = Easing.inOut(Easing.sin);
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(value, { toValue: 1, duration: period / 2, easing: ease, useNativeDriver: true, isInteraction: false }),
+      Animated.timing(value, { toValue: 0, duration: period / 2, easing: ease, useNativeDriver: true, isInteraction: false }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [value, period, reduced]);
   const range = (to: number, from = 0) => value.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
   return { opacity: range(opacity, opacity * 0.72), transform: [{ translateX: range(dx) }, { translateY: range(dy) }, { scale: range(grow, 1) }] };
 }

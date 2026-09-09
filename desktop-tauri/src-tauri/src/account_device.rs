@@ -30,7 +30,7 @@ pub fn device_label() -> String {
     }
 }
 
-fn hostname() -> Option<String> {
+pub fn hostname() -> Option<String> {
     let output = std::process::Command::new("hostname").output().ok()?;
     let name = String::from_utf8_lossy(&output.stdout).trim().to_owned();
     let safe = name.len() <= 64

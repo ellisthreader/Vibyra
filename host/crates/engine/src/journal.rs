@@ -3,7 +3,7 @@ use rusqlite::{params, Connection};
 use std::{collections::HashMap, path::Path};
 
 pub(crate) struct Journal {
-    connection: Connection,
+    pub(crate) connection: Connection,
     _instance_lock: std::fs::File,
 }
 
@@ -83,7 +83,9 @@ impl Journal {
                 metadata.status = "interrupted".into();
             }
             let session = Session::restored(metadata, owner, request);
-            if interrupted { self.save(&session)?; }
+            if interrupted {
+                self.save(&session)?;
+            }
             sessions.insert(session.meta.id.clone(), session);
         }
         Ok(sessions)

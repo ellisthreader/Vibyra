@@ -1,22 +1,23 @@
 import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
-import { Companion } from "../companion/Companion";
 import { CloseConfirmModal } from "./CloseConfirmModal";
 import { ProjectStrip } from "./ProjectStrip";
 import { ProjectWorkspace } from "./ProjectWorkspace";
-import { Rail } from "./Rail";
 import { ScreenshotTray } from "./ScreenshotTray";
 import { TitleBar } from "./TitleBar";
 import { UpdateBanner } from "./UpdateBanner";
 import { VoiceHud } from "./VoiceHud";
+import { PhoneApprovalModal } from "../phone/PhoneApprovalModal";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
 import { useActivityTicker } from "../../lib/useActivityTicker";
+import { useBackgroundThrottle } from "../../lib/useBackgroundThrottle";
 import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
 import { useSessionLifecycle } from "../../lib/useSessionLifecycle";
 import { useUpdateWatch } from "../../lib/useUpdateWatch";
 import { useNotificationRuntime } from "../../lib/useNotificationRuntime";
+import { usePhoneWatch } from "../../lib/usePhoneWatch";
 import { useWorkspaceRuntime } from "../../lib/useWorkspaceRuntime";
 import { useAccountStore } from "../../state/accountStore";
 import { useLaunchApprovalStore } from "../../state/launchApprovalStore";
@@ -50,7 +51,6 @@ export function WorkspaceApp() {
   const settings = useSettingsStore((s) => s.settings);
   const view = useProjectStore((s) => s.view);
   const activeId = useProjectStore((s) => s.activeId);
-  const projectMode = useWorkspaceStore((s) => s.projectMode);
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
   const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
   const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
@@ -66,7 +66,9 @@ export function WorkspaceApp() {
   useNotificationRuntime();
   useSessionLifecycle();
   useActivityTicker();
+  useBackgroundThrottle();
   useUpdateWatch();
+  usePhoneWatch();
 
   const beginWelcomeHandoff = useCallback(() => setWelcomeHandoff(true), []);
   const finishWelcome = useCallback((handoff: boolean) => {
@@ -94,9 +96,7 @@ export function WorkspaceApp() {
         <ProjectStrip />
         {showProject ? (
           <>
-            {projectMode === "terminals" && <Rail />}
             <ProjectWorkspace />
-            {projectMode === "terminals" && <Companion />}
           </>
         ) : (
           <Suspense fallback={null}><HomeView /></Suspense>
@@ -106,6 +106,7 @@ export function WorkspaceApp() {
       <Toasts />
       <VoiceHud />
       <CloseConfirmModal />
+      <PhoneApprovalModal />
       <ScreenshotTray />
       <Suspense fallback={null}>
         {screenshotEditorOpen ? <ScreenshotEditor /> : null}

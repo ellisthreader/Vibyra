@@ -1,4 +1,9 @@
+import { vibesActions } from './vibesActions';
 import { makeAccountActions } from '../account/accountActions';
+import { conversationActions } from './conversationActions';
+import { ConversationLedger } from './conversationLedger';
+import { receiveConversation } from './conversationSession';
+import { cachedConversation } from './conversationContinuity';
 import type { Notice } from '../transport/RpcClient';
 import type { WorkspaceActions, ThemePreference } from '../ui/types';
 import { CreateRequests } from './createRequest';
@@ -15,6 +20,8 @@ export class WorkspaceStore {
   epoch = 0;
   selectionEpoch = 0;
   ledger: OutputLedger | null = null;
+  conversationLedger: ConversationLedger | null = null;
+  conversationLoading: Promise<void> | null = null;
   lease: { sessionId: string; lease: string; generation: string } | null = null;
   dimensions: [number, number] | null = null;
   readonly creates: CreateRequests;
@@ -26,7 +33,7 @@ export class WorkspaceStore {
   constructor(readonly deps: RuntimeDependencies) {
     this.creates = new CreateRequests(deps.uuid);
     this.unsubscribe = deps.rpc.listen(this.receive);
-    this.actions = { ...makeActions(this), ...makeAccountActions(this), connect: link => connect(this, link), reconnect: () => reconnect(this),
+    this.actions = { ...makeActions(this), ...vibesActions(this), ...conversationActions(this), ...makeAccountActions(this), connect: link => connect(this, link), reconnect: () => reconnect(this),
       disconnect: this.disconnect, refresh: () => this.refresh(true), selectSession: id => { void selectSession(this, id); },
       claimControl: () => claimControl(this), setTheme: this.setTheme, forgetDevice: () => forget(this) };
   }
@@ -44,8 +51,9 @@ export class WorkspaceStore {
     return this.createPersistence;
   }
   disconnect = () => {
+    const cached = cachedConversation(this);
     this.epoch++; this.clearSession(); this.deps.rpc.close();
-    this.update({ status: 'offline', error: null, projects: [], sessions: [], devices: [], approvals: [], syncing: false });
+    this.update({ status: 'offline', error: null, projects: [], sessions: [], devices: [], approvals: [], syncing: false, ...cached });
   };
   suspend = () => {
     if (this.state.status === 'offline' || this.state.status === 'error') return;
@@ -53,7 +61,8 @@ export class WorkspaceStore {
   };
   clearSession() {
     this.selectionEpoch++; this.ledger = null; this.lease = null; this.dimensions = null;
-    this.update({ selectedSessionId: null, output: '', control: 'none', syncing: false });
+    this.conversationLedger = null;
+    this.update({ selectedSessionId: null, output: '', conversation: null, control: 'none', syncing: false });
   }
   acceptHost(result: HostState) {
     if (result.protocol !== 1 || result.host?.id !== this.saved?.pairing.hostId || !Array.isArray(result.sessions) ||
@@ -63,6 +72,8 @@ export class WorkspaceStore {
     const sessions = result.sessions.map(item => item.status === 'exited' ? { ...item,
       exitCode: item.exitCode ?? this.state.sessions.find(previous => previous.id === item.id)?.exitCode } : item);
     this.update({ host: result.host, projects: result.projects, sessions,
+      vibesToolsAvailable: result.capabilities?.vibesToolsV1 === true,
+      conversationAvailable: this.deps.iosConversations === true && result.capabilities?.conversationV1 === true,
       devices: result.devices.map(item => ({ id: item.id, name: item.name, current: item.id === this.saved?.deviceId })),
       approvals: result.approvals.filter(item => item.deviceId === this.saved?.deviceId)
         .map(item => ({ id: item.id, title: item.title, detail: item.description, expiresAt: item.expiresAt })) });
@@ -94,16 +105,18 @@ export class WorkspaceStore {
   private receive = (notice: Notice) => {
     if (notice.type === 'error' || notice.type === 'closed') {
       if (!['connected', 'connecting', 'pairing'].includes(this.state.status)) return;
+      const cached = cachedConversation(this);
       this.epoch++; this.clearSession();
       this.update({ status: notice.type === 'error' ? 'error' : 'offline', syncing: false,
         projects: [], sessions: [], devices: [], approvals: [], host: this.saved?.host ?? (this.saved ? {
           id: this.saved.pairing.hostId, name: this.saved.pairing.name, platform: 'Computer',
-        } : null), error: notice.message ?? 'Connection closed. Reconnect to catch up.' });
+        } : null), error: notice.message ?? 'Connection closed. Reconnect to catch up.', ...cached });
       if (notice.type === 'error') this.deps.rpc.close();
       return;
     }
     if (notice.type !== 'message' || this.state.status !== 'connected') return;
     const event = notice.payload;
+    if (event?.event === 'conversation.updated') receiveConversation(this, event.data);
     if (event?.event === 'host.changed') void this.refresh().catch(() => {});
     if (event?.event === 'terminal.resync' && event.data?.sessionId === this.state.selectedSessionId) {
       this.update({ control: 'none', error: 'Catching up with terminal output…' });

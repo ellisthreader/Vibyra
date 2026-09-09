@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { getSettings, saveSettings } from "../ipc/settings";
 import { DEFAULT_NOTIFICATIONS, normalizeNotifications } from "../lib/notificationPrefs";
+import { applyPerformanceMode } from "../lib/performanceMode";
 import { applySettingsToAll } from "../lib/terminalRegistry";
 import { resolveTheme } from "../lib/xtermTheme";
 import type { NotificationPrefs } from "../notificationTypes";
@@ -15,6 +16,13 @@ interface SettingsStore {
 
 function applyTheme(settings: Settings): void {
   document.documentElement.dataset.theme = resolveTheme(settings.theme);
+}
+
+/** Everything the document element carries. Applied on load and on every
+ * write, so both flags survive a settings.json edited outside the app. */
+function applyDocument(settings: Settings): void {
+  applyTheme(settings);
+  applyPerformanceMode(settings.performanceMode);
 }
 
 function normalizeSettings(settings: Settings): Settings {
@@ -31,7 +39,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   load: async () => {
     const settings = normalizeSettings(await getSettings());
-    applyTheme(settings);
+    applyDocument(settings);
     set({ settings });
   },
 
@@ -40,7 +48,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (!current) return;
     const next = { ...current, ...partial };
     set({ settings: next });
-    applyTheme(next);
+    applyDocument(next);
     // Re-fitting every xterm is only needed when appearance actually changed;
     // unrelated writes (project bookkeeping, agent toggles) must not disturb
     // running terminals.

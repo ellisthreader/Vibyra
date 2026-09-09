@@ -11,29 +11,35 @@ import { ProjectsScreen } from './ProjectsScreen';
 import { SessionScreen } from './SessionScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { Icon, IconButton } from './primitives';
-import { setDraftForScope } from './useDraft';
 import { WorkScreen } from './WorkScreen';
-import type { Destination, SessionKind, WorkspaceModel } from './types';
+import { VibesScreen } from '../vibes/VibesScreen';
+import { VibesDrawer } from '../vibes/VibesDrawer';
+import { VibesBalanceRow } from '../vibes/VibesBalanceRow';
+import { WalletSheet } from '../vibes/WalletSheet';
+import type { Destination, WorkspaceModel } from './types';
 
-export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
+export function WorkspaceApp({ workspace, vibesEnabled = false }: { workspace: WorkspaceModel; vibesEnabled?: boolean }) {
   const systemScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const compact = width > height && height < 500;
   const dark = workspace.themePreference === 'dark' || (workspace.themePreference === 'system' && systemScheme !== 'light');
   const colors = dark ? palettes.dark : palettes.light;
+  const [aiHome, setAiHome] = useState(vibesEnabled);
   const [destination, setDestination] = useState<Destination>('work');
   const [drawer, setDrawer] = useState(false);
   const [connect, setConnect] = useState(false);
   const [newSession, setNewSession] = useState(false);
+  const [wallet, setWallet] = useState(false);
   const [initialProjectId, setInitialProjectId] = useState<string>();
-  const [initialKind, setInitialKind] = useState<SessionKind>('claude');
-  const [initialPrompt, setInitialPrompt] = useState('');
   const session = destination === 'work' ? workspace.sessions.find(item => item.id === workspace.selectedSessionId) : undefined;
   useEffect(() => { setDestination('work'); setDrawer(false); setConnect(false); setNewSession(false); }, [workspace.demo, workspace.onboarding.status]);
   useEffect(() => { if (workspace.selectedSessionId) setDestination('work'); }, [workspace.selectedSessionId]);
-  const home = () => { workspace.actions.selectSession(null); setDestination('work'); };
-  const start = (projectId?: string, kind: SessionKind = 'claude', prompt = '') => {
-    setInitialProjectId(projectId); setInitialKind(kind); setInitialPrompt(prompt);
+  const home = () => { workspace.actions.selectSession(null); setAiHome(vibesEnabled); setDestination('work'); };
+  const openAI = () => { home(); setDrawer(false); };
+  // Only the Projects list still configures a session up front; there the folder
+  // is the point of the action. The home composer never opens this sheet.
+  const start = (projectId?: string) => {
+    setInitialProjectId(projectId);
     if (workspace.status === 'connected') setNewSession(true); else setConnect(true);
   };
   // One-time first-run gate. Everything below renders exactly as before once it is complete.
@@ -44,8 +50,8 @@ export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
   return <ThemeContext.Provider value={{ colors, dark }}>
     <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
     <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]}>
-      <View aria-hidden={drawer || connect || newSession} accessibilityElementsHidden={drawer || connect || newSession}
-        importantForAccessibility={drawer || connect || newSession ? 'no-hide-descendants' : 'auto'}
+      <View aria-hidden={drawer || connect || newSession || wallet} accessibilityElementsHidden={drawer || connect || newSession || wallet}
+        importantForAccessibility={drawer || connect || newSession || wallet ? 'no-hide-descendants' : 'auto'}
         style={[s.frame, width > 700 && { maxWidth: 820 }]}>
         <View style={[s.header, compact && { minHeight: 44, paddingVertical: 0 }]}>
           <IconButton icon="menu-outline" label="Open navigation menu" onPress={() => setDrawer(true)} />
@@ -63,18 +69,26 @@ export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
         </View>
         <View style={s.body}>
           {destination === 'work' && (session ? <SessionScreen key={session.id} session={session} workspace={workspace} /> :
-            <WorkScreen workspace={workspace} onConnect={() => setConnect(true)} onNew={start} onProjects={() => setDestination('projects')} />)}
+            vibesEnabled && aiHome ? <VibesScreen workspace={workspace} onComputer={() => setAiHome(false)} /> :
+              <WorkScreen workspace={workspace} cloud={vibesEnabled} onConnect={() => setConnect(true)}
+                onProjects={() => setDestination('projects')} onAi={() => setAiHome(true)} />)}
           {destination === 'projects' && <ProjectsScreen workspace={workspace} onConnect={() => setConnect(true)} onNew={start} />}
           {destination === 'computers' && <ComputersScreen workspace={workspace} onConnect={() => setConnect(true)} />}
           {destination === 'settings' && <SettingsScreen workspace={workspace} />}
         </View>
       </View>
+      {/* The balance is never gated on `vibesEnabled`: plans must be readable on
+          every runtime, and only the purchase button needs the native bridge. */}
       <NavigationDrawer visible={drawer} destination={destination} workspace={workspace}
-        onClose={() => setDrawer(false)} onNavigate={setDestination} onNew={home} />
+        onClose={() => setDrawer(false)} onNavigate={setDestination} onNew={home}
+        extraChats={vibesEnabled ? <VibesDrawer onOpen={openAI} /> : undefined}
+        balance={<VibesBalanceRow signedIn={Boolean(workspace.account)}
+          onWallet={() => { setDrawer(false); setWallet(true); }}
+          onSignIn={() => { setDrawer(false); setDestination('settings'); }} />} />
+      <WalletSheet visible={wallet} onClose={() => setWallet(false)} />
       <ConnectScreen visible={connect} workspace={workspace} onClose={() => setConnect(false)} />
       <NewSessionSheet visible={newSession} workspace={workspace} initialProjectId={initialProjectId}
-        initialKind={initialKind} initialPrompt={initialPrompt}
-        onCreated={() => { if (initialPrompt) setDraftForScope(`${workspace.demo ? 'sample' : 'live'}:new-chat`, ''); }} onClose={() => setNewSession(false)} />
+        onClose={() => setNewSession(false)} />
     </SafeAreaView>
   </ThemeContext.Provider>;
 }

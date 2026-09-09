@@ -2,12 +2,18 @@ name: Rust desktop beta packages
 
 on:
   workflow_dispatch:
+    inputs:
+      macos_only:
+        description: Build the Mac in-app update only
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   package:
+    if: ${{ !inputs.macos_only }}
     name: ${{ matrix.label }} Rust package
     strategy:
       fail-fast: false
@@ -23,6 +29,16 @@ jobs:
             command: npm run app:build:linux
             source: src-tauri/target/release/bundle/appimage/*.AppImage
             suffix: x86_64.AppImage
+          - os: macos-26
+            label: macOS-arm64
+            command: npm run app:build:macos
+            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
+            suffix: macos-arm64.app.tar.gz
+          - os: macos-26-intel
+            label: macOS-x64
+            command: npm run app:build:macos
+            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
+            suffix: macos-x64.app.tar.gz
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -66,6 +82,12 @@ jobs:
           # release cannot be offered as an in-app update.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       - name: Stage versioned artifact, checksum and update signature
         shell: bash
         run: |
@@ -74,11 +96,29 @@ jobs:
           matches=( ${{ matrix.source }} )
           test "${#matches[@]}" = 1
           cp "${matches[0]}" "release/$output"
-          sha256sum "release/$output" > "release/$output.sha256"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            shasum -a 256 "release/$output" > "release/$output.sha256"
+          else
+            sha256sum "release/$output" > "release/$output.sha256"
+          fi
           # The updater refuses an unsigned package, so a missing .sig here is
           # a failed release, not a warning.
           test -f "${matches[0]}.sig"
           cp "${matches[0]}.sig" "release/$output.sig"
+      - name: Verify macOS signing, notarization and launch
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          app=src-tauri/target/release/bundle/macos/Vibyra.app
+          codesign --verify --deep --strict "$app"
+          spctl --assess --type execute --verbose "$app"
+          xcrun stapler validate "$app"
+          "$app/Contents/MacOS/Vibyra" &
+          pid=$!
+          sleep 12
+          kill -0 "$pid"
+          kill "$pid"
+          wait "$pid" || true
       - name: Smoke-test Linux AppImage launch
         if: runner.os == 'Linux'
         shell: bash
@@ -133,3 +173,8 @@ jobs:
             desktop-tauri/release/${{ steps.version.outputs.output }}.sig
           if-no-files-found: error
           retention-days: 30
+
+  macos:
+    if: ${{ inputs.macos_only }}
+    uses: ./.github/workflows/desktop-macos-release.yml
+    secrets: inherit

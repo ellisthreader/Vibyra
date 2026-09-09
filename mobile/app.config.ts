@@ -4,9 +4,10 @@ const config: ExpoConfig = {
   name: 'Vibyra', slug: 'vibyra', version: '1.0.0', scheme: 'vibyra',
   orientation: 'default', userInterfaceStyle: 'automatic',
   ios: {
-    bundleIdentifier: 'app.vibyra.mobile', supportsTablet: false,
+    bundleIdentifier: 'app.vibyra.mobile', supportsTablet: false, usesAppleSignIn: true,
     infoPlist: {
-      NSLocalNetworkUsageDescription: 'Connect securely to your computer to run your development sessions.',
+      NSLocalNetworkUsageDescription: 'Find your computer running Vibyra Host on the same Wi-Fi so you can connect to it.',
+      NSBonjourServices: ['_vibyra-host._tcp'],
       NSAppTransportSecurity: { NSAllowsLocalNetworking: true },
       ITSAppUsesNonExemptEncryption: true,
     },
@@ -14,6 +15,8 @@ const config: ExpoConfig = {
   android: { package: 'app.vibyra.mobile' },
   web: { bundler: 'metro', output: 'single' },
   plugins: [
+    'expo-apple-authentication',
+    'expo-web-browser',
     'expo-secure-store',
     'expo-font',
     'expo-asset',

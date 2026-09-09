@@ -10,13 +10,17 @@ use std::{
 use tokio::sync::oneshot;
 
 pub struct Shared {
-    pub engine: Arc<vibyra_engine::Engine>,
+    pub engine: Arc<dyn crate::backend::Backend>,
     pub identity: Mutex<Identity>,
     pub invitation: Mutex<Option<Invitation>>,
     pub pending: Mutex<BTreeMap<String, (String, oneshot::Sender<bool>)>>,
     pub active: Mutex<HashSet<String>>,
     pub pairing_url: String,
     pub relay: bool,
+    /// Nearby phones that found this Host over Bonjour may ask to pair without
+    /// a code. Only enabled where the Host advertises itself, and it never
+    /// grants trust on its own: `authenticate` still waits for local approval.
+    pub nearby: bool,
 }
 
 impl Shared {

@@ -48,6 +48,7 @@ try {
   await page.getByRole('button', { name: 'Get started', exact: true }).click();
   await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
   await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+  await page.getByRole('button', { name: 'I have a pairing code', exact: true }).click();
   await page.getByRole('textbox', { name: 'Computer pairing link' }).fill(JSON.stringify(pairing));
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   const key = await until(() => hostOutput.match(/approve ([a-f0-9]{64})/)?.[1], 'local approval request');

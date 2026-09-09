@@ -31,6 +31,7 @@ function sessionChannel(): { channel: Channel<TermEvent>; bind: (id: number) => 
 export interface CreateTerminalOptions {
   agentId: string;
   cwd?: string | null;
+  resumeCwd?: string | null;
   rows?: number;
   cols?: number;
   model?: string | null;
@@ -53,6 +54,7 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Se
     request: {
       agentId: options.agentId,
       cwd: options.cwd ?? null,
+      resumeCwd: options.resumeCwd ?? null,
       rows: options.rows ?? null,
       cols: options.cols ?? null,
       model: options.model ?? null,
@@ -112,5 +114,13 @@ export function setTerminalVisibility(id: number, visibility: Visibility): Promi
 }
 
 export function removeTerminal(id: number): Promise<void> {
-  return invoke("remove_terminal", { id });
+    return invoke("remove_terminal", { id });
+}
+
+export function terminalSnapshot(id: number): Promise<string> {
+  return invoke("terminal_snapshot", { id });
+}
+
+export function terminalSessionIdentities(panes: { id: number; accountId: string | null }[]): Promise<{ id: number; sessionId: string | null }[]> {
+  return invoke("terminal_session_identities", { panes });
 }

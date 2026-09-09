@@ -10,12 +10,17 @@ use tauri::Wry;
 
 use super::{
     account, agent_conversations, agents, ai, ai_memory, ai_service, clipboard, fs, memory,
-    memory_browser, perf, preview, provider_accounts, render, report, screenshot,
+    memory_browser, perf, phone, preview, provider_accounts, render, report, screenshot,
     screenshot_reveal, session, settings, terminal, voice,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
+        phone::phone_status,
+        phone::phone_configure,
+        phone::phone_invite,
+        phone::phone_answer,
+        phone::phone_revoke,
         account::account_snapshot,
         account::account_restore,
         account::account_login_email,
@@ -38,6 +43,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         terminal::kill_terminal,
         terminal::remove_terminal,
         terminal::list_terminals,
+        terminal::terminal_session_identities,
         agents::list_agents,
         agent_conversations::agent_conversation_resumable,
         render::renderer_policy,

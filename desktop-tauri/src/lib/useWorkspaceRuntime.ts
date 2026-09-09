@@ -11,6 +11,7 @@ import { useWorkspaceStore } from "../state/workspaceStore";
 import { restoredProjectId } from "./sessionRestore";
 import { startAppRuntime } from "./appStartup";
 import { notifyModelsReleased, notifySessionExit } from "./notificationTriggers";
+import { startupPrefetchEnabled } from "./performanceMode";
 import { providerAccountRuntimeUpdate } from "./providerAccountPolicy";
 import { setSessionExitHandler, setSessionTitleHandler } from "./terminalEvents";
 
@@ -77,12 +78,17 @@ function useModelReleaseWatch(): void {
 }
 
 /** Warms the screenshot editor chunk once the app is quiet. The shortcut is
- * global, so its first press must not wait on a module fetch. */
+ * global, so its first press must not wait on a module fetch — unless the user
+ * asked for Performance mode, which takes the opposite side of that trade. */
 function useScreenshotEditorPrefetch(): void {
+  const enabled = startupPrefetchEnabled(
+    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+  );
   useEffect(() => {
+    if (!enabled) return;
     const timer = setTimeout(() => void import("../components/layout/ScreenshotEditor"), 1_500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [enabled]);
 }
 
 /** Everything the authenticated workspace starts once, kept out of the shell

@@ -1,16 +1,5 @@
-// Which agents let Vibyra name the conversation, and how a pane gets its own.
-//
-// "Resume the last conversation here" is ambiguous the moment a project has
-// two panes running the same agent: every one of them would continue the same
-// conversation, and two live processes would then be appending to it. The way
-// out is to stop asking for "the last one" — Claude Code accepts
-// `--session-id <uuid>` at launch and `--resume <uuid>` afterwards, so a pane
-// can be given its own conversation up front and name exactly that one later.
-//
-// Codex and Gemini have no equivalent: Codex cannot be told an id at launch,
-// and Gemini resumes by recency or list index rather than by id. Panes running
-// those fall back to the recency form, which `relaunchContinuity` only allows
-// when the pane is the only one that form could mean.
+// Claude can pin a conversation before launch. Codex assigns its own UUID,
+// discovered by sessionIdentity.ts on Mac. Unknown IDs use a provider chooser.
 
 const PINNABLE_AGENTS = new Set(["claude"]);
 

@@ -1,24 +1,55 @@
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
+import { useVibes } from '../vibes/VibesProvider';
+import { AgentSheet } from './AgentSheet';
+import { AUTO, autoAgent, defaultProjectId, modelLabel, sessionTitle } from './agents';
 import { BrandMark, Hint, Icon } from './primitives';
 import { NewChatComposer } from './NewChatComposer';
-import { useDraft } from './useDraft';
+import { useAction } from './useAction';
+import { setDraftForScope, useDraft } from './useDraft';
 import type { SessionKind, WorkspaceModel } from './types';
 
-export function WorkScreen({ workspace, onConnect, onNew, onProjects }: {
-  workspace: WorkspaceModel; onConnect: () => void;
-  onNew: (projectId?: string, kind?: SessionKind, prompt?: string) => void; onProjects: () => void;
+export function WorkScreen({ workspace, onConnect, onProjects, onAi, cloud }: {
+  workspace: WorkspaceModel; onConnect: () => void; onProjects: () => void; onAi: () => void; cloud: boolean;
 }) {
   const { colors } = useTheme();
+  const { models, store } = useVibes();
   const [draft, setDraft] = useDraft(`${workspace.demo ? 'sample' : 'live'}:new-chat`);
+  const [pick, setPick] = useState(false);
+  const { busy, error, run } = useAction();
   const connected = workspace.status === 'connected';
+  const projectId = defaultProjectId(workspace.projects, workspace.sessions);
+  // Sending resolves everything itself: Auto picks the agent, the most recent
+  // shared project is used, and the prompt becomes both the title and the draft.
+  const launch = (kind: SessionKind | typeof AUTO) => {
+    if (!connected) { onConnect(); return; }
+    if (!projectId) return;
+    const resolved = kind === AUTO ? autoAgent(Platform.OS === 'ios' && workspace.conversationAvailable) : kind;
+    const prompt = draft.trim();
+    void run(async () => {
+      const session = await workspace.actions.createSession(projectId, resolved, sessionTitle(prompt, resolved));
+      if (session && prompt) setDraftForScope(`${workspace.host?.id}:${session.projectId}:${session.id}`, prompt);
+      setDraft('');
+    });
+  };
+  // Every row in the picker is an OpenRouter model, so choosing one is choosing
+  // the AI chat and the draft moves with it. Auto stays here and resolves itself.
+  const select = (id: string) => {
+    if (id === AUTO) return;
+    store.update({ model: id });
+    setDraftForScope(`vibes:${workspace.account?.email ?? 'guest'}:${store.state.draftScope}`, draft);
+    setDraft(''); onAi();
+  };
+  const note = !connected ? 'Connect your computer to start coding.'
+    : !projectId ? 'Share a folder in Vibyra Host to start a chat.' : 'Your computer. Your workspace.';
   return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       <View style={s.hero}>
         <BrandMark size={48} />
         <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>What are we{'\n'}building?</Text>
         <View style={s.actions}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Open terminal" onPress={() => onNew(undefined, 'shell')}
+          <Pressable accessibilityRole="button" accessibilityLabel="Open terminal" onPress={() => launch('shell')}
             style={[s.action, { borderColor: colors.border }]}>
             <Icon name="terminal-outline" size={17} color={colors.muted} /><Text style={[s.actionText, { color: colors.text }]}>Open terminal</Text>
           </Pressable>
@@ -45,10 +76,12 @@ export function WorkScreen({ workspace, onConnect, onNew, onProjects }: {
           <Icon name="arrow-up-outline" size={17} color={colors.muted} />
         </Pressable>)}
       </View>}
-      {workspace.error && <View style={s.error}><Hint error>{workspace.error}</Hint></View>}
+      {(error || workspace.error) && <View style={s.error}><Hint error>{error || workspace.error}</Hint></View>}
     </ScrollView>
-    <NewChatComposer value={draft} onChange={setDraft} connected={connected}
-      onStart={(kind, prompt) => onNew(undefined, kind, prompt)} />
+    <NewChatComposer value={draft} onChange={setDraft} onSend={() => launch(AUTO)} onPick={() => setPick(true)}
+      agent={modelLabel(AUTO, models)} note={note} busy={busy} />
+    <AgentSheet visible={pick} onClose={() => setPick(false)} onSelect={select} models={cloud ? models : []}
+      selection={AUTO} paid={Boolean(store.state.wallet?.paidAvailable)} />
   </KeyboardAvoidingView>;
 }
 const s = StyleSheet.create({

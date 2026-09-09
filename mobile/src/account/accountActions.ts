@@ -51,8 +51,15 @@ function credentials(email: string, password: string) {
   return clean;
 }
 export function makeAccountActions(store: WorkspaceStore): Pick<WorkspaceActions,
-  'signUp' | 'logIn' | 'logOut' | 'completeOnboarding' | 'resetOnboarding'> {
+  'signUp' | 'logIn' | 'providerLogIn' | 'logOut' | 'completeOnboarding' | 'resetOnboarding'> {
   return {
+    providerLogIn: async (provider, signal) => {
+      if (!store.deps.account.socialLogin) throw new Error('Provider sign-in is unavailable. Please use email.');
+      const session = await store.deps.account.socialLogin(provider, signal);
+      if (!session || signal.aborted) return false;
+      await keep(store, session);
+      return true;
+    },
     signUp: async (email, password) => keep(store, await store.deps.account.signup(credentials(email, password), password)),
     logIn: async (email, password) => keep(store, await store.deps.account.login(credentials(email, password), password)),
     logOut: async () => {

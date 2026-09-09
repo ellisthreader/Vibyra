@@ -1,35 +1,18 @@
-/* Restored panes: saved output shown behind a dimming veil, with the resume
-   affordance pinned to the bottom. Tokens only, so both themes follow.
-   Inherits position/inset from .term-view. */
-
-.term-view--suspended {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-.pane__suspended {
-  align-items: center;
-  background: linear-gradient(to top, var(--term-screen) 64%, transparent);
-  bottom: 0;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  left: 0;
-  padding: 22px 14px 14px;
-  position: absolute;
-  right: 0;
-}
-
-.pane__suspended span {
-  color: var(--term-muted);
-  font-size: 11.5px;
-  font-weight: 560;
-}
-
-.pane__suspended .btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
+/* Saved history stays selectable; recovery lives below it instead of blocking it. */
+.pane-recovery { position: relative; flex: none; padding: 16px; z-index: 6; background: var(--term-screen); border-top: 1px solid var(--line-soft); }
+.pane-recovery__card { display: grid; gap: 14px; }
+.pane-recovery__copy { flex: 1 1 220px; }
+.pane-recovery__copy strong { font-size: 14px; font-weight: 620; }
+.pane-recovery__copy p { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.6; max-width: 440px; }
+.pane-recovery__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pane-recovery__copy .pane-recovery__error { color: var(--danger); }
+.pane-recovery--empty { position: absolute; inset: 0; display: grid; place-items: center; border: 0; padding: 28px; }
+.pane-recovery--empty .pane-recovery__card { max-width: 420px; display: grid; gap: 22px; }
+.pane-recovery--empty .pane-recovery__copy strong { font-size: 22px; letter-spacing: -.025em; }
+.pane-recovery__new { background: transparent; }
+.pane__state { color: var(--dim); font-size: var(--pane-state-size, 11px); white-space: nowrap; }
+.pane__state--attention { color: var(--amber); }
+.close-confirm__body .close-confirm__error { color: var(--danger); }
 
 /* ── close confirmation ─────────────────────────────────────────────────── */
 
@@ -81,3 +64,9 @@
   justify-content: flex-end;
   padding: 13px 18px;
 }
+
+.pane--recoverable .pane__body { display: flex; flex-direction: column; }
+.pane--recoverable .term-view { position: relative; flex: 1; min-height: 0; }
+.pane--recoverable .pane-recovery { max-height: 65%; overflow-y: auto; }
+.pane--recoverable .pane-recovery--empty { max-height: none; }
+.adot--saved { background: var(--dim); }

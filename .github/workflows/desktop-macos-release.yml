@@ -1,0 +1,142 @@
+name: Mac release packages
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.label }} Rust package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            label: macOS-arm64
+            command: npm run app:build:macos
+            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
+            suffix: macos-arm64.app.tar.gz
+          - os: macos-15-intel
+            label: macOS-x64
+            command: npm run app:build:macos
+            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
+            suffix: macos-x64.app.tar.gz
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "12.0"
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Require the existing updater signing key
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: test -n "$TAURI_SIGNING_PRIVATE_KEY"
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Confirm pinned Rust toolchain
+        run: rustup show active-toolchain
+      - name: Run release gates
+        run: npm run verify
+      - name: Verify encrypted embedded phone transport
+        run: cargo test --manifest-path ../host/Cargo.toml -p vibyra-host --no-default-features --lib --locked
+      - name: Read the version being released
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "output=Vibyra-Desktop-$version-${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build native package
+        run: ${{ matrix.command }}
+        env:
+          # Without these the bundler silently skips the .sig files and the
+          # release cannot be offered as an in-app update.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # In-app beta update: ad-hoc Mac code signature plus Tauri authentication.
+          APPLE_SIGNING_IDENTITY: "-"
+      - name: Stage versioned artifact, checksum and update signature
+        shell: bash
+        run: |
+          mkdir -p release
+          output="${{ steps.version.outputs.output }}"
+          matches=( ${{ matrix.source }} )
+          test "${#matches[@]}" = 1
+          cp "${matches[0]}" "release/$output"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            shasum -a 256 "release/$output" > "release/$output.sha256"
+          else
+            sha256sum "release/$output" > "release/$output.sha256"
+          fi
+          # The updater refuses an unsigned package, so a missing .sig here is
+          # a failed release, not a warning.
+          test -f "${matches[0]}.sig"
+          cp "${matches[0]}.sig" "release/$output.sig"
+      - name: Verify macOS code signature, microphone entitlement and launch
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          app=src-tauri/target/release/bundle/macos/Vibyra.app
+          codesign --verify --deep --strict "$app"
+          codesign -d --entitlements - --xml "$app" > /tmp/vibyra-entitlements.plist
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' /tmp/vibyra-entitlements.plist | grep -qx true
+          /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
+          "$app/Contents/MacOS/Vibyra" &
+          pid=$!
+          sleep 12
+          kill -0 "$pid"
+          kill "$pid"
+          wait "$pid" || true
+      - name: Summarise the values needed to publish this release
+        shell: bash
+        run: |
+          output="${{ steps.version.outputs.output }}"
+          {
+            echo "### ${{ matrix.label }} — Vibyra ${{ steps.version.outputs.version }}"
+            echo
+            echo "Set these on the backend, then upload \`$output\` to the release volume:"
+            echo
+            echo '```'
+            echo "VERSION=${{ steps.version.outputs.version }}"
+            echo "FILENAME=$output"
+            echo "SIZE=$(wc -c < "release/$output")"
+            echo "SHA256=$(cut -d' ' -f1 < "release/$output.sha256")"
+            echo "SIGNATURE=$(cat "release/$output.sig")"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload package and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-rust-beta-${{ matrix.label }}-${{ github.sha }}
+          path: |
+            desktop-tauri/release/${{ steps.version.outputs.output }}
+            desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
+            desktop-tauri/release/${{ steps.version.outputs.output }}.sig
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Preserve packages if a final packaging check fails
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-macos-unverified-${{ matrix.label }}-${{ github.sha }}
+          path: desktop-tauri/release/*
+          if-no-files-found: ignore
+          retention-days: 7

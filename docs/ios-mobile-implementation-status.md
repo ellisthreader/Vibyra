@@ -1,5 +1,11 @@
 # iOS implementation status
 
+September 9 conversation update: new native iOS Codex sessions on capable Hosts
+now use structured messages, activity, permissions and questions. Existing PTYs
+retain their original runner. See [conversation verification](ios-conversation-validation.md)
+and `host/docs/conversations.md` for current evidence and limitations; the older
+foundation sections below describe the pre-conversation baseline.
+
 Updated 7 September 2026. This records the foundation and conversation-first redesign of
 the [master plan](ios-mobile-master-plan-2026-2027.md), not completion of M0–M5.
 

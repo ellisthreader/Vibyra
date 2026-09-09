@@ -1,10 +1,12 @@
-import { type KeyboardEvent, useEffect, useRef } from "react";
+import { type CSSProperties, type KeyboardEvent, useEffect, useRef } from "react";
 
 import { setTerminalVisibility } from "../../ipc/terminal";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import { type ProjectMode, useWorkspaceStore } from "../../state/workspaceStore";
+import { Companion } from "../companion/Companion";
+import { PlusIcon } from "../common/Icons";
 import { PreviewModeIcon, TerminalModeIcon } from "../preview/PreviewIcons";
 import { PreviewWorkspace } from "../preview/PreviewWorkspace";
 import { TerminalStage } from "../terminal/TerminalStage";
@@ -14,19 +16,20 @@ export function ProjectWorkspace() {
   const projects = useProjects();
   const mode = useWorkspaceStore((state) => state.projectMode);
   const companionOpen = useWorkspaceStore((state) => state.companionOpen);
+  const companionSize = useWorkspaceStore((state) => state.companionSize);
+  const companionWidth = useWorkspaceStore((state) => state.companionWidth);
+  const toolsVisible = mode === "terminals" && companionOpen;
+  const terminalsVisible = mode === "terminals" && !(toolsVisible && companionSize === "full");
   const panes = useTerminalStore((state) => state.panes);
   const zoomedId = useTerminalStore((state) => state.zoomedId);
   const terminalTab = useRef<HTMLButtonElement>(null);
   const previewTab = useRef<HTMLButtonElement>(null);
   const project = projects.find((entry) => entry.id === activeId);
   const projectPanes = panes.filter((pane) => pane.projectId === activeId);
-  const live = projectPanes.filter(
-    (pane) => pane.status === "running" && pane.visibility !== "hibernated",
-  ).length;
 
   useEffect(() => {
     if (!activeId) return;
-    const visibility = mode === "terminals" ? "visible" : "hidden";
+    const visibility = terminalsVisible ? "visible" : "hidden";
     const store = useTerminalStore.getState();
     const candidates = store.panes.filter(
       (pane) =>
@@ -47,7 +50,7 @@ export function ProjectWorkspace() {
         ),
       }));
     }
-  }, [activeId, mode]);
+  }, [activeId, terminalsVisible]);
 
   if (!project || !activeId) return null;
 
@@ -76,7 +79,8 @@ export function ProjectWorkspace() {
   };
 
   return (
-    <main className="workspace project-workspace">
+    <main className="workspace project-workspace" data-tools={toolsVisible ? companionSize : "closed"}
+      style={{ "--tools-reserve": companionSize === "wide" ? "56%" : `${companionWidth + 8}px` } as CSSProperties}>
       <header className="project-modebar">
         <nav className="project-modes" role="tablist" aria-label="Project workspace mode">
           <button
@@ -106,13 +110,7 @@ export function ProjectWorkspace() {
             Preview
           </button>
         </nav>
-        <span className="project-modebar__context">
-          {mode === "terminals"
-            ? projectPanes.length
-              ? projectPanes.length + " session" + (projectPanes.length === 1 ? "" : "s") + " · " + live + " live"
-              : project.root
-            : "Browser preview · local only"}
-        </span>
+        <span className="project-modebar__context" title={project.root}>{project.root.split(/[\\/]/).filter(Boolean).slice(-2).join(" / ")}</span>
         <span className="project-modebar__spacer" />
         {mode === "terminals" && zoomedId !== null && (
           <button
@@ -122,26 +120,17 @@ export function ProjectWorkspace() {
             Exit zoom
           </button>
         )}
-        {mode === "terminals" && (
-          <button
-            className={"icon-btn " + (companionOpen ? "icon-btn--active" : "")}
-            title={companionOpen ? "Hide side panel" : "Show side panel"}
-            aria-label={companionOpen ? "Hide side panel" : "Show side panel"}
-            onClick={() => useWorkspaceStore.getState().toggleCompanion()}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="16" rx="2.5" />
-              <path d="M15 4v16" />
-            </svg>
-          </button>
+        {mode === "terminals" && projectPanes.length > 0 && (
+          <button className="btn project-modebar__new" onClick={() => useWorkspaceStore.getState().openAgentPicker()}><PlusIcon size={14} /> New terminal</button>
         )}
+
       </header>
       <div className="project-mode-stack">
         <section
           id="project-terminal-panel"
           role="tabpanel"
-          className={"project-mode-panel " + (mode === "terminals" ? "project-mode-panel--active" : "")}
-          aria-hidden={mode !== "terminals"}
+          className={"project-mode-panel " + (terminalsVisible ? "project-mode-panel--active" : "")}
+          aria-hidden={!terminalsVisible}
         >
           <TerminalStage />
         </section>
@@ -155,6 +144,7 @@ export function ProjectWorkspace() {
           </section>
         )}
       </div>
+      {mode === "terminals" && <Companion />}
     </main>
   );
 }

@@ -7,8 +7,9 @@ import { DemoConversation } from '../demo/DemoConversation';
 import { isDemoWorkspace } from '../demo/data';
 import { useTheme } from '../theme';
 import { Composer } from './Composer';
+import { ConversationSessionScreen } from './ConversationSessionScreen';
 import { confirmAction } from './confirm';
-import { Button, Hint, Icon, IconButton } from './primitives';
+import { Button, EmptyState, Hint, Icon, IconButton } from './primitives';
 import { ReviewSheet } from './ReviewSheet';
 import { SessionDetails } from './SessionDetails';
 import { Sheet } from './Sheet';
@@ -18,6 +19,24 @@ import { useDraft } from './useDraft';
 import type { Session, WorkspaceModel } from './types';
 
 export function SessionScreen({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
+  if (session.runner === 'conversation') return Platform.OS === 'ios'
+    ? <ConversationSessionScreen session={session} workspace={workspace} />
+    : <PhoneConversationNotice session={session} workspace={workspace} />;
+  return <TerminalSessionScreen session={session} workspace={workspace} />;
+}
+function PhoneConversationNotice({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
+  const [review, setReview] = useState(false);
+  const project = workspace.projects.find(item => item.id === session.projectId);
+  return <View style={s.body}>
+    <EmptyState icon="phone-portrait-outline" title="Continue on your iPhone"
+      detail="Open this conversation in Vibyra on your iPhone to read updates and respond to the agent.">
+      <Button title="Review project files" secondary icon="folder-outline" disabled={workspace.status !== 'connected'}
+        onPress={() => setReview(true)} />
+    </EmptyState>
+    <ReviewSheet visible={review} onClose={() => setReview(false)} project={project} workspace={workspace} initialMode="files" />
+  </View>;
+}
+function TerminalSessionScreen({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const compact = width > height && height < 500;
@@ -33,7 +52,7 @@ export function SessionScreen({ session, workspace }: { session: Session; worksp
   const provider = session.kind === 'shell' ? 'Terminal' : session.kind === 'claude' ? 'Claude Code' : 'Codex';
   const connected = workspace.status === 'connected';
   const controlReady = workspace.demo || workspace.control === 'ready';
-  const canInput = connected && (workspace.demo ? session.status !== 'interrupted' : session.status === 'running' && controlReady);
+  const canInput = !session.readOnly && connected && (workspace.demo ? session.status !== 'interrupted' : session.status === 'running' && controlReady);
   const showTerminal = tab === 'terminal' || !isDemoWorkspace(workspace);
   const stop = () => confirmAction('Stop this session?', workspace.demo
     ? 'Stop this sample session. No computer process is affected.'
@@ -48,7 +67,7 @@ export function SessionScreen({ session, workspace }: { session: Session; worksp
   };
   return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     {!compact && <View style={s.context}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Open session project" disabled={!connected}
+      <Pressable accessibilityRole="button" accessibilityLabel="Open session project" disabled={!connected || session.readOnly}
         onPress={() => setReview('files')} style={s.project}>
         <Icon name="folder-outline" size={13} color={colors.muted} />
         <Text numberOfLines={1} style={[s.contextText, { color: colors.muted }]}>{project?.name ?? 'Project'}</Text>
@@ -69,7 +88,7 @@ export function SessionScreen({ session, workspace }: { session: Session; worksp
           </Pressable>)}
       </View>
       <View style={s.spacer} />
-      <IconButton icon="git-compare-outline" label="Review project files and changes" disabled={!connected} onPress={() => setReview('changes')} />
+      {!session.readOnly && <IconButton icon="git-compare-outline" label="Review project files and changes" disabled={!connected} onPress={() => setReview('changes')} />}
       {compact && <IconButton icon="ellipsis-horizontal" label="Session options" onPress={() => setDetails(true)} />}
     </View>
     {!connected && <View style={[s.status, { backgroundColor: colors.elevated }]}>
@@ -80,8 +99,8 @@ export function SessionScreen({ session, workspace }: { session: Session; worksp
       ? 'Session interrupted. Start a new chat to continue.' : `Session ended${session.exitCode === undefined ? '.' : ` · exit ${session.exitCode}`}`}</Hint></View>}
     {connected && !controlReady && session.status === 'running' && <View style={[s.observe, { backgroundColor: colors.surface }]}>
       <View style={s.observing}><View style={[s.dot, { backgroundColor: colors.success }]} />
-        <Text style={[s.statusText, { color: colors.muted }]}>{workspace.control === 'claiming' ? 'Requesting control…' : 'Viewing live'}</Text></View>
-      {workspace.actions.claimControl && workspace.control !== 'claiming' && <Pressable accessibilityRole="button"
+        <Text style={[s.statusText, { color: colors.muted }]}>{session.readOnly ? 'Viewing Mac desktop · Read only' : workspace.control === 'claiming' ? 'Requesting control…' : 'Viewing live'}</Text></View>
+      {!session.readOnly && workspace.actions.claimControl && workspace.control !== 'claiming' && <Pressable accessibilityRole="button"
         accessibilityLabel="Take control" disabled={busy} onPress={() => void run(workspace.actions.claimControl!)} style={s.claim}>
         <Text style={[s.claimText, { color: colors.accent }]}>Take control</Text><Icon name="arrow-forward" size={14} color={colors.accent} />
       </Pressable>}
@@ -97,12 +116,12 @@ export function SessionScreen({ session, workspace }: { session: Session; worksp
         <TerminalSurface output={workspace.output} onPasteMode={setBracketedPaste} onInput={input}
           onResize={(cols, rows) => { void Promise.resolve(workspace.actions.resize(cols, rows)).catch(cause =>
             setInputError(cause instanceof Error ? cause.message : 'Terminal size could not be updated.')); }} disabled={!canInput} />
-        {!compact && <TerminalKeys disabled={!canInput} onInput={input} />}
+        {!session.readOnly && !compact && <TerminalKeys disabled={!canInput} onInput={input} />}
       </View>}
-    <Composer compact={compact} value={draft} onChange={setDraft} disabled={!canInput} demo={workspace.demo}
+    {!session.readOnly && <Composer compact={compact} value={draft} onChange={setDraft} disabled={!canInput} demo={workspace.demo}
       shell={session.kind === 'shell' || tab === 'terminal'} contextLabel={provider} onContext={() => setDetails(true)}
       onReview={connected ? () => setReview('files') : undefined}
-      onSend={value => run(() => workspace.actions.sendInput(workspace.demo ? `${value}\r` : composerInput(value, bracketedPaste)))} />
+      onSend={value => run(() => workspace.actions.sendInput(workspace.demo ? `${value}\r` : composerInput(value, bracketedPaste)))} />}
     {workspace.demo && <DemoPreviewSheet visible={preview} onClose={() => setPreview(false)}
       onFeedback={value => { setDraft(value); setTab('chat'); setPreview(false); }} />}
     <ReviewSheet visible={review !== null} onClose={() => setReview(null)} project={project} workspace={workspace} initialMode={review ?? 'changes'} />

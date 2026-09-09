@@ -6,6 +6,7 @@ export type RuntimeState = Omit<WorkspaceModel, 'actions'>;
 export interface SavedConnection { pairing: Pairing; privateKey: string; deviceId?: string; host?: Computer }
 export interface HostState {
   protocol: number;
+  capabilities?: { conversationV1?: boolean; vibesToolsV1?: boolean };
   host: Computer;
   projects: Project[];
   sessions: Session[];
@@ -19,7 +20,7 @@ export interface SecureStorage {
 }
 // `storage` holds secrets (trust keys, the account token). `flags` holds non-secret device state such as
 // whether the welcome flow has been completed; on the web it may persist across reloads.
-export interface RuntimeDependencies { rpc: RpcClient; storage: SecureStorage; flags: SecureStorage; account: AccountApi; uuid(): string }
+export interface RuntimeDependencies { rpc: RpcClient; storage: SecureStorage; flags: SecureStorage; account: AccountApi; uuid(): string; iosConversations?: boolean }
 export interface SavedOnboarding { completedAt: string; mode: 'computer' | 'phone' | null }
 export interface SavedAccount { token: string; email: string; name: string; plan: string }
 export const initialState: RuntimeState = {

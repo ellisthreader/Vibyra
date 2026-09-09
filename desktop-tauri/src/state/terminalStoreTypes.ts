@@ -10,6 +10,8 @@ export interface PaneState {
   permissionMode: "standard" | "full";
   reasoningEffort: string | null;
   sourceCwd: string | null;
+  /** Actual native working folder, including an existing safe worktree. */
+  resumeCwd?: string | null;
   workspaceMode: "safe" | "shared";
   safeSnapshotFingerprint: string | null;
   customTitle: string | null;
@@ -33,6 +35,7 @@ export interface PaneState {
 
 export interface SpawnAgentOptions {
   cwd?: string | null;
+  resumeCwd?: string | null;
   model?: string | null;
   permissionMode?: "standard" | "full";
   reasoningEffort?: string | null;
@@ -62,6 +65,9 @@ export interface TerminalStore {
   focusedId: number | null;
   zoomedId: number | null;
   activity: Record<number, ActivityState>;
+  sessionReady: boolean;
+  relaunching: number[];
+  relaunchErrors: Record<number, string>;
   spawnAgent: (agent: ResolvedAgent, projectId: string, options?: SpawnAgentOptions) => Promise<void>;
   spawnSsh: (target: string, projectId: string, options?: SpawnSshOptions) => Promise<void>;
   restart: (id: number) => Promise<void>;

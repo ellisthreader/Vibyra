@@ -69,6 +69,10 @@ export const SparklesIcon = icon(
   </>,
 );
 
+/** Settings → Performance. A bolt reads as "fast" without implying energy
+    saving, which is the opposite trade from the one this mode makes. */
+export const BoltIcon = icon(<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />);
+
 export const MemoryIcon = icon(
   <>
     <path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 1 5 17.5z" />

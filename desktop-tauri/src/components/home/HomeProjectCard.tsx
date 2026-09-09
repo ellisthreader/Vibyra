@@ -1,99 +1,36 @@
 import { useState } from "react";
-
 import { abbreviateHome, relativeTime } from "../../lib/relativeTime";
 import { useProjectStore } from "../../state/projectStore";
-import { paneLabel, useTerminalStore } from "../../state/terminalStore";
+import { useTerminalStore } from "../../state/terminalStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 import type { ProjectSpec } from "../../types";
+import { CloseIcon, PlusIcon } from "../common/Icons";
 
 export function HomeProjectCard({ project }: { project: ProjectSpec }) {
-  const activate = useProjectStore((state) => state.activate);
-  const remove = useProjectStore((state) => state.remove);
-  const homeDir = useProjectStore((state) => state.homeDir);
-  const openAgentPicker = useWorkspaceStore((state) => state.openAgentPicker);
-  const allPanes = useTerminalStore((state) => state.panes);
-  const panes = allPanes.filter((pane) => pane.projectId === project.id);
-  const activity = useTerminalStore((state) => state.activity);
+  const activate = useProjectStore((s) => s.activate);
+  const remove = useProjectStore((s) => s.remove);
+  const homeDir = useProjectStore((s) => s.homeDir);
+  const openAgentPicker = useWorkspaceStore((s) => s.openAgentPicker);
+  const allPanes = useTerminalStore((s) => s.panes);
+  const activity = useTerminalStore((s) => s.activity);
   const [confirming, setConfirming] = useState(false);
-
-  const working = panes.filter((pane) => activity[pane.id] === "working").length;
-  const waiting = panes.filter((pane) => activity[pane.id] === "attention").length;
-  const sleeping = panes.filter((pane) => pane.visibility === "hibernated").length;
-  const latest = [...panes].sort((left, right) => right.lastFocusedAt - left.lastFocusedAt)[0];
-  const status = [] as string[];
-  if (working) status.push(`${working} working`);
-  if (waiting) status.push(`${waiting} waiting`);
-  if (sleeping) status.push(`${sleeping} sleeping`);
-  if (panes.length > 0 && status.length === 0) status.push(`${panes.length} idle`);
-
+  const panes = allPanes.filter((p) => p.projectId === project.id);
+  const waiting = panes.filter((p) => p.status === "running" && activity[p.id] === "attention").length;
+  const working = panes.filter((p) => p.status === "running" && activity[p.id] === "working").length;
+  const saved = panes.filter((p) => p.status === "suspended").length;
+  const status = waiting ? `${waiting} need attention` : working ? `${working} working` : saved ? `${saved} saved ${saved === 1 ? "chat" : "chats"}` : panes.length ? `${panes.length} ${panes.length === 1 ? "terminal" : "terminals"}` : "Ready to start";
   return (
-    <div
-      className={`hcard ${waiting > 0 ? "hcard--attn" : ""}`}
-      style={{ "--hc": project.color } as React.CSSProperties}
-      role="button"
-      tabIndex={0}
-      onClick={() => void activate(project.id)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") void activate(project.id);
-      }}
-      onMouseLeave={() => setConfirming(false)}
-    >
-      <div className="hcard__top">
-        <span className="hcard__mono">{project.name.charAt(0).toUpperCase()}</span>
-        <span className="hcard__names">
-          <strong>{project.name}</strong>
-          <small>{abbreviateHome(project.root, homeDir)}</small>
-        </span>
-        <span className="hcard__tools" onClick={(event) => event.stopPropagation()}>
-          <button
-            className="icon-btn"
-            title={`New agent in ${project.name}`}
-            onClick={() => void activate(project.id).then(openAgentPicker)}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-          <button
-            className={`icon-btn ${confirming ? "icon-btn--danger" : ""}`}
-            title={confirming ? "Click again to remove from Vibyra (folder is untouched)" : "Remove project"}
-            onClick={() => {
-              if (confirming) void remove(project.id);
-              else setConfirming(true);
-            }}
-          >
-            {confirming ? (
-              <span className="hcard__confirm">sure?</span>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
-        </span>
+    <article className={`hcard ${waiting ? "hcard--attn" : ""}`} onMouseLeave={() => setConfirming(false)}>
+      <button className="hcard__open" onClick={() => void activate(project.id)} aria-label={`Open ${project.name}`}>
+        <span className="hcard__mono" style={{ "--hc": project.color } as React.CSSProperties}>{project.name.charAt(0).toUpperCase()}</span>
+        <span className="hcard__names"><strong>{project.name}</strong><small title={project.root}>{abbreviateHome(project.root, homeDir)}</small></span>
+        <span className="hcard__status">{working > 0 && <span className="adot adot--working" />}{status}</span>
+        <span className="hcard__last">{project.lastOpenedMs ? relativeTime(project.lastOpenedMs) : "New"}</span>
+      </button>
+      <div className="hcard__tools">
+        <button className="icon-btn" title={`New terminal in ${project.name}`} aria-label={`New terminal in ${project.name}`} onClick={() => void activate(project.id).then(openAgentPicker)}><PlusIcon size={15} /></button>
+        <button className={`icon-btn ${confirming ? "icon-btn--danger" : ""}`} title={confirming ? "Remove from Vibyra? Your folder stays on disk." : "Remove project"} aria-label={confirming ? `Confirm removing ${project.name}` : `Remove ${project.name}`} onClick={() => { if (confirming) void remove(project.id); else setConfirming(true); }}>{confirming ? <span className="hcard__confirm">Sure?</span> : <CloseIcon size={14} />}</button>
       </div>
-      <div className="hcard__agents">
-        {panes.slice(0, 6).map((pane) => (
-          <span
-            key={pane.id}
-            className={`adot adot--${
-              pane.status === "exited"
-                ? "exited"
-                : pane.visibility === "hibernated"
-                  ? "sleeping"
-                  : (activity[pane.id] ?? "idle")
-            }`}
-          />
-        ))}
-        <span className="hcard__status">{panes.length === 0 ? "no agents yet" : status.join(" · ")}</span>
-      </div>
-      <div className="hcard__last">
-        {latest
-          ? // A session saved before Vibyra recorded when it was written has
-            // no timestamp, and dating it to the epoch reads as "20687d ago".
-            `${paneLabel(latest)}${latest.lastFocusedAt > 0 ? ` · ${relativeTime(latest.lastFocusedAt)}` : ""}`
-          : "open it and launch an agent"}
-      </div>
-    </div>
+    </article>
   );
 }

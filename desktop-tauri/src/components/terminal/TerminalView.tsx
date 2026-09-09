@@ -5,7 +5,12 @@ import {
   terminalViewportIsNearBottom,
 } from "../../lib/terminalBottomAnchor";
 import { dropCarriesText, terminalDropText } from "../../lib/terminalDrop";
-import { fitTerminal, getTerminal, mountTerminal } from "../../lib/terminalRegistry";
+import {
+  fitTerminal,
+  getTerminal,
+  mountTerminal,
+  setTerminalFontSize,
+} from "../../lib/terminalRegistry";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 
@@ -16,18 +21,27 @@ import { useTerminalStore } from "../../state/terminalStore";
  *
  * Resizes fit on the next frame (throttled) plus a trailing settle pass, so
  * grid changes and panel drags track live instead of snapping late.
+ *
+ * `fontSize` comes from the grid layout rather than the settings, because a
+ * crowded grid buys lines back by rendering smaller. It is applied outside the
+ * mount effect so a density change resizes the terminal in place instead of
+ * tearing down a live one.
  */
 const FIT_THROTTLE_MS = 90;
 
-export function TerminalView({ id, bottomAnchored }: { id: number; bottomAnchored: boolean }) {
+export function TerminalView(
+  { id, bottomAnchored, fontSize }: { id: number; bottomAnchored: boolean; fontSize: number },
+) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const fontRef = useRef(fontSize);
+  fontRef.current = fontSize;
 
   useEffect(() => {
     const host = hostRef.current;
     const settings = useSettingsStore.getState().settings;
     if (!host || !settings) return;
 
-    const entry = mountTerminal(id, settings, host, bottomAnchored);
+    const entry = mountTerminal(id, settings, host, bottomAnchored, fontRef.current);
     let trailingTimer = 0;
     let frame = 0;
     let lastFitAt = 0;
@@ -56,6 +70,8 @@ export function TerminalView({ id, bottomAnchored }: { id: number; bottomAnchore
       entry.container.remove();
     };
   }, [bottomAnchored, id]);
+
+  useEffect(() => setTerminalFontSize(id, fontSize), [fontSize, id]);
 
   return (
     <div

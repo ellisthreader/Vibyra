@@ -29,21 +29,25 @@ export function AuthScreen() {
   };
 
   return (
-    <div className="auth" data-auth-theme="dark">
+    <div className="auth" >
       <AuthBackdrop />
-      <div className="auth__scrim" />
       <header className="auth__bar" data-tauri-drag-region>
+        <div className="auth__wordmark"><img src={logoUrl} alt="" />Vibyra</div>
         <WindowControls />
       </header>
       <main className="auth__viewport">
+        <section className="auth-intro" aria-label="Your workspace, together">
+          <span className="auth-intro__eyebrow">A space to build</span>
+          <h2>Ideas in motion.<br /><span>Everything in place.</span></h2>
+          <p>Your projects, AI tools and conversations.<br />Together in one thoughtful workspace.</p>
+          <div className="auth-intro__features"><span>Projects</span><span>AI terminals</span><span>Live preview</span></div>
+        </section>
         <section className="auth-card" aria-label="Sign in to Vibyra">
           <div className="auth-card__hero">
-            <span className="auth-card__halo" aria-hidden="true" />
-            <img className="auth-card__logo" src={logoUrl} alt="" draggable={false} />
             <h1>
-              Welcome to <span>Vibyra</span>
+              Welcome to Vibyra
             </h1>
-            <p>Sign in to open your workspace.</p>
+            <p>Sign in to make yourself at home.</p>
           </div>
           {restoring && (
             <div className="auth-wait" role="status" aria-live="polite">

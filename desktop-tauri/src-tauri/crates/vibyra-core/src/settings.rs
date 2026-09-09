@@ -51,6 +51,11 @@ pub struct Settings {
     pub ai_hourly_call_cap: u32,
     pub ai_daily_spend_cap_usd: f64,
     pub ai_monthly_spend_cap_usd: f64,
+    /// Strips the desktop down to what the work needs: no animation, blur or
+    /// layered shadow, no perf watchdog, no startup prefetch, and a slower
+    /// activity tick. Cross-platform and independent of `renderer_mode`, which
+    /// only picks a Linux compositing path. See `performanceMode.ts`.
+    pub performance_mode: bool,
     /// Whether a restored terminal keeps its previous on-screen output. Off
     /// means only the layout is saved — no terminal text ever reaches disk.
     pub persist_terminal_scrollback: bool,
@@ -82,6 +87,7 @@ impl Default for Settings {
             ai_hourly_call_cap: 60,
             ai_daily_spend_cap_usd: 2.0,
             ai_monthly_spend_cap_usd: 20.0,
+            performance_mode: false,
             persist_terminal_scrollback: true,
             notifications: NotificationPrefs::default(),
             custom_agents: Vec::new(),

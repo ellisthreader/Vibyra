@@ -22,7 +22,10 @@ mod screenshot_capture;
 #[cfg(target_os = "windows")]
 #[path = "screenshot_capture_windows.rs"]
 mod screenshot_capture;
-#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+#[cfg(target_os = "macos")]
+#[path = "screenshot_capture_macos.rs"]
+mod screenshot_capture;
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
 #[path = "screenshot_capture_unsupported.rs"]
 mod screenshot_capture;
 mod screenshot_png;
@@ -34,7 +37,7 @@ mod screenshot_x11;
 pub mod session;
 pub mod settings;
 pub mod terminal;
-mod terminal_args;
+pub(crate) mod terminal_args;
 mod terminal_launch;
 #[cfg(test)]
 mod terminal_launch_tests;
@@ -65,3 +68,5 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
         .await
         .map_err(|error| CoreError::Task(error.to_string()))?
 }
+
+pub mod phone;

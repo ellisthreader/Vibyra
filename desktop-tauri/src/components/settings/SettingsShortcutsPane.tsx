@@ -1,3 +1,4 @@
+import { keyLabel, isMac } from "../../lib/platform";
 import { useEffect, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
@@ -86,12 +87,14 @@ function HotkeyRecorder({ defaultValue, label, otherValue, value, onChange }: Re
 }
 
 const APP_SHORTCUTS = [
-  { label: "Open the command palette", keys: "Ctrl/Cmd + K" },
-  { label: "Back to the home view", keys: "Ctrl/Cmd + Shift + H" },
-  { label: "Focus terminal 1–9", keys: "Ctrl/Cmd + 1–9" },
-  { label: "Switch project 1–9", keys: "Ctrl/Cmd + Shift + 1–9" },
+  { label: "Open Settings", keys: keyLabel("Mod+,") },
+  { label: "Paste text or an image into a terminal", keys: isMac ? "⌘V" : "Ctrl Shift V" },
+  { label: "Open the command palette", keys: keyLabel("Mod+K") },
+  { label: "Back to the home view", keys: keyLabel("Mod+Shift+H") },
+  { label: "Focus terminal 1–9", keys: keyLabel("Mod+1–9") },
+  { label: "Switch project 1–9", keys: keyLabel("Mod+Shift+1–9") },
   { label: "Send composer line", keys: "Enter" },
-  { label: "New line in composer", keys: "Shift + Enter" },
+  { label: "New line in composer", keys: keyLabel("Shift+Enter") },
 ];
 
 export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
@@ -108,7 +111,7 @@ export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
               onChange={(voiceShortcut) => void update({ voiceShortcut })}
             />
           </SettingRow>
-          <SettingRow label="Screenshot editor" hint="Capture the display under the pointer, then crop, mark up, copy, or save">
+          <SettingRow label="Screenshot editor" hint={isMac ? "Capture the main display, then crop, mark up, copy or save. Your keyboard may require Fn with F9." : "Capture the display under the pointer, then crop, mark up, copy or save"}>
             <HotkeyRecorder
               label="screenshot"
               value={settings.screenshotShortcut}

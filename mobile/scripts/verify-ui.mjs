@@ -43,6 +43,10 @@ try {
       await shot('account-required');
       await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+      await shot('computer-setup');
+      await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
+      await shot('computer-network');
+      await page.getByRole('button', { name: 'Use pairing code', exact: true }).click();
       await page.getByRole('textbox', { name: 'Computer pairing link' }).waitFor();
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
       await page.getByRole('button', { name: 'Skip — I’ll decide later', exact: true }).click();
@@ -52,6 +56,10 @@ try {
       assert.equal(await page.getByRole('button', { name: 'Get started', exact: true }).count(), 0, 'The welcome flow stays dismissed after a reload');
       await shot('home');
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+      await shot('computer-setup');
+      await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
+      await shot('computer-network');
+      await page.getByRole('button', { name: 'Use pairing code', exact: true }).click();
       await page.getByRole('textbox', { name: 'Computer pairing link' }).waitFor();
       await shot('connect');
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
@@ -111,18 +119,18 @@ try {
         'Terminal output cannot leak between sessions');
       await page.getByRole('button', { name: 'New chat', exact: true }).click();
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).fill('A draft carried into a new chat');
-      await page.getByRole('button', { name: 'Create chat with draft', exact: true }).click();
-      await page.getByRole('radio', { name: 'Studio', exact: true }).click();
-      await page.getByRole('radio', { name: 'Codex', exact: true }).click();
-      assert.equal(await page.getByRole('radio', { name: 'Codex', exact: true }).getAttribute('aria-checked'), 'true');
-      await page.getByRole('textbox', { name: 'Session name' }).fill('QA new chat');
+      await page.getByRole('button', { name: 'Choose AI model', exact: true }).click();
+      assert.equal(await page.getByRole('radio', { name: 'Auto', exact: true }).getAttribute('aria-checked'), 'true',
+        'Making no choice leaves the composer on Auto');
+      assert.equal(await page.getByRole('radio', { name: 'Codex', exact: true }).count(), 0,
+        'The picker offers OpenRouter models only');
       await shot('new-chat');
-      await page.getByRole('button', { name: 'Create chat', exact: true }).click();
+      await page.getByRole('radio', { name: 'Auto', exact: true }).click();
+      await page.getByRole('button', { name: 'Send message', exact: true }).click();
+      assert.equal(await page.getByRole('button', { name: 'Create chat', exact: true }).count(), 0,
+        'Sending a chat never opens a session configuration sheet');
       assert.equal(await composer.inputValue(), 'A draft carried into a new chat', 'New chat prompt remains unsent');
       await page.getByRole('button', { name: 'New chat', exact: true }).click();
-      await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
-      await page.getByRole('radio', { name: 'Studio', exact: true }).click();
-      await page.getByRole('textbox', { name: 'Session name' }).fill('QA new terminal');
       await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
       assert.equal(await terminalInput.inputValue(), '', 'New terminal does not inherit the new chat prompt');
       await drawer();

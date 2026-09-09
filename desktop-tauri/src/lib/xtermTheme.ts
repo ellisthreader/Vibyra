@@ -5,8 +5,8 @@ import type { ITheme } from "@xterm/xterm";
 
 const dark: ITheme = {
   background: "#0b0c10",
-  foreground: "#eeeaf8",
-  cursor: "#a9a3b8",
+  foreground: "#f0f2f6",
+  cursor: "#a6adba",
   cursorAccent: "#0b0c10",
   selectionBackground: "rgba(91, 124, 250, 0.22)",
   selectionInactiveBackground: "rgba(91, 124, 250, 0.14)",

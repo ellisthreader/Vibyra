@@ -13,7 +13,7 @@ function source(path) {
  */
 test("the chosen account reaches the terminal it launches", () => {
   const configured = source("../src/lib/configuredLaunch.ts");
-  const lifecycle = source("../src/state/terminalLifecycleActions.ts");
+  const lifecycle = source("../src/state/terminalSpawnActions.ts");
   const ipc = source("../src/ipc/terminal.ts");
   const launch = source("../src-tauri/src/commands/terminal_launch.rs");
   const prepare = source("../src-tauri/src/commands/terminal_prepare.rs");
@@ -53,15 +53,15 @@ test("the resumable check reads the account's own transcripts", () => {
   const ipc = source("../src/ipc/terminal.ts");
   const relaunch = source("../src/state/terminalRelaunch.ts");
 
-  assert.match(conversations, /pub fn detect\(account_id: Option<&str>\)/);
-  assert.match(conversations, /Registry::load\(\)\s*\.home\("claude", account\)/);
+  assert.match(conversations, /pub fn detect\(agent: &str, account_id: Option<&str>\)/);
+  assert.match(conversations, /Registry::load\(\)\s*\.home\(agent, account\)/);
   assert.doesNotMatch(
     conversations,
     /var_os\("CLAUDE_CONFIG_DIR"\)/,
     "the folder must come from the account, not from Vibyra's own environment",
   );
   assert.match(ipc, /\{ agentId, sessionId, accountId \}/);
-  assert.match(relaunch, /pane\.accountId,/);
+  assert.match(relaunch, /pane\.accountId\)/);
 });
 
 /**
@@ -88,7 +88,7 @@ test("switching a pane relaunches it in place without destroying anything", () =
   const swap = source("../src/state/terminalAccountSwitch.ts");
 
   assert.match(swap, /replaces: id/, "the pane keeps its slot in the grid");
-  assert.match(swap, /replaySnapshot: pane\.snapshot \?\? null/, "its output stays on screen");
+  assert.match(swap, /replaySnapshot: snapshot/, "its output stays on screen");
   assert.match(swap, /resume: false/);
   assert.match(swap, /agentSessionId: null/, "the new account starts its own conversation");
   assert.doesNotMatch(

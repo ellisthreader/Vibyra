@@ -1,61 +1,54 @@
-import { Terminal } from "@xterm/xterm";
-import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
+import { terminalFont } from "./terminalFont";
 
-import { resizeTerminal, writeTerminal } from "../ipc/terminal";
 import type { Settings } from "../types";
-import { clearAttention, stampBell } from "./activity";
 import { clear, detach } from "./terminalBus";
-import { attachSessionEvents, sessionTitleChanged } from "./terminalEvents";
-import { dropReplay, takeReplay } from "./terminalReplay";
+import { dropReplay } from "./terminalReplay";
 import {
   applyTerminalBottomAnchor,
-  createBottomAnchorState,
-  measureTerminalCellHeight,
   terminalViewportIsNearBottom,
-  type BottomAnchorState,
 } from "./terminalBottomAnchor";
-import { attachTerminalClipboard } from "./terminalClipboard";
-import { attachRenderer } from "./xtermRenderer";
+import { createTerminalEntry, fitTerminal, type TerminalEntry } from "./terminalInstance";
 import { themeFor } from "./xtermTheme";
 
 // xterm instances live here, outside the React tree, keyed by session id;
 // React panes only mount/unmount the host element, so remounts never destroy
 // terminal state. Only hibernation disposes one — Rust replays on wake.
+// `terminalInstance.ts` owns what one of them is made of.
 
-export interface TerminalEntry {
-  term: Terminal;
-  fit: FitAddon;
-  container: HTMLDivElement;
-  anchor: BottomAnchorState;
-}
+export { fitTerminal, type TerminalEntry };
 
 const entries = new Map<number, TerminalEntry>();
 
-/** Puts the bundled JetBrains Mono variable font ahead of the user's stack. */
-function monoStack(userStack: string): string {
-  return `"JetBrains Mono Variable", ${userStack}`;
-}
-
-/** Fits the grid to the host and refreshes the cached cell height. */
-export function fitTerminal(entry: TerminalEntry): void {
-  const rect = entry.container.getBoundingClientRect();
-  if (rect.width <= 80 || rect.height <= 60) return;
-  entry.fit.fit();
-  entry.anchor.cellHeight = measureTerminalCellHeight(entry.term);
-}
-
-/** Rendered cell size from any live terminal, for pre-spawn size estimates. */
-export function measuredCellSize(): { width: number; height: number } | null {
+/**
+ * Rendered cell size from any live terminal, for pre-spawn size estimates and
+ * for the grid layout. It reports the font it measured at: a crowded grid
+ * renders below the configured size, and a caller that read those cells as the
+ * base ones would shrink again on every pass.
+ */
+export function measuredCellSize(): { width: number; height: number; fontSize: number } | null {
   for (const entry of entries.values()) {
     const { term } = entry;
     const screen = term.element?.querySelector<HTMLElement>(".xterm-screen");
     const rect = screen?.getBoundingClientRect();
-    if (rect && rect.width > 0 && rect.height > 0 && term.cols > 0 && term.rows > 0) {
-      return { width: rect.width / term.cols, height: rect.height / term.rows };
+    const fontSize = term.options.fontSize;
+    if (rect && rect.width > 0 && rect.height > 0 && term.cols > 0 && term.rows > 0 && fontSize) {
+      return { width: rect.width / term.cols, height: rect.height / term.rows, fontSize };
     }
   }
   return null;
+}
+
+/**
+ * Applies the font size the grid layout chose. The layout owns it, so
+ * `applySettingsToAll` leaves it alone and a settings change reaches panes by
+ * way of a fresh layout.
+ */
+export function setTerminalFontSize(id: number, fontSize: number): void {
+  const entry = entries.get(id);
+  if (!entry || entry.term.options.fontSize === fontSize) return;
+  entry.term.options.fontSize = fontSize;
+  fitTerminal(entry);
+  applyTerminalBottomAnchor(entry.term, entry.anchor, terminalViewportIsNearBottom(entry.term));
 }
 
 /**
@@ -68,82 +61,19 @@ export function mountTerminal(
   settings: Settings,
   host: HTMLElement,
   bottomAnchored = true,
+  fontSize = settings.fontSize,
 ): TerminalEntry {
   const existing = entries.get(id);
   if (existing) {
     existing.anchor.enabled = bottomAnchored;
+    existing.term.options.fontSize = fontSize;
     host.appendChild(existing.container);
     fitTerminal(existing);
     applyTerminalBottomAnchor(existing.term, existing.anchor);
     return existing;
   }
 
-  const container = document.createElement("div");
-  container.className = "term-host";
-  host.appendChild(container);
-
-  const term = new Terminal({
-    cursorBlink: false,
-    fontSize: settings.fontSize,
-    fontFamily: monoStack(settings.fontFamily),
-    scrollback: settings.scrollbackLines,
-    scrollOnUserInput: false,
-    theme: themeFor(settings.theme),
-    allowProposedApi: true,
-  });
-  const fit = new FitAddon();
-  term.loadAddon(fit);
-  term.loadAddon(new WebLinksAddon());
-  term.open(container);
-  attachRenderer(term);
-  attachTerminalClipboard(term);
-
-  const entry: TerminalEntry = {
-    term,
-    fit,
-    container,
-    anchor: createBottomAnchorState(bottomAnchored),
-  };
-
-  // Guards the onScroll handler against re-entry while the write callback is
-  // already anchoring (scrollToBottom fires onScroll synchronously).
-  let anchoring = false;
-  const anchorNow = (followOutput = false) => {
-    anchoring = true;
-    applyTerminalBottomAnchor(term, entry.anchor, followOutput);
-    anchoring = false;
-  };
-
-  term.onData((data) => {
-    clearAttention(id);
-    anchorNow();
-    void writeTerminal(id, data).catch(() => {});
-  });
-  term.onResize(({ rows, cols }) => void resizeTerminal(id, rows, cols).catch(() => {}));
-  term.onScroll(() => {
-    if (!anchoring) anchorNow();
-  });
-  term.onTitleChange((title) => sessionTitleChanged(id, title));
-  term.onBell(() => stampBell(id));
-
-  // Fit after the handlers are live and before the bus attaches: this is the
-  // fit that moves off xterm's 80x24 default, so any earlier and its onResize
-  // fires into the void, any later and replayed output wraps at a stale
-  // width. Then hand the PTY the grid the renderer actually built — onResize
-  // cannot carry it alone, because FitAddon skips term.resize() whenever the
-  // pre-spawn estimate already matched, leaving the PTY on that estimate. A
-  // PTY wider than the pane wraps every line the CLI draws, which is what
-  // sheared the bottom row of a 2x2 grid until some later layout change
-  // happened to refit it.
-  fitTerminal(entry);
-  void resizeTerminal(id, term.rows, term.cols).catch(() => {});
-
-  // After the fit so it wraps at the real width, before the bus attaches so
-  // the new session's own output lands underneath it rather than above.
-  takeReplay(id, term);
-
-  attachSessionEvents(id, term, anchorNow);
-
+  const entry = createTerminalEntry(id, settings, host, bottomAnchored, fontSize);
   entries.set(id, entry);
   return entry;
 }
@@ -175,8 +105,8 @@ export function destroySession(id: number): void {
 export function applySettingsToAll(settings: Settings): void {
   for (const entry of entries.values()) {
     const { term } = entry;
-    term.options.fontSize = settings.fontSize;
-    term.options.fontFamily = monoStack(settings.fontFamily);
+    // Not fontSize — see setTerminalFontSize; TerminalStage owns it.
+    term.options.fontFamily = terminalFont(settings.fontFamily);
     term.options.scrollback = settings.scrollbackLines;
     term.options.theme = themeFor(settings.theme);
     fitTerminal(entry);

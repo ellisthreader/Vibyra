@@ -1,45 +1,50 @@
-import { accentFor } from "../../lib/providerAccents";
-import { gridColumns } from "../../lib/gridLayout";
-import { launchConfigured } from "../../lib/configuredLaunch";
-import { useAgentStore } from "../../state/agentStore";
+import { useEffect, useRef, useState } from "react";
+import { BotIcon } from "../common/Icons";
+import { LaunchSettingsPanel } from "../rail/LaunchSettings";
+import { terminalGridLayout, type GridLayout } from "../../lib/gridLayout";
+import { measuredCellSize } from "../../lib/terminalRegistry";
 import { useProjectStore } from "../../state/projectStore";
-import { useProjects } from "../../state/settingsStore";
+import { useProjects, useSettingsStore } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
-import { AgentMark } from "../common/AgentMark";
 import { TerminalPaneCard } from "./TerminalPaneCard";
 
 function EmptyState({ projectName }: { projectName: string }) {
-  const agents = useAgentStore((state) => state.agents);
-  const activeId = useProjectStore((state) => state.activeId);
-  const quick = agents.filter((agent) => agent.installed).slice(0, 5);
-
   return (
     <div className="grid-empty">
-      <h2>{projectName} is quiet</h2>
-      <p>
-        Launch an agent — it starts in this project's folder automatically. Or press{" "}
-        <kbd className="kbd">Ctrl K</kbd> for anything.
-      </p>
-      <div className="grid-empty__quick">
-        {quick.map((agent) => {
-          const accent = accentFor(agent.id, agent.accent);
-          return (
-            <button
-              key={agent.id}
-              className="quick-chip"
-              style={{ "--chip-accent": accent } as React.CSSProperties}
-              onClick={() => {
-                if (activeId) void launchConfigured(agent, activeId);
-              }}
-            >
-              <AgentMark agentId={agent.id} name={agent.name} accent={accent} size={18} />
-              {agent.name}
-            </button>
-          );
-        })}
-      </div>
+      <span className="workspace-launcher__icon"><BotIcon size={28} /></span>
+      <h2>Start something in {projectName}</h2>
+      <p>Choose a model and open your first terminal.</p>
+      <div className="workspace-launcher"><LaunchSettingsPanel /></div>
+      <span className="workspace-launcher__hint">Your project, chats and layout stay together.</span>
     </div>
   );
+}
+
+/**
+ * Cell size at the configured font, normalised off whatever a live pane is
+ * rendering at. Kept once per font, because the layout may answer a measured
+ * cell by changing the font that produced it: re-reading it every pass lets a
+ * rounding difference flip a close layout back and forth between renders.
+ */
+const cells = new Map<string, { width: number; height: number }>();
+
+function baseCell(fontSize: number, family: string): { width: number; height: number } {
+  const key = `${fontSize}/${family}`;
+  const cached = cells.get(key);
+  if (cached) return cached;
+  const measured = measuredCellSize();
+  if (!measured) return { width: fontSize * 0.6, height: fontSize * 1.33 };
+  const ratio = fontSize / measured.fontSize;
+  const cell = { width: measured.width * ratio, height: measured.height * ratio };
+  cells.set(key, cell);
+  return cell;
+}
+
+function gridStyle(layout: GridLayout): React.CSSProperties {
+  return {
+    gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+    gridAutoRows: `minmax(${Math.round(layout.minPaneHeight)}px, 1fr)`,
+  } as React.CSSProperties;
 }
 
 export function TerminalStage() {
@@ -47,25 +52,51 @@ export function TerminalStage() {
   const projects = useProjects();
   const allPanes = useTerminalStore((state) => state.panes);
   const zoomedId = useTerminalStore((state) => state.zoomedId);
+  const fontSize = useSettingsStore((state) => state.settings?.fontSize ?? 13);
+  const fontFamily = useSettingsStore((state) => state.settings?.fontFamily ?? "");
   const project = projects.find((entry) => entry.id === activeId);
   const panes = allPanes.filter((pane) => pane.projectId === activeId);
   const zoomed = zoomedId === null ? undefined : panes.find((pane) => pane.id === zoomedId);
-  const columns = zoomed ? 1 : gridColumns(panes.length);
+  const host = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const element = host.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) setBox({ width, height });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  // A zoomed pane is the whole stage, so it lays out as a single comfortable
+  // one — the grid behind it keeps its own metrics for when zoom is dropped.
+  const cell = baseCell(fontSize, fontFamily);
+  const layout = terminalGridLayout(zoomed ? 1 : panes.length, {
+    width: box.width,
+    height: box.height,
+    cellWidth: cell.width,
+    cellHeight: cell.height,
+    fontSize,
+  });
 
   return (
-    <div className="workspace__body terminal-stage">
+    <div ref={host} className="workspace__body terminal-stage">
       {panes.length === 0 ? (
         <EmptyState projectName={project?.name ?? "This project"} />
       ) : (
         <div
-          className="grid"
-          style={{ gridTemplateColumns: "repeat(" + columns + ", minmax(0, 1fr))" }}
+          className={`grid grid--${layout.density}${layout.scrolls ? " grid--scrolls" : ""}`}
+          style={gridStyle(layout)}
         >
           {panes.map((pane) => (
             <TerminalPaneCard
               key={pane.id}
               pane={pane}
               hidden={zoomed !== undefined && pane.id !== zoomed.id}
+              fontSize={layout.fontSize}
+              density={layout.density}
             />
           ))}
         </div>

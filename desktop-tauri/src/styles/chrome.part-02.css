@@ -42,3 +42,10 @@
   background: var(--amber-soft);
   color: var(--amber);
 }
+
+/* Native macOS traffic lights occupy the leading 88px of the titlebar. */
+:root[data-platform="mac"] .chrome__brand { padding-left: 90px; gap: 8px; }
+:root[data-platform="mac"] .chrome__logo { width: 20px; height: 18px; }
+:root[data-platform="mac"] { --font-ui: -apple-system, BlinkMacSystemFont, "Inter Variable", sans-serif; }
+.chrome__crumb { font-size: 13px; }
+.chrome__right { gap: 8px; padding-right: 16px; }

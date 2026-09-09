@@ -3,18 +3,17 @@ import type { Terminal } from "@xterm/xterm";
 import type { TermEvent } from "../types";
 import { stampOutput } from "./activity";
 import { terminalViewportIsNearBottom } from "./terminalBottomAnchor";
-import { attach } from "./terminalBus";
+import { attach, setExitHandler } from "./terminalBus";
 
 // Everything Rust sends about a session, turned into writes on its terminal.
 //
 // Split from the registry, which owns the xterm instances themselves: this is
 // only the routing, and it is the half that the workspace hooks into.
 
-let onSessionExit: (id: number, code: number | null) => void = () => {};
 let onSessionTitle: (id: number, title: string) => void = () => {};
 
 export function setSessionExitHandler(handler: (id: number, code: number | null) => void): void {
-  onSessionExit = handler;
+  setExitHandler(handler);
 }
 
 export function setSessionTitleHandler(handler: (id: number, title: string) => void): void {
@@ -52,7 +51,7 @@ export function attachSessionEvents(
     } else {
       const label = event.code === null ? "" : ` (code ${event.code})`;
       term.write(`\r\n\x1b[2m[process exited${label}]\x1b[0m\r\n`, () => anchorNow(true));
-      onSessionExit(id, event.code);
+      term.options.disableStdin = true;
     }
   });
 }

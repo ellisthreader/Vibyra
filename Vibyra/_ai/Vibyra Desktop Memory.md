@@ -12,8 +12,8 @@ first.
 The desktop app is a native window that runs AI CLI agents in PTY-backed
 terminal panes, grouped by project. Rust owns the PTYs, output batching,
 project/file watching, previews, screenshots, settings, and account auth; the
-React renderer owns terminal presentation, panels, and stores. There is no
-local HTTP bridge and no phone pairing.
+React renderer owns terminal presentation, panels, and stores. The optional encrypted
+iPhone connection serves read-only live PTY output; see [[Desktop/iPhone Connection]].
 
 See [[Product Surfaces]] for how the desktop app differs from the public
 website, Expo browser client, and native phone app.
@@ -28,6 +28,12 @@ website, Expo browser client, and native phone app.
 
 ## Focused Notes
 
+- Mac frontend direction, native window lifecycle and reliable saved chats:
+  `Desktop/Mac Experience And Sessions.md`
+
+- Native Apple Silicon installation and local packaging: `Desktop/Mac Setup.md`
+- Settings > Performance, the cross-platform Performance mode and what it
+  gates: `Desktop/Performance Mode.md`
 - App launch, terminal rail, source ownership, and checks:
   `Desktop/Rust Tauri Desktop.md`
 - One-time personalized post-auth welcome, account scoping, motion, source
@@ -91,9 +97,10 @@ Renderer detection lives in `src-tauri/src/renderer.rs` and
 fails the Windows/macOS build on dead code. `Auto` disables DMA-BUF only when
 the `boot_vga` GPU is NVIDIA (`0x10de`) or the session asks for PRIME offload,
 so hybrid laptops on their iGPU keep the accelerated path; an unreadable
-topology stays conservative. Users override it in Settings > General >
+topology stays conservative. Users override it in Settings > Performance >
 Graphics (`rendererMode`), and `src/lib/rendererPolicy.ts` mirrors the same
-policy for the UI and the xterm renderer choice. Do not reintroduce the old
+policy for the UI and the xterm renderer choice. `rendererMode` is a different
+axis from `performanceMode`; see [[Performance Mode]]. Do not reintroduce the old
 "`/sys/module/nvidia` exists" rule.
 
 The terminal write path must stay free of forced layout: cell height is cached

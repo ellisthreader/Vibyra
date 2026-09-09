@@ -1,8 +1,10 @@
-import type { Approval, Project, Session, WorkspaceModel } from '../ui/types';
+import type { Account, Approval, Project, Session, WorkspaceModel } from '../ui/types';
 
 export interface DemoMessage { id: string; role: 'user' | 'assistant'; text: string; result?: boolean }
 export interface DemoWorkspace extends WorkspaceModel { demo: true; messages: DemoMessage[] }
 export const isDemoWorkspace = (value: WorkspaceModel): value is DemoWorkspace => value.demo === true;
+// The stand-in account behind the dev-only test sign-in: never sent to the backend, never stored on the phone.
+export const demoAccount: Account = { email: 'demo@vibyra.app', name: 'Demo account', plan: 'sample' };
 export const projects: Project[] = [
   { id: 'demo-studio', name: 'Studio', path: '~/Projects/studio', branch: 'feat/checkout' },
   { id: 'demo-orbit', name: 'Orbit', path: '~/Projects/orbit', branch: 'main' },

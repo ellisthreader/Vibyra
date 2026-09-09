@@ -5,8 +5,9 @@ import { useTheme } from '../theme';
 import { IconButton } from '../ui/primitives';
 
 const steps = 3;
-export function OnboardingScaffold({ step, onBack, children, footer, backdrop }: {
+export function OnboardingScaffold({ step, onBack, children, footer, backdrop, header, headerRight }: {
   step: number; onBack?: () => void; children: ReactNode; footer?: ReactNode; backdrop?: ReactNode;
+  header?: ReactNode; headerRight?: ReactNode;
 }) {
   const { colors } = useTheme();
   return <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
@@ -14,15 +15,16 @@ export function OnboardingScaffold({ step, onBack, children, footer, backdrop }:
     <View style={s.frame}>
       <View style={s.header}>
         {onBack ? <IconButton icon="chevron-back" label="Back" onPress={onBack} /> : <View style={s.spacer} />}
-        <View accessible accessibilityRole="progressbar" accessibilityLabel={`Step ${step} of ${steps}`}
+        {header ? <View style={s.headerTitle}>{header}</View> : <View accessible accessibilityRole="progressbar" accessibilityLabel={`Step ${step} of ${steps}`}
           accessibilityValue={{ min: 1, max: steps, now: step }} style={s.dots}>
           {Array.from({ length: steps }, (_, index) => <View key={index} style={[s.dot,
             { backgroundColor: index + 1 === step ? colors.accent : colors.border, width: index + 1 === step ? 18 : 6 }]} />)}
-        </View>
-        <View style={s.spacer} />
+        </View>}
+        {headerRight ?? <View style={s.spacer} />}
       </View>
       <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>{children}</ScrollView>
         {footer && <View style={s.footer}>{footer}</View>}
       </KeyboardAvoidingView>
     </View>
@@ -47,6 +49,7 @@ const s = StyleSheet.create({
   safe: { flex: 1 }, backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', alignItems: 'center' },
   frame: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center' }, body: { flex: 1 },
   header: { minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 }, spacer: { width: 44 },
+  headerTitle: { flex: 1, alignItems: 'center' },
   dots: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
   dot: { height: 6, borderRadius: 3 },
   content: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24, gap: 18 },

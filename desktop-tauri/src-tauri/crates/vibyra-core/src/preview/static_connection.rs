@@ -9,6 +9,9 @@ use super::static_assets::{mime_type, requested_file};
 const MAX_REQUEST_HEAD_BYTES: usize = 16 * 1024;
 
 pub(crate) fn serve(mut stream: TcpStream, root: &Path, entry: &Path) -> io::Result<()> {
+    // macOS inherits the listener's nonblocking mode on accepted sockets.
+    // Each connection has its own worker and uses bounded blocking reads.
+    stream.set_nonblocking(false)?;
     stream.set_read_timeout(Some(Duration::from_secs(2)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
     let request = read_request_head(&mut stream)?;

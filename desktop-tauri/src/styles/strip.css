@@ -1,119 +1,46 @@
-/* Far-left project strip — contexts as tiles, Discord-style. */
-
+/* One named navigation column with quiet, consistent selection. */
 .pstrip {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  width: 54px;
-  min-width: 54px;
-  padding: 10px 0;
-  background: color-mix(in srgb, var(--bg) 55%, #000000 8%);
+  flex: 0 0 var(--rail-w);
+  width: var(--rail-w);
+  min-height: 0;
+  padding: 16px 12px 10px;
+  background: var(--rail);
   border-right: 1px solid var(--line);
-  overflow: visible;
   z-index: 30;
 }
-
-:root[data-theme="light"] .pstrip {
-  background: color-mix(in srgb, var(--rail) 85%, var(--bg));
-}
-
-.pstrip__list {
+.pstrip__primary { display: grid; gap: 4px; padding-bottom: 18px; }
+.pstrip__scroll { min-height: 0; flex: 1; overflow-y: auto; }
+.pstrip__row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 7px;
-  overflow-y: auto;
-  overflow-x: visible;
-  flex: 1;
-  min-height: 0;
-  scrollbar-width: none;
-}
-
-.pstrip__list::-webkit-scrollbar {
-  display: none;
-}
-
-.pstrip__sep {
-  width: 22px;
-  height: 1px;
-  background: var(--line);
-  flex-shrink: 0;
-}
-
-.pstrip__tile {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--muted);
   font-size: 13px;
-  font-weight: 780;
-  color: var(--dim);
-  background: var(--surface);
-  flex-shrink: 0;
-  transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard),
-    border-radius var(--t-ui) var(--e-standard), transform var(--t-ui) var(--e-standard);
+  font-weight: 530;
+  text-align: left;
+  transition: background var(--t-ui), color var(--t-ui);
 }
-
-.pstrip__tile:hover {
-  color: var(--text);
-  border-radius: 12px;
-  transform: translateY(-1px);
-}
-
-.pstrip__tile--home.pstrip__tile--active {
-  background: var(--accent-soft);
-  color: var(--accent-2);
-}
-
-.pstrip__tile--project {
-  background: color-mix(in srgb, var(--tile-c, var(--accent)) 15%, transparent);
-  color: var(--tile-c, var(--accent));
-}
-
-.pstrip__tile--project:hover {
-  background: color-mix(in srgb, var(--tile-c, var(--accent)) 26%, transparent);
-  color: var(--tile-c, var(--accent));
-}
-
-.pstrip__tile--project.pstrip__tile--active {
-  background: var(--tile-c, var(--accent));
-  color: #0b0c10;
-}
-
-.pstrip__tile--active::before {
-  content: "";
-  position: absolute;
-  left: -9px;
-  width: 3px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--text);
-}
-
-.pstrip__badge {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 11px;
-  height: 11px;
-  border-radius: 999px;
-  background: var(--amber);
-  border: 2.5px solid var(--bg);
-  animation: pulse-ring 1.8s var(--e-standard) infinite;
-}
-
-.pstrip__tile--add {
-  background: transparent;
-  border: 1px dashed var(--border);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.pstrip__tile--add:hover {
-  border-color: var(--accent-border);
-  color: var(--accent);
-  background: var(--accent-soft);
-}
+.pstrip__row > svg { flex-shrink: 0; }
+.pstrip__row:hover { color: var(--text); background: var(--hover); }
+.pstrip__row--active { color: var(--text); background: var(--hover-strong); }
+.pstrip__row--active > svg { color: var(--accent); }
+.pstrip__row kbd { margin-left: auto; color: var(--dim); font: 11px var(--font-ui); white-space: nowrap; }
+.pstrip__heading { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 6px 10px; }
+.pstrip__heading > span { color: var(--dim); font-size: 11px; font-weight: 650; letter-spacing: .025em; }
+.pstrip__list { display: grid; gap: 3px; }
+.pstrip__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pstrip__badge { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; margin-left: auto; }
+.pstrip__footer { padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.sidebar-sessions { margin-top: 24px; }
+.sidebar-sessions__empty { padding: 8px 10px; color: var(--dim); font-size: 12px; line-height: 1.5; }
+.sidebar-sessions .session-row { min-height: 38px; padding: 8px 10px; font-size: 12.5px; }
+.sidebar-sessions .session-row--active { background: var(--hover-strong); }
+.sidebar-sessions .session-row__kbd { font-size: 10px; }
+.sidebar-sessions .session-row:focus-within .session-row__close { opacity: 1; }
+@media (max-width: 1100px) { .pstrip { --rail-w: 192px; } }

@@ -65,6 +65,18 @@ fn notifications_default_in_for_a_pre_feature_settings_file() {
     assert!((0.0..=1.0).contains(&loaded.notifications.volume));
 }
 
+/// Performance mode is opt-in, so every existing install must upgrade with it
+/// off. Turning it on for someone who never asked would silently strip the
+/// motion and depth they are used to.
+#[test]
+fn performance_mode_stays_off_for_a_pre_feature_settings_file() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("settings.json");
+    std::fs::write(&path, r#"{"theme":"dark","rendererMode":"auto"}"#).unwrap();
+    let loaded = Settings::load_from(&path);
+    assert!(!loaded.performance_mode);
+}
+
 #[test]
 fn corrupt_file_falls_back_to_defaults() {
     let tmp = tempfile::tempdir().unwrap();

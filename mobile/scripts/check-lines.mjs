@@ -6,10 +6,11 @@ async function visit(directory) {
     if (entry.name === 'generated') continue;
     const path = `${directory}/${entry.name}`;
     if (entry.isDirectory()) await visit(path);
-    else if (/\.(tsx?|mjs)$/.test(path)) files.push(path);
+    else if (/\.(tsx?|mjs|swift)$/.test(path)) files.push(path);
   }
 }
 await visit('src'); await visit('scripts'); await visit('tests');
+await visit('modules');
 let failed = false;
 for (const path of files) {
   const count = (await readFile(resolve(path), 'utf8')).trimEnd().split('\n').length;
