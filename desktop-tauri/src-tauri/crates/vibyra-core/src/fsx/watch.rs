@@ -121,8 +121,20 @@ mod tests {
         .unwrap();
         std::thread::sleep(Duration::from_millis(100));
         std::fs::write(tmp.path().join("new-file.txt"), "hello").unwrap();
-        let changes = rx.recv_timeout(Duration::from_secs(5)).unwrap();
-        assert!(changes.iter().any(|c| c.path.contains("new-file.txt")));
+        // macOS can deliver a directory setup batch before the file event.
+        // Keep the original deadline while waiting for the event being tested.
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        loop {
+            let changes = rx
+                .recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
+                .expect("watcher did not report the created file before the deadline");
+            if changes
+                .iter()
+                .any(|c| Path::new(&c.path).ends_with("new-file.txt"))
+            {
+                break;
+            }
+        }
         drop(watcher);
     }
 }
