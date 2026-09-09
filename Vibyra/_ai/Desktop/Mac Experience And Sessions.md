@@ -114,3 +114,10 @@ microphone purpose string and audio-input entitlement were checked. The
 installer's running-app refusal was exercised successfully; `/Applications`
 still contains the running 0.1.7, so installation remains pending. Local
 ad-hoc validation is not Developer ID notarization evidence.
+
+Mac 0.1.8 publication completed for both architectures on September 9, 2026;
+see [[Mac Setup]] for the exact source, CI run and live verification checkpoint.
+Both CI jobs passed the 484-test verification gate and native launch check.
+The live updater downloads were independently authenticated with the app's
+configured key. Physical microphone dictation, screen recording consent and
+installed-app window/provider lifecycle remain user-device validation items.

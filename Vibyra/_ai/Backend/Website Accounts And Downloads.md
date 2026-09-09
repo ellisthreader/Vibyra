@@ -113,11 +113,13 @@ works. After promotion, verify `/web-api/releases`, attachment
 `Content-Length` and `X-Checksum-SHA256` headers, and a real GET signature
 before declaring the buttons live.
 
-Changing Railway env vars triggers a rebuild from the linked GitHub repo,
-which is far behind the locally deployed working tree — the 2026-08-19 cutover
-briefly 404'd the whole site this way. After any `railway variables --set`,
-immediately re-run `railway up` from the repo root to restore the working-tree
-snapshot.
+Changing Railway env vars can rebuild from the linked GitHub repo, which is
+behind the deployed backend. For release metadata changes, use
+`variable set --skip-deploys`, then ordinary `redeploy` of the existing snapshot
+without `--from-source`. Confirm original snapshot provenance; a rebuild can change the image digest. Do not
+run `railway up` from an older local checkout to repair this; first establish
+which source actually matches production. See Desktop/Mac Setup for the
+separate signed Mac updater metadata and persistent archive storage.
 
 Desktop release automation lives in `.github/workflows/desktop-release.yml`
 and packages the Rust/Tauri app directly: native Windows NSIS on

@@ -24,7 +24,7 @@ It refuses to replace a running Vibyra and never closes user terminals. Use
 including Vibyra when it hosts the terminal running the installer. After a
 bundle replacement, an existing process still executes the old mapped binary;
 check `lsof -p PID -a -d txt` when the displayed models disagree with source.
-Ad-hoc signing is for local use; updater signature verification stays enabled.
+Local installs use ad-hoc signing; updater signature verification stays enabled.
 Without the release key, only updater artifact creation is skipped locally.
 `Info.plist` supplies the microphone usage description; the Mac config includes
 `Entitlements.plist` for audio input. The local signing command must keep that
@@ -35,7 +35,7 @@ Mac native audio. Recording permission is requested only on the user action.
 `.github/workflows/desktop-release.yml` includes native Apple Silicon and Intel
 Mac jobs. They build signed `.app.tar.gz` updater artifacts, verify Developer ID
 acceptance/notarization and smoke-test launch before upload. Apple signing and
-notarization secrets plus the Tauri update key are required for distribution;
+notarization secrets plus the Tauri update key are required for notarized distribution;
 adding the jobs does not publish a release to the backend update feed.
 
 The local `plan` skill requires checking the actual installed version, signature
@@ -62,17 +62,60 @@ inside Vibyra itself; never kill that active workspace to complete installation.
 
 ## Mac update publication
 
-The 0.1.8 candidate is on `release/macos-0.1.8-experience`. Its Mac packaging
-workflow builds both architectures and requires Apple signing/notarization
-credentials plus the existing Tauri signing key before release builds.
-At the September 9 publication check, GitHub had only the Tauri private-key
-secret; no Apple signing identity was installed locally. Railway deployment
-access was not configured here. Both live Mac update routes returned 204 and
-the download catalogue marked both Mac architectures unavailable. Source push
-is complete; no Mac update has been published.
+The published 0.1.8 source is on `release/macos-0.1.8-experience`. The user explicitly
+chose an in-app beta update without Apple Developer credentials. The Mac-only
+workflow uses ad-hoc Apple code signing (`APPLE_SIGNING_IDENTITY=-`) and the
+existing Tauri private key for updater authentication. Apple notarization is
+not a prerequisite for this chosen updater path; do not call it notarized or
+promise Gatekeeper approval. Public DMG distribution remains separate.
+
+`desktop-release.yml` dispatches the Mac-only reusable workflow when
+`macos_only=true`, retaining Windows/Linux packaging checks. Both architecture
+jobs run the full verify gate, build signed updater archives, check native
+launch and microphone metadata. Use `codesign -d --entitlements - --xml` when
+piping entitlements to a plist parser; the default display is not XML.
+`examples/verify_update_bundle.rs` verifies real downloaded archives using the
+same minisign implementation and public key as the app.
+
+Railway login is now configured through `npx @railway/cli`. Production is
+project `spectacular-charisma`, environment `production`, service `Vibyra`.
+A dedicated local SSH identity is `~/.ssh/id_ed25519_railway_vibyra`, registered
+with Railway. Never print keychain credentials: GitHub CLI entries can have a
+`go-keyring-base64:` storage wrapper that must be handled before authentication.
 
 Keep DMG download metadata separate from signed `.app.tar.gz` updater metadata.
 The newer `release/0.6.3-macos` backend implements this separation; the older
 local `main` backend expects DMGs in its shared release config. Check the live
 backend contract before setting feed variables. Never replace the existing
 Tauri key to work around missing access: installed clients trust its public key.
+
+The live backend was checked and already has `config/macos-updates.php` and
+`/downloads/{macos-arm64|macos-x64}/update`. Set `VIBYRA_MACOS_{ARM64|X64}_UPDATE_`
+`VERSION/PATH/FILENAME/SIZE/SHA256/SIGNATURE` after both archives pass verification.
+Upload to a unique hidden path on `vibyra-volume`, verify remote bytes/hash,
+then promote. Use `variable set --skip-deploys` followed by ordinary `redeploy`
+of the existing deployment; never use `--from-source`, since the linked source
+is older than the deployed snapshot. Verify both feeds and unchanged non-Mac
+release metadata after activation.
+
+## Published checkpoint — September 9, 2026
+
+Mac 0.1.8 is live for Apple Silicon and Intel through the in-app updater.
+Artifact source is `1f4ad82eb2d577cbec025bea069edaac4176bfcc`; GitHub Actions
+run `34335929864` passed both complete verify gates and native launch checks.
+Archives are stored under `releases/macos/0.1.8-1f4ad82eb2d5/{arm64|x64}`.
+Railway deployment `814fa0b0-dc66-4a91-bd58-73415dfc1a22` succeeded using the
+original CLI snapshot. Redeploy rebuilds that snapshot: the new image digest
+is `sha256:2f80711438ffce923a255f39d8cfa22c83a90135d1423e2ad4538a078b02c380`.
+Compare snapshot provenance, not an assumption that the image digest stays fixed.
+
+Both Darwin architecture feeds return 0.1.8 to 0.1.7 clients and 204 for
+0.1.8 or newer. Both actual HTTP archives passed the configured updater-key
+signature check, byte count and SHA-256 checks. Public installer catalogue
+remained unchanged and `/up` passed. Public Mac DMGs are still unavailable;
+this is the user-authorized Tauri-authenticated, ad-hoc Mac beta update.
+
+The updater checks shortly after opening the workspace and every 20 minutes.
+The update banner offers Download, then Restart now; no manual Check for
+Updates button exists. The active local host stays on 0.1.7 until the user
+installs/restarts. Do not terminate the agent's host to force installation.
