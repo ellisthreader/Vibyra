@@ -1,11 +1,9 @@
 import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
-import { Companion } from "../companion/Companion";
 import { CloseConfirmModal } from "./CloseConfirmModal";
 import { ProjectStrip } from "./ProjectStrip";
 import { ProjectWorkspace } from "./ProjectWorkspace";
-import { Rail } from "./Rail";
 import { ScreenshotTray } from "./ScreenshotTray";
 import { TitleBar } from "./TitleBar";
 import { UpdateBanner } from "./UpdateBanner";
@@ -50,7 +48,6 @@ export function WorkspaceApp() {
   const settings = useSettingsStore((s) => s.settings);
   const view = useProjectStore((s) => s.view);
   const activeId = useProjectStore((s) => s.activeId);
-  const projectMode = useWorkspaceStore((s) => s.projectMode);
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
   const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
   const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
@@ -94,9 +91,7 @@ export function WorkspaceApp() {
         <ProjectStrip />
         {showProject ? (
           <>
-            {projectMode === "terminals" && <Rail />}
             <ProjectWorkspace />
-            {projectMode === "terminals" && <Companion />}
           </>
         ) : (
           <Suspense fallback={null}><HomeView /></Suspense>

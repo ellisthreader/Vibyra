@@ -1,3 +1,4 @@
+import { appModifier } from "./platform";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { useEffect } from "react";
 
@@ -84,19 +85,27 @@ export function useGlobalShortcuts(): void {
         runAction("screenshot");
         return;
       }
-      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.code === "KeyK") {
+      if (appModifier(event) && !event.shiftKey && event.code === "KeyK") {
         event.preventDefault();
         const workspace = useWorkspaceStore.getState();
         workspace.setPaletteOpen(!workspace.paletteOpen);
         return;
       }
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === "KeyH") {
+      if (appModifier(event) && event.shiftKey && event.code === "KeyH") {
         event.preventDefault();
         useProjectStore.getState().goHome();
         return;
       }
+      if (appModifier(event) && !event.shiftKey && event.code === "Comma") {
+        event.preventDefault();
+        useWorkspaceStore.getState().openSettings();
+        return;
+      }
+      const workspace = useWorkspaceStore.getState();
+      if (workspace.settingsOpen || workspace.agentPickerOpen || workspace.paletteOpen) return;
       const digit = /^Digit([1-9])$/.exec(event.code);
-      if (!digit || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (!digit || !appModifier(event) || event.altKey) return;
+      event.preventDefault();
       const index = Number(digit[1]) - 1;
       if (event.shiftKey) {
         const target = useSettingsStore.getState().settings?.projects[index];

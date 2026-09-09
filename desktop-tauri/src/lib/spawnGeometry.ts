@@ -17,7 +17,10 @@
 // next frame.
 
 /** Pane chrome around the xterm host: header row + `.term-view` padding. */
-export const PANE_HEADER_PX = 36;
+export const PANE_HEADER_PX = 44;
+export const GRID_PADDING_PX = 8;
+export const GRID_GAP_PX = 8;
+export const PANE_BORDER_PX = 2;
 export const TERM_INSET_X = 12;
 export const TERM_INSET_Y = 12;
 
@@ -56,8 +59,8 @@ export function spawnDimensionsFor(geometry: PaneGeometry): { rows: number; cols
   const { stageWidth, stageHeight, columns, paneRows, cellWidth, cellHeight } = geometry;
   if (columns < 1 || paneRows < 1 || cellWidth <= 0 || cellHeight <= 0) return null;
 
-  const hostWidth = Math.floor(stageWidth / columns) - TERM_INSET_X;
-  const hostHeight = Math.floor(stageHeight / paneRows) - PANE_HEADER_PX - TERM_INSET_Y;
+  const hostWidth = Math.floor((stageWidth - GRID_PADDING_PX * 2 - GRID_GAP_PX * (columns - 1)) / columns) - PANE_BORDER_PX - TERM_INSET_X;
+  const hostHeight = Math.floor((stageHeight - GRID_PADDING_PX * 2 - GRID_GAP_PX * (paneRows - 1)) / paneRows) - PANE_BORDER_PX - PANE_HEADER_PX - TERM_INSET_Y;
   const usableWidth = hostWidth - SCROLLBAR_PX;
   if (usableWidth <= 0 || hostHeight <= 0) return null;
 

@@ -177,6 +177,10 @@ impl Session {
         self.alive.load(Ordering::SeqCst)
     }
 
+    pub fn process_id(&self) -> Option<u32> {
+        self.child.lock().process_id()
+    }
+
     pub fn set_visibility(&self, visibility: Visibility) {
         self.output.lock().visibility = visibility;
     }

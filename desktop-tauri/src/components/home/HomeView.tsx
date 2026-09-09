@@ -1,121 +1,70 @@
-import logoUrl from "../../assets/vibyra-cobalt.png";
 import { relativeTime } from "../../lib/relativeTime";
 import { basename, useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../../state/terminalStore";
+import { AgentMark } from "../common/AgentMark";
+import { ChevronIcon, FolderIcon, PlusIcon } from "../common/Icons";
 import { HomeLaunchBar } from "./HomeLaunchBar";
 import { HomeProjectCard } from "./HomeProjectCard";
 
 function greeting(): string {
   const hour = new Date().getHours();
-  if (hour < 5) return "Up late";
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
-
-function ownerName(homeDir: string): string {
-  const raw = basename(homeDir);
-  return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "";
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 }
 
 export function HomeView() {
   const projects = useProjects();
-  const homeDir = useProjectStore((state) => state.homeDir);
-  const pickAndCreate = useProjectStore((state) => state.pickAndCreate);
-  const panes = useTerminalStore((state) => state.panes);
-  const activity = useTerminalStore((state) => state.activity);
-  const setFocus = useTerminalStore((state) => state.setFocus);
-  const working = panes.filter((pane) => activity[pane.id] === "working").length;
-  const waiting = panes.filter((pane) => activity[pane.id] === "attention");
-  const busyProjects = new Set(
-    panes.filter((pane) => activity[pane.id] === "working").map((pane) => pane.projectId),
-  ).size;
-  const ordered = [...projects].sort((left, right) => right.lastOpenedMs - left.lastOpenedMs);
-  const recents = panes
-    .filter((pane) => pane.status === "running")
-    .sort((left, right) => right.lastFocusedAt - left.lastFocusedAt)
-    .slice(0, 3);
-  const summary = working > 0
-    ? `${working} agent${working === 1 ? "" : "s"} working across ${busyProjects} project${busyProjects === 1 ? "" : "s"}`
-    : panes.length > 0
-      ? `${panes.length} session${panes.length === 1 ? "" : "s"} idle`
-      : "Quiet in here — open a project to put agents to work.";
-
+  const homeDir = useProjectStore((s) => s.homeDir);
+  const activate = useProjectStore((s) => s.activate);
+  const pickAndCreate = useProjectStore((s) => s.pickAndCreate);
+  const panes = useTerminalStore((s) => s.panes);
+  const activity = useTerminalStore((s) => s.activity);
+  const setFocus = useTerminalStore((s) => s.setFocus);
+  const working = panes.filter((p) => p.status === "running" && activity[p.id] === "working").length;
+  const waiting = panes.filter((p) => p.status === "running" && activity[p.id] === "attention");
+  const ordered = [...projects].sort((a, b) => b.lastOpenedMs - a.lastOpenedMs);
+  const recents = [...panes].sort((a, b) => b.lastFocusedAt - a.lastFocusedAt).slice(0, 4);
+  const rawName = basename(homeDir);
+  const name = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : "";
   return (
     <main className="homeview">
       <div className="homeview__inner">
         <header className="homeview__hi">
-          <img className="homeview__logo" src={logoUrl} alt="" />
-          <h1>{greeting()}{ownerName(homeDir) ? `, ${ownerName(homeDir)}` : ""}</h1>
-          <p>
-            {summary}
-            {waiting.length > 0 ? (
-              <button
-                className="homeview__attn"
-                onClick={() => {
-                  const pane = waiting[0];
-                  void useProjectStore.getState().activate(pane.projectId)
-                    .then(() => setFocus(pane.id));
-                }}
-              >
-                {waiting.length === 1
-                  ? `${paneLabel(waiting[0])} is waiting for you`
-                  : `${waiting.length} agents are waiting for you`}
-              </button>
-            ) : null}
-          </p>
+          <span className="homeview__eyebrow">Your workspace</span>
+          <h1>{greeting()}{name ? `, ${name}` : ""}.</h1>
+          <p>{working ? `${working} ${working === 1 ? "agent is" : "agents are"} working. Pick up where you left off.` : "Open a project or continue a recent chat."}</p>
         </header>
-
-        <HomeLaunchBar />
-
-        {ordered.length > 0 ? (
-          <div className="hcards">
-            {ordered.map((project) => <HomeProjectCard key={project.id} project={project} />)}
-            <button className="hcard hcard--new" onClick={() => void pickAndCreate()}>
-              <span className="hcard__plus">＋</span>
-              <strong>New project</strong>
-              <small>pick a folder — it remembers everything</small>
-            </button>
-          </div>
-        ) : (
-          <div className="home-empty">
-            <h2>Projects are the spine of Vibyra</h2>
-            <p>
-              Each project keeps its own agents, files, memory and chat. Add your first one —
-              agents will launch straight into its folder.
-            </p>
-            <button className="btn btn--primary" onClick={() => void pickAndCreate()}>
-              ＋ Add your first project
-            </button>
-          </div>
+        {waiting.length > 0 && <button className="homeview__attn" onClick={() => void activate(waiting[0].projectId).then(() => setFocus(waiting[0].id))}>
+          {waiting.length} {waiting.length === 1 ? "chat needs" : "chats need"} your attention <ChevronIcon size={14} />
+        </button>}
+        {recents.length > 0 && (
+          <section className="home-recents" aria-label="Recent chats">
+            <div className="home-section-head"><h2>Continue working</h2><span>Your recent chats</span></div>
+            <div className="home-recents__grid">
+              {recents.map((pane) => {
+                const project = projects.find((p) => p.id === pane.projectId);
+                const state = pane.status === "suspended" ? "Saved" : pane.status === "exited" ? "Ended" : activity[pane.id] === "working" ? "Working" : "Open";
+                return (
+                  <button key={pane.id} className="home-recent" onClick={() => void activate(pane.projectId).then(() => setFocus(pane.id))}>
+                    <span className="home-recent__top"><AgentMark agentId={pane.agentId} name={pane.title} accent={pane.accent} size={24} /><span className={`home-recent__state ${state === "Working" ? "home-recent__state--live" : ""}`}>{state}</span></span>
+                    <strong className="home-recent__label">{paneLabel(pane)}</strong>
+                    <span className="home-recent__project">{project?.name ?? "Project"}</span>
+                    <span className="home-recent__bottom"><span>{pane.lastFocusedAt ? relativeTime(pane.lastFocusedAt) : "Previous session"}</span><ChevronIcon size={14} /></span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         )}
-
-        {recents.length > 0 ? (
-          <div className="home-recents">
-            <span className="section-label">Continue where you left off</span>
-            {recents.map((pane) => {
-              const project = projects.find((candidate) => candidate.id === pane.projectId);
-              return (
-                <button
-                  key={pane.id}
-                  className="home-recent"
-                  onClick={() => void useProjectStore.getState().activate(pane.projectId)
-                    .then(() => setFocus(pane.id))}
-                >
-                  <span
-                    className="launch__mono"
-                    style={{ "--hc": project?.color ?? "var(--accent)" } as React.CSSProperties}
-                  >
-                    {(project?.name ?? "?").charAt(0).toUpperCase()}
-                  </span>
-                  <span className="home-recent__label">{paneLabel(pane)}</span>
-                  <span className="home-recent__time">{relativeTime(pane.lastFocusedAt)}</span>
-                </button>
-              );
-            })}
+        <section className="home-projects" aria-label="Your projects">
+          <div className="home-section-head"><h2>Projects <span className="home-section-count">{projects.length}</span></h2>
+            <button className="btn" onClick={() => void pickAndCreate()}><PlusIcon size={14} /> Open folder</button>
           </div>
-        ) : null}
+          <HomeLaunchBar />
+          {ordered.length ? <div className="hcards">{ordered.map((project) => <HomeProjectCard key={project.id} project={project} />)}</div> : (
+            <div className="home-empty"><FolderIcon size={32} /><h2>Make room for your next idea.</h2><p>Open a project folder to bring your code, AI chats and preview into one workspace.</p><button className="btn btn--primary" onClick={() => void pickAndCreate()}><PlusIcon size={15} /> Open your first project</button></div>
+          )}
+        </section>
       </div>
     </main>
   );

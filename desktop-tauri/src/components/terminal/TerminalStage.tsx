@@ -1,43 +1,20 @@
-import { accentFor } from "../../lib/providerAccents";
+import { useEffect, useRef, useState } from "react";
+import { BotIcon } from "../common/Icons";
+import { LaunchSettingsPanel } from "../rail/LaunchSettings";
 import { gridColumns } from "../../lib/gridLayout";
-import { launchConfigured } from "../../lib/configuredLaunch";
-import { useAgentStore } from "../../state/agentStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
-import { AgentMark } from "../common/AgentMark";
 import { TerminalPaneCard } from "./TerminalPaneCard";
 
 function EmptyState({ projectName }: { projectName: string }) {
-  const agents = useAgentStore((state) => state.agents);
-  const activeId = useProjectStore((state) => state.activeId);
-  const quick = agents.filter((agent) => agent.installed).slice(0, 5);
-
   return (
     <div className="grid-empty">
-      <h2>{projectName} is quiet</h2>
-      <p>
-        Launch an agent — it starts in this project's folder automatically. Or press{" "}
-        <kbd className="kbd">Ctrl K</kbd> for anything.
-      </p>
-      <div className="grid-empty__quick">
-        {quick.map((agent) => {
-          const accent = accentFor(agent.id, agent.accent);
-          return (
-            <button
-              key={agent.id}
-              className="quick-chip"
-              style={{ "--chip-accent": accent } as React.CSSProperties}
-              onClick={() => {
-                if (activeId) void launchConfigured(agent, activeId);
-              }}
-            >
-              <AgentMark agentId={agent.id} name={agent.name} accent={accent} size={18} />
-              {agent.name}
-            </button>
-          );
-        })}
-      </div>
+      <span className="workspace-launcher__icon"><BotIcon size={28} /></span>
+      <h2>Start something in {projectName}</h2>
+      <p>Choose a model and open your first terminal.</p>
+      <div className="workspace-launcher"><LaunchSettingsPanel /></div>
+      <span className="workspace-launcher__hint">Your project, chats and layout stay together.</span>
     </div>
   );
 }
@@ -50,10 +27,21 @@ export function TerminalStage() {
   const project = projects.find((entry) => entry.id === activeId);
   const panes = allPanes.filter((pane) => pane.projectId === activeId);
   const zoomed = zoomedId === null ? undefined : panes.find((pane) => pane.id === zoomedId);
-  const columns = zoomed ? 1 : gridColumns(panes.length);
+  const host = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(Infinity);
+  useEffect(() => {
+    const element = host.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width > 0) setWidth(entry.contentRect.width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const columns = zoomed ? 1 : gridColumns(panes.length, width);
 
   return (
-    <div className="workspace__body terminal-stage">
+    <div ref={host} className="workspace__body terminal-stage">
       {panes.length === 0 ? (
         <EmptyState projectName={project?.name ?? "This project"} />
       ) : (

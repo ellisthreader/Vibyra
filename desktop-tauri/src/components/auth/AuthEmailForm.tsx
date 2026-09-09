@@ -73,7 +73,7 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
         </div>
       )}
       {recovering && <p className="auth-email__lead">Enter your email and we’ll send a password reset link.</p>}
-      <div className={`auth-reveal ${!recovering && mode === "signup" ? "auth-reveal--open" : ""}`}>
+      <div className={`auth-reveal ${!recovering && mode === "signup" ? "auth-reveal--open" : ""}`} inert={recovering || mode !== "signup"}>
         <div className="auth-reveal__inner">
           <input
             ref={mode === "signup" ? firstFieldRef : undefined}

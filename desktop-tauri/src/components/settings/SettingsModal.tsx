@@ -73,7 +73,7 @@ export function SettingsModal() {
               );
             })}
           </nav>
-          <div className="settings-nav__foot">Changes apply live and persist on disk.</div>
+          <div className="settings-nav__foot">Changes saved automatically.</div>
         </aside>
         <div className="settings-pane">
           <header className="settings-pane__header">

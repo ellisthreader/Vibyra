@@ -5,6 +5,9 @@ import test from "node:test";
 
 import {
   PANE_HEADER_PX,
+  GRID_PADDING_PX,
+  GRID_GAP_PX,
+  PANE_BORDER_PX,
   SCROLLBAR_PX,
   TERM_INSET_X,
   TERM_INSET_Y,
@@ -28,8 +31,15 @@ test("spawn geometry still matches the pane stylesheet", async () => {
   assert.equal(
     Number(header[1]),
     PANE_HEADER_PX,
+  GRID_PADDING_PX,
+  GRID_GAP_PX,
+  PANE_BORDER_PX,
     "PANE_HEADER_PX must track .pane__header min-height",
   );
+
+  assert.equal(Number(/\.grid\s*\{[^}]*?padding:\s*(\d+)px/.exec(workspace)?.[1]), GRID_PADDING_PX);
+  assert.equal(Number(/\.grid\s*\{[^}]*?gap:\s*(\d+)px/.exec(workspace)?.[1]), GRID_GAP_PX);
+  assert.equal(Number(/\.pane\s*\{[^}]*?border:\s*(\d+)px/.exec(workspace)?.[1]) * 2, PANE_BORDER_PX);
 
   const padding = /\.term-view\s*\{[^}]*?padding:\s*([^;]+);/.exec(panes);
   assert.ok(padding, ".term-view no longer declares padding");

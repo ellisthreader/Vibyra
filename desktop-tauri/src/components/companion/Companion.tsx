@@ -21,6 +21,7 @@ const TABS: { id: CompanionTab; label: string; icon: ComponentType<{ size?: numb
 
 export function Companion() {
   const open = useWorkspaceStore((s) => s.companionOpen);
+  const size = useWorkspaceStore((s) => s.companionSize);
   const tab = useWorkspaceStore((s) => s.companionTab);
   const preferredWidth = useWorkspaceStore((s) => s.companionWidth);
   const setTab = useWorkspaceStore((s) => s.setCompanionTab);
@@ -51,10 +52,11 @@ export function Companion() {
   return (
     <aside
       className="companion"
+      data-size={size}
       aria-label="Project companion"
       style={{ "--companion-width": `${resize.width}px` } as CSSProperties}
     >
-      <div
+      {size === "compact" && <div
         className="companion__resize"
         role="separator"
         aria-label="Resize project companion"
@@ -66,7 +68,7 @@ export function Companion() {
         onPointerDown={resize.start}
         onKeyDown={resize.resizeWithKeyboard}
         onDoubleClick={resize.reset}
-      />
+      />}
       <header className="companion__head">
         <nav className="companion__tabs" role="tablist" aria-label="Companion tools">
           {TABS.map((entry, index) => {

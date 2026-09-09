@@ -14,6 +14,7 @@ use super::terminal_args::{
 pub struct CreateTerminalRequest {
     pub agent_id: String,
     pub cwd: Option<String>,
+    pub resume_cwd: Option<String>,
     pub rows: Option<u16>,
     pub cols: Option<u16>,
     pub model: Option<String>,
@@ -99,17 +100,20 @@ pub fn isolate_account_environment(
 /// `spec.env` is applied last of all — after the AppImage's own environment
 /// repairs — so what lands here is what the CLI actually reads. The first
 /// account names nothing, which is what makes it "wherever this CLI looks".
-pub fn select_launch_account(spec: &mut LaunchSpec, agent_id: &str, account_id: Option<&str>) {
+pub fn select_launch_account(
+    spec: &mut LaunchSpec,
+    agent_id: &str,
+    account_id: Option<&str>,
+) -> Result<(), CoreError> {
     let Some(account_id) = account_id else {
-        return;
+        return Ok(());
     };
-    let Ok(home) = crate::provider_auth_registry::Registry::load().home(agent_id, account_id)
-    else {
-        return;
-    };
+    let home = crate::provider_auth_registry::Registry::load().home(agent_id, account_id)
+        .map_err(|_| invalid("The saved provider account is no longer available. Reconnect it in Settings > Integrations."))?;
     if let Some((name, value)) = home.env() {
         spec.env.push((name, value));
     }
+    Ok(())
 }
 
 pub fn configure_dimensions(

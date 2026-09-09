@@ -1,6 +1,6 @@
 {
   "name": "vibyra-desktop-tauri",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "description": "Vibyra Desktop — AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
   "private": true,
   "type": "module",
@@ -20,8 +20,8 @@
     "app:dev": "node scripts/dev.mjs",
     "app:build": "npm run app:install",
     "app:build:linux": "tauri build --bundles appimage",
-    "app:install": "node scripts/install-linux.mjs",
-    "app:install:only": "node scripts/install-linux.mjs --no-build",
+    "app:install": "node scripts/install.mjs",
+    "app:install:only": "node scripts/install.mjs --no-build",
     "discord:configure": "bash scripts/configure-discord-webhook.sh configure",
     "discord:test": "bash scripts/configure-discord-webhook.sh test",
     "discord:clear": "bash scripts/configure-discord-webhook.sh clear",
@@ -36,32 +36,33 @@
     "rust:clippy": "cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets --locked -- -D warnings",
     "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml --workspace --locked",
     "rust:audit": "cargo audit --file src-tauri/Cargo.lock --ignore RUSTSEC-2024-0429",
-    "verify": "npm run lines && npm run check:dead-code && npm test && npm run build && npm run rust:fmt && npm run rust:clippy && npm run rust:test"
+    "verify": "npm run lines && npm run check:dead-code && npm test && npm run build && npm run rust:fmt && npm run rust:clippy && npm run rust:test",
+    "app:build:macos": "tauri build --bundles app"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@tauri-apps/api": "^2.11.1",
-    "@tauri-apps/plugin-dialog": "^2.7.2",
+    "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-global-shortcut": "^2.3.2",
-    "@tauri-apps/plugin-notification": "^2.3.3",
+    "@tauri-apps/plugin-notification": "^2.4.0",
     "@tauri-apps/plugin-process": "^2.3.1",
-    "@tauri-apps/plugin-updater": "^2.10.1",
+    "@tauri-apps/plugin-updater": "^2.11.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-web-links": "^0.12.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^6.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.5",
-    "knip": "6.32.2",
-    "typescript": "^5.9.3",
-    "vite": "^8.2.1"
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "knip": "^6.35.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   }
 }

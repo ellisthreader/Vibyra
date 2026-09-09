@@ -1,18 +1,3 @@
-/* The matching poster remains beneath the local video so startup, decoder
-   recovery, and reduced-motion mode never expose a blank or unrelated frame. */
-
-.auth__backdrop--video {
-  opacity: 0;
-  transition: opacity 480ms ease;
-}
-
-.auth__backdrop--video.is-ready {
-  opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth__backdrop--video {
-    display: none;
-    transition: none;
-  }
-}
+.auth__backdrop { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse at 10% 55%, var(--accent-soft), transparent 60%); }
+.auth__orbit { position: absolute; left: -360px; top: 50%; width: 1000px; height: 1000px; border-radius: 50%; border: 1px solid var(--line-soft); transform: translateY(-50%); }
+.auth__orbit--inner { left: -220px; width: 720px; height: 720px; }

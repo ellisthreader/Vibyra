@@ -51,6 +51,9 @@ mod report_image;
 mod report_tests;
 mod report_text;
 mod secret_store;
+mod session_identity;
+#[cfg(any(target_os = "macos", test))]
+mod session_process_files;
 mod session_store;
 #[cfg(test)]
 mod session_store_tests;
@@ -101,19 +104,9 @@ pub fn run() {
         // flush the session to disk; `confirm_close` then sets the flag and
         // closes for real. Only when a UI is mounted that can answer — see
         // `close_guard`.
-        .on_window_event(|window, event| {
-            use tauri::Manager;
-
-            let tauri::WindowEvent::CloseRequested { api, .. } = event else {
-                return;
-            };
-            if !close_guard::should_veto(&window.state::<state::AppState>()) {
-                return;
-            }
-            api.prevent_close();
-            close_guard::hand_off(window);
-        })
+        .on_window_event(close_guard::window_event)
         .invoke_handler(commands::registry::handler())
-        .run(tauri::generate_context!())
-        .expect("error while running Vibyra Desktop");
+        .build(tauri::generate_context!())
+        .expect("error while building Vibyra Desktop")
+        .run(close_guard::run_event);
 }

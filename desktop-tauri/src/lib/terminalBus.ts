@@ -9,8 +9,17 @@ type Handler = (event: TermEvent) => void;
 
 const handlers = new Map<number, Handler>();
 const queues = new Map<number, TermEvent[]>();
+const exits = new Map<number, number | null>();
+let onExit: (id: number, code: number | null) => void = () => {};
+
+export function setExitHandler(handler: typeof onExit): void { onExit = handler; }
+export function sessionExitCode(id: number): number | null | undefined { return exits.get(id); }
 
 export function dispatch(id: number, event: TermEvent): void {
+  if (event.type === "exit") {
+    exits.set(id, event.code);
+    onExit(id, event.code);
+  }
   const handler = handlers.get(id);
   if (handler) {
     handler(event);
@@ -37,6 +46,7 @@ export function detach(id: number): void {
 }
 
 export function clear(id: number): void {
+  exits.delete(id);
   handlers.delete(id);
   queues.delete(id);
 }

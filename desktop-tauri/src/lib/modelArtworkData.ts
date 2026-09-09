@@ -41,12 +41,6 @@ const OPENAI_ICONS: Array<[string, string]> = [
   ["gpt-5-4", "gpt-5.4.png"],
 ];
 
-const NATIVE_ACCOUNT_ICONS: Record<string, Array<[string, string]>> = {
-  Anthropic: CLAUDE_ICONS,
-  Google: GEMINI_ICONS,
-  OpenAI: OPENAI_ICONS,
-};
-
 function normalize(value: string): string {
   return value.toLowerCase().replace(/[.\s_]+/g, "-");
 }
@@ -62,13 +56,4 @@ export function modelArtworkFile(id: string, label = ""): string | null {
     GEMINI_ICONS.find(([slug]) => identity.includes(slug))?.[1] ??
     null
   );
-}
-
-/** True only for curated model IDs known to be accepted by an account-owned CLI. */
-export function nativeAccountModelSupported(company: string, id: string): boolean {
-  const icons = NATIVE_ACCOUNT_ICONS[company];
-  if (!icons || id.includes(":")) return false;
-  const bare = id.trim().replace(/^[^/]+\//, "");
-  const key = normalize(bare);
-  return icons.some(([slug]) => slug === key);
 }

@@ -15,7 +15,7 @@ function SessionRow({ pane, index }: { pane: PaneState; index: number }) {
   const [draft, setDraft] = useState("");
 
   const state =
-    pane.status === "exited"
+    pane.status === "suspended" ? "saved" : pane.status === "exited"
       ? "exited"
       : pane.visibility === "hibernated"
         ? "sleeping"
@@ -37,7 +37,7 @@ function SessionRow({ pane, index }: { pane: PaneState; index: number }) {
         else setFocus(pane.id);
       }}
       onKeyDown={(e) => {
-        if (e.key === "Enter") setFocus(pane.id);
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setFocus(pane.id); }
       }}
       onDoubleClick={() => {
         setDraft(pane.customTitle ?? "");

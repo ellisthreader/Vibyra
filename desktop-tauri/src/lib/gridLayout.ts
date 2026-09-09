@@ -1,7 +1,6 @@
-/** Column count for an auto-balancing terminal grid. */
-export function gridColumns(paneCount: number): number {
-  if (paneCount <= 1) return 1;
-  if (paneCount <= 4) return 2;
-  if (paneCount <= 9) return 3;
-  return 4;
+/** Keep each terminal readable when a tools panel narrows the stage. */
+export function gridColumns(paneCount: number, availableWidth = Infinity): number {
+  const balanced = paneCount <= 1 ? 1 : paneCount <= 4 ? 2 : paneCount <= 9 ? 3 : 4;
+  const capacity = Math.max(1, Math.floor(availableWidth / 360));
+  return Math.min(balanced, capacity);
 }

@@ -6,6 +6,9 @@ export const COMPANION_MAX_WIDTH = 520;
 
 const WIDTH_KEY = "vibyra.desktop.companionWidth";
 const TAB_KEY = "vibyra.desktop.companionTab";
+export type CompanionSize = "compact" | "wide" | "full";
+const SIZE_KEY = "vibyra.desktop.companionSize";
+const OPEN_KEY = "vibyra.desktop.companionOpen";
 
 interface PreferenceStorage {
   getItem: (key: string) => string | null;
@@ -14,6 +17,14 @@ interface PreferenceStorage {
 
 function browserStorage(): PreferenceStorage | null {
   return typeof localStorage === "undefined" ? null : localStorage;
+}
+
+export function restoreCompanionOpen(storage = browserStorage()): boolean {
+  try { return storage?.getItem(OPEN_KEY) === "true"; } catch { return false; }
+}
+
+export function saveCompanionOpen(open: boolean, storage = browserStorage()): void {
+  try { storage?.setItem(OPEN_KEY, String(open)); } catch { /* Convenience preference. */ }
 }
 
 export function clampCompanionWidth(value: number): number {
@@ -57,4 +68,15 @@ export function saveCompanionTab(tab: CompanionTab, storage = browserStorage()):
   } catch {
     // The selected tool remains usable when storage is unavailable.
   }
+}
+
+export function restoreCompanionSize(storage = browserStorage()): CompanionSize {
+  try {
+    const size = storage?.getItem(SIZE_KEY);
+    return size === "wide" || size === "full" ? size : "compact";
+  } catch { return "compact"; }
+}
+
+export function saveCompanionSize(size: CompanionSize, storage = browserStorage()): void {
+  try { storage?.setItem(SIZE_KEY, size); } catch { /* Convenience preference. */ }
 }

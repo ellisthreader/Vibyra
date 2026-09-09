@@ -95,7 +95,7 @@ mod tests {
         assert_eq!(summary.name, "vault");
         assert_eq!(
             load_connected_vault(&store, "project-1").unwrap(),
-            Some(vault)
+            Some(fs::canonicalize(vault).unwrap())
         );
         disconnect_vault(&store, "project-1").unwrap();
         assert_eq!(load_connected_vault(&store, "project-1").unwrap(), None);

@@ -38,6 +38,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         terminal::kill_terminal,
         terminal::remove_terminal,
         terminal::list_terminals,
+        terminal::terminal_session_identities,
         agents::list_agents,
         agent_conversations::agent_conversation_resumable,
         render::renderer_policy,

@@ -1,72 +1,65 @@
 import type { StoreApi } from "zustand";
-
 import { listAgents } from "../ipc/agents";
-import { agentConversationResumable } from "../ipc/terminal";
+import { agentConversationResumable, removeTerminal, terminalSnapshot } from "../ipc/terminal";
 import { inspectSafeWorkspace } from "../ipc/workspace";
-import { relaunchContinuity } from "../lib/sessionRestore";
-import type { PaneState, TerminalStore } from "./terminalStoreTypes";
-import { useWorkspaceStore } from "./workspaceStore";
-
-// How a pane is placed in the grid and how it is brought back from its saved
-// recipe. Shared by restart (a live pane) and resume (a restored one) so the
-// two can never drift apart.
+import { conversationInUse, resumableAgent } from "../lib/resumePolicy";
+import { dropStats } from "../lib/activity";
+import { suppressExitNotice } from "../lib/sessionExitNotifications";
+import { destroySession } from "../lib/terminalRegistry";
+import type { TerminalStore } from "./terminalStoreTypes";
 
 type GetState = StoreApi<TerminalStore>["getState"];
+type SetState = StoreApi<TerminalStore>["setState"];
 
-function reportError(error: unknown): void {
-  useWorkspaceStore.getState().setError(String(error));
-}
-
-/**
- * Relaunches a pane from its saved recipe. Shared by restart and resume so
- * both paths agree on how an agent is looked up and how a safe workspace is
- * re-checked — a fingerprint captured earlier may no longer describe the tree.
- * They differ only in what they carry over; see `relaunchContinuity`.
- */
-export async function relaunch(get: GetState, pane: PaneState, replaces?: number): Promise<void> {
-  // Only a suspended pane asks to continue anything, and only one carrying an
-  // id names a conversation that can have gone missing since. If the check
-  // itself fails, assume it is there: a broken lookup must not quietly stop
-  // resuming the conversations that are.
-  const conversationResumable =
-    pane.status === "suspended" && pane.agentSessionId
-      ? await agentConversationResumable(
-          pane.agentId,
-          pane.agentSessionId,
-          pane.accountId,
-        ).catch(() => true)
-      : true;
-  const { resume, replaySnapshot } = relaunchContinuity(pane, get().panes, conversationResumable);
-  if (pane.agentId === "ssh") {
-    await get().spawnSsh(pane.title, pane.projectId, { replaces, replaySnapshot });
-    return;
+/** Replace only after a successful spawn. Failed resumes leave the saved pane intact. */
+export async function relaunch(set: SetState, get: GetState, id: number, continuing: boolean): Promise<void> {
+  const pane = get().panes.find((candidate) => candidate.id === id);
+  if (!pane || get().relaunching.includes(id) || (continuing && pane.status === "running")) return;
+  set((state) => ({ relaunching: [...state.relaunching, id], relaunchErrors: { ...state.relaunchErrors, [id]: "" } }));
+  try {
+    if (continuing && conversationInUse(pane, get().panes, get().relaunching)) {
+      throw new Error("This conversation is already open in another terminal. Continue there to keep your chat in sync.");
+    }
+    if (continuing && pane.agentSessionId && resumableAgent(pane.agentId)) {
+      const exists = await agentConversationResumable(pane.agentId, pane.agentSessionId, pane.accountId);
+      if (!exists) throw new Error("The provider's saved chat is unavailable. Your saved output is still here. You can start a new chat below.");
+    }
+    const replaySnapshot = continuing
+      ? pane.snapshot ?? (id > 0 ? await terminalSnapshot(id).catch(() => null) : null)
+      : null;
+    if (pane.agentId === "ssh") {
+      await get().spawnSsh(pane.title, pane.projectId, { replaces: id, replaySnapshot });
+    } else {
+      const agents = await listAgents();
+      const agent = agents.find((candidate) => candidate.id === pane.agentId && candidate.installed);
+      if (!agent) throw new Error(`${pane.agentId} is not installed. Reconnect it in Settings → Integrations, then try again.`);
+      const fingerprint = pane.workspaceMode === "safe" && pane.sourceCwd && !(continuing && pane.resumeCwd)
+        ? (await inspectSafeWorkspace(pane.sourceCwd)).fingerprint : undefined;
+      await get().spawnAgent(agent, pane.projectId, {
+        model: pane.model,
+        permissionMode: pane.permissionMode,
+        reasoningEffort: pane.reasoningEffort,
+        title: pane.customTitle ?? pane.title,
+        cwd: pane.sourceCwd,
+        resumeCwd: continuing ? pane.resumeCwd : undefined,
+        workspaceMode: pane.workspaceMode,
+        safeSnapshotFingerprint: fingerprint,
+        replaces: id,
+        resume: continuing,
+        replaySnapshot,
+        // A new Claude chat must get a new UUID: reusing one causes "ID in use".
+        agentSessionId: continuing ? pane.agentSessionId : null,
+        accountId: pane.accountId,
+      });
+    }
+    suppressExitNotice(id);
+    destroySession(id);
+    dropStats(id);
+    if (id > 0) await removeTerminal(id).catch(() => {});
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    set((state) => ({ relaunchErrors: { ...state.relaunchErrors, [id]: message } }));
+  } finally {
+    set((state) => ({ relaunching: state.relaunching.filter((value) => value !== id) }));
   }
-  const agents = await listAgents().catch(() => []);
-  const agent = agents.find((candidate) => candidate.id === pane.agentId);
-  if (!agent) {
-    reportError(`agent "${pane.agentId}" is no longer available`);
-    return;
-  }
-  let fingerprint = pane.safeSnapshotFingerprint ?? undefined;
-  if (pane.workspaceMode === "safe" && pane.sourceCwd) {
-    fingerprint = await inspectSafeWorkspace(pane.sourceCwd)
-      .then((preflight) => preflight.fingerprint)
-      .catch(() => fingerprint);
-  }
-  await get().spawnAgent(agent, pane.projectId, {
-    model: pane.model,
-    permissionMode: pane.permissionMode,
-    reasoningEffort: pane.reasoningEffort,
-    title: pane.customTitle ?? pane.title,
-    cwd: pane.sourceCwd,
-    workspaceMode: pane.workspaceMode,
-    safeSnapshotFingerprint: fingerprint,
-    replaces,
-    resume,
-    replaySnapshot,
-    agentSessionId: pane.agentSessionId,
-    // The same login it was on. Resuming onto a different account would look
-    // for this conversation in a folder that has never held it.
-    accountId: pane.accountId,
-  });
 }

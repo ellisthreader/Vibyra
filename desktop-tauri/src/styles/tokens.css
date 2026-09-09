@@ -22,7 +22,7 @@
   /* text */
   --text: #f5f7fa;
   --muted: #a6adba;
-  --dim: #747c8a;
+  --dim: #939baa;
 
   /* the cobalt nerve */
   --accent: #5b7cfa;
@@ -62,7 +62,7 @@
 
   /* shape — the system is 7/8px; panes 12; menus 10 */
   --r-sm: 6px;
-  --r-shell: 7px;
+  --r-shell: 8px;
   --r-control: 8px;
   --r-card: 9px;
   --r-menu: 10px;
@@ -80,15 +80,15 @@
   --e-hero: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* layout */
-  --chrome-h: 52px;
-  --rail-w: 236px;
+  --chrome-h: 56px;
+  --rail-w: 224px;
 
   /* terminal screen (deepest well) */
   --term-screen: #0b0c10;
   --term-input: #08090c;
-  --term-text: #eeeaf8;
-  --term-muted: #a9a3b8;
-  --term-dim: #918ca1;
+  --term-text: #f0f2f6;
+  --term-muted: #a6adba;
+  --term-dim: #939baa;
 }
 
 :root[data-theme="light"] {
@@ -108,7 +108,7 @@
 
   --text: #171a21;
   --muted: #626a78;
-  --dim: #7a8290;
+  --dim: #697180;
 
   --accent: #315bd8;
   --accent-2: #2449b8;

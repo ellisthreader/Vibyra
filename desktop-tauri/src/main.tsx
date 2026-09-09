@@ -80,13 +80,18 @@ import "./styles/settings-graphics.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
 
+import "./styles/interface-layout.css";
+import "./styles/project-tools.css";
+
 import App from "./App";
 import { installAppDropGuard } from "./lib/terminalDrop";
 import { initRendererPolicy } from "./lib/xtermRenderer";
+import { isMac } from "./lib/platform";
+
+document.documentElement.dataset.platform = isMac ? "mac" : "desktop";
 
 // Resolves long before the first terminal can mount (post sign-in).
 void initRendererPolicy();
 installAppDropGuard();
 
 createRoot(document.getElementById("root")!).render(<App />);
-

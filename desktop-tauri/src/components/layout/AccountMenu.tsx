@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { avatarInitial, logoutConfirmCopy } from "../../lib/accountPolicy";
 import { useAccountStore } from "../../state/accountStore";
+import { useReportStore } from "../../state/reportStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 
@@ -117,6 +118,10 @@ export function AccountMenu() {
               >
                 Settings
               </button>
+              <button role="menuitem" className="account-menu__item" onClick={() => {
+                close(false);
+                void useReportStore.getState().begin();
+              }}>Report a problem</button>
               <button
                 role="menuitem"
                 className="account-menu__item"

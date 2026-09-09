@@ -22,7 +22,7 @@ export function estimateSpawnDimensions(
   if (rect.width < 120 || rect.height < 90) return null;
 
   const count = Math.max(1, paneCount);
-  const columns = gridColumns(count);
+  const columns = gridColumns(count, rect.width);
   const cell = measuredCellSize() ?? fallbackCell(fontSize);
   return spawnDimensionsFor({
     stageWidth: rect.width,

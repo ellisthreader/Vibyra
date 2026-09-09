@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { SearchIcon } from "../common/Icons";
 
 import { basename, useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
@@ -36,12 +37,13 @@ export function HomeLaunchBar() {
   return (
     <div className="launch">
       <div className="launch__bar">
-        <span className="launch__prompt">❯</span>
+        <span className="launch__prompt"><SearchIcon size={16} /></span>
         <input
           className="launch__input"
           data-welcome-focus
           value={query}
-          placeholder="Open a project, or paste a folder path to add one…"
+          aria-label="Find a project or enter a folder path"
+          placeholder="Find a project or paste a folder path…"
           spellCheck={false}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -53,7 +55,7 @@ export function HomeLaunchBar() {
               void run(selected);
             } else if (event.key === "ArrowDown") {
               event.preventDefault();
-              setSelected((value) => Math.min(value + 1, suggestions.length - 1));
+              setSelected((value) => Math.max(0, Math.min(value + 1, suggestions.length - 1)));
             } else if (event.key === "ArrowUp") {
               event.preventDefault();
               setSelected((value) => Math.max(value - 1, 0));
@@ -62,7 +64,7 @@ export function HomeLaunchBar() {
             }
           }}
         />
-        <kbd className="kbd">Ctrl K</kbd>
+        <kbd className="kbd">↵</kbd>
       </div>
       {(suggestions.length > 0 || (isPath && query.trim().length > 1)) ? (
         <div className="launch__drop">

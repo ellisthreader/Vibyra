@@ -67,7 +67,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
     try {
       const status = await voiceStatus();
       if (!status.recorder) {
-        fail("No microphone recorder (arecord) found");
+        fail("No microphone recorder is available on this computer");
         return;
       }
       if (!status.keyConfigured) {

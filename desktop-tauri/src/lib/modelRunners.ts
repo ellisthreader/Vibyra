@@ -5,7 +5,7 @@
 
 import type { CatalogModel } from "./openRouterCatalog";
 import type { ResolvedAgent } from "../types";
-import { nativeAccountModelSupported } from "./modelArtworkData.ts";
+import { nativeAccountModelSupported } from "./nativeAccountModels.ts";
 
 interface NativeRunner {
   company: string;

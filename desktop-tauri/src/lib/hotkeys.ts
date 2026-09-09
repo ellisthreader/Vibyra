@@ -1,3 +1,5 @@
+import { isMac } from "./platform";
+
 export type HotkeyAction = "voice" | "screenshot";
 
 export const DEFAULT_VOICE_SHORTCUT = "F8";
@@ -33,7 +35,8 @@ export function shortcutFromEvent(event: KeyboardEvent): string | null {
   const isFunctionKey = key.startsWith("F") && /^F\d+$/.test(key);
   if (!isFunctionKey && !event.ctrlKey && !event.metaKey && !event.altKey) return null;
   const parts: string[] = [];
-  if (event.ctrlKey || event.metaKey) parts.push("CommandOrControl");
+  if (event.metaKey || (!isMac && event.ctrlKey)) parts.push("CommandOrControl");
+  if (isMac && event.ctrlKey) parts.push("Control");
   if (event.altKey) parts.push("Alt");
   if (event.shiftKey) parts.push("Shift");
   parts.push(key);
@@ -41,5 +44,7 @@ export function shortcutFromEvent(event: KeyboardEvent): string | null {
 }
 
 export function shortcutLabel(shortcut: string): string {
-  return shortcut.replace("CommandOrControl", "Ctrl/Cmd").replaceAll("+", " + ");
+  return isMac
+    ? shortcut.replace("CommandOrControl", "⌘").replace("Control", "⌃").replace("Shift", "⇧").replace("Alt", "⌥").replaceAll("+", "")
+    : shortcut.replace("CommandOrControl", "Ctrl").replaceAll("+", " + ");
 }

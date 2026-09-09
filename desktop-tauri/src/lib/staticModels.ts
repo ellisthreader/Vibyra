@@ -1,8 +1,7 @@
-// Offline fallback roster — used only when OpenRouter is unreachable and
-// no cached catalog exists. Native-CLI companies keep their full walls
-// (every entry with per-model artwork); the rest get their flagship.
+// Offline roster and verified native models merged into live/cached catalogs.
+// Personal-account CLI availability is independent of OpenRouter and artwork.
 
-import { COMPANY_META } from "./companyMeta";
+import { COMPANY_META } from "./companyMeta.ts";
 import type { CatalogModel, CompanyGroup } from "./catalogTypes";
 
 function entry(id: string, label: string, company: string, contextLength = 200_000): CatalogModel {
@@ -24,15 +23,18 @@ function entry(id: string, label: string, company: string, contextLength = 200_0
 
 const WALLS: Array<[string, Array<[string, string]>]> = [
   ["OpenAI", [
+    ["openai/gpt-6-astra", "GPT-6 Astra"],
     ["openai/gpt-5.6-sol", "GPT-5.6 Sol"],
     ["openai/gpt-5.6-luna", "GPT-5.6 Luna"],
     ["openai/gpt-5.6-terra", "GPT-5.6 Terra"],
     ["openai/gpt-5.5", "GPT-5.5"],
     ["openai/gpt-5.4", "GPT-5.4"],
     ["openai/gpt-5.4-mini", "GPT-5.4 Mini"],
+    ["openai/gpt-5.3-codex-spark", "GPT-5.3 Codex Spark"],
     ["openai/gpt-5-codex", "GPT-5 Codex"],
   ]],
   ["Anthropic", [
+    ["anthropic/claude-fable-5.1", "Claude Fable 5.1"],
     ["anthropic/claude-opus-5", "Claude Opus 5"],
     ["anthropic/claude-fable-5", "Claude Fable 5"],
     ["anthropic/claude-sonnet-5", "Claude Sonnet 5"],

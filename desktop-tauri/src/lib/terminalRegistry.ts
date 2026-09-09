@@ -1,3 +1,4 @@
+import { terminalFont } from "./terminalFont";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -31,11 +32,6 @@ export interface TerminalEntry {
 }
 
 const entries = new Map<number, TerminalEntry>();
-
-/** Puts the bundled JetBrains Mono variable font ahead of the user's stack. */
-function monoStack(userStack: string): string {
-  return `"JetBrains Mono Variable", ${userStack}`;
-}
 
 /** Fits the grid to the host and refreshes the cached cell height. */
 export function fitTerminal(entry: TerminalEntry): void {
@@ -85,7 +81,7 @@ export function mountTerminal(
   const term = new Terminal({
     cursorBlink: false,
     fontSize: settings.fontSize,
-    fontFamily: monoStack(settings.fontFamily),
+    fontFamily: terminalFont(settings.fontFamily),
     scrollback: settings.scrollbackLines,
     scrollOnUserInput: false,
     theme: themeFor(settings.theme),
@@ -176,7 +172,7 @@ export function applySettingsToAll(settings: Settings): void {
   for (const entry of entries.values()) {
     const { term } = entry;
     term.options.fontSize = settings.fontSize;
-    term.options.fontFamily = monoStack(settings.fontFamily);
+    term.options.fontFamily = terminalFont(settings.fontFamily);
     term.options.scrollback = settings.scrollbackLines;
     term.options.theme = themeFor(settings.theme);
     fitTerminal(entry);

@@ -3,15 +3,15 @@
 // rank by quality + recency, and group per company in display order.
 // Cached in localStorage so the picker opens instantly and works offline.
 
-import { COMPANY_META, COMPANY_PRIORITY, companyForModel, trimCompanyPrefix } from "./companyMeta";
+import { COMPANY_META, COMPANY_PRIORITY, companyForModel, trimCompanyPrefix } from "./companyMeta.ts";
 import type { CatalogModel, CompanyGroup } from "./catalogTypes";
-import { modelArtworkFile } from "./modelArtworkData";
-import { catalogQuality, displayOrder, selectForCompany } from "./openRouterCatalogRanking";
+import { mergeNativeCatalog } from "./mergeNativeCatalog.ts";
+import { catalogQuality, displayOrder, selectForCompany } from "./openRouterCatalogRanking.ts";
 import {
   normalizeOpenRouterReasoning,
   type RawOpenRouterReasoning,
-} from "./openRouterReasoning";
-import { STATIC_GROUPS } from "./staticModels";
+} from "./openRouterReasoning.ts";
+import { STATIC_GROUPS } from "./staticModels.ts";
 
 export type { CatalogModel, CompanyGroup } from "./catalogTypes";
 
@@ -50,18 +50,19 @@ export async function loadCatalog(
 ): Promise<{ groups: CompanyGroup[]; source: "live" | "cache" | "static" }> {
   const cached = readCache();
   if (!force && cached && Date.now() - cached.savedAt < CACHE_MS) {
-    return { groups: cached.groups, source: "cache" };
+    return { groups: mergeNativeCatalog(cached.groups), source: "cache" };
   }
   try {
     const response = await fetch(MODELS_URL, { headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error(`OpenRouter ${response.status}`);
     const json = (await response.json()) as { data?: RawModel[] };
-    const groups = buildGroups(Array.isArray(json.data) ? json.data : []);
-    if (groups.length === 0) throw new Error("empty catalog");
+    const liveGroups = buildGroups(Array.isArray(json.data) ? json.data : []);
+    if (liveGroups.length === 0) throw new Error("empty catalog");
+    const groups = mergeNativeCatalog(liveGroups);
     localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), groups }));
     return { groups, source: "live" };
   } catch {
-    if (cached) return { groups: cached.groups, source: "cache" };
+    if (cached) return { groups: mergeNativeCatalog(cached.groups), source: "cache" };
     return { groups: STATIC_GROUPS, source: "static" };
   }
 }
@@ -111,8 +112,6 @@ function normalizeModel(model: RawModel): CatalogModel | null {
   if (!COMPANY_PRIORITY.has(company)) return null;
   const label = trimCompanyPrefix(String(model.name ?? id), company).slice(0, 96);
   if (isBlocked(id, label)) return null;
-  // The OpenAI wall is icons-only: a GPT model without artwork doesn't show.
-  if (company === "OpenAI" && !modelArtworkFile(id, label)) return null;
   const prompt = price(model.pricing?.prompt);
   const completion = price(model.pricing?.completion);
   const free = id.endsWith(":free") || (prompt === 0 && completion === 0);

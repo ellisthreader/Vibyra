@@ -11,6 +11,7 @@ export interface PersistedPane {
   permissionMode: "standard" | "full";
   reasoningEffort: string | null;
   sourceCwd: string | null;
+  resumeCwd?: string | null;
   workspaceMode: "safe" | "shared";
   accent: string;
   snapshot: string | null;

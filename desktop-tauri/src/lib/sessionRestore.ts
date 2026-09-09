@@ -32,9 +32,10 @@ export function toPaneStates(session: TerminalSession): PaneState[] {
     permissionMode: pane.permissionMode,
     reasoningEffort: pane.reasoningEffort,
     sourceCwd: pane.sourceCwd,
+    resumeCwd: pane.resumeCwd ?? null,
     workspaceMode: pane.workspaceMode,
     // Deliberately dropped: a stale fingerprint must not be trusted a session
-    // later. Resume re-inspects the workspace, exactly as restart does.
+    // later. New worktrees are re-inspected; resume validates its existing path.
     safeSnapshotFingerprint: null,
     customTitle: pane.customTitle,
     osc: null,
@@ -90,72 +91,6 @@ export function restoredProjectId(
   return best;
 }
 
-/** What a relaunch inherits from the pane it is replacing. */
-export interface RelaunchContinuity {
-  /** Ask the agent to continue the conversation this pane was in. */
-  resume: boolean;
-  /** Output to show above the new process's own, or null for a clean start. */
-  replaySnapshot: string | null;
-}
-
-/**
- * Resuming and restarting are the same relaunch with opposite intent.
- *
- * **Resume** picks a suspended pane back up: the user is returning to work
- * they left, so the output they were reading stays on screen and the agent is
- * asked to continue its conversation rather than open an empty one.
- * **Restart** is asked for on a pane that is already running or has exited,
- * and deliberately starts clean — that is the whole reason to press it.
- *
- * `siblings` is every pane in the workspace, because for an agent that can
- * only resume *the most recent* conversation, whether that is the right one
- * is not a property of this pane alone. See `ambiguousRecencyResume`.
- *
- * `conversationResumable` answers whether the agent can still find the
- * conversation this pane's id names — see `agentConversationResumable`. It is
- * passed in rather than looked up here so this stays a pure decision.
- */
-export function relaunchContinuity(
-  pane: PaneState,
-  siblings: PaneState[] = [],
-  conversationResumable = true,
-): RelaunchContinuity {
-  if (pane.status !== "suspended") return { resume: false, replaySnapshot: null };
-  return {
-    // A pane that names a conversation the agent no longer has must not ask
-    // for it: `claude --resume` kills the pane over a missing id instead of
-    // opening an empty chat, which is how a pane that was never typed into
-    // came back as an error. Relaunching keeps the id, so once the user does
-    // say something the pane is resumable again.
-    //
-    // The saved output still replays. "Never written" and "cleaned up after
-    // `cleanupPeriodDays`" look identical from here, and dropping the second
-    // one's scrollback would throw away work the user can still read.
-    resume: conversationResumable && !ambiguousRecencyResume(pane, siblings),
-    replaySnapshot: pane.snapshot ?? null,
-  };
-}
-
-/**
- * True when "continue the last conversation here" could mean more than one
- * thing, so it must not be asked for.
- *
- * A pane carrying its own conversation id names that one exactly and is never
- * ambiguous. Without an id all Vibyra can ask for is recency, which two panes
- * of the same agent in the same folder would both resolve to — pulling them
- * into one conversation with two live processes writing to it. Those relaunch
- * clean instead, which loses the thread but never corrupts it.
- */
-export function ambiguousRecencyResume(pane: PaneState, siblings: PaneState[]): boolean {
-  if (pane.agentSessionId) return false;
-  return siblings.some(
-    (other) =>
-      other.id !== pane.id &&
-      other.agentId === pane.agentId &&
-      (other.sourceCwd ?? null) === (pane.sourceCwd ?? null),
-  );
-}
-
 /**
  * Live panes report their real id so Rust can read their scrollback; suspended
  * panes report 0 and carry the snapshot they were restored with.
@@ -171,6 +106,7 @@ export function toPersistedPanes(panes: PaneState[]): PersistedPane[] {
     permissionMode: pane.permissionMode,
     reasoningEffort: pane.reasoningEffort,
     sourceCwd: pane.sourceCwd,
+    resumeCwd: pane.resumeCwd ?? null,
     workspaceMode: pane.workspaceMode,
     accent: pane.accent,
     snapshot: pane.snapshot ?? null,

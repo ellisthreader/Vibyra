@@ -1,3 +1,4 @@
+import { terminalFont } from "../../lib/terminalFont";
 import { useEffect, useRef } from "react";
 
 import { FitAddon } from "@xterm/addon-fit";
@@ -15,10 +16,10 @@ import { themeFor } from "../../lib/xtermTheme";
  */
 export function SuspendedPaneView({ snapshot }: { snapshot: string | null | undefined }) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const settings = useSettingsStore((state) => state.settings);
 
   useEffect(() => {
     const host = hostRef.current;
-    const settings = useSettingsStore.getState().settings;
     if (!host || !settings) return;
 
     const term = new Terminal({
@@ -26,7 +27,7 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
       cursorBlink: false,
       cursorStyle: "bar",
       fontSize: settings.fontSize,
-      fontFamily: `"JetBrains Mono Variable", ${settings.fontFamily}`,
+      fontFamily: terminalFont(settings.fontFamily),
       scrollback: settings.scrollbackLines,
       theme: themeFor(settings.theme),
       allowProposedApi: true,
@@ -48,13 +49,17 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
       term.write(snapshot, () => term.scrollToBottom());
     }
 
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const syncTheme = () => { if (settings.theme === "auto") term.options.theme = themeFor("auto"); };
+    media.addEventListener("change", syncTheme);
     const observer = new ResizeObserver(refit);
     observer.observe(host);
     return () => {
       observer.disconnect();
+      media.removeEventListener("change", syncTheme);
       term.dispose();
     };
-  }, [snapshot]);
+  }, [snapshot, settings?.theme, settings?.fontSize, settings?.fontFamily, settings?.scrollbackLines]);
 
   return <div ref={hostRef} className="term-view term-view--suspended" aria-label="Saved output" />;
 }

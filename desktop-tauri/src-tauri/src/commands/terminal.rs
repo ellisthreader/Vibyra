@@ -125,3 +125,12 @@ pub async fn remove_terminal(state: State<'_, AppState>, id: SessionId) -> Resul
 pub async fn list_terminals(state: State<'_, AppState>) -> Result<Vec<SessionInfo>, CoreError> {
     Ok(state.manager.list())
 }
+
+#[tauri::command]
+pub async fn terminal_session_identities(
+    state: State<'_, AppState>,
+    panes: Vec<crate::session_identity::IdentityRequest>,
+) -> Result<Vec<crate::session_identity::SessionIdentity>, String> {
+    let manager = Arc::clone(&state.manager);
+    super::run_blocking(move || crate::session_identity::identify(&manager, &panes)).await
+}

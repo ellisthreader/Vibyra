@@ -1,4 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { isMac } from "../../lib/platform";
 
 type ResizeDirection =
   | "East"
@@ -46,6 +47,7 @@ function CloseGlyph() {
 }
 
 export function WindowControls() {
+  if (isMac) return null;
   const appWindow = getCurrentWindow();
   return (
     <div className="window-controls">
@@ -68,6 +70,7 @@ export function WindowControls() {
 }
 
 export function ResizeHandles() {
+  if (isMac) return null;
   const appWindow = getCurrentWindow();
   return (
     <>
