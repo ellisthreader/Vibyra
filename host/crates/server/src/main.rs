@@ -1,12 +1,14 @@
 mod auth;
 #[cfg(test)]
 mod auth_tests;
+mod backend;
 mod config;
 mod connection;
 #[cfg(test)]
 mod connection_tests;
 mod console;
 mod direct;
+mod discovery;
 mod identity;
 mod instance;
 mod invitation;
@@ -72,6 +74,16 @@ async fn start(config: Config) -> Result<(), String> {
         "Vibyra Host listening on {}",
         listener.local_addr().map_err(|e| e.to_string())?
     );
+    let _discovery = if config.discover {
+        let identity = shared.identity.lock().map_err(|_| "Identity unavailable")?;
+        Some(discovery::Advertisement::start(
+            &identity.name,
+            &identity.id(),
+            listener.local_addr().map_err(|e| e.to_string())?,
+        )?)
+    } else {
+        None
+    };
     println!(
         "Host public key: {}",
         shared

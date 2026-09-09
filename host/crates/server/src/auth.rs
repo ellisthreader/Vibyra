@@ -51,14 +51,9 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
         id: id.into(),
     };
     println!(
-        "\nPair request from {}\nDevice key: {}\n\
-         Trust allows this phone to start and control shells as your computer user.\n\
-         Shell commands can access files and programs beyond the configured project folders.\n\
-         This prototype grants access to all configured projects until locally revoked.\n\
-         Type: approve {} (or deny {})",
+        "Pair request from {}. {} Approve or deny device {} locally.",
         clean_name(&hello.device_name),
-        id,
-        id,
+        shared.engine.pairing_notice(),
         id
     );
     let approved = tokio::time::timeout(Duration::from_secs(85), receive).await;

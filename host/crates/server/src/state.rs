@@ -10,7 +10,7 @@ use std::{
 use tokio::sync::oneshot;
 
 pub struct Shared {
-    pub engine: Arc<vibyra_engine::Engine>,
+    pub engine: Arc<dyn crate::backend::Backend>,
     pub identity: Mutex<Identity>,
     pub invitation: Mutex<Option<Invitation>>,
     pub pending: Mutex<BTreeMap<String, (String, oneshot::Sender<bool>)>>,

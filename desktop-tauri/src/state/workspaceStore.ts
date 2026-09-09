@@ -26,7 +26,8 @@ export type SettingsSectionId =
   | "ai"
   | "integrations"
   | "agents"
-  | "shortcuts";
+  | "shortcuts"
+  | "phone";
 
 /** Routes a failure into the notification system as a sticky app error. */
 function reportProblem(message: string | null): void {

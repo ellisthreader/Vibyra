@@ -1,0 +1,9 @@
+.phone-connection { display: grid; gap: 24px; }
+.phone-connection__hint { color: var(--muted); font-size: 12px; line-height: 1.65; margin: 0 0 12px; }
+.phone-connection__error { color: var(--danger, #d15353); font-size: 13px; overflow-wrap: anywhere; }
+.phone-connection__invite { display: grid; gap: 10px; margin-top: 14px; }
+.phone-connection__invite textarea { width: 100%; resize: vertical; font-size: 11px; }
+.phone-connection__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px; }
+.phone-connection__device { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.phone-connection__device strong { font-size: 13px; }
+.phone-connection__key { font-size: 10px; overflow-wrap: anywhere; max-width: 280px; color: var(--muted); }

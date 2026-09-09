@@ -11,6 +11,7 @@ use super::Visibility;
 pub struct SessionOutput {
     /// Bytes read from the PTY that have not been delivered to the UI yet.
     pending: Vec<u8>,
+    pub remote: super::remote::RemoteOutput,
     /// True once `pending` overflowed its cap while hidden/hibernated, which
     /// means the UI must be resynced from the scrollback ring instead of
     /// receiving an incremental flush.
@@ -35,6 +36,7 @@ impl SessionOutput {
     pub fn new(pending_cap: usize, scrollback_cap: usize) -> Self {
         Self {
             pending: Vec::new(),
+            remote: super::remote::RemoteOutput::new(),
             overflowed: false,
             scrollback: ByteRing::new(scrollback_cap),
             visibility: Visibility::Visible,
@@ -46,6 +48,7 @@ impl SessionOutput {
     /// Called by the reader thread for every PTY read.
     pub fn push(&mut self, bytes: &[u8]) {
         self.scrollback.extend(bytes);
+        self.remote.push(bytes);
         if self.pending.len() + bytes.len() > self.pending_cap {
             // Keep memory flat for unwatched noisy terminals; mark that the
             // incremental stream is broken so the next drain resyncs.

@@ -140,6 +140,10 @@ impl PtyManager {
         Ok(self.session(id)?.output.lock().snapshot())
     }
 
+    pub fn remote_snapshot(&self, id: SessionId) -> CoreResult<(String, u64, bool)> {
+        Ok(self.session(id)?.output.lock().remote.snapshot())
+    }
+
     pub fn process_id(&self, id: SessionId) -> CoreResult<Option<u32>> {
         Ok(self.session(id)?.process_id())
     }

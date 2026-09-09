@@ -1,4 +1,4 @@
-name: Mac 0.1.8 release packages
+name: Mac release packages
 
 on:
   workflow_dispatch:
@@ -52,6 +52,8 @@ jobs:
         run: rustup show active-toolchain
       - name: Run release gates
         run: npm run verify
+      - name: Verify encrypted embedded phone transport
+        run: cargo test --manifest-path ../host/Cargo.toml -p vibyra-host --no-default-features --lib --locked
       - name: Read the version being released
         id: version
         shell: bash

@@ -11,6 +11,7 @@ import { SettingsAiPane } from "./SettingsAiPane";
 import { SettingsGeneralPane } from "./SettingsGeneralPane";
 import { SettingsNotificationsPane } from "./SettingsNotificationsPane";
 import { SettingsIntegrationsPane } from "./SettingsIntegrationsPane";
+import { SettingsPhonePane } from "./SettingsPhonePane";
 import { SettingsProfilePane } from "./SettingsProfilePane";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
 
@@ -29,6 +30,7 @@ const SECTIONS: Section[] = [
   { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
   { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
   { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
+  { id: "phone", label: "iPhone connection", blurb: "Securely view your desktop terminals on your phone", icon: LinkIcon },
   { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
   { id: "shortcuts", label: "Shortcuts", blurb: "Set global tools and review app controls", icon: CommandIcon },
 ];
@@ -47,6 +49,7 @@ export function SettingsModal() {
   const section = SECTIONS.find((item) => item.id === active) ?? SECTIONS[0];
   const pane = {
     profile: <SettingsProfilePane />,
+    phone: <SettingsPhonePane />,
     general: <SettingsGeneralPane settings={settings} update={update} />,
     notifications: <SettingsNotificationsPane settings={settings} update={update} />,
     ai: <SettingsAiPane settings={settings} update={update} />,

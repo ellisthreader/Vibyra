@@ -23,6 +23,7 @@ mod model_watch_discord;
 mod model_watch_tests;
 mod openai_key;
 mod perf;
+mod phone;
 mod provider_auth;
 mod provider_auth_attempt;
 mod provider_auth_claude;

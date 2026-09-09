@@ -38,6 +38,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 parking_lot = { workspace = true }
 vibyra-core = { path = "crates/vibyra-core" }
+vibyra-host = { path = "../../host/crates/server", default-features = false }
 dirs = "6"
 image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"

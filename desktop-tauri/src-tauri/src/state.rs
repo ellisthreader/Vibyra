@@ -18,6 +18,7 @@ use crate::sink::ChannelSink;
 
 pub struct AppState {
     pub account: AccountSessionManager,
+    pub phone: Arc<Mutex<crate::phone::PhoneConnection>>,
     pub manager: Arc<PtyManager>,
     pub sink: Arc<ChannelSink>,
     pub preview: Arc<PreviewManager>,
@@ -61,6 +62,13 @@ impl AppState {
             .unwrap_or_else(|| std::env::temp_dir().join("vibyra-ai-usage.json"));
         Self {
             account: AccountSessionManager::default(),
+            phone: Arc::new(crate::phone::PhoneConnection::new(
+                settings_path
+                    .parent()
+                    .unwrap_or(std::path::Path::new("."))
+                    .join("phone"),
+                manager.clone(),
+            )),
             manager,
             sink,
             preview: PreviewManager::new(),
