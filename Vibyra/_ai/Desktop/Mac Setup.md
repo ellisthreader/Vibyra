@@ -117,8 +117,10 @@ this is the user-authorized Tauri-authenticated, ad-hoc Mac beta update.
 
 The updater checks shortly after opening the workspace and every 20 minutes.
 The update banner offers Download, then Restart now; no manual Check for
-Updates button exists. The active local host stays on 0.1.7 until the user
-installs/restarts. Do not terminate the agent's host to force installation.
+Updates button exists. A later installed-app check confirmed this Mac is on
+0.1.9. Leave an active agent's host running until the user installs/restarts;
+do not terminate that workspace to force installation.
 
-Mac 0.1.9 adds the live, view-only iPhone connection and supersedes 0.1.8 on
-both Mac updater feeds. See [[iPhone Connection]] for setup and release evidence.
+Mac 0.1.9 introduced the live, view-only iPhone connection. Mac 0.1.10 is now
+live on both updater feeds and adds IPv6-only network support. See
+[[iPhone Connection]] for setup, matching mobile changes and release evidence.

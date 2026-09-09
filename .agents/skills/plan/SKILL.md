@@ -107,6 +107,9 @@ For frontend work, review the plan against the relevant frontend/design skill be
   authority; verify real existing-PTY output, pairing approval, reconnect,
   revocation and shutdown. Validate the exact release checkout because the
   desktop format gate traverses Host path dependencies, including optional ones.
+  Check IPv4 and IPv6 route selection: CLAT 192.0.0.2 is not a LAN endpoint.
+  Require explicit LAN scope, bracketed IPv6 URLs and the matching mobile parser;
+  retain encrypted pairing and the embedded listener's peer-prefix restriction.
 
 ## Completion
 

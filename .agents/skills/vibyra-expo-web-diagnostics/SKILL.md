@@ -43,7 +43,13 @@ an existing matching account and restart an offline Metro online before
 investigating account discovery. CLI identity alone does not prove the phone's
 server list is updated. Direct LAN access is a separate verification path.
 
-Before sharing a QR, use the active default-route LAN IPv4 and verify:
+Before sharing a QR, verify the route and listener address family. IPv6-only
+Macs can expose 192.0.0.2 through CLAT; it is not a phone-reachable LAN address.
+Never advertise it or treat localhost-only Simulator Metro as a phone server.
+For desktop terminal invitations, read `Desktop/iPhone Connection.md`: Mac
+0.1.10 and the matching mobile parser support explicit direct LAN IPv6 pairing.
+Use the current interface, bracket IPv6 URLs, and preserve Noise/pinned-key
+checks. For Expo, verify the actual advertised launch URL is phone-reachable:
 
 1. `/status` returns `packager-status:running`.
 2. The iOS manifest is 200 and identifies the intended project/SDK/LAN host.
