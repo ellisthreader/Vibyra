@@ -1,9 +1,18 @@
 <?php
 
+use App\Http\Controllers\IntegrationsController;
 use App\Http\Controllers\VibesController;
+use App\Http\Controllers\VibesGuestController;
 use App\Http\Controllers\VibesPurchaseController;
 use App\Http\Controllers\VibesToolsController;
 use Illuminate\Support\Facades\Route;
+
+/*
+ * Becoming a guest. Outside the group below because it is the one Vibes route
+ * with no session yet, and because minting an account deserves a far tighter
+ * limit than reading a wallet does.
+ */
+Route::post('api/vibes/guest', VibesGuestController::class)->middleware('throttle:6,60');
 
 Route::prefix('api/vibes')->middleware('throttle:90,1')->group(function () {
     Route::get('wallet', [VibesController::class, 'wallet']);
@@ -21,3 +30,13 @@ Route::prefix('api/vibes')->middleware('throttle:90,1')->group(function () {
 });
 
 Route::post('api/vibes/apple-notifications', \App\Http\Controllers\VibesAppleNotificationController::class)->middleware('throttle:60,1');
+
+/*
+ * Integrations. The catalogue is public like the model list; connecting an account
+ * and disconnecting it authenticate inside the controller.
+ */
+Route::prefix('api/integrations')->middleware('throttle:60,1')->group(function () {
+    Route::get('/', [IntegrationsController::class, 'index']);
+    Route::post('{integration}/connect', [IntegrationsController::class, 'connect'])->middleware('throttle:10,1');
+    Route::post('{integration}/disconnect', [IntegrationsController::class, 'disconnect']);
+})->where('integration', '[a-z][a-z0-9]*');

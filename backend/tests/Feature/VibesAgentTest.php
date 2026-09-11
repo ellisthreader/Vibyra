@@ -9,11 +9,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\{DB, Http, Queue};
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Feature\Support\PinnedVibesTrial;
 use Tests\TestCase;
 
 class VibesAgentTest extends TestCase
 {
+    use PinnedVibesTrial;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->pinTrial();
+    }
 
     public function test_tool_loop_aggregates_cost_and_duplicate_decisions_do_not_queue_twice(): void
     {

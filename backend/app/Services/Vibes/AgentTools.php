@@ -3,6 +3,7 @@
 namespace App\Services\Vibes;
 
 use App\Jobs\RunVibesTurn;
+use App\Services\Integrations\IntegrationTools;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -36,6 +37,9 @@ class AgentTools
             abort_unless(!empty($request['tools']), 422, 'This conversation has no project tool access.');
             $calls = $message['tool_calls'] ?? [];
             abort_if(count($calls) > 4 || count($calls) === 0, 422, 'Too many tool requests.');
+            // The allowlist is the set this turn actually offered, so a tool cannot be
+            // accepted here unless the priced request already contained its schema.
+            $offered = array_column(array_column($request['tools'], 'function'), 'name');
             $ids = array_column($calls, 'id');
             abort_unless(count($ids) === count($calls) && count(array_unique($ids)) === count($ids), 422, 'Invalid tool identifiers.');
             $request['messages'][] = $message;
@@ -43,20 +47,31 @@ class AgentTools
                 abort_unless(is_string($call['id']) && strlen($call['id']) <= 200
                     && !DB::table('vibes_tools')->where('turn_id', $turn->id)->where('provider_id', $call['id'])->exists(), 422, 'Invalid tool identifier.');
                 $name = $call['function']['name'] ?? '';
-                abort_unless(in_array($name, ['list_files', 'read_file', 'write_file']), 422, 'Unsupported AI tool.');
+                abort_unless(in_array($name, $offered, true), 422, 'Unsupported AI tool.');
                 $args = json_decode($call['function']['arguments'], true, flags: JSON_THROW_ON_ERROR);
-                abort_unless(is_array($args) && is_string($args['path'] ?? null) && strlen($args['path']) <= 2048, 422, 'Invalid tool path.');
-                if ($name === 'write_file') abort_unless(is_string($args['content'] ?? null) && strlen($args['content']) <= 8192
-                    && is_string($args['expectedSha256'] ?? null), 422, 'Invalid file edit.');
-                $safe = array_intersect_key($args, array_flip(['path', 'content', 'expectedSha256']));
+                abort_unless(is_array($args), 422, 'Invalid tool arguments.');
+                // An integration call is answered by this server against the person's own
+                // connected account; a project call is answered by their phone.
+                $integration = app(IntegrationTools::class)->ownerOf($name);
+                $safe = $integration !== null ? app(IntegrationTools::class)->validate($integration, $name, $args) : $this->fileArguments($name, $args);
                 DB::table('vibes_tools')->insert(['id' => (string) Str::uuid(), 'turn_id' => $turn->id,
-                    'provider_id' => $call['id'], 'operation' => $name, 'arguments' => json_encode($safe),
+                    'provider_id' => $call['id'], 'operation' => $name, 'integration' => $integration, 'arguments' => json_encode($safe),
                     'created_at' => now(), 'updated_at' => now()]);
             }
             DB::table('vibes_turns')->where('id', $turn->id)->update(['status' => 'waiting',
                 'request' => json_encode($request), 'actual_micro_usd' => $current->actual_micro_usd + $micro,
                 'generation_id' => null, 'updated_at' => now()]);
         });
+    }
+
+    /** The project tools' own argument check, unchanged and still the only file path gate. */
+    private function fileArguments(string $name, array $args): array
+    {
+        abort_unless(in_array($name, ['list_files', 'read_file', 'write_file'], true), 422, 'Unsupported AI tool.');
+        abort_unless(is_string($args['path'] ?? null) && strlen($args['path']) <= 2048, 422, 'Invalid tool path.');
+        if ($name === 'write_file') abort_unless(is_string($args['content'] ?? null) && strlen($args['content']) <= 8192
+            && is_string($args['expectedSha256'] ?? null), 422, 'Invalid file edit.');
+        return array_intersect_key($args, array_flip(['path', 'content', 'expectedSha256']));
     }
 
     public function respond(int $userId, string $id, string $decision, array $result): void
@@ -91,7 +106,12 @@ class AgentTools
 
     public function payload(string $turnId): array
     {
-        return DB::table('vibes_tools')->where('turn_id', $turnId)->orderBy('created_at')->get()->map(fn ($t) => [
+        // An integration's result is the person's own mail or payments and is answered
+        // here, so the phone is sent the one line it renders and nothing more.
+        return DB::table('vibes_tools')->where('turn_id', $turnId)->orderBy('created_at')->get()->map(fn ($t) => $t->integration ? [
+            'id' => $t->id, 'operation' => $t->operation, 'integration' => $t->integration, 'summary' => $t->summary,
+            'decision' => $t->decision, 'expiresAt' => \Illuminate\Support\Carbon::parse($t->created_at)->addMinutes(15)->timestamp,
+        ] : [
             'id' => $t->id, 'operation' => $t->operation, 'arguments' => json_decode($t->arguments, true),
             'decision' => $t->decision, 'result' => $t->result ? json_decode($t->result, true) : null,
             'expiresAt' => \Illuminate\Support\Carbon::parse($t->created_at)->addMinutes(15)->timestamp,

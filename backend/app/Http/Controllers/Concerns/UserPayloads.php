@@ -93,11 +93,28 @@ trait UserPayloads
     {
         return (bool) filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
-    private function authenticatedUser(Request $request): User
+    /**
+     * The account behind the session token, refusing a guest unless the caller
+     * says it can handle one.
+     *
+     * Guests are ordinary `users` rows, so a guest session would otherwise reach
+     * every authenticated endpoint in the app. The default is the safe one and
+     * `$allowGuest` is opted into by name, which means a new endpoint is closed to
+     * guests unless somebody decided otherwise on purpose.
+     */
+    private function authenticatedUser(Request $request, bool $allowGuest = false): User
     {
-        return $this->authenticatedSession($request)->user;
+        return $this->refuseGuest($this->authenticatedSession($request)->user, $allowGuest);
     }
-    private function optionalAuthenticatedUser(Request $request): ?User
+    private function refuseGuest(User $user, bool $allowGuest): User
+    {
+        if ($user->isGuest() && ! $allowGuest) {
+            abort($this->json(['ok' => false, 'error' => 'Create your free account to use this.'], 403));
+        }
+
+        return $user;
+    }
+    private function optionalAuthenticatedUser(Request $request, bool $allowGuest = false): ?User
     {
         $token = (string) $request->bearerToken();
         if ($token === '') {
@@ -111,7 +128,12 @@ trait UserPayloads
 
         $request->attributes->set('vibyra.session.used_previous_token', $result['using_previous_token']);
 
-        return $result['session']->user;
+        // A guest reads as signed out to anything that has not asked for one,
+        // rather than as an error: these callers already have a signed-out path,
+        // and it is the correct one for an account that does not exist yet.
+        $user = $result['session']->user;
+
+        return $user->isGuest() && ! $allowGuest ? null : $user;
     }
 
     private function resolveSession(Request $request, string $token): ?array

@@ -8,15 +8,18 @@ use App\Services\Vibes\{AppleStore, Purchases, Wallet};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Tests\Feature\Support\PinnedVibesTrial;
 use Tests\TestCase;
 
 class VibesPurchasesTest extends TestCase
 {
+    use PinnedVibesTrial;
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->pinTrial();
         $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']);
         openssl_pkey_export($key, $pem);
         config(['vibes.enabled' => true, 'vibes.purchases_enabled' => true, 'vibes.apple_private_key' => $pem,

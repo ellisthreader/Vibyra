@@ -2,10 +2,22 @@
 
 return [
     'enabled' => env('VIBES_ENABLED', false),
+    // Whether Vibes can be tried with no account. Off by default: a guest grant
+    // is real money, and `devicecheck_*` below is what keeps one device to one.
+    'guests_enabled' => env('VIBES_GUESTS_ENABLED', false),
     'purchases_enabled' => env('VIBES_PURCHASES_ENABLED', false),
-    'trial_credits' => 100,
+    // The free trial, and the only free spend Vibyra ever funds. Three Vibes buys
+    // about three replies on a cheap model, which is a taste of the product rather
+    // than a usable amount of it. Every number here is read at runtime - `Wallet`,
+    // `Quotes` and `Turns` keep no copy - so the trial is retuned here and nowhere
+    // else, including the wording the phone renders from the wallet payload.
+    //
+    // What a free account can ever cost is `trial_credits` x `micro_usd_per_credit`
+    // plus the OpenRouter funding fee, once, and never again: $0.03 at these
+    // numbers. `vibyra:audit-vibes-economics` prints that figure from this config.
+    'trial_credits' => 3,
     'trial_chats' => 2,
-    'trial_chat_credits' => 50,
+    'trial_chat_credits' => 3,
     'micro_usd_per_credit' => 10000,
     'daily_micro_usd_limit' => (int) env('VIBES_DAILY_MICRO_USD_LIMIT', 25000000),
     'max_output_tokens' => 2048,
@@ -15,6 +27,17 @@ return [
     'apple_issuer' => env('APPLE_IAP_ISSUER_ID'),
     'apple_key_id' => env('APPLE_IAP_KEY_ID'),
     'apple_private_key' => env('APPLE_IAP_PRIVATE_KEY'),
+
+    // Apple DeviceCheck. Two bits per physical device that Apple stores, which
+    // survive deleting the app, restoring a backup and wiping everything we own.
+    // bit0 means "this device has had its guest Vibes"; bit1 is untouched.
+    //
+    // The team id is the Apple Developer team, not the App Store Connect issuer
+    // used above: DeviceCheck signs with its own key and its own `iss`.
+    'devicecheck_key_id' => env('APPLE_DEVICECHECK_KEY_ID'),
+    'devicecheck_private_key' => env('APPLE_DEVICECHECK_PRIVATE_KEY'),
+    'devicecheck_team_id' => env('APPLE_TEAM_ID'),
+    'devicecheck_environment' => env('VIBES_DEVICECHECK_ENVIRONMENT', 'production'),
     'products' => [
         'app.vibyra.vibes.starter.monthly' => ['plan' => 'starter', 'credits' => 350, 'pence' => 2000, 'kind' => 'subscription'],
         'app.vibyra.vibes.builder.monthly' => ['plan' => 'builder', 'credits' => 1000, 'pence' => 4900, 'kind' => 'subscription'],
@@ -26,11 +49,54 @@ return [
     // phone renders wording from these numbers and never invents its own.
     // 'maxProjects' => null means no limit. 'remoteAccess' only becomes a real
     // capability once 'remote_access_live' is true and a qualified relay ships.
+    //
+    // 'fullCatalogue' is true on every plan: the whole OpenRouter catalogue is a
+    // menu, not something to buy. It stays in the entitlement set because the
+    // wallet publishes it and the phone words the plan cards from it. What a plan
+    // still decides is what trial credit may fund, which Catalog::resolve enforces
+    // by marking every uncurated model 'trial' => false.
+    //
+    // 'sessionCredits' and 'weekCredits' are the two rolling usage windows, sized
+    // below. They bound the *rate* Vibes leave the account, never the amount: a
+    // balance is still spent in full, just not all in one afternoon.
     'plans' => [
-        'free' => ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => false, 'remoteAccess' => false],
-        'starter' => ['maxProjects' => 3, 'concurrentReplies' => 1, 'fullCatalogue' => false, 'remoteAccess' => false],
-        'builder' => ['maxProjects' => 10, 'concurrentReplies' => 2, 'fullCatalogue' => false, 'remoteAccess' => false],
-        'pro' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true],
+        'free' => ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
+            'sessionCredits' => 60, 'weekCredits' => 150],
+        'starter' => ['maxProjects' => 3, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
+            'sessionCredits' => 70, 'weekCredits' => 175],
+        'builder' => ['maxProjects' => 10, 'concurrentReplies' => 2, 'fullCatalogue' => true, 'remoteAccess' => false,
+            'sessionCredits' => 200, 'weekCredits' => 500],
+        'pro' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
+            'sessionCredits' => 400, 'weekCredits' => 1000],
+    ],
+
+    // The two rolling usage windows, in the units `UsageWindows` measures them in.
+    // Rolling, not calendar: spend ages out continuously, so there is no midnight
+    // everyone queues for and no reset bookkeeping to drift.
+    //
+    // Why they exist, given that a balance already bounds what an account can ever
+    // spend and `vibyra:audit-vibes-economics` proves every offer clears its
+    // contribution floor at full redemption. It is the *rate* they bound:
+    //
+    //  - Vibes roll over, and carryover is funded at grant time, so a subscriber
+    //    who is quiet for six months holds six months of provider cost. Nothing
+    //    stopped that landing in one afternoon.
+    //  - `daily_micro_usd_limit` is one shared per-day budget for the whole
+    //    platform. One account draining a banked balance used to be able to spend
+    //    it, and every other account then met "AI is at capacity" - a refund and
+    //    churn event caused by someone else's burst.
+    //
+    // Sizing rule, so these can be retuned without re-deriving it: the week is half
+    // the plan's monthly allowance, and the session is 40% of the week. A month is
+    // 4.35 weeks, so the week cap still permits ~2.2x the monthly grant per month -
+    // wide enough that a normal month is never withheld and banked Vibes can be
+    // burned down, tight enough that no single account can take the day's budget.
+    // At these numbers hitting either window means spending half a month's Vibes in
+    // a week, which is a burst, not a workday. Free is not the trial's three Vibes:
+    // it is what a lapsed subscriber's paid, never-reclaimed balance drains at.
+    'limits' => [
+        'session_hours' => (int) env('VIBES_SESSION_WINDOW_HOURS', 5),
+        'week_days' => (int) env('VIBES_WEEK_WINDOW_DAYS', 7),
     ],
 
     // The internet-reachable relay is not qualified yet. While this is false the
@@ -40,6 +106,31 @@ return [
     // Upper bound on models returned to a full-catalogue account, so one stale
     // OpenRouter sync cannot push an unbounded list to the phone.
     'catalogue_limit' => (int) env('VIBES_CATALOGUE_LIMIT', 400),
+
+    // What a free account may spend its trial credit on. The line is a price, not
+    // a hand-set flag per model, so it cannot drift as providers repost prices:
+    // a curated model at or under both ceilings is included, everything else needs
+    // purchased Vibes. Uncurated catalogue models are never trial-funded whatever
+    // they cost, because they carry no tier and no written blurb.
+    //
+    // At these ceilings every curated model is included except the four flagships:
+    // Grok 4.6 ($6/M out), Sonnet 5 ($10), Opus 5 ($25) and GPT-6 Astra ($50).
+    'free_tier' => [
+        'input_per_million' => (float) env('VIBES_FREE_INPUT_PER_MILLION', 1.00),
+        'output_per_million' => (float) env('VIBES_FREE_OUTPUT_PER_MILLION', 5.00),
+    ],
+
+    // Models included for free regardless of price or curation. Empty, and meant to
+    // stay empty: it is an override, not a place to park flagships. An entry here
+    // skips the price ceiling above, so one line is enough to turn the trial from a
+    // taste of a cheap model into a free sample of a dear one - which is what it did
+    // while it held GPT-5.5 at $30/M out, dearer than Opus 5.
+    //
+    // A three-Vibe trial prices the flagships out by itself: Opus 5 quotes six Vibes
+    // for a single turn and Astra eleven, so neither can be sent at all. Leaving them
+    // off this list is what keeps the picker honest about that, rather than showing
+    // them as included and refusing them at send.
+    'free_extra' => [],
     // Curated models. 'tier' and 'released' drive the phone's picker sections
     // ("Best for building", "Newest", ...) and its "New" badge; nothing else reads
     // them. Catalogue models from the live OpenRouter snapshot carry no tier and

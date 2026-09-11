@@ -61,7 +61,82 @@ class OpenRouterPricingNormalizer
             'name' => is_string($model['name'] ?? null) ? trim($model['name']) : $slug,
             'pricing' => $normalizedPricing,
             'supported_parameters' => $supportedParameters,
+            // Clamped here rather than on the phone: a timestamp in the future would
+            // otherwise satisfy "released recently" forever and badge a model New for good.
+            'created' => is_int($model['created'] ?? null) && $model['created'] > 0
+                && $model['created'] <= time() + 86400 ? $model['created'] : null,
+            'context_length' => $this->positiveInt($model['context_length'] ?? null)
+                ?? $this->positiveInt(($model['top_provider'] ?? [])['context_length'] ?? null),
+            'output_modalities' => $this->modalities($model['architecture'] ?? null),
+            'reasoning' => $this->reasoning($model['reasoning'] ?? null),
         ];
+    }
+
+    /**
+     * The model's reasoning ladder, kept only when the provider actually publishes
+     * one. A missing `supported_efforts` key and an explicit null are different
+     * facts - "no levels, only a switch" versus "every level" - so the absent key
+     * is preserved as an absent key rather than flattened into an empty list.
+     */
+    private function reasoning(mixed $reasoning): ?array
+    {
+        if (! is_array($reasoning)) {
+            return null;
+        }
+
+        $normalized = ['mandatory' => ($reasoning['mandatory'] ?? null) === true];
+        if (array_key_exists('supported_efforts', $reasoning)) {
+            $efforts = $reasoning['supported_efforts'];
+            $normalized['supported_efforts'] = $efforts === null ? null : $this->efforts($efforts);
+        }
+        $default = $reasoning['default_effort'] ?? null;
+        if (is_string($default) && in_array($default, self::EFFORTS, true)) {
+            $normalized['default_effort'] = $default;
+        }
+
+        return $normalized;
+    }
+
+    /** OpenRouter's effort vocabulary. Anything outside it is not forwardable. */
+    public const EFFORTS = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+
+    private function efforts(mixed $efforts): array
+    {
+        if (! is_array($efforts)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($efforts as $effort) {
+            if (is_string($effort) && in_array($effort, self::EFFORTS, true)) {
+                $normalized[] = $effort;
+            }
+        }
+
+        // Ascending, so every reader sees one cheapest-to-deepest order.
+        return array_values(array_intersect(self::EFFORTS, array_unique($normalized)));
+    }
+
+    private function modalities(mixed $architecture): ?array
+    {
+        $output = is_array($architecture) ? ($architecture['output_modalities'] ?? null) : null;
+        if (! is_array($output)) {
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($output as $modality) {
+            if (is_string($modality) && trim($modality) !== '' && strlen($modality) <= 32) {
+                $normalized[] = strtolower(trim($modality));
+            }
+        }
+
+        return array_values(array_unique($normalized));
+    }
+
+    private function positiveInt(mixed $value): ?int
+    {
+        return is_int($value) && $value > 0 ? $value : null;
     }
 
     private function supportedParameters(mixed $parameters): array

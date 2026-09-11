@@ -8,11 +8,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Feature\Support\PinnedVibesTrial;
 use Tests\TestCase;
 
 class VibesEconomyTest extends TestCase
 {
+    use PinnedVibesTrial;
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->pinTrial();
+    }
 
     private function account(): User
     {

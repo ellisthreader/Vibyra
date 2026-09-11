@@ -23,7 +23,7 @@ class VibesApiTest extends TestCase
         $u = User::factory()->create(['email_verified_at' => now()]);
         VibyraSession::create(['user_id' => $u->id, 'token_hash' => hash('sha256', $this->token), 'device_name' => 'iPhone']);
         $this->withToken($this->token);
-        Cache::put('billing:openrouter-pricing:v1', ['synced_at' => now()->toIso8601String(), 'models' => [
+        Cache::put((string) config('billing.openrouter_pricing.cache_key'), ['synced_at' => now()->toIso8601String(), 'models' => [
             'qwen/qwen3.8-flash' => ['pricing' => ['prompt' => '0.00000015', 'completion' => '0.00000047'],
                 'supported_parameters' => ['tools', 'max_tokens']],
         ]]);
@@ -32,7 +32,7 @@ class VibesApiTest extends TestCase
 
     private function quote(): array
     {
-        $this->getJson('/api/vibes/wallet')->assertOk()->assertJsonPath('wallet.available', 100);
+        $this->getJson('/api/vibes/wallet')->assertOk()->assertJsonPath('wallet.available', (int) config('vibes.trial_credits'));
         $this->postJson('/api/vibes/consent', ['accepted' => true])->assertOk();
         $id = (string) Str::uuid();
         $this->postJson('/api/vibes/chats', ['id' => $id, 'title' => 'Build a timer'])->assertOk();
@@ -50,7 +50,7 @@ class VibesApiTest extends TestCase
         $job = new RunVibesTurn($id); app()->call([$job, 'handle']); app()->call([$job, 'handle']);
         Http::assertSentCount(1);
         $this->getJson('/api/vibes/turns/'.$id)->assertOk()->assertJsonPath('turn.status', 'completed')->assertJsonPath('turn.charged', 1);
-        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', 99)->assertJsonPath('wallet.held', 0);
+        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', (int) config('vibes.trial_credits') - 1)->assertJsonPath('wallet.held', 0);
     }
 
     public function test_unknown_usage_is_held_then_released_without_replay(): void
@@ -62,7 +62,7 @@ class VibesApiTest extends TestCase
         $this->getJson('/api/vibes/turns/'.$id)->assertJsonPath('turn.status', 'reconciling');
         $this->travel(16)->minutes();
         $this->artisan('vibyra:recover-vibes')->assertSuccessful();
-        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', 100);
+        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', (int) config('vibes.trial_credits'));
         $this->assertSame($q['maxCredits'] * 10000, (int) DB::table('vibes_spend_days')->sum('spent'));
         Http::assertSentCount(1);
     }
@@ -76,7 +76,7 @@ class VibesApiTest extends TestCase
         app()->call([new RunVibesTurn($id), 'handle']);
         Http::assertNothingSent();
         $this->getJson('/api/vibes/turns/'.$id)->assertJsonPath('turn.status', 'cancelled');
-        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', 100);
+        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', (int) config('vibes.trial_credits'));
     }
 
     public function test_tampered_quote_wrong_account_and_unverified_identity_fail_closed(): void
@@ -98,6 +98,6 @@ class VibesApiTest extends TestCase
         $this->getJson('/api/vibes/turns/'.$id)->assertOk();
         $this->postJson('/api/vibes/turns', ['id' => (string) Str::uuid(), 'quote' => $q['quote']])->assertStatus(503);
         $this->postJson('/api/vibes/turns/'.$id.'/cancel')->assertOk();
-        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', 100);
+        $this->getJson('/api/vibes/wallet')->assertJsonPath('wallet.available', (int) config('vibes.trial_credits'));
     }
 }

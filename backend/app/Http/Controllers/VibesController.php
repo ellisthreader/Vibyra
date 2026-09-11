@@ -5,19 +5,44 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\UserPayloads;
 use App\Jobs\RunVibesTurn;
 use App\Models\User;
+use App\Services\Billing\OpenRouterPricingNormalizer;
 use App\Services\Vibes\{Catalog, Quotes, Turns, Wallet};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class VibesController extends Controller
 {
     use UserPayloads;
 
+    /**
+     * The account these routes act for. Vibes is the one area a guest may reach,
+     * because trying it is what a guest is for; everything else in the app refuses
+     * a guest session by default.
+     */
     private function account(Request $request): User
     {
-        $user = $this->authenticatedUser($request);
+        $user = $this->authenticatedUser($request, allowGuest: true);
         app(Wallet::class)->ensure($user);
         return $user;
+    }
+
+    /**
+     * Whether this account may spend its Vibes at all.
+     *
+     * An account proves it is a person by verifying an email; a guest has none, so
+     * it proves the same thing with Apple's DeviceCheck, which is what decided
+     * whether it was granted any Vibes in the first place. A guest that was denied
+     * a grant holds nothing and so cannot spend regardless of this check — the
+     * balance is the limit, not a second gate.
+     *
+     * These are alternatives, never a bypass: without DeviceCheck configured, a
+     * guest's grant is the ordinary trial and the email gate is the only control
+     * left, which is why `Guests::issue` is the one place that decides an amount.
+     */
+    private function maySpend(User $user): void
+    {
+        abort_if(!$user->isGuest() && !$user->hasVerifiedEmail(), 403, 'Verify your email to use your free Vibes.');
     }
 
     public function wallet(Request $request, Wallet $wallet)
@@ -38,7 +63,7 @@ class VibesController extends Controller
     // but Auto. Every path that spends Vibes stays gated on `vibes.enabled`.
     public function models(Request $request, Catalog $catalog, Wallet $wallet)
     {
-        $user = $this->optionalAuthenticatedUser($request);
+        $user = $this->optionalAuthenticatedUser($request, allowGuest: true);
         if ($user) $wallet->ensure($user);
         return $this->json(['models' => $catalog->models($user ? $wallet->planFor($user->id) : 'free')]);
     }
@@ -64,16 +89,22 @@ class VibesController extends Controller
     {
         abort_unless(config('vibes.enabled'), 503, 'AI chat is not available yet. Your computer sessions still work.');
         $user = $this->account($request);
-        abort_unless($user->hasVerifiedEmail(), 403, 'Verify your email to use your free Vibes.');
-        $d = $request->validate(['chatId' => 'required|uuid', 'text' => 'required|string|max:4000', 'model' => 'required|string|max:150']);
-        return $this->json($quotes->create($user->id, $d['chatId'], $d['text'], $d['model']));
+        $this->maySpend($user);
+        // The effort is checked against the chosen model's own published ladder in
+        // Quotes; this only keeps values outside OpenRouter's vocabulary off the wire.
+        $d = $request->validate(['chatId' => 'required|uuid', 'text' => 'required|string|max:4000', 'model' => 'required|string|max:150',
+            'effort' => ['nullable', 'string', Rule::in(OpenRouterPricingNormalizer::EFFORTS)],
+            // Which integrations were named in the message. Quotes keeps only the ones this
+            // account has really connected, so an unknown or uninstalled slug is ignored.
+            'integrations' => 'sometimes|array|max:8', 'integrations.*' => 'string|max:40']);
+        return $this->json($quotes->create($user->id, $d['chatId'], $d['text'], $d['model'], $d['effort'] ?? null, $d['integrations'] ?? []));
     }
 
     public function submit(Request $request, Quotes $quotes, Turns $turns)
     {
         abort_unless(config('vibes.enabled'), 503, 'AI chat is not available yet. Your computer sessions still work.');
         $user = $this->account($request);
-        abort_unless($user->hasVerifiedEmail(), 403, 'Verify your email to use Vibes.');
+        $this->maySpend($user);
         $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:100000']);
         $turn = $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
         if ($turn->status === 'queued') RunVibesTurn::dispatch($turn->id);

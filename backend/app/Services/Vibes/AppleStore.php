@@ -64,23 +64,9 @@ class AppleStore
     {
         $key = config('vibes.apple_private_key');
         abort_unless($key && config('vibes.apple_key_id') && config('vibes.apple_issuer'), 503, 'Purchases are not configured yet.');
-        $head = $this->encode(json_encode(['alg' => 'ES256', 'kid' => config('vibes.apple_key_id'), 'typ' => 'JWT']));
-        $body = $this->encode(json_encode(['iss' => config('vibes.apple_issuer'), 'iat' => time(),
-            'exp' => time() + 300, 'aud' => 'appstoreconnect-v1', 'bid' => config('vibes.apple_bundle_id')]));
-        if (!openssl_sign($head.'.'.$body, $signature, str_replace('\\n', "\n", $key), OPENSSL_ALGO_SHA256)) {
-            throw new RuntimeException('Apple signing key could not be used.');
-        }
-        // OpenSSL returns DER integers; JWT ES256 requires 32-byte r followed by 32-byte s.
-        $offset = 2; $raw = '';
-        for ($i = 0; $i < 2; $i++) {
-            if (ord($signature[$offset++]) !== 2) throw new RuntimeException('Invalid EC signature.');
-            $length = ord($signature[$offset++]);
-            $integer = ltrim(substr($signature, $offset, $length), "\0"); $offset += $length;
-            if (strlen($integer) > 32) throw new RuntimeException('Invalid ES256 key.');
-            $raw .= str_pad($integer, 32, "\0", STR_PAD_LEFT);
-        }
-        return $head.'.'.$body.'.'.$this->encode($raw);
+        return app(AppleJwt::class)->sign($key, (string) config('vibes.apple_key_id'), [
+            'iss' => config('vibes.apple_issuer'), 'iat' => time(), 'exp' => time() + 300,
+            'aud' => 'appstoreconnect-v1', 'bid' => config('vibes.apple_bundle_id'),
+        ]);
     }
-
-    private function encode(string $data): string { return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); }
 }

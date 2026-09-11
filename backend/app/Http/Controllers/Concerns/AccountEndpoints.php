@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
 use App\Models\VibyraSession;
+use App\Notifications\HostDownloadLink;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\ProviderIdentityVerifier;
 use App\Services\Auth\ProviderChallengeService;
@@ -12,6 +13,8 @@ use App\Services\SessionLocationResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use RuntimeException;
 
 trait AccountEndpoints
@@ -73,6 +76,52 @@ trait AccountEndpoints
             'ok' => true,
             'device' => $this->accountSessionPayload($session->fresh() ?? $session, true),
         ]);
+    }
+
+    /**
+     * Email a link to install Vibyra on a computer. The phone has no way to put
+     * software on a laptop, so this is how the setup step reaches it.
+     *
+     * Signed in, the address is the account's own and any address in the request is
+     * ignored, so an account cannot be used to mail a stranger. Signed out, the
+     * caller supplies one — pairing deliberately never required an account, so the
+     * setup step must work for a guest too. The mail is only the public downloads
+     * page: it carries no pairing material, no token and nothing about the account,
+     * so the worst an abuser achieves is sending someone a download link. Guests are
+     * limited per address and per IP to keep even that from being useful.
+     */
+    public function sendHostDownloadLink(Request $request): JsonResponse
+    {
+        $user = $this->optionalAuthenticatedUser($request);
+        $email = $user?->email ?? $this->normalizeEmail($request->input('email'));
+        if (! $email) {
+            return $this->json(['ok' => false, 'error' => 'Enter a valid email address.'], 422);
+        }
+
+        $keys = $user
+            ? ['host-link:user:'.$user->id => 3]
+            : ['host-link:mail:'.hash('sha256', $email) => 2, 'host-link:ip:'.hash('sha256', (string) $request->ip()) => 5];
+        foreach ($keys as $key => $limit) {
+            if (RateLimiter::tooManyAttempts($key, $limit)) {
+                $retryAfter = max(1, RateLimiter::availableIn($key));
+
+                return $this->json([
+                    'ok' => false,
+                    'error' => "Please wait {$retryAfter} seconds before asking for another link.",
+                ], 429);
+            }
+        }
+        foreach (array_keys($keys) as $key) {
+            RateLimiter::hit($key, 300);
+        }
+
+        if ($user) {
+            $user->notify(new HostDownloadLink);
+        } else {
+            Notification::route('mail', $email)->notify(new HostDownloadLink);
+        }
+
+        return $this->json(['ok' => true, 'email' => $email]);
     }
 
     public function updateAccountProfile(Request $request): JsonResponse

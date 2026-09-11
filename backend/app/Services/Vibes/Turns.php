@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class Turns
 {
-    public function __construct(private readonly Wallet $wallet) {}
+    public function __construct(private readonly Wallet $wallet, private readonly UsageWindows $windows) {}
 
     public function submit(int $userId, string $id, array $q): object
     {
@@ -26,16 +26,21 @@ class Turns
             $entitled = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';
             $limit = app(Plans::class)->for($entitled)['concurrentReplies'];
             abort_if((clone $active)->count() >= $limit || (clone $active)->where('chat_id', $chat->id)->exists(), 409, 'Wait for your current reply or stop it first.');
+            // Rate before balance. Both windows are checked under the wallet lock
+            // taken above, so two sends racing cannot each read the same headroom
+            // and each take it; and checking before the grants are decremented
+            // keeps a refused turn from touching the ledger at all.
+            $this->windows->guard($userId, $entitled, $q['max']);
             $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->orderBy('id')->get();
             $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
             if (!$chat->trial_slot && $paid === 0) {
                 $slots = DB::table('vibes_chats')->where('user_id', $userId)->whereNotNull('trial_slot')->pluck('trial_slot')->all();
-                $slot = collect([1, 2])->first(fn ($s) => !in_array($s, $slots));
-                abort_unless($slot, 402, 'Your two trial chats are used. Upgrade to keep building.');
+                $slot = collect(range(1, Wallet::trialChats()))->first(fn ($s) => !in_array($s, $slots));
+                abort_unless($slot, 402, 'Your '.Wallet::trialChats().' free chats are used. Upgrade to keep building.');
                 $chat->trial_slot = $slot;
                 DB::table('vibes_chats')->where('id', $chat->id)->update(['trial_slot' => $slot]);
             }
-            $trialAllowed = $chat->trial_slot && $q['trial'] ? max(0, 50 - $chat->trial_used) : 0;
+            $trialAllowed = $chat->trial_slot && $q['trial'] ? max(0, Wallet::trialChatCredits() - $chat->trial_used) : 0;
             $remaining = $q['max']; $allocations = [];
             foreach ($grants as $g) {
                 $usable = $g->kind === 'trial' ? min($g->remaining, $trialAllowed) : $g->remaining;
@@ -65,14 +70,21 @@ class Turns
         }, 5);
     }
 
-    public function settle(string $id, ?int $micro, ?string $response, ?string $error = null, bool $uncertain = false): void
+    /**
+     * `$absorb` settles a turn that cost real money but produced nothing the person
+     * can use. They are not charged for an empty answer - Vibyra wears it - while
+     * the true spend is still recorded against the daily cap. Charging zero also
+     * lets the trial-slot restore below fire, so a failed first reply cannot quietly
+     * consume one of the account's lifetime trial chats.
+     */
+    public function settle(string $id, ?int $micro, ?string $response, ?string $error = null, bool $uncertain = false, bool $absorb = false): void
     {
         $original = DB::table('vibes_turns')->where('id', $id)->firstOrFail();
-        DB::transaction(function () use ($original, $micro, $response, $error, $uncertain) {
+        DB::transaction(function () use ($original, $micro, $response, $error, $uncertain, $absorb) {
             $this->wallet->lock($original->user_id);
             $t = DB::table('vibes_turns')->where('id', $original->id)->firstOrFail();
             if ($t->settled_at) return;
-            $charge = min($t->reserved, max(0, (int) ceil(($micro ?? 0) / 10000)));
+            $charge = $absorb ? 0 : min($t->reserved, max(0, (int) ceil(($micro ?? 0) / 10000)));
             $left = $charge; $trialUsed = 0;
             foreach (json_decode($t->allocations, true) as $a) {
                 $used = min($left, $a['amount']); $left -= $used;

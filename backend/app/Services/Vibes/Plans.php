@@ -5,7 +5,8 @@ namespace App\Services\Vibes;
 class Plans
 {
     /** Enforced defaults for an unknown or missing plan. Never widen here. */
-    private const FLOOR = ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => false, 'remoteAccess' => false];
+    private const FLOOR = ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => false, 'remoteAccess' => false,
+        'sessionCredits' => 60, 'weekCredits' => 150];
 
     public function for(string $plan): array
     {
@@ -16,7 +17,23 @@ class Plans
             'concurrentReplies' => max(1, (int) ($configured['concurrentReplies'] ?? self::FLOOR['concurrentReplies'])),
             'fullCatalogue' => (bool) ($configured['fullCatalogue'] ?? self::FLOOR['fullCatalogue']),
             'remoteAccess' => (bool) ($configured['remoteAccess'] ?? self::FLOOR['remoteAccess']),
+            // The two rolling usage windows. `UsageWindows` is the only thing that
+            // enforces them, and it reads them from here, so a plan that omits one
+            // is rate-limited at the floor rather than left unlimited.
+            'sessionCredits' => $this->window($configured, 'sessionCredits'),
+            'weekCredits' => $this->window($configured, 'weekCredits'),
         ];
+    }
+
+    /**
+     * One window allowance. Zero is not "no limit" here - it would be a plan that
+     * can never send - so an absent, negative or zero value lands on the floor.
+     */
+    private function window(array $configured, string $key): int
+    {
+        $value = (int) ($configured[$key] ?? 0);
+
+        return $value > 0 ? $value : self::FLOOR[$key];
     }
 
     /**

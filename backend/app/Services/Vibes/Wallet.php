@@ -8,9 +8,19 @@ use Illuminate\Support\Str;
 
 class Wallet
 {
-    public function ensure(User $user): object
+    /**
+     * The account's wallet, created with its welcome grant the first time it is
+     * asked for. `$trialCredits` is only ever passed when creating a guest, whose
+     * grant is nothing when Apple says this device has already had one.
+     *
+     * The grant is written under `welcome:{user_id}`, and `grant()` ignores a
+     * reference it has already used. That is what makes this safe to call on every
+     * request, and — the part that matters — what stops a guest who signs up from
+     * being handed a second trial on top of whatever is left of the first.
+     */
+    public function ensure(User $user, ?int $trialCredits = null): object
     {
-        return DB::transaction(function () use ($user) {
+        return DB::transaction(function () use ($user, $trialCredits) {
             User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $wallet = DB::table('vibes_wallets')->where('user_id', $user->id)->first();
             if ($wallet) return $wallet;
@@ -18,9 +28,39 @@ class Wallet
                 'user_id' => $user->id, 'account_token' => (string) Str::uuid(),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
-            $this->grant($user->id, 'welcome:'.$user->id, 'trial', 100);
+            $this->grant($user->id, 'welcome:'.$user->id, 'trial',
+                $trialCredits === null ? self::trialCredits() : max(0, $trialCredits));
             return $this->lock($user->id);
         }, 3);
+    }
+
+    /** Spendable Vibes, without building the whole payload. */
+    public function available(int $userId): int
+    {
+        return (int) DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->sum('remaining');
+    }
+
+    /** The one free grant an account ever receives. Config owns it; nothing here does. */
+    public static function trialCredits(): int
+    {
+        return max(0, (int) config('vibes.trial_credits'));
+    }
+
+    /** How many conversations that grant may be spread across. */
+    public static function trialChats(): int
+    {
+        return max(1, (int) config('vibes.trial_chats'));
+    }
+
+    /**
+     * The most of the trial grant any one conversation may draw. At or above
+     * `trial_credits` this is inert and the grant itself is the only limit, which
+     * is the shape a small trial wants: three Vibes split three ways is not a
+     * trial of anything.
+     */
+    public static function trialChatCredits(): int
+    {
+        return max(0, (int) config('vibes.trial_chat_credits'));
     }
 
     public function lock(int $userId): object
@@ -68,9 +108,11 @@ class Wallet
     public function payload(int $userId): array
     {
         $plans = app(Plans::class);
+        $windows = app(UsageWindows::class);
 
-        return DB::transaction(function () use ($userId, $plans) {
+        return DB::transaction(function () use ($userId, $plans, $windows) {
             $w = $this->lock($userId);
+            $user = User::findOrFail($userId);
             $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
             $held = (int) DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at')->sum('reserved');
             $available = (int) $grants->sum('remaining');
@@ -80,10 +122,20 @@ class Wallet
                 'version' => 1, 'available' => $available, 'held' => $held, 'total' => $available + $held,
                 'chatEnabled' => (bool) config('vibes.enabled'),
                 'paidAvailable' => $paid, 'plan' => $plan, 'paidUntil' => $w->paid_until,
-                'trialChatsRemaining' => max(0, 2 - DB::table('vibes_chats')->where('user_id', $userId)->whereNotNull('trial_slot')->count()),
+                'trialChatsRemaining' => max(0, self::trialChats() - DB::table('vibes_chats')->where('user_id', $userId)->whereNotNull('trial_slot')->count()),
+                // Published so the phone words the trial from the same numbers the
+                // backend enforces, instead of keeping its own copy of them.
+                'trialCredits' => self::trialCredits(), 'trialChats' => self::trialChats(),
+                'trialChatCredits' => self::trialChatCredits(),
                 'accountToken' => $w->account_token, 'consented' => $w->consented_at !== null,
-                'verified' => User::findOrFail($userId)->hasVerifiedEmail(),
-                'purchasesEnabled' => (bool) (config('vibes.enabled') && config('vibes.purchases_enabled') && config('vibes.apple_private_key')
+                // A guest has no address to verify, so it reports itself as one and
+                // the phone stops asking. What replaced the email as its proof is
+                // the DeviceCheck bit that decided its grant, which is spent before
+                // the wallet exists and is not re-checked per request.
+                'verified' => $user->hasVerifiedEmail(), 'guest' => $user->isGuest(),
+                // Buying needs somewhere for the purchase to live if the phone is
+                // lost, so it needs an account. The upgrade page says so.
+                'purchasesEnabled' => !$user->isGuest() && (bool) (config('vibes.enabled') && config('vibes.purchases_enabled') && config('vibes.apple_private_key')
                     && config('vibes.apple_key_id') && config('vibes.apple_issuer')),
                 'products' => collect(config('vibes.products'))->map(fn ($p, $id) => ['id' => $id, ...$p])->values()->all(),
                 // Backend owns every entitlement number the upgrade screen shows.
@@ -91,6 +143,9 @@ class Wallet
                 'planEntitlements' => $plans->all(),
                 'remoteAccessLive' => $plans->remoteAccessLive(),
                 'usedProjects' => $this->projectCount($userId),
+                // How fast this plan may spend, measured the same way `Turns::submit`
+                // refuses. The phone draws its meters from these and invents nothing.
+                'limits' => $windows->payload($userId, $plan),
             ];
         });
     }
