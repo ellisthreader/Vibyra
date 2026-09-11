@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { demoAccount } from './src/demo/data';
-import { sampleIntegrationsApi } from './src/demo/sampleIntegrations';
 import { sampleVibesApi } from './src/demo/sampleVibes';
 import { useDemoWorkspace } from './src/demo/useDemoWorkspace';
 import { IntegrationsProvider } from './src/integrations/IntegrationsProvider';
@@ -26,9 +25,12 @@ export default function App() {
     <RuntimeBridge ref={runtime.bridge} onMessage={runtime.onMessage} />
     <VibesProvider api={demo ? sampleVibesApi : runtime.vibesApi}
       identity={demo ? demoAccount.email : workspace.account?.email ?? null}>
-      <IntegrationsProvider api={demo ? sampleIntegrationsApi : runtime.integrationsApi}
-        identity={demo ? demoAccount.email : workspace.account?.email ?? null}>
-        <WorkspaceApp workspace={workspace} vibesEnabled={!demo && (Platform.OS === 'ios' || process.env.EXPO_PUBLIC_VIBES_WEB_PREVIEW === '1')} />
+      {/* Integrations use the real server and the real account even inside the
+          sample workspace: a key is saved to a Vibyra account, and connecting
+          one should not depend on which workspace happens to be on screen. */}
+      <IntegrationsProvider api={runtime.integrationsApi} identity={runtime.workspace.account?.email ?? null}>
+        <WorkspaceApp workspace={workspace} accountWorkspace={runtime.workspace}
+          vibesEnabled={!demo && (Platform.OS === 'ios' || process.env.EXPO_PUBLIC_VIBES_WEB_PREVIEW === '1')} />
       </IntegrationsProvider>
     </VibesProvider>
   </SafeAreaProvider>;

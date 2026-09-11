@@ -117,27 +117,6 @@ try {
     await readonly.close(); console.log('PASS writes: disclosed where there are any, absent where there are none.');
   }
 
-  // The sample workspace has no account to connect to. It used to say
-  // "not switched on for this account", which sent a person looking for a server
-  // switch that was already on; it has to name the sample workspace and the way out.
-  {
-    const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
-    await page.goto(`${server.url}/?state=sample`);
-    await page.getByText(/^You are in the sample workspace, so nothing here can be connected\./).waitFor();
-    await page.getByRole('button', { name: 'GitHub, not connected' }).click();
-    const sheet = page.getByRole('dialog', { name: 'GitHub' });
-    await sheet.getByText(/^This is the sample workspace, so nothing can be connected here\./).waitFor();
-    assert.equal(await sheet.getByText('Integrations are not switched on for this account yet.').count(), 0,
-      'The sample workspace must not blame a server switch');
-    assert.equal(await sheet.getByRole('button', { name: /^Connect/ }).count(), 0,
-      'Nothing offers to connect inside the sample workspace');
-    await capture(page, `${out}/sample.png`);
-    // The way out is on the page itself, not only in Settings.
-    await sheet.getByRole('button', { name: 'Leave sample workspace' }).click();
-    assert.ok((await calls(page)).includes('leave-sample'), 'Leave sample workspace leaves it');
-    await page.close(); console.log('PASS sample: names the sample workspace and the way out.');
-  }
-
   // Signed out, the page offers sign-in before a key rather than refusing a pasted
   // one, and the form swaps into the same sheet: a second modal over a live one is
   // the iOS race this codebase has been bitten by.
