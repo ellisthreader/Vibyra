@@ -16,7 +16,7 @@ export function ConnectForm({ integration, value, onChange, error }: {
   return <View style={s.form}>
     <Text style={[s.help, { color: colors.muted }]}>{integration.credential.help}</Text>
     <TextInput accessibilityLabel={`${integration.name} ${integration.credential.label.toLowerCase()}`} value={value} onChangeText={onChange}
-      placeholder={integration.credential.placeholder} placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false}
+      placeholder={integration.credential.placeholder} placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} autoFocus
       autoComplete="off" spellCheck={false} keyboardAppearance={dark ? 'dark' : 'light'} maxLength={500}
       style={[s.input, { color: colors.text, backgroundColor: colors.elevated, borderColor: colors.border }]} />
     {integration.credential.url ? <Pressable accessibilityRole="link" accessibilityLabel={`Open ${integration.name} to create a key`}

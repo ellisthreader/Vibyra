@@ -118,16 +118,36 @@ encrypted.
 - A row's second line is one fact: who it is connected as, else the tagline. The
   longer description belongs on the integration's own page, never in the list.
 
-`IntegrationPage.tsx` answers with two labelled lines, `Reads` and `Changes`,
-rather than a list of abilities as well; `abilities` is still in the catalogue
-but is not drawn. `Changes` is set in full text colour rather than muted, because
-it must not read as small print. The key form replaces the description inside
-the same sheet - never a second modal over a live one.
+Tapping a row opens `IntegrationSheet.tsx`, a card that rises from the bottom
+(designed 2026-09-11 to the user's brief). Top to bottom:
 
-A refused key or failed disconnect is held in the page's own state and cleared
-every time the page opens. It used to come from the shared provider `error`, so
-GitHub's "That token did not work" was printed on Stripe's page too. The
-provider's `error` now only matters while `live` is false, and the footer says it.
+- `ConnectionGraphic`: Vibyra's V, a line, the service's mark. The line draws
+  once as the card opens and a lock settles on it; once connected it redraws in
+  the success colour with a tick. It is the one piece of motion, and Reduce
+  Motion lands it at rest.
+- "Connect GitHub", then four points in this order: what Vibyra can see (catalogue
+  `reads`), what it can change (`writes`; absent for a read-only connector),
+  where your data goes (only on an `@mention`; results go to the AI provider
+  writing the reply and are saved with that chat), and the key (encrypted, never
+  shown again, deleted on disconnect, revocable at the provider).
+- Pinned to the bottom, outside the scroll: the consent line (you may share this
+  account's data; you agree to the Terms and Privacy Policy at
+  vibyra.app/legal/terms and /privacy; the provider's own terms still apply),
+  then the coloured "Connect GitHub" button, then Cancel. Pinned so the button
+  never scrolls off a small phone, and the consent sits right beside it.
+
+The copy is the product's plain-language disclosure, not legal advice: if a data
+flow changes (another AI provider, longer retention, a new write), change these
+points in the same commit, and have the Privacy Policy say the same.
+
+Signing in, pasting the key and the connected state replace the card's content;
+nothing opens a second modal over it. The card is Modal-based and private to
+integrations; `ui/BottomSheet.tsx` is a different, full-height in-tree sheet
+owned by the settings work. Motion for the card is `ui/presence.ts`.
+
+A refused key or failed disconnect is held in the card's own state and cleared
+every time it opens, so GitHub's "That token did not work" never shows on
+Stripe's card. The provider's `error` only matters while `live` is false.
 
 ## Brand marks
 
