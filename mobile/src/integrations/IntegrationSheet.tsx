@@ -49,7 +49,7 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
   // The prop is a snapshot; connecting changes the catalogue, not the row that opened this.
   const entry = catalogue.integrations.find(item => item.id === shown.id) ?? shown;
   const name = entry.name;
-  const keyName = entry.credential.label.toLowerCase();
+  const keyName = keyWord(entry.credential.label);
   const reason = (e: unknown) => e instanceof Error ? e.message : 'That did not work. Please try again.';
   const submit = async () => {
     setFailure(null);
@@ -115,6 +115,9 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
   </Frame>;
 }
 
+/** A key's name mid-sentence: only the first letter drops, so "Restricted API key" keeps its API. */
+const keyWord = (label: string) => label.charAt(0).toLowerCase() + label.slice(1);
+
 /** The title under the graphic, and one optional line under it, such as who it is connected as. */
 function Heading({ title, detail, success = false }: { title: string; detail?: string; success?: boolean }) {
   const { colors } = useTheme();
@@ -140,18 +143,16 @@ function Disclosure({ entry }: { entry: Integration }) {
     ...(entry.writes ? [{ icon: 'create-outline' as const, title: 'What Vibyra can change', body: entry.writes }] : []),
     { icon: 'sparkles-outline', title: 'Where your data goes',
       body: `Only when you mention ${entry.mention} in a chat. What ${entry.name} returns is sent to the AI provider writing your reply and saved with that chat.` },
-    { icon: 'lock-closed-outline', title: `Your ${entry.credential.label.toLowerCase()}`,
+    { icon: 'lock-closed-outline', title: `Your ${keyWord(entry.credential.label)}`,
       body: `Encrypted on Vibyra and never shown again. Disconnect any time to delete it, or revoke it on ${entry.name}.` },
   ];
-  return <View style={[s.points, { backgroundColor: colors.elevated }]}>
-    {points.map((point, index) => <View key={point.title}>
-      {index > 0 && <View style={[s.divider, { backgroundColor: colors.border }]} />}
-      <View style={s.point}>
-        <Icon name={point.icon} size={18} color={colors.muted} />
-        <View style={s.pointText}>
-          <Text style={[s.pointTitle, { color: colors.text }]}>{point.title}</Text>
-          <Text style={[s.pointBody, { color: colors.muted }]}>{point.body}</Text>
-        </View>
+  // Flat: the points sit on the card itself, parted by space rather than a panel or rules.
+  return <View style={s.points}>
+    {points.map(point => <View key={point.title} style={s.point}>
+      <Icon name={point.icon} size={18} color={colors.muted} />
+      <View style={s.pointText}>
+        <Text style={[s.pointTitle, { color: colors.text }]}>{point.title}</Text>
+        <Text style={[s.pointBody, { color: colors.muted }]}>{point.body}</Text>
       </View>
     </View>)}
   </View>;
@@ -235,12 +236,11 @@ const s = StyleSheet.create({
   title: { fontSize: 23, lineHeight: 29, fontWeight: '700', letterSpacing: -0.6, textAlign: 'center' },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   detail: { fontSize: 14, lineHeight: 20, textAlign: 'center' },
-  points: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 4 },
-  point: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 10 },
+  points: { gap: 16, paddingHorizontal: 2 },
+  point: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   pointText: { flex: 1, gap: 2 },
   pointTitle: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
   pointBody: { fontSize: 13.5, lineHeight: 18.5 },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
   consent: { fontSize: 12.5, lineHeight: 18 },
   link: { fontWeight: '600' },
   actions: { gap: 4 },
