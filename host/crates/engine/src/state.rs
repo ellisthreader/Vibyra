@@ -29,6 +29,8 @@ pub(crate) struct Metadata {
     pub kind: String,
     pub status: String,
     pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runner: Option<String>,
 }
 
 pub(crate) struct Lease {
@@ -83,6 +85,7 @@ pub(crate) struct State {
     pub subscribers: Vec<SyncSender<Value>>,
     pub seq: u64,
     pub journal: Journal,
+    pub conversations: HashMap<String, crate::conversation::model::Conversation>,
     pub preview_ports: HashSet<(String, u16)>,
 }
 
@@ -100,6 +103,7 @@ impl State {
             subscribers: Vec::new(),
             seq: 0,
             preview_ports: HashSet::new(),
+            conversations: HashMap::new(),
         }
     }
 
@@ -117,7 +121,7 @@ impl State {
         json!({"protocol":1,"host":{"id":"local","name":"Vibyra Host",
             "platform":std::env::consts::OS},"projects":self.projects,"sessions":history["sessions"],
             "sessionCount":history["sessionCount"],"nextCursor":history["nextCursor"],
-            "approvals":[],"devices":[]})
+            "approvals":[],"devices":[],"capabilities":{"conversationV1":true,"vibesToolsV1":true}})
     }
 
     pub fn resolve_project(&self, value: &str) -> Result<&Project, String> {

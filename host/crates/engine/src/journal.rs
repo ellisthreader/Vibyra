@@ -3,7 +3,7 @@ use rusqlite::{params, Connection};
 use std::{collections::HashMap, path::Path};
 
 pub(crate) struct Journal {
-    connection: Connection,
+    pub(crate) connection: Connection,
     _instance_lock: std::fs::File,
 }
 

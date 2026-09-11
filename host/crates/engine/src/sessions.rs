@@ -21,6 +21,7 @@ fn repeated(
     if session.meta.project_id != project
         || session.meta.kind != kind
         || session.meta.title != title
+        || session.meta.runner.is_some()
     {
         return Err("request ID was already used for a different action".into());
     }
@@ -70,6 +71,7 @@ impl Engine {
             kind: kind.into(),
             status: "interrupted".into(),
             created_at: now(),
+            runner: None,
         };
         let mut session = Session::restored(metadata, device.into(), request.into());
         // Commit the idempotency receipt before spawning anything. A crash after
@@ -119,6 +121,12 @@ impl Engine {
                 .is_some_and(|lease| lease.device == device)
         {
             return Err("claim control before stopping another device's session".into());
+        }
+        if let Some(conversation) = state.conversations.get(&session.meta.id) {
+            if let Some(runtime) = &conversation.runtime {
+                runtime.stop();
+            }
+            return Ok(json!({"ok":true}));
         }
         if session.meta.status == "running" {
             self.ptys

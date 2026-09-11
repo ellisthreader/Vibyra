@@ -26,7 +26,8 @@ export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'crea
       await store.persistCreates(); store.assertCurrent(epoch);
       let result: Session;
       try {
-        result = await request<Session>('session.create', { projectId, kind, title: cleanTitle, requestId });
+        result = await request<Session>('session.create', { projectId, kind, title: cleanTitle, requestId,
+          ...(store.state.conversationAvailable && kind === 'codex' ? { runner: 'conversation' } : {}) });
         store.creates.success(key);
         await store.persistCreates().catch(error => store.report(error));
       } catch (error) { store.creates.failed(key, error); await store.persistCreates().catch(() => {}); throw error; }

@@ -25,11 +25,14 @@ export function SessionDetails({ session, project, workspace, busy, onReview, on
           ? workspace.demo ? 'Running · sample session' : 'Running on your computer'
           : session.status === 'interrupted' ? 'Interrupted' : 'Finished'}</Text></View>
     </View>
-    <Button title="Review files and changes" icon="git-compare-outline" secondary onPress={onReview} disabled={workspace.status !== 'connected'} />
-    <Text style={[s.note, { color: colors.muted }]}>{workspace.demo ? 'Sample workspace. No computer is connected.'
+    {!session.readOnly && <Button title="Review files and changes" icon="git-compare-outline" secondary onPress={onReview} disabled={workspace.status !== 'connected'} />}
+    <Text style={[s.note, { color: colors.muted }]}>{session.readOnly ? session.canInput === true
+      ? 'This is the live terminal from Vibyra Desktop. Take control to type into it; use your Mac to stop sessions or review files.'
+      : 'This is the live terminal from Vibyra Desktop. Use your Mac to send commands, stop sessions or review files.' : workspace.demo ? 'Sample workspace. No computer is connected.'
       : session.kind === 'shell' ? 'Commands run in your computer’s shell with access to its files and installed tools.'
+        : session.runner === 'conversation' ? `${provider} runs on your computer. Tap an activity in the conversation to inspect commands and output. Questions and permissions appear inline when your response is needed.`
         : `${provider} runs on your computer. Its live terminal includes any permission requests that need your response.`}</Text>
-    {session.status === 'running' && <Button title="Stop session" danger icon="stop-circle-outline" busy={busy}
+    {!session.readOnly && session.status === 'running' && <Button title="Stop session" danger icon="stop-circle-outline" busy={busy}
       disabled={workspace.status !== 'connected'} onPress={onStop} />}
   </ScrollView>;
 }

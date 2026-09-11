@@ -1,5 +1,10 @@
 export interface OutputFrame { sessionId: string; output: string; offset: number; generation: string }
-export interface Snapshot extends OutputFrame { status: 'running' | 'exited' | 'interrupted' }
+export interface Snapshot extends OutputFrame {
+  status: 'running' | 'exited' | 'interrupted';
+  /** The grid the computer is formatting for. Absent from older hosts, which
+   *  is why a viewer must still cope with never being told. */
+  cols?: number; rows?: number;
+}
 export const byteLength = (text: string) => {
   let total = 0;
   for (const char of text) { const code = char.codePointAt(0)!; total += code < 128 ? 1 : code < 2048 ? 2 : code < 65536 ? 3 : 4; }

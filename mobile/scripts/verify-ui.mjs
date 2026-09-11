@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
-import { capture, fullyVisible, terminalText, until } from './ui-test-helpers.mjs';
+import { capture, fullyVisible, terminalText } from './ui-test-helpers.mjs';
 
 const out = process.env.VIBYRA_SHOTS ?? '/tmp/vibyra-ios-screenshots';
 await mkdir(out, { recursive: true });
@@ -20,14 +20,44 @@ try {
       const shot = name => capture(page, `${out}/${device}-${colorScheme}-${name}.png`);
       const drawer = () => page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
       const menu = async name => { await drawer(); await page.getByRole('button', { name, exact: true }).click(); };
-      const session = async name => { await drawer(); await page.getByRole('tab', { name: 'All', exact: true }).click();
-        await page.getByRole('button', { name, exact: true }).click(); };
+      // Recents is one list with no filter tabs, so a session is one click from the rail.
+      const session = async name => { await drawer(); await page.getByRole('button', { name, exact: true }).click(); };
       await page.goto(url);
-      await page.getByRole('button', { name: 'Set up later', exact: true }).click();
+      await page.getByRole('button', { name: 'Get started', exact: true }).waitFor();
+      await shot('welcome');
+      await page.getByRole('button', { name: 'I already have an account', exact: true }).click();
+      await page.getByRole('button', { name: 'Log in', exact: true }).waitFor();
+      await shot('login');
+      await page.getByRole('button', { name: 'Create an account', exact: true }).click();
+      await page.getByRole('textbox', { name: 'Email' }).fill('ellis@example.com');
+      await page.getByLabel('Password', { exact: true }).fill('short');
+      await shot('account');
+      await page.getByRole('button', { name: 'Create account', exact: true }).click();
+      await page.getByText('Enter a valid email and a password with at least 8 characters.', { exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.getByRole('radio', { name: 'Code on this phone', exact: true }).click();
+      assert.equal(await page.getByRole('radio', { name: 'Code on this phone', exact: true }).getAttribute('aria-checked'), 'true');
+      await shot('path');
+      await page.getByRole('button', { name: 'Start on phone', exact: true }).click();
+      await page.getByText('Coding on your phone needs a Vibyra account.', { exact: true }).waitFor();
+      await shot('account-required');
+      await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
+      await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+      await shot('computer-setup');
+      // Setup emails a download link now; there is no pairing-code page behind it.
+      await page.getByRole('button', { name: 'Send me an email link', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
+      await shot('computer-network');
+      await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip — I’ll decide later', exact: true }).click();
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
+      await page.reload();
+      await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
+      assert.equal(await page.getByRole('button', { name: 'Get started', exact: true }).count(), 0, 'The welcome flow stays dismissed after a reload');
       await shot('home');
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
-      await page.getByRole('textbox', { name: 'Computer pairing link' }).waitFor();
+      await shot('computer-setup');
+      await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
       await shot('connect');
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
       await menu('Settings');
@@ -86,41 +116,58 @@ try {
         'Terminal output cannot leak between sessions');
       await page.getByRole('button', { name: 'New chat', exact: true }).click();
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).fill('A draft carried into a new chat');
-      await page.getByRole('button', { name: 'Create chat with draft', exact: true }).click();
-      await page.getByRole('radio', { name: 'Studio', exact: true }).click();
-      await page.getByRole('radio', { name: 'Codex', exact: true }).click();
-      assert.equal(await page.getByRole('radio', { name: 'Codex', exact: true }).getAttribute('aria-checked'), 'true');
-      await page.getByRole('textbox', { name: 'Session name' }).fill('QA new chat');
+      await page.getByRole('button', { name: 'Choose AI model', exact: true }).click();
+      assert.equal(await page.getByRole('radio', { name: 'Auto', exact: true }).getAttribute('aria-checked'), 'true',
+        'Making no choice leaves the composer on Auto');
+      assert.equal(await page.getByRole('radio', { name: 'Codex', exact: true }).count(), 0,
+        'The picker offers OpenRouter models only');
+      // The regression this exists to stop: the catalogue used to be gated on the
+      // runtime, so the browser, Android and the sample workspace were handed an
+      // empty list and showed Auto and nothing else. Auto is a choice among many,
+      // never the only one on offer.
+      const catalogue = page.getByRole('dialog', { name: 'Choose your AI' });
+      const companies = await catalogue.locator('[aria-expanded]').evaluateAll(
+        nodes => nodes.map(node => node.getAttribute('aria-label')));
+      assert.ok(companies.length >= 5, `Every runtime can read the catalogue, saw ${companies.length} companies`);
+      for (const company of ['OpenAI', 'Anthropic', 'Google'])
+        assert.ok(companies.includes(company), `${company} is missing from the picker`);
+      await page.getByRole('button', { name: 'Anthropic', exact: true }).click();
+      assert.ok(await catalogue.getByRole('radio').count() > 1, 'A company opens to reveal its models');
       await shot('new-chat');
-      await page.getByRole('button', { name: 'Create chat', exact: true }).click();
+      await page.getByRole('radio', { name: 'Auto', exact: true }).click();
+      await page.getByRole('button', { name: 'Send message', exact: true }).click();
+      assert.equal(await page.getByRole('button', { name: 'Create chat', exact: true }).count(), 0,
+        'Sending a chat never opens a session configuration sheet');
       assert.equal(await composer.inputValue(), 'A draft carried into a new chat', 'New chat prompt remains unsent');
       await page.getByRole('button', { name: 'New chat', exact: true }).click();
       await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
-      await page.getByRole('radio', { name: 'Studio', exact: true }).click();
-      await page.getByRole('textbox', { name: 'Session name' }).fill('QA new terminal');
-      await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
       assert.equal(await terminalInput.inputValue(), '', 'New terminal does not inherit the new chat prompt');
       await drawer();
-      await page.getByRole('tab', { name: 'Terminals', exact: true }).scrollIntoViewIfNeeded();
-      await page.waitForTimeout(200); // RN ScrollView suppresses presses during scroll settling.
-      await page.getByRole('tab', { name: 'Terminals', exact: true }).click();
-      await until(async () => await page.getByRole('tab', { name: 'Terminals', exact: true }).getAttribute('aria-selected') === 'true', 'terminal filter selection');
-      assert.equal(await page.getByRole('button', { name: 'A calmer checkout, Claude', exact: true }).count(), 0);
+      assert.equal(await page.getByRole('tab').count(), 0, 'Recents carries no filter tabs');
+      // Search opens from the icon beside the logo, so the rail's top stays one line.
+      await page.getByRole('button', { name: 'Search chats', exact: true }).click();
       await page.getByRole('textbox', { name: 'Search chats' }).fill('QA new terminal');
       await shot('drawer');
-      await page.getByRole('textbox', { name: 'Search chats' }).fill('');
+      await page.getByRole('button', { name: 'Close search', exact: true }).click();
       await page.getByRole('button', { name: 'Projects', exact: true }).click();
       await shot('projects');
-      await menu('Computers'); await shot('computers');
+      await menu('Remote'); await shot('computers');
       await menu('Settings'); await shot('settings');
       await page.getByRole('button', { name: 'Appearance', exact: true }).click();
       await page.getByRole('radio', { name: colorScheme === 'dark' ? 'Light' : 'Dark', exact: true }).click();
       await shot('switched-appearance');
       await page.getByRole('button', { name: 'Leave sample workspace', exact: true }).click();
       await page.getByRole('button', { name: 'Connect computer', exact: true }).waitFor();
+      await menu('Settings');
+      await page.getByRole('button', { name: 'Sign in or create account', exact: true }).click();
+      await page.getByRole('button', { name: 'Log in', exact: true }).waitFor();
+      await shot('account-sheet');
+      await page.getByRole('button', { name: 'Close Your Vibyra account', exact: true }).click();
+      await page.getByRole('button', { name: 'Show welcome again', exact: true }).click();
+      await page.getByRole('button', { name: 'Get started', exact: true }).waitFor();
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`PASS: ${device}/${colorScheme} chat/terminal isolation, draft handoff, decision, review, preview, navigation and appearance.`);
+      console.log(`PASS: ${device}/${colorScheme} welcome flow, account validation, path choice, chat/terminal isolation, draft handoff, decision, review, preview, navigation and appearance.`);
     }
   }
   console.log(`Screenshots: ${out}. Browser viewport checks; physical iPhone acceptance remains separate.`);

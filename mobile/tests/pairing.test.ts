@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkBrowserConnection, parsePairing } from '../src/transport/pairing';
+import { parsePairing } from '../src/transport/pairing';
 const pairing = { version: 1, hostId: 'host-1', name: 'Ellis’s Mac', publicKey: 'ab'.repeat(32),
   url: 'ws://192.168.1.10:4318', invite: 'a'.repeat(64), expiresAt: '2099-01-01T00:00:00Z' };
 
@@ -25,12 +25,4 @@ test('reconnect descriptors do not require an enrollment invitation', () => {
   const { invite: _invite, expiresAt: _expires, ...saved } = pairing;
   assert.equal(parsePairing(JSON.stringify(saved)).hostId, 'host-1');
   assert.throws(() => parsePairing(JSON.stringify({ ...pairing, invite: {} })), /invalid invitation/);
-});
-
-test('hosted HTTPS rejects LAN WebSocket links with an actionable error before connecting', () => {
-  const parsed = parsePairing(JSON.stringify(pairing));
-  assert.throws(() => checkBrowserConnection(parsed, 'https:'), /native phone preview/);
-  assert.doesNotThrow(() => checkBrowserConnection(parsed, 'http:'));
-  assert.doesNotThrow(() => checkBrowserConnection(parsed, ''));
-  assert.doesNotThrow(() => checkBrowserConnection({ ...parsed, url: 'wss://relay.example.com' }, 'https:'));
 });

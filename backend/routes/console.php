@@ -17,3 +17,7 @@ Schedule::command('vibyra:deploy-runtime-demos --limit=1')->everyMinute()->witho
 Schedule::command('vibyra:cleanup-runtime-demos --limit=5')->everyMinute()->withoutOverlapping(10)->onOneServer();
 
 Schedule::command('model:prune', ['--model' => [IntegrationAttempt::class]])->daily()->withoutOverlapping()->onOneServer();
+
+Schedule::command('vibyra:recover-vibes')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Schedule::command('vibyra:reconcile-vibes-purchases')->hourly()->withoutOverlapping(55)->onOneServer();

@@ -35,33 +35,30 @@ try {
     await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
     await page.getByRole('button', { name, exact: true }).click();
   };
+  // Naming a session is only offered from the Projects list, where choosing the
+  // folder is the point. The home composer starts a terminal in one tap instead.
   const openTerminal = async title => {
-    await menu('New chat');
-    await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
+    await menu('Projects');
+    await page.getByRole('button', { name: /^New chat in / }).first().click();
+    await page.getByRole('radio', { name: 'Terminal', exact: true }).click();
     await page.getByRole('textbox', { name: 'Session name' }).fill(title);
     await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
     await page.getByText(title, { exact: true }).first().waitFor();
   };
   await page.goto(process.env.VIBYRA_URL ?? 'http://localhost:8081');
   await noTutorialFraming(page);
+  // Pair from inside the first-run flow: a successful pairing must finish it and land on the workspace.
+  await page.getByRole('button', { name: 'Get started', exact: true }).click();
+  await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
   await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+  await page.getByRole('button', { name: 'I have a pairing code', exact: true }).click();
   await page.getByRole('textbox', { name: 'Computer pairing link' }).fill(JSON.stringify(pairing));
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
-  await until(() => hostOutput.match(/approve ([a-f0-9]{64})/)?.[1], 'first local approval request');
-  assert.equal(await page.getByRole('button', { name: 'Open workspace', exact: true }).count(), 0,
-    'An unapproved device cannot complete onboarding');
-  await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
-  hostOutput = '';
-  child.stdin.write(`pair ws://${address}\n`);
-  const retryUri = await until(() => hostOutput.match(/vibyra:\/\/pair\?data=([\w-]+)/)?.[1], 'fresh single-use invitation');
-  Object.assign(pairing, JSON.parse(Buffer.from(retryUri, 'base64url').toString()));
-  await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Computer pairing link' }).fill(JSON.stringify(pairing));
-  await page.getByRole('button', { name: 'Connect', exact: true }).click();
-  const key = await until(() => hostOutput.match(/approve ([a-f0-9]{64})/)?.[1], 'local approval request');
+  const key = await until(() => hostOutput.match(/Approve or deny device ([a-f0-9]{64})/)?.[1], 'local approval request');
   child.stdin.write(`approve ${key}\n`);
-  await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
   await page.getByText('UI Test Computer', { exact: true }).first().waitFor();
+  await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
+  assert.equal(await page.getByRole('button', { name: 'Get started', exact: true }).count(), 0, 'Pairing completes the welcome flow');
   await openTerminal('Verified UI terminal');
   const input = page.getByRole('textbox', { name: 'Command for computer terminal' });
   const send = page.getByRole('button', { name: 'Send command and Enter', exact: true });
@@ -88,22 +85,24 @@ try {
   await page.getByText('hello.txt', { exact: true }).click();
   await page.getByText('Verified project file', { exact: true }).waitFor();
   await page.getByRole('button', { name: /^Close / }).click();
-  await menu('Computers');
+  await menu('Remote');
   await page.getByRole('button', { name: 'Disconnect', exact: true }).click();
   await page.getByRole('button', { name: 'Reconnect', exact: true }).click();
   await page.getByText('Connected', { exact: true }).waitFor();
   await menu('Verified UI terminal, Terminal');
   await page.getByText('Viewing live', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Take control', exact: true }).click();
+  // In a terminal the return key runs the command; a newline in the box would
+  // otherwise become an accidental multiline paste the shell cannot submit.
   await input.fill("printf 'UI_%s_VERIFIED\\n' RECONNECTED >> ui-result.txt");
-  await send.click();
+  await input.press('Enter');
   await until(() => readFileSync(join(fixture, 'ui-result.txt'), 'utf8').includes('UI_RECONNECTED_VERIFIED'), 'continued real session');
   await page.getByRole('button', { name: 'Session options', exact: true }).click();
   await page.getByRole('button', { name: 'Stop session', exact: true }).click();
   await page.getByText(/Session ended/).waitFor();
   await noTutorialFraming(page);
   assert.deepEqual(errors, []);
-  console.log('PASS: cancel/retry before Host approval, real pairing, two isolated terminals/drafts, input effects, diff/files, reconnect, observation/control and stop.');
+  console.log('PASS: real Host pairing, two isolated terminals/drafts, input effects, diff/files, reconnect, observation/control and stop.');
   console.log('This verifies standalone Host CLI sessions; existing Vibyra Desktop chat synchronization is not implemented.');
 } finally {
   await browser.close(); child.kill('SIGINT');

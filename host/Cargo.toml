@@ -10,4 +10,3 @@ license = "UNLICENSED"
 [profile.release]
 lto = "thin"
 strip = true
-

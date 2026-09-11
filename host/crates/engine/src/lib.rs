@@ -1,4 +1,5 @@
 mod control;
+mod conversation;
 mod events;
 mod git;
 mod history;
@@ -8,6 +9,8 @@ mod preview;
 mod projects;
 mod sessions;
 mod state;
+mod vibes_tools;
+mod vibes_write;
 
 use parking_lot::Mutex;
 use serde_json::{json, Value};
@@ -30,7 +33,9 @@ impl Engine {
         let projects = projects::configure(projects)?;
         let journal = journal::Journal::open(&state_dir)?;
         let sessions = journal.restore()?;
+        let conversations = journal.conversations()?;
         let shared = Arc::new(Mutex::new(State::new(projects, journal, sessions)));
+        shared.lock().conversations = conversations;
         let sink = Arc::new(events::Sink(Arc::clone(&shared)));
         let config = FlushConfig {
             scrollback_cap: 256 * 1024,
@@ -45,8 +50,20 @@ impl Engine {
             return Err("invalid authenticated request".into());
         }
         match method {
+            "vibes.bind" | "vibes.tool" => self.vibes_tool(device, method, &params),
             "host.state" => Ok(self.shared.lock().snapshot()),
+            "session.create" if params["runner"] == "conversation" => {
+                self.create_conversation(device, &params)
+            }
             "session.create" => self.create(device, &params),
+            method
+                if method.starts_with("conversation.")
+                    || method.starts_with("turn.")
+                    || method == "decision.resolve"
+                    || method == "question.answer" =>
+            {
+                self.conversation_handle(device, method, &params)
+            }
             "session.list" => self.shared.lock().history(&params, 48 * 1024),
             "session.snapshot" => self.snapshot(&params),
             "session.claim" => self.claim(device, &params),

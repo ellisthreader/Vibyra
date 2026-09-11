@@ -1,7 +1,6 @@
 # Vibyra for iPhone
 
-The new Graphite + Cobalt remote workspace lives here. The repository-root
-`src/` app is the legacy client. This app is a development foundation, with
+The new Graphite + Cobalt remote workspace lives here. This is the only mobile client in the repository. This app is a development foundation, with
 real Host terminals, agent sessions, and a conversation-first mobile interface.
 
 ## Run
@@ -15,10 +14,7 @@ npm ci
 npm run web
 ```
 
-The app opens on a first-run welcome marked **Work in progress**. Connect your computer,
-explore an explicitly labelled sample workspace, or choose **Set up later**.
-Reopen setup from **Settings → Welcome and computer setup**. No Vibyra account
-is required for this Host preview. After connecting, choose a project
+The app opens on a new coding composer. Connect a computer, choose a project
 and Claude Code, Codex, or Terminal, then continue that session from the sidebar.
 A prompt entered before creating a chat carries over as an unsent draft.
 The sidebar searches chats and filters terminals independently.
@@ -27,7 +23,8 @@ sends commands or provider requests.
 The browser keeps device keys in memory; reloading requires fresh enrollment.
 
 For an Expo Go phone preview, run `npm run phone` from this directory or the
-repository root. This launches the new SDK 57 app on port 8081, explicitly in
+repository root. The first screen is “Build from your pocket.”; Settings →
+Show welcome again reopens it. This launches the new SDK 57 app on port 8081, explicitly in
 Expo Go mode. Use current SDK 57 Expo Go and the same Expo account in the
 CLI and phone. Verify and warm the LAN iOS bundle before sharing its QR.
 For native development, use `npm start` with an installed development build.
@@ -53,6 +50,12 @@ Existing sessions open in observation mode. **Take control** requests the
 Host's exclusive input lease. Disconnecting the phone leaves the process running;
 stopping a session is a separate action. An uncertain send is never retried
 automatically. Reconnect retrieves a bounded snapshot of current output.
+
+The connection sheet starts with installation steps, then asks before local
+network discovery. Run the LAN Host with `--discover` to make it discoverable.
+Native discovery requires a development build; Expo Go and web retain code
+pairing. See [computer connection](../docs/mobile-computer-connection.md) for
+the permission boundary, Host launch command, artwork and validation.
 
 ## Checks
 
