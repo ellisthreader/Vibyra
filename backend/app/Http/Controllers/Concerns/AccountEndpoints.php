@@ -168,6 +168,10 @@ trait AccountEndpoints
             if ($password === '' || ! Hash::check($password, $user->password)) {
                 return $this->json(['ok' => false, 'error' => 'Password is incorrect.'], 401);
             }
+        } elseif (config('chat_connectors.catalogue.'.$user->provider.'.oauth.signs_in')) {
+            // Made by connecting GitHub while signed out: there is no identity token
+            // to present again, so the signed-in session is the proof. App Review
+            // requires every account the app can make to be deletable in the app.
         } else {
             try {
                 $nonce = $user->provider === 'apple'

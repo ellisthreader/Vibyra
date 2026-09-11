@@ -426,6 +426,21 @@ class ChatConnectorsTest extends TestCase
         $this->assertSame(1, User::where('email', 'taken@example.com')->count());
     }
 
+    /** An account GitHub made has no password and no identity token, and must still be deletable in the app. */
+    public function test_an_account_github_made_can_be_deleted_from_its_session(): void
+    {
+        $this->withGithubSignIn();
+        $start = $this->withToken('')->postJson('/api/connectors/github/start', ['returnUrl' => 'vibyra://integrations/connected'])->json();
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        $this->fakeGithubIdentity();
+        $this->get('/api/connectors/callback/github?code=the-code&state='.$query['state']);
+        $token = $this->withToken('')->getJson('/api/connectors/flows/'.$start['flowId'])->json('session.token');
+
+        $this->withToken($token)->deleteJson('/api/account')->assertOk();
+        $this->assertDatabaseMissing('users', ['email' => 'new-person@example.com']);
+        $this->assertDatabaseCount('vibes_integration_installs', 0);
+    }
+
     public function test_stripe_cannot_be_started_signed_out_because_it_cannot_sign_anyone_in(): void
     {
         config(['chat_connectors.catalogue.stripe.oauth.client_id' => 'ca_platform', 'chat_connectors.catalogue.stripe.oauth.client_secret' => 'sk_platform']);
