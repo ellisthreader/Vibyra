@@ -13,7 +13,7 @@ import { IntegrationsScreen } from './IntegrationsScreen';
 import { ProjectsScreen } from './ProjectsScreen';
 import { SessionScreen } from './SessionScreen';
 import { SettingsScreen } from './SettingsScreen';
-import { AccountSheet } from './AccountSheet';
+import { AccountPanel, AccountSheet } from './AccountSheet';
 import { WorkScreen } from './WorkScreen';
 import { VibesScreen } from '../vibes/VibesScreen';
 import { VibesDrawer } from '../vibes/VibesDrawer';
@@ -118,7 +118,9 @@ export function WorkspaceApp({ workspace, vibesEnabled = false }: { workspace: W
           {destination === 'projects' && <ProjectsScreen workspace={workspace} onConnect={() => setConnect(true)} onNew={start}
             onOpenSession={id => { workspace.actions.selectSession(id); setDestination('work'); }} />}
           {destination === 'computers' && <ComputersScreen workspace={workspace} />}
-          {destination === 'integrations' && <IntegrationsScreen onUse={useIntegrationInChat} />}
+          {destination === 'integrations' && <IntegrationsScreen onUse={useIntegrationInChat}
+            signedIn={Boolean(workspace.account)} signIn={done => <AccountPanel workspace={workspace} onDone={done} />}
+            onLeaveSample={workspace.demo ? workspace.actions.exitDemo : undefined} />}
           {destination === 'settings' && <SettingsScreen workspace={workspace} onConnect={() => setConnect(true)} />}
         </View>
       </View>

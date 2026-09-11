@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Mark } from '../ui/BrandLogo';
@@ -30,14 +30,23 @@ import type { Integration } from './types';
  * race this codebase has already been bitten by once.
  *
  * There is never a button that cannot work. An account without the feature and a
- * server that cannot be reached each say so in the footer instead.
+ * server that cannot be reached each say so in the footer instead. A person who
+ * is signed out is offered sign-in before a key, not a refusal after pasting one,
+ * and the form for it swaps into this sheet for the same reason the key form does.
+ * The sample workspace offers the way out of itself, because nothing in it can
+ * ever be connected.
  */
-export function IntegrationPage({ integration, visible, onClose, onUse }: {
+export function IntegrationPage({ integration, visible, onClose, onUse, signedIn = true, signIn, onLeaveSample }: {
   integration: Integration | null; visible: boolean; onClose(): void; onUse(mention: string): void;
+  /** Whether a real account is signed in. The fixture and the sample leave this on. */
+  signedIn?: boolean;
+  /** The sign-in form, drawn in place of the description; `done` returns to it. */
+  signIn?: (done: () => void) => ReactNode;
+  onLeaveSample?: () => void;
 }) {
   const { colors } = useTheme();
   const { catalogue, live, busy, error, connect, disconnect } = useIntegrations();
-  const [mode, setMode] = useState<'details' | 'connect'>('details');
+  const [mode, setMode] = useState<'details' | 'connect' | 'signin'>('details');
   const [credential, setCredential] = useState('');
   // What went wrong on this page, kept here rather than read from the provider so
   // that one service's refused key is never shown on the next service's page.
@@ -53,9 +62,19 @@ export function IntegrationPage({ integration, visible, onClose, onUse }: {
     try { await connect(entry.id, credential.trim()); setMode('details'); setCredential(''); }
     catch (e) { setFailure(reason(e)); }
   };
+  // Signed out: offer sign-in in place of the key, and hide the footer while the
+  // form is up, since the form carries its own buttons.
+  const signInFooter = mode === 'signin' ? undefined : signIn
+    ? <Button title={'Sign in to connect ' + entry.name} icon="person-circle-outline" onPress={() => setMode('signin')} />
+    : <Hint>{'Sign in to your Vibyra account to connect ' + entry.name + '.'}</Hint>;
   const footer = !live ? <Hint error>{error ?? 'Could not reach Vibyra, so integrations cannot be connected right now.'}</Hint>
+    : catalogue.sample ? <View style={s.footerStack}>
+      <Hint>{'This is the sample workspace, so nothing can be connected here. Leave it, then sign in to your Vibyra account to connect ' + entry.name + '.'}</Hint>
+      {onLeaveSample && <Button title="Leave sample workspace" icon="exit-outline" onPress={onLeaveSample} />}
+    </View>
     : !catalogue.enabled ? <Hint>Integrations are not switched on for this account yet.</Hint>
       : entry.installed ? <Button title="Use it in a chat" icon="arrow-forward" onPress={() => onUse(entry.mention)} />
+        : !signedIn ? signInFooter
         : mode === 'connect' ? <Button title="Connect" busy={busy} disabled={!credential.trim()} onPress={() => void submit()} />
           : <Button title={'Connect ' + entry.name} icon="key-outline" onPress={() => setMode('connect')} />;
   return <Sheet title={entry.name} visible={visible} onClose={onClose} footer={footer}>
@@ -69,7 +88,8 @@ export function IntegrationPage({ integration, visible, onClose, onUse }: {
         </View>
         : <Text numberOfLines={1} style={[s.accountText, { color: colors.muted }]}>{entry.category}</Text>}
     </View>
-    {mode === 'connect' ? <ConnectForm integration={entry} value={credential} onChange={setCredential} error={failure} /> : <>
+    {mode === 'signin' && signIn ? signIn(() => setMode('details'))
+      : mode === 'connect' ? <ConnectForm integration={entry} value={credential} onChange={setCredential} error={failure} /> : <>
       <Text style={[s.blurb, { color: colors.text }]}>{entry.blurb}</Text>
       {/* The safety answer, and the whole of it. Reads first because it is always
           the larger permission; writes second and in full text colour, because what
@@ -107,6 +127,7 @@ function Safety({ icon, label, text, muted = false }: {
 }
 const s = StyleSheet.create({
   hero: { alignItems: 'center', gap: 9 },
+  footerStack: { gap: 10 },
   account: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   accountText: { fontSize: 13 },
   blurb: { fontSize: 16, lineHeight: 24, textAlign: 'center' },
