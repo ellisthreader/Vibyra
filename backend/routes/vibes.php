@@ -33,10 +33,17 @@ Route::post('api/vibes/apple-notifications', \App\Http\Controllers\VibesAppleNot
 
 /*
  * Integrations. The catalogue is public like the model list; connecting an account
- * and disconnecting it authenticate inside the controller.
+ * and disconnecting it authenticate inside the controller. The sign-in callback
+ * arrives from the provider's page in a browser with no app session, so it is
+ * outside the group and proves itself with the single-use `state` instead.
  */
+Route::get('api/connectors/callback/{integration}', [ChatConnectorsController::class, 'callback'])
+    ->where('integration', '[a-z][a-z0-9]*')->middleware('throttle:30,1');
+
 Route::prefix('api/connectors')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [ChatConnectorsController::class, 'index']);
+    Route::get('flows/{flow}', [ChatConnectorsController::class, 'flow'])->whereUuid('flow');
+    Route::post('{integration}/start', [ChatConnectorsController::class, 'start'])->middleware('throttle:10,1');
     Route::post('{integration}/connect', [ChatConnectorsController::class, 'connect'])->middleware('throttle:10,1');
     Route::post('{integration}/disconnect', [ChatConnectorsController::class, 'disconnect']);
 })->where('integration', '[a-z][a-z0-9]*');

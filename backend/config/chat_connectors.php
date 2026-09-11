@@ -47,6 +47,18 @@ return [
                 'help' => 'Create a fine-grained token, choose the repositories it can see, and give it read access to Contents, Issues and Pull requests. Set Issues to read and write if you want to open issues from a chat. One token reaches one owner: your own account or one organization.',
                 'url' => 'https://github.com/settings/personal-access-tokens/new',
             ],
+            // Signing in with GitHub, once an OAuth app is registered whose callback is
+            // {APP_URL}/api/connectors/callback/github. GitHub has no OAuth scope narrower
+            // than `repo` that reaches private issues, so it asks for more than the tools
+            // use; the connect card says so. Until both values exist the key form is used.
+            'oauth' => [
+                'authorize_url' => 'https://github.com/login/oauth/authorize',
+                'token_url' => 'https://github.com/login/oauth/access_token',
+                'scope' => 'repo',
+                'client_id' => env('CHAT_CONNECTORS_GITHUB_CLIENT_ID'),
+                'client_secret' => env('CHAT_CONNECTORS_GITHUB_CLIENT_SECRET'),
+                'token_fields' => ['client_id', 'client_secret', 'code', 'redirect_uri'],
+            ],
         ],
 
         'stripe' => [
@@ -67,6 +79,18 @@ return [
                 'placeholder' => 'rk_live_…',
                 'help' => 'Create a restricted key with read access to Balance and Charges, and write access to Customers. A full secret key is not needed.',
                 'url' => 'https://dashboard.stripe.com/apikeys',
+            ],
+            // Signing in with Stripe Connect: a `ca_` client id from the platform's Connect
+            // settings, with {APP_URL}/api/connectors/callback/stripe as a redirect, and the
+            // platform's secret key for the exchange. `read_write` is the only scope that
+            // can create a customer. The token endpoint takes only these three fields.
+            'oauth' => [
+                'authorize_url' => 'https://connect.stripe.com/oauth/authorize',
+                'token_url' => 'https://connect.stripe.com/oauth/token',
+                'scope' => 'read_write',
+                'client_id' => env('CHAT_CONNECTORS_STRIPE_CLIENT_ID'),
+                'client_secret' => env('CHAT_CONNECTORS_STRIPE_SECRET_KEY'),
+                'token_fields' => ['client_secret', 'code', 'grant_type'],
             ],
         ],
 
