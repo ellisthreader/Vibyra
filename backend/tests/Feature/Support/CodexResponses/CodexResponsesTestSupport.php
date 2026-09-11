@@ -34,7 +34,7 @@ trait CodexResponsesTestSupport
         }
 
         Cache::put(
-            (string) config('billing.openrouter_pricing.cache_key', 'billing:openrouter-pricing:v1'),
+            (string) config('billing.openrouter_pricing.cache_key', (string) config('billing.openrouter_pricing.cache_key')),
             [
                 'synced_at' => now()->toIso8601String(),
                 'models' => $catalog,

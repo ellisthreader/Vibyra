@@ -26,6 +26,28 @@ class ProductionProcessTopologyTest extends TestCase
         $this->assertStringContainsString('php_admin_value[post_max_size] = 48M', $config);
         $this->assertStringContainsString('fastcgi_buffering off', $config);
         $this->assertStringContainsString('"nginx"', $nixpacks);
+
+        // The root config has to use the same launcher. The live service reads
+        // `backend/railway.json`, but a service pointed at the repository root
+        // reads this one, and it used to start `php artisan serve` by itself -
+        // no scheduler and no queue worker at all.
+        $root = json_decode((string) file_get_contents(dirname($backend).'/railway.json'), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertStringContainsString('scripts/start-production.sh', $root['deploy']['startCommand']);
+    }
+
+    public function test_the_all_in_one_role_runs_the_queue_worker_that_answers_phone_chat(): void
+    {
+        $launcher = (string) file_get_contents(dirname(__DIR__, 2).'/scripts/start-production.sh');
+
+        // `RunVibesTurn` is queued on `vibes`. Without a worker on that queue a
+        // deployment accepts a turn, holds the person's Vibes and never answers.
+        $this->assertStringContainsString('vibes,deployments,default', $launcher);
+        $this->assertStringContainsString('start_worker &', $launcher);
+        $this->assertStringContainsString('php artisan schedule:work &', $launcher);
+        // A worker ends itself after `--max-time`, and in this role any child
+        // exiting ends the container, which Railway does not restart on status 0.
+        // So the worker is restarted in a loop instead of being allowed to exit.
+        $this->assertMatchesRegularExpression('/start_worker\(\) \{\s*while true; do/', $launcher);
     }
 
     public function test_example_topology_has_isolated_web_worker_and_scheduler_roles(): void

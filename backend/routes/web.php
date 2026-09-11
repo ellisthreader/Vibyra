@@ -110,6 +110,7 @@ Route::get('/api/auth/email/verify/{id}/{hash}', [VibyraAppController::class, 'v
     ->middleware('throttle:12,1')
     ->name('verification.verify');
 Route::post('/api/account/profile', [VibyraAppController::class, 'updateAccountProfile']);
+Route::post('/api/account/host-link', [VibyraAppController::class, 'sendHostDownloadLink'])->middleware('throttle:6,1');
 Route::post('/api/account/phone/start', [VibyraAppController::class, 'startPhoneVerification'])->middleware('throttle:3,10');
 Route::post('/api/account/phone/check', [VibyraAppController::class, 'checkPhoneVerification'])->middleware('throttle:10,10');
 Route::post('/api/account/session/device', [VibyraAppController::class, 'updateAccountSessionDevice']);
@@ -181,3 +182,6 @@ Route::options('/api/{any}', [VibyraAppController::class, 'options'])->where('an
 if (config('desktop.legacy_routes_enabled')) {
     Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');
 }
+
+
+require __DIR__.'/vibes.php';

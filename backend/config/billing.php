@@ -183,7 +183,10 @@ return [
     ],
 
     'openrouter_pricing' => [
-        'cache_key' => 'billing:openrouter-pricing:v1',
+        // v2 adds reasoning ladders, created and modalities. A v1 snapshot has none of
+        // them, and every reader must fall back to "not steerable, not new" rather than
+        // guess, so the new shape gets its own key instead of ageing out of the old one.
+        'cache_key' => 'billing:openrouter-pricing:v2',
         'ttl_seconds' => 21600,
         'max_stale_seconds' => 86400,
         'model_miss_seconds' => 60,
