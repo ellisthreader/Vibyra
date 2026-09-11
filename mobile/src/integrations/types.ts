@@ -1,9 +1,16 @@
+import type { AccountSession } from '../account/accountApi';
+
 /**
  * How an integration is connected. `oauth` signs in on the provider's own page;
  * `token` (and an older server that sends no kind) is a pasted key, described by
  * the rest of these fields.
  */
-export interface IntegrationCredential { kind?: 'token' | 'oauth'; label: string; placeholder: string; help: string; url: string }
+export interface IntegrationCredential {
+  kind?: 'token' | 'oauth';
+  /** The provider's sign-in also signs a person in to Vibyra, so Connect needs no Vibyra account first (GitHub can; Stripe cannot). */
+  signsIn?: boolean;
+  label: string; placeholder: string; help: string; url: string;
+}
 export interface Integration {
   id: string;
   /** What to type in a message to point a reply at this integration, `@github`. */
@@ -20,7 +27,13 @@ export interface Integration {
 export interface IntegrationCatalogue { enabled: boolean; integrations: Integration[] }
 /** A sign-in begun on the server: the provider's page to open, and the flow to read back. */
 export interface IntegrationFlow { flowId: string; url: string }
-export interface IntegrationFlowState { status: 'pending' | 'connected' | 'failed' | 'expired'; error?: string; catalogue: IntegrationCatalogue }
+export interface IntegrationFlowState {
+  status: 'pending' | 'connected' | 'failed' | 'expired'; error?: string; catalogue: IntegrationCatalogue;
+  /** For a sign-in begun signed out: the Vibyra account the provider's identity signed in to. */
+  session?: AccountSession;
+}
+/** What a finished sign-in brings back: the catalogue, and the account it made or found when there was none. */
+export interface IntegrationAuthorization { catalogue: IntegrationCatalogue; session?: AccountSession }
 export interface IntegrationsApi {
   catalogue(): Promise<IntegrationCatalogue>;
   connect(id: string, credential: string): Promise<IntegrationCatalogue>;
@@ -29,5 +42,5 @@ export interface IntegrationsApi {
   start?(id: string, returnUrl: string): Promise<IntegrationFlow>;
   flow?(flowId: string): Promise<IntegrationFlowState>;
   /** The whole sign-in, where something other than the system browser performs it (the fixture). */
-  authorize?(id: string): Promise<IntegrationCatalogue>;
+  authorize?(id: string): Promise<IntegrationAuthorization>;
 }

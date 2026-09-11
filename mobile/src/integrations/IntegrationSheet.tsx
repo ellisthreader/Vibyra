@@ -59,13 +59,16 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
   // `oauth` signs in on the provider's own page in the system browser sheet; a
   // key-based entry asks for the key in this card instead.
   const oauth = entry.credential.kind === 'oauth';
+  // GitHub's sign-in also signs a person in to Vibyra, so signed out it goes
+  // straight to GitHub's page; Stripe's cannot, so it asks for Vibyra's first.
+  const signsIn = oauth && Boolean(entry.credential.signsIn);
   const signInWithProvider = async () => {
     setFailure(null);
     try { await authorize(entry.id); } catch (e) { setFailure(reason(e)); }
   };
   const begin = () => {
     setFailure(null);
-    if (!signedIn) setStep('signin');
+    if (!signedIn && !signsIn) setStep('signin');
     else if (oauth) void signInWithProvider();
     else setStep('key');
   };
@@ -87,7 +90,8 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
     </>;
   } else if (step === 'signin' && signIn) {
     content = <>
-      <Heading title={`Sign in to connect ${name}`} detail="Your key is saved to your Vibyra account, so connecting needs one." />
+      <Heading title={`Sign in to connect ${name}`}
+        detail={`Your ${oauth ? 'connection' : 'key'} is saved to your Vibyra account, so connecting needs one.`} />
       {/* Back to the card for a provider sign-in, so the browser sheet opens on a tap
           rather than over the sign-in form as it closes. */}
       {signIn(() => setStep(oauth ? 'consent' : 'key'))}
@@ -107,7 +111,7 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
     // is off, or no way to sign in each say so where the button would be.
     const blocked = !live ? error ?? 'Checking your integrations…'
       : !catalogue.enabled ? 'Integrations are not switched on for this account yet.'
-        : !signedIn && !signIn ? `Sign in to your Vibyra account to connect ${name}.` : null;
+        : !signedIn && !signIn && !signsIn ? `Sign in to your Vibyra account to connect ${name}.` : null;
     content = <>
       <Heading title={`Connect ${name}`} />
       <Disclosure entry={entry} />
@@ -116,11 +120,14 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
     // sign-in that did not finish says why in the same place.
     consent = <>
       {failure && <Hint error>{failure}</Hint>}
-      <Consent name={name} oauth={oauth} />
+      <Consent name={name} oauth={oauth} signsIn={!signedIn && signsIn} />
     </>;
     actions = <>
       {blocked ? <Hint error={!live && Boolean(error)}>{blocked}</Hint>
         : <Button title={`Connect ${name}`} busy={busy} onPress={begin} />}
+      {/* A GitHub email that already has a Vibyra account is refused rather than
+          joined to it, so that refusal offers the way in it asks for. */}
+      {failure && !signedIn && signsIn && signIn && <TextAction title="Sign in to Vibyra first" onPress={() => { setFailure(null); setStep('signin'); }} />}
       <TextAction title="Cancel" onPress={onClose} />
     </>;
   }
@@ -184,12 +191,15 @@ function Disclosure({ entry }: { entry: Integration }) {
  * provider sign-in adds one sentence, because the provider's own screen asks for
  * wider access than the tools use - GitHub has no scope narrower than all repos
  * that reaches a private issue - and a person should hear that from us first.
+ * Signed out, a provider that signs a person in says so too, since tapping makes
+ * a Vibyra account.
  */
-function Consent({ name, oauth = false }: { name: string; oauth?: boolean }) {
+function Consent({ name, oauth = false, signsIn = false }: { name: string; oauth?: boolean; signsIn?: boolean }) {
   const { colors } = useTheme();
   const link = (label: string, url: string) => <Text accessibilityRole="link" onPress={() => { void Linking.openURL(url); }}
     style={[s.link, { color: colors.accent }]}>{label}</Text>;
   return <Text style={[s.consent, { color: colors.muted }]}>
+    {signsIn ? `This also signs you in to Vibyra with ${name}, making an account with your ${name} email if you have none. ` : ''}
     {oauth ? `${name} may ask to allow more than Vibyra uses; Vibyra only ever does what is listed above. ` : ''}
     By connecting, you confirm you are allowed to share this account's data with Vibyra, and you agree to our{' '}
     {link('Terms', TERMS)} and {link('Privacy Policy', PRIVACY)}. {name}'s own terms still apply.

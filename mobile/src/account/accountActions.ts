@@ -51,7 +51,7 @@ function credentials(email: string, password: string) {
   return clean;
 }
 export function makeAccountActions(store: WorkspaceStore): Pick<WorkspaceActions,
-  'signUp' | 'logIn' | 'providerLogIn' | 'logOut' | 'sendHostLink' | 'completeOnboarding' | 'resetOnboarding'> {
+  'signUp' | 'logIn' | 'providerLogIn' | 'adoptSession' | 'logOut' | 'sendHostLink' | 'completeOnboarding' | 'resetOnboarding'> {
   return {
     // The setup step cannot install anything on a computer, so it emails the link
     // there instead. A signed-in phone already has an address and never asks again;
@@ -67,6 +67,8 @@ export function makeAccountActions(store: WorkspaceStore): Pick<WorkspaceActions
       await keep(store, session);
       return true;
     },
+    // A session some other sign-in already made, such as connecting GitHub while signed out.
+    adoptSession: async session => keep(store, session),
     signUp: async (email, password) => keep(store, await store.deps.account.signup(credentials(email, password), password)),
     logIn: async (email, password) => keep(store, await store.deps.account.login(credentials(email, password), password)),
     logOut: async () => {

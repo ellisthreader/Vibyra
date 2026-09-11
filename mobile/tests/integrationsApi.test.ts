@@ -89,3 +89,26 @@ test('a sign-in is started with the app\'s return link, and its outcome is read 
   assert.equal(state.status, 'connected');
   assert.deepEqual(state.catalogue, { enabled: true, integrations: [{ id: 'github' }, { id: 'stripe' }] });
 });
+
+test('signed out, a sign-in starts with no token and brings back the Vibyra session it made', async () => {
+  const seen: { url: string; auth?: string }[] = [];
+  const impl = (async (input: string | URL | Request, init?: RequestInit) => {
+    seen.push({ url: String(input), auth: (init?.headers as Record<string, string>)?.Authorization });
+    if (String(input).endsWith('/start')) return new Response(JSON.stringify({ flowId: 'f-2', url: 'https://github.com/login/oauth/authorize?x=2' }), { status: 200 });
+    return new Response(JSON.stringify({ status: 'connected', catalogue,
+      session: { ok: true, token: 'tok-new', user: { email: 'octo@example.com', name: 'Octo', plan: 'free' } } }), { status: 200 });
+  }) as typeof fetch;
+  const api = createIntegrationsApi('https://api.example.test', () => null, impl);
+  await api.start!('github', 'vibyra://integrations/connected');
+  const state = await api.flow!('f-2');
+  assert.deepEqual(seen.map(call => call.auth), [undefined, undefined], 'No token is invented for a signed-out phone');
+  assert.deepEqual(state.session, { token: 'tok-new', user: { email: 'octo@example.com', name: 'Octo', plan: 'free' } });
+  assert.deepEqual(state.catalogue, { enabled: true, integrations: [{ id: 'github' }, { id: 'stripe' }] });
+});
+
+test('a flow whose session is malformed connects without signing anyone in', async () => {
+  const impl = (async () => new Response(JSON.stringify({ status: 'connected', catalogue, session: { token: '' } }), { status: 200 })) as typeof fetch;
+  const state = await createIntegrationsApi('https://api.example.test', () => null, impl).flow!('f-3');
+  assert.equal(state.status, 'connected');
+  assert.equal('session' in state, false);
+});
