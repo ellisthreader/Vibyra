@@ -1,4 +1,4 @@
-import type { IntegrationCatalogue, IntegrationsApi } from './types';
+import type { IntegrationCatalogue, IntegrationFlow, IntegrationFlowState, IntegrationsApi } from './types';
 
 export class IntegrationsError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
@@ -59,5 +59,10 @@ export function createIntegrationsApi(baseUrl: string, token: () => string | nul
     catalogue: async () => validate(await call('', undefined, true)),
     connect: async (integration, credential) => validate(await call(`/${id(integration)}/connect`, { credential })),
     disconnect: async integration => validate(await call(`/${id(integration)}/disconnect`, {})),
+    start: async (integration, returnUrl) => await call(`/${id(integration)}/start`, { returnUrl }) as IntegrationFlow,
+    flow: async flowId => {
+      const data = await call(`/flows/${id(flowId)}`);
+      return { ...data, catalogue: validate(data.catalogue) } as IntegrationFlowState;
+    },
   };
 }

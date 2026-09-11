@@ -35,7 +35,7 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
   /** The sign-in form, drawn in place of the key step; `done` moves on to the key. */
   signIn?: (done: () => void) => ReactNode;
 }) {
-  const { catalogue, live, busy, error, connect, disconnect } = useIntegrations();
+  const { catalogue, live, busy, error, connect, authorize, disconnect } = useIntegrations();
   const [step, setStep] = useState<'consent' | 'signin' | 'key'>('consent');
   const [credential, setCredential] = useState('');
   // What went wrong in this card, kept here so one service's refusal is never shown for another.
@@ -56,7 +56,19 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
     try { await connect(entry.id, credential.trim()); setStep('consent'); setCredential(''); }
     catch (e) { setFailure(reason(e)); }
   };
-  const begin = () => { setFailure(null); setStep(signedIn ? 'key' : 'signin'); };
+  // `oauth` signs in on the provider's own page in the system browser sheet; a
+  // key-based entry asks for the key in this card instead.
+  const oauth = entry.credential.kind === 'oauth';
+  const signInWithProvider = async () => {
+    setFailure(null);
+    try { await authorize(entry.id); } catch (e) { setFailure(reason(e)); }
+  };
+  const begin = () => {
+    setFailure(null);
+    if (!signedIn) setStep('signin');
+    else if (oauth) void signInWithProvider();
+    else setStep('key');
+  };
 
   let content: ReactNode;
   let actions: ReactNode;
@@ -76,7 +88,9 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
   } else if (step === 'signin' && signIn) {
     content = <>
       <Heading title={`Sign in to connect ${name}`} detail="Your key is saved to your Vibyra account, so connecting needs one." />
-      {signIn(() => setStep('key'))}
+      {/* Back to the card for a provider sign-in, so the browser sheet opens on a tap
+          rather than over the sign-in form as it closes. */}
+      {signIn(() => setStep(oauth ? 'consent' : 'key'))}
     </>;
     actions = <TextAction title="Back" onPress={() => setStep('consent')} />;
   } else if (step === 'key') {
@@ -98,11 +112,15 @@ export function IntegrationSheet({ integration, visible, onClose, onUse, signedI
       <Heading title={`Connect ${name}`} />
       <Disclosure entry={entry} />
     </>;
-    // Beside the button it qualifies, so it is on screen whenever the button is.
-    consent = <Consent name={name} />;
+    // Beside the button it qualifies, so it is on screen whenever the button is; a
+    // sign-in that did not finish says why in the same place.
+    consent = <>
+      {failure && <Hint error>{failure}</Hint>}
+      <Consent name={name} oauth={oauth} />
+    </>;
     actions = <>
       {blocked ? <Hint error={!live && Boolean(error)}>{blocked}</Hint>
-        : <Button title={`Connect ${name}`} onPress={begin} />}
+        : <Button title={`Connect ${name}`} busy={busy} onPress={begin} />}
       <TextAction title="Cancel" onPress={onClose} />
     </>;
   }
@@ -143,8 +161,11 @@ function Disclosure({ entry }: { entry: Integration }) {
     ...(entry.writes ? [{ icon: 'create-outline' as const, title: 'What Vibyra can change', body: entry.writes }] : []),
     { icon: 'sparkles-outline', title: 'Where your data goes',
       body: `Only when you mention ${entry.mention} in a chat. What ${entry.name} returns is sent to the AI provider writing your reply and saved with that chat.` },
-    { icon: 'lock-closed-outline', title: `Your ${keyWord(entry.credential.label)}`,
-      body: `Encrypted on Vibyra and never shown again. Disconnect any time to delete it, or revoke it on ${entry.name}.` },
+    entry.credential.kind === 'oauth'
+      ? { icon: 'lock-closed-outline', title: `Your ${entry.name} sign-in`,
+        body: `Vibyra keeps the access ${entry.name} grants, encrypted and never shown. Disconnect any time to delete it, or remove Vibyra in your ${entry.name} settings.` }
+      : { icon: 'lock-closed-outline', title: `Your ${keyWord(entry.credential.label)}`,
+        body: `Encrypted on Vibyra and never shown again. Disconnect any time to delete it, or revoke it on ${entry.name}.` },
   ];
   // Flat: the points sit on the card itself, parted by space rather than a panel or rules.
   return <View style={s.points}>
@@ -158,12 +179,18 @@ function Disclosure({ entry }: { entry: Integration }) {
   </View>;
 }
 
-/** The consent line. Short, but it is the part that makes the tap an agreement. */
-function Consent({ name }: { name: string }) {
+/**
+ * The consent line. Short, but it is the part that makes the tap an agreement. A
+ * provider sign-in adds one sentence, because the provider's own screen asks for
+ * wider access than the tools use - GitHub has no scope narrower than all repos
+ * that reaches a private issue - and a person should hear that from us first.
+ */
+function Consent({ name, oauth = false }: { name: string; oauth?: boolean }) {
   const { colors } = useTheme();
   const link = (label: string, url: string) => <Text accessibilityRole="link" onPress={() => { void Linking.openURL(url); }}
     style={[s.link, { color: colors.accent }]}>{label}</Text>;
   return <Text style={[s.consent, { color: colors.muted }]}>
+    {oauth ? `${name} may ask to allow more than Vibyra uses; Vibyra only ever does what is listed above. ` : ''}
     By connecting, you confirm you are allowed to share this account's data with Vibyra, and you agree to our{' '}
     {link('Terms', TERMS)} and {link('Privacy Policy', PRIVACY)}. {name}'s own terms still apply.
   </Text>;

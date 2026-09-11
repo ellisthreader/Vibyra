@@ -71,3 +71,21 @@ test('a 200 that is not a catalogue is refused rather than drawn as an empty sho
   const error = await failure(() => api.catalogue());
   assert.equal(error.message, 'Integrations are temporarily unavailable.');
 });
+
+test('a sign-in is started with the app\'s return link, and its outcome is read back as a catalogue', async () => {
+  const seen: { url: string; body?: string }[] = [];
+  const impl = (async (input: string | URL | Request, init?: RequestInit) => {
+    seen.push({ url: String(input), body: init?.body as string | undefined });
+    if (String(input).endsWith('/start')) return new Response(JSON.stringify({ flowId: 'f-1', url: 'https://github.com/login/oauth/authorize?x=1' }), { status: 200 });
+    return new Response(JSON.stringify({ status: 'connected', catalogue }), { status: 200 });
+  }) as typeof fetch;
+  const api = createIntegrationsApi('https://api.example.test', () => 'tok-1', impl);
+  const flow = await api.start!('github', 'vibyra://integrations/connected');
+  assert.deepEqual(flow, { flowId: 'f-1', url: 'https://github.com/login/oauth/authorize?x=1' });
+  assert.equal(seen[0].url, 'https://api.example.test/api/connectors/github/start');
+  assert.deepEqual(JSON.parse(seen[0].body!), { returnUrl: 'vibyra://integrations/connected' });
+  const state = await api.flow!('f-1');
+  assert.equal(seen[1].url, 'https://api.example.test/api/connectors/flows/f-1');
+  assert.equal(state.status, 'connected');
+  assert.deepEqual(state.catalogue, { enabled: true, integrations: [{ id: 'github' }, { id: 'stripe' }] });
+});
