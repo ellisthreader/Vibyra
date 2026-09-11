@@ -30,43 +30,49 @@ try {
 
       await page.getByRole('button', { name: 'GitHub, not connected' }).click();
       const sheet = page.getByRole('dialog', { name: 'GitHub' });
-      // The mark is what the page opens on, not a paragraph.
-      await sheet.getByRole('heading', { name: 'Reads' }).waitFor();
-      // Nothing labels the logo with the name already at the top of the sheet.
-      assert.equal(await sheet.getByText('@github', { exact: true }).count(), 0,
-        'The page carries no @mention pill; the footer button inserts it instead');
-      // What it can see is on the page before anything is connected, not after.
+      // The card opens on the decision itself: the title is the action.
+      await sheet.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+      // The whole disclosure is on the card before anything connects, in plain words.
+      for (const point of ['What Vibyra can see', 'What Vibyra can change', 'Where your data goes', 'Your personal access token'])
+        await sheet.getByText(point, { exact: true }).waitFor();
       await sheet.getByText(/^Repository names, issues/).waitFor();
+      await sheet.getByText(/is sent to the AI provider writing your reply/).waitFor();
+      // Tapping Connect is the agreement, so the Terms and Privacy Policy sit right above it.
+      await sheet.getByRole('link', { name: 'Terms' }).waitFor();
+      await sheet.getByRole('link', { name: 'Privacy Policy' }).waitFor();
+      await sheet.getByRole('button', { name: 'Cancel' }).waitFor();
       // Opening the destination asks the server again, so a switch turned on since
       // the app started is seen; the first fetch is the provider's own.
       assert.ok((await calls(page)).filter(call => call === 'catalogue').length >= 2, 'Opening Integrations asks the server again');
-      assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), [], 'Reading an integration page never connects it');
+      assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), [], 'Reading the card never connects anything');
       await capture(page, `${out}/${size}-${theme}-page.png`);
 
       await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
+      await sheet.getByRole('heading', { name: 'Paste your personal access token' }).waitFor();
       const key = sheet.getByRole('textbox', { name: 'GitHub personal access token' });
       await key.fill('nonsense');
-      await sheet.getByRole('button', { name: 'Connect', exact: true }).click();
+      await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
       await sheet.getByText('That token did not work. Check it has not expired and try again.', { exact: true }).waitFor();
       await capture(page, `${out}/${size}-${theme}-refused.png`);
 
       await key.fill('github_pat_example');
-      await sheet.getByRole('button', { name: 'Connect', exact: true }).click();
+      await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
+      await sheet.getByRole('heading', { name: 'GitHub is connected' }).waitFor();
       await sheet.getByText('Connected as @ellis', { exact: true }).waitFor();
       assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), ['connect:github', 'connect:github']);
       await capture(page, `${out}/${size}-${theme}-connected.png`);
 
-      // The payoff: the page hands you straight to a chat with the mention typed.
+      // The payoff: the card hands you straight to a chat with the mention typed.
       await sheet.getByRole('button', { name: 'Use it in a chat' }).click();
       assert.ok((await calls(page)).includes('use:@github'), 'Connecting leads to using it');
       await page.getByRole('button', { name: 'GitHub, connected' }).waitFor();
       assert.deepEqual(errors, []); await page.close();
-      console.log(`PASS ${size}/${theme}: browse, page, refusal, connect and hand-off.`);
+      console.log(`PASS ${size}/${theme}: browse, disclosure, refusal, connect and hand-off.`);
     }
   }
 
-  // A refused key belongs to the page it was pasted on. It used to be shared, so
-  // GitHub's "that token did not work" was printed on Stripe's page as well.
+  // A refused key belongs to the card it was pasted on: GitHub's "that token did
+  // not work" must not follow a person to Stripe. Back and Cancel are the ways out.
   {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
     await page.goto(`${server.url}/`);
@@ -74,69 +80,67 @@ try {
     const github = page.getByRole('dialog', { name: 'GitHub' });
     await github.getByRole('button', { name: 'Connect GitHub' }).click();
     await github.getByRole('textbox', { name: 'GitHub personal access token' }).fill('nonsense');
-    await github.getByRole('button', { name: 'Connect', exact: true }).click();
+    await github.getByRole('button', { name: 'Connect GitHub' }).click();
     await github.getByText(/^That token did not work/).waitFor();
-    await github.getByRole('button', { name: 'Close GitHub' }).click();
+    await github.getByRole('button', { name: 'Back' }).click();
+    await github.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+    await github.getByRole('button', { name: 'Cancel' }).click();
+    await github.waitFor({ state: 'detached' });
     await page.getByRole('button', { name: 'Stripe, not connected' }).click();
     const stripe = page.getByRole('dialog', { name: 'Stripe' });
-    await stripe.getByRole('heading', { name: 'Reads' }).waitFor();
+    await stripe.getByRole('heading', { name: 'Connect Stripe' }).waitFor();
     assert.equal(await page.getByText(/^That token did not work/).count(), 0, 'Stripe shows GitHub\'s refusal');
     await stripe.getByRole('button', { name: 'Connect Stripe' }).click();
     await stripe.getByRole('textbox', { name: 'Stripe restricted api key' }).waitFor();
     assert.equal(await page.getByText(/^That token did not work/).count(), 0, 'Stripe\'s key form shows GitHub\'s refusal');
-    await page.close(); console.log('PASS refusals: one page\'s error never shows on another.');
+    await page.close(); console.log('PASS refusals: one card\'s error never shows on another, and Cancel closes it.');
   }
 
-  // What something can change in your account is its own labelled section, and it
-  // is there before anything is connected. An integration that only reads has no
-  // such section at all, so its absence is what says "this one only looks".
+  // What something can change in your account is its own point, before anything is
+  // connected. A connector that only reads has no such point at all, so its absence
+  // is what says "this one only looks".
   {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
     await page.goto(`${server.url}/`);
     await page.getByRole('button', { name: 'Stripe, not connected' }).click();
     const stripe = page.getByRole('dialog', { name: 'Stripe' });
-    await stripe.getByRole('heading', { name: 'Reads' }).waitFor();
-    await stripe.getByRole('heading', { name: 'Changes' }).waitFor();
+    await stripe.getByRole('heading', { name: 'Connect Stripe' }).waitFor();
+    await stripe.getByText('What Vibyra can change', { exact: true }).waitFor();
     await stripe.getByText(/^Creates customer records you ask for/).waitFor();
-    // Two lines and no third: the abilities list said the same thing a third time.
-    assert.equal(await stripe.getByRole('heading', { name: 'What it can do' }).count(), 0,
-      'The page answers with reads and changes, not with a list as well');
+    assert.equal(await stripe.getByText('What it can do').count(), 0, 'The card answers with its points, not an abilities list as well');
     await capture(page, `${out}/stripe-writes.png`);
-
     await page.close();
 
-    // Everything we ship can change something, so the other half is proved against
-    // a catalogue with `writes` cleared: the heading has to go, not print over nothing.
     const readonly = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
     await readonly.goto(`${server.url}/?state=readonly`);
     await readonly.getByRole('button', { name: 'Stripe, not connected' }).click();
     const plain = readonly.getByRole('dialog', { name: 'Stripe' });
-    await plain.getByRole('heading', { name: 'Reads' }).waitFor();
-    assert.equal(await plain.getByRole('heading', { name: 'Changes' }).count(), 0,
-      'An integration that only reads carries no "changes" half');
+    await plain.getByText('What Vibyra can see', { exact: true }).waitFor();
+    assert.equal(await plain.getByText('What Vibyra can change', { exact: true }).count(), 0,
+      'A connector that only reads carries no "can change" point');
     await readonly.close(); console.log('PASS writes: disclosed where there are any, absent where there are none.');
   }
 
-  // Signed out, the page offers sign-in before a key rather than refusing a pasted
-  // one, and the form swaps into the same sheet: a second modal over a live one is
-  // the iOS race this codebase has been bitten by.
+  // Signed out, Connect leads to sign-in before any key, and the form swaps into the
+  // same card: a second modal over a live one is the iOS race this codebase has been
+  // bitten by. Signing in moves straight on to the key.
   {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
     await page.goto(`${server.url}/?state=signedout`);
     await page.getByRole('button', { name: 'GitHub, not connected' }).click();
     const sheet = page.getByRole('dialog', { name: 'GitHub' });
-    await sheet.getByRole('heading', { name: 'Reads' }).waitFor();
-    await sheet.getByRole('button', { name: 'Sign in to connect GitHub' }).click();
+    await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
+    await sheet.getByRole('heading', { name: 'Sign in to connect GitHub' }).waitFor();
     await sheet.getByText('Fixture sign-in form', { exact: true }).waitFor();
-    // react-native-web wraps a sheet in an unnamed dialog of its own, so what is
-    // counted is named sheets: GitHub's must still be the only one on screen.
+    // react-native-web wraps a modal in an unnamed dialog of its own, so what is
+    // counted is named ones: GitHub's must still be the only one on screen.
     const named = await page.getByRole('dialog').evaluateAll(els => els.map(e => e.getAttribute('aria-label')).filter(Boolean));
-    assert.deepEqual(named, ['GitHub'], 'Sign-in opens inside the same sheet, not over it');
+    assert.deepEqual(named, ['GitHub'], 'Sign-in opens inside the same card, not over it');
     assert.equal(await sheet.getByRole('button', { name: /^Connect/ }).count(), 0, 'No key is asked for before sign-in');
     await capture(page, `${out}/signed-out.png`);
     await sheet.getByRole('button', { name: 'Finish sign-in' }).click();
-    await sheet.getByRole('heading', { name: 'Reads' }).waitFor();
-    await page.close(); console.log('PASS signed out: sign-in first, in the same sheet.');
+    await sheet.getByRole('heading', { name: 'Paste your personal access token' }).waitFor();
+    await page.close(); console.log('PASS signed out: sign-in first, in the same card, then the key.');
   }
 
   // A server that cannot be reached says so, rather than showing nothing connected.
@@ -146,6 +150,8 @@ try {
     await page.getByText('Could not reach Vibyra. Check your connection and try again.', { exact: true }).first().waitFor();
     await page.getByRole('button', { name: 'GitHub, not connected' }).click();
     const sheet = page.getByRole('dialog', { name: 'GitHub' });
+    await sheet.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+    await sheet.getByRole('button', { name: 'Cancel' }).waitFor();
     assert.equal(await sheet.getByRole('button', { name: /^Connect/ }).count(), 0,
       'Nothing offers to connect while the catalogue is unknown');
     await capture(page, `${out}/offline.png`);

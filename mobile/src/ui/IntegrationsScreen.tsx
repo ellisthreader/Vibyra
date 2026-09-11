@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
-import { IntegrationPage } from '../integrations/IntegrationPage';
+import { IntegrationSheet } from '../integrations/IntegrationSheet';
 import { IntegrationRow } from '../integrations/IntegrationRow';
 import { useIntegrations } from '../integrations/IntegrationsProvider';
 import type { Integration } from '../integrations/types';
@@ -58,7 +58,7 @@ export function IntegrationsScreen({ onUse, signedIn, signIn }: {
         <Text style={[s.noteText, { color: colors.muted }]}>Keys are encrypted on Vibyra and never shown again.</Text>
       </View>
     </ScrollView>
-    <IntegrationPage integration={open} visible={open !== null} onClose={() => setOpen(null)}
+    <IntegrationSheet integration={open} visible={open !== null} onClose={() => setOpen(null)}
       onUse={mention => { setOpen(null); onUse(mention); }} signedIn={signedIn} signIn={signIn} />
   </>;
 }
