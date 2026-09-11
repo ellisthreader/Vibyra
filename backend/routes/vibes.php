@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChatConnectorsController;
+use App\Http\Controllers\VibesAttachmentsController;
 use App\Http\Controllers\VibesController;
 use App\Http\Controllers\VibesGuestController;
 use App\Http\Controllers\VibesPurchaseController;
@@ -27,6 +28,9 @@ Route::prefix('api/vibes')->middleware('throttle:90,1')->group(function () {
     Route::post('purchases', [VibesPurchaseController::class, 'claim'])->middleware('throttle:10,1');
     Route::post('chats/{chat}/project', [VibesToolsController::class, 'attach'])->whereUuid('chat');
     Route::post('tools/{tool}/result', [VibesToolsController::class, 'result'])->whereUuid('tool');
+    // A photo or file for the next message. Its own prefixed limit: an unprefixed
+    // throttle shares one counter per address with every other unprefixed throttle.
+    Route::post('attachments', [VibesAttachmentsController::class, 'store'])->middleware('throttle:30,1,vibes-attach');
 });
 
 Route::post('api/vibes/apple-notifications', \App\Http\Controllers\VibesAppleNotificationController::class)->middleware('throttle:60,1');

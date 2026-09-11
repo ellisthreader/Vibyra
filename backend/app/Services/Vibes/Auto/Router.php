@@ -96,6 +96,8 @@ final class Router
             if ($this->catalog->hidden($id, $model)) continue;
             if ($situation->trialOnly && ! $this->catalog->includedFree($id)) continue;
             if ($situation->needsTools && ! $this->pricing->supportsTerminalToolCalling($id)) continue;
+            // A photo sent to a model that cannot see it is answered as if it were not there.
+            if ($situation->needsVision && ! $this->pricing->readsImages($id)) continue;
             $rows[] = ['id' => $id, 'price' => $price, 'model' => $model,
                 'efforts' => Ladder::ordered($this->catalog->efforts($id))];
         }

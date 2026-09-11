@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\ChatConnectors\ConnectorRunner;
-use App\Services\Vibes\{AgentTools, TurnPrice, Turns};
+use App\Services\Vibes\{AgentTools, Attachments, TurnPrice, Turns};
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -34,11 +34,14 @@ class RunVibesTurn implements ShouldQueue
         }
         try {
             $request = json_decode($t->request, true);
+            // The stored request carries references; the provider is sent the photos and
+            // files themselves, and only those linked to this turn.
+            [$outgoing, $attached] = app(Attachments::class)->expand($request, $t->id);
             $prices = $request['provider']['max_price'] ?? [];
             // Bounded with the very method `Quotes` priced this turn by, so the budget
             // the job enforces and the budget the person was quoted are one number
             // rather than two that drift apart the first time either is tuned.
-            $inputCost = TurnPrice::inputBound($request['messages'] ?? [], $request['tools'] ?? [])
+            $inputCost = (TurnPrice::inputBound($request['messages'] ?? [], $request['tools'] ?? []) + $attached)
                 * ($prices['prompt'] ?? 100);
             $completionRate = max(0.001, (float) ($prices['completion'] ?? 100));
             $remainingMicro = $t->reserved * 10000 - $t->actual_micro_usd;
@@ -47,11 +50,11 @@ class RunVibesTurn implements ShouldQueue
                 $turns->settle($t->id, $t->actual_micro_usd, 'Paused at the turn budget. Review the tool results for any completed changes. Send another message to continue.');
                 return;
             }
-            $request['max_tokens'] = $outputTokens;
+            $outgoing['max_tokens'] = $outputTokens;
             DB::table('vibes_turns')->where('id', $t->id)->increment('step_count');
             $response = Http::withToken(config('services.openrouter.key'))->acceptJson()->timeout(65)
                 ->withHeaders(['HTTP-Referer' => 'https://vibyra.app', 'X-OpenRouter-Title' => 'Vibyra'])
-                ->post(config('services.openrouter.url'), $request);
+                ->post(config('services.openrouter.url'), $outgoing);
             $body = $response->json();
             $id = is_string($body['id'] ?? null) ? $body['id'] : null;
             DB::table('vibes_turns')->where('id', $t->id)->update(['generation_id' => $id]);

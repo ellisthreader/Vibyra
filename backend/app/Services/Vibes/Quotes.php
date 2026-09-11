@@ -5,6 +5,7 @@ namespace App\Services\Vibes;
 use App\Services\ChatConnectors\ConnectorTools;
 use App\Services\Vibes\Auto\Router;
 use App\Services\Vibes\Auto\Situation;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,7 @@ class Quotes
         private readonly Wallet $wallet,
         private readonly Router $router,
         private readonly ConnectorTools $integrations,
+        private readonly Attachments $attachments,
     ) {}
 
     /** The level to price and send: what was asked for, if this model takes it. */
@@ -33,19 +35,23 @@ class Quotes
      * resolved against what the account has really connected before anything is
      * priced, because their schemas travel with the prompt and are paid for.
      */
-    public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = []): array
+    public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = [], array $attachments = []): array
     {
         $chat = DB::table('vibes_chats')->where('id', $chatId)->where('user_id', $userId)->firstOrFail();
         $named = $this->integrations->resolve($userId, $integrations);
+        // Photos and files uploaded for this message. They ride in it as references and
+        // are priced here from the bound fixed at upload, exactly as the job budgets them.
+        $files = $this->attachments->forMessage($userId, $attachments);
+        $seeing = $files->contains('kind', 'image');
         // The conversation is assembled before the model is chosen, because nothing in
         // it depends on the model and Auto has to know how big this turn is to route
         // it. It also means the bound-project system prompt is priced, which the
         // previous order missed by rewriting it after the bound had been taken.
-        $messages = $this->messages($chatId, $text, (bool) $chat->binding, $named);
+        $messages = $this->messages($chatId, $text, (bool) $chat->binding, $named, $files);
         // Assembled before the price so the schemas are inside the bound, and before
         // the router so it weighs the turn that will actually be sent.
         $tools = [...($chat->binding ? AgentTools::definitions() : []), ...$this->integrations->definitions($named)];
-        $inputBound = TurnPrice::inputBound($messages, $tools);
+        $inputBound = TurnPrice::inputBound($messages, $tools) + $this->attachments->tokens($files);
         $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
         $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
         $trialUsable = $chat->trial_slot || ! $paid
@@ -55,10 +61,14 @@ class Quotes
             // Integrations need a tool-calling model just as a bound project does, so Auto
             // is told tools are in play rather than being left to pick one that cannot.
             ? $this->router->route($text, Situation::of($inputBound, $paid + $trialUsable, $paid === 0,
-                (bool) $chat->binding || $named !== [], $this->historyBytes($messages), intdiv(max(0, count($messages) - 2), 2)))
+                (bool) $chat->binding || $named !== [], $this->historyBytes($messages), intdiv(max(0, count($messages) - 2), 2), $seeing))
             : null;
 
         $selected = $this->catalog->resolve($decision?->model ?? $model, $this->wallet->planFor($userId));
+        // A model that cannot see answers a photo as if it were not there, and charges for it.
+        abort_if($seeing && ! $selected['vision'], 422, $decision !== null
+            ? 'No model that can see photos is available right now. Send the message without the photo, or try again later.'
+            : $selected['name'].' cannot see photos. Choose Auto or a model that can.');
         // Under Auto the router owns the level too. Honouring a level the client sent
         // alongside "choose for me" is how an invisible, unchangeable effort ends up
         // priced into someone's turn, since the composer hides the control for Auto.
@@ -84,6 +94,10 @@ class Quotes
                 'max_price' => ['prompt' => (float) $p['prompt'] * 1000000, 'completion' => (float) $p['completion'] * 1000000]]];
         // Priced above and sent here, so the turn that runs is the turn quoted.
         if ($effort !== null) $request['reasoning'] = ['effort' => $effort];
+        // OpenRouter reads a PDF for any model, but its default parser for a model that
+        // cannot read one natively is a paid OCR engine the quote never priced. Plain
+        // text extraction is free and is what the page-count bound above assumes.
+        if ($files->contains('kind', 'pdf')) $request['plugins'] = [['id' => 'file-parser', 'pdf' => ['engine' => 'pdf-text']]];
         if ($tools) {
             abort_unless($selected['tools'], 422, $chat->binding
                 ? 'This model does not currently support project tools. Choose another model.'
@@ -96,7 +110,9 @@ class Quotes
         }
         $data = ['userId' => $userId, 'chatId' => $chatId, 'text' => $text, 'model' => $selected['id'],
             'trial' => $selected['trial'], 'max' => $max, 'request' => $request,
-            'expires' => now()->addMinutes(2)->timestamp, 'revision' => $chat->revision];
+            'expires' => now()->addMinutes(2)->timestamp, 'revision' => $chat->revision,
+            // Linked to the turn on submit, which is what lets the job expand them.
+            'attachments' => $files->pluck('id')->all()];
 
         return ['quote' => Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR)),
             'maxCredits' => $max, 'estimatedCredits' => $max,
@@ -113,16 +129,20 @@ class Quotes
      * context budget. The two system prompts differ in length as well as in content,
      * so which one is used has to be settled before the turn is priced.
      */
-    private function messages(string $chatId, string $text, bool $bound, array $integrations = []): array
+    private function messages(string $chatId, string $text, bool $bound, array $integrations = [], ?Collection $files = null): array
     {
         $history = DB::table('vibes_turns')->where('chat_id', $chatId)->whereNotNull('settled_at')
             ->whereNotNull('response')->orderByDesc('created_at')->limit(12)->get()->reverse();
+        // Earlier photos are not sent again - they are priced once, with the turn that
+        // carried them - but their names stay, so "the screenshot" still means something.
+        $earlier = DB::table('vibes_attachments')->whereIn('turn_id', $history->pluck('id'))->get()->groupBy('turn_id');
         $messages = [['role' => 'system', 'content' => $this->prompt($bound, $integrations)]];
         foreach ($history as $turn) {
-            $messages[] = ['role' => 'user', 'content' => $turn->prompt];
+            $names = ($earlier[$turn->id] ?? collect())->pluck('name')->implode(', ');
+            $messages[] = ['role' => 'user', 'content' => $names === '' ? $turn->prompt : $turn->prompt."\n\n[Attached with this message: ".$names.']'];
             $messages[] = ['role' => 'assistant', 'content' => $turn->response];
         }
-        $messages[] = ['role' => 'user', 'content' => $text];
+        $messages[] = ['role' => 'user', 'content' => $this->attachments->content($text, $files ?? collect())];
         while (strlen((string) json_encode($messages)) > 20000 && count($messages) > 2) array_splice($messages, 1, 2);
 
         return $messages;

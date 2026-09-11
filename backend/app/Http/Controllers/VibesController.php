@@ -6,7 +6,7 @@ use App\Http\Controllers\Concerns\UserPayloads;
 use App\Jobs\RunVibesTurn;
 use App\Models\User;
 use App\Services\Billing\OpenRouterPricingNormalizer;
-use App\Services\Vibes\{Catalog, Quotes, Turns, Wallet};
+use App\Services\Vibes\{Attachments, Catalog, Quotes, Turns, Wallet};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -96,8 +96,12 @@ class VibesController extends Controller
             'effort' => ['nullable', 'string', Rule::in(OpenRouterPricingNormalizer::EFFORTS)],
             // Which integrations were named in the message. Quotes keeps only the ones this
             // account has really connected, so an unknown or uninstalled slug is ignored.
-            'integrations' => 'sometimes|array|max:8', 'integrations.*' => 'string|max:40']);
-        return $this->json($quotes->create($user->id, $d['chatId'], $d['text'], $d['model'], $d['effort'] ?? null, $d['integrations'] ?? []));
+            'integrations' => 'sometimes|array|max:8', 'integrations.*' => 'string|max:40',
+            // Photos and files uploaded for this message. Quotes accepts only this account's
+            // own, and only ones not already sent with another turn.
+            'attachments' => 'sometimes|array|max:'.Attachments::PER_MESSAGE, 'attachments.*' => 'uuid']);
+        return $this->json($quotes->create($user->id, $d['chatId'], $d['text'], $d['model'], $d['effort'] ?? null,
+            $d['integrations'] ?? [], $d['attachments'] ?? []));
     }
 
     public function submit(Request $request, Quotes $quotes, Turns $turns)

@@ -88,6 +88,7 @@ class Catalog
         // Priced here too, so what the picker showed as included is what is funded.
         $entry['trial'] = $this->includedFree($id);
         return ['id' => $id, ...$entry, 'pricing' => $price, 'tools' => $this->pricing->supportsTerminalToolCalling($id),
+            'vision' => $this->pricing->readsImages($id),
             'efforts' => $this->efforts($id), 'defaultEffort' => $this->defaultEffort($id)];
     }
 
@@ -154,6 +155,9 @@ class Catalog
             // Already normalized, so the phone reads one shape whatever OpenRouter sent.
             'reasoning' => ['efforts' => $this->efforts($id), 'defaultEffort' => $this->defaultEffort($id),
                 'mandatory' => (bool) ($this->reasoningFor($id)['mandatory'] ?? false)],
+            // Read straight from the snapshot, so listing four hundred rows never asks
+            // for a refresh per row. The phone uses it to say a model cannot see photos.
+            'vision' => in_array('image', (array) ($this->pricing->all()[$id]['input_modalities'] ?? []), true),
             'created' => $this->pricing->all()[$id]['created'] ?? null];
     }
 
