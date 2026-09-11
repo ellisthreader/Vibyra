@@ -37,7 +37,10 @@ try {
         'The page carries no @mention pill; the footer button inserts it instead');
       // What it can see is on the page before anything is connected, not after.
       await sheet.getByText(/^Repository names, issues/).waitFor();
-      assert.deepEqual(await calls(page), ['catalogue'], 'Reading an integration page never connects it');
+      // Opening the destination asks the server again, so a switch turned on since
+      // the app started is seen; the first fetch is the provider's own.
+      assert.ok((await calls(page)).filter(call => call === 'catalogue').length >= 2, 'Opening Integrations asks the server again');
+      assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), [], 'Reading an integration page never connects it');
       await capture(page, `${out}/${size}-${theme}-page.png`);
 
       await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
@@ -50,7 +53,7 @@ try {
       await key.fill('github_pat_example');
       await sheet.getByRole('button', { name: 'Connect', exact: true }).click();
       await sheet.getByText('Connected as @ellis', { exact: true }).waitFor();
-      assert.deepEqual(await calls(page), ['catalogue', 'connect:github', 'connect:github']);
+      assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), ['connect:github', 'connect:github']);
       await capture(page, `${out}/${size}-${theme}-connected.png`);
 
       // The payoff: the page hands you straight to a chat with the mention typed.
@@ -112,6 +115,49 @@ try {
     assert.equal(await plain.getByRole('heading', { name: 'Changes' }).count(), 0,
       'An integration that only reads carries no "changes" half');
     await readonly.close(); console.log('PASS writes: disclosed where there are any, absent where there are none.');
+  }
+
+  // The sample workspace has no account to connect to. It used to say
+  // "not switched on for this account", which sent a person looking for a server
+  // switch that was already on; it has to name the sample workspace and the way out.
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+    await page.goto(`${server.url}/?state=sample`);
+    await page.getByText(/^You are in the sample workspace, so nothing here can be connected\./).waitFor();
+    await page.getByRole('button', { name: 'GitHub, not connected' }).click();
+    const sheet = page.getByRole('dialog', { name: 'GitHub' });
+    await sheet.getByText(/^This is the sample workspace, so nothing can be connected here\./).waitFor();
+    assert.equal(await sheet.getByText('Integrations are not switched on for this account yet.').count(), 0,
+      'The sample workspace must not blame a server switch');
+    assert.equal(await sheet.getByRole('button', { name: /^Connect/ }).count(), 0,
+      'Nothing offers to connect inside the sample workspace');
+    await capture(page, `${out}/sample.png`);
+    // The way out is on the page itself, not only in Settings.
+    await sheet.getByRole('button', { name: 'Leave sample workspace' }).click();
+    assert.ok((await calls(page)).includes('leave-sample'), 'Leave sample workspace leaves it');
+    await page.close(); console.log('PASS sample: names the sample workspace and the way out.');
+  }
+
+  // Signed out, the page offers sign-in before a key rather than refusing a pasted
+  // one, and the form swaps into the same sheet: a second modal over a live one is
+  // the iOS race this codebase has been bitten by.
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+    await page.goto(`${server.url}/?state=signedout`);
+    await page.getByRole('button', { name: 'GitHub, not connected' }).click();
+    const sheet = page.getByRole('dialog', { name: 'GitHub' });
+    await sheet.getByRole('heading', { name: 'Reads' }).waitFor();
+    await sheet.getByRole('button', { name: 'Sign in to connect GitHub' }).click();
+    await sheet.getByText('Fixture sign-in form', { exact: true }).waitFor();
+    // react-native-web wraps a sheet in an unnamed dialog of its own, so what is
+    // counted is named sheets: GitHub's must still be the only one on screen.
+    const named = await page.getByRole('dialog').evaluateAll(els => els.map(e => e.getAttribute('aria-label')).filter(Boolean));
+    assert.deepEqual(named, ['GitHub'], 'Sign-in opens inside the same sheet, not over it');
+    assert.equal(await sheet.getByRole('button', { name: /^Connect/ }).count(), 0, 'No key is asked for before sign-in');
+    await capture(page, `${out}/signed-out.png`);
+    await sheet.getByRole('button', { name: 'Finish sign-in' }).click();
+    await sheet.getByRole('heading', { name: 'Reads' }).waitFor();
+    await page.close(); console.log('PASS signed out: sign-in first, in the same sheet.');
   }
 
   // A server that cannot be reached says so, rather than showing nothing connected.

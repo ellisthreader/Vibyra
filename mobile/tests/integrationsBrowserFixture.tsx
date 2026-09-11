@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Button } from '../src/ui/primitives';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { fallbackIntegrations } from '../src/integrations/catalogue';
 import { IntegrationsProvider, useIntegrations } from '../src/integrations/IntegrationsProvider';
@@ -25,7 +26,8 @@ const state = query.get('state') ?? 'browse';
 // rather than a real one, because pretending a service only reads would be a lie
 // the day someone reads this fixture for the truth.
 const shape = (installed: string[]): IntegrationCatalogue => ({
-  enabled: true,
+  // `sample` is the sample workspace's shipped copy: off, but not because a server said so.
+  ...(state === 'sample' ? { enabled: false, sample: true } : { enabled: true }),
   integrations: fallbackIntegrations.map(integration => ({
     ...integration,
     ...(state === 'readonly' ? { writes: null } : {}),
@@ -71,7 +73,10 @@ function Fixture() {
           {state === 'composer' ? <Composer /> : <>
             <AppHeader destination="integrations" workspace={fixtureWorkspace} session={undefined} connected
               compact={false} onMenu={() => {}} onNewChat={() => {}} onSwitchChat={() => {}} onComputers={() => {}} />
-            <IntegrationsScreen onUse={mention => calls.push('use:' + mention)} />
+            <IntegrationsScreen onUse={mention => calls.push('use:' + mention)} signedIn={state !== 'signedout'}
+              signIn={done => <View><Text style={{ color: colors.text }}>Fixture sign-in form</Text>
+                <Button title="Finish sign-in" onPress={() => { calls.push('signed-in'); done(); }} /></View>}
+              onLeaveSample={state === 'sample' ? () => calls.push('leave-sample') : undefined} />
           </>}
         </IntegrationsProvider>
       </View>

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { IntegrationPage } from '../integrations/IntegrationPage';
 import { IntegrationRow } from '../integrations/IntegrationRow';
 import { useIntegrations } from '../integrations/IntegrationsProvider';
 import type { Integration } from '../integrations/types';
-import { Hint, Icon } from './primitives';
+import { Button, Hint, Icon } from './primitives';
 
 /**
  * The integration list. One sentence says what an integration is for, and the rows under it
@@ -29,10 +29,22 @@ import { Hint, Icon } from './primitives';
  * server knows what an account has connected, so when it cannot be reached the
  * page says so rather than showing three integrations as though none were connected.
  */
-export function IntegrationsScreen({ onUse }: { onUse(mention: string): void }) {
+export function IntegrationsScreen({ onUse, signedIn, signIn, onLeaveSample }: {
+  onUse(mention: string): void;
+  /** Whether a real account is signed in; connecting needs one. */
+  signedIn?: boolean;
+  /** The sign-in form, drawn inside an integration's own sheet. */
+  signIn?: (done: () => void) => ReactNode;
+  /** Present only in the sample workspace, where nothing can be connected. */
+  onLeaveSample?: () => void;
+}) {
   const { colors } = useTheme();
-  const { catalogue, live, error } = useIntegrations();
+  const { catalogue, live, error, refresh } = useIntegrations();
   const [open, setOpen] = useState<Integration | null>(null);
+  // The provider fetches once per account, so a switch turned on at the server,
+  // or a failure since recovered, stayed invisible until the app restarted.
+  // Opening the destination is when the answer is wanted, so ask again then.
+  useEffect(() => { void refresh(); }, [refresh]);
   const connected = catalogue.integrations.filter(integration => integration.installed);
   const rest = catalogue.integrations.filter(integration => !integration.installed);
   // Both groups filled is the only time a label earns its line.
@@ -41,6 +53,10 @@ export function IntegrationsScreen({ onUse }: { onUse(mention: string): void }) 
     <ScrollView contentContainerStyle={s.content} indicatorStyle={colors.text === '#F5F7FA' ? 'white' : 'black'}>
       <Text style={[s.lead, { color: colors.muted }]}>Connect an account, then mention it in a chat.</Text>
       {!live && error && <View style={s.notice}><Hint error>{error}</Hint></View>}
+      {catalogue.sample && <View style={[s.notice, s.sample]}>
+        <Hint>You are in the sample workspace, so nothing here can be connected. Leave it and sign in to connect your own accounts.</Hint>
+        {onLeaveSample && <Button title="Leave sample workspace" icon="exit-outline" secondary onPress={onLeaveSample} />}
+      </View>}
       <Group label={label ? 'Connected' : null} integrations={connected} onOpen={setOpen} />
       <Group label={label ? 'Available' : null} integrations={rest} onOpen={setOpen} />
       <View style={s.note}>
@@ -49,7 +65,8 @@ export function IntegrationsScreen({ onUse }: { onUse(mention: string): void }) 
       </View>
     </ScrollView>
     <IntegrationPage integration={open} visible={open !== null} onClose={() => setOpen(null)}
-      onUse={mention => { setOpen(null); onUse(mention); }} />
+      onUse={mention => { setOpen(null); onUse(mention); }} signedIn={signedIn} signIn={signIn}
+      onLeaveSample={onLeaveSample && (() => { setOpen(null); onLeaveSample(); })} />
   </>;
 }
 
@@ -72,6 +89,7 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 36 },
   lead: { fontSize: 15, lineHeight: 22 },
   notice: { marginTop: 16 },
+  sample: { gap: 10 },
   group: { marginTop: 22 },
   groupLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 9, marginLeft: 4 },
   card: { borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
