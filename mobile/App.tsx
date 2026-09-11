@@ -28,7 +28,8 @@ export default function App() {
       {/* Integrations use the real server and the real account even inside the
           sample workspace: a key is saved to a Vibyra account, and connecting
           one should not depend on which workspace happens to be on screen. */}
-      <IntegrationsProvider api={runtime.integrationsApi} identity={runtime.workspace.account?.email ?? null}>
+      <IntegrationsProvider api={runtime.integrationsApi} identity={runtime.workspace.account?.email ?? null}
+        onSession={runtime.workspace.actions.adoptSession}>
         <WorkspaceApp workspace={workspace} accountWorkspace={runtime.workspace}
           vibesEnabled={!demo && (Platform.OS === 'ios' || process.env.EXPO_PUBLIC_VIBES_WEB_PREVIEW === '1')} />
       </IntegrationsProvider>

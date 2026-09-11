@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { AccountSession } from '../account/accountApi';
 import { authorizeInBrowser } from './authorizeInBrowser';
 import { fallbackCatalogue } from './catalogue';
 import type { Integration, IntegrationCatalogue, IntegrationsApi } from './types';
@@ -22,7 +23,12 @@ const empty: IntegrationsValue = {
 };
 const Context = createContext<IntegrationsValue>(empty);
 
-export function IntegrationsProvider({ api, identity, children }: { api: IntegrationsApi | null; identity: string | null; children: ReactNode }) {
+export function IntegrationsProvider({ api, identity, onSession, children }: {
+  api: IntegrationsApi | null; identity: string | null;
+  /** Keeps the Vibyra account a signed-out provider sign-in produced, so the phone is signed in to it. */
+  onSession?: (session: AccountSession) => Promise<void>;
+  children: ReactNode;
+}) {
   const [catalogue, setCatalogue] = useState<IntegrationCatalogue>(fallbackCatalogue);
   const [live, setLive] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,17 +47,29 @@ export function IntegrationsProvider({ api, identity, children }: { api: Integra
     catch (e) { setError(e instanceof Error ? e.message : 'That did not work. Please try again.'); throw e; }
     finally { setBusy(false); }
   }, [adopt]);
+  // Whose catalogue is on screen. A sign-in that made the account brought that
+  // account's catalogue back with it, so the change of account it causes must not
+  // wipe the card back to "checking" just as it says connected.
+  const holder = useRef(identity);
   // Connections belong to an account, so a different account starts from the
   // shipped list rather than showing the last person's connected services.
-  useEffect(() => { setCatalogue(fallbackCatalogue); setLive(false); void refresh(); }, [identity, refresh]);
+  useEffect(() => {
+    if (holder.current !== identity) { holder.current = identity; setCatalogue(fallbackCatalogue); setLive(false); }
+    void refresh();
+  }, [identity, refresh]);
+  const signIn = useCallback(async (id: string) => {
+    const result = await (api!.authorize ? api!.authorize(id) : authorizeInBrowser(api!, id));
+    if (result.session && onSession) { holder.current = result.session.user.email; await onSession(result.session); }
+    return result.catalogue;
+  }, [api, onSession]);
   const value = useMemo<IntegrationsValue>(() => ({
     catalogue, live, busy, error,
     installed: catalogue.integrations.filter(integration => integration.installed),
     refresh,
     connect: (id, credential) => act(() => api!.connect(id, credential)).then(() => {}),
-    authorize: id => act(() => api!.authorize ? api!.authorize(id) : authorizeInBrowser(api!, id)).then(() => {}),
+    authorize: id => act(() => signIn(id)).then(() => {}),
     disconnect: id => act(() => api!.disconnect(id)).then(() => {}),
-  }), [catalogue, live, busy, error, api, refresh, act]);
+  }), [catalogue, live, busy, error, api, refresh, act, signIn]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useIntegrations() { return useContext(Context); }

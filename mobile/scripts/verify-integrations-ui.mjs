@@ -172,6 +172,46 @@ try {
     await cancelled.close(); console.log('PASS sign-in: the provider\'s page instead of a key, and a cancel said as one.');
   }
 
+  // Signed out, GitHub's own sign-in is the way in: Connect goes straight to GitHub's
+  // page, never to Vibyra's sign-in form, and comes back connected and signed in.
+  // Stripe's sign-in cannot make a Vibyra account, so it still asks for one first.
+  // A GitHub email that already has an account is refused, and offers that sign-in.
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+    await page.goto(`${server.url}/?state=oauth-signedout`);
+    await page.getByRole('button', { name: 'Stripe, not connected' }).click();
+    const stripe = page.getByRole('dialog', { name: 'Stripe' });
+    await stripe.getByRole('button', { name: 'Connect Stripe' }).click();
+    await stripe.getByRole('heading', { name: 'Sign in to connect Stripe' }).waitFor();
+    await stripe.getByRole('button', { name: 'Back' }).click();
+    await stripe.getByRole('button', { name: 'Cancel' }).click();
+    await stripe.waitFor({ state: 'detached' });
+
+    await page.getByRole('button', { name: 'GitHub, not connected' }).click();
+    const sheet = page.getByRole('dialog', { name: 'GitHub' });
+    await sheet.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+    await sheet.getByText(/^This also signs you in to Vibyra with GitHub/).waitFor();
+    await capture(page, `${out}/oauth-signed-out.png`);
+    await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
+    await sheet.getByRole('heading', { name: 'GitHub is connected' }).waitFor();
+    assert.equal(await page.getByText('Fixture sign-in form', { exact: true }).count(), 0, 'No Vibyra sign-in form on the way');
+    assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), ['authorize:github', 'session:octo@example.com']);
+    await capture(page, `${out}/oauth-signed-out-connected.png`);
+    await page.close();
+
+    const taken = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+    await taken.goto(`${server.url}/?state=oauth-taken`);
+    await taken.getByRole('button', { name: 'GitHub, not connected' }).click();
+    const card = taken.getByRole('dialog', { name: 'GitHub' });
+    await card.getByRole('button', { name: 'Connect GitHub' }).click();
+    await card.getByText('An account already exists for that email. Log in with its original method.', { exact: true }).waitFor();
+    await card.getByRole('button', { name: 'Sign in to Vibyra first' }).click();
+    await card.getByRole('heading', { name: 'Sign in to connect GitHub' }).waitFor();
+    await card.getByRole('button', { name: 'Finish sign-in' }).click();
+    await card.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+    await taken.close(); console.log('PASS signed out: GitHub signs you in on its own page; Stripe and a taken email ask for Vibyra\'s.');
+  }
+
   // A server that cannot be reached says so, rather than showing nothing connected.
   {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });

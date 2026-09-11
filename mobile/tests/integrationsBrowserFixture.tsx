@@ -19,6 +19,7 @@ const calls: string[] = [];
 const query = new URLSearchParams(location.search);
 const dark = query.get('theme') !== 'light';
 const state = query.get('state') ?? 'browse';
+const startsSignedOut = state === 'signedout' || state === 'oauth-signedout' || state === 'oauth-taken';
 
 // Every integration we ship can change something, so `readonly` is what proves the
 // other half of the page: with `writes` cleared, the "what it can change" section
@@ -29,8 +30,10 @@ const shape = (installed: string[]): IntegrationCatalogue => ({
   enabled: true,
   integrations: fallbackIntegrations.map(integration => ({
     ...integration,
-    // `oauth` and `oauth-cancel` are servers that can send a person to the provider's sign-in.
-    ...(state.startsWith('oauth') ? { credential: { ...integration.credential, kind: 'oauth' as const } } : {}),
+    // `oauth…` states are servers that can send a person to the provider's sign-in;
+    // in the signed-out ones GitHub's sign-in makes the Vibyra account too, as it does live.
+    ...(state.startsWith('oauth') ? { credential: { ...integration.credential, kind: 'oauth' as const,
+      signsIn: integration.id === 'github' && startsSignedOut } } : {}),
     ...(state === 'readonly' ? { writes: null } : {}),
     ...(installed.includes(integration.id)
       ? { installed: true, account: '@ellis', connectedAt: '2026-09-09T00:00:00Z' } : {}),
@@ -50,10 +53,15 @@ const api: IntegrationsApi = {
   },
   disconnect: async id => { calls.push('disconnect:' + id); connected = connected.filter(item => item !== id); return shape(connected); },
   // Stands in for the system browser sheet, which a test cannot drive: approving connects, cancelling says so.
+  // Begun signed out, GitHub's identity signs the person in, and the phone is handed that session;
+  // `oauth-taken` is a GitHub email that already has a Vibyra account, which is refused, not joined.
   authorize: async id => {
     calls.push('authorize:' + id);
     if (state === 'oauth-cancel') throw new Error('You cancelled the sign-in.');
-    connected = [...connected, id]; return shape(connected);
+    if (state === 'oauth-taken') throw new Error('An account already exists for that email. Log in with its original method.');
+    connected = [...connected, id];
+    return { catalogue: shape(connected), ...(state === 'oauth-signedout'
+      ? { session: { token: 'fixture-token', user: { email: 'octo@example.com', name: 'Octo', plan: 'free' } } } : {}) };
   },
 };
 
@@ -69,6 +77,7 @@ function Composer() {
 }
 function Fixture() {
   const colors = dark ? palettes.dark : palettes.light;
+  const [identity, setIdentity] = useState<string | null>(startsSignedOut ? null : 'ellis@example.com');
   // The canvas and the header both belong to `WorkspaceApp` in the real app, and
   // a screen that drew its own would double-paint. Without them here the page
   // renders on browser white with nothing naming it, which is not what ships:
@@ -76,13 +85,14 @@ function Fixture() {
   return <ThemeContext.Provider value={{ colors, dark }}>
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 375, height: 667 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <IntegrationsProvider api={api} identity="ellis@example.com">
+        <IntegrationsProvider api={api} identity={identity}
+          onSession={async session => { calls.push('session:' + session.user.email); setIdentity(session.user.email); }}>
           {state === 'composer' ? <Composer /> : <>
             <AppHeader destination="integrations" workspace={fixtureWorkspace} session={undefined} connected
               compact={false} onMenu={() => {}} onNewChat={() => {}} onSwitchChat={() => {}} onComputers={() => {}} />
-            <IntegrationsScreen onUse={mention => calls.push('use:' + mention)} signedIn={state !== 'signedout'}
+            <IntegrationsScreen onUse={mention => calls.push('use:' + mention)} signedIn={identity !== null}
               signIn={done => <View><Text style={{ color: colors.text }}>Fixture sign-in form</Text>
-                <Button title="Finish sign-in" onPress={() => { calls.push('signed-in'); done(); }} /></View>} />
+                <Button title="Finish sign-in" onPress={() => { calls.push('signed-in'); setIdentity('ellis@example.com'); done(); }} /></View>} />
           </>}
         </IntegrationsProvider>
       </View>

@@ -51,6 +51,8 @@ export interface WorkspaceActions {
   signUp?(email: string, password: string): Promise<void>;
   logIn?(email: string, password: string): Promise<void>;
   providerLogIn?(provider: 'apple' | 'google', signal: AbortSignal): Promise<boolean>;
+  /** Keeps a session another sign-in produced, such as connecting GitHub while signed out. */
+  adoptSession?(session: { token: string; user: Account }): Promise<void>;
   logOut?(): Promise<void>;
   // Emails a link to install Vibyra on a computer, and resolves with the address it
   // went to. A signed-in phone needs no argument; a guest passes the address typed.

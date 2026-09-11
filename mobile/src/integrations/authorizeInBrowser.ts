@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import * as Browser from 'expo-web-browser';
-import type { IntegrationCatalogue, IntegrationsApi } from './types';
+import type { IntegrationAuthorization, IntegrationsApi } from './types';
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -14,8 +14,11 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * The return link carries the outcome, but the server's flow is the record, so it
  * is read either way: a sheet closed by hand after approving still connects. A
  * sheet closed before approving is a cancel, said as one.
+ *
+ * Begun signed out, with a provider that can sign a person in, the flow also
+ * carries the Vibyra session the provider's identity produced, for the app to keep.
  */
-export async function authorizeInBrowser(api: IntegrationsApi, id: string): Promise<IntegrationCatalogue> {
+export async function authorizeInBrowser(api: IntegrationsApi, id: string): Promise<IntegrationAuthorization> {
   if (!api.start || !api.flow) throw new Error('This version of Vibyra cannot sign in to integrations yet.');
   // `vibyra://…` in the store app, `exp://…/--/…` inside Expo Go; the server accepts only these.
   const returnUrl = Linking.createURL('integrations/connected');
@@ -23,7 +26,7 @@ export async function authorizeInBrowser(api: IntegrationsApi, id: string): Prom
   const result = await Browser.openAuthSessionAsync(flow.url, returnUrl);
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const state = await api.flow(flow.flowId);
-    if (state.status === 'connected') return state.catalogue;
+    if (state.status === 'connected') return { catalogue: state.catalogue, session: state.session };
     if (state.status !== 'pending') throw new Error(state.error ?? 'The sign-in did not finish. Please try again.');
     // Still pending with the sheet closed by hand means nobody approved anything.
     if (result.type !== 'success') throw new Error('You cancelled the sign-in.');

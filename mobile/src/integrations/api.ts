@@ -1,3 +1,4 @@
+import type { AccountSession } from '../account/accountApi';
 import type { IntegrationCatalogue, IntegrationFlow, IntegrationFlowState, IntegrationsApi } from './types';
 
 export class IntegrationsError extends Error {
@@ -8,6 +9,17 @@ function validate(value: unknown): IntegrationCatalogue {
   const body = value as IntegrationCatalogue;
   if (!body || !Array.isArray(body.integrations)) throw new IntegrationsError('Integrations are temporarily unavailable.', 502);
   return { enabled: Boolean(body.enabled), integrations: body.integrations.filter(integration => typeof integration?.id === 'string') };
+}
+/**
+ * The Vibyra sign-in a flow begun signed out produced, read the way the account
+ * API reads one. Anything that does not look like a session is no session: the
+ * connection still shows, and the person is simply not signed in.
+ */
+function session(value: unknown): AccountSession | undefined {
+  const raw = value as { token?: unknown; user?: Record<string, unknown> } | null;
+  if (!raw || typeof raw.token !== 'string' || !raw.token || typeof raw.user?.email !== 'string') return undefined;
+  const { email, name, plan } = raw.user;
+  return { token: raw.token, user: { email: email as string, name: typeof name === 'string' ? name : '', plan: typeof plan === 'string' ? plan : 'free' } };
 }
 /**
  * The body, whatever the server actually sent. A failure does not always arrive
@@ -59,10 +71,14 @@ export function createIntegrationsApi(baseUrl: string, token: () => string | nul
     catalogue: async () => validate(await call('', undefined, true)),
     connect: async (integration, credential) => validate(await call(`/${id(integration)}/connect`, { credential })),
     disconnect: async integration => validate(await call(`/${id(integration)}/disconnect`, {})),
-    start: async (integration, returnUrl) => await call(`/${id(integration)}/start`, { returnUrl }) as IntegrationFlow,
+    // Both answer signed out, for a provider whose sign-in makes the Vibyra account
+    // too; the server refuses the rest itself. A signed-in phone still sends its token.
+    start: async (integration, returnUrl) => await call(`/${id(integration)}/start`, { returnUrl }, true) as IntegrationFlow,
     flow: async flowId => {
-      const data = await call(`/flows/${id(flowId)}`);
-      return { ...data, catalogue: validate(data.catalogue) } as IntegrationFlowState;
+      const data = await call(`/flows/${id(flowId)}`, undefined, true);
+      const { session: signedIn, ...state } = data;
+      const account = session(signedIn);
+      return { ...state, catalogue: validate(data.catalogue), ...(account ? { session: account } : {}) } as IntegrationFlowState;
     },
   };
 }
