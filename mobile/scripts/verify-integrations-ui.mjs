@@ -143,6 +143,35 @@ try {
     await page.close(); console.log('PASS signed out: sign-in first, in the same card, then the key.');
   }
 
+  // Where the server can send a person to the provider's own sign-in, Connect goes
+  // there instead of asking for a key: the system sheet, the provider's page, and
+  // back to a connected card. The card says first that the provider may ask for
+  // more than Vibyra uses, and a cancel is said as one, on the same card.
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+    await page.goto(`${server.url}/?state=oauth`);
+    await page.getByRole('button', { name: 'GitHub, not connected' }).click();
+    const sheet = page.getByRole('dialog', { name: 'GitHub' });
+    await sheet.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+    await sheet.getByText('Your GitHub sign-in', { exact: true }).waitFor();
+    await sheet.getByText(/^GitHub may ask to allow more than Vibyra uses/).waitFor();
+    await sheet.getByRole('button', { name: 'Connect GitHub' }).click();
+    await sheet.getByRole('heading', { name: 'GitHub is connected' }).waitFor();
+    assert.equal(await page.getByRole('textbox').count(), 0, 'A sign-in never asks for a key');
+    assert.deepEqual((await calls(page)).filter(call => call !== 'catalogue'), ['authorize:github']);
+    await capture(page, `${out}/oauth-connected.png`);
+    await page.close();
+
+    const cancelled = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
+    await cancelled.goto(`${server.url}/?state=oauth-cancel`);
+    await cancelled.getByRole('button', { name: 'GitHub, not connected' }).click();
+    const card = cancelled.getByRole('dialog', { name: 'GitHub' });
+    await card.getByRole('button', { name: 'Connect GitHub' }).click();
+    await card.getByText('You cancelled the sign-in.', { exact: true }).waitFor();
+    await card.getByRole('heading', { name: 'Connect GitHub' }).waitFor();
+    await cancelled.close(); console.log('PASS sign-in: the provider\'s page instead of a key, and a cancel said as one.');
+  }
+
   // A server that cannot be reached says so, rather than showing nothing connected.
   {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });

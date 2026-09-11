@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { authorizeInBrowser } from './authorizeInBrowser';
 import { fallbackCatalogue } from './catalogue';
 import type { Integration, IntegrationCatalogue, IntegrationsApi } from './types';
 
@@ -11,11 +12,13 @@ interface IntegrationsValue {
   busy: boolean; error: string | null;
   refresh(): Promise<void>;
   connect(id: string, credential: string): Promise<void>;
+  /** Connect by signing in on the provider's own page, for an `oauth` integration. */
+  authorize(id: string): Promise<void>;
   disconnect(id: string): Promise<void>;
 }
 const empty: IntegrationsValue = {
   catalogue: fallbackCatalogue, installed: [], live: false, busy: false, error: null,
-  refresh: async () => {}, connect: async () => {}, disconnect: async () => {},
+  refresh: async () => {}, connect: async () => {}, authorize: async () => {}, disconnect: async () => {},
 };
 const Context = createContext<IntegrationsValue>(empty);
 
@@ -46,6 +49,7 @@ export function IntegrationsProvider({ api, identity, children }: { api: Integra
     installed: catalogue.integrations.filter(integration => integration.installed),
     refresh,
     connect: (id, credential) => act(() => api!.connect(id, credential)).then(() => {}),
+    authorize: id => act(() => api!.authorize ? api!.authorize(id) : authorizeInBrowser(api!, id)).then(() => {}),
     disconnect: id => act(() => api!.disconnect(id)).then(() => {}),
   }), [catalogue, live, busy, error, api, refresh, act]);
   return <Context.Provider value={value}>{children}</Context.Provider>;

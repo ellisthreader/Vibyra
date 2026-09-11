@@ -29,6 +29,8 @@ const shape = (installed: string[]): IntegrationCatalogue => ({
   enabled: true,
   integrations: fallbackIntegrations.map(integration => ({
     ...integration,
+    // `oauth` and `oauth-cancel` are servers that can send a person to the provider's sign-in.
+    ...(state.startsWith('oauth') ? { credential: { ...integration.credential, kind: 'oauth' as const } } : {}),
     ...(state === 'readonly' ? { writes: null } : {}),
     ...(installed.includes(integration.id)
       ? { installed: true, account: '@ellis', connectedAt: '2026-09-09T00:00:00Z' } : {}),
@@ -47,6 +49,12 @@ const api: IntegrationsApi = {
     connected = [...connected, id]; return shape(connected);
   },
   disconnect: async id => { calls.push('disconnect:' + id); connected = connected.filter(item => item !== id); return shape(connected); },
+  // Stands in for the system browser sheet, which a test cannot drive: approving connects, cancelling says so.
+  authorize: async id => {
+    calls.push('authorize:' + id);
+    if (state === 'oauth-cancel') throw new Error('You cancelled the sign-in.');
+    connected = [...connected, id]; return shape(connected);
+  },
 };
 
 // The composer on its own, with one integration connected. What is under test is the
