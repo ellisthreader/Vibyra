@@ -67,7 +67,9 @@ export function IntegrationPage({ integration, visible, onClose, onUse, signedIn
   const signInFooter = mode === 'signin' ? undefined : signIn
     ? <Button title={'Sign in to connect ' + entry.name} icon="person-circle-outline" onPress={() => setMode('signin')} />
     : <Hint>{'Sign in to your Vibyra account to connect ' + entry.name + '.'}</Hint>;
-  const footer = !live ? <Hint error>{error ?? 'Could not reach Vibyra, so integrations cannot be connected right now.'}</Hint>
+  // Not live with no error is the moment between signing in and the new
+  // account's catalogue arriving, which is a wait, not a failure.
+  const footer = !live ? error ? <Hint error>{error}</Hint> : <Hint>Checking your integrations…</Hint>
     : catalogue.sample ? <View style={s.footerStack}>
       <Hint>{'This is the sample workspace, so nothing can be connected here. Leave it, then sign in to your Vibyra account to connect ' + entry.name + '.'}</Hint>
       {onLeaveSample && <Button title="Leave sample workspace" icon="exit-outline" onPress={onLeaveSample} />}
