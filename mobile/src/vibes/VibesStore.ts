@@ -1,16 +1,20 @@
-import type { PurchaseBridge, VibesApi, VibesChat, VibesModel, VibesTurn, VibesWallet } from './types';
+import type { Effort, PurchaseBridge, VibesApi, VibesChat, VibesModel, VibesTurn, VibesWallet } from './types';
 import { activeTurn } from './types';
+import { asEffort, resolveEffort } from '../ui/effort';
+import { AUTO } from '../ui/agents';
 import { VibesError } from './api';
 import { fallbackModels } from './catalogue';
 
 export interface VibesState {
   wallet: VibesWallet | null; models: VibesModel[]; chats: VibesChat[]; turns: VibesTurn[];
-  selected: string | null; draftScope: string; model: string; ready: boolean; error: string | null; pending: string | null;
+  selected: string | null; draftScope: string; model: string; effort: Effort | null;
+  ready: boolean; error: string | null; pending: string | null;
 }
 export class VibesStore {
   // The catalogue ships with the app so the picker always offers every family;
   // the server's list replaces it as soon as one arrives.
-  state: VibesState = { wallet: null, models: fallbackModels, chats: [], turns: [], selected: null, draftScope: 'new', model: 'auto', ready: false, error: null, pending: null };
+  state: VibesState = { wallet: null, models: fallbackModels, chats: [], turns: [], selected: null,
+    draftScope: 'new', model: 'auto', effort: null, ready: false, error: null, pending: null };
   private listeners = new Set<() => void>();
   private generation = 0;
   private refreshPromise: Promise<void> | null = null;
@@ -27,20 +31,48 @@ export class VibesStore {
       const saved = await this.persistence.read();
       if (saved) {
         const p = JSON.parse(saved);
-        this.update({ pending: typeof p.pending === 'string' ? p.pending : null, selected: typeof p.selected === 'string' ? p.selected : null, draftScope: typeof p.selected === 'string' ? p.selected : 'new' });
+        this.update({ pending: typeof p.pending === 'string' ? p.pending : null, selected: typeof p.selected === 'string' ? p.selected : null,
+          draftScope: typeof p.selected === 'string' ? p.selected : 'new',
+          model: typeof p.model === 'string' && p.model ? p.model : this.state.model, effort: asEffort(p.effort) });
       }
     } catch { /* A damaged cache cannot grant credits or start execution. */ }
     void this.loadModels();
     await this.refresh();
   }
-  private save() { return this.persistence.write(JSON.stringify({ pending: this.state.pending, selected: this.state.selected })); }
+  private save() {
+    return this.persistence.write(JSON.stringify({ pending: this.state.pending, selected: this.state.selected,
+      model: this.state.model, effort: this.state.effort }));
+  }
+  /**
+   * Keeps the chosen effort legal for the chosen model. An unknown model is not
+   * proof that it has no levels - before the catalogue answers, every model is
+   * unknown - so a saved choice survives a cold start instead of being wiped by
+   * a fallback list that carries no effort data at all.
+   */
+  private reconcileEffort(model = this.state.model, models = this.state.models) {
+    // Auto chooses the level as well as the model, and the composer shows no
+    // control for it, so a level held here is one nobody can see or change. Left
+    // behind by the last model picked, it used to be sent alongside "choose for
+    // me" and priced into the turn.
+    if (model === AUTO) { if (this.state.effort !== null) this.update({ effort: null }); return; }
+    const known = models.find(entry => entry.id === model);
+    if (!known?.reasoning) return;
+    const effort = resolveEffort(known, this.state.effort);
+    if (effort !== this.state.effort) this.update({ effort });
+  }
+  setModel(model: string) {
+    this.update({ model });
+    this.reconcileEffort(model);
+    void this.save();
+  }
+  setEffort(effort: Effort | null) { this.update({ effort }); void this.save(); }
   // Models are a menu, not account state: they load on their own so a failed
   // wallet call, a signed-out phone or a backend without the route still offers
   // the full list rather than Auto alone.
   loadModels = () => {
     if (this.modelsPromise) return this.modelsPromise;
     this.modelsPromise = this.api.models()
-      .then(models => { if (models.length) this.update({ models }); })
+      .then(models => { if (models.length) { this.update({ models }); this.reconcileEffort(this.state.model, models); } })
       .catch(() => {})
       .finally(() => { this.modelsPromise = null; });
     return this.modelsPromise;
@@ -102,7 +134,12 @@ export class VibesStore {
       if (this.state.selected === turn.chatId) this.update({ turns: [...this.state.turns, turn] });
       await this.refresh(); return true;
     } catch (e) {
-      if (e instanceof VibesError && [400, 401, 402, 403, 409, 422].includes(e.status)) {
+      // Every status here is proof the submission was refused before a turn row
+      // existed, so the draft is released rather than left waiting on a reply that
+      // is never coming. 429 is on the list for both of its senders: the route's
+      // own throttle rejects ahead of the controller, and a usage window rejects
+      // inside `Turns::submit` before anything is written.
+      if (e instanceof VibesError && [400, 401, 402, 403, 409, 422, 429].includes(e.status)) {
         this.update({ pending: null }); await this.save();
       }
       this.error(e); return false;

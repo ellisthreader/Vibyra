@@ -10,6 +10,7 @@ final class ComputerBrowser {
 
   private var browser: NWBrowser?
   private var deadline: DispatchWorkItem?
+  private var resolutionTimer: DispatchSourceTimer?
   private let resolver = ServiceResolver()
   private let scope = NetworkScope()
   private var found: [String: Candidate] = [:]
@@ -36,9 +37,8 @@ final class ComputerBrowser {
     resolver.reset()
     scope.start()
     let parameters = NWParameters.tcp
-    // Cover every link this phone has, not just the current Wi-Fi: peer-to-peer
-    // finds a computer with no shared network at all, and a VPN or shared link
-    // is browsed the same way. Bonjour still cannot cross a router.
+    // Include available local links. Peer-to-peer also requires a compatible
+    // advertiser and usable endpoint; browsing alone cannot guarantee it.
     parameters.includePeerToPeer = true
     // The TXT record carries the Host identity, so browse with metadata.
     let descriptor = NWBrowser.Descriptor.bonjourWithTXTRecord(type: Self.service, domain: "local.")
@@ -67,6 +67,11 @@ final class ComputerBrowser {
     // Starting this real service browse is what lets iOS request Local Network
     // permission. No synthetic permission probe or subnet sweep is performed.
     next.start(queue: .main)
+    let retry = DispatchSource.makeTimerSource(queue: .main)
+    retry.schedule(deadline: .now() + 1, repeating: 1)
+    retry.setEventHandler { [weak self] in self?.resolveFound() }
+    resolutionTimer = retry
+    retry.resume()
     let timeout = DispatchWorkItem { [weak self] in self?.finish("finished") }
     deadline = timeout
     DispatchQueue.main.asyncAfter(deadline: .now() + Self.searchSeconds, execute: timeout)
@@ -75,6 +80,8 @@ final class ComputerBrowser {
   func stop() {
     deadline?.cancel()
     deadline = nil
+    resolutionTimer?.cancel()
+    resolutionTimer = nil
     resolver.stop()
     scope.stop()
     let previous = browser
@@ -93,11 +100,18 @@ final class ComputerBrowser {
     var candidates: [String: Candidate] = [:]
     for result in results {
       guard case let .service(name, type, domain, _) = result.endpoint else { continue }
-      let id = "\(name).\(type).\(domain)"
+      let hostId = Self.hostId(from: result.metadata)
+      let id = hostId ?? "\(name).\(type).\(domain)"
+      // The same identity advertised on two links is one computer. Prefer the
+      // existing endpoint so repeated updates cannot move a pending tap.
+      if let existing = found[id], results.contains(where: { $0.endpoint == existing.endpoint }) {
+        candidates[id] = existing
+        continue
+      }
       candidates[id] = Candidate(
         id: id,
         name: String(name.prefix(128)),
-        hostId: Self.hostId(from: result.metadata),
+        hostId: hostId,
         via: NetworkScope.kind(of: result.interfaces),
         endpoint: result.endpoint
       )
@@ -106,10 +120,12 @@ final class ComputerBrowser {
     found = Dictionary(
       uniqueKeysWithValues: candidates.sorted { $0.key < $1.key }.prefix(16).map { ($0.key, $0.value) }
     )
-    for candidate in found.values {
-      resolver.resolve(id: candidate.id, endpoint: candidate.endpoint)
-    }
+    resolveFound()
     emit()
+  }
+
+  private func resolveFound() {
+    resolver.update(Dictionary(uniqueKeysWithValues: found.values.map { ($0.id, $0.endpoint) }))
   }
 
   /// The Host advertises its static public key, which is also its `hostId`.

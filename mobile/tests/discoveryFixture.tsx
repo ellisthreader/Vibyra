@@ -31,7 +31,7 @@ export function DiscoveryFixture() {
   const record = (call: string) => { window.discoveryCalls.push(call); };
   const stage = connecting[state];
   return <SafeAreaProvider><ThemeContext.Provider value={{ colors, dark }}>
-    <View style={[s.frame, { backgroundColor: colors.surface }]}>
+    <View style={[s.frame, { backgroundColor: colors.background }]}>
       <Text style={[s.label, { color: colors.muted }]}>Nearby computer fixture</Text>
       {stage ? <ConnectingStep computer={target} workspace={stub(stage, record)}
         onDone={() => record('done')} onSearch={() => record('search')} />

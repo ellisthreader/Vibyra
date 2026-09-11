@@ -3,17 +3,29 @@ import { useTheme } from '../theme';
 import { Icon } from '../ui/primitives';
 import { useVibes } from './VibesProvider';
 
-export function VibesDrawer({ onOpen }: { onOpen(): void }) {
+// AI chats sit in the rail's one Recents list. Starting a new one is the pinned
+// action in the corner, so this list is only ever titles.
+export function VibesDrawer({ onOpen, query = '' }: { onOpen(): void; query?: string }) {
   const { store, chats, selected } = useVibes(); const { colors } = useTheme();
-  const select = (id: string | null) => { void store.select(id).catch(e => store.error(e)); onOpen(); };
-  return <View style={s.section}>
-    <Pressable accessibilityRole="button" onPress={() => select(null)} style={s.row}>
-      <Icon name="sparkles-outline" size={18} color={colors.accent} /><Text style={[s.label, { color: colors.text }]}>New AI chat</Text></Pressable>
-    {chats.slice(0, 20).map(chat => <Pressable key={chat.id} accessibilityRole="button"
+  const select = (id: string) => { void store.select(id).catch(e => store.error(e)); onOpen(); };
+  const matches = chats.filter(chat => chat.title.toLowerCase().includes(query));
+  if (!matches.length) {
+    return query
+      ? <Text style={[s.empty, { color: colors.muted }]}>No chats match “{query}”.</Text>
+      : <Text style={[s.empty, { color: colors.muted }]}>Your chats appear here.</Text>;
+  }
+  return <View>
+    {matches.slice(0, 20).map(chat => <Pressable key={chat.id} accessibilityRole="button"
       accessibilityLabel={'Open AI chat ' + chat.title} accessibilityState={{ selected: chat.id === selected }}
-      onPress={() => select(chat.id)} style={[s.row, { backgroundColor: chat.id === selected ? colors.elevated : 'transparent' }]}>
-      <Icon name="chatbubble-outline" size={16} color={colors.muted} /><Text numberOfLines={1} style={[s.label, { color: colors.text }]}>{chat.title}</Text>
+      onPress={() => select(chat.id)} style={({ pressed }) => [s.row,
+        { backgroundColor: chat.id === selected || pressed ? colors.elevated : 'transparent' }]}>
+      <Icon name="chatbubble-outline" size={17} color={chat.id === selected ? colors.accent : colors.muted} />
+      <Text numberOfLines={1} style={[s.label, { color: colors.text }]}>{chat.title}</Text>
     </Pressable>)}
   </View>;
 }
-const s = StyleSheet.create({ section: { marginBottom: 12 }, row: { minHeight: 48, paddingHorizontal: 14, borderRadius: 13, flexDirection: 'row', alignItems: 'center', gap: 12 }, label: { flex: 1, fontSize: 14 } });
+const s = StyleSheet.create({
+  row: { minHeight: 48, paddingHorizontal: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  label: { flex: 1, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },
+  empty: { fontSize: 13, lineHeight: 19, paddingHorizontal: 12, paddingVertical: 8 },
+});

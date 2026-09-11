@@ -14,6 +14,10 @@ export interface AccountApi {
   login(email: string, password: string): Promise<AccountSession>;
   session(token: string): Promise<Account>;
   logout(token: string): Promise<void>;
+  // The phone cannot install anything on a computer, so it asks the backend to
+  // email a download link. Signed in, the backend uses the account's own address
+  // and ignores anything sent here; a guest supplies one.
+  sendHostLink(token: string | null, email?: string): Promise<string>;
 }
 export class AccountError extends Error {
   constructor(message: string, readonly status: number) { super(message); this.name = 'AccountError'; }
@@ -87,5 +91,7 @@ export function createAccountApi({ baseUrl, deviceName, fetch: fetchImpl = fetch
     login: async (email, password) => session(await call('POST', '/api/auth/login', { provider: 'email', email, password, deviceName })),
     session: async token => user((await call('GET', '/api/session', undefined, token)).user),
     logout: async token => { await call('DELETE', '/api/auth/logout', undefined, token); },
+    sendHostLink: async (token, email) =>
+      String((await call('POST', '/api/account/host-link', email ? { email } : {}, token ?? undefined)).email ?? ''),
   };
 }

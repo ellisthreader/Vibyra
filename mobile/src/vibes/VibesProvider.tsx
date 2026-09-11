@@ -39,8 +39,11 @@ export function VibesProvider({ api, identity, children, purchases = purchaseBri
   return <Context.Provider value={store}>{children}</Context.Provider>;
 }
 export function useVibes() {
-  const store = useContext(Context);
+  const store = useVibesStore();
   if (!store) throw new Error('VibesProvider is missing');
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   return { store, ...state };
 }
+// The store on its own, without subscribing. A caller that only starts a new chat
+// must not re-render the whole app every time the wallet or a turn changes.
+export function useVibesStore() { return useContext(Context); }

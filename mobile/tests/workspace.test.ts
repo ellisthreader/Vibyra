@@ -12,9 +12,9 @@ test('enrollment stores only local identity, maps host approval copy and marks c
   assert.equal(persisted.privateKey.length, 64);
   h.store.dispose();
 });
-test('saved identity restores offline and reconnect is explicit', async () => {
+test('a computer put away by hand restores offline, and comes back without its invitation', async () => {
   const h = runtimeHarness(); await h.store.actions.connect(JSON.stringify(pairing));
-  h.store.actions.disconnect(); const count = h.sent.filter(item => item.type === 'open').length;
+  await h.store.actions.disconnect(); const count = h.sent.filter(item => item.type === 'open').length;
   await h.store.initialize();
   assert.equal(h.store.state.status, 'offline');
   assert.equal(h.sent.filter(item => item.type === 'open').length, count);

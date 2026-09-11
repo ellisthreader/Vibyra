@@ -11,6 +11,9 @@ export interface Session {
   kind: SessionKind;
   runner?: 'conversation';
   readOnly?: boolean;
+  /** This session accepts input from the phone. Absent on a computer that has
+   *  not been given the typing switch, so every gate tests `=== true`. */
+  canInput?: boolean;
   status: 'running' | 'exited' | 'interrupted';
   createdAt: string;
   exitCode?: number;
@@ -49,8 +52,12 @@ export interface WorkspaceActions {
   logIn?(email: string, password: string): Promise<void>;
   providerLogIn?(provider: 'apple' | 'google', signal: AbortSignal): Promise<boolean>;
   logOut?(): Promise<void>;
+  // Emails a link to install Vibyra on a computer, and resolves with the address it
+  // went to. A signed-in phone needs no argument; a guest passes the address typed.
+  sendHostLink?(email?: string): Promise<string>;
   completeOnboarding?(mode: OnboardingMode | null): Promise<void>;
   resetOnboarding?(): Promise<void>;
+  setTerminalFontSize?(size: number): void;
 }
 export interface WorkspaceModel {
   vibesToolsAvailable?: boolean;
@@ -58,22 +65,37 @@ export interface WorkspaceModel {
   conversationAvailable?: boolean;
   demo?: boolean;
   syncing?: boolean;
+  /** The whole connection only watches: a paired Vibyra Desktop, as opposed to
+   *  a standalone Host. Nothing that starts or changes work is offered. */
+  viewOnly?: boolean;
+  /** That computer will accept typed input, even though it still refuses to
+   *  start, stop or browse. Independent of `viewOnly`, which stays true. */
+  canType?: boolean;
   control?: 'none' | 'claiming' | 'ready' | 'readonly';
   status: ConnectionStatus;
+  /** Not connected, but on its way back by itself: the app is working through
+   *  its retry ladder rather than waiting to be asked. */
+  reconnecting?: boolean;
   error: string | null;
   host: Computer | null;
+  // Where the computer was reached, as host:port from the pairing URL. The Host
+  // never reports its own address, so this comes from the pairing this phone holds.
+  hostAddress?: string | null;
   projects: Project[];
   sessions: Session[];
   devices: TrustedDevice[];
   approvals: Approval[];
   selectedSessionId: string | null;
   output: string;
+  /** The type size a person pinched the terminal to, kept so reopening a
+   *  session does not throw the size away. */
+  terminalFontSize?: number;
   themePreference: ThemePreference;
   onboarding: OnboardingState;
   account: Account | null;
   actions: WorkspaceActions;
 }
-export type Destination = 'work' | 'projects' | 'computers' | 'settings';
+export type Destination = 'work' | 'projects' | 'integrations' | 'computers' | 'vibes' | 'settings';
 export type OnboardingMode = 'computer' | 'phone';
 export interface OnboardingState { status: 'unknown' | 'pending' | 'complete'; mode: OnboardingMode | null }
 export interface Account { email: string; name: string; plan: string }

@@ -20,8 +20,8 @@ try {
       const shot = name => capture(page, `${out}/${device}-${colorScheme}-${name}.png`);
       const drawer = () => page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
       const menu = async name => { await drawer(); await page.getByRole('button', { name, exact: true }).click(); };
-      const session = async name => { await drawer(); await page.getByRole('tab', { name: 'All', exact: true }).click();
-        await page.getByRole('button', { name, exact: true }).click(); };
+      // Recents is one list with no filter tabs, so a session is one click from the rail.
+      const session = async name => { await drawer(); await page.getByRole('button', { name, exact: true }).click(); };
       await page.goto(url);
       await page.getByRole('button', { name: 'Get started', exact: true }).waitFor();
       await shot('welcome');
@@ -44,10 +44,10 @@ try {
       await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
       await shot('computer-setup');
+      // Setup emails a download link now; there is no pairing-code page behind it.
+      await page.getByRole('button', { name: 'Send me an email link', exact: true }).waitFor();
       await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
       await shot('computer-network');
-      await page.getByRole('button', { name: 'Use pairing code', exact: true }).click();
-      await page.getByRole('textbox', { name: 'Computer pairing link' }).waitFor();
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
       await page.getByRole('button', { name: 'Skip — I’ll decide later', exact: true }).click();
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
@@ -58,9 +58,6 @@ try {
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
       await shot('computer-setup');
       await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
-      await shot('computer-network');
-      await page.getByRole('button', { name: 'Use pairing code', exact: true }).click();
-      await page.getByRole('textbox', { name: 'Computer pairing link' }).waitFor();
       await shot('connect');
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
       await menu('Settings');
@@ -124,6 +121,18 @@ try {
         'Making no choice leaves the composer on Auto');
       assert.equal(await page.getByRole('radio', { name: 'Codex', exact: true }).count(), 0,
         'The picker offers OpenRouter models only');
+      // The regression this exists to stop: the catalogue used to be gated on the
+      // runtime, so the browser, Android and the sample workspace were handed an
+      // empty list and showed Auto and nothing else. Auto is a choice among many,
+      // never the only one on offer.
+      const catalogue = page.getByRole('dialog', { name: 'Choose your AI' });
+      const companies = await catalogue.locator('[aria-expanded]').evaluateAll(
+        nodes => nodes.map(node => node.getAttribute('aria-label')));
+      assert.ok(companies.length >= 5, `Every runtime can read the catalogue, saw ${companies.length} companies`);
+      for (const company of ['OpenAI', 'Anthropic', 'Google'])
+        assert.ok(companies.includes(company), `${company} is missing from the picker`);
+      await page.getByRole('button', { name: 'Anthropic', exact: true }).click();
+      assert.ok(await catalogue.getByRole('radio').count() > 1, 'A company opens to reveal its models');
       await shot('new-chat');
       await page.getByRole('radio', { name: 'Auto', exact: true }).click();
       await page.getByRole('button', { name: 'Send message', exact: true }).click();
@@ -134,15 +143,15 @@ try {
       await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
       assert.equal(await terminalInput.inputValue(), '', 'New terminal does not inherit the new chat prompt');
       await drawer();
-      await page.getByRole('tab', { name: 'Terminals', exact: true }).click();
-      assert.equal(await page.getByRole('tab', { name: 'Terminals', exact: true }).getAttribute('aria-selected'), 'true');
-      assert.equal(await page.getByRole('button', { name: 'A calmer checkout, Claude', exact: true }).count(), 0);
+      assert.equal(await page.getByRole('tab').count(), 0, 'Recents carries no filter tabs');
+      // Search opens from the icon beside the logo, so the rail's top stays one line.
+      await page.getByRole('button', { name: 'Search chats', exact: true }).click();
       await page.getByRole('textbox', { name: 'Search chats' }).fill('QA new terminal');
       await shot('drawer');
-      await page.getByRole('textbox', { name: 'Search chats' }).fill('');
+      await page.getByRole('button', { name: 'Close search', exact: true }).click();
       await page.getByRole('button', { name: 'Projects', exact: true }).click();
       await shot('projects');
-      await menu('Computers'); await shot('computers');
+      await menu('Remote'); await shot('computers');
       await menu('Settings'); await shot('settings');
       await page.getByRole('button', { name: 'Appearance', exact: true }).click();
       await page.getByRole('radio', { name: colorScheme === 'dark' ? 'Light' : 'Dark', exact: true }).click();

@@ -15,7 +15,7 @@ const child = spawn(binary, ['--name', 'Native Fixture Computer', '--state-dir',
 let output = '', diagnostics = '', result, approved = false;
 child.stdout.on('data', bytes => {
   output += bytes.toString();
-  const key = output.match(/approve ([a-f0-9]{64})/)?.[1];
+  const key = output.match(/Approve or deny device ([a-f0-9]{64})/)?.[1];
   if (key && !approved) { approved = true; child.stdin.write(`approve ${key}\n`); }
 });
 child.stderr.on('data', bytes => { diagnostics += bytes.toString(); });

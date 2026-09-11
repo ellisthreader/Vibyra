@@ -4,12 +4,12 @@ import { useTheme } from '../theme';
 import { terminalState } from './terminalState';
 import type { TerminalSurfaceProps } from './TerminalSurface.types';
 
-export function TerminalSurface({ output, disabled, onInput, onResize, onPasteMode }: TerminalSurfaceProps) {
+export function TerminalSurface({ output, disabled, onInput, onResize, onPasteMode, fontSize, onFontSize }: TerminalSurfaceProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const ready = useRef(false);
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
   const send = useCallback(() => frame.current?.contentWindow?.postMessage(
-    JSON.stringify(terminalState(output, disabled, colors)), '*'), [output, disabled, colors]);
+    JSON.stringify(terminalState(output, disabled, colors, dark, fontSize)), '*'), [output, disabled, colors, dark, fontSize]);
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || typeof event.data !== 'string') return;
@@ -18,8 +18,9 @@ export function TerminalSurface({ output, disabled, onInput, onResize, onPasteMo
       if (data.target !== 'vibyra-terminal') return;
       if (data.type === 'ready') { ready.current = true; send(); }
       if (data.type === 'paste-mode') onPasteMode?.(data.enabled === true);
+      if (data.type === 'font-size' && typeof data.size === 'number') onFontSize?.(data.size);
       if (data.type === 'input' && !disabled && typeof data.data === 'string') onInput(data.data);
-      if (data.type === 'resize' && !disabled && Number.isInteger(data.cols) && Number.isInteger(data.rows)) onResize(data.cols, data.rows);
+      if (data.type === 'resize' && Number.isInteger(data.cols) && Number.isInteger(data.rows)) onResize(data.cols, data.rows);
     };
     window.addEventListener('message', receive);
     if (ready.current) send();

@@ -1,59 +1,41 @@
-import type { NearbyComputer, SearchNetwork } from './discoveryTypes';
+import type { NearbyComputer } from './discoveryTypes';
+import { isConnectable } from './nearbyPairing';
 
-/** The words for each state of the search. Two-line titles with an accented
- *  second line match the setup page, and every line states only what is true:
- *  Bonjour covers the links this phone is on, never a computer past a router. */
-export function describeSearch({ unavailable, denied, status, computers, only, elapsed, networks }: {
-  unavailable: boolean; denied: boolean; status: string; computers: NearbyComputer[];
-  only: NearbyComputer | null; elapsed: number; networks: SearchNetwork[];
-}): { lead: string; accent: string; detail: string } {
+/** The words for each state of the search.
+ *
+ *  Named for what someone is doing, never for how the search works: no
+ *  addresses, ports, subnets or pass counts reach the screen. One plain title
+ *  and one plain line under it — the words are the whole design. */
+export function describeSearch({ unavailable, denied, status, computers, only, elapsed }: {
+  unavailable: boolean; denied: boolean; status: string;
+  computers: NearbyComputer[]; only: NearbyComputer | null; elapsed: number;
+}): { title: string; detail: string } {
   if (unavailable) {
-    return { lead: 'Searching needs', accent: 'the app',
-      detail: 'This preview cannot reach your networks. Open the Vibyra app on your iPhone and it finds your computer by itself.' };
+    return { title: 'Join a Wi-Fi network',
+      detail: 'Vibyra needs to be on the same Wi-Fi as your computer to find it.' };
   }
   if (denied) {
-    return { lead: 'Local network', accent: 'is off',
-      detail: 'iOS is blocking Vibyra from seeing your networks. Turn on Local Network for Vibyra in Settings, then search again.' };
+    return { title: 'Allow local network access',
+      detail: 'iOS is blocking Vibyra from seeing your Wi-Fi. Turn on Local Network for Vibyra in Settings, then look again.' };
   }
-  if (only) {
-    return { lead: 'Found', accent: only.name,
-      detail: `Reached over ${linkName(only.via)}. Starting the encrypted connection…` };
-  }
+  if (only) return { title: `Found ${only.name}`, detail: 'Connecting…' };
   if (computers.length > 1) {
-    return { lead: 'Choose your', accent: 'computer',
-      detail: `${computers.length} computers answered on your networks.` };
+    return { title: 'Choose your computer',
+      detail: `${computers.filter(isConnectable).length} ready to connect. Choose the computer you want to use.` };
   }
   if (computers.length === 1) {
-    return { lead: 'Found', accent: computers[0].name,
-      detail: 'Waiting for it to announce an address we can connect to.' };
+    return { title: `Found ${computers[0].name}`, detail: status === 'finished' || status === 'failed'
+      ? 'This computer did not become available. Check that iPhone connection is on, then search again.' : 'Getting it ready…' };
   }
   if (status === 'finished') {
-    return { lead: 'Nothing', accent: 'answered',
-      detail: 'Open Vibyra Host or Vibyra Desktop on your computer and bring it onto one of these networks, then search again.' };
+    return { title: 'No computer found',
+      detail: 'Open Vibyra on your computer and turn on iPhone connection, then look again. Both devices need the same Wi-Fi.' };
   }
   if (status === 'failed') {
-    return { lead: 'The search', accent: 'stopped',
-      detail: 'Your network refused the search. Check the connection, then try again.' };
+    return { title: 'Could not look for computers', detail: 'Check your Wi-Fi connection, then try again.' };
   }
-  return { lead: 'Searching your', accent: 'networks', detail: searching(elapsed, networks) };
-}
-
-function searching(elapsed: number, networks: SearchNetwork[]): string {
-  const searched = networks.filter(network => network.searched);
-  if (!networks.length) return 'Looking for a network to search. Allow local network access when iOS asks.';
-  if (!searched.length) {
-    return 'None of your current networks can be searched. Join Wi-Fi, or connect to your computer directly.';
-  }
-  const links = searched.map(network => network.label);
-  const list = links.length === 1 ? links[0]
-    : `${links.slice(0, -1).join(', ')} and ${links[links.length - 1]}`;
-  return elapsed > 9
-    ? `Still listening on ${list}. Keep Vibyra Host open on your computer.`
-    : `Listening on ${list} at the same time. Nothing to type.`;
-}
-
-function linkName(via?: string): string {
-  const names: Record<string, string> = { wifi: 'Wi-Fi', direct: 'a direct link', wired: 'Ethernet',
-    shared: 'a shared network', vpn: 'your VPN', other: 'your network', cellular: 'cellular' };
-  return (via && names[via]) ?? 'your network';
+  return { title: 'Looking for your computer',
+    detail: elapsed > 10
+      ? 'On your computer, open Settings → iPhone connection and turn it on. Keep both devices on the same Wi-Fi.'
+      : 'Keep Vibyra open on your computer, with iPhone connection turned on.' };
 }

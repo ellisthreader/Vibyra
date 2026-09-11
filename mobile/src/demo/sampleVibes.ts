@@ -4,14 +4,17 @@ import type { VibesApi, VibesEntitlements, VibesWallet } from '../vibes/types';
 // wallet too rather than leaving the balance looking signed out. Purchases stay
 // off: the sample can show what a plan includes, never sell one.
 const entitlements: Record<string, VibesEntitlements> = {
-  free: { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false },
-  starter: { maxProjects: 3, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false },
-  builder: { maxProjects: 10, concurrentReplies: 2, fullCatalogue: false, remoteAccess: false },
-  pro: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true },
+  free: { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false, sessionCredits: 60, weekCredits: 150 },
+  starter: { maxProjects: 3, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false, sessionCredits: 70, weekCredits: 175 },
+  builder: { maxProjects: 10, concurrentReplies: 2, fullCatalogue: false, remoteAccess: false, sessionCredits: 200, weekCredits: 500 },
+  pro: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true, sessionCredits: 400, weekCredits: 1000 },
 };
 export const sampleWallet: VibesWallet = {
-  version: 1, available: 100, held: 0, total: 100, paidAvailable: 0, chatEnabled: false,
+  version: 1, available: 3, held: 0, total: 3, paidAvailable: 0, chatEnabled: false,
   plan: 'free', paidUntil: null, trialChatsRemaining: 2, accountToken: 'sample-workspace',
+  // The trial as `config/vibes.php` grants it, so the sample workspace and the
+  // screenshots taken from it show the offer a real free account actually gets.
+  trialCredits: 3, trialChats: 2, trialChatCredits: 3,
   consented: true, verified: true, purchasesEnabled: false,
   products: [
     { id: 'sample.starter', plan: 'starter', credits: 350, pence: 2000, kind: 'subscription' },
@@ -20,6 +23,12 @@ export const sampleWallet: VibesWallet = {
   ],
   entitlements: entitlements.free, planEntitlements: entitlements,
   remoteAccessLive: false, usedProjects: 0,
+  // The windows as `config/vibes.php` sizes them for Free, so a screenshot of the
+  // sample shows the meters a real free account sees rather than an empty page.
+  limits: {
+    session: { unit: 'hours', span: 5, used: 0, limit: 60, resetsAt: null },
+    week: { unit: 'days', span: 7, used: 0, limit: 150, resetsAt: null },
+  },
 };
 const unavailable = async (): Promise<never> => {
   throw new Error('This is a sample workspace. Sign in to use your own Vibes.');

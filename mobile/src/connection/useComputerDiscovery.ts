@@ -22,7 +22,8 @@ export function useComputerDiscovery({ auto = false }: { auto?: boolean } = {}) 
       // iOS becomes inactive for its own consent alert; let that alert finish.
       if (state === 'background') {
         session.stop();
-        setResult(previous => ({ ...previous, status: 'finished' }));
+        setResult(previous => ({ ...previous, computers: [],
+          status: previous.status === 'denied' ? 'denied' : 'finished' }));
       }
     });
     return () => { session.stop(); subscription.remove(); };
@@ -32,6 +33,6 @@ export function useComputerDiscovery({ auto = false }: { auto?: boolean } = {}) 
     const timer = setInterval(() => setElapsed(value => value + 1), 1000);
     return () => clearInterval(timer);
   }, [result.status]);
-  return { ...result, networks: result.networks ?? [], elapsed, available: localDiscovery.available,
-    stop: session.stop, start: () => restart.current() };
+  return { ...result, networks: result.networks ?? [], progress: result.progress, elapsed,
+    available: localDiscovery.available, stop: session.stop, start: () => restart.current() };
 }

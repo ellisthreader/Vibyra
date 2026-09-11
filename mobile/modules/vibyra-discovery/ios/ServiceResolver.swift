@@ -18,15 +18,34 @@ final class ServiceResolver {
   private var attempts: [String: NWConnection] = [:]
   private var deadlines: [String: DispatchWorkItem] = [:]
   private var addresses: [String: Address] = [:]
-  /// A resolved service that later disappears keeps its address until the next
-  /// search, so a card the person is already tapping never loses its target.
+  private var endpoints: [String: NWEndpoint] = [:]
+  private var lastAttempts: [String: Date] = [:]
   var onChange: (() -> Void)?
   var onDenied: (() -> Void)?
 
   func address(for id: String) -> Address? { addresses[id] }
 
-  func resolve(id: String, endpoint: NWEndpoint) {
+  /// Called on Bonjour updates and once per second during the search. Failed
+  /// resolutions retry even when the service list never changes. Oldest-first
+  /// scheduling lets all 16 candidates use the eight available slots.
+  func update(_ current: [String: NWEndpoint]) {
+    for (id, endpoint) in endpoints where current[id] != endpoint {
+      finish(id)
+      addresses.removeValue(forKey: id)
+      lastAttempts.removeValue(forKey: id)
+    }
+    endpoints = current
+    let oldest = Date.distantPast
+    for id in current.keys.sorted(by: { (lastAttempts[$0] ?? oldest) < (lastAttempts[$1] ?? oldest) }) {
+      guard Date().timeIntervalSince(lastAttempts[id] ?? oldest) >= 2,
+            let endpoint = current[id] else { continue }
+      resolve(id: id, endpoint: endpoint)
+    }
+  }
+
+  private func resolve(id: String, endpoint: NWEndpoint) {
     guard addresses[id] == nil, attempts[id] == nil, attempts.count < 8 else { return }
+    lastAttempts[id] = Date()
     let connection = NWConnection(to: endpoint, using: Self.parameters())
     attempts[id] = connection
     let timeout = DispatchWorkItem { [weak self] in self?.finish(id) }
@@ -76,6 +95,8 @@ final class ServiceResolver {
   func reset() {
     stop()
     addresses.removeAll()
+    endpoints.removeAll()
+    lastAttempts.removeAll()
   }
 
   private func finish(_ id: String) {
@@ -90,7 +111,7 @@ final class ServiceResolver {
     tcp.connectionTimeout = 5
     tcp.noDelay = true
     let parameters = NWParameters(tls: nil, tcp: tcp)
-    parameters.includePeerToPeer = false
+    parameters.includePeerToPeer = true
     parameters.prohibitedInterfaceTypes = [.cellular]
     return parameters
   }

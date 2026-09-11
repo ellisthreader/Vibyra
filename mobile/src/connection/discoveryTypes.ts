@@ -13,8 +13,14 @@ export interface NearbyComputer {
   id: string; name: string; hostId?: string; host?: string; port?: number; via?: NetworkKind;
 }
 export type DiscoveryStatus = 'idle' | 'searching' | 'finished' | 'denied' | 'failed' | 'unavailable';
+/** How far a fallback address sweep has got. Bonjour has nothing to count, so
+ *  it reports no progress and the UI shows elapsed time instead. */
+/** How far a fallback sweep has got. It drives the radar dial only: the counts
+ *  and the addresses behind them are never written on the screen. */
+export interface SearchProgress { checked: number; total: number; attempt: number }
 export interface DiscoveryUpdate {
   status: DiscoveryStatus; computers: NearbyComputer[]; networks?: SearchNetwork[];
+  progress?: SearchProgress;
 }
 export interface DiscoveryAdapter {
   available: boolean;

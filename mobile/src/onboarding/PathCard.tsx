@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Icon, type IconName } from '../ui/primitives';
+import { PathDevice } from './PathDevice';
 
 export function PathCard({ icon, title, detail, badge, selected, onPress }: {
   icon: IconName; title: string; detail: string; badge?: string; selected: boolean; onPress: () => void;
@@ -9,12 +10,13 @@ export function PathCard({ icon, title, detail, badge, selected, onPress }: {
   return <Pressable accessibilityRole="radio" accessibilityLabel={title} accessibilityHint={[detail, badge].filter(Boolean).join(' ')}
     aria-checked={selected} accessibilityState={{ checked: selected }} onPress={onPress}
     style={({ pressed }) => [s.card, { backgroundColor: pressed ? colors.elevated : colors.surface,
-      borderColor: selected ? colors.accent : colors.border }]}>
+      borderColor: selected ? colors.accent : colors.border, shadowColor: colors.text,
+      transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
     <View style={s.top}>
-      <View style={[s.tile, { backgroundColor: selected ? colors.accentSoft : colors.elevated }]}>
-        <Icon name={icon} size={23} color={selected ? colors.accent : colors.muted} />
-      </View>
-      {badge && <Text style={[s.badge, { color: colors.muted }]}>{badge}</Text>}
+      <PathDevice phone={icon === 'phone-portrait-outline'} selected={selected} />
+      {badge && <View style={[s.badgeWrap, { backgroundColor: selected ? colors.accentSoft : colors.elevated }]}>
+        <Text style={[s.badge, { color: selected ? colors.accent : colors.muted }]}>{badge}</Text>
+      </View>}
       <View style={[s.check, { borderColor: selected ? colors.action : colors.border,
         backgroundColor: selected ? colors.action : 'transparent' }]}>
         {selected && <Icon name="checkmark" size={15} color={colors.onAction} />}
@@ -27,11 +29,12 @@ export function PathCard({ icon, title, detail, badge, selected, onPress }: {
   </Pressable>;
 }
 const s = StyleSheet.create({
-  card: { padding: 20, borderRadius: 20, borderWidth: 1, gap: 16 },
+  card: { padding: 22, borderRadius: 24, borderWidth: 1, gap: 14,
+    shadowOpacity: 0.035, shadowRadius: 16, shadowOffset: { width: 0, height: 5 } },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  tile: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  badge: { flex: 1, fontSize: 12, fontWeight: '500' },
+  badgeWrap: { flexShrink: 1, paddingVertical: 5, paddingHorizontal: 9, borderRadius: 7 },
+  badge: { fontSize: 11, fontWeight: '600', letterSpacing: 0.1 },
   check: { marginLeft: 'auto', width: 23, height: 23, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  copy: { gap: 7 }, title: { fontSize: 18, lineHeight: 23, fontWeight: '600', letterSpacing: -0.4 },
+  copy: { gap: 6 }, title: { fontSize: 20, lineHeight: 25, fontWeight: '600', letterSpacing: -0.6 },
   detail: { fontSize: 14, lineHeight: 20 },
 });

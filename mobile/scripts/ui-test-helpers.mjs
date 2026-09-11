@@ -10,6 +10,10 @@ export async function capture(page, path) {
   await noTutorialFraming(page);
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
     `${path}: horizontal overflow`);
+  // Two painted frames. A screenshot taken in the same tick as the change that
+  // opened a sheet returns the frame before it, so the artifact a person reviews
+  // shows the screen the assertions above have just walked past.
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
   await page.screenshot({ path });
 }
 

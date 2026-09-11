@@ -3,27 +3,8 @@ import { useTheme } from '../theme';
 import { Icon } from './primitives';
 import type { Session } from './types';
 
-export type SessionFilter = 'All' | 'Chats' | 'Terminals';
-export const sessionFilters: SessionFilter[] = ['All', 'Chats', 'Terminals'];
 export const sessionKindLabel = (session: Session) =>
   session.kind === 'shell' ? 'Terminal' : session.kind === 'claude' ? 'Claude' : 'Codex';
-
-export function FilterTabs({ filter, onChange }: {
-  filter: SessionFilter; onChange: (value: SessionFilter) => void;
-}) {
-  const { colors } = useTheme();
-  return <View accessibilityRole="tablist" style={[s.track, { borderBottomColor: colors.border }]}>
-    {sessionFilters.map(item => {
-      const selected = item === filter;
-      return <Pressable key={item} accessibilityRole="tab" accessibilityLabel={item}
-        aria-selected={selected} accessibilityState={{ selected }} onPress={() => onChange(item)}
-        style={({ pressed }) => [s.segment, { opacity: pressed ? 0.6 : 1 }]}>
-        <Text style={[s.segmentText, { color: selected ? colors.text : colors.muted }]}>{item}</Text>
-        {selected && <View style={[s.underline, { backgroundColor: colors.accent }]} />}
-      </Pressable>;
-    })}
-  </View>;
-}
 
 export function SessionRow({ session, project, selected, onPress }: {
   session: Session; project: string; selected: boolean; onPress: () => void;
@@ -47,17 +28,16 @@ export function SessionRow({ session, project, selected, onPress }: {
   </Pressable>;
 }
 
-export function SessionsEmpty({ query, filter }: { query: string; filter: SessionFilter }) {
+// One Recents list, so one empty state. The Chats/Terminals filters are gone:
+// a terminal and a chat both belong in Recents and the list stays simpler without
+// a tab strip above four rows.
+export function SessionsEmpty({ query }: { query: string }) {
   const { colors } = useTheme();
-  const title = query ? 'No results' : filter === 'Terminals' ? 'No terminals yet' : 'Your next idea starts here';
-  const detail = query ? 'Try a different name or project.'
-    : filter === 'Terminals' ? 'Terminals you open appear here.'
-      : filter === 'Chats' ? 'Chats you start appear here.'
-        : 'Start a new chat. Find it here anytime.';
+  const title = query ? 'No results' : 'Your next idea starts here';
+  const detail = query ? 'Try a different name or project.' : 'Start a new chat. Find it here anytime.';
   return <View style={s.empty}>
     <View style={[s.emptyTile, { backgroundColor: colors.elevated }]}>
-      <Icon name={query ? 'search-outline' : filter === 'Terminals' ? 'terminal-outline' : 'chatbubble-outline'}
-        size={23} color={colors.muted} />
+      <Icon name={query ? 'search-outline' : 'chatbubble-outline'} size={23} color={colors.muted} />
     </View>
     <Text style={[s.emptyTitle, { color: colors.text }]}>{title}</Text>
     <Text style={[s.emptyText, { color: colors.muted }]}>{detail}</Text>

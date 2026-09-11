@@ -5,6 +5,11 @@ import type { NearbyComputer } from './discoveryTypes';
  *  and Apple resolved a routable address. Until then the card stays inert
  *  instead of failing a connection the person already believes started. */
 export function isConnectable(computer: NearbyComputer): computer is Required<NearbyComputer> {
+  if (!hasEndpoint(computer)) return false;
+  try { parsePairing(pairingPayload(computer)); return true; } catch { return false; }
+}
+
+function hasEndpoint(computer: NearbyComputer) {
   return typeof computer.hostId === 'string' && /^[a-f0-9]{64}$/.test(computer.hostId)
     && typeof computer.host === 'string' && computer.host.length > 0
     && typeof computer.port === 'number' && Number.isInteger(computer.port)
@@ -16,33 +21,17 @@ export function isConnectable(computer: NearbyComputer): computer is Required<Ne
  *  will connect to. The Host static public key is its `hostId`; there is no
  *  invitation, so the computer must approve this phone locally instead. */
 export function nearbyPairingLink(computer: NearbyComputer): string {
-  if (!isConnectable(computer)) {
+  if (!hasEndpoint(computer)) {
     throw new Error('This computer has not finished announcing its address. Try again in a moment.');
   }
-  const link = JSON.stringify({
-    version: 1, hostId: computer.hostId, name: computer.name, publicKey: computer.hostId,
-    url: `ws://${computer.host}:${computer.port}`, route: 'direct', network: 'lan', nearby: true,
-  });
+  const link = pairingPayload(computer);
   parsePairing(link);
   return link;
 }
 
-/** A stable starting angle for a set of computers. Hashing alone cannot keep
- *  two names apart, so it only decides where the arrangement begins. */
-export function radarAngle(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash = Math.imul(hash ^ id.charCodeAt(index), 16777619);
-  }
-  return ((hash >>> 0) % 3600) / 10;
-}
-
-/** Spreads the computers found around the radar face. Angles are decorative,
- *  never a real bearing; the same set always lays out identically, so the
- *  repeated updates of a live search never make the blips jitter. */
-export function radarAngles(ids: string[]): number[] {
-  if (!ids.length) return [];
-  const base = radarAngle(ids[0]);
-  const step = 360 / ids.length;
-  return ids.map((_, index) => (base + index * step) % 360);
+function pairingPayload(computer: NearbyComputer): string {
+  return JSON.stringify({
+    version: 1, hostId: computer.hostId, name: computer.name, publicKey: computer.hostId,
+    url: `ws://${computer.host}:${computer.port}`, route: 'direct', network: 'lan', nearby: true,
+  });
 }

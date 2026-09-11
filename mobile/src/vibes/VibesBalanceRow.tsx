@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Icon } from '../ui/primitives';
+import { vibes } from './count';
 import { useVibes } from './VibesProvider';
 import { planNames } from './plans';
 
@@ -14,16 +15,16 @@ import { planNames } from './plans';
  * a balance that has not loaded yet, so reading it as "signed out" told signed-in
  * people to sign in and sent them to Settings.
  */
-export function VibesBalanceRow({ signedIn, onWallet, onSignIn }: {
-  signedIn: boolean; onWallet(): void; onSignIn(): void;
+export function VibesBalanceRow({ signedIn, selected, onWallet, onSignIn }: {
+  signedIn: boolean; selected?: boolean; onWallet(): void; onSignIn(): void;
 }) {
   const { colors } = useTheme();
   const { wallet } = useVibes();
-  const title = wallet ? `${wallet.available.toLocaleString()} Vibes` : signedIn ? 'Vibes' : '100 free Vibes';
+  const title = wallet ? vibes(wallet.available) : signedIn ? 'Vibes' : 'Free Vibes';
   const trailing = wallet ? planNames[wallet.plan] ?? wallet.plan : signedIn ? '—' : 'Sign in';
   return <Pressable accessibilityRole="button" accessibilityLabel={`${title}, ${signedIn ? `${trailing} plan` : 'sign in to start'}`}
-    onPress={() => (signedIn ? onWallet() : onSignIn())}
-    style={({ pressed }) => [s.row, { backgroundColor: pressed ? colors.elevated : 'transparent' }]}>
+    accessibilityState={{ selected }} onPress={() => (signedIn ? onWallet() : onSignIn())}
+    style={({ pressed }) => [s.row, { backgroundColor: selected || pressed ? colors.elevated : 'transparent' }]}>
     <View style={s.icon}><Icon name="sparkles-outline" size={19} color={colors.accent} /></View>
     <Text numberOfLines={1} style={[s.title, { color: colors.text }]}>{title}</Text>
     <Text numberOfLines={1} style={[s.trailing, { color: colors.muted }]}>{trailing}</Text>

@@ -58,3 +58,19 @@ test('network failures, outages and malformed replies become plain messages, nev
   const missingUser = fakeFetch(() => ({ status: 200, body: { ok: true, token: 'tok', user: { id: 9 } } }));
   await assert.rejects(missingUser.api.login('ellis@example.com', 'longenough'), /unexpected account/);
 });
+
+// The phone cannot install anything on a computer, so setup asks the backend to
+// email the link. The address is the account's own — the call never carries one.
+test('the host download link is requested with the bearer token and no email', async () => {
+  const { api, requests } = fakeFetch(() => ({ status: 200, body: { ok: true, email: 'ellis@example.com' } }));
+  assert.equal(await api.sendHostLink('tok-9'), 'ellis@example.com');
+  assert.equal(requests[0].url, 'https://api.example.test/api/account/host-link');
+  assert.equal(requests[0].init.method, 'POST');
+  assert.equal((requests[0].init.headers as Record<string, string>).Authorization, 'Bearer tok-9');
+  assert.deepEqual(JSON.parse(String(requests[0].init.body)), {});
+});
+test('a rate-limited link request surfaces the backend message', async () => {
+  const { api } = fakeFetch(() => ({ status: 429, body: { ok: false, error: 'Please wait 240 seconds before asking for another link.' } }));
+  await assert.rejects(() => api.sendHostLink('tok-9'),
+    (error: AccountError) => error.status === 429 && /240 seconds/.test(error.message));
+});

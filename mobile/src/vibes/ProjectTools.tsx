@@ -4,18 +4,20 @@ import { useTheme } from '../theme';
 import { Button, Hint } from '../ui/primitives';
 import type { WorkspaceModel } from '../ui/types';
 import { useVibes } from './VibesProvider';
-import type { VibesTool } from './types';
+import { isProjectTool, type ProjectTool } from './types';
 
 export function ProjectTools({ workspace }: { workspace: WorkspaceModel }) {
   const { store, chats, selected, turns, wallet } = useVibes(); const { colors } = useTheme();
   const chat = chats.find(c => c.id === selected);
   const turn = turns.find(t => t.status === 'waiting');
-  const tool = turn?.tools?.find(t => t.result === null);
+  // Only the calls this phone answers. An integration call in the same batch was already
+  // answered by the server, and offering it here would ask for a decision twice.
+  const tool = turn?.tools?.filter(isProjectTool).find(t => t.result == null);
   const [busy, setBusy] = useState(false); const lock = useRef(false); const attempted = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastDecision, setLastDecision] = useState<'allow' | 'decline'>('allow');
   const connected = workspace.status === 'connected' && workspace.host?.id === chat?.host_id;
-  const respond = async (t: VibesTool, decision: 'allow' | 'decline') => {
+  const respond = async (t: ProjectTool, decision: 'allow' | 'decline') => {
     if (lock.current || !chat?.binding || !wallet || !workspace.actions.vibesProjectRequest || !store.api.toolResult || !connected) return;
     lock.current = true; setBusy(true); setError(null); setLastDecision(decision);
     try {

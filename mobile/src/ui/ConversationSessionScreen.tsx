@@ -3,6 +3,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Pressable, StyleSheet, Text, u
 import { ConversationView } from '../conversation/ConversationView';
 import { presentConversation } from '../state/presentConversation';
 import { useTheme } from '../theme';
+import { useKeyboardOffset } from './keyboardOffset';
 import { Composer } from './Composer';
 import { Hint, Icon, IconButton } from './primitives';
 import { ReviewSheet } from './ReviewSheet';
@@ -16,6 +17,7 @@ import type { Session, WorkspaceModel } from './types';
 export function ConversationSessionScreen({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
+  const offset = useKeyboardOffset();
   const compact = width > height && height < 500;
   const [review, setReview] = useState<'files' | 'changes' | null>(null);
   const [details, setDetails] = useState(false);
@@ -33,7 +35,7 @@ export function ConversationSessionScreen({ session, workspace }: { session: Ses
     'Stop session', () => { void run(() => workspace.actions.stopSession(session.id)).then(stopped => {
       if (stopped) setDetails(false);
     }); });
-  return <KeyboardAvoidingView style={s.body} behavior="padding">
+  return <KeyboardAvoidingView style={s.body} behavior="padding" keyboardVerticalOffset={offset}>
     <View style={s.context}><Pressable accessibilityRole="button" accessibilityLabel="Browse conversation project"
       disabled={!connected} onPress={() => setReview('files')} style={s.projectButton}>
       <Icon name="folder-outline" size={13} color={colors.muted} />

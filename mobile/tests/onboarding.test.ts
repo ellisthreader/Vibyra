@@ -82,3 +82,19 @@ test('a saved account restores offline, refreshes quietly and is cleared only by
   assert.equal(JSON.parse(fresh.memory.get('account')!).token, 'tok-2');
   fresh.store.dispose();
 });
+
+// A guest types the address once; a phone that already has one never asks again.
+test('the host download link takes a guest address, and a signed-in phone its own', async () => {
+  const h = runtimeHarness();
+  await h.store.initialize();
+  await assert.rejects(() => h.store.actions.sendHostLink!(), /Enter the email address/);
+  assert.equal(await h.store.actions.sendHostLink!('guest@example.com'), 'guest@example.com');
+  assert.deepEqual(h.calls.at(-1), ['host-link', null, 'guest@example.com']);
+  await h.store.actions.signUp!('ellis@example.com', 'longenough');
+  assert.equal(await h.store.actions.sendHostLink!(), 'ellis@example.com');
+  // Signed in, the token decides the address and nothing typed can override it.
+  assert.deepEqual(h.calls.at(-1), ['host-link', 'tok-1', undefined]);
+  assert.equal(await h.store.actions.sendHostLink!('stranger@example.com'), 'ellis@example.com');
+  assert.deepEqual(h.calls.at(-1), ['host-link', 'tok-1', undefined]);
+  h.store.dispose();
+});

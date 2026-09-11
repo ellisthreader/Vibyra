@@ -13,12 +13,20 @@ const links: SearchNetwork[] = [
   { id: 'pdp_ip0', kind: 'cellular', label: 'Cellular', searched: false },
 ];
 const offline: SearchNetwork[] = [links[3]];
+// The sweep knows one scope, and names it rather than a link type.
+const subnet: SearchNetwork = { id: '192.168.1', kind: 'wifi', label: '192.168.1.×', searched: true };
+// What an iOS Simulator sees: Expo serves from 127.0.0.1, so the Host is on
+// the very machine running it and loopback is the whole search.
+const here: SearchNetwork = { id: 'here', kind: 'wifi', label: 'this computer', searched: true };
 const studio: NearbyComputer = { id: 'Studio._vibyra-host._tcp.local.', name: 'Ellis’s Studio',
   hostId: key('ab'), host: '192.168.1.24', port: 4318, via: 'wifi' };
 const laptop: NearbyComputer = { id: 'Workshop._vibyra-host._tcp.local.', name: 'Workshop MacBook Pro',
-  hostId: key('cd'), host: '192.168.1.31', port: 4318, via: 'vpn' };
+  hostId: key('cd'), host: '192.168.1.31', port: 4318, via: 'direct' };
+// A computer reached over a VPN rather than the current Wi-Fi.
+const tunnel: NearbyComputer = { id: 'Office._vibyra-host._tcp.local.', name: 'Office desktop',
+  hostId: key('ef'), host: '10.8.0.14', port: 4318, via: 'vpn' };
 const arriving: NearbyComputer = { id: 'Mini._vibyra-host._tcp.local.', name: 'Living room mini',
-  via: 'direct' };
+  via: 'wifi' };
 // Resolved, but advertising no identity: an older Host that still needs a code.
 const older: NearbyComputer = { id: 'Attic._vibyra-host._tcp.local.', name: 'Attic tower',
   host: '192.168.1.44', port: 4318, via: 'wifi' };
@@ -28,7 +36,7 @@ const scripts: Record<string, DiscoveryUpdate[]> = {
   one: [{ status: 'searching', computers: [], networks: links },
     { status: 'searching', computers: [studio], networks: links }],
   many: [{ status: 'searching', computers: [studio], networks: links },
-    { status: 'searching', computers: [studio, laptop, arriving, older], networks: links }],
+    { status: 'searching', computers: [studio, laptop, tunnel, arriving, older], networks: links }],
   denied: [{ status: 'searching', computers: [], networks: links },
     { status: 'denied', computers: [], networks: links }],
   empty: [{ status: 'searching', computers: [], networks: links },
@@ -36,6 +44,18 @@ const scripts: Record<string, DiscoveryUpdate[]> = {
   failed: [{ status: 'searching', computers: [], networks: links },
     { status: 'failed', computers: [], networks: links }],
   cellular: [{ status: 'searching', computers: [], networks: offline }],
+  simulator: [{ status: 'searching', computers: [], networks: [here],
+    progress: { checked: 1, total: 2, attempt: 1 } }],
+  // A later pass: the search keeps watching instead of giving up after one go.
+  retry: [{ status: 'searching', computers: [], networks: [here],
+    progress: { checked: 2, total: 2, attempt: 4 } }],
+  // The fallback address sweep, which reports real progress as it goes.
+  sweep: [
+    { status: 'searching', computers: [], networks: [subnet], progress: { checked: 0, total: 508, attempt: 1 } },
+    { status: 'searching', computers: [], networks: [subnet], progress: { checked: 216, total: 508, attempt: 1 } },
+  ],
+  swept: [{ status: 'finished', computers: [], networks: [subnet],
+    progress: { checked: 508, total: 508, attempt: 1 } }],
 };
 
 function scripted() {

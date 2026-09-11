@@ -12,12 +12,8 @@ export const computerAgents: { kind: SessionKind; name: string; short: string; d
   { kind: 'codex', name: 'Codex', short: 'Codex', detail: 'The Codex CLI, on your computer', icon: 'code-slash-outline' },
   { kind: 'shell', name: 'Terminal', short: 'Terminal', detail: 'A plain shell, on your computer', icon: 'terminal-outline' },
 ];
-// Curated models carry `released`, which earns the picker's "New" badge.
-const NEW_MS = 90 * 24 * 60 * 60 * 1000;
-export const isNewModel = (model: VibesModel, now = Date.now()) => {
-  const released = model.released ? Date.parse(model.released) : NaN;
-  return Number.isFinite(released) && now - released < NEW_MS;
-};
+// The picker's "New" badge lives in `modelGroups`, which reads OpenRouter's
+// `created` epoch as well as the curated `released` date. One rule, one place.
 export const autoAgent = (structured?: boolean): SessionKind => (structured ? 'codex' : 'claude');
 export const agentName = (kind: SessionKind) => computerAgents.find(agent => agent.kind === kind)!.name;
 export const modelLabel = (id: string, models: VibesModel[]) => models.find(model => model.id === id)?.name ?? 'Auto';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isConnectable, nearbyPairingLink, radarAngles } from '../src/connection/nearbyPairing';
+import { isConnectable, nearbyPairingLink } from '../src/connection/nearbyPairing';
 import { parsePairing } from '../src/transport/pairing';
 
 const key = 'ab'.repeat(32);
@@ -31,6 +31,9 @@ test('a computer is only connectable once Bonjour and Apple resolution both answ
 });
 
 test('discovery cannot widen what the phone will connect to', () => {
+  for (const host of ['93.184.216.34', '192.0.0.2', '[fe80::1]', 'computer.local', '[::ffff:192.168.1.2]']) {
+    assert.equal(isConnectable({ ...found, host }), false, `${host} must not get a Connect action`);
+  }
   // An untrusted record claiming a routable address stays blocked by the same
   // rule a scanned code obeys: plaintext ws is local-only.
   assert.throws(() => nearbyPairingLink({ ...found, host: '93.184.216.34' }), /secure wss/);
@@ -47,22 +50,4 @@ test('discovery cannot widen what the phone will connect to', () => {
   assert.throws(() => parsePairing(forge({ route: 'direct' })), /cannot use nearby pairing/);
   assert.throws(() => parsePairing(forge({ route: 'direct', network: 'lan', nearby: 'yes' })),
     /cannot use nearby pairing/);
-});
-
-test('blips stay put between updates and never stack on the radar face', () => {
-  // Service names differ only in their first label, so an even arrangement,
-  // not the hash, is what keeps two computers legibly apart.
-  const ids = ['Studio', 'Workshop', 'Mini', 'Studio 2'].map(name => `${name}._vibyra-host._tcp.local.`);
-  const angles = radarAngles(ids);
-  assert.deepEqual(angles, radarAngles(ids), 'a live search re-emits without moving the blips');
-  assert.equal(angles.length, ids.length);
-  for (const [index, value] of angles.entries()) {
-    assert.ok(value >= 0 && value < 360);
-    for (const other of angles.slice(index + 1)) {
-      const apart = Math.min(Math.abs(value - other), 360 - Math.abs(value - other));
-      assert.ok(apart > 60, `angles ${value} and ${other} are only ${apart.toFixed(1)} apart`);
-    }
-  }
-  assert.deepEqual(radarAngles([]), []);
-  assert.notDeepEqual(radarAngles([ids[0]]), radarAngles([ids[1]]), 'the arrangement still varies by computer');
 });

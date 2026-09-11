@@ -5,14 +5,19 @@ import { VibesStore } from '../src/vibes/VibesStore';
 import { buyVibes, claimPending } from '../src/vibes/purchases';
 import { benefitsFor, defaultOffer, offers } from '../src/vibes/plans';
 import { sampleVibesApi } from '../src/demo/sampleVibes';
-import type { PurchaseBridge, VibesApi, VibesProduct, VibesTurn, VibesWallet } from '../src/vibes/types';
+import type { PurchaseBridge, VibesApi, VibesModel, VibesProduct, VibesTurn, VibesWallet } from '../src/vibes/types';
 
-const free = { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false };
-const pro = { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true };
-const wallet: VibesWallet = { version: 1, available: 100, held: 0, total: 100, paidAvailable: 0, plan: 'free',
-  paidUntil: null, trialChatsRemaining: 2, accountToken: 'account-one', consented: true, verified: true,
+export const free = { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false,
+  sessionCredits: 60, weekCredits: 150 };
+const pro = { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true,
+  sessionCredits: 400, weekCredits: 1000 };
+export const limits = { session: { unit: 'hours' as const, span: 5, used: 0, limit: 60, resetsAt: null },
+  week: { unit: 'days' as const, span: 7, used: 0, limit: 150, resetsAt: null } };
+export const wallet: VibesWallet = { version: 1, available: 3, held: 0, total: 3, paidAvailable: 0, plan: 'free',
+  paidUntil: null, trialChatsRemaining: 2, trialCredits: 3, trialChats: 2, trialChatCredits: 3,
+  accountToken: 'account-one', consented: true, verified: true,
   purchasesEnabled: true, products: [{ id: 'starter', credits: 350, pence: 2000, kind: 'subscription', plan: 'starter' }],
-  entitlements: free, planEntitlements: { free, pro }, remoteAccessLive: false, usedProjects: 0 };
+  entitlements: free, planEntitlements: { free, pro }, remoteAccessLive: false, usedProjects: 0, limits };
 const turn: VibesTurn = { id: 'request-one', chatId: 'chat-one', model: 'auto', status: 'queued', prompt: 'Hello',
   response: null, error: null, reserved: 2, charged: 0, createdAt: '2026-09-09' };
 function fixture(overrides: Partial<VibesApi> = {}) {
@@ -91,14 +96,17 @@ test('a late chat creation cannot replace a deliberately selected conversation',
 test('a backend without entitlements falls back to the floor rather than widening access', () => {
   const w = validateWallet({ ...wallet, entitlements: undefined, planEntitlements: undefined,
     remoteAccessLive: undefined, usedProjects: undefined });
-  assert.deepEqual(w.entitlements, { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false });
+  assert.deepEqual(w.entitlements, free);
   assert.equal(w.remoteAccessLive, false);
   assert.deepEqual(w.planEntitlements, {});
-  const spoofed = validateWallet({ ...wallet, entitlements: { maxProjects: -4, concurrentReplies: 0, fullCatalogue: 'yes', remoteAccess: 1 } });
-  assert.deepEqual(spoofed.entitlements, { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false });
+  const spoofed = validateWallet({ ...wallet, entitlements: { maxProjects: -4, concurrentReplies: 0,
+    fullCatalogue: 'yes', remoteAccess: 1, sessionCredits: 0, weekCredits: -1 } });
+  // A usage window of zero is a plan that can never send, so it is the floor and
+  // not "no limit": a spoofed wallet must never widen the rate either.
+  assert.deepEqual(spoofed.entitlements, free);
   assert.equal(validateWallet({ ...wallet, entitlements: { ...pro } }).entitlements.maxProjects, null);
 });
-test('the upgrade screen offers only higher plans and defaults to the middle one', () => {
+test('the upgrade page offers only higher plans and leads with the top one', () => {
   const products: VibesProduct[] = [
     { id: 'starter', plan: 'starter', credits: 350, pence: 2000, kind: 'subscription' },
     { id: 'builder', plan: 'builder', credits: 1000, pence: 4900, kind: 'subscription' },
@@ -107,7 +115,7 @@ test('the upgrade screen offers only higher plans and defaults to the middle one
   ];
   const free = offers({ ...wallet, products });
   assert.deepEqual(free.map(p => p.plan), ['starter', 'builder', 'pro']);
-  assert.equal(defaultOffer(free), 'builder');
+  assert.equal(defaultOffer(free), 'pro', 'the page sells the plan that carries everything');
   const builder = offers({ ...wallet, products, plan: 'builder' });
   assert.deepEqual(builder.map(p => p.plan), ['pro']);
   assert.equal(defaultOffer(builder), 'pro');
@@ -117,8 +125,12 @@ test('an entitlement that is not switched on is shown as pending, never as ready
   const product: VibesProduct = { id: 'pro', plan: 'pro', credits: 2000, pence: 9900, kind: 'subscription' };
   const wait = benefitsFor(product, { ...wallet, planEntitlements: { pro }, remoteAccessLive: false });
   assert.equal(wait.find(b => b.label.includes('Remote access'))?.status, 'Coming soon');
-  assert.ok(wait.some(b => b.label === 'Every model on OpenRouter'));
   assert.ok(wait.some(b => b.label === 'Unlimited projects'));
+  // The catalogue is on every plan, so it is not a reason to upgrade and is not
+  // listed as one. It returns by itself the moment some plan lacks it.
+  assert.ok(!wait.some(b => b.label === 'Every model on OpenRouter'));
+  const narrow = benefitsFor(product, { ...wallet, planEntitlements: { free, pro }, remoteAccessLive: false });
+  assert.ok(narrow.some(b => b.label === 'Every model on OpenRouter'));
   const live = benefitsFor(product, { ...wallet, planEntitlements: { pro }, remoteAccessLive: true });
   assert.equal(live.find(b => b.label.includes('Remote access'))?.status, undefined);
   // A plan without the entitlement must not advertise it at all.
@@ -135,7 +147,7 @@ test('the sample workspace has a wallet, so a signed-in demo never reads as sign
   assert.equal(w.purchasesEnabled, false, 'a sample workspace can show plans but never sell one');
   assert.deepEqual(offers(w).map(p => p.plan), ['starter', 'builder', 'pro'], 'the upgrade page is reachable in the sample');
   assert.equal(w.planEntitlements.pro.fullCatalogue, true);
-  assert.equal(defaultOffer(offers(w)), 'builder');
+  assert.equal(defaultOffer(offers(w)), 'pro');
 });
 test('the sample workspace cannot spend, purchase or start real work', async () => {
   for (const call of [
@@ -144,4 +156,33 @@ test('the sample workspace cannot spend, purchase or start real work', async () 
     () => sampleVibesApi.submit('id', 'quote'),
     () => sampleVibesApi.purchase('transaction', 'product'),
   ]) await assert.rejects(call(), /sample workspace/);
+});
+
+// Auto chooses the level as well as the model, and the composer shows no control
+// for it, so an effort held while Auto is selected is one nobody can see or change.
+// Left behind by the last model picked, it was persisted and sent alongside
+// "choose for me", and the server priced the turn at a level the person never set.
+test('switching to Auto drops the effort the previous model was using', async () => {
+  const steerable: VibesModel = { id: 'anthropic/claude-opus-5', name: 'Opus 5', family: 'Claude', trial: false,
+    available: true, inputPerMillion: 5, outputPerMillion: 25,
+    reasoning: { efforts: ['low', 'medium', 'high'], defaultEffort: 'high', mandatory: false } };
+  const f = fixture({ models: async () => [steerable] });
+  await f.store.initialize();
+  f.store.setModel('anthropic/claude-opus-5');
+  f.store.setEffort('high');
+  assert.equal(f.store.state.effort, 'high');
+
+  f.store.setModel('auto');
+  assert.equal(f.store.state.effort, null, 'Auto owns the level, so the phone holds none');
+  assert.equal(JSON.parse(f.saved()).effort, null, 'and a cold start cannot restore it');
+});
+
+// The reason a restored effort must survive an unknown model: before the catalogue
+// answers every model is unknown, and clearing on that would wipe a real choice.
+test('a restored effort survives a cold start on a model the catalogue has not described', async () => {
+  let saved = JSON.stringify({ pending: null, selected: null, model: 'anthropic/claude-opus-5', effort: 'xhigh' });
+  const api: VibesApi = { ...fixture().api, models: async () => [] };
+  const store = new VibesStore(api, () => 'request-one', { read: async () => saved, write: async v => { saved = v; } });
+  await store.initialize();
+  assert.equal(store.state.effort, 'xhigh');
 });

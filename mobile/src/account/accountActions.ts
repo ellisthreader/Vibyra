@@ -51,8 +51,15 @@ function credentials(email: string, password: string) {
   return clean;
 }
 export function makeAccountActions(store: WorkspaceStore): Pick<WorkspaceActions,
-  'signUp' | 'logIn' | 'providerLogIn' | 'logOut' | 'completeOnboarding' | 'resetOnboarding'> {
+  'signUp' | 'logIn' | 'providerLogIn' | 'logOut' | 'sendHostLink' | 'completeOnboarding' | 'resetOnboarding'> {
   return {
+    // The setup step cannot install anything on a computer, so it emails the link
+    // there instead. A signed-in phone already has an address and never asks again;
+    // a guest types one, because pairing never required an account.
+    sendHostLink: async (email?: string) => {
+      if (!store.token && !email) throw new Error('Enter the email address to send the link to.');
+      return store.deps.account.sendHostLink(store.token, store.token ? undefined : email);
+    },
     providerLogIn: async (provider, signal) => {
       if (!store.deps.account.socialLogin) throw new Error('Provider sign-in is unavailable. Please use email.');
       const session = await store.deps.account.socialLogin(provider, signal);
