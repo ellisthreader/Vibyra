@@ -17,7 +17,7 @@ const failure = async (run: () => Promise<unknown>): Promise<IntegrationsError> 
 };
 
 test('the catalogue is read from the integrations endpoint and kept to its shape', async () => {
-  const api = fakeFetch(url => url === 'https://api.example.test/api/integrations'
+  const api = fakeFetch(url => url === 'https://api.example.test/api/connectors'
     ? { status: 200, body: JSON.stringify({ ...catalogue, integrations: [...catalogue.integrations, { name: 'no id' }] }) }
     : new Error('wrong url: ' + url));
   assert.deepEqual(await api.catalogue(), { enabled: true, integrations: [{ id: 'github' }, { id: 'stripe' }] });
@@ -27,12 +27,12 @@ test('the catalogue is read from the integrations endpoint and kept to its shape
  * A deployment whose backend predates integrations answers the catalogue in framework
  * language, and Laravel puts it in the same `message` field our own refusals use,
  * so it was printed on the page: "The GET method is not supported for route
- * api/integrations. Supported methods: OPTIONS." Routing is never something to say to
+ * api/connectors. Supported methods: OPTIONS." Routing is never something to say to
  * a person, and the honest sentence is that this server has no integrations yet.
  */
 test('a server without the endpoint says so, in words, and never quotes its router', async () => {
   for (const status of [404, 405, 501]) {
-    const api = fakeFetch(() => ({ status, body: JSON.stringify({ message: 'The GET method is not supported for route api/integrations. Supported methods: OPTIONS.' }) }));
+    const api = fakeFetch(() => ({ status, body: JSON.stringify({ message: 'The GET method is not supported for route api/connectors. Supported methods: OPTIONS.' }) }));
     const error = await failure(() => api.catalogue());
     assert.equal(error.message, 'Integrations are not available on this server yet.');
     assert.equal(error.status, status);

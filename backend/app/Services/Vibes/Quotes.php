@@ -2,7 +2,7 @@
 
 namespace App\Services\Vibes;
 
-use App\Services\Integrations\IntegrationTools;
+use App\Services\ChatConnectors\ConnectorTools;
 use App\Services\Vibes\Auto\Router;
 use App\Services\Vibes\Auto\Situation;
 use Illuminate\Support\Facades\Crypt;
@@ -14,7 +14,7 @@ class Quotes
         private readonly Catalog $catalog,
         private readonly Wallet $wallet,
         private readonly Router $router,
-        private readonly IntegrationTools $integrations,
+        private readonly ConnectorTools $integrations,
     ) {}
 
     /** The level to price and send: what was asked for, if this model takes it. */
@@ -137,7 +137,7 @@ class Quotes
     {
         $base = $bound ? self::AGENT_PROMPT : self::CHAT_PROMPT;
         if (! $integrations) return $base;
-        $names = implode(', ', array_map(fn ($slug) => (string) config('integrations.catalogue.'.$slug.'.name', $slug), $integrations));
+        $names = implode(', ', array_map(fn ($slug) => (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug), $integrations));
 
         return $base.' The person has connected '.$names.' and referred to it in this message. '
             .'Use its tools to answer from their own account rather than from memory. '

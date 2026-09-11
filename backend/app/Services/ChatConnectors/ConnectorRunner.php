@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Integrations;
+namespace App\Services\ChatConnectors;
 
 use App\Services\Vibes\AgentTools;
 use Illuminate\Support\Facades\DB;
@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\DB;
  * and hands the result back through the same batch the phone uses. A reply that
  * mixes both therefore resumes only when every call has an answer.
  */
-class IntegrationRunner
+class ConnectorRunner
 {
-    public function __construct(private readonly IntegrationTools $tools, private readonly AgentTools $agent) {}
+    public function __construct(private readonly ConnectorTools $tools, private readonly AgentTools $agent) {}
 
     public function run(string $turnId, int $userId): void
     {

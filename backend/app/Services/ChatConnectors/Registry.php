@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Integrations;
+namespace App\Services\ChatConnectors;
 
-use App\Services\Integrations\Connectors\{GithubConnector, StripeConnector};
+use App\Services\ChatConnectors\Connectors\{GithubConnector, StripeConnector};
 
 /**
  * Routes a slug to its connector and a tool call back to the integration that owns it.
@@ -25,7 +25,7 @@ class Registry
     /** Slugs that have both a catalogue entry and an implementation. */
     public function slugs(): array
     {
-        return array_values(array_intersect(array_keys(self::CONNECTORS), array_keys((array) config('integrations.catalogue', []))));
+        return array_values(array_intersect(array_keys(self::CONNECTORS), array_keys((array) config('chat_connectors.catalogue', []))));
     }
 
     public function has(string $slug): bool

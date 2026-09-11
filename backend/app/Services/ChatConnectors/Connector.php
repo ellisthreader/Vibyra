@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Integrations;
+namespace App\Services\ChatConnectors;
 
 /**
  * One connected service. A connector owns three things and nothing else: the tool

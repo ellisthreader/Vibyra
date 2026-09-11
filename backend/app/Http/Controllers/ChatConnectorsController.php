@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UserPayloads;
-use App\Services\Integrations\{Catalogue, Installs, Registry};
+use App\Services\ChatConnectors\{Catalogue, Installs, Registry};
 use Illuminate\Http\Request;
 
-class IntegrationsController extends Controller
+class ChatConnectorsController extends Controller
 {
     use UserPayloads;
 
@@ -36,7 +36,7 @@ class IntegrationsController extends Controller
 
     private function available(Request $request, string $integration)
     {
-        abort_unless(config('integrations.enabled'), 503, 'Integrations are not switched on for this account yet.');
+        abort_unless(config('chat_connectors.enabled'), 503, 'Integrations are not switched on for this account yet.');
         abort_unless(app(Registry::class)->has($integration), 404, 'That integration does not exist.');
         return $this->authenticatedUser($request);
     }

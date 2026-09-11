@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\Integrations\IntegrationRunner;
+use App\Services\ChatConnectors\ConnectorRunner;
 use App\Services\Vibes\{AgentTools, TurnPrice, Turns};
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -65,7 +65,7 @@ class RunVibesTurn implements ShouldQueue
                     app(AgentTools::class)->awaitTools($t, $body['choices'][0]['message'], $micro);
                     // Integration calls are answered here rather than by the phone, which also
                     // re-queues this turn; a call the phone owes still parks as before.
-                    app(IntegrationRunner::class)->run($t->id, (int) $t->user_id);
+                    app(ConnectorRunner::class)->run($t->id, (int) $t->user_id);
                     return;
                 }
                 // A call that succeeded but came back empty is a budgeting failure on

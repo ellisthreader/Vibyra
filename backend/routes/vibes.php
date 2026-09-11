@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\IntegrationsController;
+use App\Http\Controllers\ChatConnectorsController;
 use App\Http\Controllers\VibesController;
 use App\Http\Controllers\VibesGuestController;
 use App\Http\Controllers\VibesPurchaseController;
@@ -35,8 +35,8 @@ Route::post('api/vibes/apple-notifications', \App\Http\Controllers\VibesAppleNot
  * Integrations. The catalogue is public like the model list; connecting an account
  * and disconnecting it authenticate inside the controller.
  */
-Route::prefix('api/integrations')->middleware('throttle:60,1')->group(function () {
-    Route::get('/', [IntegrationsController::class, 'index']);
-    Route::post('{integration}/connect', [IntegrationsController::class, 'connect'])->middleware('throttle:10,1');
-    Route::post('{integration}/disconnect', [IntegrationsController::class, 'disconnect']);
+Route::prefix('api/connectors')->middleware('throttle:60,1')->group(function () {
+    Route::get('/', [ChatConnectorsController::class, 'index']);
+    Route::post('{integration}/connect', [ChatConnectorsController::class, 'connect'])->middleware('throttle:10,1');
+    Route::post('{integration}/disconnect', [ChatConnectorsController::class, 'disconnect']);
 })->where('integration', '[a-z][a-z0-9]*');

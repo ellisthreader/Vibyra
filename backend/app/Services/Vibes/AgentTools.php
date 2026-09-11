@@ -3,7 +3,7 @@
 namespace App\Services\Vibes;
 
 use App\Jobs\RunVibesTurn;
-use App\Services\Integrations\IntegrationTools;
+use App\Services\ChatConnectors\ConnectorTools;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -52,8 +52,8 @@ class AgentTools
                 abort_unless(is_array($args), 422, 'Invalid tool arguments.');
                 // An integration call is answered by this server against the person's own
                 // connected account; a project call is answered by their phone.
-                $integration = app(IntegrationTools::class)->ownerOf($name);
-                $safe = $integration !== null ? app(IntegrationTools::class)->validate($integration, $name, $args) : $this->fileArguments($name, $args);
+                $integration = app(ConnectorTools::class)->ownerOf($name);
+                $safe = $integration !== null ? app(ConnectorTools::class)->validate($integration, $name, $args) : $this->fileArguments($name, $args);
                 DB::table('vibes_tools')->insert(['id' => (string) Str::uuid(), 'turn_id' => $turn->id,
                     'provider_id' => $call['id'], 'operation' => $name, 'integration' => $integration, 'arguments' => json_encode($safe),
                     'created_at' => now(), 'updated_at' => now()]);

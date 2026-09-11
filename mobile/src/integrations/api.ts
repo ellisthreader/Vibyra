@@ -37,13 +37,13 @@ export function createIntegrationsApi(baseUrl: string, token: () => string | nul
     if (!identity && !anonymous) throw new IntegrationsError('Sign in to connect an integration.', 401);
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 25000);
     try {
-      const r = await fetcher(`${baseUrl.replace(/\/$/, '')}/api/integrations${path}`, { method: body === undefined ? 'GET' : 'POST',
+      const r = await fetcher(`${baseUrl.replace(/\/$/, '')}/api/connectors${path}`, { method: body === undefined ? 'GET' : 'POST',
         headers: { ...(identity ? { Authorization: `Bearer ${identity}` } : {}), Accept: 'application/json', 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
       const data = await parse(r);
       if (!anonymous && identity !== token()) throw new IntegrationsError('Your account changed. Please try again.', 401);
       // A server without this endpoint answers in framework language — "The GET
-      // method is not supported for route api/integrations" — and that used to be
+      // method is not supported for route api/connectors" — and that used to be
       // printed on the page verbatim, because it arrives in the same `message`
       // field our own refusals use. Routing is never something to tell a person.
       if (!r.ok) throw new IntegrationsError(missing(r.status) ? unexplained(r.status)

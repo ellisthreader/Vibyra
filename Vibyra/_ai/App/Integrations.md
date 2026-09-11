@@ -2,15 +2,27 @@
 
 Read this before changing the Integrations destination, an integration's page, the
 connectors behind it, or the brand marks any of them draw. The backend contract
-lives in `backend/config/integrations.php` and is mirrored, deliberately
+lives in `backend/config/chat_connectors.php` and is mirrored, deliberately
 duplicated, in `mobile/src/integrations/catalogue.ts` so the page draws before a
 server answers. Keep the two in step, in the same order.
 
+In code this feature is **chat connectors**. `release/0.6.3-macos` has a
+separate Integrations feature - OAuth connections for the desktop agents
+(Google, Microsoft, Stripe, Shopify, GitHub) under `/api/integrations`,
+`IntegrationsController`, `config/integrations.php` and `App\Services\Integrations`.
+The phone chat went onto production's backend line, `release/macos-web`, on
+2026-09-11 (branch `launch/vibes-on-macos-web`), and ours was renamed rather
+than theirs so the two can meet in a later merge without colliding: `/api/connectors`, `ChatConnectorsController`,
+`config/chat_connectors.php`, `App\Services\ChatConnectors` (`ConnectorTools`,
+`ConnectorRunner`), `CHAT_CONNECTORS_ENABLED`, and `connectors:smoke`. The phone
+keeps the word "Integrations" on screen and in `mobile/src/integrations`, and the
+Vibes quote field is still `integrations`. The two could share one account
+broker one day (a GitHub connected once for both); today they are independent.
+
 This was called Plugins until 2026-09-10. Nothing shipped under that name: the
 rename went through the table (`vibes_integration_installs`), the column
-(`vibes_tools.integration`), the route prefix (`/api/integrations`), the quote
-field (`integrations`) and the env var (`INTEGRATIONS_ENABLED`) in one go, so
-there is no compatibility shim to keep. The word "plugin" left in this repo
+(`vibes_tools.integration`), the quote field (`integrations`) and the env var in
+one go, so there is no compatibility shim to keep. The word "plugin" left in this repo
 belongs to Tauri, Vite, Composer or OpenRouter's own `web_plugin`, and none of it
 is this feature.
 
@@ -139,11 +151,11 @@ title-cased initial - so a connector added on the backend never draws a blank ti
 
 ## Validation
 
-`php artisan test --filter='IntegrationsTest|ConnectorOperationsTest'` covers the
+`php artisan test --filter='ChatConnectorsTest|ConnectorOperationsTest'` covers the
 catalogue shape, tool routing, the writes contract, every operation against a
 recorded answer, what each write puts on the wire, and Stripe's double-create.
 Recorded answers cannot catch a provider retiring an endpoint - that is how
-Todoist's `410` went unnoticed - so `php artisan integrations:smoke` against real
+Todoist's `410` went unnoticed - so `php artisan connectors:smoke` against real
 keys is the check before shipping.
 
 `npm run verify:integrations --prefix mobile` walks browse, page, refusal,
@@ -155,5 +167,5 @@ change too. The fixture's `?state=readonly` clears `writes` across the catalogue
 so the absence of that section stays covered while every real integration has one.
 
 The two catalogues being in step is still only enforced by eye. Dumping
-`config('integrations.catalogue')` and diffing it against `fallbackIntegrations`
+`config('chat_connectors.catalogue')` and diffing it against `fallbackIntegrations`
 field by field is the check to run after changing either.

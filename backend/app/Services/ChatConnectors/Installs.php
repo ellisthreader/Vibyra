@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Integrations;
+namespace App\Services\ChatConnectors;
 
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +53,7 @@ class Installs
     public function credential(int $userId, string $slug): string
     {
         $row = DB::table('vibes_integration_installs')->where('user_id', $userId)->where('integration', $slug)->first();
-        $name = (string) config('integrations.catalogue.'.$slug.'.name', $slug);
+        $name = (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug);
         abort_unless($row, 422, 'Connect '.$name.' before using it.');
         DB::table('vibes_integration_installs')->where('id', $row->id)->update(['last_used_at' => now()]);
         return Crypt::decryptString($row->credential);

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\Integrations\Registry;
+use App\Services\ChatConnectors\Registry;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -26,7 +26,7 @@ class ConnectorOperationsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['integrations.enabled' => true]);
+        config(['chat_connectors.enabled' => true]);
     }
 
     /**

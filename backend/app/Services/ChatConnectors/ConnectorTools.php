@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\Integrations;
+namespace App\Services\ChatConnectors;
 
 /**
  * The bridge between a turn and the connectors. An integration reaches a model only
  * when the person named it in the message and the account has really connected
  * it, so an install alone never quietly widens what a reply can read.
  */
-class IntegrationTools
+class ConnectorTools
 {
     public function __construct(private readonly Registry $registry, private readonly Installs $installs) {}
 
@@ -22,7 +22,7 @@ class IntegrationTools
             array_map(fn ($slug) => is_string($slug) ? strtolower(trim($slug)) : '', $requested),
             fn ($slug) => $slug !== '' && in_array($slug, $installed, true),
         )));
-        return array_slice($allowed, 0, max(1, (int) config('integrations.max_per_turn', 3)));
+        return array_slice($allowed, 0, max(1, (int) config('chat_connectors.max_per_turn', 3)));
     }
 
     public function definitions(array $slugs): array
@@ -55,7 +55,7 @@ class IntegrationTools
             $outcome = $this->registry->for($slug)->run($operation, $arguments, $credential);
             return ['result' => (array) ($outcome['result'] ?? []), 'summary' => (string) ($outcome['summary'] ?? $operation)];
         } catch (\Throwable $e) {
-            $name = (string) config('integrations.catalogue.'.$slug.'.name', $slug);
+            $name = (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug);
             $message = $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException
                 ? $e->getMessage() : $name.' could not be reached just now.';
             return ['result' => ['error' => $message], 'summary' => $name.' could not answer'];

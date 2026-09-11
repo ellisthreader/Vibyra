@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Integrations\Connectors;
+namespace App\Services\ChatConnectors\Connectors;
 
-use App\Services\Integrations\Connector;
+use App\Services\ChatConnectors\Connector;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -142,7 +142,7 @@ class GithubConnector implements Connector
     private function request(string $credential)
     {
         return Http::withToken($credential)->acceptJson()
-            ->timeout((int) config('integrations.timeout_seconds', 12))
+            ->timeout((int) config('chat_connectors.timeout_seconds', 12))
             ->withHeaders(['Accept' => 'application/vnd.github+json', 'X-GitHub-Api-Version' => '2022-11-28']);
     }
 

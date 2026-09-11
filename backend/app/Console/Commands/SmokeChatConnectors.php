@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Integrations\Registry;
+use App\Services\ChatConnectors\Registry;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -17,13 +17,13 @@ use Throwable;
  * files an issue on someone's repository every time it is invoked is a smoke run
  * nobody will dare to leave in CI.
  *
- *   php artisan integrations:smoke                    reads only, every credential present
- *   php artisan integrations:smoke --write            reads and one real write each
- *   php artisan integrations:smoke github,stripe      just those two
+ *   php artisan connectors:smoke                    reads only, every credential present
+ *   php artisan connectors:smoke --write            reads and one real write each
+ *   php artisan connectors:smoke github,stripe      just those two
  */
-class SmokeIntegrations extends Command
+class SmokeChatConnectors extends Command
 {
-    protected $signature = 'integrations:smoke {only? : Comma-separated slugs, default every one with a credential}
+    protected $signature = 'connectors:smoke {only? : Comma-separated slugs, default every one with a credential}
         {--write : Also perform one real write per integration, which creates real objects}';
 
     protected $description = 'Run one real read, and optionally one real write, against every connected integration';
@@ -36,7 +36,7 @@ class SmokeIntegrations extends Command
     private const CHECKS = [
         'github' => ['SMOKE_GITHUB_TOKEN', 'github_list_repositories', [],
             'github_create_issue', ['repository' => 'SMOKE_GITHUB_REPOSITORY', 'title' => 'Vibyra smoke test',
-                'body' => 'Opened by `php artisan integrations:smoke --write`. Safe to close.']],
+                'body' => 'Opened by `php artisan connectors:smoke --write`. Safe to close.']],
         'stripe' => ['SMOKE_STRIPE_KEY', 'stripe_balance', [],
             'stripe_create_customer', ['email' => 'SMOKE_STRIPE_EMAIL', 'description' => 'Vibyra smoke test']],
     ];

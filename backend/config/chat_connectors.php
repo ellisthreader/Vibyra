@@ -14,11 +14,11 @@
  */
 return [
 
-    'enabled' => env('INTEGRATIONS_ENABLED', false),
+    'enabled' => env('CHAT_CONNECTORS_ENABLED', false),
 
     // A connected account is never called more slowly than this allows, and one
     // integration call may never hold a turn open longer than the job's own timeout.
-    'timeout_seconds' => (int) env('INTEGRATIONS_TIMEOUT_SECONDS', 12),
+    'timeout_seconds' => (int) env('CHAT_CONNECTORS_TIMEOUT_SECONDS', 12),
 
     // At most this many integration tools may be attached to a single turn. Every
     // tool schema is sent with the prompt and is therefore paid for by the person.

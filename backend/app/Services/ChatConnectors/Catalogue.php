@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Integrations;
+namespace App\Services\ChatConnectors;
 
 /**
  * The catalogue is a menu, not an entitlement: it answers before sign-in and
@@ -14,13 +14,13 @@ class Catalogue
     public function payload(?int $userId): array
     {
         $rows = $userId ? $this->installs->all($userId) : [];
-        return ['enabled' => (bool) config('integrations.enabled'), 'integrations' =>
+        return ['enabled' => (bool) config('chat_connectors.enabled'), 'integrations' =>
             array_map(fn ($slug) => $this->entry($slug, $rows[$slug] ?? null), $this->registry->slugs())];
     }
 
     private function entry(string $slug, ?object $install): array
     {
-        $entry = (array) config('integrations.catalogue.'.$slug, []);
+        $entry = (array) config('chat_connectors.catalogue.'.$slug, []);
         $credential = (array) ($entry['credential'] ?? []);
         return [
             'id' => $slug,

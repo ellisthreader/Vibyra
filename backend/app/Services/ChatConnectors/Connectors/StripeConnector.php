@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Integrations\Connectors;
+namespace App\Services\ChatConnectors\Connectors;
 
-use App\Services\Integrations\Connector;
+use App\Services\ChatConnectors\Connector;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -161,7 +161,7 @@ class StripeConnector implements Connector
 
     private function request(string $credential)
     {
-        return Http::withToken($credential)->acceptJson()->timeout((int) config('integrations.timeout_seconds', 12));
+        return Http::withToken($credential)->acceptJson()->timeout((int) config('chat_connectors.timeout_seconds', 12));
     }
 
     /** The decoded body, or null when Stripe refused or could not be reached. */

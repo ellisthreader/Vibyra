@@ -12,37 +12,35 @@ security assessment before anyone outside a 100-person test list can connect it.
 
 ## 1. Ship the backend and the app
 
-The integrations layer is still local work, which is why production answers
-`GET /api/integrations` with `405`: the route does not exist there yet.
+Production's backend runs `release/macos-web`, deployed by uploading a checkout
+with `railway up` rather than from GitHub (the Mac app itself, 0.1.x, is built
+from `release/macos-0.1.8-experience`). The launch branch
+`launch/vibes-on-macos-web` is that backend line plus the Vibes chat backend and
+these connectors, so deploying it adds the chat without rolling back the
+website, downloads or Mac updater. Deploy it from that branch's checkout only,
+and see the memory note on finding the live line before any deploy.
 
-The new files are untracked:
+In code these are **chat connectors**, not integrations, because
+`release/0.6.3-macos` has a separate Integrations feature for the desktop agents
+(`/api/integrations`, `IntegrationsController`, `config/integrations.php`,
+`App\Services\Integrations`) that will meet this line when the two are merged.
+Ours lives under `/api/connectors`, `ChatConnectorsController`,
+`config/chat_connectors.php` and `App\Services\ChatConnectors`, and is switched
+on by `CHAT_CONNECTORS_ENABLED`. The phone still calls the destination
+"Integrations".
 
-```
-backend/app/Services/Integrations  backend/app/Http/Controllers/IntegrationsController.php
-backend/config/integrations.php    backend/database/migrations/2026_09_09_000002_create_vibes_integrations.php
-backend/app/Console/Commands/SmokeIntegrations.php
-backend/tests/Feature/IntegrationsTest.php  backend/tests/Feature/ConnectorOperationsTest.php
-mobile/src/integrations  mobile/src/ui/IntegrationsScreen.tsx  mobile/src/demo/sampleIntegrations.ts
-mobile/tests/integrationsApi.test.ts  mobile/tests/integrationsBrowserFixture.tsx
-mobile/scripts/verify-integrations-ui.mjs
-```
-
-It is also wired in through tracked files that carry other uncommitted work, so
-they ship together with it: `backend/routes/vibes.php`, `VibesController`,
-`RunVibesTurn`, `Vibes/AgentTools`, `Vibes/Quotes`, and on the phone `App.tsx`,
-`useWorkspace`, `WorkspaceApp`, `NavigationDrawer`, `BrandLogo`, `VibesComposer`
-and `VibesScreen`.
-
-The migration `create_vibes_integrations` has to run on deploy; connected keys are
-stored encrypted in that table. The app has no over-the-air updates, so people
-get the Integrations screen only through a new App Store build.
+The migration `create_vibes_integrations` runs on deploy (the start script runs
+`migrate --force`); connected keys are stored encrypted in that table. The chat
+also needs `VIBES_ENABLED=true`, and the start script's worker must be able to
+reach the `vibes` queue. The app has no over-the-air updates, so people get the
+Integrations screen only through a new App Store build.
 
 ## 2. Switch the feature on
 
 On Railway, set:
 
 ```
-INTEGRATIONS_ENABLED=true
+CHAT_CONNECTORS_ENABLED=true
 ```
 
 It is one switch for every account. Until it is set the catalogue still lists
@@ -70,9 +68,9 @@ both - it is a menu, and reads fine signed out - but connecting is refused with
 ## 4. Prove them against the real services
 
 ```
-php artisan integrations:smoke                 # reads only
-php artisan integrations:smoke --write         # reads and one real write each
-php artisan integrations:smoke github          # just one
+php artisan connectors:smoke                 # reads only
+php artisan connectors:smoke --write         # reads and one real write each
+php artisan connectors:smoke github          # just one
 ```
 
 It reads credentials from the environment, stores nothing, and prints a pass/fail
