@@ -38,6 +38,8 @@ class Catalogue
                 // `oauth` once this server can send a person to the provider's own sign-in;
                 // until then the same entry is connected with a pasted key.
                 'kind' => $this->oauth->configured($slug) ? 'oauth' : 'token',
+                // Whether that sign-in also signs a signed-out person in to Vibyra.
+                'signsIn' => $this->oauth->signsIn($slug),
                 'label' => (string) ($credential['label'] ?? ''),
                 'placeholder' => (string) ($credential['placeholder'] ?? ''),
                 'help' => (string) ($credential['help'] ?? ''),

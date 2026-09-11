@@ -28,6 +28,12 @@ class ConnectorOAuth
     /** Where a finished sign-in may return to: the app, in a store build or in Expo Go. */
     private const RETURN_SCHEMES = ['vibyra', 'exp', 'exps'];
 
+    /** Whether this provider's sign-in can also sign a person in to Vibyra (GitHub can; Stripe cannot). */
+    public function signsIn(string $slug): bool
+    {
+        return $this->configured($slug) && (bool) ($this->settings($slug)['signs_in'] ?? false);
+    }
+
     public function configured(string $slug): bool
     {
         $settings = $this->settings($slug);
@@ -35,15 +41,20 @@ class ConnectorOAuth
             && (string) ($settings['client_secret'] ?? '') !== '';
     }
 
-    /** The provider's page to open, and the flow id the phone reads the outcome from. */
-    public function start(int $userId, string $slug, ?string $returnUrl): array
+    /**
+     * The provider's page to open, and the flow id the phone reads the outcome from.
+     * With no account, only a provider that can sign a person in may start: the
+     * callback then finds or makes the Vibyra account from the provider's identity.
+     */
+    public function start(?int $userId, string $slug, ?string $returnUrl): array
     {
         abort_unless($this->configured($slug), 422, 'Signing in to '.$this->name($slug).' is not set up on this server yet.');
+        abort_if($userId === null && !$this->signsIn($slug), 401, 'Sign in to Vibyra to connect '.$this->name($slug).'.');
         $flowId = (string) Str::uuid();
         $state = Str::random(48);
         Cache::put($this->stateKey($state), ['userId' => $userId, 'slug' => $slug, 'flowId' => $flowId,
             'return' => $this->safeReturn($returnUrl)], now()->addMinutes(self::FLOW_MINUTES));
-        $this->record($flowId, $userId, ['status' => 'pending']);
+        $this->record($flowId, $userId, ['status' => 'pending', 'anonymous' => $userId === null]);
         $settings = $this->settings($slug);
         $query = array_filter([
             'response_type' => 'code', 'client_id' => (string) $settings['client_id'],
@@ -83,22 +94,65 @@ class ConnectorOAuth
         return [$flow, $token];
     }
 
-    public function succeed(array $flow): void
+    /** `session` is the Vibyra sign-in a provider identity produced, for a phone that started signed out. */
+    public function succeed(array $flow, int $userId, ?array $session = null): void
     {
-        $this->record((string) $flow['flowId'], (int) $flow['userId'], ['status' => 'connected']);
+        $this->record((string) $flow['flowId'], $userId, ['status' => 'connected',
+            'anonymous' => $flow['userId'] === null] + ($session ? ['session' => $session] : []));
     }
 
     public function fail(array $flow, string $message): void
     {
-        $this->record((string) $flow['flowId'], (int) $flow['userId'], ['status' => 'failed', 'error' => $message]);
+        $this->record((string) $flow['flowId'], $flow['userId'] === null ? null : (int) $flow['userId'],
+            ['status' => 'failed', 'error' => $message, 'anonymous' => $flow['userId'] === null]);
     }
 
-    /** The outcome for its own account only; anyone else's flow reads as expired. */
-    public function status(string $flowId, int $userId): array
+    /**
+     * The outcome, to its own account, or - for a sign-in begun signed out - to the
+     * phone that began it, which alone was handed the flow id. Anyone else reads
+     * "expired". The Vibyra session a signed-out sign-in produced goes only to that
+     * phone; a signed-in reader never needs it.
+     */
+    public function status(string $flowId, ?int $userId): array
     {
         $result = Cache::get($this->resultKey($flowId));
-        if (!is_array($result) || (int) ($result['userId'] ?? 0) !== $userId) return ['status' => 'expired'];
-        return array_diff_key($result, ['userId' => true]);
+        if (!is_array($result)) return ['status' => 'expired'];
+        $anonymous = (bool) ($result['anonymous'] ?? false);
+        $owner = isset($result['userId']) ? (int) $result['userId'] : null;
+        if ($userId !== null ? $owner !== $userId : !$anonymous) return ['status' => 'expired'];
+        $visible = array_diff_key($result, ['userId' => true, 'anonymous' => true, 'session' => true]);
+        if ($userId === null && isset($result['session'])) $visible['session'] = $result['session'];
+        return $visible;
+    }
+
+    /** Whose catalogue a flow's reader should see: their own, or the account a signed-out sign-in produced. */
+    public function owner(string $flowId): ?int
+    {
+        $result = Cache::get($this->resultKey($flowId));
+        return is_array($result) && isset($result['userId']) ? (int) $result['userId'] : null;
+    }
+
+    /**
+     * Who the person is at the provider, as the provider-sign-in account service
+     * expects it: a stable subject, a verified email, and a name. GitHub hides the
+     * email from `/user` unless it is public, so the verified primary one is read
+     * from `/user/emails`, which the `user:email` scope allows.
+     *
+     * @return array{subject: string, email: ?string, name: ?string}
+     */
+    public function identify(string $slug, string $token): array
+    {
+        $identity = (array) ($this->settings($slug)['identity'] ?? []);
+        $user = Http::withToken($token)->acceptJson()->timeout(15)->get((string) ($identity['user'] ?? ''));
+        abort_unless($user->successful() && $user->json('id'), 422, $this->name($slug).' did not say who you are. Please try again.');
+        $email = null;
+        foreach ((array) Http::withToken($token)->acceptJson()->timeout(15)->get((string) ($identity['emails'] ?? ''))->json() as $row) {
+            if (is_array($row) && ($row['primary'] ?? false) && ($row['verified'] ?? false) && is_string($row['email'] ?? null)) {
+                $email = strtolower($row['email']);
+            }
+        }
+        $name = trim((string) ($user->json('name') ?: $user->json('login')));
+        return ['subject' => (string) $user->json('id'), 'email' => $email, 'name' => $name === '' ? null : $name];
     }
 
     /** Where the browser goes when it is done: back to the app, carrying the outcome. */
@@ -106,7 +160,8 @@ class ConnectorOAuth
     {
         $return = $flow['return'] ?? null;
         if (!is_string($return) || $return === '') return null;
-        $status = $this->status((string) $flow['flowId'], (int) $flow['userId'])['status'];
+        $result = Cache::get($this->resultKey((string) $flow['flowId']));
+        $status = is_array($result) ? (string) ($result['status'] ?? 'expired') : 'expired';
         return $return.(str_contains($return, '?') ? '&' : '?').http_build_query(['flow' => $flow['flowId'], 'status' => $status]);
     }
 
@@ -134,7 +189,7 @@ class ConnectorOAuth
         return in_array($scheme, self::RETURN_SCHEMES, true) ? $returnUrl : null;
     }
 
-    private function record(string $flowId, int $userId, array $result): void
+    private function record(string $flowId, ?int $userId, array $result): void
     {
         Cache::put($this->resultKey($flowId), [...$result, 'userId' => $userId], now()->addMinutes(self::FLOW_MINUTES));
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UserPayloads;
+use App\Services\Auth\{ProviderAccountException, ProviderAccountService};
 use App\Services\ChatConnectors\{Catalogue, ConnectorOAuth, Installs, Registry};
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -35,19 +36,29 @@ class ChatConnectorsController extends Controller
         return $this->json($catalogue->payload($user->id));
     }
 
-    /** Begin a sign-in: the provider's page for the phone to open, and the flow to read back. */
+    /**
+     * Begin a sign-in: the provider's page for the phone to open, and the flow to
+     * read back. A signed-out phone may begin one with a provider that can sign it
+     * in too, so connecting GitHub never stops at a Vibyra login page first.
+     */
     public function start(Request $request, string $integration, ConnectorOAuth $oauth)
     {
-        $user = $this->available($request, $integration);
+        abort_unless(config('chat_connectors.enabled'), 503, 'Integrations are not switched on for this account yet.');
+        abort_unless(app(Registry::class)->has($integration), 404, 'That integration does not exist.');
         $data = $request->validate(['returnUrl' => 'nullable|string|max:500']);
-        return $this->json($oauth->start($user->id, $integration, $data['returnUrl'] ?? null));
+        return $this->json($oauth->start($this->optionalAuthenticatedUser($request)?->id, $integration, $data['returnUrl'] ?? null));
     }
 
-    /** How a sign-in ended, with the catalogue as it now stands, for the account that started it. */
+    /**
+     * How a sign-in ended, with the catalogue as it now stands. A phone that began
+     * signed out also receives the Vibyra session the provider's identity produced.
+     */
     public function flow(Request $request, string $flow, ConnectorOAuth $oauth, Catalogue $catalogue)
     {
-        $user = $this->authenticatedUser($request);
-        return $this->json([...$oauth->status($flow, $user->id), 'catalogue' => $catalogue->payload($user->id)]);
+        $reader = $this->optionalAuthenticatedUser($request)?->id;
+        $state = $oauth->status($flow, $reader);
+        $whose = $reader ?? (isset($state['session']) ? $oauth->owner($flow) : null);
+        return $this->json([...$state, 'catalogue' => $catalogue->payload($whose)]);
     }
 
     /**
@@ -61,12 +72,26 @@ class ChatConnectorsController extends Controller
         [$flow, $token] = $oauth->finish($integration, (string) $request->query('state', ''),
             (string) $request->query('code', ''), (string) $request->query('error', ''));
         if ($flow && $token !== null) {
-            try { $installs->connect((int) $flow['userId'], $integration, $token); $oauth->succeed($flow); }
-            catch (HttpException $e) { $oauth->fail($flow, $e->getMessage()); }
+            try {
+                // Signed out when it began: the provider's identity signs the person in, by
+                // the same rule as Apple and Google - a new account from a verified email,
+                // and never a quiet link to an existing account that has the same email.
+                $user = $flow['userId'] === null
+                    ? app(ProviderAccountService::class)->resolve($request, $integration, $oauth->identify($integration, $token))
+                    : null;
+                $userId = $user?->id ?? (int) $flow['userId'];
+                $installs->connect($userId, $integration, $token);
+                $oauth->succeed($flow, $userId, $user ? $this->sessionPayload($request, $user) : null);
+            } catch (ProviderAccountException $e) {
+                $oauth->fail($flow, $e->getMessage());
+            } catch (HttpException $e) {
+                $oauth->fail($flow, $e->getMessage());
+            }
         }
         $name = $oauth->name($integration);
         if ($flow && ($to = $oauth->returnTo($flow))) return redirect()->away($to);
-        $connected = $flow && $oauth->status((string) $flow['flowId'], (int) $flow['userId'])['status'] === 'connected';
+        $connected = $flow && ($oauth->owner((string) $flow['flowId']) !== null)
+            && $oauth->status((string) $flow['flowId'], $oauth->owner((string) $flow['flowId']))['status'] === 'connected';
         return $connected ? $this->page($name.' is connected', 'You can close this page and go back to Vibyra.')
             : $this->page($name.' was not connected', 'You can close this page and try again in Vibyra.');
     }

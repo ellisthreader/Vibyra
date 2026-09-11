@@ -54,7 +54,11 @@ return [
             'oauth' => [
                 'authorize_url' => 'https://github.com/login/oauth/authorize',
                 'token_url' => 'https://github.com/login/oauth/access_token',
-                'scope' => 'repo',
+                // `user:email` reads the verified email, so signing in with GitHub can
+                // also sign a person in to Vibyra when they started signed out.
+                'scope' => 'repo user:email',
+                'signs_in' => true,
+                'identity' => ['user' => 'https://api.github.com/user', 'emails' => 'https://api.github.com/user/emails'],
                 'client_id' => env('CHAT_CONNECTORS_GITHUB_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_GITHUB_CLIENT_SECRET'),
                 'token_fields' => ['client_id', 'client_secret', 'code', 'redirect_uri'],

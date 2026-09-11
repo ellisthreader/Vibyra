@@ -45,7 +45,7 @@ class ChatConnectorsTest extends TestCase
         foreach ($body['integrations'] as $integration) {
             $this->assertFalse($integration['installed']);
             $this->assertArrayNotHasKey('credential_value', $integration);
-            $this->assertSame(['kind', 'label', 'placeholder', 'help', 'url'], array_keys($integration['credential']));
+            $this->assertSame(['kind', 'signsIn', 'label', 'placeholder', 'help', 'url'], array_keys($integration['credential']));
             // With no sign-in configured on this server, every entry is connected with a key.
             $this->assertSame('token', $integration['credential']['kind']);
         }
@@ -273,7 +273,7 @@ class ChatConnectorsTest extends TestCase
         $this->assertStringStartsWith('https://github.com/login/oauth/authorize?', $start['url']);
         $this->assertSame('gh-client', $query['client_id']);
         $this->assertSame('https://vibyra.test/api/connectors/callback/github', $query['redirect_uri']);
-        $this->assertSame('repo', $query['scope']);
+        $this->assertSame('repo user:email', $query['scope']);
         $this->assertSame(48, strlen($query['state']));
         $this->getJson('/api/connectors/flows/'.$start['flowId'])->assertOk()->assertJsonPath('status', 'pending');
     }
@@ -360,5 +360,76 @@ class ChatConnectorsTest extends TestCase
         Http::assertSent(fn ($request) => $request->url() === 'https://connect.stripe.com/oauth/token'
             && array_keys($request->data()) === ['client_secret', 'code', 'grant_type']);
         $this->assertSame('Vibyra', DB::table('vibes_integration_installs')->first()->account_label);
+    }
+
+    /** GitHub answers for a person who is not yet a Vibyra user: who they are, and their verified email. */
+    private function fakeGithubIdentity(string $email = 'new-person@example.com'): void
+    {
+        Http::fake([
+            'github.com/login/oauth/access_token' => Http::response(['access_token' => 'gho_signed_in', 'token_type' => 'bearer']),
+            'api.github.com/user/emails' => Http::response([
+                ['email' => 'old@example.com', 'primary' => false, 'verified' => true],
+                ['email' => $email, 'primary' => true, 'verified' => true],
+            ]),
+            'api.github.com/user' => Http::response(['id' => 4242, 'login' => 'newperson', 'name' => 'New Person']),
+        ]);
+    }
+
+    /**
+     * Connecting GitHub from a signed-out phone never stops at a Vibyra login page:
+     * GitHub's identity makes the Vibyra account, the phone is handed a session,
+     * and the connection belongs to that account.
+     */
+    public function test_a_signed_out_github_sign_in_makes_the_account_signs_in_and_connects(): void
+    {
+        $this->withGithubSignIn();
+        $entry = array_column($this->withToken('')->getJson('/api/connectors')->json('integrations'), null, 'id')['github'];
+        $this->assertTrue($entry['credential']['signsIn']);
+        $start = $this->withToken('')->postJson('/api/connectors/github/start', ['returnUrl' => 'vibyra://integrations/connected'])->assertOk()->json();
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        $this->assertSame('repo user:email', $query['scope']);
+        $this->fakeGithubIdentity();
+
+        $this->get('/api/connectors/callback/github?code=the-code&state='.$query['state'])
+            ->assertRedirect('vibyra://integrations/connected?flow='.$start['flowId'].'&status=connected');
+        $person = User::where('email', 'new-person@example.com')->firstOrFail();
+        $this->assertSame(['github', '4242', 'New Person'], [$person->provider, (string) $person->provider_id, $person->name]);
+        $this->assertNotNull($person->email_verified_at);
+        $this->assertSame($person->id, (int) DB::table('vibes_integration_installs')->value('user_id'));
+
+        // The phone that began it reads the session back, and that session is the person.
+        $flow = $this->withToken('')->getJson('/api/connectors/flows/'.$start['flowId'])->assertOk()
+            ->assertJsonPath('status', 'connected')->assertJsonPath('session.user.email', 'new-person@example.com')
+            ->assertJsonPath('catalogue.integrations.0.installed', true)->json();
+        $this->withToken($flow['session']['token'])->getJson('/api/connectors')
+            ->assertJsonPath('integrations.0.installed', true)->assertJsonPath('integrations.0.account', '@newperson');
+    }
+
+    /**
+     * The same rule as Apple and Google: a GitHub email that already has a Vibyra
+     * account does not quietly sign in to it, because that would let a GitHub login
+     * stand in for that account's own password.
+     */
+    public function test_a_signed_out_github_sign_in_never_takes_over_an_existing_account(): void
+    {
+        $this->withGithubSignIn();
+        User::factory()->create(['email' => 'taken@example.com', 'email_verified_at' => now()]);
+        $start = $this->withToken('')->postJson('/api/connectors/github/start', ['returnUrl' => 'vibyra://integrations/connected'])->json();
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        $this->fakeGithubIdentity('taken@example.com');
+        $this->get('/api/connectors/callback/github?code=the-code&state='.$query['state'])
+            ->assertRedirect('vibyra://integrations/connected?flow='.$start['flowId'].'&status=failed');
+        $this->withToken('')->getJson('/api/connectors/flows/'.$start['flowId'])
+            ->assertJsonPath('error', 'An account already exists for that email. Log in with its original method.')
+            ->assertJsonMissingPath('session');
+        $this->assertDatabaseCount('vibes_integration_installs', 0);
+        $this->assertSame(1, User::where('email', 'taken@example.com')->count());
+    }
+
+    public function test_stripe_cannot_be_started_signed_out_because_it_cannot_sign_anyone_in(): void
+    {
+        config(['chat_connectors.catalogue.stripe.oauth.client_id' => 'ca_platform', 'chat_connectors.catalogue.stripe.oauth.client_secret' => 'sk_platform']);
+        $refused = $this->withToken('')->postJson('/api/connectors/stripe/start')->assertStatus(401);
+        $this->assertSame('Sign in to Vibyra to connect Stripe.', $refused->json('error') ?? $refused->json('message'));
     }
 }
