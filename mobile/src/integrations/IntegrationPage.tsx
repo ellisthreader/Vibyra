@@ -33,16 +33,13 @@ import type { Integration } from './types';
  * server that cannot be reached each say so in the footer instead. A person who
  * is signed out is offered sign-in before a key, not a refusal after pasting one,
  * and the form for it swaps into this sheet for the same reason the key form does.
- * The sample workspace offers the way out of itself, because nothing in it can
- * ever be connected.
  */
-export function IntegrationPage({ integration, visible, onClose, onUse, signedIn = true, signIn, onLeaveSample }: {
+export function IntegrationPage({ integration, visible, onClose, onUse, signedIn = true, signIn }: {
   integration: Integration | null; visible: boolean; onClose(): void; onUse(mention: string): void;
-  /** Whether a real account is signed in. The fixture and the sample leave this on. */
+  /** Whether a real account is signed in. Left out, as the fixture does, it is assumed. */
   signedIn?: boolean;
   /** The sign-in form, drawn in place of the description; `done` returns to it. */
   signIn?: (done: () => void) => ReactNode;
-  onLeaveSample?: () => void;
 }) {
   const { colors } = useTheme();
   const { catalogue, live, busy, error, connect, disconnect } = useIntegrations();
@@ -70,10 +67,6 @@ export function IntegrationPage({ integration, visible, onClose, onUse, signedIn
   // Not live with no error is the moment between signing in and the new
   // account's catalogue arriving, which is a wait, not a failure.
   const footer = !live ? error ? <Hint error>{error}</Hint> : <Hint>Checking your integrations…</Hint>
-    : catalogue.sample ? <View style={s.footerStack}>
-      <Hint>{'This is the sample workspace, so nothing can be connected here. Leave it, then sign in to your Vibyra account to connect ' + entry.name + '.'}</Hint>
-      {onLeaveSample && <Button title="Leave sample workspace" icon="exit-outline" onPress={onLeaveSample} />}
-    </View>
     : !catalogue.enabled ? <Hint>Integrations are not switched on for this account yet.</Hint>
       : entry.installed ? <Button title="Use it in a chat" icon="arrow-forward" onPress={() => onUse(entry.mention)} />
         : !signedIn ? signInFooter
@@ -129,7 +122,6 @@ function Safety({ icon, label, text, muted = false }: {
 }
 const s = StyleSheet.create({
   hero: { alignItems: 'center', gap: 9 },
-  footerStack: { gap: 10 },
   account: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   accountText: { fontSize: 13 },
   blurb: { fontSize: 16, lineHeight: 24, textAlign: 'center' },

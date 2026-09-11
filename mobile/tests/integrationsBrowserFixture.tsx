@@ -26,8 +26,7 @@ const state = query.get('state') ?? 'browse';
 // rather than a real one, because pretending a service only reads would be a lie
 // the day someone reads this fixture for the truth.
 const shape = (installed: string[]): IntegrationCatalogue => ({
-  // `sample` is the sample workspace's shipped copy: off, but not because a server said so.
-  ...(state === 'sample' ? { enabled: false, sample: true } : { enabled: true }),
+  enabled: true,
   integrations: fallbackIntegrations.map(integration => ({
     ...integration,
     ...(state === 'readonly' ? { writes: null } : {}),
@@ -75,8 +74,7 @@ function Fixture() {
               compact={false} onMenu={() => {}} onNewChat={() => {}} onSwitchChat={() => {}} onComputers={() => {}} />
             <IntegrationsScreen onUse={mention => calls.push('use:' + mention)} signedIn={state !== 'signedout'}
               signIn={done => <View><Text style={{ color: colors.text }}>Fixture sign-in form</Text>
-                <Button title="Finish sign-in" onPress={() => { calls.push('signed-in'); done(); }} /></View>}
-              onLeaveSample={state === 'sample' ? () => calls.push('leave-sample') : undefined} />
+                <Button title="Finish sign-in" onPress={() => { calls.push('signed-in'); done(); }} /></View>} />
           </>}
         </IntegrationsProvider>
       </View>

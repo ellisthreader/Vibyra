@@ -7,7 +7,7 @@ import type { IntegrationCatalogue, IntegrationsApi } from '../integrations/type
  * say so, and every write rejects rather than pretending to have succeeded.
  */
 const refuse = async (): Promise<never> => { throw new Error('Sign in to connect an integration.'); };
-const catalogue: IntegrationCatalogue = { enabled: false, integrations: fallbackIntegrations, sample: true };
+const catalogue: IntegrationCatalogue = { enabled: false, integrations: fallbackIntegrations };
 export const sampleIntegrationsApi: IntegrationsApi = {
   catalogue: async () => catalogue,
   connect: refuse, disconnect: refuse,

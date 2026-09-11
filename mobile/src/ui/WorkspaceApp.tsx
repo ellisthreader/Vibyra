@@ -23,7 +23,12 @@ import { vibesDraftKey } from '../vibes/draftScope';
 import { setDraftForScope } from './useDraft';
 import type { Destination, WorkspaceModel } from './types';
 
-export function WorkspaceApp({ workspace, vibesEnabled = false }: { workspace: WorkspaceModel; vibesEnabled?: boolean }) {
+export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEnabled = false }: {
+  workspace: WorkspaceModel;
+  /** The real account, which Integrations uses even while the sample workspace is on screen. */
+  accountWorkspace?: WorkspaceModel;
+  vibesEnabled?: boolean;
+}) {
   const systemScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const compact = width > height && height < 500;
@@ -119,8 +124,7 @@ export function WorkspaceApp({ workspace, vibesEnabled = false }: { workspace: W
             onOpenSession={id => { workspace.actions.selectSession(id); setDestination('work'); }} />}
           {destination === 'computers' && <ComputersScreen workspace={workspace} />}
           {destination === 'integrations' && <IntegrationsScreen onUse={useIntegrationInChat}
-            signedIn={Boolean(workspace.account)} signIn={done => <AccountPanel workspace={workspace} onDone={done} />}
-            onLeaveSample={workspace.demo ? workspace.actions.exitDemo : undefined} />}
+            signedIn={Boolean(accountWorkspace.account)} signIn={done => <AccountPanel workspace={accountWorkspace} onDone={done} />} />}
           {destination === 'settings' && <SettingsScreen workspace={workspace} onConnect={() => setConnect(true)} />}
         </View>
       </View>
