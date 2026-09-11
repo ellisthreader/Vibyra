@@ -1,17 +1,19 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../theme';
-import { Mark } from '../ui/BrandLogo';
 import type { Brand } from '../ui/brands';
 import { BrandMark, Icon } from '../ui/primitives';
 import { useReducedMotion } from '../ui/useReducedMotion';
 
 /**
  * Vibyra's mark, a line, and the service's mark: what is being joined to what,
- * before a word is read. The line draws across once as the sheet opens and a lock
- * settles on it, because the link is a private one; once connected it draws again
- * in the success colour and the lock becomes a tick, which is the one moment of
- * motion that confirms something happened. Reduce Motion lands it at rest.
+ * before a word is read. Flat by request - the marks sit on the card itself, with
+ * no tile behind them, and the lock sits in a gap in the line rather than in a
+ * ring. The line draws across once as the card opens and the lock settles into
+ * it; once connected it draws again in the success colour with a tick, which is
+ * the one moment of motion that confirms something happened. Reduce Motion lands
+ * it at rest.
  *
  * The drawing is JS-driven: it animates a width, which the native driver cannot.
  */
@@ -38,25 +40,44 @@ export function ConnectionGraphic({ brand, connected }: { brand: Brand; connecte
   }, [connected, draw, knot]);
   const tint = connected ? colors.success : colors.accent;
   return <View style={s.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden>
-    <View style={[s.tile, { backgroundColor: colors.elevated }]}><BrandMark size={32} /></View>
+    <View style={s.mark}><BrandMark size={46} /></View>
     <View style={s.link}>
       <View style={[s.track, { backgroundColor: colors.border }]} />
       <Animated.View style={[s.track, s.drawn, { backgroundColor: tint,
         width: draw.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
-      <Animated.View style={[s.knot, { backgroundColor: colors.surface, borderColor: tint,
-        opacity: knot, transform: [{ scale: knot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] }]}>
-        <Icon name={connected ? 'checkmark' : 'lock-closed'} size={connected ? 13 : 11} color={tint} />
+      {/* The card's own colour behind the icon is what opens the gap in the line. */}
+      <Animated.View style={[s.knot, { backgroundColor: colors.surface, opacity: knot,
+        transform: [{ scale: knot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }] }]}>
+        <Icon name={connected ? 'checkmark-circle' : 'lock-closed'} size={connected ? 20 : 16} color={tint} />
       </Animated.View>
     </View>
-    <Mark brand={brand} size={56} />
+    <View style={s.mark}><Glyph brand={brand} size={40} /></View>
   </View>;
 }
+
+/**
+ * A service's mark with no tile. A mark that ships on its own coloured square -
+ * Stripe's white S on blurple - takes the square's colour instead, so it still
+ * reads as that company; a white-tiled mark keeps its own colour; a monochrome
+ * mark follows the theme.
+ */
+function Glyph({ brand, size }: { brand: Brand; size: number }) {
+  const { colors } = useTheme();
+  const tile = brand.tile && brand.tile.toUpperCase() !== '#FFFFFF' ? brand.tile : undefined;
+  if (brand.paths) return <Svg width={size} height={size} viewBox="0 0 24 24">
+    {brand.paths.map(part => <Path key={part.fill + part.d.length} d={part.d} fill={part.fill} />)}
+  </Svg>;
+  if (brand.path) return <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d={brand.path} fill={tile ?? brand.color ?? colors.text} />
+  </Svg>;
+  return <Text style={[s.initial, { fontSize: size * 0.8, color: colors.text }]}>{brand.name.charAt(0)}</Text>;
+}
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingTop: 4 },
-  tile: { width: 56, height: 56, borderRadius: 56 / 3, alignItems: 'center', justifyContent: 'center' },
-  link: { width: 84, height: 28, justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, paddingTop: 6 },
+  mark: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  link: { width: 96, height: 28, justifyContent: 'center' },
   track: { position: 'absolute', left: 0, right: 0, height: 2, borderRadius: 1 },
   drawn: { right: undefined },
-  knot: { alignSelf: 'center', width: 26, height: 26, borderRadius: 13, borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center' },
+  knot: { alignSelf: 'center', paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center' },
+  initial: { fontWeight: '700' },
 });
