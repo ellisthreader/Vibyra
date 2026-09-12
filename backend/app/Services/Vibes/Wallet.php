@@ -120,7 +120,7 @@ class Wallet
             $plan = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';
             return [
                 'version' => 1, 'available' => $available, 'held' => $held, 'total' => $available + $held,
-                'chatEnabled' => (bool) config('vibes.enabled'),
+                'chatEnabled' => (bool) config('vibes.enabled') && trim((string) config('services.openrouter.key')) !== '',
                 'paidAvailable' => $paid, 'plan' => $plan, 'paidUntil' => $w->paid_until,
                 'trialChatsRemaining' => max(0, self::trialChats() - DB::table('vibes_chats')->where('user_id', $userId)->whereNotNull('trial_slot')->count()),
                 // Published so the phone words the trial from the same numbers the

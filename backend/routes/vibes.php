@@ -4,6 +4,7 @@ use App\Http\Controllers\ChatConnectorsController;
 use App\Http\Controllers\VibesAttachmentsController;
 use App\Http\Controllers\VibesController;
 use App\Http\Controllers\VibesGuestController;
+use App\Http\Controllers\VibesPersonalizationController;
 use App\Http\Controllers\VibesPurchaseController;
 use App\Http\Controllers\VibesToolsController;
 use Illuminate\Support\Facades\Route;
@@ -13,24 +14,34 @@ use Illuminate\Support\Facades\Route;
  * with no session yet, and because minting an account deserves a far tighter
  * limit than reading a wallet does.
  */
-Route::post('api/vibes/guest', VibesGuestController::class)->middleware('throttle:6,60');
+Route::post('api/vibes/guest', VibesGuestController::class)->middleware('throttle:6,60,vibes-guest-route');
 
-Route::prefix('api/vibes')->middleware('throttle:90,1')->group(function () {
+// Separate counters: polling must not consume the much smaller send/purchase limits.
+Route::prefix('api/vibes')->middleware('throttle:90,1,vibes-api')->group(function () {
     Route::get('wallet', [VibesController::class, 'wallet']);
     Route::post('consent', [VibesController::class, 'consent']);
     Route::get('models', [VibesController::class, 'models']);
     Route::match(['get', 'post'], 'chats', [VibesController::class, 'chats']);
     Route::post('quote', [VibesController::class, 'quote']);
-    Route::post('turns', [VibesController::class, 'submit'])->middleware('throttle:12,1');
+    Route::post('turns', [VibesController::class, 'submit'])->middleware('throttle:12,1,vibes-send');
     Route::get('chats/{chat}/turns', [VibesController::class, 'turns'])->whereUuid('chat');
     Route::get('turns/{turn}', [VibesController::class, 'status'])->whereUuid('turn');
     Route::post('turns/{turn}/cancel', [VibesController::class, 'cancel'])->whereUuid('turn');
-    Route::post('purchases', [VibesPurchaseController::class, 'claim'])->middleware('throttle:10,1');
+    Route::post('purchases', [VibesPurchaseController::class, 'claim'])->middleware('throttle:10,1,vibes-purchase');
     Route::post('chats/{chat}/project', [VibesToolsController::class, 'attach'])->whereUuid('chat');
     Route::post('tools/{tool}/result', [VibesToolsController::class, 'result'])->whereUuid('tool');
-    // A photo or file for the next message. Its own prefixed limit: an unprefixed
-    // throttle shares one counter per address with every other unprefixed throttle.
+    // A photo or file for the next message. Its own prefixed limit, for the reason below.
     Route::post('attachments', [VibesAttachmentsController::class, 'store'])->middleware('throttle:30,1,vibes-attach');
+    // Settings > Personality and Memory. Guest-capable, and never gated on the chat
+    // flag: nothing here spends, and the quote is what prices their effect. The write
+    // limits are prefixed because an unprefixed throttle shares one counter per
+    // address with every other unprefixed throttle, sign-up's 5 a minute included.
+    Route::get('preferences', [VibesPersonalizationController::class, 'preferences']);
+    Route::post('preferences', [VibesPersonalizationController::class, 'updatePreferences'])->middleware('throttle:30,1,vibes-personal');
+    Route::get('memories', [VibesPersonalizationController::class, 'memories']);
+    Route::post('memories', [VibesPersonalizationController::class, 'remember'])->middleware('throttle:30,1,vibes-personal');
+    Route::delete('memories', [VibesPersonalizationController::class, 'forgetAll']);
+    Route::delete('memories/{memory}', [VibesPersonalizationController::class, 'forget'])->whereUuid('memory');
 });
 
 Route::post('api/vibes/apple-notifications', \App\Http\Controllers\VibesAppleNotificationController::class)->middleware('throttle:60,1');

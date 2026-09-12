@@ -128,6 +128,8 @@ class Turns
             'tools' => app(AgentTools::class)->payload($t->id),
             'attachments' => DB::table('vibes_attachments')->where('turn_id', $t->id)->orderBy('created_at')->get()
                 ->map(fn ($a) => app(Attachments::class)->payload($a))->all(),
+            // What this reply saved to or removed from the person's memory, for the line under it.
+            'memory' => isset($t->memory) ? json_decode($t->memory, true) : null,
             'reserved' => $t->reserved, 'charged' => $t->charged, 'createdAt' => $t->created_at];
     }
 }

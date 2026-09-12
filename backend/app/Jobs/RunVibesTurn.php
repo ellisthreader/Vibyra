@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\ChatConnectors\ConnectorRunner;
-use App\Services\Vibes\{AgentTools, Attachments, TurnPrice, Turns};
+use App\Services\Vibes\{AgentTools, Attachments, ChatMemory, TurnPrice, Turns};
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -61,6 +61,9 @@ class RunVibesTurn implements ShouldQueue
             $cost = $body['usage']['cost'] ?? null;
             $text = $body['choices'][0]['message']['content'] ?? null;
             $text = is_string($text) && trim($text) !== '' ? $text : null;
+            // Memory lines are for this server, not the person: taken out of every reply,
+            // and carried out only when this turn may change memory (see `ChatMemory`).
+            if ($text !== null && $response->successful()) $text = app(ChatMemory::class)->settle($t, $request, $text) ?: null;
             if (is_numeric($cost) && is_finite((float) $cost) && (float) $cost >= 0) {
                 $micro = (int) ceil((float) $cost * 1000000);
                 $fresh = DB::table('vibes_turns')->where('id', $t->id)->firstOrFail();

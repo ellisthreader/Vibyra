@@ -11,11 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class Quotes
 {
+    public const MAX_ENCODED_LENGTH = 262144;
     public function __construct(
         private readonly Catalog $catalog,
         private readonly Wallet $wallet,
         private readonly Router $router,
         private readonly ConnectorTools $integrations,
+        private readonly PersonalPrompt $personal,
         private readonly Attachments $attachments,
     ) {}
 
@@ -46,8 +48,12 @@ class Quotes
         // The conversation is assembled before the model is chosen, because nothing in
         // it depends on the model and Auto has to know how big this turn is to route
         // it. It also means the bound-project system prompt is priced, which the
-        // previous order missed by rewriting it after the bound had been taken.
-        $messages = $this->messages($chatId, $text, (bool) $chat->binding, $named, $files);
+        // previous order missed by rewriting it after the bound had been taken. The
+        // person's style and memory are in it for the same reason: they are paid for. A
+        // turn that offers tools reads what a tool returns, which is not the person's
+        // own words, so it is never offered the way to change their memory.
+        $personal = $this->personal->for($userId, canSave: ! $chat->binding && $named === []);
+        $messages = $this->messages($chatId, $text, (bool) $chat->binding, $named, $personal, $files);
         // Assembled before the price so the schemas are inside the bound, and before
         // the router so it weighs the turn that will actually be sent.
         $tools = [...($chat->binding ? AgentTools::definitions() : []), ...$this->integrations->definitions($named)];
@@ -114,7 +120,9 @@ class Quotes
             // Linked to the turn on submit, which is what lets the job expand them.
             'attachments' => $files->pluck('id')->all()];
 
-        return ['quote' => Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR)),
+        $encoded = Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        abort_if(strlen($encoded) > self::MAX_ENCODED_LENGTH, 422, 'This context is too large. Start a shorter chat or attach fewer integrations.');
+        return ['quote' => $encoded,
             'maxCredits' => $max, 'estimatedCredits' => $max,
             // The effort priced, which is not always the effort asked for.
             'model' => $selected['id'], 'effort' => $effort, 'expiresAt' => $data['expires'],
@@ -129,21 +137,24 @@ class Quotes
      * context budget. The two system prompts differ in length as well as in content,
      * so which one is used has to be settled before the turn is priced.
      */
-    private function messages(string $chatId, string $text, bool $bound, array $integrations = [], ?Collection $files = null): array
+    private function messages(string $chatId, string $text, bool $bound, array $integrations = [], string $personal = '', ?Collection $files = null): array
     {
         $history = DB::table('vibes_turns')->where('chat_id', $chatId)->whereNotNull('settled_at')
             ->whereNotNull('response')->orderByDesc('created_at')->limit(12)->get()->reverse();
         // Earlier photos are not sent again - they are priced once, with the turn that
         // carried them - but their names stay, so "the screenshot" still means something.
         $earlier = DB::table('vibes_attachments')->whereIn('turn_id', $history->pluck('id'))->get()->groupBy('turn_id');
-        $messages = [['role' => 'system', 'content' => $this->prompt($bound, $integrations)]];
+        $system = $this->prompt($bound, $integrations);
+        // Last, after every rule. The trim below measures the conversation without it,
+        // so however much the person keeps in memory, it never costs them history.
+        $messages = [['role' => 'system', 'content' => $personal === '' ? $system : $system."\n\n".$personal]];
         foreach ($history as $turn) {
             $names = ($earlier[$turn->id] ?? collect())->pluck('name')->implode(', ');
             $messages[] = ['role' => 'user', 'content' => $names === '' ? $turn->prompt : $turn->prompt."\n\n[Attached with this message: ".$names.']'];
             $messages[] = ['role' => 'assistant', 'content' => $turn->response];
         }
         $messages[] = ['role' => 'user', 'content' => $this->attachments->content($text, $files ?? collect())];
-        while (strlen((string) json_encode($messages)) > 20000 && count($messages) > 2) array_splice($messages, 1, 2);
+        while (strlen((string) json_encode(array_slice($messages, 1))) > 20000 && count($messages) > 2) array_splice($messages, 1, 2);
 
         return $messages;
     }

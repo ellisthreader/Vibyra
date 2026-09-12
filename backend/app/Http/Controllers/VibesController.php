@@ -88,6 +88,7 @@ class VibesController extends Controller
     public function quote(Request $request, Quotes $quotes)
     {
         abort_unless(config('vibes.enabled'), 503, 'AI chat is not available yet. Your computer sessions still work.');
+        abort_if(trim((string) config('services.openrouter.key')) === '', 503, 'AI chat is being prepared. Please try again later.');
         $user = $this->account($request);
         $this->maySpend($user);
         // The effort is checked against the chosen model's own published ladder in
@@ -107,9 +108,10 @@ class VibesController extends Controller
     public function submit(Request $request, Quotes $quotes, Turns $turns)
     {
         abort_unless(config('vibes.enabled'), 503, 'AI chat is not available yet. Your computer sessions still work.');
+        abort_if(trim((string) config('services.openrouter.key')) === '', 503, 'AI chat is being prepared. Please try again later.');
         $user = $this->account($request);
         $this->maySpend($user);
-        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:100000']);
+        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:'.Quotes::MAX_ENCODED_LENGTH]);
         $turn = $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
         if ($turn->status === 'queued') RunVibesTurn::dispatch($turn->id);
         return $this->json(['turn' => $turns->payload($turn)], 202);

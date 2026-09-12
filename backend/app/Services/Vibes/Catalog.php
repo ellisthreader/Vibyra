@@ -101,9 +101,9 @@ class Catalog
     {
         $reasoning = $this->reasoningFor($id);
         if (! is_array($reasoning) || ! array_key_exists('supported_efforts', $reasoning)) return [];
-        // No live model publishes an explicit null, and a spend path must not open
-        // the whole ladder on the strength of one. The safe middle is offered instead.
-        $efforts = $reasoning['supported_efforts'] ?? ['low', 'medium', 'high'];
+        // OpenRouter explicitly defines null as every gateway effort; an omitted
+        // key above means no selector. Match the phone's normalizer at this boundary.
+        $efforts = $reasoning['supported_efforts'] ?? OpenRouterPricingNormalizer::EFFORTS;
         // A mandatory reasoner cannot be switched off, so 'none' is not offered.
         return array_values(array_filter($efforts, fn ($effort) => ! (($reasoning['mandatory'] ?? false) && $effort === 'none')));
     }
