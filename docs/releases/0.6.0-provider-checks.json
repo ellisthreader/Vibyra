@@ -1,0 +1,41 @@
+{
+  "platform": "Linux",
+  "bridge": "binary extracted from the verified signed 0.6.0 AppImage",
+  "windowInteractionVerified": false,
+  "cases": [
+    {
+      "codeChange": {
+        "engine": "codex",
+        "runnerExit": 0,
+        "testExit": 0,
+        "testUnchanged": true,
+        "outputVerified": true,
+        "taskStatus": "succeeded",
+        "savedArtifacts": 7
+      },
+      "denial": {
+        "engine": "codex",
+        "runnerExit": 0,
+        "resolvedDecisions": 1,
+        "effectPrevented": true
+      }
+    },
+    {
+      "codeChange": {
+        "engine": "claude",
+        "runnerExit": 0,
+        "testExit": 0,
+        "testUnchanged": true,
+        "outputVerified": true,
+        "taskStatus": "succeeded",
+        "savedArtifacts": 6
+      },
+      "denial": {
+        "engine": "claude",
+        "runnerExit": 0,
+        "resolvedDecisions": 1,
+        "effectPrevented": true
+      }
+    }
+  ]
+}

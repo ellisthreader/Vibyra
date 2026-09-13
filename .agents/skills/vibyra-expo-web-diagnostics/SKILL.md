@@ -79,6 +79,18 @@ already handles Stripe.
 Verify the focused hook tests, run `npm run typecheck`, and export Expo web.
 Search the generated bundle to confirm the native module name is absent.
 
+## Replacement Phone Surface
+
+Resolve the source directory before applying SDK or auth instructions. The
+replacement Host client is `mobile/` (SDK 57); the root `src/` client is legacy
+(SDK 54). The legacy Expo Go/auth rules below apply only to root `src/`.
+Use `App/Phone Companion Onboarding.md` for the replacement's first-run/WIP
+flow. It uses Host approval without an account gate. Hosted HTTPS rejects
+local ws links before enrollment; use a provisioned wss route, native phone,
+or local HTTP web. Do not remove this guard to hide mixed-content failures.
+For browser interaction checks, wait for React Native Web's selected state
+before asserting dependent navigation results; a click can precede its commit.
+
 ## Expo Server Checks
 
 Check which Expo processes are already running before starting another server:

@@ -4,7 +4,8 @@ Vibyra is a mobile command center for AI software workflows running on the user'
 
 ## Current Shape
 
-- Expo React Native app at `src/`.
+- Current phone/web Host preview at `mobile/`; root `src/` is the legacy Expo app.
+  See [[App/Phone Companion Onboarding]] for first-run setup and the Desktop WIP entry.
 - Native Tauri desktop app at `desktop-tauri/`.
 - Laravel/backend and public marketing website at `backend/`.
 - Obsidian vault at `Vibyra/`.

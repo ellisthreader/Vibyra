@@ -1,0 +1,45 @@
+{
+  "desktopCommit": "d4b36c8f573fb0f74ffa42c01bda01a8f5192748",
+  "desktopRun": 34045947817,
+  "desktop": [
+    {
+      "bundle": "appimage",
+      "version": "0.6.0",
+      "filename": "Vibyra-Desktop-0.6.0-x86_64.AppImage",
+      "sizeBytes": 99297784,
+      "sha256": "f7308124acce712998a580c7d238620ed0692cd46cd50ce87890b5d8be1fc67e"
+    },
+    {
+      "bundle": "windows",
+      "version": "0.6.0",
+      "filename": "Vibyra-Desktop-0.6.0-x64-setup.exe",
+      "sizeBytes": 8340672,
+      "sha256": "101cf593d7d7345bf4909c6f0c6c2e80cc556ce9940ad64ed66999a5b667ffa7"
+    },
+    {
+      "bundle": "deb",
+      "version": "0.6.0",
+      "filename": "Vibyra-Desktop-0.6.0-amd64.deb",
+      "sizeBytes": 11586180,
+      "sha256": "f64ab89c49024f8a4ab85afde7e60697e7281bc98092d79c350f31de81d0bbf1"
+    }
+  ],
+  "hostCommit": "be7d78052f5ccb5fea7ffda9b06b7d6c1eeeaf6a",
+  "hostRun": 34046463544,
+  "host": [
+    {
+      "platform": "linux",
+      "filename": "Vibyra-Host-0.6.0-preview-linux-x86_64",
+      "size": 6924088,
+      "sha256": "f402bf25bd8f8203b18181216d1e062b426ff9546b88fad9f1024a8dacdce044",
+      "signatureVerified": true
+    },
+    {
+      "platform": "windows",
+      "filename": "Vibyra-Host-0.6.0-preview-windows-x86_64.exe",
+      "size": 6912000,
+      "sha256": "7f82f0b95cc2246b39da14e9f6cc1880eb2c42d248e9f0725b6b994411fdba19",
+      "signatureVerified": true
+    }
+  ]
+}

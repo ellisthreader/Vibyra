@@ -77,8 +77,15 @@ async function command(event: MessageEvent) {
         } else data = new Uint8Array(event.data);
         if (data.length > 65535) throw new Error('Invalid connection frame.');
         if (!connected) {
+          // The handshake completed, so this refusal came from the pinned
+          // computer itself. Its own words say whether the phone should wait,
+          // try again, or be paired afresh; a generic line says none of it.
           const reply = JSON.parse(decode.decode(client.finish(data)));
-          if (reply.ok !== true || reply.protocol !== 1) throw new Error(reply.error?.message ?? 'Computer refused the connection.');
+          if (reply.ok !== true || reply.protocol !== 1) {
+            socket?.close();
+            notify({ type: 'error', message: reply.error?.message ?? 'Computer refused the connection.' });
+            return;
+          }
           connected = true; notify({ type: 'connected', deviceId: reply.deviceId });
         } else notify({ type: 'message', payload: JSON.parse(decode.decode(client.decrypt(data))) });
       } catch { socket?.close(); notify({ type: 'error', message: 'The encrypted connection could not be verified. Pair again on your computer.' }); }

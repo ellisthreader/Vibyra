@@ -5,6 +5,10 @@ export interface Pairing {
   publicKey: string;
   url: string;
   route?: 'direct' | 'relay';
+  network?: 'lan';
+  /** Built from a Bonjour result rather than a code, so this computer is
+   *  expected to ask its owner for approval instead of consuming an invite. */
+  nearby?: boolean;
   invite?: string;
   expiresAt?: string | number;
 }
@@ -37,8 +41,19 @@ export function parsePairing(link: string, now = Date.now()): Pairing {
     throw new Error('This computer has an invalid connection address.');
   }
   if (value.route !== undefined && !['direct', 'relay'].includes(value.route)) throw new Error('Unsupported route.');
-  const local = /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|\[::1\])$/.test(url.hostname);
-  if (url.protocol === 'ws:' && (!local || value.route === 'relay')) {
+  if (value.network !== undefined && value.network !== 'lan') throw new Error('Unsupported network scope.');
+  // Discovery only ever claims a direct connection on this Wi-Fi. A code that
+  // arrived from anywhere else may not borrow the nearby approval flow.
+  if (value.nearby !== undefined && (value.nearby !== true || value.route !== 'direct' || value.network !== 'lan')) {
+    throw new Error('This connection cannot use nearby pairing.');
+  }
+  const local = /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|169\.254\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+|\[::1\])$/.test(url.hostname);
+  // IPv6 LAN addresses may be globally allocated. Only an explicitly local,
+  // direct invitation may use them without TLS; Noise still authenticates and
+  // encrypts every payload and the embedded Host filters peers to its LAN /64.
+  const lanV6 = value.network === 'lan' && value.route === 'direct'
+    && /^\[(?:[23][0-9a-f]{3}:|f[cd][0-9a-f]{2}:)/i.test(url.hostname);
+  if (url.protocol === 'ws:' && ((!local && !lanV6) || value.route === 'relay')) {
     throw new Error('Internet connections require a secure wss address.');
   }
   if (value.invite !== undefined) {

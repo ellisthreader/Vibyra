@@ -12,28 +12,24 @@ security assessment before anyone outside a 100-person test list can connect it.
 
 ## 1. Ship the backend and the app
 
-Production's backend runs `release/macos-web`, deployed by uploading a checkout
-with `railway up` rather than from GitHub (the Mac app itself, 0.1.x, is built
-from `release/macos-0.1.8-experience`). The launch branch
-`launch/vibes-on-macos-web` is that backend line plus the Vibes chat backend and
-these connectors, so deploying it adds the chat without rolling back the
-website, downloads or Mac updater. Deploy it from that branch's checkout only,
-and see the memory note on finding the live line before any deploy.
+Production runs `release/0.6.3-macos`, deployed by uploading a checkout with
+`railway up` rather than from GitHub. The launch branch `launch/vibes-on-release`
+is that release line plus the Vibes chat backend, these connectors and the new
+phone app, so deploying it adds the chat without rolling back any desktop,
+website or updater work. Deploy it from that branch's checkout only.
 
-In code these are **chat connectors**, not integrations, because
-`release/0.6.3-macos` has a separate Integrations feature for the desktop agents
-(`/api/integrations`, `IntegrationsController`, `config/integrations.php`,
-`App\Services\Integrations`) that will meet this line when the two are merged.
-Ours lives under `/api/connectors`, `ChatConnectorsController`,
-`config/chat_connectors.php` and `App\Services\ChatConnectors`, and is switched
-on by `CHAT_CONNECTORS_ENABLED`. The phone still calls the destination
-"Integrations".
+In code these are **chat connectors**, not integrations: `release/0.6.3-macos`
+already has a separate, live Integrations feature (OAuth connections for the
+desktop agents under `/api/integrations`, `IntegrationsController`,
+`config/integrations.php`, `App\Services\Integrations`). Ours lives under
+`/api/connectors`, `ChatConnectorsController`, `config/chat_connectors.php` and
+`App\Services\ChatConnectors`, and is switched on by `CHAT_CONNECTORS_ENABLED`.
+The phone still calls the destination "Integrations".
 
 The migration `create_vibes_integrations` runs on deploy (the start script runs
 `migrate --force`); connected keys are stored encrypted in that table. The chat
-also needs `VIBES_ENABLED=true`, and the start script's worker must be able to
-reach the `vibes` queue. The app has no over-the-air updates, so people get the
-Integrations screen only through a new App Store build.
+also needs `VIBES_ENABLED=true`. The app has no over-the-air updates, so people
+get the Integrations screen only through a new App Store build.
 
 ## 2. Switch the feature on
 

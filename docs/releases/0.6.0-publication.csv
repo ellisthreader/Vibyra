@@ -1,0 +1,29 @@
+ID,Change,Delivery
+A01,Task history,Live in Windows/AppImage/Debian 0.6.0
+A02,Saved task outputs and evidence,Live in Windows/AppImage/Debian 0.6.0
+A03,Durable tasks and recovery,Live in Windows/AppImage/Debian 0.6.0
+A04,Codex App Server integration,Live in Windows/AppImage/Debian 0.6.0
+A05,Current access and revocation enforcement,Live in Windows/AppImage/Debian 0.6.0
+A06,Stronger approval decisions,Live in Windows/AppImage/Debian 0.6.0
+A07,Safer attachments and managed files,Live in Windows/AppImage/Debian 0.6.0
+A08,Reviewable learning proposals,Live in Windows/AppImage/Debian 0.6.0
+A09,Handoff receipts,Live in Windows/AppImage/Debian 0.6.0
+A10,Routine execution reliability,Live in Windows/AppImage/Debian 0.6.0
+A11,Draft and conversation recovery,Live in Windows/AppImage/Debian 0.6.0
+A12,Restore archived chats and teammates,Live in Windows/AppImage/Debian 0.6.0
+A13,Task starters and provider readiness,Live in Windows/AppImage/Debian 0.6.0
+A14,Explicit task account and execution limits,Live in Windows/AppImage/Debian 0.6.0
+M01,GPT-6 Astra in desktop,Live in Windows/AppImage/Debian 0.6.0
+M02,Astra backend model support,Live in the production backend
+I01,Persistent computer-side Host,Signed Windows/Linux Host preview published; Linux CLI installed locally
+I02,Encrypted pairing and relay,"Native/WASM pairing and reconnect tested; relay code integrated, public relay enrollment not implemented"
+I03,New mobile workspace interface,Live in the web client; iOS simulator build passed; iPhone distribution awaits Apple signing
+I04,Live remote terminal and controls,Live in the web client; iOS simulator build passed; iPhone distribution awaits Apple signing
+I05,Project files and change review,Live in the web client; iOS simulator build passed; iPhone distribution awaits Apple signing
+I06,Optional sample workspace,Live in the web client; iOS simulator build passed; iPhone distribution awaits Apple signing
+R01,Exclude downloaded installers from Git,Live in Windows/AppImage/Debian 0.6.0
+D01,Disable unfinished Custom agents/settings entry,Live in desktop 0.6.0: selective Custom agents settings gate; released Agent/Chat modes remain available
+P18,Backend PHP dependency updates,Live backend: PHP updates reconciled; Composer audit clean and backend tests passed
+P19,Website build dependency updates,Live website: dependency updates reconciled; build and CI passed
+P20,Root/legacy Expo dependency updates,Source integrated with compatible Expo SDK 57 versions; 154 legacy tests passed; existing native phone binaries are not updated
+P21,GitHub Actions updates,Applied to release workflows; desktop and Host package runs passed; actionlint passed

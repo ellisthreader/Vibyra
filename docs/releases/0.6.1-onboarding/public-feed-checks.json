@@ -1,0 +1,226 @@
+{
+  "checks": [
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.0.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.1.0-beta.1",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.2.8",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.3.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.4.4",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.5.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.5.1",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.6.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.6.1",
+      "http": 204
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "999999.0.0",
+      "http": 204
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.0.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.1.0-beta.1",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.2.8",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.3.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.4.4",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.5.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.5.1",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.6.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.6.1",
+      "http": 204
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "999999.0.0",
+      "http": 204
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.0.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.1.0-beta.1",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.2.8",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.3.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.4.4",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.5.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.5.1",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.6.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.6.1",
+      "http": 204
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "999999.0.0",
+      "http": 204
+    }
+  ],
+  "catalog": {
+    "ok": true,
+    "releases": [
+      {
+        "platform": "windows",
+        "architecture": "",
+        "label": "Vibyra for Windows",
+        "version": "0.6.1",
+        "filename": "Vibyra-Desktop-0.6.1-x64-setup.exe",
+        "sizeBytes": 8349500,
+        "sha256": "f98ddf3d79c16f58287f22bfa1ce335f5c716a87d063583176656135792a09f7",
+        "minimumSystemVersion": "",
+        "available": true,
+        "downloadUrl": "/downloads/windows"
+      },
+      {
+        "platform": "linux",
+        "architecture": "",
+        "label": "Vibyra for Linux",
+        "version": "0.6.1",
+        "filename": "Vibyra-Desktop-0.6.1-x86_64.AppImage",
+        "sizeBytes": 99314168,
+        "sha256": "ca84818df2e9df1c9e144ee45d82965b9eea1045373c44cc421def55c9e6d290",
+        "minimumSystemVersion": "",
+        "available": true,
+        "downloadUrl": "/downloads/linux"
+      },
+      {
+        "platform": "linux-deb",
+        "architecture": "",
+        "label": "Vibyra for Debian/Ubuntu",
+        "version": "0.6.1",
+        "filename": "Vibyra-Desktop-0.6.1-amd64.deb",
+        "sizeBytes": 11595584,
+        "sha256": "e09f36d96a3a459487aa7332410b0aa387ff3c68612c242383b6b9db162f9aa9",
+        "minimumSystemVersion": "",
+        "available": true,
+        "downloadUrl": "/downloads/linux-deb"
+      },
+      {
+        "platform": "macos",
+        "label": "Vibyra for macOS",
+        "available": false,
+        "variants": [
+          {
+            "platform": "macos-arm64",
+            "architecture": "arm64",
+            "label": "Vibyra for macOS (Apple Silicon)",
+            "version": "",
+            "filename": "",
+            "sizeBytes": 0,
+            "sha256": "",
+            "minimumSystemVersion": "12.0",
+            "available": false,
+            "downloadUrl": "/downloads/macos-arm64"
+          },
+          {
+            "platform": "macos-x64",
+            "architecture": "x64",
+            "label": "Vibyra for macOS (Intel)",
+            "version": "",
+            "filename": "",
+            "sizeBytes": 0,
+            "sha256": "",
+            "minimumSystemVersion": "12.0",
+            "available": false,
+            "downloadUrl": "/downloads/macos-x64"
+          }
+        ]
+      }
+    ]
+  }
+}

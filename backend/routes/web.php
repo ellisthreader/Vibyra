@@ -183,5 +183,6 @@ if (config('desktop.legacy_routes_enabled')) {
     Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');
 }
 
+require __DIR__.'/integrations.php';
 
 require __DIR__.'/vibes.php';

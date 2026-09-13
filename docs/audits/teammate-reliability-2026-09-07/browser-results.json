@@ -1,0 +1,27 @@
+{
+  "results": [
+    "agent create: typing, Cancel, Close, Escape, focus restore",
+    "routine create: typing, Cancel, Close, Escape, focus restore",
+    "routine edit: typing, Cancel, Close, Escape, focus restore",
+    "skill create: typing, Cancel, Close, Escape, focus restore",
+    "skill edit: typing, Cancel, Close, Escape, focus restore",
+    "Static initial focus wraps backwards; terminal restoration runs after inert release",
+    "Caret stability, Tab wrap and short-window dismissal",
+    "Delayed capabilities, chosen engine becomes unavailable, provider recovery",
+    "Nested modal ownership and preservation of pre-existing inert state",
+    "Successful create is visible without depending on roster refresh",
+    "routine repeated submit sends one pending write",
+    "skill repeated submit sends one pending write",
+    "Failed skill assignment retains confirmed state; retry survives reopening",
+    "Failed memory save preserves text; successful retry survives refresh failure",
+    "Late memory success does not clear newer typing",
+    "Lost create response reconciles the receipt without another write",
+    "Closing during save preserves the result without reopening the form",
+    "Stale roster response cannot overwrite a newer committed teammate",
+    "Late save from previous account cannot populate the current account",
+    "A failed background save remains visible after the form closes",
+    "A timeout followed by late success reconciles the original form without duplicate creation",
+    "Renderer reload reconciles a lost response using the persisted token"
+  ],
+  "failures": []
+}

@@ -1,0 +1,8 @@
+{
+  "from": "0.6.1",
+  "to": "0.6.3",
+  "packageHashVerified": true,
+  "newNativeBinaryRelaunched": true,
+  "privateDisplayAndUserData": true,
+  "userWorkspacePreserved": true
+}

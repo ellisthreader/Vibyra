@@ -1,0 +1,11 @@
+{
+  "results": [
+    "Modal is outside inert workspace; nine services load",
+    "Store validation and duplicate-connect protection",
+    "Explicit access can be enabled and removed",
+    "Verification success and network failure are visible",
+    "Keyboard focus loops, Escape closes and restores focus",
+    "Narrow layout and honest missing-registration state"
+  ],
+  "errors": []
+}

@@ -1,0 +1,5 @@
+running 2 tests
+test claude_completes_two_turns_and_resumes_the_same_conversation ... ok
+test codex_completes_two_turns_and_resumes_the_same_conversation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 28.26s

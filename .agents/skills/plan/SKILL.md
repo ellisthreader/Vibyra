@@ -62,3 +62,13 @@ for DOM removal; role locators stop matching before React cleanup completes.
 ## Completion
 
 End with the concrete files changed, checks run, and any memory/skill updates made. If tests or screenshots were not run, say why.
+
+## Vibyra account integration implementation
+
+Route agent-page connection work through `Vibyra/_ai/Desktop/Agent Integrations.md`
+and its setup/evidence runbook. Keep registration presence, completed consent,
+useful engine reads and packaged release evidence separate. Refresh-token rotation
+must commit even when a later API read fails; test this across HTTP fake resets.
+Use the provider's actual mode-specific install URL, not an invented test-mode query.
+For Shopify, serialize the installation's single refresh-token owner and bind signed
+webhook body identity before trusting routing headers. Include late-delivery tests.

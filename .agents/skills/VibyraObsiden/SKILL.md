@@ -50,6 +50,12 @@ depends on Vibyra source or live state. Use only confirmed personal facts, let
 the current message override memory, and apply the smallest relevant set of
 book lenses rather than mentioning all four mechanically.
 
+For Mac publication, read `Desktop/Mac Downloads.md` and the implementation
+branch's `docs/releases/macos-publication.md`. Verify a real DMG for each Mac
+architecture and a separate signed `.app.tar.gz` updater. Ad-hoc test builds
+are not notarized releases; require native install/launch evidence and distinguish
+feature gaps from package availability before claiming Windows/Linux parity.
+
 ### Prompt Transcript Audits
 
 When auditing `Vibyra/Prompt Transcripts.md`:
@@ -136,3 +142,22 @@ Memory notes should be compact, factual, and future-facing:
 - Name the source files or modules future agents should inspect first.
 - Avoid blaming previous sessions or narrating the chat.
 - Avoid long changelogs. Durable architecture beats exhaustive history.
+
+### Publishing integrated desktop and phone work
+
+Use `docs/releases/0.6.0-publication.md` as the cross-surface release ledger.
+A successful desktop workflow supplies signed artifacts; it does not deploy
+backend metadata or publish a phone binary. Keep one exact source SHA per
+artifact set, verify remote hashes before staged metadata and deployment, and
+test an older updater client after cutover. Preserve active user workspaces.
+For the standalone phone client, inspect the actual EAS upload archive:
+`mobile/src/generated` must be present, while backend data and local logs must
+be absent. Native store signing, hosted web delivery and standalone Host
+previews are separate evidence. Record their state in `Desktop/Release 0.6.0.md`.
+
+For temporary Railway publication access, this CLI version discovers registration
+candidates under `~/.ssh` even when `ssh keys add --key` receives a path elsewhere.
+A zero exit status saying all local keys are registered does not prove the new
+key was registered. Verify its fingerprint in `railway ssh keys list`, use a
+uniquely named temporary key, and remove that registration and private material
+after publication. Never print private keys or provider credentials.

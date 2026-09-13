@@ -1,0 +1,32 @@
+{
+  "source": "99ec76c",
+  "nativeMode": "local embedded debug build; signed final package acceptance is separate",
+  "accountVerification": "isolated loopback fixture",
+  "providers": "real authenticated CLIs",
+  "isolatedUserData": true,
+  "routineScheduledWithoutManualRun": true,
+  "profiles": [
+    {
+      "engine": "claude",
+      "completedAnswers": 3,
+      "expectedContextVerified": true
+    },
+    {
+      "engine": "codex",
+      "completedAnswers": 1,
+      "expectedContextVerified": true
+    }
+  ],
+  "routines": [
+    {
+      "status": "completed",
+      "error": null
+    }
+  ],
+  "fileTask": {
+    "engine": "codex",
+    "nativeDecisionRequired": true,
+    "approvedThroughUI": true,
+    "expectedFileContentVerified": true
+  }
+}

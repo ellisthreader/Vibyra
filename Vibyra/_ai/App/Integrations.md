@@ -6,13 +6,13 @@ lives in `backend/config/chat_connectors.php` and is mirrored, deliberately
 duplicated, in `mobile/src/integrations/catalogue.ts` so the page draws before a
 server answers. Keep the two in step, in the same order.
 
-In code this feature is **chat connectors**. `release/0.6.3-macos` has a
-separate Integrations feature - OAuth connections for the desktop agents
+In code this feature is **chat connectors**. `release/0.6.3-macos` already had a
+separate, live Integrations feature - OAuth connections for the desktop agents
 (Google, Microsoft, Stripe, Shopify, GitHub) under `/api/integrations`,
 `IntegrationsController`, `config/integrations.php` and `App\Services\Integrations`.
-The phone chat went onto production's backend line, `release/macos-web`, on
-2026-09-11 (branch `launch/vibes-on-macos-web`), and ours was renamed rather
-than theirs so the two can meet in a later merge without colliding: `/api/connectors`, `ChatConnectorsController`,
+When the phone chat was brought onto that line on 2026-09-11 (branch
+`launch/vibes-on-release`), ours was renamed rather than theirs, because theirs
+is in production: `/api/connectors`, `ChatConnectorsController`,
 `config/chat_connectors.php`, `App\Services\ChatConnectors` (`ConnectorTools`,
 `ConnectorRunner`), `CHAT_CONNECTORS_ENABLED`, and `connectors:smoke`. The phone
 keeps the word "Integrations" on screen and in `mobile/src/integrations`, and the

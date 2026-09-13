@@ -1,5 +1,8 @@
 # Desktop - Shell
 
+Agent-page account connections: see [[Agent Integrations]] for the initial modal,
+broker/native ownership and live provider setup gates. This is local, unshipped work.
+
 Read this for the Vibyra Desktop (`desktop-tauri/`) shell surfaces: the auth
 gate, chrome, and settings integrations.
 

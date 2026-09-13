@@ -1,0 +1,7 @@
+running 2 tests
+test real_providers_use_saved_brief_memory_and_skill_in_fresh_sessions ... Verified claude: persisted brief, memory and skill across two fresh sessions
+Verified codex: persisted brief, memory and skill across two fresh sessions
+ok
+test saved_teammate_is_useful_after_database_reopen ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 32.34s

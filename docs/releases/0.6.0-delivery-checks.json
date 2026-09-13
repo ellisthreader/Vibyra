@@ -1,0 +1,147 @@
+{
+  "deployment": "2decc8ab-307a-4a70-a3a9-ddaca7ab51f2",
+  "feedChecks": [
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.0.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.1.0-beta.1",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.2.8",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.3.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.4.4",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.5.0",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.5.1",
+      "http": 200
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "0.6.0",
+      "http": 204
+    },
+    {
+      "bundle": "appimage",
+      "clientVersion": "999999.0.0",
+      "http": 204
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.0.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.1.0-beta.1",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.2.8",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.3.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.4.4",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.5.0",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.5.1",
+      "http": 200
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "0.6.0",
+      "http": 204
+    },
+    {
+      "bundle": "windows",
+      "clientVersion": "999999.0.0",
+      "http": 204
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.0.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.1.0-beta.1",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.2.8",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.3.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.4.4",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.5.0",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.5.1",
+      "http": 200
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "0.6.0",
+      "http": 204
+    },
+    {
+      "bundle": "deb",
+      "clientVersion": "999999.0.0",
+      "http": 204
+    }
+  ],
+  "updater": {
+    "from": "0.5.0",
+    "to": "0.6.0",
+    "downloadedPackageHashMatches": true,
+    "runningNewNativeBinary": true,
+    "originalUserAppUntouched": true
+  }
+}
