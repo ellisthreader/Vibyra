@@ -30,11 +30,18 @@ pub async fn agent_memory_add(
     state: State<'_, AppState>,
     agent_id: String,
     entry: NewMemory,
+    request_id: Option<String>,
 ) -> Result<MemoryEntry, String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::agent_memory::record(&world.db, &agent_id, entry, MemoryStatus::Active)
-            .map_err(|e| e.to_string())
+        vibyra_core::agent_memory::record_once(
+            &world.db,
+            &agent_id,
+            entry,
+            MemoryStatus::Active,
+            request_id.as_deref(),
+        )
+        .map_err(|e| e.to_string())
     })
     .await
 }

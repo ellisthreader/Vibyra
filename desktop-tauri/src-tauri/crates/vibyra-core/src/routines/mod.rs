@@ -27,5 +27,8 @@ mod zones;
 pub use due::{due, plan_tick, Due};
 pub use rows::{delete, get, list, set_enabled};
 pub use schedule::Schedule;
-pub use store::{create, update, Routine, RoutineDraft, RoutineRun};
+pub use store::{create, create_once, update, update_once, Routine, RoutineDraft, RoutineRun};
 pub use zones::{local_zone, offered_zones};
+
+pub(crate) use rows::from_row as receipt_row;
+pub(crate) use store::COLUMNS as RECEIPT_COLUMNS;

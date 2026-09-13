@@ -1,17 +1,13 @@
 //! Reads and writes of the roster. The only file that spells out its SQL.
 
-use std::path::Path;
-
 use rusqlite::params;
 
-use crate::agent_model::PlaceAccess;
-use crate::agentdb::ids::{new_id, now_ms};
+use crate::agentdb::ids::now_ms;
 use crate::agentdb::{sql, AgentDb};
 use crate::error::{CoreError, CoreResult};
 
-use super::place_store::insert_place;
-use super::record::{AgentProfile, AgentUpdate, NewAgent, COLUMNS};
-use super::{clean_name, home_for};
+use super::clean_name;
+use super::record::{AgentProfile, AgentUpdate, COLUMNS};
 
 /// Every live teammate on this account, most recently touched first.
 pub fn list(db: &AgentDb, account: &str) -> CoreResult<Vec<AgentProfile>> {
@@ -43,72 +39,6 @@ fn get_in(connection: &rusqlite::Connection, account: &str, id: &str) -> CoreRes
             Ok(AgentProfile::from_row(row))
         })
         .map_err(|_| CoreError::Settings(format!("no agent {id} on this account")))?
-}
-
-/// Creates a teammate, its private home, and the read/write grant over it.
-///
-/// All three in one transaction: an agent whose home was not granted would
-/// have nowhere at all to work, which is a state the rest of the code is
-/// entitled to assume cannot exist.
-pub fn create(
-    db: &AgentDb,
-    account: &str,
-    data_root: &Path,
-    request: NewAgent,
-) -> CoreResult<AgentProfile> {
-    let name = clean_name(&request.name)?;
-    let id = new_id();
-    let home = home_for(data_root, &id)?;
-    let now = now_ms();
-    let profile = AgentProfile {
-        id: id.clone(),
-        account: account.to_string(),
-        name,
-        brief: request.brief.trim().to_string(),
-        engine: request.engine,
-        model: None,
-        effort: None,
-        permission: crate::agent_model::PermissionMode::Standard,
-        memory_budget: 4_000,
-        reflection: crate::agent_model::Reflection::Suggest,
-        home_path: home.to_string_lossy().into_owned(),
-        accent: String::new(),
-        mail_enabled: false,
-        routines_allowed: true,
-        created_ms: now,
-        updated_ms: now,
-        archived_ms: None,
-    };
-    db.transact(|connection| {
-        connection
-            .execute(
-                "INSERT INTO agent_profiles (id, account, name, brief, engine, permission, \
-                 memory_budget, reflection, home_path, created_ms, updated_ms) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
-                params![
-                    profile.id,
-                    profile.account,
-                    profile.name,
-                    profile.brief,
-                    profile.engine.as_str(),
-                    profile.permission.as_str(),
-                    profile.memory_budget,
-                    profile.reflection.as_str(),
-                    profile.home_path,
-                    now,
-                ],
-            )
-            .map_err(sql)?;
-        insert_place(
-            connection,
-            &profile.id,
-            &profile.home_path,
-            PlaceAccess::ReadWrite,
-            "Agent home",
-            now,
-        )
-    })?;
-    Ok(profile)
 }
 
 /// Applies a partial change. Read-modify-write inside one transaction so two

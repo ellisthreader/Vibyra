@@ -21,10 +21,8 @@ pub struct Routine {
     pub instruction: String,
     pub schedule: Schedule,
     pub timezone: String,
-    /// Routines default to Plan. A standing schedule with write access is a
-    /// thing that changes files while nobody is looking, so raising it is a
-    /// separate, explicit choice rather than a default inherited from the
-    /// agent.
+    /// Routines default to Plan. Granting write access to unattended work
+    /// is an explicit choice, never inherited from the teammate.
     pub permission: PermissionMode,
     pub enabled: bool,
     pub next_run_ms: Option<i64>,
@@ -49,7 +47,7 @@ pub struct RoutineRun {
     pub error: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RoutineDraft {
     pub agent_id: String,
@@ -61,28 +59,67 @@ pub struct RoutineDraft {
     pub permission: Option<PermissionMode>,
 }
 
-pub(super) const COLUMNS: &str =
+pub(crate) const COLUMNS: &str =
     "id, agent_id, name, instruction, schedule_kind, schedule_spec, timezone, \
      permission, enabled, next_run_ms, created_ms, updated_ms";
 
 /// Saves a routine and resolves its first run.
 pub fn create(db: &AgentDb, draft: RoutineDraft) -> CoreResult<Routine> {
+    create_once(db, draft, None)
+}
+
+pub fn create_once(db: &AgentDb, draft: RoutineDraft, token: Option<&str>) -> CoreResult<Routine> {
     if !crate::agent_profiles::routines_allowed(db, &draft.agent_id) {
         return Err(CoreError::Settings(
             "that teammate has scheduled work turned off. Turn it on in its settings first.".into(),
         ));
     }
     let routine = build(new_id(), &draft, now_ms(), now_ms())?;
-    write(db, &routine, true)?;
-    Ok(routine)
+    crate::agentdb::requests::once(
+        db,
+        &draft.agent_id,
+        "routine.create",
+        token,
+        &draft,
+        |connection| {
+            write_in(connection, &routine, true)?;
+            Ok(routine.clone())
+        },
+    )
 }
 
 /// Replaces a routine's rule, recomputing when it next fires.
 pub fn update(db: &AgentDb, id: &str, draft: RoutineDraft) -> CoreResult<Routine> {
+    update_once(db, id, draft, None)
+}
+
+pub fn update_once(
+    db: &AgentDb,
+    id: &str,
+    draft: RoutineDraft,
+    token: Option<&str>,
+) -> CoreResult<Routine> {
     let existing = get(db, id)?;
-    let routine = build(id.to_string(), &draft, existing.created_ms, now_ms())?;
-    write(db, &routine, false)?;
-    Ok(routine)
+    let mut routine = build(id.to_string(), &draft, existing.created_ms, now_ms())?;
+    routine.enabled = existing.enabled;
+    if draft.agent_id != existing.agent_id
+        && !crate::agent_profiles::routines_allowed(db, &draft.agent_id)
+    {
+        return Err(CoreError::Settings(
+            "The selected teammate has scheduled work turned off.".into(),
+        ));
+    }
+    crate::agentdb::requests::once(
+        db,
+        &draft.agent_id,
+        "routine.update",
+        token,
+        &(id, &draft),
+        |connection| {
+            write_in(connection, &routine, false)?;
+            Ok(routine.clone())
+        },
+    )
 }
 
 fn build(id: String, draft: &RoutineDraft, created: i64, updated: i64) -> CoreResult<Routine> {
@@ -117,7 +154,7 @@ fn build(id: String, draft: &RoutineDraft, created: i64, updated: i64) -> CoreRe
     })
 }
 
-fn write(db: &AgentDb, routine: &Routine, insert: bool) -> CoreResult<()> {
+fn write_in(connection: &rusqlite::Connection, routine: &Routine, insert: bool) -> CoreResult<()> {
     let spec = serde_json::to_string(&routine.schedule)
         .map_err(|error| CoreError::Settings(error.to_string()))?;
     let kind = match routine.schedule {
@@ -125,40 +162,38 @@ fn write(db: &AgentDb, routine: &Routine, insert: bool) -> CoreResult<()> {
         Schedule::Weekdays { .. } => "weekdays",
         Schedule::Every { .. } => "every",
     };
-    db.with(|connection| {
-        let statement = if insert {
-            "INSERT INTO routines (id, agent_id, name, instruction, schedule_kind, \
+    let statement = if insert {
+        "INSERT INTO routines (id, agent_id, name, instruction, schedule_kind, \
              schedule_spec, timezone, permission, enabled, next_run_ms, created_ms, updated_ms) \
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)"
-        } else {
-            "INSERT INTO routines (id, agent_id, name, instruction, schedule_kind, \
+    } else {
+        "INSERT INTO routines (id, agent_id, name, instruction, schedule_kind, \
              schedule_spec, timezone, permission, enabled, next_run_ms, created_ms, updated_ms) \
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) \
-             ON CONFLICT(id) DO UPDATE SET name = excluded.name, \
+             ON CONFLICT(id) DO UPDATE SET agent_id = excluded.agent_id, name = excluded.name, \
              instruction = excluded.instruction, schedule_kind = excluded.schedule_kind, \
              schedule_spec = excluded.schedule_spec, timezone = excluded.timezone, \
              permission = excluded.permission, next_run_ms = excluded.next_run_ms, \
              updated_ms = excluded.updated_ms"
-        };
-        connection
-            .execute(
-                statement,
-                params![
-                    routine.id,
-                    routine.agent_id,
-                    routine.name,
-                    routine.instruction,
-                    kind,
-                    spec,
-                    routine.timezone,
-                    routine.permission.as_str(),
-                    routine.enabled as i64,
-                    routine.next_run_ms,
-                    routine.created_ms,
-                    routine.updated_ms,
-                ],
-            )
-            .map_err(sql)?;
-        Ok(())
-    })
+    };
+    connection
+        .execute(
+            statement,
+            params![
+                routine.id,
+                routine.agent_id,
+                routine.name,
+                routine.instruction,
+                kind,
+                spec,
+                routine.timezone,
+                routine.permission.as_str(),
+                routine.enabled as i64,
+                routine.next_run_ms,
+                routine.created_ms,
+                routine.updated_ms,
+            ],
+        )
+        .map_err(sql)?;
+    Ok(())
 }

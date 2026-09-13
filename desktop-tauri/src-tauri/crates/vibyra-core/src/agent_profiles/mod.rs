@@ -5,17 +5,19 @@
 //! reload the window and know nothing leaked, and a roster query that forgot
 //! its scope would be the hole in it.
 
+mod create;
 mod place_store;
 mod places;
 mod record;
 mod store;
+pub use create::{create, create_once};
 #[cfg(test)]
 mod tests;
 
 pub use place_store::{grant_place, list_places, revoke_place, routines_allowed};
 pub use places::{authorize, canonical_place, directory_arguments, within, AgentPlace};
 pub use record::{AgentProfile, AgentUpdate, NewAgent};
-pub use store::{archive, create, delete, get, list, update};
+pub use store::{archive, delete, get, list, update};
 
 use std::path::{Path, PathBuf};
 
@@ -62,3 +64,5 @@ pub fn managed_home(root: &Path, agent_id: &str) -> CoreResult<PathBuf> {
 
 mod archive_store;
 pub use archive_store::archived;
+
+pub(crate) use record::COLUMNS as RECEIPT_COLUMNS;

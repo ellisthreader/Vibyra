@@ -5,6 +5,14 @@ use std::{
 };
 
 pub fn state() -> (tempfile::TempDir, Arc<Shared>) {
+    state_with_nearby(false)
+}
+
+pub fn nearby_state() -> (tempfile::TempDir, Arc<Shared>) {
+    state_with_nearby(true)
+}
+
+fn state_with_nearby(nearby: bool) -> (tempfile::TempDir, Arc<Shared>) {
     let dir = tempfile::tempdir().unwrap();
     let project = dir.path().join("project");
     std::fs::create_dir(&project).unwrap();
@@ -21,6 +29,7 @@ pub fn state() -> (tempfile::TempDir, Arc<Shared>) {
         active: Mutex::new(HashSet::new()),
         pairing_url: "ws://127.0.0.1:4318".into(),
         relay: false,
+        nearby,
     });
     (dir, shared)
 }

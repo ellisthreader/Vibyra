@@ -22,9 +22,10 @@ export function listMemory(agentId: string): Promise<MemoryEntry[]> {
 export function addMemory(
   agentId: string,
   entry: { class: MemoryClass; body: string; priority?: number },
+  requestId?: string,
 ): Promise<MemoryEntry> {
   return invoke("agent_memory_add", {
-    agentId,
+    agentId, requestId,
     entry: { class: entry.class, body: entry.body, priority: entry.priority ?? null },
   });
 }
@@ -62,12 +63,12 @@ export function listSkills(): Promise<Skill[]> {
   return invoke("skill_list");
 }
 
-export function installSkill(draft: SkillDraft): Promise<Skill> {
-  return invoke("skill_install", { draft });
+export function installSkill(draft: SkillDraft, requestId?: string): Promise<Skill> {
+  return invoke("skill_install", { draft, requestId });
 }
 
-export function reviseSkill(id: string, draft: SkillDraft): Promise<Skill> {
-  return invoke("skill_revise", { id, draft });
+export function reviseSkill(id: string, draft: SkillDraft, requestId?: string): Promise<Skill> {
+  return invoke("skill_revise", { id, draft, requestId });
 }
 
 export function setSkillStatus(id: string, status: string): Promise<void> {
@@ -103,12 +104,12 @@ export function listRoutines(agentId: string | null): Promise<Routine[]> {
   return invoke("routine_list", { agentId });
 }
 
-export function createRoutine(draft: RoutineDraft): Promise<Routine> {
-  return invoke("routine_create", { draft });
+export function createRoutine(draft: RoutineDraft, requestId?: string): Promise<Routine> {
+  return invoke("routine_create", { draft, requestId });
 }
 
-export function updateRoutine(id: string, draft: RoutineDraft): Promise<Routine> {
-  return invoke("routine_update", { id, draft });
+export function updateRoutine(id: string, draft: RoutineDraft, requestId?: string): Promise<Routine> {
+  return invoke("routine_update", { id, draft, requestId });
 }
 
 export function setRoutineEnabled(id: string, enabled: boolean): Promise<Routine> {

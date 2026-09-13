@@ -76,7 +76,7 @@ impl AgentProfile {
 /// The fields `New Agent` collects. Everything else has a strong default and
 /// is changed later in the agent's own settings, which is why creation is one
 /// short form rather than a wizard.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NewAgent {
     pub name: String,

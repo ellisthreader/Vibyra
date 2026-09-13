@@ -1,3 +1,4 @@
+import { agentAccount, agentWrite } from "./agentWrite";
 import { useAgentModeStore } from "./agentModeStore";
 import { create } from "zustand";
 
@@ -12,6 +13,7 @@ interface RosterStore {
   places: Record<string, AgentPlace[]>;
   capabilities: EngineCapabilities[];
   loading: boolean;
+  capabilityError: string | null;
   error: string | null;
   load: () => Promise<void>;
   recheck: () => Promise<void>;
@@ -45,9 +47,11 @@ export function capabilityFor(
 }
 
 export const useAgentRosterStore = create<RosterStore>((set, get) => {
+  let revision = 0;
   const refresh = async (): Promise<void> => {
+    const version = revision; const account = agentAccount();
     const [agents, archived] = await Promise.all([ipc.listAgents(), ipc.listAgents(true)]);
-    set({ agents, archived });
+    if (revision === version && agentAccount() === account) set({ agents, archived });
   };
 
   return {
@@ -56,9 +60,11 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
     places: {},
     capabilities: [],
     loading: false,
+    capabilityError: null,
     error: null,
 
     load: async () => {
+      const version = revision; const account = agentAccount();
       set({ loading: true, error: null });
       try {
         const [agents, archived, capabilities] = await Promise.all([
@@ -66,32 +72,34 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
           // A cold probe is slow enough to be worth not blocking the roster on
           // it, but the roster is useless without knowing which engines work,
           // so both are awaited and the failure of either is one message.
-          get().capabilities.length > 0
+          get().capabilities.length > 0 && !get().capabilityError
             ? Promise.resolve(get().capabilities)
-            : ipc.engineCapabilities(),
+            : ipc.engineCapabilities().catch(error => { if (agentAccount() === account) set({ capabilityError: String(error) }); throw error; }),
         ]);
-        set({ agents, archived, capabilities, loading: false });
+        if (agentAccount() !== account) return;
+        set(revision === version ? { agents, archived, capabilities, loading: false, capabilityError: null } : { capabilities, loading: false, capabilityError: null });
       } catch (error) {
-        set({ loading: false, error: String(error) });
+        if (agentAccount() === account) set({ loading: false, error: String(error) });
       }
     },
 
     recheck: async () => {
-      try { set({ capabilities: await ipc.engineCapabilities(true), error: null }); }
-      catch (error) { set({ error: String(error) }); }
+      set({ loading: true });
+      try { set({ capabilities: await ipc.engineCapabilities(true), capabilityError: null }); }
+      catch (error) { set({ capabilityError: String(error) }); }
+      finally { set({ loading: false }); }
     },
 
-    create: async (name, brief, engine) => {
-      try {
-        const profile = await ipc.createAgent({ name, brief, engine });
-        await refresh();
-        await get().loadPlaces(profile.id);
-        return profile;
-      } catch (error) {
-        set({ error: String(error) });
-        return null;
-      }
-    },
+    create: (name, brief, engine) => agentWrite(
+      "agent.create", { name, brief, engine },
+      token => ipc.createAgent({ name, brief, engine }, token),
+      profile => {
+        revision++;
+        set(state => ({ agents: [profile, ...state.agents.filter(item => item.id !== profile.id)], error: null }));
+        void get().loadPlaces(profile.id);
+      },
+      error => set({ error }),
+    ),
 
     update: async (id, change) => {
       try {
@@ -123,10 +131,11 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
     },
 
     loadPlaces: async (agentId) => {
+      const account = agentAccount();
       try {
         const places = await ipc.listPlaces(agentId);
-        set((state) => ({ places: { ...state.places, [agentId]: places } }));
-      } catch (error) { set({ error: String(error) }); }
+        if (agentAccount() === account) set((state) => ({ places: { ...state.places, [agentId]: places } }));
+      } catch (error) { if (agentAccount() === account) set({ error: String(error) }); }
     },
 
     grant: async (agentId, path, access) => {
@@ -144,6 +153,6 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
       await get().loadPlaces(agentId);
     },
 
-    clear: () => set({ agents: [], archived: [], places: {}, capabilities: [], error: null }),
+    clear: () => { revision++; set({ agents: [], archived: [], places: {}, capabilities: [], loading: false, capabilityError: null, error: null }); },
   };
 });

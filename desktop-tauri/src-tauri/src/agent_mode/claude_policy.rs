@@ -64,7 +64,7 @@ pub fn args(spec: &RunSpec) -> Result<Vec<String>, String> {
         "--tools".into(),
         tools.join(","),
         "--allowedTools".into(),
-        "mcp__vibyra__propose_memory,mcp__vibyra__propose_skill".into(),
+        "mcp__vibyra__propose_memory,mcp__vibyra__propose_skill,mcp__vibyra__integration_accounts,mcp__vibyra__integration_read".into(),
     ])
 }
 

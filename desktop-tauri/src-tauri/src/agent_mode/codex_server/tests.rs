@@ -115,3 +115,47 @@ fn broader_permissions_and_network_escalations_are_declined() {
         );
     }
 }
+
+#[test]
+fn integration_dynamic_tool_uses_the_same_native_gate() {
+    use crate::agent_mode::bridge::wire::{BridgeReply, BridgeRequest};
+    use std::io::{BufRead, BufReader, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        let mut line = String::new();
+        BufReader::new(stream.try_clone().unwrap())
+            .read_line(&mut line)
+            .unwrap();
+        let request: BridgeRequest = serde_json::from_str(&line).unwrap();
+        writeln!(
+            stream,
+            "{}",
+            serde_json::to_string(&BridgeReply::allow(serde_json::json!({"accounts":[]}))).unwrap()
+        )
+        .unwrap();
+        request
+    });
+    let bridge = vibyra_core::agent_runtime::PermissionBridge {
+        exe: "/fixture".into(),
+        port,
+        token: "private-turn-token".into(),
+        chat_id: "chat-a".into(),
+        turn_id: "turn-a".into(),
+    };
+    let response = super::approval::respond(
+        "item/tool/call",
+        &serde_json::json!({
+            "tool":"integration_accounts", "callId":"call-a", "arguments":{}
+        }),
+        &bridge,
+    );
+    assert_eq!(response["success"], true);
+    let request = server.join().unwrap();
+    assert_eq!(request.tool_name, "integration_accounts");
+    assert_eq!(request.token, bridge.token);
+    assert_eq!(request.chat_id, bridge.chat_id);
+    assert_eq!(request.turn_id, bridge.turn_id);
+    assert_eq!(request.tool_use_id.as_deref(), Some("call-a"));
+}

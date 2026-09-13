@@ -115,7 +115,6 @@ test("the modal is deferred until after the updater gate", async () => {
 
 test("the approved visual, interaction and accessibility contract is present", async () => {
   const component = await read("../src/components/changelog/PostUpdateChangelog.tsx");
-  const focus = await read("../src/lib/useModalFocus.ts");
   const shell = await read("../src/styles/post-update-changelog.css");
   const content = await read("../src/styles/post-update-changelog-content.css");
   const responsive = await read("../src/styles/post-update-changelog-responsive.css");
@@ -124,7 +123,7 @@ test("the approved visual, interaction and accessibility contract is present", a
   assert.match(component, /data-autofocus/);
   assert.match(component, /event\.target === event\.currentTarget/);
   assert.match(component, /You’re up to date/);
-  assert.match(focus, /active === first \|\| outside \|\| staticFocus/);
+  // Static-focus Tab behavior is exercised in tests/ui/teammateModalChecks.mjs.
   assert.match(shell, /width: min\(560px/);
   assert.match(shell, /grid-template-rows: auto minmax\(0, 1fr\) auto/);
   assert.match(shell, /backdrop-filter: blur\(3px\)/);

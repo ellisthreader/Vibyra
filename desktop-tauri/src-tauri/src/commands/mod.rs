@@ -22,8 +22,10 @@ pub mod codex_transcripts;
 pub mod conversation_carry;
 pub mod fs;
 pub mod github;
+pub mod integrations;
 pub mod memory;
 pub mod perf;
+pub mod phone;
 pub mod preview;
 pub mod probe;
 pub mod project_activity;
@@ -39,7 +41,10 @@ mod screenshot_capture;
 #[cfg(target_os = "windows")]
 #[path = "screenshot_capture_windows.rs"]
 mod screenshot_capture;
-#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+#[cfg(target_os = "macos")]
+#[path = "screenshot_capture_macos.rs"]
+mod screenshot_capture;
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
 #[path = "screenshot_capture_unsupported.rs"]
 mod screenshot_capture;
 mod screenshot_png;

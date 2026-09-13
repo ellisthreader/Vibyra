@@ -20,7 +20,7 @@ pub(super) fn parse_zone(name: &str) -> CoreResult<chrono_tz::Tz> {
         .map_err(|_| CoreError::Settings(format!("{name} is not a timezone this build knows")))
 }
 
-pub(super) fn from_row(row: &rusqlite::Row<'_>) -> CoreResult<Routine> {
+pub(crate) fn from_row(row: &rusqlite::Row<'_>) -> CoreResult<Routine> {
     let spec: String = row.get(5).map_err(sql)?;
     let schedule: Schedule = serde_json::from_str(&spec)
         .map_err(|error| CoreError::Settings(format!("unreadable routine schedule: {error}")))?;

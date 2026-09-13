@@ -126,3 +126,27 @@ fn allow_carries_the_input_back_under_claudes_key() {
         json!({"behavior": "allow", "updatedInput": {"command": "ls"}})
     );
 }
+
+#[test]
+fn integration_read_reaches_the_gate_with_immutable_turn_identity() {
+    let wire = Recording {
+        asked: Mutex::new(Vec::new()),
+        answer: BridgeReply::allow(json!({"result":{"items":[]}})),
+    };
+    let reply = parsed(handle(
+        r#"{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"integration_read","arguments":{"connectionId":"account-a"}}}"#,
+        &wire,
+        &env(),
+    ));
+    assert!(reply["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("items"));
+    let calls = wire.asked.lock().unwrap();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].tool_name, "integration_read");
+    assert_eq!(calls[0].chat_id, "chat-9");
+    assert_eq!(calls[0].turn_id, "turn-3");
+    assert_eq!(calls[0].token, "tok");
+    assert_eq!(calls[0].input["connectionId"], "account-a");
+}

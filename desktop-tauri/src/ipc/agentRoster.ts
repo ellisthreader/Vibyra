@@ -22,8 +22,8 @@ export function createAgent(request: {
   name: string;
   brief: string;
   engine: Engine;
-}): Promise<AgentProfile> {
-  return invoke("agent_profile_create", { request });
+}, requestId?: string): Promise<AgentProfile> {
+  return invoke("agent_profile_create", { request, requestId });
 }
 
 /** Every field is optional; absent means "leave it alone". */

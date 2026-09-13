@@ -5,6 +5,7 @@ import { routineZones } from "../../ipc/agentConfig";
 import { describeSchedule } from "../../lib/routineSchedule";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { useEditorSave } from "./useEditorSave";
 import { EditorDialog } from "./EditorDialog";
 import { RoutineScheduleFields } from "./RoutineScheduleFields";
 
@@ -26,7 +27,7 @@ export function RoutineEditor({
 }) {
   const routines = useAgentWorkStore((state) => state.routines);
   const save = useAgentWorkStore((state) => state.saveRoutine);
-  const error = useAgentWorkStore((state) => state.error);
+  const submission = useEditorSave();
   const agents = useAgentRosterStore((state) => state.agents);
   const existing = routines.find((entry) => entry.id === routineId);
 
@@ -49,7 +50,7 @@ export function RoutineEditor({
     void routineZones().then((found) => {
       setZones(found);
       setTimezone((current: string) => current || found[0] || "UTC");
-    });
+    }).catch(() => setTimezone((current) => current || "UTC"));
   }, []);
 
   const schedule = useMemo<Schedule>(() => {
@@ -59,21 +60,19 @@ export function RoutineEditor({
     return { kind: "daily", minuteOfDay };
   }, [days, kind, minutes, time]);
 
-  const submit = async () => {
-    const ok = await save(
-      { agentId, name, instruction, schedule, timezone, permission },
-      routineId,
-    );
-    if (ok) onClose();
-  };
+  const submit = () => void submission.run(
+    () => save({ agentId, name, instruction, schedule, timezone, permission }, routineId),
+    () => onClose(),
+  );
 
   return (
     <EditorDialog
       title={routineId ? `Edit ${existing?.name ?? "routine"}` : "New routine"}
       lede="Each run opens a fresh chat as the teammate that owns it, with that teammate's brief, folders and memory."
       submitLabel={routineId ? "Save routine" : "Create routine"}
-      busy={!name.trim() || !instruction.trim() || !agentId}
-      error={error}
+      busy={submission.busy}
+      disabled={!name.trim() || !instruction.trim() || !agentId || !timezone}
+      error={submission.error}
       onClose={onClose}
       onSubmit={() => void submit()}
     >
@@ -96,7 +95,7 @@ export function RoutineEditor({
         <span>Name</span>
         <input
           className="input"
-          autoFocus
+          data-autofocus
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="Morning check"

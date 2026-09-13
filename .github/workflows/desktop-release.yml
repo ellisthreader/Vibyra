@@ -2,12 +2,22 @@ name: Rust desktop beta packages
 
 on:
   workflow_dispatch:
+    inputs:
+      macos_only:
+        description: Build the Apple Silicon and Intel Mac packages only
+        type: boolean
+        default: false
+      macos_validation:
+        description: Build ad-hoc Mac beta packages (first-launch approval required)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   release-preflight:
+    if: ${{ !inputs.macos_only }}
     name: Verify release version and updater feed
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -81,6 +91,9 @@ jobs:
         run: rustup show active-toolchain
       - name: Run release gates
         run: npm run verify
+      - name: Verify Agent forms and save recovery
+        if: matrix.bundle == 'appimage'
+        run: npm run test:teammate-ui && npm run test:integrations-ui
       - name: Verify and read the version being released
         id: version
         shell: bash
@@ -229,3 +242,10 @@ jobs:
             echo
             echo "No files were published to the live release volume."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  macos:
+    if: ${{ inputs.macos_only }}
+    uses: ./.github/workflows/desktop-macos.yml
+    with:
+      validation_only: ${{ inputs.macos_validation }}
+    secrets: inherit

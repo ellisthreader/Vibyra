@@ -1,3 +1,5 @@
+import { agentAccount } from "./agentWrite";
+import { agentWorkWrites } from "./agentWorkWrites";
 import { create } from "zustand";
 
 import type { ApprovalRequest, MemoryEntry, Routine, RoutineRun, Skill } from "../agentTypes";
@@ -25,7 +27,7 @@ interface WorkStore {
   approvalChatIds: string[];
   error: string | null;
   loadMemory: (agentId: string) => Promise<void>;
-  addMemory: (agentId: string, body: string, klass: MemoryEntry["class"]) => Promise<void>;
+  addMemory: (agentId: string, body: string, klass: MemoryEntry["class"]) => Promise<MemoryEntry>;
   setMemoryStatus: (agentId: string, id: string, status: MemoryEntry["status"]) => Promise<void>;
   amendMemory: (
     agentId: string,
@@ -34,11 +36,11 @@ interface WorkStore {
   ) => Promise<void>;
   deleteMemory: (agentId: string, id: string) => Promise<void>;
   loadSkills: () => Promise<void>;
-  saveSkill: (draft: ipc.SkillDraft, id?: string) => Promise<boolean>;
+  saveSkill: (draft: ipc.SkillDraft, id?: string) => Promise<Skill>;
   setSkillStatus: (id: string, status: string) => Promise<void>;
   assignSkill: (agentId: string, skillId: string, enabled: boolean) => Promise<void>;
   loadRoutines: (agentId: string | null) => Promise<void>;
-  saveRoutine: (draft: ipc.RoutineDraft, id?: string) => Promise<boolean>;
+  saveRoutine: (draft: ipc.RoutineDraft, id?: string) => Promise<Routine>;
   setRoutineEnabled: (id: string, enabled: boolean) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
   loadRuns: (routineId: string) => Promise<void>;
@@ -53,6 +55,8 @@ interface WorkStore {
 }
 
 export const useAgentWorkStore = create<WorkStore>((set, get) => {
+  let revision = 0;
+  const fresh = () => { const version = revision; const account = agentAccount(); return () => version === revision && agentAccount() === account; };
   const fail = (error: unknown) => set({ error: String(error) });
 
   return {
@@ -66,21 +70,10 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
     error: null,
 
     loadMemory: async (agentId) => {
+      const current = fresh();
       try { const entries = await ipc.listMemory(agentId);
-        set((state) => ({ memory: { ...state.memory, [agentId]: entries } }));
-      } catch (error) { fail(error); }
-    },
-
-    addMemory: async (agentId, body, klass) => {
-      try {
-        await ipc.addMemory(agentId, { class: klass, body });
-        set({ error: null });
-      } catch (error) {
-        // The one error here worth surfacing verbatim: the store refuses
-        // anything credential-shaped, and the message says what to do instead.
-        fail(error);
-      }
-      await get().loadMemory(agentId);
+        if (current()) set((state) => ({ memory: { ...state.memory, [agentId]: entries } }));
+      } catch (error) { if (current()) fail(error); }
     },
 
     setMemoryStatus: async (agentId, id, status) => {
@@ -98,44 +91,14 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
       await get().loadMemory(agentId);
     },
 
-    loadSkills: async () => { try { set({ skills: await ipc.listSkills() }); } catch (error) { fail(error); } },
-
-    saveSkill: async (draft, id) => {
-      try {
-        if (id) await ipc.reviseSkill(id, draft);
-        else await ipc.installSkill(draft);
-        set({ error: null });
-        await get().loadSkills();
-        return true;
-      } catch (error) {
-        fail(error);
-        return false;
-      }
-    },
+    loadSkills: async () => { const current = fresh(); try { const skills = await ipc.listSkills(); if (current()) set({ skills }); } catch (error) { if (current()) fail(error); } },
 
     setSkillStatus: async (id, status) => {
       await ipc.setSkillStatus(id, status).catch(fail);
       await get().loadSkills();
     },
 
-    assignSkill: async (agentId, skillId, enabled) => {
-      await ipc.assignSkill(agentId, skillId, enabled).catch(fail);
-    },
-
-    loadRoutines: async (agentId) => { try { set({ routines: await ipc.listRoutines(agentId) }); } catch (error) { fail(error); } },
-
-    saveRoutine: async (draft, id) => {
-      try {
-        if (id) await ipc.updateRoutine(id, draft);
-        else await ipc.createRoutine(draft);
-        set({ error: null });
-        await get().loadRoutines(null);
-        return true;
-      } catch (error) {
-        fail(error);
-        return false;
-      }
-    },
+    loadRoutines: async (agentId) => { const current = fresh(); try { const routines = await ipc.listRoutines(agentId); if (current()) set({ routines }); } catch (error) { if (current()) fail(error); } },
 
     setRoutineEnabled: async (id, enabled) => {
       try {
@@ -173,8 +136,9 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
     setLastChecked: (lastCheckedMs) => set({ lastCheckedMs }),
 
     ...approvalActions(set, get),
+    ...agentWorkWrites(set, () => { revision++; }),
 
-    clear: () =>
-      set({ memory: {}, skills: [], routines: [], runs: {}, approvals: [], error: null }),
+    clear: () => { revision++;
+      set({ memory: {}, skills: [], routines: [], runs: {}, approvals: [], error: null }); },
   };
 });

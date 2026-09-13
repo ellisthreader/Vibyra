@@ -13,6 +13,8 @@
 
 mod backup;
 pub mod ids;
+mod receipt_read;
+pub mod requests;
 mod schema;
 mod schema_agents;
 mod schema_runs;
@@ -162,3 +164,11 @@ fn migrate(connection: &Connection, from: i64) -> CoreResult<()> {
 pub(crate) fn sql(error: rusqlite::Error) -> CoreError {
     CoreError::Settings(format!("agent database: {error}"))
 }
+
+#[cfg(test)]
+mod request_atomic_tests;
+#[cfg(test)]
+mod request_tests;
+
+#[cfg(test)]
+mod request_config_tests;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { useEditorSave } from "./useEditorSave";
 import { EditorDialog } from "./EditorDialog";
 
 /**
@@ -43,7 +44,7 @@ const FIELDS = [
 export function SkillEditor({ skillId, onClose }: { skillId?: string; onClose: () => void }) {
   const skills = useAgentWorkStore((state) => state.skills);
   const save = useAgentWorkStore((state) => state.saveSkill);
-  const error = useAgentWorkStore((state) => state.error);
+  const submission = useEditorSave();
   const existing = skills.find((skill) => skill.id === skillId);
 
   const [draft, setDraft] = useState({
@@ -55,9 +56,7 @@ export function SkillEditor({ skillId, onClose }: { skillId?: string; onClose: (
     boundary: existing?.boundary ?? "",
   });
 
-  const submit = async () => {
-    if (await save(draft, skillId)) onClose();
-  };
+  const submit = () => void submission.run(() => save(draft, skillId), () => onClose());
 
   return (
     <EditorDialog
@@ -68,8 +67,9 @@ export function SkillEditor({ skillId, onClose }: { skillId?: string; onClose: (
           : "Once installed, this is offered to the teammates you give it to in every turn, and expanded when its trigger matches."
       }
       submitLabel={skillId ? "Save as a new version" : "Install skill"}
-      busy={!draft.name.trim() || !draft.trigger.trim() || !draft.procedure.trim()}
-      error={error}
+      busy={submission.busy}
+      disabled={!draft.name.trim() || !draft.trigger.trim() || !draft.procedure.trim()}
+      error={submission.error}
       onClose={onClose}
       onSubmit={() => void submit()}
     >
@@ -77,7 +77,7 @@ export function SkillEditor({ skillId, onClose }: { skillId?: string; onClose: (
         <span>Name</span>
         <input
           className="input"
-          autoFocus
+          data-autofocus
           value={draft.name}
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           placeholder="Prove it before saying it works"

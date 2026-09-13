@@ -5401,6 +5401,7 @@ dependencies = [
  "arboard",
  "base64 0.22.1",
  "chrono",
+ "core-graphics",
  "dirs",
  "getrandom 0.3.4",
  "image",

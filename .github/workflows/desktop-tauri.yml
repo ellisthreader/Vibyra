@@ -55,6 +55,8 @@ jobs:
         run: npm --prefix desktop-tauri run check:dead-code
       - name: Run frontend tests
         run: npm --prefix desktop-tauri test
+      - name: Verify teammate dialog and save recovery
+        run: npm --prefix desktop-tauri run test:teammate-ui
       - name: Typecheck and build frontend
         run: npm --prefix desktop-tauri run build
       - name: Check Rust formatting

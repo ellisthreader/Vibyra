@@ -21,8 +21,10 @@ impl RegisteredTree {
             .is_ok_and(|relative| !super::ignored(relative))
     }
 
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     pub fn refresh(&mut self, watcher: &mut impl Watcher) -> notify::Result<()> {
+        // FSEvents must keep one recursive stream; re-registering descendants
+        // restarts it and can lose changes during source-directory renames.
         // Windows cannot rename a parent while descendant directory handles
         // are open. One recursive root handle preserves source-folder renames;
         // the callback filters generated paths before bounded queue admission.
@@ -33,7 +35,7 @@ impl RegisteredTree {
         Ok(())
     }
 
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     pub fn refresh(&mut self, watcher: &mut impl Watcher) -> notify::Result<()> {
         // A renamed/replaced directory can retain its native watch identity.
         // Remove old registrations before adding new paths to the same inode.
@@ -95,14 +97,28 @@ mod tests {
         .unwrap();
         let mut tree = RegisteredTree::new(tmp.path().to_path_buf());
         tree.refresh(&mut watcher).unwrap();
-        assert_eq!(tree.paths.len(), if cfg!(windows) { 1 } else { 3 });
+        assert_eq!(
+            tree.paths.len(),
+            if cfg!(any(windows, target_os = "macos")) {
+                1
+            } else {
+                3
+            }
+        );
         assert!(tree.paths.contains(tmp.path()));
         assert!(!tree.includes(&tmp.path().join("node_modules/pkg/nested")));
         std::fs::rename(tmp.path().join("src"), tmp.path().join("renamed")).unwrap();
         tree.refresh(&mut watcher).unwrap();
-        assert_eq!(tree.paths.len(), if cfg!(windows) { 1 } else { 3 });
+        assert_eq!(
+            tree.paths.len(),
+            if cfg!(any(windows, target_os = "macos")) {
+                1
+            } else {
+                3
+            }
+        );
         assert!(tree.includes(&tmp.path().join("renamed/nested")));
-        #[cfg(not(windows))]
+        #[cfg(not(any(windows, target_os = "macos")))]
         assert!(tree.paths.contains(&tmp.path().join("renamed/nested")));
         assert!(!tree.paths.contains(&tmp.path().join("src/nested")));
     }

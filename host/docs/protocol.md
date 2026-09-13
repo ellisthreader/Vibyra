@@ -1,5 +1,7 @@
 # Vibyra Remote protocol 1: terminal prototype
 
+New Codex iOS chats can opt into the additive [structured conversation extension](conversations.md). Existing sessions remain PTYs.
+
 This is the current local trusted-device implementation, not the complete iOS
 master-plan protocol. Pairing binds a device key through a one-use invitation
 and explicit approval in the Host console. All configured project roots are
@@ -7,11 +9,32 @@ available to that trusted device. A controlled shell runs with the computer
 user's privileges; its working directory is not a filesystem or OS sandbox.
 
 Account-bound enrollment, per-project device grants, cloud revocation leases,
-structured agent jobs/approvals, desktop IPC, durable event-cursor replay, and
 production relay qualification are not implemented. Do not expose this as the
 completed M2 service or promise the later M3 task workflow.
 
-All execution happens on Vibyra Host. Clients never receive provider credentials.
+The Mac 0.1.9 embedded adapter serves existing desktop PTYs with a read-only
+Backend: session create/control/stop, filesystem and preview methods reject.
+It advertises `capabilities.readOnly` and `Session.readOnly`; trusted phones
+can observe all desktop terminal output. See the Desktop iPhone Connection
+memory note for enable, approval, revoke and private-network requirements.
+
+Standalone execution happens on Vibyra Host. Clients never receive provider credentials.
+Optional `--discover` advertises `_vibyra-host._tcp.local.` with the Host name,
+protocol version and TXT `id` (the Host static public key, which is also the
+`hostId`) on a LAN listener; loopback discovery is rejected. That key lets a
+phone authenticate the Host during the Noise handshake and authorizes nothing
+by itself. The advertisement still carries no invitations, device keys,
+credentials or project data, and discovered names remain untrusted.
+
+Where the Host advertises itself, a phone that found it may send `Hello`
+without `invite` ("nearby pairing"): the request enters the same bounded local
+approval queue, logs `Nearby pairing request from ...`, and is trusted only
+after an explicit local `approve KEY` (or Approve in Vibyra Desktop). With
+discovery off, a valid short-lived invitation remains mandatory, and a supplied
+invitation is always verified even for a discovered phone. Relay and
+internet-reachable connections keep using the pairing code.
+See `docs/mobile-computer-connection.md` at the repository root.
+
 Wire envelopes are JSON inside Noise_IK_25519_ChaChaPoly_BLAKE2s transport
 messages (maintained snow implementation on native host and bundled WASM client).
 Maximum plaintext frame is 60 KiB. WebSocket binary messages retain Noise order;
@@ -37,7 +60,7 @@ Methods and results:
 - `project.read {projectId,path}` -> `{path,content,truncated:boolean}`; UTF-8 text only, bounded, symlinks contained under project.
 - `project.diff {projectId}` -> `{diff:string,truncated:boolean}`; bounded git diff for review.
 - `project.status {projectId}` -> `{branch:string,changes:string}`.
-- `approval.list {}` -> `[]`. No structured approval broker is available in protocol 1; provider permission prompts stay in their real CLI terminal.
+- `approval.list {}` -> `[]`. Legacy PTY sessions keep provider prompts in their real CLI terminal. Structured sessions use the additive conversation extension.
 - `approval.resolve {...}` -> rejected. Reserved for a future exact-action approval contract; clients must not present a functioning approval inbox for this implementation.
 - `device.revoke {deviceId}` -> `{ok:true}`; a paired phone can revoke itself, local host admin revokes any device.
 - `preview.fetch {projectId,port,path}` -> `{status:number,headers:Record<string,string>,body:string,encoding:'base64'}`; explicit locally approved loopback project ports only, no arbitrary URLs/redirects.

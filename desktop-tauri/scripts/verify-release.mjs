@@ -75,7 +75,7 @@ function updaterSignature(value, label) {
   if (!verifyEd25519(null, commentPayload, key, global)) fail(`${label} trusted comment is invalid`);
   return { key, signature };
 }
-function verifySignature(value, digest, label) {
+export function verifySignature(value, digest, label) {
   const { key, signature } = updaterSignature(value, label);
   if (!verifyEd25519(null, digest, key, signature)) fail(`${label} does not verify this artifact`);
 }

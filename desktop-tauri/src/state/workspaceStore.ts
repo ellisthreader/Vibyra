@@ -18,6 +18,7 @@ import type { FilePreview } from "../types";
 
 export type { DockSize, DockTool } from "../lib/dockLayout";
 export type SettingsSectionId =
+  | "phone"
   | "profile"
   | "general"
   | "performance"

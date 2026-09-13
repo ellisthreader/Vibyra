@@ -1,4 +1,4 @@
-use crate::{connection, state::Shared};
+use crate::{connection, peer_policy, state::Shared};
 use futures_util::{SinkExt, StreamExt};
 use std::{sync::Arc, time::Duration};
 use tokio::{
@@ -10,10 +10,23 @@ use tokio_tungstenite::{
     tungstenite::{protocol::WebSocketConfig, Message},
 };
 
+#[cfg(feature = "standalone")]
 pub async fn serve(listener: TcpListener, shared: Arc<Shared>) -> Result<(), String> {
+    serve_with_policy(listener, shared, false).await
+}
+
+pub async fn serve_with_policy(
+    listener: TcpListener,
+    shared: Arc<Shared>,
+    lan_only: bool,
+) -> Result<(), String> {
+    let address = listener.local_addr().map_err(|e| e.to_string())?;
     let permits = Arc::new(Semaphore::new(32));
     loop {
-        let (stream, _) = listener.accept().await.map_err(|e| e.to_string())?;
+        let (stream, peer) = listener.accept().await.map_err(|e| e.to_string())?;
+        if lan_only && !peer_policy::allowed(address, peer) {
+            continue;
+        }
         let Ok(permit) = permits.clone().try_acquire_owned() else {
             continue;
         };

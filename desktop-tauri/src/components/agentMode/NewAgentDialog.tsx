@@ -4,6 +4,7 @@ import type { Engine } from "../../agentTypes";
 import { engineLabel } from "../../lib/agentEngineLabel";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentRosterStore, capabilityFor } from "../../state/agentRosterStore";
+import { useEditorSave } from "./useEditorSave";
 import { EditorDialog } from "./EditorDialog";
 
 /**
@@ -17,25 +18,24 @@ import { EditorDialog } from "./EditorDialog";
 export function NewAgentDialog({ onClose }: { onClose: () => void }) {
   const create = useAgentRosterStore((state) => state.create);
   const capabilities = useAgentRosterStore((state) => state.capabilities);
-  const error = useAgentRosterStore((state) => state.error);
+  const capabilityError = useAgentRosterStore((state) => state.capabilityError);
+  const loading = useAgentRosterStore((state) => state.loading);
+  const recheck = useAgentRosterStore((state) => state.recheck);
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
   const usable = capabilities.filter((entry) => entry.structured);
 
   const [name, setName] = useState("");
   const [brief, setBrief] = useState("");
-  const [engine, setEngine] = useState<Engine>(usable[0]?.engine ?? "claude");
-  const [busy, setBusy] = useState(false);
+  const [selected, setEngine] = useState<Engine | null>(null);
+  const engine = selected ?? usable[0]?.engine ?? capabilities[0]?.engine ?? "claude";
+  const save = useEditorSave();
   const chosen = capabilityFor(capabilities, engine);
 
-  const submit = async () => {
-    if (!name.trim() || busy) return;
-    setBusy(true);
-    const profile = await create(name.trim(), brief.trim(), engine);
-    setBusy(false);
-    if (profile) {
-      selectAgent(profile.id);
-      onClose();
-    }
+  const submit = () => {
+    if (!name.trim() || loading || !chosen.structured) return;
+    void save.run(() => create(name.trim(), brief.trim(), engine), (profile) => {
+      if (profile) { selectAgent(profile.id); onClose(); }
+    });
   };
 
   return (
@@ -43,24 +43,27 @@ export function NewAgentDialog({ onClose }: { onClose: () => void }) {
       title="New teammate"
       lede="A teammate keeps its own brief, memory, skills and folders across every chat you have with it."
       submitLabel="Create teammate"
-      busy={busy || !name.trim() || !chosen.structured}
-      error={error ?? (chosen.structured ? null : chosen.blocker)}
+      busy={save.busy}
+      disabled={loading || !name.trim() || !chosen.structured}
+      error={save.error ?? capabilityError ?? (loading ? null : chosen.structured ? null : chosen.blocker)}
       onClose={onClose}
       onSubmit={() => void submit()}
     >
       <label className="field">
-        <span>Name</span>
+        <span>Name (required)</span>
         <input
           className="input"
-          autoFocus
+          data-autofocus
+          required
+          maxLength={60}
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Release"
+          placeholder="e.g. Release"
         />
       </label>
 
       <label className="field">
-        <span>What it is for</span>
+        <span>What it is for (optional)</span>
         <textarea
           className="input"
           rows={5}
@@ -77,10 +80,12 @@ export function NewAgentDialog({ onClose }: { onClose: () => void }) {
         <span>Engine</span>
         <select
           className="input"
+          aria-label="Engine"
           value={engine}
+          disabled={loading || capabilities.length === 0}
           onChange={(event) => setEngine(event.target.value as Engine)}
         >
-          {(usable.length > 0 ? usable : capabilities).map((entry) => (
+          {capabilities.map((entry) => (
             <option key={entry.engine} value={entry.engine} disabled={!entry.structured}>
               {engineLabel(entry.engine)}
               {entry.structured ? "" : " — unavailable"}
@@ -88,6 +93,10 @@ export function NewAgentDialog({ onClose }: { onClose: () => void }) {
           ))}
         </select>
       </label>
+        {loading && <span role="status">Checking local providers…</span>}
+        {!loading && (capabilityError || !chosen.structured || capabilities.length === 0) && (
+          <button type="button" className="btn btn--sm" onClick={() => void recheck()}>Recheck providers</button>
+        )}
     </EditorDialog>
   );
 }

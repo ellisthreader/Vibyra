@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from "react";
 
+import { ModalPortal } from "../common/ModalPortal";
 import { CloseIcon } from "../common/Icons";
 import { useModalFocus } from "../../lib/useModalFocus";
 
@@ -21,6 +22,7 @@ export function EditorDialog({
   lede,
   submitLabel,
   busy = false,
+  disabled = false,
   error,
   onClose,
   onSubmit,
@@ -30,6 +32,7 @@ export function EditorDialog({
   lede?: string;
   submitLabel: string;
   busy?: boolean;
+  disabled?: boolean;
   error?: string | null;
   onClose: () => void;
   onSubmit: () => void;
@@ -39,16 +42,22 @@ export function EditorDialog({
   useModalFocus(shell, true, onClose);
 
   return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
+    <ModalPortal><div className="modal-backdrop" onMouseDown={onClose}>
       <form
         className="modal modal--narrow"
         ref={shell}
         role="dialog"
         aria-label={title}
+        aria-modal="true"
+        aria-busy={busy}
+        tabIndex={-1}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && event.nativeEvent.isComposing) event.preventDefault();
+        }}
         onMouseDown={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
-          if (!busy) onSubmit();
+          if (!busy && !disabled) onSubmit();
         }}
       >
         <header className="modal__header">
@@ -64,15 +73,15 @@ export function EditorDialog({
           {children}
         </div>
         <footer className="modal__foot">
-          {error && <p className="modal__error">{error}</p>}
+          {error && <p className="modal__error" role="alert">{error}</p>}
           <button type="button" className="btn btn--secondary" onClick={onClose}>
-            Cancel
+            {busy ? "Close" : "Cancel"}
           </button>
-          <button type="submit" className="btn btn--primary" disabled={busy}>
-            {submitLabel}
+          <button type="submit" className="btn btn--primary" disabled={busy || disabled}>
+            {busy ? "Saving…" : submitLabel}
           </button>
         </footer>
       </form>
-    </div>
+    </div></ModalPortal>
   );
 }

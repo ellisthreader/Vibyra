@@ -88,7 +88,10 @@ impl Identity {
             .map_err(|e| e.to_string())?;
         file.as_file().sync_all().map_err(|e| e.to_string())?;
         file.persist(&self.path).map_err(|e| e.to_string())?;
-        #[cfg(unix)] fs::File::open(directory).and_then(|f| f.sync_all()).map_err(|e| e.to_string())?;
+        #[cfg(unix)]
+        fs::File::open(directory)
+            .and_then(|f| f.sync_all())
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 }

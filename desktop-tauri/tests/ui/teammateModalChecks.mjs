@@ -1,0 +1,73 @@
+import assert from "node:assert/strict";
+import { resolve } from "node:path";
+export async function show(page, kind, edit = false) {
+  await page.evaluate(({kind, edit}) => { window.qa.reset(); window.qa.render(kind, edit); }, {kind, edit});
+  if (!["memory", "assignment"].includes(kind)) await page.locator("#opener").click();
+}
+export async function modalChecks(page, results, output) {
+  for (const [kind, edit] of [["agent", false], ["routine", false], ["routine", true], ["skill", false], ["skill", true]]) {
+    await show(page, kind, edit);
+    const name = page.getByLabel(/Name/).first();
+    await name.fill("Audited form");
+    assert.equal(await name.inputValue(), "Audited form");
+    assert.equal(await name.evaluate(el => !!el.closest("[inert]")), false);
+    assert.equal(await page.locator(".shell").getAttribute("inert"), "");
+    await page.getByRole("button", {name: "Cancel", exact: true}).click();
+    await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
+    assert.equal(await page.locator(".shell").getAttribute("inert"), null);
+    assert.equal(await page.locator("#opener").evaluate(el => el === document.activeElement), true);
+    await page.locator("#opener").click();
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
+    await page.locator("#opener").click();
+    await page.getByRole("button", {name: "Close", exact: true}).click();
+    results.push(`${kind} ${edit ? "edit" : "create"}: typing, Cancel, Close, Escape, focus restore`);
+  }
+  await show(page, "focus");
+  assert.equal(await page.getByText("Static heading").evaluate(el => el === document.activeElement), true);
+  await page.keyboard.press("Shift+Tab");
+  assert.equal(await page.getByRole("button", {name:"Last action"}).evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press("Escape");
+  assert.equal(await page.evaluate(()=>window.qa.native.restoredInert),false);
+  results.push("Static initial focus wraps backwards; terminal restoration runs after inert release");
+  await show(page, "agent");
+  const name = page.getByLabel(/Name/);
+  await name.fill("Release helper");
+  await name.press("ArrowLeft"); await name.press("ArrowLeft"); await name.press("x");
+  assert.equal(await name.inputValue(), "Release helpxer");
+  await page.getByRole("button", {name: "Create teammate"}).focus();
+  await page.keyboard.press("Tab");
+  assert.equal(await page.getByRole("button", {name:"Close", exact:true}).evaluate(el => el === document.activeElement), true);
+  await page.keyboard.press("Shift+Tab");
+  assert.equal(await page.getByRole("button", {name:"Create teammate"}).evaluate(el => el === document.activeElement), true);
+  await page.setViewportSize({width:575,height:543});
+  await page.screenshot({path:resolve(output,"new-teammate.png")});
+  await page.setViewportSize({width:640,height:360});
+  await page.getByRole("button", {name:"Cancel",exact:true}).click();
+  results.push("Caret stability, Tab wrap and short-window dismissal");
+  await page.setViewportSize({width:1000,height:800});
+  await page.evaluate(() => { window.qa.reset(); window.qa.capabilities([],true); window.qa.render("agent"); });
+  await page.locator("#opener").click(); await page.getByLabel(/Name/).fill("Provider check");
+  assert.equal(await page.getByRole("button", {name:"Create teammate"}).isDisabled(),true);
+  await page.evaluate(() => window.qa.capabilities([["claude",false],["codex",true]]));
+  assert.equal(await page.getByLabel("Engine", {exact:true}).inputValue(),"codex");
+  assert.equal(await page.getByRole("button", {name:"Create teammate"}).isEnabled(),true);
+  await page.getByLabel("Engine", {exact:true}).selectOption("codex");
+  await page.evaluate(() => window.qa.capabilities([["claude",true],["codex",false]]));
+  assert.equal(await page.getByLabel("Engine", {exact:true}).inputValue(),"codex");
+  assert.equal(await page.getByRole("button", {name:"Create teammate"}).isDisabled(),true);
+  await page.getByRole("button", {name:"Recheck providers"}).click();
+  await page.waitForFunction(() => !document.querySelector('button[type="submit"]').disabled);
+  results.push("Delayed capabilities, chosen engine becomes unavailable, provider recovery");
+  await show(page,"nested");
+  await page.getByRole("button",{name:"Open inner"}).click();
+  await page.keyboard.press("Escape");
+  assert.equal(await page.getByRole("dialog",{name:"Outer",exact:true}).count(),1);
+  assert.equal(await page.locator(".shell").getAttribute("inert"),"");
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator(".shell").getAttribute("inert"),null);
+  await page.evaluate(() => document.querySelector('.chrome').setAttribute('inert',''));
+  await page.locator('#opener').click(); await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.chrome').getAttribute('inert'), '');
+  results.push("Nested modal ownership and preservation of pre-existing inert state");
+}

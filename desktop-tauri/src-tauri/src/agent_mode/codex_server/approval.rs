@@ -6,7 +6,9 @@ use vibyra_core::agent_runtime::PermissionBridge;
 pub fn respond(method: &str, params: &Value, bridge: &PermissionBridge) -> Value {
     if method == "item/tool/call" {
         let tool = params["tool"].as_str().unwrap_or("");
-        let reply = if ["propose_memory", "propose_skill"].contains(&tool) {
+        let reply = if ["propose_memory", "propose_skill"].contains(&tool)
+            || crate::integrations::tools::is_tool(tool)
+        {
             TcpWire::new(bridge.port).ask(BridgeRequest {
                 token: bridge.token.clone(),
                 chat_id: bridge.chat_id.clone(),

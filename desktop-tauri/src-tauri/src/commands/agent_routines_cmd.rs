@@ -25,10 +25,14 @@ pub async fn routine_list(
 pub async fn routine_create(
     state: State<'_, AppState>,
     draft: RoutineDraft,
+    request_id: Option<String>,
 ) -> Result<Routine, String> {
     let world = world(&state)?;
-    run_blocking(move || vibyra_core::routines::create(&world.db, draft).map_err(|e| e.to_string()))
-        .await
+    run_blocking(move || {
+        vibyra_core::routines::create_once(&world.db, draft, request_id.as_deref())
+            .map_err(|e| e.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -36,10 +40,12 @@ pub async fn routine_update(
     state: State<'_, AppState>,
     id: String,
     draft: RoutineDraft,
+    request_id: Option<String>,
 ) -> Result<Routine, String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::routines::update(&world.db, &id, draft).map_err(|e| e.to_string())
+        vibyra_core::routines::update_once(&world.db, &id, draft, request_id.as_deref())
+            .map_err(|e| e.to_string())
     })
     .await
 }
