@@ -28,7 +28,7 @@ export function KindStep({ current, onChoose }: { current: ProjectKind | null; o
           style={({ pressed }) => [s.cell, { opacity: pressed ? 0.6 : 1 }]}>
           <View style={[s.mark, { backgroundColor: on ? tint : `${tint}1F`,
             borderColor: on ? tint : 'transparent' }]}>
-            <ProjectKindIcon kind={kind.id} size={26} color={on ? '#FFFFFF' : tint} />
+            <ProjectKindIcon kind={kind.id} size={30} color={on ? '#FFFFFF' : tint} />
           </View>
           <Text numberOfLines={2} style={[s.name, { color: on ? colors.text : colors.muted,
             fontWeight: on ? '700' : '600' }]}>{kind.name}</Text>
