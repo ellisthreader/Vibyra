@@ -1,10 +1,30 @@
 import type { Session, SessionKind, WorkspaceActions } from '../ui/types';
-import { byteLength } from './output';
+import { InputQueue } from './inputQueue';
+import { byteLength, type Snapshot } from './output';
+import { scaffoldActions } from './scaffoldActions';
 import { requireLease, resize, selectSession } from './session';
 import type { WorkspaceStore } from './WorkspaceStore';
 
+/** The Mac's wording for a lease another phone took (`phone/control.rs`). */
+const leaseTaken = (error: unknown) => error instanceof Error && error.message.startsWith('Another phone took this terminal');
+
 export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'createSession' | 'sendInput' | 'resize' |
-  'stopSession' | 'listFiles' | 'readFile' | 'getDiff' | 'revokeDevice' | 'resolveApproval'> {
+  'stopSession' | 'peekSession' | 'followOutput' | 'listFiles' | 'readFile' | 'getDiff' | 'revokeDevice' | 'resolveApproval' | 'scaffold'> {
+  // Keys go in order, one request at a time; see `InputQueue`. An authenticated
+  // acknowledgement remains definitive even if the view disconnects immediately
+  // after receiving it. Never turn it into a retry.
+  const inputs = new InputQueue(async data => {
+    const lease = requireLease(store);
+    try {
+      await store.deps.rpc.request('session.input', { ...lease, inputId: store.deps.uuid(), data });
+    } catch (error) {
+      // A Mac hands its terminal to the newest phone that opens it. The one
+      // it was taken from learns here, and goes back to watching so that a
+      // tap on the terminal takes it again rather than repeating the refusal.
+      if (leaseTaken(error) && store.lease?.lease === lease.lease) { store.lease = null; store.update({ control: 'readonly' }); }
+      throw error;
+    }
+  });
   const request = async <T>(method: string, params: object): Promise<T> => {
     const epoch = store.epoch;
     const result = await store.deps.rpc.request<T>(method, params);
@@ -16,6 +36,7 @@ export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'crea
     }
   };
   return {
+    ...scaffoldActions(store),
     createSession: async (projectId: string, kind: SessionKind, title: string) => {
       project(projectId);
       const epoch = store.epoch;
@@ -37,17 +58,27 @@ export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'crea
       return result;
     },
     sendInput: async data => {
-      const lease = requireLease(store);
-      if (!data || byteLength(data) > 8192) throw new Error('Send less than 8 KB of terminal input at a time. Your draft has been kept.');
-      // An authenticated acknowledgement remains definitive even if the view
-      // disconnects immediately after receiving it. Never turn it into a retry.
-      await store.deps.rpc.request('session.input', { ...lease, inputId: store.deps.uuid(), data });
+      requireLease(store);
+      if (!data || byteLength(data) > 8192) throw new Error('Send less than 8 KB of terminal input at a time.');
+      await inputs.push(data);
     },
     resize: (cols, rows) => resize(store, cols, rows),
     stopSession: async sessionId => {
       if (!store.state.sessions.some(item => item.id === sessionId)) throw new Error('This session is unavailable.');
       await request('session.stop', { sessionId }); await store.refresh();
     },
+    peekSession: sessionId => request<Snapshot>('session.snapshot', { sessionId }),
+    // The computer streams every terminal's output to this phone; the store
+    // keeps only the open one's. Previews on the Projects page listen here
+    // for the rest rather than asking for each terminal again.
+    followOutput: listener => store.deps.rpc.listen(notice => {
+      if (notice.type !== 'message' || store.state.status !== 'connected') return;
+      const { event, data } = notice.payload ?? {};
+      if (!data?.sessionId) return;
+      if (event === 'terminal.output') listener({ type: 'output', frame: data });
+      else if (event === 'terminal.resync') listener({ type: 'resync', sessionId: data.sessionId });
+      else if (event === 'terminal.size') listener({ type: 'size', sessionId: data.sessionId, cols: data.cols, rows: data.rows });
+    }),
     listFiles: async (projectId, path) => { project(projectId); return request('project.files', { projectId, path }); },
     readFile: async (projectId, path) => { project(projectId); return request('project.read', { projectId, path }); },
     getDiff: async projectId => { project(projectId); return request('project.diff', { projectId }); },

@@ -1,5 +1,8 @@
 mod control;
 mod conversation;
+mod desktop_launch;
+mod embedded;
+pub use desktop_launch::DesktopConversationOptions;
 mod events;
 mod git;
 mod history;
@@ -7,6 +10,11 @@ mod journal;
 mod launch;
 mod preview;
 mod projects;
+mod scaffold;
+mod scaffold_run;
+#[cfg(test)]
+mod scaffold_tests;
+mod search;
 mod sessions;
 mod state;
 mod vibes_tools;
@@ -26,14 +34,35 @@ use state::{Shared, State};
 pub struct Engine {
     pub(crate) shared: Shared,
     pub(crate) ptys: Arc<PtyManager>,
+    pub(crate) conversation_launch: embedded::ConversationLaunch,
+    pub(crate) scaffolds: scaffold::SharedScaffolds,
 }
 
 impl Engine {
     pub fn new(state_dir: PathBuf, projects: Vec<(String, PathBuf)>) -> Result<Self, String> {
         let projects = projects::configure(projects)?;
+        Self::from_projects(state_dir, projects, Default::default())
+    }
+
+    /// One project, opened without write access, whatever a caller later asks
+    /// for it to do - built for a folder a person chose to expose reading only,
+    /// such as a Vibyra Desktop vault. `write_file` is refused inside
+    /// `vibes_tool` itself, not just left off the schema offered to the model.
+    pub fn new_read_only(state_dir: PathBuf, name: String, path: PathBuf) -> Result<Self, String> {
+        let project = projects::build(name, path, true)?;
+        projects::within_limit(std::slice::from_ref(&project))?;
+        Self::from_projects(state_dir, vec![project], Default::default())
+    }
+
+    fn from_projects(
+        state_dir: PathBuf,
+        projects: Vec<state::Project>,
+        conversation_launch: embedded::ConversationLaunch,
+    ) -> Result<Self, String> {
         let journal = journal::Journal::open(&state_dir)?;
         let sessions = journal.restore()?;
         let conversations = journal.conversations()?;
+        let projects = projects::with_adopted(projects, journal.adopted_projects()?);
         let shared = Arc::new(Mutex::new(State::new(projects, journal, sessions)));
         shared.lock().conversations = conversations;
         let sink = Arc::new(events::Sink(Arc::clone(&shared)));
@@ -42,7 +71,12 @@ impl Engine {
             ..FlushConfig::default()
         };
         let ptys = PtyManager::new(sink, config);
-        Ok(Self { shared, ptys })
+        Ok(Self {
+            shared,
+            ptys,
+            conversation_launch,
+            scaffolds: Default::default(),
+        })
     }
 
     pub fn handle(&self, device: &str, method: &str, params: Value) -> Result<Value, String> {
@@ -51,6 +85,7 @@ impl Engine {
         }
         match method {
             "vibes.bind" | "vibes.tool" => self.vibes_tool(device, method, &params),
+            method if method.starts_with("scaffold.") => self.scaffold_handle(method, &params),
             "host.state" => Ok(self.shared.lock().snapshot()),
             "session.create" if params["runner"] == "conversation" => {
                 self.create_conversation(device, &params)
@@ -73,6 +108,9 @@ impl Engine {
             "session.stop" => self.stop(device, &params),
             "project.files" => self.files(&params),
             "project.read" => self.read(&params),
+            "project.search" => self
+                .project(&params)
+                .and_then(|project| search::search(&project, &params)),
             "project.diff" => self.diff(&params),
             "project.status" => self.status(&params),
             "preview.fetch" => self.preview(&params),

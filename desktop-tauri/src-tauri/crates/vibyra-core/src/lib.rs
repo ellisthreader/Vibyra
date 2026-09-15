@@ -17,6 +17,7 @@ pub mod parallel;
 pub mod preview;
 pub mod pty;
 pub mod ring;
+pub mod scaffold;
 pub mod settings;
 pub mod utf8;
 pub mod workspace;
