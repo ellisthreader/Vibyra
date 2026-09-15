@@ -2,10 +2,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import type { ProjectTemplate } from '../../scaffold/types';
 import { Icon } from '../primitives';
+import { StackMark } from './StackMark';
 
 /**
- * One stack. Shared by the kind's own list and the whole-catalog browser so
- * the two cannot drift into looking like different things. A missing
+ * One stack, led by its own mark. Shared by the kind's own list and the
+ * whole-catalog browser so the two cannot drift into looking like different
+ * things. A missing
  * toolchain is named, not merely greyed: "Needs flutter" is the whole reason
  * the row cannot be tapped.
  */
@@ -24,6 +26,7 @@ export function StackRow({ entry, missing, kindLabel, selected, onPick }: {
     accessibilityState={{ disabled: blocked, selected }} aria-disabled={blocked} disabled={blocked} onPress={onPick}
     style={({ pressed }) => [s.row, { backgroundColor: selected ? colors.accentSoft : pressed ? colors.elevated : 'transparent',
       opacity: blocked ? 0.6 : 1 }]}>
+    <StackMark templateId={entry.id} kind={entry.kinds[0]!} />
     <View style={s.text}>
       <View style={s.nameRow}>
         <Text numberOfLines={1} style={[s.name, { color: colors.text }]}>{entry.name}</Text>
@@ -39,7 +42,7 @@ export function StackRow({ entry, missing, kindLabel, selected, onPick }: {
   </Pressable>;
 }
 const s = StyleSheet.create({
-  row: { minHeight: 62, paddingHorizontal: 16, paddingVertical: 11, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  row: { minHeight: 66, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 13 },
   text: { flex: 1, minWidth: 0, gap: 3 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontSize: 15.5, fontWeight: '600', letterSpacing: -0.2, flexShrink: 1 },

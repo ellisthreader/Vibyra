@@ -29,6 +29,12 @@ try {
     await heading('What are you making?').waitFor();
     await button('Website').waitFor(); await button('Empty project').waitFor();
     await capture(page, `${out}/new-project-kind-${theme}.png`);
+    // All nine kinds at once, on one screen. The step is a glance and a tap; the
+    // moment it scrolls, the question has turned into a list to work through.
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll('*')].filter(el =>
+      el.scrollHeight > el.clientHeight + 2 && el.clientHeight > 200
+      && getComputedStyle(el).overflowY !== 'visible').length), 0,
+      'the kind step fits without scrolling');
     // The stack question: rows filed under the kind, the safe default first.
     await button('Website').click();
     await heading('Which stack?').waitFor();
