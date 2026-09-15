@@ -6,7 +6,7 @@ import { kindForTemplate, stepAfterKind, stepAfterStack } from '../src/scaffold/
 import { PROJECT_KINDS } from '../src/scaffold/kinds';
 import { plannedProject } from '../src/scaffold/planned';
 import { searchTemplates } from '../src/scaffold/search';
-import { allRequiredTools, hasInstallStep, missingTools, PROJECT_TEMPLATES, templateById, templatesForKind } from '../src/scaffold/templates';
+import { additionsFor, allRequiredTools, canLayer, hasInstallStep, missingTools, PROJECT_TEMPLATES, templateById, templatesForKind } from '../src/scaffold/templates';
 import { DEFAULT_TEMPLATE_OPTIONS } from '../src/scaffold/types';
 import { initialWizard, wizardReducer, type WizardState } from '../src/scaffold/wizard';
 
@@ -90,6 +90,9 @@ test('the wizard walks the questions, remembers the way back, and plans the buil
   state = wizardReducer(state, { type: 'chooseKind', kind: 'website' });
   assert.equal(state.step, 'stack');
   state = wizardReducer(state, { type: 'chooseTemplate', templateId: 'next' });
+  // Picking a stack no longer leaves the step: more than one can be chosen here.
+  assert.equal(state.step, 'stack');
+  state = wizardReducer(state, { type: 'continue' });
   assert.equal(state.step, 'options');
   state = wizardReducer(state, { type: 'setOptions', patch: { install: false } });
   state = wizardReducer(state, { type: 'go', step: 'where' });
@@ -110,4 +113,39 @@ test('the wizard walks the questions, remembers the way back, and plans the buil
   assert.equal(skipped.step, 'where');
   assert.equal(plannedProject({ ...skipped, home: '/h', parent: '/h/p' }).entry.id, 'empty');
   assert.equal(wizardReducer(state, { type: 'reset', runId: 'run-3' }).runId, 'run-3');
+});
+
+test('one stack owns the folder, and the rest are layered inside it', () => {
+  // Only one scaffolder can own a new folder, so the additions offered are the
+  // ones whose work happens inside a folder that already exists.
+  assert.equal(canLayer(templateById('next')!), false, 'create-next-app makes the folder');
+  assert.equal(canLayer(templateById('express')!), true, 'an Express server goes into one');
+  assert.equal(additionsFor('website', null).some(entry => entry.id === 'next'), false,
+    'a stack that owns the folder is never offered as an addition');
+  assert.ok(additionsFor('website', null).some(entry => entry.id === 'express'),
+    'a server is worth adding to a website');
+  assert.equal(additionsFor('backend', null).some(entry => entry.id === 'express'), false,
+    'the question is not asked twice: a backend stack is not an addition to a backend');
+
+  let state: WizardState = initialWizard('run-4');
+  state = wizardReducer(state, { type: 'preflight', tools: { node: true }, home: '/h', parent: '/h/Code', projectPaths: [] });
+  state = wizardReducer(state, { type: 'chooseKind', kind: 'website' });
+  state = wizardReducer(state, { type: 'chooseTemplate', templateId: 'next' });
+  state = wizardReducer(state, { type: 'toggleExtra', templateId: 'express' });
+  state = wizardReducer(state, { type: 'setName', name: 'Shop' });
+  const planned = plannedProject(state);
+  assert.deepEqual(planned.extras.map(entry => entry.id), ['express']);
+  // The base runs first and makes the folder; the addition follows it inside.
+  assert.ok(planned.commands[0]!.includes('create-next-app'), 'the base scaffolds first');
+  assert.ok(planned.commands.length > 1, 'the addition contributes its own work');
+  assert.equal(planned.request.dir, '/h/Code/shop');
+
+  // Toggling it off takes it back out of the plan.
+  state = wizardReducer(state, { type: 'toggleExtra', templateId: 'express' });
+  assert.deepEqual(plannedProject(state).extras, []);
+  // Swapping the base keeps what was added on top of it.
+  state = wizardReducer(state, { type: 'toggleExtra', templateId: 'express' });
+  state = wizardReducer(state, { type: 'chooseTemplate', templateId: 'astro' });
+  assert.equal(state.templateId, 'astro');
+  assert.deepEqual(state.extraIds, ['express'], 'an addition survives changing the stack under it');
 });

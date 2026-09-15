@@ -4,7 +4,7 @@ import { useTheme } from '../../theme';
 import { kindName } from '../../scaffold/kinds';
 import { searchTemplates } from '../../scaffold/search';
 import { missingTools } from '../../scaffold/templates';
-import type { ProjectKind } from '../../scaffold/types';
+import type { ProjectKind, ProjectTemplate } from '../../scaffold/types';
 import { Group } from '../../settings/SettingsRows';
 import { Icon } from '../primitives';
 import { StackRow } from './StackRow';
@@ -15,8 +15,11 @@ import { WizardFooter } from './WizardFooter';
  * not under the kind I picked". Each row says where it is filed, so choosing
  * from here is not a leap in the dark.
  */
-export function StackBrowser({ kind, tools, selected, onChoose, onBack }: {
+export function StackBrowser({ kind, tools, selected, extras, onPick, onChoose, onBack }: {
   kind: ProjectKind | null; tools: Record<string, boolean>; selected: string | null;
+  /** Stacks layered on the chosen one, so a row here shows the same tick the list does. */
+  extras: string[];
+  onPick: (entry: ProjectTemplate) => void;
   onChoose: (templateId: string | null) => void; onBack: () => void;
 }) {
   const { colors } = useTheme();
@@ -35,7 +38,8 @@ export function StackBrowser({ kind, tools, selected, onChoose, onBack }: {
       {results.length > 0
         ? <Group inset={16}>
           {results.map(entry => <StackRow key={entry.id} entry={entry} missing={missingTools(entry, tools)}
-            kindLabel={kindName(entry.kinds[0]!)} selected={selected === entry.id} onPick={() => onChoose(entry.id)} />)}
+            kindLabel={kindName(entry.kinds[0]!)} selected={entry.id === selected || extras.includes(entry.id)}
+            onPick={() => onPick(entry)} />)}
         </Group>
         : <Text style={[s.empty, { color: colors.muted }]}>
           {`Nothing matches “${query.trim()}”. Skip the question and Vibyra will make the folder — you can set the project up however you like from a terminal in it.`}

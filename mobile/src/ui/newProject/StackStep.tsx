@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { missingTools, templatesForKind } from '../../scaffold/templates';
-import type { ProjectKind } from '../../scaffold/types';
+import { additionsFor, canLayer, missingTools, templatesForKind } from '../../scaffold/templates';
+import type { ProjectKind, ProjectTemplate } from '../../scaffold/types';
 import { Group } from '../../settings/SettingsRows';
 import { Icon } from '../primitives';
 import { StackBrowser } from './StackBrowser';
@@ -9,24 +9,38 @@ import { StackRow } from './StackRow';
 import { WizardFooter } from './WizardFooter';
 
 /**
- * Question two. Rows, not tiles: the blurb is what picks the stack, and a
- * missing toolchain has to be readable rather than merely greyed out. The
- * first row is the safe default for the kind. "Other…" opens the whole
- * catalog, inside the same card because it is one of the answers to this
- * question rather than a separate control.
+ * Question two. One list, rows not tiles: the blurb is what picks the stack,
+ * and a missing toolchain has to be readable rather than merely greyed out.
+ * The recommended stack leads it and says so.
+ *
+ * More than one can be chosen. The list runs the kind's own stacks first, then
+ * the things worth putting inside whichever of them is picked — a server, a
+ * model layer — because a project is often two of these and picking the second
+ * one should not mean starting again.
+ *
+ * Only one stack can make the folder, though: two scaffolders both expecting to
+ * own an empty directory is the second one failing on the first one's files. So
+ * choosing another of those quietly takes the place of the last, while the ones
+ * that only add files inside simply accumulate. The ticks always show what is
+ * actually going to be built.
  */
-export function StackStep({ kind, tools, selected, browsing, onChoose, onBrowse }: {
-  kind: ProjectKind | null; tools: Record<string, boolean>; selected: string | null; browsing: boolean;
-  onChoose: (templateId: string | null) => void; onBrowse: (on: boolean) => void;
+export function StackStep({ kind, tools, selected, extras, browsing, onChoose, onToggleExtra, onContinue, onBrowse }: {
+  kind: ProjectKind | null; tools: Record<string, boolean>; selected: string | null; extras: string[]; browsing: boolean;
+  onChoose: (templateId: string | null) => void; onToggleExtra: (templateId: string) => void;
+  onContinue: () => void; onBrowse: (on: boolean) => void;
 }) {
   const { colors } = useTheme();
-  if (browsing) return <StackBrowser kind={kind} tools={tools} selected={selected} onChoose={onChoose} onBack={() => onBrowse(false)} />;
-  const entries = kind ? templatesForKind(kind) : [];
+  const pick = (entry: ProjectTemplate) => canLayer(entry) ? onToggleExtra(entry.id) : onChoose(entry.id);
+  if (browsing) return <StackBrowser kind={kind} tools={tools} selected={selected} extras={extras}
+    onPick={pick} onChoose={onChoose} onBack={() => onBrowse(false)} />;
+  const own = kind ? templatesForKind(kind) : [];
+  const entries = kind ? [...own, ...additionsFor(kind, selected)] : [];
+  const on = (entry: ProjectTemplate) => entry.id === selected || extras.includes(entry.id);
   return <>
     <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       <Group inset={16}>
         {entries.map((entry, index) => <StackRow key={entry.id} entry={entry} missing={missingTools(entry, tools)}
-          recommended={index === 0} selected={selected === entry.id} onPick={() => onChoose(entry.id)} />)}
+          recommended={index === 0} selected={on(entry)} onPick={() => pick(entry)} />)}
         <Pressable accessibilityRole="button" accessibilityLabel="Other stacks" onPress={() => onBrowse(true)}
           style={({ pressed }) => [s.other, { backgroundColor: pressed ? colors.elevated : 'transparent' }]}>
           <View style={s.text}>
@@ -37,7 +51,8 @@ export function StackStep({ kind, tools, selected, browsing, onChoose, onBrowse 
         </Pressable>
       </Group>
     </ScrollView>
-    <WizardFooter quiet={[{ title: 'Skip — just make a folder', onPress: () => onChoose(null) }]} />
+    <WizardFooter primary={{ title: 'Continue', onPress: onContinue, disabled: !selected && extras.length === 0 }}
+      quiet={[{ title: 'Skip — just make a folder', onPress: () => onChoose(null) }]} />
   </>;
 }
 const s = StyleSheet.create({

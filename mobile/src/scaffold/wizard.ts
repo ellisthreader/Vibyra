@@ -15,7 +15,11 @@ export interface WizardState {
   step: CreateStep;
   history: CreateStep[];
   kind: ProjectKind | null;
+  /** The stack that makes the project. Exactly one, because only one scaffolder
+   *  can own a new folder. */
   templateId: string | null;
+  /** Stacks layered on top of it, in the order they were picked. */
+  extraIds: string[];
   options: TemplateOptions;
   /** The computer's home folder and where projects go, once preflight answers. */
   home: string;
@@ -38,6 +42,8 @@ export type WizardAction =
   | { type: 'back' }
   | { type: 'chooseKind'; kind: ProjectKind | null }
   | { type: 'chooseTemplate'; templateId: string | null }
+  | { type: 'toggleExtra'; templateId: string }
+  | { type: 'continue' }
   | { type: 'browseAll'; on: boolean }
   | { type: 'setOptions'; patch: Partial<TemplateOptions> }
   | { type: 'setName'; name: string }
@@ -51,7 +57,7 @@ export type WizardAction =
 const LOG_LINES = 400;
 
 export function initialWizard(runId: string): WizardState {
-  return { step: 'kind', history: [], kind: null, templateId: null, options: DEFAULT_TEMPLATE_OPTIONS, home: '',
+  return { step: 'kind', history: [], kind: null, templateId: null, extraIds: [], options: DEFAULT_TEMPLATE_OPTIONS, home: '',
     parent: '', name: 'untitled', browsing: false, tools: {}, phase: 'idle', runId, progress: null, log: [],
     error: null, project: null };
 }
@@ -68,11 +74,23 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
       return previous ? { ...state, step: previous, history } : state;
     }
     case 'chooseKind':
-      return go({ ...state, kind: action.kind, browsing: false, templateId: action.kind === 'empty' ? 'empty' : null },
-        stepAfterKind(action.kind));
-    case 'chooseTemplate':
-      return go({ ...state, templateId: action.templateId, kind: kindForTemplate(state.kind, action.templateId) },
-        stepAfterStack(action.templateId));
+      return go({ ...state, kind: action.kind, browsing: false, extraIds: [],
+        templateId: action.kind === 'empty' ? 'empty' : null }, stepAfterKind(action.kind));
+    case 'chooseTemplate': {
+      // Picking the base no longer moves on by itself: more than one stack can
+      // be chosen here, so leaving the step is the person's own decision.
+      // Skipping the question is still an answer, and still moves on.
+      const next = { ...state, templateId: action.templateId, extraIds: state.extraIds.filter(id => id !== action.templateId),
+        kind: kindForTemplate(state.kind, action.templateId) };
+      return action.templateId === null ? go({ ...next, extraIds: [] }, stepAfterStack(null)) : next;
+    }
+    case 'toggleExtra': {
+      const on = state.extraIds.includes(action.templateId);
+      return { ...state, extraIds: on ? state.extraIds.filter(id => id !== action.templateId)
+        : [...state.extraIds, action.templateId] };
+    }
+    case 'continue':
+      return go({ ...state, browsing: false }, stepAfterStack(state.templateId ?? state.extraIds[0] ?? null));
     case 'browseAll': return { ...state, browsing: action.on };
     case 'setOptions': return { ...state, options: { ...state.options, ...action.patch } };
     case 'setName': return { ...state, name: action.name };
