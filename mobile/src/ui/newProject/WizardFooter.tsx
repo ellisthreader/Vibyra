@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { useSheetBottomInset } from '../OverlaySheet';
-import { Button } from '../primitives';
+import { WizardButton } from './WizardButton';
 
 export interface FooterAction { title: string; onPress: () => void; disabled?: boolean; busy?: boolean; label?: string }
 
@@ -19,9 +19,9 @@ export function WizardFooter({ primary, secondary, quiet = [] }: {
   if (!primary && !secondary && quiet.length === 0) return null;
   return <View style={[s.strip, { borderTopColor: colors.border, paddingBottom: Math.max(bottom, 12) + 4 }]}>
     {(primary || secondary) && <View style={s.buttons}>
-      {secondary && <View style={s.grow}><Button title={secondary.title} label={secondary.label} secondary
+      {secondary && <View style={s.grow}><WizardButton title={secondary.title} label={secondary.label} secondary
         disabled={secondary.disabled} busy={secondary.busy} onPress={secondary.onPress} /></View>}
-      {primary && <View style={s.grow}><Button title={primary.title} label={primary.label}
+      {primary && <View style={s.grow}><WizardButton title={primary.title} label={primary.label}
         disabled={primary.disabled} busy={primary.busy} onPress={primary.onPress} /></View>}
     </View>}
     {quiet.length > 0 && <View style={s.quietRow}>
