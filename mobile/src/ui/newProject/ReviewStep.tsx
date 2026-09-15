@@ -14,14 +14,12 @@ export function ReviewStep({ kind, name, home, planned, host, onCreate }: {
   kind: ProjectKind | null; name: string; home: string; planned: PlannedProject; host: string; onCreate: () => void;
 }) {
   const { colors } = useTheme();
-  const { entry, extras, destination, request, commands } = planned;
-  const stacks = entry.id === 'empty' ? 'Nothing installed'
-    : [entry, ...extras].map(pick => pick.name).join(', ');
+  const { entry, destination, request, commands } = planned;
   return <>
     <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       <Group>
         <Row title="Making" value={kind ? kindName(kind) : 'An empty project'} />
-        <Row title="With" value={stacks} />
+        <Row title="With" value={entry.id === 'empty' ? 'Nothing installed' : entry.name} />
         <Row title="Called" value={name} />
         <Row title="At" value={abbreviateHome(destination.path, home)} />
       </Group>

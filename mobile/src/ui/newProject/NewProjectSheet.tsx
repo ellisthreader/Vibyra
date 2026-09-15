@@ -49,11 +49,8 @@ export function NewProjectSheet({ visible, workspace, onClose, onDone }: {
     </View>}
     <Step key={state.step} instant={reduced}>
       {state.step === 'kind' && <KindStep current={state.kind} onChoose={kind => dispatch({ type: 'chooseKind', kind })} />}
-      {state.step === 'stack' && <StackStep kind={state.kind} tools={state.tools} selected={state.templateId}
-        extras={state.extraIds} browsing={state.browsing}
-        onChoose={templateId => dispatch({ type: 'chooseTemplate', templateId })}
-        onToggleExtra={templateId => dispatch({ type: 'toggleExtra', templateId })}
-        onContinue={() => dispatch({ type: 'continue' })} onBrowse={on => dispatch({ type: 'browseAll', on })} />}
+      {state.step === 'stack' && <StackStep kind={state.kind} tools={state.tools} selected={state.templateId} browsing={state.browsing}
+        onChoose={templateId => dispatch({ type: 'chooseTemplate', templateId })} onBrowse={on => dispatch({ type: 'browseAll', on })} />}
       {state.step === 'options' && <OptionsStep templateId={state.templateId} options={state.options}
         onChange={patch => dispatch({ type: 'setOptions', patch })} onContinue={() => dispatch({ type: 'go', step: 'where' })} />}
       {state.step === 'where' && <WhereStep name={state.name} parent={state.parent} home={state.home}

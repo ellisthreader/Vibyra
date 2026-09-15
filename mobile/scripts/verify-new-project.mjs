@@ -20,9 +20,6 @@ try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     const button = name => page.getByRole('button', { name, exact: true });
-    // A stack that makes the project is one of these; a stack added inside it is any of these.
-    const stack = name => page.getByRole('radio', { name, exact: true });
-    const addition = name => page.getByRole('checkbox', { name, exact: true });
     const heading = name => page.getByRole('heading', { name, exact: true });
     await page.goto(`${url}/?theme=${theme}`);
     // The entry sits in the list of projects, first, shaped like a folder row.
@@ -38,29 +35,22 @@ try {
       el.scrollHeight > el.clientHeight + 2 && el.clientHeight > 200
       && getComputedStyle(el).overflowY !== 'visible').length), 0,
       'the kind step fits without scrolling');
-    // The stack question: rows filed under the kind, the safe default first and named so.
+    // The stack question: rows filed under the kind, the safe default first.
     await button('Website').click();
     await heading('Which stack?').waitFor();
-    await stack('Next.js').waitFor(); await stack('Plain HTML, CSS and JavaScript').waitFor();
+    await button('Next.js').waitFor(); await button('Plain HTML, CSS and JavaScript').waitFor();
+    // The first row was always the safe default for the kind; now it says so.
     await page.getByText('Recommended', { exact: true }).first().waitFor();
-    // Continue cannot be taken until the question is actually answered.
-    assert.equal(await button('Continue').isDisabled(), true, 'no stack, nothing to continue to');
     await capture(page, `${out}/new-project-stack-${theme}.png`);
     // Other… opens every stack; a missing toolchain is named, and the row cannot be tapped.
     await button('Other stacks').click();
     await page.getByRole('textbox', { name: 'Search every stack' }).fill('flutter');
-    await stack('Flutter').waitFor();
+    await button('Flutter').waitFor();
     await page.getByText('Needs flutter', { exact: true }).waitFor();
-    assert.equal(await stack('Flutter').isDisabled(), true, 'a stack whose tool is missing is not offered');
+    assert.equal(await button('Flutter').isDisabled(), true, 'a stack whose tool is missing is not offered');
     await capture(page, `${out}/new-project-browse-${theme}.png`);
     await button('Back to website stacks').click();
-    await stack('Next.js').click();
-    // Picking a stack stays on the step, so a second one can be added inside it.
-    await heading('Which stack?').waitFor();
-    await addition('Express').click();
-    assert.equal(await addition('Express').isChecked(), true, 'an addition is kept alongside the stack');
-    await capture(page, `${out}/new-project-stack-combined-${theme}.png`);
-    await button('Continue').click();
+    await button('Next.js').click();
     // Options in Settings' own rows; the install switch only for a stack that installs.
     await heading('How should it be set up?').waitFor();
     for (const name of ['Install dependencies', 'Start a git repository', 'Open a terminal when it is done']) {
@@ -83,8 +73,7 @@ try {
     // The review names every answer and shows the literal commands, nothing else is run.
     await heading('Ready when you are').waitFor();
     for (const fact of ['Making', 'With', 'Called', 'At']) await page.getByText(fact, { exact: true }).waitFor();
-    // Both stacks are named, in the order they run.
-    await page.getByText('Next.js, Express', { exact: true }).waitFor();
+    await page.getByText('Next.js', { exact: true }).waitFor();
     await page.getByText('~/Projects/my-site', { exact: true }).waitFor();
     await page.getByText('Studio Mac will run', { exact: true }).waitFor();
     await page.getByText(/^npx --yes create-next-app@latest my-site/).waitFor();
@@ -93,7 +82,7 @@ try {
     // The build reports each step; the sheet then hands the app the shared project.
     await button('Create project').click();
     await heading('Building your project').waitFor();
-    await page.getByText(/Creating the Next\.js app… \(1 of \d+\)/).waitFor();
+    await page.getByText(/Creating the Next.js app… \(1 of 2\)/).waitFor();
     await button('Cancel').waitFor();
     await capture(page, `${out}/new-project-running-${theme}.png`);
     await page.getByRole('button', { name: /^Show output/ }).click();
