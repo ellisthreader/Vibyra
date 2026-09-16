@@ -15,6 +15,10 @@ export interface RequestDeps {
   closeChat: (id: string) => Promise<void>;
   /** Opens a folder as a project here, exactly as the person's own New project does. */
   adopt: (path: string, name: string) => Promise<PhoneProjectOpened | null>;
+  /** Renames a project in this window's list. The folder keeps its own name. */
+  rename: (projectId: string, name: string) => Promise<PhoneProjectOpened | null>;
+  /** Drops a project from this window's list. Nothing on disk is deleted. */
+  forget: (projectId: string) => Promise<void>;
 }
 
 export type Reply = { result?: PhoneTerminalStarted | PhoneProjectOpened | { ok: true }; error?: string };
@@ -31,6 +35,15 @@ export async function answerTerminalRequest(request: PhoneTerminalRequest, deps:
       // The folder is built either way; what failed is it appearing in the list.
       if (!project) return { error: "Vibyra could not open the new folder as a project." };
       return { result: project };
+    }
+    if (request.action === "rename") {
+      const project = await deps.rename(request.projectId, request.name);
+      if (!project) return { error: "That project is not open on this Mac." };
+      return { result: project };
+    }
+    if (request.action === "forget") {
+      await deps.forget(request.projectId);
+      return { result: { ok: true } };
     }
     if (request.action === "close") {
       if (request.conversationId) await deps.closeChat(request.conversationId);

@@ -164,6 +164,50 @@ impl State {
         Ok(json!({"id":project.id,"name":project.name,"path":project.path}))
     }
 
+    /// Renames a shared project. The folder on disk is untouched: this is the
+    /// name the phone and the computer list it under, nothing more.
+    pub fn rename_project(&mut self, id: &str, name: &str) -> Result<Value, String> {
+        let name = name.trim();
+        if name.is_empty() || name.chars().count() > 64 || name.chars().any(char::is_control) {
+            return Err("a project name is 1-64 characters".into());
+        }
+        if self
+            .projects
+            .iter()
+            .any(|p| p.id != id && p.name == name)
+        {
+            return Err("this computer already shares a project by that name".into());
+        }
+        let index = self
+            .projects
+            .iter()
+            .position(|p| p.id == id || p.name == id)
+            .ok_or("project is not approved on this computer")?;
+        self.projects[index].name = name.to_owned();
+        let project = &self.projects[index];
+        self.journal.save_project(&project.name, &project.path)?;
+        let answer = json!({"id":project.id,"name":project.name,"path":project.path});
+        self.emit("host.changed", json!({}));
+        Ok(answer)
+    }
+
+    /// Stops sharing a folder. Nothing on disk is deleted — the project simply
+    /// leaves the list, and can be shared again later.
+    pub fn forget_project(&mut self, id: &str) -> Result<Value, String> {
+        let index = self
+            .projects
+            .iter()
+            .position(|p| p.id == id || p.name == id)
+            .ok_or("project is not approved on this computer")?;
+        if self.sessions.values().any(|s| s.meta.project_id == self.projects[index].id) {
+            return Err("close this project's terminals on the computer first".into());
+        }
+        let project = self.projects.remove(index);
+        self.journal.forget_project(&project.path)?;
+        self.emit("host.changed", json!({}));
+        Ok(json!({"ok":true}))
+    }
+
     pub fn resolve_project(&self, value: &str) -> Result<&Project, String> {
         self.projects
             .iter()

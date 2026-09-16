@@ -106,6 +106,15 @@ impl Engine {
             "session.resize" => self.resize(device, &params),
             "session.release" => self.release(device, &params),
             "session.stop" => self.stop(device, &params),
+            "project.rename" => {
+                let id = text(&params, "projectId")?.to_owned();
+                let name = text(&params, "name")?.to_owned();
+                self.shared.lock().rename_project(&id, &name)
+            }
+            "project.forget" => {
+                let id = text(&params, "projectId")?.to_owned();
+                self.shared.lock().forget_project(&id)
+            }
             "project.files" => self.files(&params),
             "project.read" => self.read(&params),
             "project.search" => self

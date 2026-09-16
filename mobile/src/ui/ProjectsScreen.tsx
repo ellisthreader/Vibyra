@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { sessionsInProject } from './DrawerProjects';
 import { Button, EmptyState, Hint, Icon } from './primitives';
-import { NewProjectRow } from './NewProjectRow';
+import { ProjectActionsSheet } from './newProject/ProjectActionsSheet';
 import { ProjectRow } from './ProjectRow';
 import { useAction } from './useAction';
 import type { Project, WorkspaceModel } from './types';
@@ -26,7 +27,9 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   onNew?: () => void;
 }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const [optionsFor, setOptionsFor] = useState<string | null>(null);
   const { busy, error, run } = useAction();
   const connected = workspace.status === 'connected';
   // A paired Vibyra Desktop shows the projects it is working in and refuses
@@ -43,10 +46,9 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   const projects = workspace.projects.filter(matches);
   const activeProjectId = workspace.sessions.find(session => session.id === workspace.selectedSessionId)?.projectId;
   const searchable = workspace.projects.length > 3 || workspace.sessions.length > 4;
-  // A Host that can scaffold offers it in the list itself; a watched Desktop cannot start anything.
-  // Why this computer cannot start one, or null when it can. The row is drawn either
-  // way: a row that simply vanishes reads as a feature nobody wrote, when the answer
-  // people need is which computer to ask.
+  // Why this computer cannot start one, or null when it can. The button is drawn
+  // either way: a control that simply vanishes reads as a feature nobody wrote,
+  // when the answer people need is which computer to ask.
   //
   // The computer's own answer decides it, not whether this is a watched Desktop.
   // A Desktop refuses everything else a phone could change, and still builds a
@@ -55,7 +57,13 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   const createReason = workspace.scaffoldAvailable === true ? null
     : `Update Vibyra on ${host} to start projects from your phone.`;
   const canCreate = connected && Boolean(onNew);
-  return <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
+  // Renaming a project, and dropping it from the list, are the computer's to
+  // allow: a watched Desktop with typing off refuses both.
+  const canManage = connected && workspace.actions.renameProject !== undefined
+    && workspace.actions.forgetProject !== undefined && (!watching || workspace.canManage === true);
+  const chosen = workspace.projects.find(project => project.id === optionsFor) ?? null;
+  return <View style={s.page}>
+    <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
       indicatorStyle={colors.text === '#F5F7FA' ? 'white' : 'black'}
       refreshControl={<RefreshControl refreshing={busy || !!workspace.syncing} tintColor={colors.accent}
         onRefresh={() => void run(workspace.actions.refresh)} enabled={connected} />}>
@@ -70,23 +78,44 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
         <TextInput value={query} onChangeText={setQuery} accessibilityLabel="Search projects and terminals"
           placeholder="Search projects and terminals" placeholderTextColor={colors.muted}
           style={[s.searchInput, { color: colors.text }]} /></View> : null}
-      {projects.length === 0 && !(canCreate && !term) ? <EmptyState icon="folder-outline" title={term ? 'No matches' : 'No shared projects'}
+      {projects.length === 0 ? <EmptyState icon="folder-outline" title={term ? 'No matches' : 'No shared projects'}
         detail={term ? 'Try another project or terminal name.'
           : watching ? 'Open a project in Vibyra on your computer.'
             : 'Add a folder in Vibyra Host on your computer.'} />
         : <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {canCreate && !term && <NewProjectRow host={host} reason={createReason ?? undefined} onPress={onNew!} />}
           {projects.map((project, index) => <View key={project.id}>
             {/* Inset to the text column, so the tiles read as one stack rather than a table. */}
-            {(index > 0 || (canCreate && !term)) && <View style={[s.divider, { backgroundColor: colors.border }]} />}
+            {index > 0 && <View style={[s.divider, { backgroundColor: colors.border }]} />}
             <ProjectRow project={project} sessions={sessionsOf(project.id)} active={project.id === activeProjectId}
-              onPress={() => onOpen(project.id)} />
+              onPress={() => onOpen(project.id)}
+              onOptions={canManage ? () => setOptionsFor(project.id) : undefined} />
           </View>)}
         </View>}
-    </ScrollView>;
+    </ScrollView>
+    {canCreate && createReason && <Text style={[s.reason, { color: colors.muted, bottom: insets.bottom + 76 }]}>{createReason}</Text>}
+    {canCreate && <Pressable accessibilityRole="button" accessibilityLabel="New project"
+      accessibilityHint={createReason ?? `Starts a project on ${host}`}
+      accessibilityState={{ disabled: createReason !== null }} aria-disabled={createReason !== null}
+      disabled={createReason !== null} onPress={onNew!}
+      style={({ pressed }) => [s.add, { backgroundColor: colors.action, bottom: insets.bottom + 18,
+        opacity: createReason ? 0.4 : pressed ? 0.85 : 1 }]}>
+      <Icon name="add" size={24} color={colors.onAction} />
+      <Text style={[s.addText, { color: colors.onAction }]}>New project</Text>
+    </Pressable>}
+    <ProjectActionsSheet project={chosen} host={host} onClose={() => setOptionsFor(null)}
+      onRename={name => workspace.actions.renameProject!(chosen!.id, name)}
+      onForget={() => workspace.actions.forgetProject!(chosen!.id)} />
+  </View>;
 }
 const s = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 36 },
+  page: { flex: 1 },
+  // Bottom left, clear of the list's own scroll, and a pill rather than a
+  // circle: the words are what say it starts a project rather than adds a row.
+  add: { position: 'absolute', left: 20, flexDirection: 'row', alignItems: 'center', gap: 7,
+    height: 50, paddingLeft: 14, paddingRight: 20, borderRadius: 25 },
+  addText: { fontSize: 15.5, fontWeight: '600', letterSpacing: -0.2 },
+  reason: { position: 'absolute', left: 20, right: 20, fontSize: 13, lineHeight: 18 },
+  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 104 },
   lead: { fontSize: 15, lineHeight: 22 },
   notice: { gap: 13, marginTop: 16 },
   search: { minHeight: 44, borderRadius: 13, flexDirection: 'row', alignItems: 'center', gap: 9,

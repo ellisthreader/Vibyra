@@ -9,7 +9,7 @@ import type { WorkspaceStore } from './WorkspaceStore';
 const leaseTaken = (error: unknown) => error instanceof Error && error.message.startsWith('Another phone took this terminal');
 
 export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'createSession' | 'sendInput' | 'resize' |
-  'stopSession' | 'peekSession' | 'followOutput' | 'listFiles' | 'readFile' | 'getDiff' | 'revokeDevice' | 'resolveApproval' | 'scaffold'> {
+  'stopSession' | 'peekSession' | 'followOutput' | 'listFiles' | 'readFile' | 'getDiff' | 'revokeDevice' | 'resolveApproval' | 'scaffold' | 'renameProject' | 'forgetProject'> {
   // Keys go in order, one request at a time; see `InputQueue`. An authenticated
   // acknowledgement remains definitive even if the view disconnects immediately
   // after receiving it. Never turn it into a retry.
@@ -82,6 +82,19 @@ export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'crea
     listFiles: async (projectId, path) => { project(projectId); return request('project.files', { projectId, path }); },
     readFile: async (projectId, path) => { project(projectId); return request('project.read', { projectId, path }); },
     getDiff: async projectId => { project(projectId); return request('project.diff', { projectId }); },
+    // Both change the list of projects the computer shares, and neither
+    // touches the folder itself: a renamed project keeps its folder name, and a
+    // forgotten one keeps every file it had.
+    renameProject: async (projectId, name) => {
+      project(projectId);
+      await request('project.rename', { projectId, name });
+      await store.refresh();
+    },
+    forgetProject: async projectId => {
+      project(projectId);
+      await request('project.forget', { projectId });
+      await store.refresh();
+    },
     revokeDevice: async deviceId => {
       if (deviceId !== store.saved?.deviceId) throw new Error('Remove other devices directly on your computer.');
       await store.deps.rpc.request('device.revoke', { deviceId }); await store.actions.forgetDevice!();

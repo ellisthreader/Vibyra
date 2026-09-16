@@ -1,117 +1,96 @@
-import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
-import { computerAgents } from './agents';
-import { sessionKindLabel } from './DrawerSessionList';
 import { Icon } from './primitives';
-import { useReducedMotion } from './useReducedMotion';
-import type { IconName } from './primitives';
 import type { Project, Session } from './types';
 
-// The desktop column's row primitive at phone size: one monochrome icon, one
-// name, one trailing slot. A project and the terminals inside it are the same
-// row at two indents, so an opened project reads as one list continuing rather
-// than a panel that grew out of the page.
-const kindIcon = (session: Session): IconName =>
-  computerAgents.find(agent => agent.kind === session.kind)?.icon ?? 'terminal-outline';
-const stateName = (session: Session) =>
-  session.status === 'running' ? 'Running' : session.status === 'interrupted' ? 'Stopped' : 'Exited';
+/** Windows the stack draws; past that the number beside it does the counting. */
+const STACKED = 3;
+const [WIDTH, HEIGHT, STEP, RISE] = [26, 18, 8, 3];
 
-function TerminalRow({ session, selected, onPress }: { session: Session; selected: boolean; onPress: () => void }) {
-  const { colors } = useTheme();
-  // State is the one trailing dot every row in this list uses. Exited is drawn as
-  // an outline rather than another filled colour competing with what is running.
-  const dot = session.status === 'running' ? { backgroundColor: colors.success }
-    : session.status === 'interrupted' ? { backgroundColor: colors.warning }
-      : { borderWidth: 1.5, borderColor: colors.border };
-  return <Pressable accessibilityRole="button" accessibilityState={{ selected }}
-    accessibilityLabel={`${session.title}, ${sessionKindLabel(session)}, ${stateName(session)}`} onPress={onPress}
-    style={({ pressed }) => [s.row, { backgroundColor: selected ? colors.accentSoft : pressed ? colors.elevated : 'transparent' }]}>
-    {selected ? <View style={[s.edge, { backgroundColor: colors.accent }]} /> : null}
-    <Icon name={kindIcon(session)} size={17} color={selected ? colors.accent : colors.muted} />
-    <Text numberOfLines={1} style={[s.rowName, { color: colors.text }]}>{session.title}</Text>
-    <View style={[s.dot, dot]} />
-  </Pressable>;
-}
-
-function ActionRow({ icon, title, label, disabled, onPress }: {
-  icon: IconName; title: string; label: string; disabled?: boolean; onPress: () => void;
-}) {
-  const { colors } = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} aria-disabled={disabled}
-    accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [s.row, { opacity: disabled ? 0.4 : 1, backgroundColor: pressed ? colors.elevated : 'transparent' }]}>
-    <Icon name={icon} size={17} color={colors.muted} />
-    <Text numberOfLines={1} style={[s.rowName, { color: colors.muted }]}>{title}</Text>
-  </Pressable>;
-}
-
-export function ProjectRow({ project, sessions, open, connected, watching, selectedId, onToggle, onOpenSession, onNew, onFiles }: {
-  project: Project; sessions: Session[]; open: boolean; connected: boolean; watching: boolean;
-  selectedId: string | null;
-  onToggle: () => void; onOpenSession: (id: string) => void; onNew: () => void; onFiles: () => void;
-}) {
-  const { colors } = useTheme();
-  const reduced = useReducedMotion();
-  const turn = useRef(new Animated.Value(open ? 1 : 0)).current;
-  useEffect(() => {
-    if (reduced) { turn.setValue(open ? 1 : 0); return; }
-    const animation = Animated.timing(turn, { toValue: open ? 1 : 0, duration: 170,
-      easing: Easing.out(Easing.quad), useNativeDriver: true });
-    animation.start();
-    return () => { animation.stop(); };
-  }, [open, reduced, turn]);
+/** How many terminals a project holds, and how many are running, in words. */
+export function terminalWords(sessions: Session[]) {
   const running = sessions.filter(session => session.status === 'running').length;
-  return <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-    <Pressable accessibilityRole="button" accessibilityLabel={project.name} aria-expanded={open}
-      accessibilityState={{ expanded: open }}
-      accessibilityHint={open ? 'Hides the terminals in this project' : 'Shows the terminals in this project'}
-      onPress={onToggle} style={({ pressed }) => [s.head, { backgroundColor: pressed ? colors.elevated : 'transparent' }]}>
-      <Icon name="folder-outline" size={21} color={open ? colors.accent : colors.muted} />
-      <View style={s.text}>
-        <Text numberOfLines={1} style={[s.name, { color: colors.text }]}>{project.name}</Text>
-        <View style={s.meta}>
-          {project.branch ? <Icon name="git-branch-outline" size={11} color={colors.muted} /> : null}
-          <Text numberOfLines={1} style={[s.metaText, { color: colors.muted }]}>{project.branch ?? project.path}</Text>
-        </View>
-      </View>
-      {!open && running > 0 ? <View style={[s.dot, { backgroundColor: colors.success }]} /> : null}
-      {!open && sessions.length > 0 ? <View style={[s.count, { backgroundColor: colors.elevated }]}>
-        <Text style={[s.countText, { color: colors.muted }]}>{sessions.length}</Text>
-      </View> : null}
-      <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
-        <Icon name="chevron-down" size={18} color={colors.muted} />
-      </Animated.View>
-    </Pressable>
-    {open ? <View style={[s.body, { borderTopColor: colors.border }]}>
-      {sessions.map(session => <TerminalRow key={session.id} session={session} selected={session.id === selectedId}
-        onPress={() => onOpenSession(session.id)} />)}
-      {sessions.length === 0 ? <Text style={[s.none, { color: colors.muted }]}>
-        {watching ? 'No terminals open in this project on your computer.' : 'No terminals open yet.'}</Text> : null}
-      {/* A computer this phone is only watching refuses both of these. Offering
-          them anyway turned every tap into a server rejection. */}
-      {watching ? null : <>
-        <ActionRow icon="add" title="New terminal" label={`New chat in ${project.name}`}
-          disabled={!connected} onPress={onNew} />
-        <ActionRow icon="git-compare-outline" title="Files & changes" label={`Open ${project.name} files`}
-          disabled={!connected} onPress={onFiles} />
-      </>}
-    </View> : null}
+  if (sessions.length === 0) return 'no terminals';
+  return `${sessions.length} ${sessions.length === 1 ? 'terminal' : 'terminals'}${running ? `, ${running} running` : ''}`;
+}
+
+/**
+ * The terminals in a project as a glance rather than a list: a small stack of
+ * windows, one per terminal up to three, with the total beside it. A running
+ * terminal's window carries the live dot, a stopped one the warning, an exited
+ * one only its outline. Nothing in a window can be read, on purpose — the page
+ * says how much is open in each project, and the project's own sheet says what.
+ */
+function TerminalStack({ sessions }: { sessions: Session[] }) {
+  const { colors } = useTheme();
+  const shown = sessions.slice(0, STACKED);
+  const depth = shown.length - 1;
+  const tone = (session: Session) => session.status === 'running' ? colors.success
+    : session.status === 'interrupted' ? colors.warning : colors.border;
+  return <View style={{ width: WIDTH + depth * STEP, height: HEIGHT + depth * RISE }}>
+    {shown.map((session, index) => <View key={session.id} style={[s.window, { left: index * STEP,
+      top: (depth - index) * RISE, zIndex: STACKED - index, backgroundColor: colors.elevated, borderColor: colors.border }]}>
+      <View style={[s.pixel, { backgroundColor: tone(session) }]} />
+      <View style={[s.line, { backgroundColor: colors.muted }]} />
+      <View style={[s.line, s.short, { backgroundColor: colors.muted }]} />
+    </View>)}
   </View>;
 }
+
+/**
+ * One project in the list: a folder tile, its name, the branch it is on, and
+ * how much is open inside it. The row enters the project; the terminals are
+ * read in the rail there. `active` is the project whose terminal is open on the Work tab,
+ * marked on the tile the way the rail marks the session itself.
+ */
+export function ProjectRow({ project, sessions, active, onPress, onOptions }: {
+  project: Project; sessions: Session[]; active: boolean; onPress: () => void;
+  /** Opens the project's own options — its name here, and removing it from the
+   *  list. A long press as well as the button, because a row is a big target
+   *  and holding it is what people try first. */
+  onOptions?: () => void;
+}) {
+  const { colors } = useTheme();
+  const running = sessions.filter(session => session.status === 'running').length;
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${project.name}, ${terminalWords(sessions)}`}
+    accessibilityHint="Opens this project" onPress={onPress} onLongPress={onOptions} delayLongPress={400}
+    style={({ pressed }) => [s.row, { opacity: pressed ? 0.55 : 1 }]}>
+    <View style={[s.tile, { backgroundColor: active ? colors.accentSoft : colors.elevated }]}>
+      <Icon name={active ? 'folder' : 'folder-outline'} size={22} color={active ? colors.accent : colors.text} />
+    </View>
+    <View style={s.text}>
+      <Text numberOfLines={1} style={[s.name, { color: colors.text }]}>{project.name}</Text>
+      <View style={s.detail}>
+        <Icon name={project.branch ? 'git-branch-outline' : 'folder-open-outline'} size={12} color={colors.muted} />
+        <Text numberOfLines={1} style={[s.detailText, { color: colors.muted }]}>{project.branch ?? project.path}</Text>
+        {running > 0 && <Text numberOfLines={1} style={[s.running, { color: colors.success }]}>{`· ${running} running`}</Text>}
+      </View>
+    </View>
+    {sessions.length > 0 && <View style={s.trail}>
+      <TerminalStack sessions={sessions} />
+      <Text style={[s.count, { color: colors.text }]}>{sessions.length}</Text>
+    </View>}
+    {onOptions
+      ? <Pressable accessibilityRole="button" accessibilityLabel={`Options for ${project.name}`}
+        onPress={onOptions} hitSlop={10} style={({ pressed }) => [s.options, { opacity: pressed ? 0.5 : 1 }]}>
+        <Icon name="ellipsis-horizontal" size={18} color={colors.muted} />
+      </Pressable>
+      : <Icon name="chevron-forward" size={16} color={colors.muted} />}
+  </Pressable>;
+}
 const s = StyleSheet.create({
-  card: { borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  head: { minHeight: 70, paddingHorizontal: 15, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 13 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 14, paddingVertical: 13, minHeight: 72 },
+  tile: { width: 46, height: 46, borderRadius: 46 / 3, alignItems: 'center', justifyContent: 'center' },
+  options: { width: 32, height: 40, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, gap: 4 },
   name: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  metaText: { flex: 1, fontSize: 12 },
-  count: { minWidth: 23, height: 21, borderRadius: 11, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center' },
-  countText: { fontSize: 12, fontWeight: '600' },
-  body: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 8, paddingVertical: 7, gap: 1 },
-  row: { minHeight: 46, paddingHorizontal: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  edge: { position: 'absolute', left: 0, top: 11, bottom: 11, width: 2, borderRadius: 1 },
-  rowName: { flex: 1, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.1 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
-  none: { fontSize: 13, lineHeight: 19, paddingHorizontal: 8, paddingVertical: 9 },
+  detail: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  detailText: { flexShrink: 1, fontSize: 13, lineHeight: 18 },
+  running: { fontSize: 13, lineHeight: 18, fontWeight: '500', flexShrink: 0 },
+  trail: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4 },
+  count: { fontSize: 14, fontWeight: '600', minWidth: 10, textAlign: 'right' },
+  window: { position: 'absolute', width: WIDTH, height: HEIGHT, borderRadius: 4, borderWidth: 1, padding: 4, gap: 2.5 },
+  pixel: { width: 3.5, height: 3.5, borderRadius: 2 },
+  line: { height: 1.5, width: 11, borderRadius: 1, opacity: 0.45 },
+  short: { width: 7 },
 });

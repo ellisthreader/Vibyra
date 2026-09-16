@@ -116,7 +116,11 @@ export type PhoneTerminalRequest =
   | { id: string; action: "close"; paneId?: number; conversationId?: string }
   // A project the phone's wizard has just built on this Mac. Rust made the
   // folder; only this window can put it in the list it publishes.
-  | { id: string; action: "adopt"; path: string; name: string };
+  | { id: string; action: "adopt"; path: string; name: string }
+  // The list again: what a project is called here, and whether it is listed at
+  // all. Neither touches the folder on disk.
+  | { id: string; action: "rename"; projectId: string; name: string }
+  | { id: string; action: "forget"; projectId: string };
 
 /** The answer a start gives back — which pane or chat it became. */
 export type PhoneTerminalStarted = { paneId: number } | { conversationId: string };

@@ -24,6 +24,8 @@ function deps(overrides = {}) {
     closePane: async (id) => { calls.closedPanes.push(id); },
     closeChat: async (id) => { calls.closedChats.push(id); },
     adopt: async (path, name) => ({ id: "p-9", name, path }),
+    rename: async (projectId, name) => ({ id: projectId, name, path: "/Users/someone/Code/site" }),
+    forget: async () => {},
     ...overrides,
   };
 }
@@ -97,4 +99,28 @@ test("a folder the window will not open is a reason, not a hang", async () => {
     deps({ adopt: async () => null }));
   assert.match(reply.error, /could not open the new folder/);
   assert.equal(reply.result, undefined);
+});
+
+// The list a phone can change: what a project is called, and whether it is on
+// the list at all. Neither request touches the folder on disk.
+test("a project can be renamed from the phone, and the window answers with it", async () => {
+  const asked = [];
+  const reply = await answerTerminalRequest({ id: "r", action: "rename", projectId: "p-1", name: "Shop" },
+    deps({ rename: async (projectId, name) => { asked.push([projectId, name]); return { id: projectId, name, path: "/p" }; } }));
+  assert.deepEqual(reply, { result: { id: "p-1", name: "Shop", path: "/p" } });
+  assert.deepEqual(asked, [["p-1", "Shop"]]);
+});
+
+test("renaming a project this window does not have is a reason, not a hang", async () => {
+  const reply = await answerTerminalRequest({ id: "r", action: "rename", projectId: "gone", name: "Shop" },
+    deps({ rename: async () => null }));
+  assert.match(reply.error, /not open on this Mac/);
+});
+
+test("forgetting drops it from the list and says so plainly", async () => {
+  const dropped = [];
+  const reply = await answerTerminalRequest({ id: "r", action: "forget", projectId: "p-1" },
+    deps({ forget: async (projectId) => { dropped.push(projectId); } }));
+  assert.deepEqual(reply, { result: { ok: true } });
+  assert.deepEqual(dropped, ["p-1"]);
 });

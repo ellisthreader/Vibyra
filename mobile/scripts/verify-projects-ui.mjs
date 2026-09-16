@@ -28,7 +28,19 @@ try {
     assert.equal(await page.getByText('Development server').count(), 0, 'no terminal is listed on the page');
     assert.equal(await page.getByRole('button', { name: /^New chat in / }).count(), 0, 'the actions live in the project, not on the page');
     // A Host without the wizard keeps the row and asks to be updated, rather than hiding it.
+    // Starting a project is a control over the list now, not a row inside it.
     assert.equal(await button('New project').getAttribute('aria-disabled'), 'true', 'a Host without the wizard cannot open it');
+    // Every project carries its own options: what it is called, and whether it is listed.
+    await button('Options for Studio').click();
+    await page.getByRole('textbox', { name: 'Project name' }).fill('Studio Two');
+    await button('Save name').click();
+    assert.deepEqual(await page.evaluate(() => window.renamed), ['demo-studio', 'Studio Two'], 'the rename reaches the computer');
+    // Saving closes the sheet, so the page is left as it was found.
+    await page.getByRole('dialog').waitFor({ state: 'detached' });
+    await button('Options for Orbit').click();
+    await capture(page, `${out}/projects-options-${theme}.png`);
+    await button('Close Project options').click();
+    await page.getByRole('dialog').waitFor({ state: 'detached' });
     await capture(page, `${out}/projects-${theme}.png`);
     // A folder enters its project: no sheet opens, the app is handed the project.
     await button('Studio, 3 terminals, 1 running').click();

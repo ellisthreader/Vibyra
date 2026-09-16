@@ -38,6 +38,13 @@ const storeDeps: RequestDeps = {
   approvalPending: () => useLaunchApprovalStore.getState().pending !== null,
   closePane: (id) => useTerminalStore.getState().close(id),
   closeChat,
+  rename: async (projectId, name) => {
+    const renamed = await useProjectStore.getState().rename(projectId, name);
+    return renamed ? { id: renamed.id, name: renamed.name, path: renamed.root } : null;
+  },
+  // The Mac's own Remove project: it leaves the list and its terminals close.
+  // The folder stays exactly where it is.
+  forget: (projectId) => useProjectStore.getState().remove(projectId),
   adopt: async (path, name) => {
     const project = await useProjectStore.getState().create(path, name);
     // The phone's folder list is keyed the way this window publishes it.

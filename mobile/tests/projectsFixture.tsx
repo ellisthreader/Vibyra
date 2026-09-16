@@ -12,7 +12,8 @@ import type { Session, WorkspaceModel } from '../src/ui/types';
 // `many=1` adds enough folders to raise the search field, and one holding four
 // terminals so the stack shows its cap. `watching=1` is a paired Vibyra Desktop:
 // the same folders. `scaffold=1` is a Host that can build a project, which puts
-// the New project row first. Tapping a row enters the project; the fixture records which.
+// the New project button. `manage=0` is a computer
+// that will not let a phone rename or remove one. Tapping a row enters the project; the fixture records which.
 const query = new URLSearchParams(location.search);
 const dark = query.get('theme') !== 'light';
 const many = query.get('many') === '1';
@@ -27,7 +28,17 @@ function Fixture() {
   const selected = 'demo-terminal';
   const workspace: WorkspaceModel = { ...fixtureWorkspace, host: { id: 'demo-mac', name: 'Studio Mac', platform: 'macos' },
     projects: [...projects, ...extra], sessions: [...sessions, ...older], selectedSessionId: selected,
-    viewOnly: query.get('watching') === '1', scaffoldAvailable: query.get('scaffold') === '1' };
+    viewOnly: query.get('watching') === '1', scaffoldAvailable: query.get('scaffold') === '1',
+    canManage: query.get('manage') !== '0',
+    actions: { ...fixtureWorkspace.actions,
+      ...(query.get('manage') === '0' ? {} : {
+        renameProject: async (projectId: string, name: string) => {
+          (window as unknown as { renamed?: string[] }).renamed = [projectId, name];
+        },
+        forgetProject: async (projectId: string) => {
+          (window as unknown as { forgot?: string }).forgot = projectId;
+        },
+      }) } };
   return <ThemeContext.Provider value={{ colors: dark ? palettes.dark : palettes.light, dark }}>
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <View style={{ flex: 1, backgroundColor: (dark ? palettes.dark : palettes.light).background }}>

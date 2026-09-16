@@ -1,5 +1,6 @@
 use super::control::Control;
 use super::frames;
+use super::railway::RailwayCli;
 use super::requests::TerminalRequests;
 use super::scaffold::{Scaffolder, Scaffolds, SharedScaffolds};
 use super::stream;
@@ -17,6 +18,7 @@ pub struct DesktopBackend {
     typing: Arc<AtomicBool>,
     generation: String,
     vault: Arc<Vault>,
+    railway: Arc<RailwayCli>,
     pub(super) requests: Arc<TerminalRequests>,
     pub(super) scaffolds: SharedScaffolds,
     scaffolder: Scaffolder,
@@ -36,6 +38,7 @@ impl DesktopBackend {
         let generation = bytes.iter().map(|b| format!("{b:02x}")).collect();
         let scaffolds: SharedScaffolds = Arc::new(parking_lot::Mutex::new(Scaffolds::default()));
         let scaffolder = Scaffolder::new(scaffolds.clone(), workspace.clone(), requests.clone());
+        let railway = RailwayCli::start();
         Ok(Self {
             manager,
             workspace,
@@ -43,6 +46,7 @@ impl DesktopBackend {
             typing,
             generation,
             vault,
+            railway,
             requests,
             scaffolds,
             scaffolder,
@@ -158,6 +162,8 @@ impl Backend for DesktopBackend {
                     "capabilities":{"readOnly":true,"canInput":self.control.typing(),"canManage":self.can_manage(),
                         "scaffoldV1":true},
                     "projects":projects,
+                    // The Mac's own Railway CLI, for the phone's Integrations page.
+                    "railway":self.railway.status(),
                     "sessions":sessions,"sessionCount":count,
                     "nextCursor":null,"approvals":[],"devices":[]}))
             }
@@ -181,6 +187,9 @@ impl Backend for DesktopBackend {
                 Ok(json!({"ok":true}))
             }
             "approval.list" => Ok(json!([])),
+            // Renaming a project, and dropping it from the list. Neither touches
+            // the folder itself, so neither is the write that readOnly refuses.
+            "project.rename" | "project.forget" => self.manage_project(method, &params),
             // Starting a project is the one thing a phone may make on this Mac.
             // It is not a general write: the plan is the wizard's own, checked
             // before a process runs, and the folder is new by definition.

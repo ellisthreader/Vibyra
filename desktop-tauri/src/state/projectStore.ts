@@ -2,6 +2,7 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { create } from "zustand";
 
 import { fsHomeDir, unwatchWorkspace, watchWorkspace } from "../ipc/fs";
+import { removeSharedChatProject } from "../ipc/sharedChats";
 import { stopProjectPreviews } from "../ipc/preview";
 import { setTerminalVisibility } from "../ipc/terminal";
 import type { ProjectSpec } from "../types";
@@ -37,6 +38,8 @@ interface ProjectStore {
   homeDir: string;
   init: () => Promise<void>;
   create: (root: string, name?: string) => Promise<ProjectSpec | null>;
+  /** Renames a project in the list. The folder on disk keeps its own name. */
+  rename: (id: string, name: string) => Promise<ProjectSpec | null>;
   /** Native folder picker → project. The one-gesture "new project". */
   pickAndCreate: () => Promise<void>;
   activate: (id: string) => Promise<void>;
@@ -113,6 +116,16 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     }
   },
 
+  rename: async (id, name) => {
+    const trimmed = name.trim();
+    const list = projects();
+    const project = list.find((entry) => entry.id === id);
+    if (!project || !trimmed || trimmed === project.name) return project ?? null;
+    const renamed = { ...project, name: trimmed };
+    await persist(list.map((entry) => (entry.id === id ? renamed : entry)), get().activeId);
+    return renamed;
+  },
+
   create: async (root, name) => {
     const trimmed = root.trim().replace(/\/+$/, "");
     if (!trimmed) return null;
@@ -168,6 +181,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   remove: async (id) => {
+    await removeSharedChatProject(id);
     const current = projects();
     const project = current.find((entry) => entry.id === id);
     const list = current.filter((entry) => entry.id !== id);

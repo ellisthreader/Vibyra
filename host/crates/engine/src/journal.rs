@@ -32,7 +32,9 @@ impl Journal {
                 "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
             CREATE TABLE IF NOT EXISTS sessions (
                 id TEXT PRIMARY KEY, owner TEXT NOT NULL, request TEXT NOT NULL,
-                metadata TEXT NOT NULL, UNIQUE(owner, request));",
+                metadata TEXT NOT NULL, UNIQUE(owner, request));
+            CREATE TABLE IF NOT EXISTS adopted_projects (
+                path TEXT PRIMARY KEY, name TEXT NOT NULL, adopted_at TEXT NOT NULL);",
             )
             .map_err(|e| e.to_string())?;
         #[cfg(unix)]
@@ -57,6 +59,50 @@ impl Journal {
             )
             .map(|_| ())
             .map_err(|e| e.to_string())
+    }
+
+    pub fn save_project(&self, name: &str, path: &Path) -> Result<(), String> {
+        self.connection
+            .execute(
+                "INSERT INTO adopted_projects(path, name, adopted_at) VALUES(?1,?2,?3)
+            ON CONFLICT(path) DO UPDATE SET name=excluded.name",
+                params![path.to_string_lossy(), name, crate::now()],
+            )
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+
+    /// Stops an adopted folder coming back on the next run. A folder the Host
+    /// was started with on the command line is not recorded here, so forgetting
+    /// one of those lasts only as long as this run.
+    pub fn forget_project(&self, path: &Path) -> Result<(), String> {
+        self.connection
+            .execute(
+                "DELETE FROM adopted_projects WHERE path = ?1",
+                params![path.to_string_lossy()],
+            )
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+
+    /// Folders adopted by earlier runs, oldest first. Whether each still exists
+    /// is the caller's question; a folder that was deleted is simply not listed.
+    pub fn adopted_projects(&self) -> Result<Vec<(String, std::path::PathBuf)>, String> {
+        let mut statement = self
+            .connection
+            .prepare("SELECT name, path FROM adopted_projects ORDER BY adopted_at, path")
+            .map_err(|e| e.to_string())?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| e.to_string())?;
+        let mut projects = Vec::new();
+        for row in rows {
+            let (name, path) = row.map_err(|e| e.to_string())?;
+            projects.push((name, std::path::PathBuf::from(path)));
+        }
+        Ok(projects)
     }
 
     pub fn restore(&self) -> Result<HashMap<String, Session>, String> {
