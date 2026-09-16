@@ -57,10 +57,15 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   const createReason = workspace.scaffoldAvailable === true ? null
     : `Update Vibyra on ${host} to start projects from your phone.`;
   const canCreate = connected && Boolean(onNew);
-  // Renaming a project, and dropping it from the list, are the computer's to
-  // allow: a watched Desktop with typing off refuses both.
+  // The options are offered wherever there is a project to change. Whether the
+  // computer will actually allow it is the sheet's to explain — hiding the door
+  // is how the New project row went missing for a week.
   const canManage = connected && workspace.actions.renameProject !== undefined
-    && workspace.actions.forgetProject !== undefined && (!watching || workspace.canManage === true);
+    && workspace.actions.forgetProject !== undefined;
+  // A paired Desktop bundles changing things with typing, which is one switch on
+  // the Mac; a Host that predates these methods will simply refuse them.
+  const manageReason = !watching || workspace.canManage === true ? null
+    : `Turn on typing from your phone in Vibyra on ${host} to rename or remove projects.`;
   const chosen = workspace.projects.find(project => project.id === optionsFor) ?? null;
   return <View style={s.page}>
     <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
@@ -92,17 +97,17 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
           </View>)}
         </View>}
     </ScrollView>
-    {canCreate && createReason && <Text style={[s.reason, { color: colors.muted, bottom: insets.bottom + 76 }]}>{createReason}</Text>}
+    {canCreate && createReason && <Text style={[s.reason, { color: colors.muted, bottom: insets.bottom + 68 }]}>{createReason}</Text>}
     {canCreate && <Pressable accessibilityRole="button" accessibilityLabel="New project"
       accessibilityHint={createReason ?? `Starts a project on ${host}`}
       accessibilityState={{ disabled: createReason !== null }} aria-disabled={createReason !== null}
       disabled={createReason !== null} onPress={onNew!}
-      style={({ pressed }) => [s.add, { backgroundColor: colors.action, bottom: insets.bottom + 18,
+      style={({ pressed }) => [s.add, { backgroundColor: colors.action, bottom: insets.bottom + 12,
         opacity: createReason ? 0.4 : pressed ? 0.85 : 1 }]}>
       <Icon name="add" size={24} color={colors.onAction} />
-      <Text style={[s.addText, { color: colors.onAction }]}>New project</Text>
+      <Text style={[s.addText, { color: colors.onAction }]}>Project</Text>
     </Pressable>}
-    <ProjectActionsSheet project={chosen} host={host} onClose={() => setOptionsFor(null)}
+    <ProjectActionsSheet project={chosen} host={host} reason={manageReason} onClose={() => setOptionsFor(null)}
       onRename={name => workspace.actions.renameProject!(chosen!.id, name)}
       onForget={() => workspace.actions.forgetProject!(chosen!.id)} />
   </View>;
@@ -111,10 +116,10 @@ const s = StyleSheet.create({
   page: { flex: 1 },
   // Bottom left, clear of the list's own scroll, and a pill rather than a
   // circle: the words are what say it starts a project rather than adds a row.
-  add: { position: 'absolute', left: 20, flexDirection: 'row', alignItems: 'center', gap: 7,
-    height: 50, paddingLeft: 14, paddingRight: 20, borderRadius: 25 },
+  add: { position: 'absolute', left: 12, flexDirection: 'row', alignItems: 'center', gap: 5,
+    height: 48, paddingLeft: 13, paddingRight: 18, borderRadius: 24 },
   addText: { fontSize: 15.5, fontWeight: '600', letterSpacing: -0.2 },
-  reason: { position: 'absolute', left: 20, right: 20, fontSize: 13, lineHeight: 18 },
+  reason: { position: 'absolute', left: 14, right: 20, fontSize: 13, lineHeight: 18 },
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 104 },
   lead: { fontSize: 15, lineHeight: 22 },
   notice: { gap: 13, marginTop: 16 },
