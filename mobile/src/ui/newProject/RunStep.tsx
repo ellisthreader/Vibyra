@@ -1,29 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import type { ScaffoldProgress } from '../../scaffold/api';
 import type { RunPhase } from '../../scaffold/wizard';
-import { useReducedMotion } from '../useReducedMotion';
+import { Icon } from '../primitives';
+import { BuildRing } from './BuildRing';
 import { MONO } from './mono';
 import { WizardFooter } from './WizardFooter';
 
 /**
- * The build. One line of progress, the log a tap away, and a failure that
- * leaves the folder alone and offers a way out rather than an apology.
+ * The build, watched rather than waited out. The ring carries the progress, the
+ * steps underneath say what each one was, and the log stays a tap away for the
+ * times it matters.
+ *
+ * The step list comes from the plan, not from the computer's reports, so all of
+ * it is on screen from the first moment — you can see what is going to happen
+ * as well as what already has. A failure leaves the folder alone and offers a
+ * way out rather than an apology.
  */
-export function RunStep({ phase, progress, log, error, onCancel, onRetry, onOpenFolder, onOpenTerminal, onClose }: {
-  phase: RunPhase; progress: ScaffoldProgress | null; log: string[]; error: string | null;
+export function RunStep({ phase, progress, steps, log, error, onCancel, onRetry, onOpenFolder, onOpenTerminal, onClose }: {
+  phase: RunPhase; progress: ScaffoldProgress | null;
+  /** Every step's label, in order, from the plan that was started. */
+  steps: string[];
+  log: string[]; error: string | null;
   onCancel: () => void; onRetry: () => void; onOpenFolder: () => void; onOpenTerminal: () => void; onClose: () => void;
 }) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const tail = useRef<ScrollView>(null);
   const running = phase === 'running';
+  const done = phase === 'done';
   useEffect(() => { if (expanded) tail.current?.scrollToEnd({ animated: false }); }, [expanded, log]);
+  const index = progress?.index ?? 0;
+  const total = progress?.total ?? steps.length;
   const status = running
-    ? progress ? `${progress.label}… (${progress.index + 1} of ${progress.total})` : 'Getting the folder ready…'
-    : phase === 'done' ? 'Done.' : error ?? 'Stopped.';
-  const tone = phase === 'done' ? colors.success : phase === 'stalled' ? colors.warning : phase === 'failed' ? colors.error : colors.accent;
+    ? progress?.label ?? 'Getting the folder ready…'
+    : done ? 'Your project is ready.' : error ?? 'Stopped.';
   const footer = running ? { secondary: { title: 'Cancel', onPress: onCancel } }
     : phase === 'stalled' ? { secondary: { title: 'Close', onPress: onClose }, primary: { title: 'Open it in a terminal', onPress: onOpenTerminal } }
     : phase === 'failed' ? { secondary: { title: 'Close', onPress: onClose },
@@ -32,10 +44,26 @@ export function RunStep({ phase, progress, log, error, onCancel, onRetry, onOpen
       primary: log.length > 0 ? { title: 'Open the folder anyway', onPress: onOpenFolder } : { title: 'Try again', onPress: onRetry } }
     : {};
   return <>
-    <View style={s.body}>
-      <ProgressBar running={running} tone={tone} />
-      <Text accessibilityRole="text" accessibilityLiveRegion="polite" style={[s.status, { color: phase === 'failed' ? colors.error : colors.text }]}>{status}</Text>
+    <ScrollView style={s.scroll} contentContainerStyle={s.content}>
+      <BuildRing phase={phase} index={index} total={total} label={status} />
+      <Text accessibilityRole="text" accessibilityLiveRegion="polite"
+        style={[s.status, { color: phase === 'failed' ? colors.error : colors.text }]}>{status}</Text>
       {running && log.length > 0 && <Text numberOfLines={1} style={[s.tail, { color: colors.muted }]}>{log[log.length - 1]}</Text>}
+      {steps.length > 0 && <View style={s.steps}>
+        {steps.map((step, at) => {
+          const finished = done || at < index;
+          const active = running && at === index;
+          return <View key={`${step}-${at}`} style={s.step}>
+            <View style={[s.bullet, { borderColor: finished || active ? colors.accent : colors.border,
+              backgroundColor: finished ? colors.accent : 'transparent' }]}>
+              {finished && <Icon name="checkmark" size={11} color="#FFFFFF" />}
+            </View>
+            <Text numberOfLines={1} style={[s.stepText, {
+              color: finished ? colors.muted : active ? colors.text : colors.muted,
+              fontWeight: active ? '600' : '500' }]}>{step}</Text>
+          </View>;
+        })}
+      </View>}
       {log.length > 0 && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(!expanded)}
         hitSlop={6} style={({ pressed }) => [s.toggle, { opacity: pressed ? 0.55 : 1 }]}>
         <Text style={[s.toggleText, { color: colors.accent }]}>{expanded ? 'Hide output' : `Show output (${log.length} lines)`}</Text>
@@ -43,40 +71,22 @@ export function RunStep({ phase, progress, log, error, onCancel, onRetry, onOpen
       {expanded && <ScrollView ref={tail} style={[s.log, { backgroundColor: colors.elevated }]} contentContainerStyle={s.logContent}>
         <Text selectable style={[s.logText, { color: colors.text }]}>{log.join('\n')}</Text>
       </ScrollView>}
-    </View>
+    </ScrollView>
     <WizardFooter {...footer} />
   </>;
 }
-
-/** A thin bar: sliding while the computer works, filled in the outcome's colour after. */
-function ProgressBar({ running, tone }: { running: boolean; tone: string }) {
-  const { colors } = useTheme();
-  const reduced = useReducedMotion();
-  const [width, setWidth] = useState(0);
-  const slide = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!running || reduced || width === 0) { slide.setValue(0); return; }
-    const loop = Animated.loop(Animated.timing(slide, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }));
-    loop.start();
-    return () => loop.stop();
-  }, [running, reduced, width, slide]);
-  const span = width * 0.38;
-  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[s.track, { backgroundColor: colors.border }]}>
-    {running && !reduced
-      ? <Animated.View style={[s.fill, { width: span, backgroundColor: tone,
-        transform: [{ translateX: slide.interpolate({ inputRange: [0, 1], outputRange: [-span, width] }) }] }]} />
-      : <View style={[s.fill, { width: running ? '50%' : '100%', backgroundColor: tone }]} />}
-  </View>;
-}
 const s = StyleSheet.create({
-  body: { flex: 1, paddingHorizontal: 20, paddingTop: 22, gap: 12 },
-  track: { height: 4, borderRadius: 2, overflow: 'hidden' },
-  fill: { height: 4, borderRadius: 2 },
-  status: { fontSize: 16, lineHeight: 22, fontWeight: '500', letterSpacing: -0.2 },
-  tail: { fontFamily: MONO, fontSize: 12, marginTop: -4 },
-  toggle: { alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: 20, paddingTop: 26, paddingBottom: 20 },
+  status: { fontSize: 17, lineHeight: 23, fontWeight: '600', letterSpacing: -0.3, textAlign: 'center', marginTop: 22 },
+  tail: { fontFamily: MONO, fontSize: 11.5, textAlign: 'center', marginTop: 7 },
+  steps: { marginTop: 26, gap: 13 },
+  step: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  bullet: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  stepText: { flex: 1, fontSize: 14.5, letterSpacing: -0.2 },
+  toggle: { alignSelf: 'center', minHeight: 40, justifyContent: 'center', marginTop: 20 },
   toggleText: { fontSize: 14, fontWeight: '600' },
-  log: { maxHeight: 260, borderRadius: 14 },
+  log: { maxHeight: 220, borderRadius: 14, marginTop: 4 },
   logContent: { paddingHorizontal: 14, paddingVertical: 12 },
   logText: { fontFamily: MONO, fontSize: 11.5, lineHeight: 17 },
 });

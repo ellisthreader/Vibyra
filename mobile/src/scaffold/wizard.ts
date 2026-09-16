@@ -82,15 +82,14 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
       // Skipping the question is still an answer, and still moves on.
       const next = { ...state, templateId: action.templateId, extraIds: state.extraIds.filter(id => id !== action.templateId),
         kind: kindForTemplate(state.kind, action.templateId) };
-      return action.templateId === null ? go({ ...next, extraIds: [] }, stepAfterStack(null)) : next;
+      return action.templateId === null ? go({ ...next, extraIds: [] }, stepAfterStack()) : next;
     }
     case 'toggleExtra': {
       const on = state.extraIds.includes(action.templateId);
       return { ...state, extraIds: on ? state.extraIds.filter(id => id !== action.templateId)
         : [...state.extraIds, action.templateId] };
     }
-    case 'continue':
-      return go({ ...state, browsing: false }, stepAfterStack(state.templateId ?? state.extraIds[0] ?? null));
+    case 'continue': return go({ ...state, browsing: false }, stepAfterStack());
     case 'browseAll': return { ...state, browsing: action.on };
     case 'setOptions': return { ...state, options: { ...state.options, ...action.patch } };
     case 'setName': return { ...state, name: action.name };

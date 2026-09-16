@@ -10,7 +10,6 @@ import { useReducedMotion } from '../useReducedMotion';
 import type { Project, WorkspaceModel } from '../types';
 import { KindStep } from './KindStep';
 import { OptionsStep } from './OptionsStep';
-import { ReviewStep } from './ReviewStep';
 import { RunStep } from './RunStep';
 import { StackStep } from './StackStep';
 import { useProjectCreate } from './useProjectCreate';
@@ -42,6 +41,9 @@ export function NewProjectSheet({ visible, workspace, onClose, onDone }: {
   const running = state.phase === 'running';
   const reached = RAIL.indexOf(state.step);
   const host = workspace.demo ? 'The sample computer' : workspace.host?.name ?? 'Your computer';
+  // Built once per render and shared: the setup step shows the commands it will
+  // run, and the build lists the very same steps as it works through them.
+  const planned = plannedProject(state);
   return <OverlaySheet visible={visible} title={STEP_TITLES[state.step]} label="New project" testID="new-project-sheet" onClose={onClose}
     onBack={state.history.length > 0 && !running ? () => dispatch({ type: 'back' }) : undefined}>
     {reached >= 0 && <View style={s.rail} accessibilityLabel={`Step ${reached + 1} of ${RAIL.length}`} accessibilityRole="progressbar">
@@ -54,14 +56,14 @@ export function NewProjectSheet({ visible, workspace, onClose, onDone }: {
         onChoose={templateId => dispatch({ type: 'chooseTemplate', templateId })}
         onToggleExtra={templateId => dispatch({ type: 'toggleExtra', templateId })}
         onContinue={() => dispatch({ type: 'continue' })} onBrowse={on => dispatch({ type: 'browseAll', on })} />}
-      {state.step === 'options' && <OptionsStep templateId={state.templateId} options={state.options}
-        onChange={patch => dispatch({ type: 'setOptions', patch })} onContinue={() => dispatch({ type: 'go', step: 'where' })} />}
       {state.step === 'where' && <WhereStep name={state.name} parent={state.parent} home={state.home}
+        stacks={[planned.entry, ...planned.extras].filter(entry => entry.id !== 'empty')}
         onName={name => dispatch({ type: 'setName', name })} onParent={parent => dispatch({ type: 'setParent', parent })}
-        onContinue={() => dispatch({ type: 'go', step: 'review' })} />}
-      {state.step === 'review' && <ReviewStep kind={state.kind} name={state.name} home={state.home} planned={plannedProject(state)}
-        host={host} onCreate={() => void create.start()} />}
+        onContinue={() => dispatch({ type: 'go', step: 'options' })} />}
+      {state.step === 'options' && <OptionsStep templateId={state.templateId} options={state.options} planned={planned} host={host}
+        onChange={patch => dispatch({ type: 'setOptions', patch })} onStart={() => void create.start()} />}
       {state.step === 'running' && <RunStep phase={state.phase} progress={state.progress} log={state.log} error={state.error}
+        steps={planned.request.steps.map(step => step.label)}
         onCancel={create.cancel} onRetry={() => void create.start()} onOpenFolder={() => void create.adoptAsIs(false)}
         onOpenTerminal={() => void create.adoptAsIs(true)} onClose={onClose} />}
     </Step>

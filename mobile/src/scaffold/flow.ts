@@ -4,18 +4,22 @@ import type { ProjectKind } from './types';
 /** The wizard's screens. `running` covers the build and however it ends. The
  *  desktop also has a `start` fork (build something, or open a folder you have);
  *  the phone has no folder picker, so it begins at the first question. */
-export type CreateStep = 'kind' | 'stack' | 'options' | 'where' | 'review' | 'running';
+export type CreateStep = 'kind' | 'stack' | 'where' | 'options' | 'running';
 
 /** The four questions that carry a progress rail. `running` is the outcome,
- *  so it is not a step you can be "on". */
-export const RAIL: CreateStep[] = ['kind', 'stack', 'options', 'where'];
+ *  so it is not a step you can be "on".
+ *
+ *  Naming comes before setting up: the name is the answer people already have
+ *  in mind when they open this, and the switches read better once the thing
+ *  they apply to has a name. Setting up is also the last thing asked, which is
+ *  what lets its button start the build instead of turning one more page. */
+export const RAIL: CreateStep[] = ['kind', 'stack', 'where', 'options'];
 
 export const STEP_TITLES: Record<CreateStep, string> = {
   kind: 'What are you making?',
   stack: 'Which stack?',
+  where: 'Name your project',
   options: 'How should it be set up?',
-  where: 'Name it and place it',
-  review: 'Ready when you are',
   running: 'Building your project',
 };
 
@@ -29,10 +33,10 @@ export function stepAfterKind(kind: ProjectKind | null): CreateStep {
   return kind === null || kind === 'empty' ? 'where' : 'stack';
 }
 
-/** Options are only worth asking about when the template runs something. */
-export function stepAfterStack(templateId: string | null): CreateStep {
-  const entry = templateById(templateId);
-  return entry && entry.steps.length > 0 ? 'options' : 'where';
+/** Naming follows the stack, whatever was picked. Every project needs a name;
+ *  only some need anything else decided. */
+export function stepAfterStack(): CreateStep {
+  return 'where';
 }
 
 /**

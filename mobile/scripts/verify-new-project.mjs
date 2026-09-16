@@ -19,7 +19,7 @@ try {
   for (const theme of ['dark', 'light']) {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
-    const button = name => page.getByRole('button', { name, exact: true });
+    const button = name => page.getByRole('button', typeof name === 'string' ? { name, exact: true } : { name });
     // Stacks are a multiple choice now, so each row is a checkbox.
     const stack = name => page.getByRole('checkbox', { name, exact: true });
     const heading = name => page.getByRole('heading', { name, exact: true });
@@ -67,39 +67,37 @@ try {
     await stack('Next.js').click();
     await capture(page, `${out}/new-project-stack-combined-${theme}.png`);
     await button('Continue').click();
-    // Options in Settings' own rows; the install switch only for a stack that installs.
-    await heading('How should it be set up?').waitFor();
-    for (const name of ['Install dependencies', 'Start a git repository', 'Open a terminal when it is done']) {
-      await page.getByRole('switch', { name }).waitFor();
-    }
-    await capture(page, `${out}/new-project-options-${theme}.png`);
-    await button('Continue').click();
-    // The name is pre-filled and the folder is the computer's suggestion; the path follows the typing.
-    await heading('Name it and place it').waitFor();
+    // Naming comes next, and it is the whole screen: one large field, the path
+    // under it, and the stacks just chosen shown above.
+    await heading('Name your project').waitFor();
     const name = page.getByRole('textbox', { name: 'Project name' });
     assert.equal(await name.inputValue(), 'untitled');
     await name.fill('My Site');
-    await page.getByText('It will be created at ~/Projects/my-site', { exact: true }).waitFor();
+    await page.getByText('~/Projects/', { exact: false }).first().waitFor();
     await capture(page, `${out}/new-project-where-${theme}.png`);
     await name.fill('!!!');
     await page.getByText('Use letters or numbers in the name.', { exact: true }).waitFor();
     assert.equal(await button('Continue').isDisabled(), true, 'a name that makes no folder cannot continue');
     await name.fill('My Site');
     await button('Continue').click();
-    // The review names every answer and shows the literal commands, nothing else is run.
-    await heading('Ready when you are').waitFor();
-    for (const fact of ['Making', 'With', 'Called', 'At']) await page.getByText(fact, { exact: true }).waitFor();
-    // Both stacks are named, in the order they run.
-    await page.getByText('Next.js, Express', { exact: true }).waitFor();
-    await page.getByText('~/Projects/my-site', { exact: true }).waitFor();
-    await page.getByText('Studio Mac will run', { exact: true }).waitFor();
+    // Setting up is the last question, and its own button starts the build:
+    // there is no page after it repeating what it already says.
+    await heading('How should it be set up?').waitFor();
+    for (const label of ['Install dependencies', 'Start a git repository', 'Open a terminal when it is done']) {
+      await page.getByRole('switch', { name: label }).waitFor();
+    }
+    // The commands are folded away here rather than given a screen of their own.
+    await button('Show the commands').click();
     await page.getByText(/^npx --yes create-next-app@latest my-site/).waitFor();
     await page.getByText('npm install', { exact: true }).waitFor();
-    await capture(page, `${out}/new-project-review-${theme}.png`);
+    await capture(page, `${out}/new-project-options-${theme}.png`);
     // The build reports each step; the sheet then hands the app the shared project.
-    await button('Create project').click();
+    await button('Start building on Studio Mac').click();
     await heading('Building your project').waitFor();
-    await page.getByText(/Creating the Next\.js app… \(1 of \d+\)/).waitFor();
+    await page.getByText('Creating the Next.js app', { exact: true }).first().waitFor();
+    // Every step of the plan is listed from the start, not just the one running.
+    await page.getByText('Installing packages', { exact: true }).first().waitFor();
+    await page.getByText(/^of \d+$/).waitFor();
     await button('Cancel').waitFor();
     await capture(page, `${out}/new-project-running-${theme}.png`);
     await page.getByRole('button', { name: /^Show output/ }).click();
@@ -109,19 +107,18 @@ try {
     await button('my-site, no terminals').waitFor();
     await page.getByRole('dialog').waitFor({ state: 'detached' });
     await capture(page, `${out}/new-project-done-${theme}.png`);
-    // Skipping the first question goes straight to naming, and reviews as an empty folder.
+    // Skipping the first question goes straight to naming, and sets up as an empty folder.
     await button('New project').click();
     await heading('What are you making?').waitFor();
     await button('Skip — just make a folder').click();
-    await heading('Name it and place it').waitFor();
+    await heading('Name your project').waitFor();
     await button('Continue').click();
-    await page.getByText('An empty project', { exact: true }).waitFor();
-    await page.getByText('Nothing installed', { exact: true }).waitFor();
+    await heading('How should it be set up?').waitFor();
     await page.getByText(/Nothing is run — the folder is created and left empty for you\./).waitFor();
-    await capture(page, `${out}/new-project-empty-review-${theme}.png`);
+    await capture(page, `${out}/new-project-empty-setup-${theme}.png`);
     // Back retraces the questions; close leaves the page as it was.
     await button('Back').click();
-    await heading('Name it and place it').waitFor();
+    await heading('Name your project').waitFor();
     await button('Close New project').click();
     await button('New project').waitFor();
     // Without the wizard on the computer, or on a watched Desktop, the row stays and

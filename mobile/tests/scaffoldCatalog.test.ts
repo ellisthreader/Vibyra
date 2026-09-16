@@ -75,9 +75,8 @@ test('a skipped question never asks a follow-up, and every path reaches a folder
   assert.equal(stepAfterKind(null), 'where');
   assert.equal(stepAfterKind('empty'), 'where');
   assert.equal(stepAfterKind('game'), 'stack');
-  assert.equal(stepAfterStack(null), 'where');
-  assert.equal(stepAfterStack('plain-html'), 'where', 'nothing to set up when nothing runs');
-  assert.equal(stepAfterStack('next'), 'options');
+  // Naming follows the stack whatever was picked; setting up follows the name.
+  assert.equal(stepAfterStack(), 'where');
   assert.equal(kindForTemplate('game', 'next'), 'website', 'Making: Game / With: Next.js is never printed');
   assert.equal(kindForTemplate('webapp', 'next'), 'webapp');
   assert.equal(kindForTemplate('game', null), 'game');
@@ -93,18 +92,18 @@ test('the wizard walks the questions, remembers the way back, and plans the buil
   // Picking a stack no longer leaves the step: more than one can be chosen here.
   assert.equal(state.step, 'stack');
   state = wizardReducer(state, { type: 'continue' });
-  assert.equal(state.step, 'options');
-  state = wizardReducer(state, { type: 'setOptions', patch: { install: false } });
-  state = wizardReducer(state, { type: 'go', step: 'where' });
+  // The name is asked before the setup now, and the setup is the last question.
+  assert.equal(state.step, 'where');
   state = wizardReducer(state, { type: 'setName', name: 'Site' });
-  state = wizardReducer(state, { type: 'go', step: 'review' });
+  state = wizardReducer(state, { type: 'go', step: 'options' });
+  state = wizardReducer(state, { type: 'setOptions', patch: { install: false } });
   const planned = plannedProject(state);
   assert.equal(planned.destination.path, '/home/ellis/Code/site');
   assert.deepEqual(planned.commands, ['npx --yes create-next-app@latest site --ts --app --eslint --tailwind --src-dir --import-alias @/* --use-npm --skip-install']);
   state = wizardReducer(state, { type: 'back' });
   assert.equal(state.step, 'where');
   state = wizardReducer(state, { type: 'back' });
-  assert.equal(state.step, 'options');
+  assert.equal(state.step, 'stack');
   state = wizardReducer(state, { type: 'log', lines: ['a', 'b'] });
   state = wizardReducer(state, { type: 'run', patch: { phase: 'failed', error: 'no' } });
   state = wizardReducer(state, { type: 'restart' });
