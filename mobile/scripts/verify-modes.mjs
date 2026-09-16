@@ -40,19 +40,23 @@ try {
     assert.equal(await button('Projects').count(), 0, 'The rail hides Projects without a computer');
     // Remote is the one computer entry a phone-only user gets: it is the install flow.
     await button('Remote').waitFor();
-    assert.equal(await button('Development server, Terminal').count(), 0, 'No terminals in the rail without a computer');
+    assert.equal(await button('Development server, Terminal, Working').count(), 0, 'No terminals in the rail without a computer');
 
     await shot('phone-rail');
     await closeDrawer();
     await menu('Settings');
-    assert.equal(await button('Remote access').count(), 0, 'Computer settings stay hidden without a computer');
+    await page.getByRole('dialog', { name: 'Settings' }).waitFor();
+    // Without a computer the sheet's one computer row is the way to add one.
+    await button('Connect a computer').waitFor();
+    assert.equal(await button('Smaller terminal text').count(), 0, 'Terminal settings stay hidden without a computer');
     assert.equal(await button('Forget saved connection').count(), 0, 'Nothing is saved to forget');
 
     await shot('phone-settings');
 
     // Connected. The sample workspace reports a connected computer, so it is this
     // mode: every shared project, the Terminals section and a visible online state.
-    await button('Open sample workspace').click();
+    await page.getByRole('button', { name: 'Advanced', exact: true }).click();
+    await page.getByRole('switch', { name: 'Sample workspace', exact: true }).click();
     await page.getByRole('button', { name: 'Open terminal', exact: true }).waitFor();
     await button('Browse projects').waitFor();
     await page.getByText('Sample workspace', { exact: true }).first().waitFor();
@@ -60,23 +64,32 @@ try {
     await drawer();
     await button('Projects').waitFor();
     await button('Remote').waitFor();
-    // Recents carries no filter tabs; a terminal simply sits in the list beside the chats.
-    assert.equal(await page.getByRole('tab').count(), 0, 'Recents carries no filter tabs');
-    await button('Development server, Terminal').waitFor();
+    // The rail carries no filter tabs and no terminals: those wait in their project's face.
+    assert.equal(await page.getByRole('tab').count(), 0, 'The rail carries no filter tabs');
+    assert.equal(await button('Development server, Terminal, Working').count(), 0, 'The home face lists no terminal');
     await shot('computer-rail');
     await closeDrawer();
     await menu('Projects');
     for (const project of ['Studio', 'Orbit']) await page.getByText(project, { exact: true }).first().waitFor();
     await shot('computer-projects');
+    // Entering a project opens the rail at once on that project's terminals.
+    await page.getByRole('button', { name: /^Studio, / }).click();
+    await page.getByTestId('navigation-drawer').waitFor();
+    await button('Development server, Terminal, Working').waitFor();
+    await button('Back to chats').click();
+    await closeDrawer();
 
     // Leaving the computer puts the phone straight back into its own mode.
     await menu('Settings');
-    await button('Leave sample workspace').click();
+    await page.getByRole('button', { name: 'Advanced', exact: true }).click();
+    await page.getByRole('switch', { name: 'Sample workspace', exact: true }).click();
     await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
     assert.equal(await button('Open terminal').count(), 0, 'Losing the computer takes its terminals with it');
     await drawer();
-    assert.equal(await button('Development server, Terminal').count(), 0, 'Losing the computer takes its terminals with it');
-    assert.equal(await button('Projects').count(), 0, 'Losing the computer takes its projects with it');
+    assert.equal(await button('Development server, Terminal, Working').count(), 0, 'Losing the computer takes its terminals with it');
+    // Nothing was ever paired here, so there is nothing to remember: a computer
+    // that has answered once keeps its Projects row when it goes away.
+    assert.equal(await button('Projects').count(), 0, 'A phone that never paired one is offered no projects');
     await closeDrawer();
 
     assert.deepEqual(errors, []);

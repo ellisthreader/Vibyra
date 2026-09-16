@@ -3,7 +3,7 @@ import type { RemoteApi } from '../remote/remoteApi';
 import type { NearbyComputer } from '../connection/discoveryTypes';
 import type { RpcClient } from '../transport/RpcClient';
 import type { Pairing } from '../transport/pairing';
-import type { Account, Computer, Project, Session, WorkspaceModel } from '../ui/types';
+import type { Account, Computer, Project, RailwayStatus, Session, WorkspaceModel } from '../ui/types';
 export type RuntimeState = Omit<WorkspaceModel, 'actions'>;
 export interface SavedConnection {
   pairing: Pairing; privateKey: string; deviceId?: string; host?: Computer;
@@ -18,6 +18,8 @@ export interface HostState {
   host: Computer;
   projects: Project[];
   sessions: Session[];
+  /** A Vibyra Desktop reports its Railway CLI here; a standalone Host says nothing. */
+  railway?: RailwayStatus | null;
   devices: { id: string; name: string; createdAt: string }[];
   approvals: { id: string; title: string; description: string; createdAt: string; expiresAt: string; deviceId: string }[];
 }
@@ -40,7 +42,7 @@ export interface SavedOnboarding { completedAt: string; mode: 'computer' | 'phon
 /** The account as the server last described it, beside its token, so a relaunch opens on it. */
 export interface SavedAccount extends Account { token: string }
 export const initialState: RuntimeState = {
-  status: 'offline', error: null, host: null, projects: [], sessions: [], devices: [], approvals: [],
+  status: 'offline', error: null, host: null, projects: [], remembered: null, sessions: [], devices: [], approvals: [],
   selectedSessionId: null, output: '', themePreference: 'system', accent: 'cobalt', syncing: false, control: 'none',
   onboarding: { status: 'unknown', mode: null }, account: null, reconnecting: false, viewOnly: false, canType: false, canManage: false, terminalFontSize: 13,
   hostGrid: null,

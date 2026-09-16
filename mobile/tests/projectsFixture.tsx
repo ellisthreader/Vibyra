@@ -13,7 +13,8 @@ import type { Session, WorkspaceModel } from '../src/ui/types';
 // terminals so the stack shows its cap. `watching=1` is a paired Vibyra Desktop:
 // the same folders. `scaffold=1` is a Host that can build a project, which puts
 // the New project button. `manage=0` is a computer
-// that will not let a phone rename or remove one. Tapping a row enters the project; the fixture records which.
+// that will not let a phone rename or remove one. `away=1` is the computer
+// gone: the page reads from what it was last seen sharing. Tapping a row enters the project; the fixture records which.
 const query = new URLSearchParams(location.search);
 const dark = query.get('theme') !== 'light';
 const many = query.get('many') === '1';
@@ -30,6 +31,10 @@ function Fixture() {
     projects: [...projects, ...extra], sessions: [...sessions, ...older], selectedSessionId: selected,
     viewOnly: query.get('watching') === '1', scaffoldAvailable: query.get('scaffold') === '1',
     canManage: query.get('manage') !== '0',
+    ...(query.get('away') === '1'
+      ? { status: 'offline' as const, projects: [],
+        remembered: { projects: [...projects, ...extra], seenAt: new Date(Date.now() - 3 * 3600_000).toISOString() } }
+      : {}),
     actions: { ...fixtureWorkspace.actions,
       ...(query.get('manage') === '0' ? {} : {
         renameProject: async (projectId: string, name: string) => {

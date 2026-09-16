@@ -80,6 +80,25 @@ try {
     await button('Studio, 3 terminals, 1 running').click();
     assert.equal(await opened(), 'demo-studio', 'a watched project is entered the same way');
     await capture(page, `${out}/projects-watching-${theme}.png`);
+    // The computer away: its folders are still readable, and every action says
+    // so rather than disappearing. This is the whole point of remembering them.
+    await page.goto(`${url}/?theme=${theme}&away=1&scaffold=1`);
+    await page.getByText(/^What Studio Mac was sharing when it was last seen, .+\.$/).waitFor();
+    await button('Studio, no terminals').waitFor();
+    await button('Orbit, no terminals').waitFor();
+    await page.getByText('Reconnect to open one, or to start something new.', { exact: true }).waitFor();
+    assert.equal(await button('New project').getAttribute('aria-disabled'), 'true', 'nothing is started without the computer');
+    await page.getByText(/Studio Mac is away\. Reconnect to start a project\./).waitFor();
+    // Tapping a remembered project shows what is known about it, never opens it.
+    await page.evaluate(() => { window.opened = undefined; });
+    await button('Studio, no terminals').click();
+    await page.getByRole('dialog').waitFor();
+    await page.getByText(/Studio Mac is away\. Reconnect to rename or remove projects\./).waitFor();
+    assert.equal(await opened(), undefined, 'a remembered project is not entered');
+    assert.equal(await button('Save name').isDisabled(), true, 'and it cannot be renamed while it is away');
+    await capture(page, `${out}/projects-away-${theme}.png`);
+    await button('Close Project options').click();
+    await page.getByRole('dialog').waitFor({ state: 'detached' });
     assert.deepEqual(errors, []);
     await page.close();
     console.log(`PASS ${theme}: folders count their terminals, a row enters its project, search reaches inside.`);

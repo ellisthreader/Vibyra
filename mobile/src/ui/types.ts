@@ -153,6 +153,10 @@ export interface WorkspaceModel {
   /** Reached through Vibyra Cloud rather than on this network. */
   throughCloud?: boolean;
   projects: Project[];
+  /** What the paired computer was last seen sharing, kept on the phone so the
+   *  Projects page has something to show while that computer is away. A memory,
+   *  never a live list: every action on one still needs the computer. */
+  remembered?: { projects: Project[]; seenAt: string } | null;
   sessions: Session[];
   devices: TrustedDevice[];
   approvals: Approval[];

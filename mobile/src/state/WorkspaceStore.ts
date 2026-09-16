@@ -6,7 +6,7 @@ import { ConversationLedger } from './conversationLedger';
 import { receiveConversation, loadConversation } from './conversationSession';
 import { cachedConversation } from './conversationContinuity';
 import type { Notice } from '../transport/RpcClient';
-import type { WorkspaceActions, ThemePreference } from '../ui/types';
+import type { RailwayStatus, WorkspaceActions, ThemePreference } from '../ui/types';
 import { restoreAccent, restoreTerminalFontSize, setAccent } from './preferences';
 import { CreateRequests } from './createRequest';
 import { AutoConnect } from './autoConnect';
@@ -101,7 +101,9 @@ export class WorkspaceStore {
     const sessions = result.sessions.map(item => item.status === 'exited' ? { ...item,
       exitCode: item.exitCode ?? this.state.sessions.find(previous => previous.id === item.id)?.exitCode } : item);
     this.update({ host: result.host, projects: result.projects, sessions,
+      railway: railwayStatus(result.railway),
       vibesToolsAvailable: result.capabilities?.vibesToolsV1 === true, scaffoldAvailable: result.capabilities?.scaffoldV1 === true,
+      remembered: result.projects.length > 0 ? { projects: result.projects, seenAt: new Date().toISOString() } : this.state.remembered,
       // A Vibyra Desktop says so up front. Without keeping it, every screen
       // outside a session offers work this connection will refuse to start.
       viewOnly: result.capabilities?.readOnly === true,
@@ -196,4 +198,12 @@ export class WorkspaceStore {
       if (event.data?.sessionId === this.state.selectedSessionId) { this.lease = null; this.update({ control: 'none' }); }
     }
   };
+}
+
+/** Only the three states the Mac can actually be in; anything else reads as "said nothing". */
+function railwayStatus(value: HostState['railway']): RailwayStatus | null {
+  if (!value || typeof value !== 'object') return null;
+  const status = value.status;
+  if (status !== 'ready' && status !== 'signedOut' && status !== 'missing') return null;
+  return { status, account: typeof value.account === 'string' && value.account ? value.account : null };
 }

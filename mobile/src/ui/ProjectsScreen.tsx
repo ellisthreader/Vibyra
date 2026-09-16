@@ -21,6 +21,18 @@ import type { Project, WorkspaceModel } from './types';
  * A search reaches terminals as well as folders, so a terminal remembered by
  * name is still found from here, through the folder holding it.
  */
+function describeSeen(seenAt: string): string {
+  const then = Date.parse(seenAt);
+  if (Number.isNaN(then)) return 'earlier';
+  const minutes = Math.round((Date.now() - then) / 60000);
+  if (minutes < 2) return 'a moment ago';
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? 'yesterday' : `${days} days ago`;
+}
+
 export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   workspace: WorkspaceModel; onConnect: () => void; onOpen: (projectId: string) => void;
   /** Opens the New project sheet. Offered only where the computer can build one. */
@@ -40,12 +52,14 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   // Live terminals lead, then the most recent, so the one you are likely to want
   // is first in the stack and first in the sheet rather than wherever the host
   // listed it. The rail orders a project's terminals the same way, from the same helper.
-  const sessionsOf = (id: string) => sessionsInProject(workspace.sessions, id);
+  const sessionsOf = (id: string) => connected ? sessionsInProject(workspace.sessions, id) : [];
   const matches = (project: Project) => !term || project.name.toLowerCase().includes(term)
     || sessionsOf(project.id).some(session => session.title.toLowerCase().includes(term));
-  const projects = workspace.projects.filter(matches);
+  const away = !connected && (workspace.remembered?.projects.length ?? 0) > 0;
+  const shown = connected ? workspace.projects : away ? workspace.remembered!.projects : [];
+  const projects = shown.filter(matches);
   const activeProjectId = workspace.sessions.find(session => session.id === workspace.selectedSessionId)?.projectId;
-  const searchable = workspace.projects.length > 3 || workspace.sessions.length > 4;
+  const searchable = shown.length > 3 || workspace.sessions.length > 4;
   // Why this computer cannot start one, or null when it can. The button is drawn
   // either way: a control that simply vanishes reads as a feature nobody wrote,
   // when the answer people need is which computer to ask.
@@ -54,28 +68,33 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
   // A Desktop refuses everything else a phone could change, and still builds a
   // project: the folder is new, so there is nothing of the person's to overwrite,
   // and the window is what opens it afterwards.
-  const createReason = workspace.scaffoldAvailable === true ? null
-    : `Update Vibyra on ${host} to start projects from your phone.`;
-  const canCreate = connected && Boolean(onNew);
+  const createReason = away ? `${host} is away. Reconnect to start a project.`
+    : workspace.scaffoldAvailable === true ? null
+      : `Update Vibyra on ${host} to start projects from your phone.`;
+  const canCreate = (connected || away) && Boolean(onNew);
   // The options are offered wherever there is a project to change. Whether the
   // computer will actually allow it is the sheet's to explain — hiding the door
   // is how the New project row went missing for a week.
-  const canManage = connected && workspace.actions.renameProject !== undefined
+  const canManage = (connected || away) && workspace.actions.renameProject !== undefined
     && workspace.actions.forgetProject !== undefined;
   // A paired Desktop bundles changing things with typing, which is one switch on
   // the Mac; a Host that predates these methods will simply refuse them.
-  const manageReason = !watching || workspace.canManage === true ? null
+  const manageReason = away ? `${host} is away. Reconnect to rename or remove projects.`
+    : !watching || workspace.canManage === true ? null
     : `Turn on typing from your phone in Vibyra on ${host} to rename or remove projects.`;
-  const chosen = workspace.projects.find(project => project.id === optionsFor) ?? null;
+  const chosen = shown.find(project => project.id === optionsFor) ?? null;
   return <View style={s.page}>
     <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
       indicatorStyle={colors.text === '#F5F7FA' ? 'white' : 'black'}
       refreshControl={<RefreshControl refreshing={busy || !!workspace.syncing} tintColor={colors.accent}
         onRefresh={() => void run(workspace.actions.refresh)} enabled={connected} />}>
-      {connected && <Text style={[s.lead, { color: colors.muted }]}>{watching
-        ? `The projects open in Vibyra on ${host}.` : `Folders on ${host} and the terminals in each.`}</Text>}
+      {connected ? <Text style={[s.lead, { color: colors.muted }]}>{watching
+        ? `The projects open in Vibyra on ${host}.` : `Folders on ${host} and the terminals in each.`}</Text>
+        : away ? <Text style={[s.lead, { color: colors.muted }]}>
+          {`What ${host} was sharing when it was last seen, ${describeSeen(workspace.remembered!.seenAt)}.`}</Text> : null}
       {error || workspace.error ? <View style={s.notice}><Hint error>{error || workspace.error}</Hint></View> : null}
-      {!connected ? <View style={s.notice}><Hint>Connect to access your computer’s projects.</Hint>
+      {!connected ? <View style={s.notice}>
+        <Hint>{away ? 'Reconnect to open one, or to start something new.' : 'Connect to access your computer’s projects.'}</Hint>
         <Button title={workspace.host ? 'Reconnect' : 'Connect computer'} secondary busy={busy}
           onPress={workspace.host && workspace.actions.reconnect ? () => void run(workspace.actions.reconnect!) : onConnect} /></View> : null}
       {searchable ? <View style={[s.search, { backgroundColor: colors.elevated }]}>
@@ -92,7 +111,8 @@ export function ProjectsScreen({ workspace, onConnect, onOpen, onNew }: {
             {/* Inset to the text column, so the tiles read as one stack rather than a table. */}
             {index > 0 && <View style={[s.divider, { backgroundColor: colors.border }]} />}
             <ProjectRow project={project} sessions={sessionsOf(project.id)} active={project.id === activeProjectId}
-              onPress={() => onOpen(project.id)}
+              faded={away}
+              onPress={() => away ? setOptionsFor(project.id) : onOpen(project.id)}
               onOptions={canManage ? () => setOptionsFor(project.id) : undefined} />
           </View>)}
         </View>}

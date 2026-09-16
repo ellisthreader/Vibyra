@@ -43,8 +43,11 @@ function TerminalStack({ sessions }: { sessions: Session[] }) {
  * read in the rail there. `active` is the project whose terminal is open on the Work tab,
  * marked on the tile the way the rail marks the session itself.
  */
-export function ProjectRow({ project, sessions, active, onPress, onOptions }: {
+export function ProjectRow({ project, sessions, active, faded, onPress, onOptions }: {
   project: Project; sessions: Session[]; active: boolean; onPress: () => void;
+  /** Remembered rather than live: the computer sharing it is away, so the row is
+   *  drawn quieter and cannot be entered. It is still worth reading. */
+  faded?: boolean;
   /** Opens the project's own options — its name here, and removing it from the
    *  list. A long press as well as the button, because a row is a big target
    *  and holding it is what people try first. */
@@ -53,8 +56,9 @@ export function ProjectRow({ project, sessions, active, onPress, onOptions }: {
   const { colors } = useTheme();
   const running = sessions.filter(session => session.status === 'running').length;
   return <Pressable accessibilityRole="button" accessibilityLabel={`${project.name}, ${terminalWords(sessions)}`}
-    accessibilityHint="Opens this project" onPress={onPress} onLongPress={onOptions} delayLongPress={400}
-    style={({ pressed }) => [s.row, { opacity: pressed ? 0.55 : 1 }]}>
+    accessibilityHint={faded ? 'Shows what is known about this project' : 'Opens this project'}
+    onPress={onPress} onLongPress={onOptions} delayLongPress={400}
+    style={({ pressed }) => [s.row, { opacity: pressed ? 0.55 : faded ? 0.62 : 1 }]}>
     <View style={[s.tile, { backgroundColor: active ? colors.accentSoft : colors.elevated }]}>
       <Icon name={active ? 'folder' : 'folder-outline'} size={22} color={active ? colors.accent : colors.text} />
     </View>
