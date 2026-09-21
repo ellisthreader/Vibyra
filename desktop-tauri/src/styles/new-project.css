@@ -1,0 +1,75 @@
+/* The New Project page: the shell, the front door and the kind grid. The step
+   rows and the build live in `new-project-steps.css` and
+   `new-project-build.css`. */
+
+.new-project-page { flex: 1; min-width: 0; min-height: 0; overflow: hidden; display: flex;
+  padding: clamp(18px, 5vh, 52px) 24px; }
+
+.np { display: flex; flex-direction: column; width: 100%; max-width: 620px; max-height: 100%;
+  min-height: 0; margin: auto; color: var(--text); }
+.np--tight { max-width: 520px; }
+
+.np__head { display: grid; gap: 7px; }
+.np__meta { display: flex; align-items: center; gap: 10px; min-height: 26px; }
+.np__back { flex: none; }
+.np__back svg { transform: rotate(180deg); }
+.np__kicker { color: var(--muted); font-size: 10.5px; font-weight: 640; letter-spacing: .12em; }
+.np__meta-end { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.np__rail { display: flex; gap: 3px; flex: none; }
+.np__rail i { width: 15px; height: 3px; border-radius: 999px; background: var(--border);
+  transition: background .25s ease; }
+.np__rail i.np__rail-on { background: var(--accent); }
+.np__head h1 { margin: 0; font-size: 25px; letter-spacing: -.7px; line-height: 1.2; }
+
+.np__step { display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto;
+  padding-top: 18px; animation: np-rise .28s ease; }
+/* Both ends are declared and the fill mode is left alone on purpose: a screen
+   that never gets to animate — a throttled renderer, a hidden tab — must be
+   readable rather than held at the invisible first frame. */
+@keyframes np-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Every step ends with this strip. The primary action is a button; the quiet
+   ones are text, because skipping a question must not look as weighted as
+   answering it. */
+.np-foot { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 24px; }
+.np-foot .btn { min-width: 190px; justify-content: center; }
+.np-quiet { padding: 8px 6px; color: var(--muted); font-size: 13px; font-weight: 560; }
+.np-quiet:hover { color: var(--text); }
+.np-quiet--inline { flex: none; padding: 4px 6px; color: var(--accent); }
+.np-quiet--start { align-self: flex-start; margin-top: 14px; color: var(--accent); }
+.np-quiet-text { margin: 18px 2px 0; color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+
+/* The fork: no surface at all. A card, a border and a shadow around two lines
+   of text is a box drawn for the sake of having drawn one — the choices sit on
+   the page itself and only take a ground when the pointer is on them. The rows
+   are pulled out by their own padding so the mark still starts on the heading's
+   left edge rather than one padding-width inside it. */
+.np-start { display: grid; gap: 2px; }
+.np-choice { display: flex; align-items: center; gap: 16px; margin: 0 -14px; padding: 16px 14px;
+  text-align: left; border-radius: var(--r-card); transition: background .14s ease; }
+.np-choice:hover { background: var(--hover); }
+.np-choice__mark { flex: none; display: grid; place-items: center; width: 28px; height: 28px;
+  color: var(--muted); transition: color .14s ease; }
+.np-choice--lead .np-choice__mark { color: var(--accent); }
+.np-choice:hover .np-choice__mark { color: var(--accent); }
+.np-choice__text { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.np-choice strong { font-size: 15px; font-weight: 620; letter-spacing: -.2px; color: var(--text); }
+.np-choice small { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.np-choice__go { flex: none; display: grid; place-items: center; color: var(--dim);
+  transition: color .14s ease, transform .14s ease; }
+.np-choice:hover .np-choice__go { color: var(--accent); transform: translateX(2px); }
+
+/* Question one, whole on the screen: nine kinds are exactly a square, so they
+   are drawn as one. No tiles and no nine hues — the marks are inked in the
+   theme's own colour and only the chosen one takes cobalt, which is what the
+   90/8/2 graphite-and-cobalt split asks for. */
+.np-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  min-height: 0; overflow-y: auto; }
+.np-kind { display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 18px 8px; border-radius: var(--r-card); color: var(--muted);
+  font-size: 13px; font-weight: 560; letter-spacing: -.1px;
+  transition: background .14s ease, color .14s ease; }
+.np-kind:hover { background: var(--hover); color: var(--text); }
+.np-kind--on { background: var(--accent-soft); color: var(--accent); font-weight: 680; }
+
+.np-empty { margin: 8px 4px; color: var(--muted); font-size: 13.5px; line-height: 1.55; }

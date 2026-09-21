@@ -96,8 +96,9 @@ test("scrollbar reserve still matches the xterm build in node_modules", async (t
 test("mounting a terminal always hands the PTY the grid it built", async () => {
   const instance = await read("src/lib/terminalInstance.ts");
   // onResize cannot carry the first size — FitAddon skips term.resize() when
-  // the pre-spawn estimate already matched — so this unconditional call is
-  // the only thing keeping the PTY and the renderer the same size.
+  // the pre-spawn estimate already matched — so this call is the only thing
+  // keeping the PTY and the renderer the same size. Nothing gates it: this
+  // Mac alone sizes its panes, and a phone watching one draws this grid.
   assert.match(
     instance,
     /fitTerminal\(entry\);\s*\n\s*void resizeTerminal\(id, term\.rows, term\.cols\)/,

@@ -1,0 +1,215 @@
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { createServer } from 'node:http';
+import { mkdir } from 'node:fs/promises';
+import { chromium, webkit } from 'playwright-core';
+const out='../output/right-sidebar-implementation'; await mkdir(out,{recursive:true});
+const bundle=await build({entryPoints:['../desktop-tauri/tests/workspaceToolsFixture.tsx'],bundle:true,write:false,outfile:'/tmp/right-sidebar.js',format:'iife',jsx:'automatic',loader:{'.woff2':'dataurl','.png':'dataurl','.webp':'dataurl'},plugins:[{name:'art',setup(b){b.onLoad({filter:/\/modelArtwork\.ts$/},()=>({contents:'export const modelArtworkUrl=()=>null;',loader:'ts'}));}}]});
+const server=createServer((req,res)=>{
+ if(req.url==='/sample-preview'){res.setHeader('content-type','text/html');res.end('<html><body style="background:#f6f3ed;color:#304035;font-family:system-ui;padding:20px"><h1>Forma.</h1><h2>Less, but lovelier.</h2><label>Preview form <input id="retained" /></label></body></html>');return;}
+ const file=bundle.outputFiles.find(f=>req.url==='/fixture.js'?f.path.endsWith('.js'):req.url==='/fixture.css'?f.path.endsWith('.css'):false);
+ res.setHeader('content-type',file?(req.url.endsWith('.js')?'text/javascript':'text/css'):'text/html');res.end(file?.text??'<meta charset="utf-8"><link rel="stylesheet" href="/fixture.css"><style>html,body,#root{height:100%;margin:0}body{font-family:Inter,system-ui;background:var(--bg)}</style><div id="root"></div><script src="/fixture.js"></script>');
+});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const useWebkit=process.env.VIBYRA_TEST_WEBKIT==='1';
+const browser=useWebkit?await webkit.launch({headless:true}):await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+try {
+ for(const theme of ['dark','light']) {
+  const page=await browser.newPage({viewport:{width:1440,height:900}}); const errors=[];page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(`http://127.0.0.1:${server.address().port}/?theme=${theme}&navigation&connector-sync&disconnected`);
+  const chooseDevice=async key=>{await page.getByRole('combobox',{name:'Preview device'}).click();await page.locator(`[role=option][data-device="${key}"]`).click();};
+  const count=command=>page.evaluate(command=>window.fixtureCalls.filter(c=>c.command===command).length,command);
+  assert.equal(await page.getByRole('tab',{name:'Worktrees',exact:true}).count(),1);
+  await page.getByRole('textbox',{name:'Message Vibyra'}).fill('Keep this draft');
+  const connectorCallsBeforeWorktrees = await count('teammate_request');
+  await page.getByRole('tab',{name:'Worktrees',exact:true}).click();
+  await page.getByRole('heading',{name:'A branch of your own.'}).waitFor();
+  assert.equal(await count('workspace_worktrees'),0,'Safe Mode off never inspects worktrees');
+  assert.equal(await count('teammate_request'),connectorCallsBeforeWorktrees,'Safe Mode off never checks connectors');
+  await page.screenshot({path:`${out}/worktrees-safe-off-${theme}.png`});
+  await page.setViewportSize({width:600,height:450});
+  const enable = page.getByRole('button',{name:'Turn on Safe Mode',exact:true});
+  await enable.scrollIntoViewIfNeeded();
+  assert.ok(await enable.isVisible());
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:`${out}/worktrees-safe-off-compact-${theme}.png`});
+  await page.setViewportSize({width:1440,height:900});
+  await page.evaluate(()=>window.dispatchEvent(new Event('fixture-checkout')));
+  await enable.click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('vibyra.launch-settings.v2')).studio.safeMode),true);
+  assert.equal(await count('preview_start'),0,'enabling Safe Mode never starts Preview');
+  await page.getByText('Connect GitHub to use Safe Mode worktrees.',{exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:/files changed/}).count(),0,'worktrees gated before GitHub connection');
+  assert.equal(await count('workspace_worktrees'),0,'disconnected sidebar does not inspect worktrees');
+  await page.getByRole('button',{name:'Connect GitHub',exact:true}).click();
+  assert.deepEqual(await page.evaluate(()=>{const s=window.fixtureWorkspace.getState();return [s.settingsOpen,s.settingsSection,s.settingsPanel];}),[true,'ai','integrations']);
+  assert.equal(await page.evaluate(()=>window.fixtureCalls.filter(c=>c.command==='teammate_request'&&c.args.path.endsWith('/start')).length),0,'link only opens Integrations');
+  await page.evaluate(()=>window.dispatchEvent(new Event('fixture-settings-connect')));
+  await page.getByRole('button',{name:'Refresh GitHub connection',exact:true}).waitFor();
+  await page.getByRole('button',{name:/Checkout experience Working/}).waitFor();
+  assert.equal(await page.getByRole('button',{name:/files changed/}).count(),3);
+  await page.screenshot({path:`${out}/worktrees-${theme}.png`});
+  await page.evaluate(()=>window.dispatchEvent(new Event('fixture-github-disconnect')));
+  await page.getByRole('button',{name:'Refresh GitHub connection'}).click();
+  await page.getByText('Connect GitHub to use Safe Mode worktrees.',{exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:/files changed/}).count(),0,'revocation gates existing panel');
+  await page.getByRole('button',{name:'Connect GitHub',exact:true}).click();
+  await page.evaluate(()=>window.dispatchEvent(new Event('fixture-settings-connect')));
+  await page.getByRole('button',{name:/Checkout experience Working/}).click();
+  await page.getByRole('button',{name:'Changes (3)',exact:true}).waitFor();
+  await page.getByRole('button',{name:'src/App.tsx Modified',exact:true}).click();
+  await page.getByLabel('Changes in src/App.tsx').waitFor();
+  await page.screenshot({path:`${out}/changes-${theme}.png`});
+  await page.getByRole('button',{name:'Preview ↗',exact:true}).click();
+  await page.getByRole('button',{name:'Run preview',exact:true}).waitFor();
+  assert.equal(await count('preview_start'),0,'opening Preview does not start code');
+  await page.getByRole('button',{name:'Run preview',exact:true}).click();
+  const frame=page.frameLocator('iframe'); await frame.getByLabel('Preview form').fill('Retain this page');
+  assert.ok(await page.evaluate(()=>window.fixtureCalls.some(c=>c.command==='preview_start'&&c.args.root==='/Projects/Studio-checkout')));
+  const iframe=await page.locator('iframe').elementHandle();
+  assert.equal(await page.locator('.sidebar-preview-context,.sidebar-preview-target').count(),0,'no project headings');
+  const beforeMenu=await page.locator('iframe').boundingBox();
+  await page.getByRole('combobox',{name:'Preview device'}).click();
+  assert.deepEqual(await page.locator('iframe').boundingBox(),beforeMenu,'device menu causes no layout shift');
+  await page.screenshot({path:`${out}/device-menu-${theme}.png`});
+  await page.getByRole('listbox',{name:'Devices'}).press('End');
+  await page.getByRole('listbox',{name:'Devices'}).press('Enter');
+  assert.equal(await page.getByRole('combobox',{name:'Preview device'}).getAttribute('aria-expanded'),'false');
+  await page.getByRole('combobox',{name:'Preview device'}).press('ArrowDown');
+  await page.getByRole('listbox',{name:'Devices'}).press('Escape');
+  assert.ok(await page.getByRole('combobox',{name:'Preview device'}).evaluate(el=>el===document.activeElement));
+  const devices=[['iphone-16-pro',402,874],['iphone-16e',390,844],['iphone-se-3',375,667],['ipad-pro-11',834,1210],['macbook-air-13',1280,832],['full-hd',1920,1080],['4k-tv',3840,2160]];
+  for(const [key,w,h] of devices) {
+   await chooseDevice(key);
+   const actual=await page.locator('iframe').evaluate(el=>[el.clientWidth,el.clientHeight]);
+   assert.deepEqual(actual,[w,h],`exact viewport for ${key}`);
+   assert.equal(await frame.getByLabel('Preview form').inputValue(),'Retain this page','device change preserves iframe state');
+   await page.screenshot({path:`${out}/device-${key}-${theme}.png`});
+  }
+  await chooseDevice('iphone-16-pro');
+  await page.getByLabel('Preview options',{exact:true}).click();
+  await page.getByRole('button',{name:'Rotate screen',exact:false}).click();
+  assert.deepEqual(await page.locator('iframe').evaluate(el=>[el.clientWidth,el.clientHeight]),[874,402]);
+  await page.getByRole('button',{name:'Rotate screen',exact:false}).click();
+  await page.getByLabel('Preview options',{exact:true}).click();
+
+  await page.screenshot({path:`${out}/preview-sidebar-${theme}.png`});
+  await page.getByRole('button',{name:'Expand Preview to full screen'}).click();
+  assert.equal(await page.getByRole('complementary',{name:'Workspace navigation'}).count(),0,'full screen hides navigation');
+  assert.ok(await page.locator('#project-companion').evaluate(el=>el.getBoundingClientRect().width>innerWidth-30));
+  assert.equal(await frame.getByLabel('Preview form').inputValue(),'Retain this page');
+  assert.ok(await iframe.evaluate(el=>el===document.querySelector('iframe')),'same iframe after expanding');
+  await chooseDevice('desktop');
+  await page.screenshot({path:`${out}/preview-expanded-${theme}.png`});
+  await page.getByRole('button',{name:'Restore sidebar'}).click();
+  assert.ok(await page.getByRole('complementary',{name:'Workspace navigation'}).isVisible(),'restore returns navigation');
+  assert.equal(await frame.getByLabel('Preview form').inputValue(),'Retain this page');
+  await page.getByRole('tab',{name:'Chat',exact:true}).click();
+  assert.equal(await page.getByRole('textbox',{name:'Message Vibyra'}).inputValue(),'Keep this draft');
+  await page.getByRole('tab',{name:'Preview',exact:true}).click();
+  assert.equal(await frame.getByLabel('Preview form').inputValue(),'Retain this page');
+  await page.getByRole('button',{name:'Close sidebar',exact:true}).click();
+  assert.equal(await count('preview_stop'),0,'closing the panel does not stop another runtime');
+  await page.getByRole('button',{name:'Workspace sidebar',exact:true}).click();
+  assert.equal(await frame.getByLabel('Preview form').inputValue(),'Retain this page');
+  await page.getByLabel('Preview options',{exact:true}).click();
+  await page.getByRole('button',{name:'Stop',exact:true}).click();
+  await page.getByLabel('Preview options',{exact:true}).click();
+  await page.getByRole('button',{name:'Run preview',exact:true}).waitFor();assert.equal(await count('preview_stop'),1);
+  const startsBeforeUrl = await count('preview_start');
+  await page.getByRole('textbox',{name:'Preview URL'}).fill('exp://localhost:8081');
+  await page.getByRole('button',{name:'Open URL',exact:true}).click();
+  await page.getByRole('alert').filter({hasText:'Expo Go link'}).waitFor();
+  // A second loopback hostname avoids embedding the privileged app origin.
+  const manualUrl = `http://localhost:${server.address().port}/sample-preview`;
+  await page.getByRole('textbox',{name:'Preview URL'}).fill(manualUrl);
+  await page.getByRole('button',{name:'Open URL',exact:true}).click();
+  await page.frameLocator('iframe').getByLabel('Preview form').fill('Manual URL works');
+  assert.equal(await count('preview_start'), startsBeforeUrl, 'manual URL never starts a process');
+  await page.getByLabel('Preview options',{exact:true}).click();
+  await page.getByRole('button',{name:'Open in browser ↗',exact:true}).click();
+  await page.getByLabel('Preview options',{exact:true}).click();
+  assert.ok(await page.evaluate(url=>window.fixtureCalls.some(c=>c.command==='preview_open_url'&&c.args.url===url),manualUrl));
+  await page.getByRole('button',{name:'Expand Preview to full screen'}).click();
+  assert.equal(await page.frameLocator('iframe').getByLabel('Preview form').inputValue(),'Manual URL works');
+  await page.screenshot({path:`${out}/manual-url-${theme}.png`});
+  await page.getByRole('button',{name:'Restore sidebar'}).click();
+  const address = page.getByRole('textbox', {name:'Preview URL'});
+  await page.route(/^https?:\/\/preview-server\.test(?::\d+)?\//, route => route.fulfill({
+    contentType:'text/html', body:'<label>Replacement preview <input /></label>',
+  }));
+  for (const [typed, expected] of [
+    ['https://preview-server.test/secure', 'https://preview-server.test/secure'],
+    ['preview-server.test:8080/new?q=1', 'http://preview-server.test:8080/new?q=1'],
+    ['http://preview-server.test:8080/explicit', 'http://preview-server.test:8080/explicit'],
+  ]) {
+    await address.fill('');
+    await address.blur();
+    assert.equal(await address.inputValue(), '', 'clearing does not restore the previous URL');
+    await address.fill(typed);
+    await address.press('Enter');
+    await page.frameLocator('iframe').getByLabel('Replacement preview').fill('Loaded replacement');
+    assert.equal(await page.locator('iframe').getAttribute('src'), expected);
+    assert.equal(await address.inputValue(), expected);
+  }
+  assert.equal(await count('preview_start'), startsBeforeUrl, 'replacement never starts a process');
+  const stopsBeforeDisconnect = await count('preview_stop');
+  await page.getByLabel('Preview options',{exact:true}).click();
+  await page.getByRole('button',{name:'Disconnect',exact:true}).click();
+  assert.equal(await count('preview_stop'),stopsBeforeDisconnect,'disconnect leaves external server alone');
+  await page.waitForFunction(() => document.querySelector('[aria-label="Preview URL"]').value === '');
+  assert.equal(await address.inputValue(), '', 'disconnect clears the stale external URL');
+  await page.getByRole('tab',{name:'Worktrees',exact:true}).click();
+  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('fixture-safe',{detail:false})));
+  assert.equal(await page.getByRole('tab',{name:'Worktrees',exact:true}).getAttribute('aria-selected'),'true');
+  await page.getByRole('button',{name:'Turn on Safe Mode',exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:/files changed/}).count(),0);
+  assert.equal(await count('preview_stop'),stopsBeforeDisconnect,'Safe Mode off does not stop existing work');
+  await page.getByRole('tab',{name:'Chat',exact:true}).click();
+  assert.equal(await page.getByRole('textbox',{name:'Message Vibyra'}).inputValue(),'Keep this draft');
+  await page.screenshot({path:`${out}/chat-${theme}.png`});
+  for(const size of [{width:1024,height:768},{width:960,height:600},{width:600,height:600}]) {
+   await page.setViewportSize(size);await page.getByRole('tab',{name:'Preview',exact:true}).click();
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no page overflow');
+   const bounds=await page.getByRole('button',{name:'Run preview',exact:true}).boundingBox();assert.ok(bounds.y+bounds.height<=size.height,'Run remains visible');
+   await page.screenshot({path:`${out}/preview-${size.width}-${theme}.png`});
+  }
+  assert.deepEqual(errors,[]);await page.close();
+ }
+ const sync = await browser.newPage({viewport:{width:1180,height:800}});
+ await sync.goto(`http://127.0.0.1:${server.address().port}/?connector-sync&theme=light`);
+ await sync.evaluate(()=>window.dispatchEvent(new CustomEvent('fixture-safe',{detail:true})));
+ await sync.getByRole('tab',{name:'Worktrees',exact:true}).click();
+ await sync.getByRole('button',{name:'Open repository on GitHub'}).waitFor();
+ assert.equal(await sync.locator('.worktree-repo .integration-logo--github svg').count(),1);
+ await sync.evaluate(()=>window.dispatchEvent(new Event('fixture-slow-catalogue')));
+ await sync.getByRole('button',{name:'Refresh GitHub connection'}).click();
+ assert.ok(await sync.getByRole('button',{name:'Open repository on GitHub'}).isVisible(),'refresh preserves verified connection');
+ await sync.waitForTimeout(650);
+ assert.ok(await sync.getByRole('button',{name:'Open repository on GitHub'}).isVisible());
+ await sync.getByRole('button',{name:'Refresh GitHub connection'}).click();
+ await sync.evaluate(()=>window.dispatchEvent(new Event('fixture-settings-disconnect')));
+ await sync.getByRole('button',{name:'Connect GitHub',exact:true}).waitFor();
+ await sync.waitForTimeout(650);
+ assert.equal(await sync.getByRole('button',{name:'Open repository on GitHub'}).count(),0,'late connected response cannot undo Settings disconnect');
+ assert.equal(await sync.getByRole('button',{name:/files changed/}).count(),0);
+ await sync.screenshot({path:`${out}/github-disconnected.png`});
+ await sync.getByRole('tab',{name:'Chat',exact:true}).click();
+ await sync.getByRole('button',{name:'Conversation options'}).click();
+ await sync.getByRole('menuitem',{name:'Clear conversation'}).click();
+ await sync.screenshot({path:`${out}/chat-empty-light.png`});
+ await sync.close();
+ const failure = await browser.newPage({viewport:{width:960,height:600}});
+ await failure.goto(`http://127.0.0.1:${server.address().port}/?preview-error`);
+ await failure.getByRole('tab',{name:'Preview',exact:true}).click();
+ await failure.getByRole('button',{name:'Run preview',exact:true}).click();
+ await failure.getByText('Preview could not start',{exact:true}).waitFor();
+ await failure.getByText(/Expo web needs its web dependencies/).waitFor();
+ await failure.getByText('Startup details',{exact:true}).click();
+ await failure.getByText('Missing web dependencies: react-native-web',{exact:true}).waitFor();
+ await failure.getByRole('textbox',{name:'Preview URL'}).fill(`http://localhost:${server.address().port}/sample-preview`);
+ await failure.getByRole('button',{name:'Open URL',exact:true}).click();
+ await failure.frameLocator('iframe').getByLabel('Preview form').fill('Recovered from error');
+ await failure.close();
+ console.log(`PASS ${useWebkit?'WebKit':'Chromium'}: worktrees, GitHub flow, exact worktree Preview, no implicit starts, retained iframe/draft across expand/tab/close, Safe Mode, themes and compact geometry (mock IPC).`);
+} finally { await browser.close();server.close(); }

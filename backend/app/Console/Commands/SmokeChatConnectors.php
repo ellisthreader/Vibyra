@@ -39,11 +39,18 @@ class SmokeChatConnectors extends Command
                 'body' => 'Opened by `php artisan connectors:smoke --write`. Safe to close.']],
         'stripe' => ['SMOKE_STRIPE_KEY', 'stripe_balance', [],
             'stripe_create_customer', ['email' => 'SMOKE_STRIPE_EMAIL', 'description' => 'Vibyra smoke test']],
+        // Figma is read-only, so there is no write half to prove; a live authorize
+        // round-trip and this read are the whole check.
+        'figma' => ['SMOKE_FIGMA_TOKEN', 'figma_list_frames', ['file' => 'SMOKE_FIGMA_FILE'], null, []],
     ];
 
     public function handle(Registry $registry): int
     {
         $only = array_filter(array_map('trim', explode(',', (string) $this->argument('only'))));
+        if (array_diff($only, array_keys(self::CHECKS))) {
+            $this->error('Unknown integration requested. Choose github, stripe or figma.');
+            return self::FAILURE;
+        }
         $rows = [];
         $failed = false;
         $skipped = [];
@@ -51,7 +58,7 @@ class SmokeChatConnectors extends Command
         foreach (self::CHECKS as $slug => [$variable, $read, $readArguments, $write, $writeArguments]) {
             if ($only && !in_array($slug, $only, true)) continue;
             $credential = (string) env($variable, '');
-            if ($credential === '') { $skipped[] = $slug.' ('.$variable.')'; continue; }
+            if ($credential === '') { $skipped[] = $slug.' ('.$variable.')'; $failed = true; continue; }
 
             $connector = $registry->for($slug);
             $account = $this->attempt(fn () => $connector->connect($credential));
@@ -61,11 +68,18 @@ class SmokeChatConnectors extends Command
             // and two more failures underneath it would only obscure the one that matters.
             if (!$account['ok']) continue;
 
-            $rows[] = [$slug, $read, ...$this->operation($connector, $read, $readArguments, $credential, $failed)];
+            $resolvedRead = $this->resolve($readArguments);
+            if ($resolvedRead === null) {
+                $failed = true;
+                $rows[] = [$slug, $read, '—', 'Needs '.implode(', ', $this->missing($readArguments))];
+            } else {
+                $rows[] = [$slug, $read, ...$this->operation($connector, $read, $resolvedRead, $credential, $failed)];
+            }
 
-            if (!$this->option('write')) continue;
+            if (!$this->option('write') || $write === null) continue;
             $resolved = $this->resolve($writeArguments);
             if ($resolved === null) {
+                $failed = true;
                 $rows[] = [$slug, $write, '—', 'Needs '.implode(', ', $this->missing($writeArguments))];
                 continue;
             }

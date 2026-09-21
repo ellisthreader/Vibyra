@@ -4,11 +4,12 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 impl Engine {
-    pub(crate) fn vibes_tool(
+    pub(crate) fn vibes_tool_with(
         &self,
         device: &str,
         method: &str,
         p: &Value,
+        reader: Option<&crate::external_read::Reader<'_>>,
     ) -> Result<Value, String> {
         let project = self.project(p)?;
         let state = self.shared.lock();
@@ -126,6 +127,11 @@ impl Engine {
             } else {
                 drop(state);
                 let result = match operation {
+                    "write_file" if project.read_only => {
+                        Err("This project is read-only; nothing here can be changed.".into())
+                    }
+                    "list_files" | "read_file" if reader.is_some() => reader.unwrap()(operation, p),
+                    _ if reader.is_some() => Err("This integration only supports approved reads.".into()),
                     "list_files" => self.files(p).map(|mut value| {
                         if let Some(entries) = value["entries"].as_array_mut() {
                             entries.retain(|e| e["name"].as_str().is_some_and(|n| n != ".git" && n != "node_modules" && n != ".env" && !n.starts_with(".env.")));
@@ -145,6 +151,7 @@ impl Engine {
                         value
                     }),
                     "write_file" => crate::vibes_write::write(&project, p),
+                    "search_files" => crate::search::search(&project, p),
                     _ => Err("This AI tool is unavailable".into()),
                 };
                 let state = self.shared.lock();

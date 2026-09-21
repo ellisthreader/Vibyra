@@ -31,19 +31,20 @@ function group(groupName: string, kind: PreviewDeviceKind, entries: Entry[]): Pr
   }));
 }
 
+// Viewport references and scaling assumptions: docs/preview-device-reference.md.
 export const PREVIEW_DEVICES: PreviewDevice[] = [
   ...group("Apple iPhone", "phone", [
     ["iphone-16-pro-max", "iPhone 16 Pro Max", 440, 956, 3, 56, 44, "island"],
     ["iphone-16-pro", "iPhone 16 Pro", 402, 874, 3, 54, 42, "island"],
     ["iphone-16-plus", "iPhone 16 Plus", 430, 932, 3, 54, 42, "island"],
     ["iphone-16", "iPhone 16", 393, 852, 3, 52, 40, "island"],
-    ["iphone-16e", "iPhone 16e", 390, 844, 3, 46, 36, "dot"],
+    ["iphone-16e", "iPhone 16e", 390, 844, 3, 46, 36, "notch"],
     ["iphone-15-pro-max", "iPhone 15 Pro Max", 430, 932, 3, 56, 44, "island"],
     ["iphone-15-pro", "iPhone 15 Pro", 393, 852, 3, 52, 40, "island"],
-    ["iphone-14", "iPhone 14", 390, 844, 3, 46, 36, "dot"],
-    ["iphone-13-mini", "iPhone 13 mini", 375, 812, 3, 42, 32, "dot"],
-    ["iphone-se-3", "iPhone SE (3rd gen)", 375, 667, 2, 34, 24, "none"],
-    ["iphone-se", "iPhone SE (compact)", 320, 568, 2, 30, 22, "none"],
+    ["iphone-14", "iPhone 14", 390, 844, 3, 46, 36, "notch"],
+    ["iphone-13-mini", "iPhone 13 mini", 375, 812, 3, 42, 32, "notch"],
+    ["iphone-se-3", "iPhone SE (3rd gen)", 375, 667, 2, 34, 2, "none"],
+    ["iphone-se", "iPhone SE (compact)", 320, 568, 2, 30, 2, "none"],
   ]),
   ...group("Google Pixel", "phone", [
     ["pixel-9-pro-xl", "Pixel 9 Pro XL", 448, 997, 3, 46, 36],
@@ -59,21 +60,21 @@ export const PREVIEW_DEVICES: PreviewDevice[] = [
     ["galaxy-z-fold-7", "Galaxy Z Fold 7 · open", 984, 1092, 2, 34, 24, "dot", "foldable"],
     ["galaxy-z-fold-7-cover", "Galaxy Z Fold 7 · cover", 360, 840, 3, 38, 28],
     ["galaxy-z-fold-6", "Galaxy Z Fold 6 · open", 928, 1080, 2, 34, 24, "dot", "foldable"],
-    ["galaxy-z-flip-7", "Galaxy Z Flip 7", 360, 764, 3, 38, 28],
-    ["galaxy-z-flip-7-cover", "Galaxy Z Flip 7 · cover", 474, 448, 2, 28, 20, "none"],
+    ["galaxy-z-flip-7", "Galaxy Z Flip 7", 360, 840, 3, 38, 28],
+    ["galaxy-z-flip-7-cover", "Galaxy Z Flip 7 · cover", 474, 524, 2, 28, 20, "none"],
   ]),
   ...group("Tablets", "tablet", [
     ["galaxy-tab-s9", "Galaxy Tab S9", 640, 1024, 2.5, 36, 26],
     ["ipad-mini", "iPad mini", 744, 1133, 2, 38, 28],
     ["ipad-air-11", "iPad Air 11-inch", 820, 1180, 2, 38, 28],
     ["ipad-air-13", "iPad Air 13-inch", 1024, 1366, 2, 38, 28],
-    ["ipad-pro-11", "iPad Pro 11-inch", 834, 1194, 2, 38, 28],
+    ["ipad-pro-11", "iPad Pro 11-inch (M4)", 834, 1210, 2, 38, 28],
     ["ipad-pro-13", "iPad Pro 13-inch", 1032, 1376, 2, 38, 28],
   ]),
   ...group("Laptops", "laptop", [
     ["small-laptop", "Small laptop", 1280, 720, 1, 10],
     ["laptop", "Standard laptop", 1366, 768, 1, 10],
-    ["macbook-air-13", "MacBook Air 13-inch", 1440, 900, 2, 10],
+    ["macbook-air-13", "MacBook Air 13-inch (M3)", 1280, 832, 2, 10],
     ["macbook-pro-14", "MacBook Pro 14-inch", 1512, 982, 2, 10],
     ["surface-pro-9", "Surface Pro 9", 1440, 960, 2, 10],
   ]),

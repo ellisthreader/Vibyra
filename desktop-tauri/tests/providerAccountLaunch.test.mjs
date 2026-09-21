@@ -18,7 +18,7 @@ test("the chosen account reaches the terminal it launches", () => {
   const launch = source("../src-tauri/src/commands/terminal_launch.rs");
   const prepare = source("../src-tauri/src/commands/terminal_prepare.rs");
 
-  assert.match(configured, /accountId: preferences\.accountByProvider\[agent\.id\] \?\? null/);
+  assert.match(configured, /accountId: resolveLaunchAccount\(agent\.id, preferences\.accountByProvider\[agent\.id\]\)/);
   assert.match(lifecycle, /accountId: options\?\.accountId \?\? null/);
   assert.match(ipc, /accountId: options\.accountId \?\? null/);
   assert.match(launch, /pub account_id: Option<String>/);

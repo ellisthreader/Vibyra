@@ -3,8 +3,14 @@ import { create } from "zustand";
 import {
   phoneAnswer,
   phoneConfigure,
+  phoneRemoteDisconnectAll,
+  phoneDisconnectDevice,
   phoneRevoke,
+  phoneSetRemote,
+  phoneSetTyping,
   phoneStatus,
+  phoneVaultChoose,
+  phoneVaultClear,
   type PhoneStatus,
 } from "../ipc/phone";
 
@@ -16,8 +22,15 @@ interface PhoneStore {
   error: string;
   refresh: () => Promise<void>;
   configure: (enabled: boolean) => Promise<void>;
+  setTyping: (enabled: boolean) => Promise<void>;
+  setRemote: (enabled: boolean) => Promise<void>;
+  disconnectRemote: () => Promise<void>;
   answer: (id: string, approve: boolean) => Promise<void>;
   revoke: (id: string) => Promise<void>;
+  /** Drops the live connection; the phone stays allowed. */
+  disconnectDevice: (id: string) => Promise<void>;
+  chooseVault: () => Promise<void>;
+  clearVault: () => Promise<void>;
 }
 
 async function run(
@@ -56,6 +69,12 @@ export const usePhoneStore = create<PhoneStore>((set, get) => ({
     }
   },
   configure: (enabled) => run(set, get, () => phoneConfigure(enabled)),
+  setTyping: (enabled) => run(set, get, () => phoneSetTyping(enabled)),
+  setRemote: (enabled) => run(set, get, () => phoneSetRemote(enabled)),
+  disconnectRemote: () => run(set, get, () => phoneRemoteDisconnectAll()),
   answer: (id, approve) => run(set, get, () => phoneAnswer(id, approve)),
   revoke: (id) => run(set, get, () => phoneRevoke(id)),
+  disconnectDevice: (id) => run(set, get, () => phoneDisconnectDevice(id)),
+  chooseVault: () => run(set, get, () => phoneVaultChoose()),
+  clearVault: () => run(set, get, () => phoneVaultClear()),
 }));

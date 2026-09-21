@@ -13,7 +13,7 @@ class VibesToolsController extends Controller
 
     public function attach(Request $request, string $chat)
     {
-        $user = $this->authenticatedUser($request);
+        $user = $this->authenticatedUser($request, allowGuest: true);
         abort_unless(config('vibes.enabled'), 503);
         $d = $request->validate(['hostId' => 'required|string|max:150', 'projectId' => 'required|string|max:150',
             'binding' => 'required|uuid', 'shareProject' => 'required|accepted']);
@@ -40,8 +40,9 @@ class VibesToolsController extends Controller
 
     public function result(Request $request, string $tool, AgentTools $tools)
     {
-        $user = $this->authenticatedUser($request);
+        $user = $this->authenticatedUser($request, allowGuest: true);
         $d = $request->validate(['decision' => 'required|in:allow,decline', 'result' => 'required|array']);
+        abort_if(DB::table('vibes_tools')->where('id', $tool)->whereNotNull('integration')->exists(), 422, 'Connected service results are recorded by Vibyra.');
         abort_if(strlen(json_encode($d['result'])) > 16000, 422, 'Tool output is too large.');
         $tools->respond($user->id, $tool, $d['decision'], $d['decision'] === 'decline' ? ['declined' => true] : $d['result']);
         return $this->json(['ok' => true]);

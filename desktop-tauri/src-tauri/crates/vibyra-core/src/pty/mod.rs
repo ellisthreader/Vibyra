@@ -113,6 +113,11 @@ pub struct SessionInfo {
     pub visibility: Visibility,
     pub alive: bool,
     pub exit_code: Option<i32>,
+    /// The grid the program formats for. A remote viewer must render this, not
+    /// its own width, or every line re-wraps and a TUI's cursor moves clamp.
+    pub cols: u16,
+    pub rows: u16,
 }
 
 mod remote;
+mod remote_view;

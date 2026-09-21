@@ -1,3 +1,4 @@
+import { NotificationError } from './NotificationError';
 import type { NotificationItem } from "../../notificationTypes";
 import { relativeTime } from "../../lib/relativeTime";
 import { CloseIcon } from "../common/Icons";
@@ -25,7 +26,8 @@ export function NotificationRow({ item, onAction, onDismiss }: NotificationRowPr
           <h4>{item.title}</h4>
           {item.count > 1 && <span className="nrow__count">×{item.count}</span>}
         </div>
-        {item.body && <p className="nrow__body">{item.body}</p>}
+        {item.severity === 'danger' ? <NotificationError message={item.body ?? item.title} />
+          : item.body && <p className="nrow__body">{item.body}</p>}
         <div className="nrow__meta">
           <category.Icon size={11} />
           <span>{category.label}</span>

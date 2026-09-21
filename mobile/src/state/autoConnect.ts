@@ -1,3 +1,4 @@
+import { reconnect } from './connection';
 import type { WorkspaceStore } from './WorkspaceStore';
 
 /** How long to wait before each further attempt once one has failed. A computer
@@ -34,6 +35,10 @@ export class AutoConnect {
   sleep() { this.away = true; this.cancel(); }
   /** Connected. The next drop starts the ladder from its first rung again. */
   settled() { this.cancel(); this.attempt = 0; }
+  /** The person pressed Reconnect. Whatever the ladder had got to — waiting,
+   *  or given up — it starts over behind this attempt, so a computer that is
+   *  back a moment after the press is still picked up. */
+  renew() { this.cancel(); this.away = false; this.attempt = 0; }
   /** Put away by hand, forgotten, or torn down. */
   stop() { this.cancel(); this.attempt = 0; }
   /** A connection dropped: take the next rung of the ladder, or give up on it. */
@@ -43,8 +48,11 @@ export class AutoConnect {
   failed(elapsed: number) { if (elapsed < HELD_FOR_APPROVAL) this.retry(); else this.stop(); }
 
   private schedule(delay: number) {
-    this.cancel();
-    if (delay < 0 || !this.wanted()) return;
+    // Straight from one rung to the next: dropping `reconnecting` in between
+    // showed "Couldn't reach your computer" for a moment on every rung.
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    if (delay < 0 || !this.wanted()) { this.waiting(false); return; }
     this.waiting(true);
     this.timer = setTimeout(() => { this.timer = null; void this.run(); }, delay);
   }
@@ -55,8 +63,11 @@ export class AutoConnect {
   private waiting(value: boolean) {
     if (this.store.state.reconnecting !== value) this.store.update({ reconnecting: value });
   }
+  /** Only a computer this phone has actually reached is kept connected unasked:
+   *  a pairing that never completed would only queue another approval request
+   *  on someone's screen. */
   private wanted() {
-    return !this.away && Boolean(this.store.saved) && this.store.saved!.autoConnect !== false;
+    return !this.away && Boolean(this.store.saved?.host) && this.store.saved!.autoConnect !== false;
   }
   private async run() {
     // Something else is already reaching this computer. Whatever it is reports
@@ -64,8 +75,9 @@ export class AutoConnect {
     // than opening a second connection alongside it.
     if (!this.wanted() || BUSY.includes(this.store.state.status)) { this.cancel(); return; }
     this.attempting = true;
-    // open() drives the ladder from its own result, including this failure.
-    try { await this.store.actions.reconnect!(); } catch { /* reported into state */ }
+    // open() drives the ladder from its own result, including this failure. Not
+    // `actions.reconnect`: that is the button, and it would restart the ladder.
+    try { await reconnect(this.store); } catch { /* reported into state */ }
     finally { this.attempting = false; }
   }
 }

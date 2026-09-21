@@ -1,5 +1,6 @@
 import { useProjectStore } from "../state/projectStore";
 import { useTerminalStore } from "../state/terminalStore";
+import { useUpdateStore } from "../state/updateStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import type { NotificationAction } from "../notificationTypes";
 
@@ -45,16 +46,21 @@ export function runNotificationAction(action: NotificationAction): void {
       hibernateIdleTerminals();
       return;
     case "openGraphicsSettings":
-      workspace.openSettingsSection("performance");
+      workspace.openSettingsSection("general", "performance");
       return;
     case "openAiSettings":
-      workspace.openSettingsSection("ai");
+      workspace.openSettingsSection("advanced", "vibyraFeatures");
       return;
     case "openShortcutSettings":
       workspace.openSettingsSection("shortcuts");
       return;
     case "openModelPicker":
       workspace.openAgentPicker();
+      return;
+    case "installUpdate":
+      // Download, or restart once the package is staged — the same one-click
+      // path as the title-bar chip, so the two can never disagree.
+      void useUpdateStore.getState().act();
       return;
     case "openPreview":
       if (typeof action.arg === "string") {

@@ -1,0 +1,10 @@
+.launch-effort { isolation: isolate; }
+.launch-effort-animation { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+.launch-effort[data-provider="claude"][data-effort="ultracode"] output { color: #af87ff; }
+.launch-effort[data-provider="codex"][data-effort="max"] output { color: #ffb242; }
+.launch-effort[data-provider="codex"][data-effort="ultra"] output { color: #ba82ff; }
+:root[data-theme="light"] .launch-effort[data-provider="codex"][data-effort="max"] output { color: #b06200; }
+:root[data-theme="light"] .launch-effort[data-provider="codex"][data-effort="ultra"] output { color: #7c3ad9; }
+
+@media (prefers-reduced-motion: reduce) { .launch-effort-animation { visibility: hidden; } }
+html[data-performance="on"] .launch-effort-animation { visibility: hidden; }

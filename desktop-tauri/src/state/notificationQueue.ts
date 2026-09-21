@@ -32,6 +32,7 @@ const SUMMARY: Record<NotificationCategory, string> = {
   preview: "preview updates",
   aiSpend: "spend alerts",
   models: "model updates",
+  appUpdate: "Vibyra updates",
   system: "app notices",
 };
 
@@ -62,15 +63,31 @@ function exactMatch(history: NotificationItem[], input: NotificationInput, now: 
   );
 }
 
+/**
+ * Categories whose notices are distinct sentences rather than N of one event.
+ *
+ * Bursting exists so three agents failing in a blink read as "3 agents failed".
+ * The updater's two notices are not that: "0.7.6 is available" and "0.7.6 is
+ * ready — restart to finish installing" are different instructions about the
+ * same release, and a fast download puts them inside the burst window. Letting
+ * them collapse replaces the one that says what to do next with a count, and —
+ * because a collapse counts as a repeat — suppresses its notification too.
+ */
+const NEVER_BURST = new Set<NotificationCategory>(["appUpdate", "system"]);
+
 /** Level 2: the newest item shares this category and arrived a blink ago. */
 function burstMatch(history: NotificationItem[], input: NotificationInput, now: number) {
+  if (NEVER_BURST.has(input.category)) return undefined;
   const head = history[0];
   if (!head || head.category !== input.category) return undefined;
   return now - head.at <= BURST_MS ? head : undefined;
 }
 
 function surface(visible: NotificationItem[], item: NotificationItem): QueueState["visible"] {
-  return [item, ...visible.filter((entry) => entry.id !== item.id)];
+  const rest = visible.filter((entry) => entry.id !== item.id);
+  // A notice that owns a surface of its own is still history and still reaches
+  // the OS; it just does not also stack a card over the one already on screen.
+  return item.toast === false ? rest : [item, ...rest];
 }
 
 export function enqueue(
@@ -100,7 +117,7 @@ function collapse(target: NotificationItem, now: number): NotificationItem {
   const count = target.count + 1;
   // Only a true burst earns a summary title. A repeat eight seconds later is
   // still the same sentence, just with a count on it.
-  const burst = now - target.at <= BURST_MS;
+  const burst = !NEVER_BURST.has(target.category) && now - target.at <= BURST_MS;
   return {
     ...target,
     at: now,

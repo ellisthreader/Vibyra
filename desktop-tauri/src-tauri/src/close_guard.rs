@@ -85,7 +85,11 @@ pub fn run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
                 let _ = window.set_focus();
             }
         }
-        tauri::RunEvent::Exit => app.state::<AppState>().manager.shutdown(),
+        tauri::RunEvent::Exit => {
+            crate::commands::speech::shutdown();
+            app.state::<AppState>().shared_chats.shutdown();
+            app.state::<AppState>().manager.shutdown();
+        }
         _ => {}
     }
 }

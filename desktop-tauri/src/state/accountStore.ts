@@ -11,6 +11,8 @@ import {
   accountResendVerification,
   accountRestore,
   accountSignupEmail,
+  accountTwoFactorCancel,
+  accountTwoFactorSubmit,
 } from "../ipc/account";
 import { clearTerminalSession } from "../ipc/session";
 import type { AccountSnapshot } from "../types";
@@ -39,7 +41,22 @@ interface AccountStore {
   /** Both resolve to a confirmation or failure message for inline display. */
   forgotPassword: (email: string) => Promise<string>;
   resendVerification: () => Promise<string>;
+  /** The code half of a login, and abandoning it. */
+  submitTwoFactor: (code: string) => Promise<void>;
+  cancelTwoFactor: () => Promise<void>;
   logout: () => Promise<void>;
+  /** Returns to the sign-in screen after native code has already ended the
+   * session: signing this Mac out from Devices, or deleting the account. */
+  endSession: () => Promise<void>;
+}
+
+/** The saved session holds the departing user's terminals — and, with
+ * scrollback saving on, their output. Discard it so it cannot be restored
+ * into the next account, then reload so no account-scoped renderer state
+ * survives either. */
+async function finishSession() {
+  await clearTerminalSession().catch(() => {});
+  window.location.reload();
 }
 
 async function runAuthAction(
@@ -121,6 +138,16 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     }
   },
 
+  submitTwoFactor: (code) => runAuthAction(set, get, () => accountTwoFactorSubmit(code)),
+
+  cancelTwoFactor: async () => {
+    try {
+      set({ snapshot: await accountTwoFactorCancel() });
+    } catch (error) {
+      set({ snapshot: { ...get().snapshot, status: "signedOut", error: String(error) } });
+    }
+  },
+
   logout: async () => {
     set({ busy: true });
     try {
@@ -128,13 +155,8 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     } catch (error) {
       console.error("Vibyra logout cleanup issue:", error);
     }
-    // The saved session holds the signed-out user's terminals — and, with
-    // scrollback saving on, their output. Discard it so it cannot be restored
-    // into the next account to sign in on this machine.
-    await clearTerminalSession().catch(() => {});
-    // Reload so no account-scoped renderer state survives into the next
-    // session; the credential is already cleared, so the app returns to
-    // the authentication screen.
-    window.location.reload();
+    await finishSession();
   },
+
+  endSession: finishSession,
 }));

@@ -29,7 +29,7 @@ export function HomeProjectCard({ project }: { project: ProjectSpec }) {
       </button>
       <div className="hcard__tools">
         <button className="icon-btn" title={`New terminal in ${project.name}`} aria-label={`New terminal in ${project.name}`} onClick={() => void activate(project.id).then(openAgentPicker)}><PlusIcon size={15} /></button>
-        <button className={`icon-btn ${confirming ? "icon-btn--danger" : ""}`} title={confirming ? "Remove from Vibyra? Your folder stays on disk." : "Remove project"} aria-label={confirming ? `Confirm removing ${project.name}` : `Remove ${project.name}`} onClick={() => { if (confirming) void remove(project.id); else setConfirming(true); }}>{confirming ? <span className="hcard__confirm">Sure?</span> : <CloseIcon size={14} />}</button>
+        <button className={`icon-btn ${confirming ? "icon-btn--danger" : ""}`} title={confirming ? "Remove this project and stop its terminals? Your folder stays on disk." : "Remove project"} aria-label={confirming ? `Confirm removing ${project.name}` : `Remove ${project.name}`} onClick={() => { if (confirming) void remove(project.id).catch(error => useWorkspaceStore.getState().setError(String(error))); else setConfirming(true); }}>{confirming ? <span className="hcard__confirm">Sure?</span> : <CloseIcon size={14} />}</button>
       </div>
     </article>
   );

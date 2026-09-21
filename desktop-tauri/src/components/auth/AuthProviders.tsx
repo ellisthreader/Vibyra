@@ -25,6 +25,16 @@ export function AuthProviders({
     <div className="auth-choices">
       <div className="auth-choices__group">
         <button
+          className="auth-choice auth-choice--apple"
+          disabled={authorizing}
+          onClick={() => onProvider("apple")}
+        >
+          <span className="auth-choice__mark auth-choice__mark--apple">
+            <AppleMark />
+          </span>
+          Continue with Apple
+        </button>
+        <button
           className="auth-choice"
           disabled={authorizing}
           onClick={() => onProvider("google")}
@@ -33,16 +43,6 @@ export function AuthProviders({
             <GoogleMark />
           </span>
           Continue with Google
-        </button>
-        <button
-          className="auth-choice"
-          disabled={authorizing}
-          onClick={() => onProvider("apple")}
-        >
-          <span className="auth-choice__mark auth-choice__mark--apple">
-            <AppleMark />
-          </span>
-          Continue with Apple
         </button>
       </div>
       <div className="auth-provider-status" role="status" aria-live="polite">

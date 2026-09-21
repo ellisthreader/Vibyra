@@ -18,7 +18,8 @@ class SessionLocationResolver
             return 'Unknown location';
         }
 
-        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
+            || $this->isCarrierGradeNat($ip)) {
             return 'Local network';
         }
 
@@ -34,6 +35,14 @@ class SessionLocationResolver
         }
 
         return $label;
+    }
+
+    /** RFC 6598 shared address space (100.64.0.0/10), which a proxy edge such as Railway uses. */
+    private function isCarrierGradeNat(string $ip): bool
+    {
+        $packed = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? ip2long($ip) : false;
+
+        return $packed !== false && ($packed >> 22) === (ip2long('100.64.0.0') >> 22);
     }
 
     private function lookupPublicIp(string $ip): string

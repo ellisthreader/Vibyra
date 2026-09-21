@@ -5,19 +5,19 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../src/${path}`, import.meta.url), "utf8");
 
 test("sign-in needs no autoplay or video decoding and keeps decoration hidden from assistive technology", async () => {
-  const source = await read("components/auth/AuthBackdrop.tsx");
+  const source = await read("components/auth/AuthPhoneArt.tsx");
   assert.doesNotMatch(source, /<video|autoPlay|\.mp4|setInterval|requestAnimationFrame/);
   assert.match(source, /aria-hidden/);
 });
 
 test("sign-in follows the selected theme and supports a narrow window", async () => {
   const [screen, css, backdrop] = await Promise.all([
-    read("components/auth/AuthScreen.tsx"), read("styles/auth.css"), read("styles/auth-backdrop.css"),
+    read("components/auth/AuthScreen.tsx"), read("styles/auth.css"), read("styles/auth-pocket-layout.css"),
   ]);
   assert.doesNotMatch(screen, /data-theme="dark"/);
   assert.match(css, /background: var\(--workspace\)/);
   assert.match(css, /max-width: 760px/);
-  assert.doesNotMatch(backdrop, /animation:|url\(/);
+  assert.match(backdrop, /prefers-reduced-motion/);
 });
 
 test("account creation does not offer password recovery", async () => {

@@ -1,0 +1,49 @@
+.worktrees-panel { flex: 1; min-height: 0; overflow: auto; padding-bottom: 20px; }
+.worktree-repo { padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.worktree-repo__name { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.worktree-repo__name strong { font-size: 11px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.worktree-repo__name > span { color: var(--dim); }
+.worktree-repo__name button { margin-left: auto; flex-shrink: 0; }
+.worktree-repo__status { margin: 9px 0 0 22px; font-size: 11px; color: var(--dim); line-height: 1.7; }
+.worktree-repo__status button { padding: 0 5px; color: var(--dim); }
+.worktree-repo__status .worktree-dot { margin-right: 6px; }
+.worktree-link { color: var(--accent); font-size: 11px; padding: 10px 0 0; text-align: left; }
+.worktree-repo > .worktree-link { margin-left: 22px; }
+.worktree-connect { padding: 14px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.worktree-connect p { width: 100%; color: var(--dim); font-size: 12px; line-height: 1.6; }
+.worktrees-heading { display: flex; justify-content: space-between; padding: 24px 22px 10px; color: var(--dim); font-size: 11px; }
+.worktrees-heading span:last-child { font-size: 10px; }
+.worktree-row { width: 100%; padding: 19px 22px; text-align: left; display: block; position: relative; }
+.worktree-row:hover { background: var(--hover); }
+.worktree-row + .worktree-row::before { content: ''; position: absolute; top: 0; left: 22px; right: 22px; height: 1px; background: var(--line); }
+.worktree-row__top { display: flex; align-items: center; gap: 8px; }
+.worktree-row__top strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 550; color: var(--text); }
+.worktree-row__top small { margin-left: auto; color: var(--dim); font-size: 10px; white-space: nowrap; }
+.worktree-row__top small[data-state="working"] { color: var(--success); }
+.worktree-row__top small[data-state="attention"] { color: var(--amber); }
+.worktree-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.worktree-dot--working { background: var(--success); }
+.worktree-dot--attention { background: var(--amber); }
+.worktree-branch { display: block; margin: 9px 0 0 14px; font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.worktree-row__bottom { margin: 11px 0 0 14px; display: flex; gap: 12px; color: var(--dim); font-size: 10px; }
+.worktree-row__bottom span:last-child { margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.worktree-row__bottom span:first-child { flex-shrink: 0; }
+.worktree-empty { color: var(--dim); font-size: 12px; line-height: 1.7; padding: 22px; }
+.worktree-error { color: var(--danger); padding: 16px 22px; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.worktree-error button { color: var(--text); margin-left: 8px; text-decoration: underline; }
+.worktree-detail { display: flex; flex-direction: column; min-height: 0; flex: 1; padding: 20px 22px 0; }
+.worktree-back { align-self: flex-start; color: var(--dim); font-size: 11px; padding: 0 0 20px; }
+.worktree-detail h2 { font-size: 18px; font-weight: 500; letter-spacing: -.4px; overflow-wrap: anywhere; }
+.worktree-detail > .worktree-branch { margin-left: 0; }
+.worktree-detail__actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 0 16px; color: var(--dim); font-size: 11px; }
+.worktree-detail__actions > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.worktree-detail .files-panel { padding: 0; }
+.worktree-detail .files-scope { display: none; }
+
+.worktree-repo__link { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); text-align: left; }
+.worktree-repo__name .worktree-repo__link { margin-left: 0; flex: 1; flex-shrink: 1; }
+.worktree-repo__link:hover { color: var(--text); }
+.worktree-repo__refresh { font-size: 12px; color: var(--dim); padding: 3px; }
+
+.worktree-repo__name .integration-logo { display: grid; place-items: center; flex-shrink: 0; background: transparent; color: var(--text); }
+.worktree-repo__name { gap: 7px; }

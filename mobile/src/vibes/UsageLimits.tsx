@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { spanOf } from './plans';
@@ -38,42 +39,58 @@ import type { VibesLimits, VibesWindow } from './types';
  */
 export function UsageLimits({ limits }: { limits: VibesLimits }) {
   const { colors } = useTheme();
+  // The countdown is read while the page stays open, so it moves with the clock
+  // rather than freezing at whatever it said when the wallet arrived.
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(tick);
+  }, []);
   return <View style={[s.block, { borderTopColor: colors.border }]}>
-    {[limits.session, limits.week].map(w => <Meter key={w.unit} window={w} />)}
+    {[limits.session, limits.week].map(w => <Meter key={w.unit} window={w} now={now} />)}
   </View>;
 }
 
 /**
- * "in about 2 hours". A rolling window frees up when its oldest spend ages out,
- * so this is a duration rather than a clock time — the same wording the server
- * uses when it refuses a send, so the two never appear to disagree.
+ * When a window next gives Vibes back: "Resets in 3 hr 12 min" under a day, and
+ * the phone's own day and time ("Resets Mon 14:20") beyond one. The server words
+ * its refusal as a duration because it does not know the phone's timezone; the
+ * phone does, so a week away is a day to plan around rather than "3 days".
+ *
+ * `resetsAt` is when the oldest spend in the window ages out, and it is null while
+ * nothing is in the window. The line stays, saying only how long the window runs:
+ * "Resets every 5 hours". It said "…after your next message" until that was asked
+ * to go as more than the line needed.
  */
-function freesUp(iso: string | null): string | null {
-  const at = iso ? new Date(iso).getTime() : NaN;
-  if (Number.isNaN(at)) return null;
-  const minutes = Math.ceil((at - Date.now()) / 60000);
-  if (minutes <= 0) return null;
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.ceil(minutes / 60);
-  return hours < 48 ? `${hours} ${hours === 1 ? 'hour' : 'hours'}` : `${Math.ceil(hours / 24)} days`;
+function resetLine(window: VibesWindow, now: number): string {
+  const at = window.resetsAt ? new Date(window.resetsAt).getTime() : NaN;
+  if (Number.isNaN(at)) return `Resets every ${spanOf(window)}`;
+  const minutes = Math.ceil((at - now) / 60000);
+  if (minutes <= 0) return 'Resetting now';
+  if (minutes < 60) return `Resets in ${minutes} min`;
+  if (minutes < 24 * 60) {
+    const rest = minutes % 60;
+    return `Resets in ${Math.floor(minutes / 60)} hr${rest ? ` ${rest} min` : ''}`;
+  }
+  return `Resets ${new Date(at).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`;
 }
 
-function Meter({ window }: { window: VibesWindow }) {
+function Meter({ window, now }: { window: VibesWindow; now: number }) {
   const { colors } = useTheme();
   const left = Math.max(0, window.limit - window.used);
   const share = Math.min(1, left / Math.max(1, window.limit));
   // One step of colour, at the point it stops being information and starts being
   // something to act on. A bar that reddens gradually says nothing at 60%.
   const bar = left === 0 ? colors.error : share < 0.15 ? colors.warning : colors.accent;
-  // Shown whenever anything is in the window, not only once it is empty. Waiting
-  // until 0 meant the one fact people came looking for — when does this come back —
-  // only ever appeared at the moment it was too late to plan around.
-  const waiting = freesUp(window.resetsAt);
+  // Shown under every window, full or not. It used to wait until a window held
+  // something, and before that until it was empty, so the one fact people came
+  // looking for — when does this come back — was missing whenever they looked early.
+  const reset = resetLine(window, now);
   // "Next", not "Every": what someone is deciding is whether to send now, and the
   // window they are deciding against is the one ahead of them.
   const label = `Next ${spanOf(window)}`;
   return <View style={s.meter} accessibilityRole="progressbar"
-    accessibilityLabel={`${label}, ${left.toLocaleString()} of ${window.limit.toLocaleString()} Vibes left`}
+    accessibilityLabel={`${label}, ${left.toLocaleString()} of ${window.limit.toLocaleString()} Vibes left. ${reset}`}
     accessibilityValue={{ min: 0, max: window.limit, now: left }}>
     <View style={s.row}>
       <Text style={[s.label, { color: colors.text }]}>{label}</Text>
@@ -83,10 +100,9 @@ function Meter({ window }: { window: VibesWindow }) {
     <View style={[s.track, { backgroundColor: colors.elevated }]}>
       <View style={[s.fill, { backgroundColor: bar, width: `${Math.round(share * 100)}%` }]} />
     </View>
-    {/* "Frees up", not "resets": a rolling window returns the oldest spend in it
-        rather than emptying, so `resetsAt` is when capacity starts coming back and
-        promising a reset would overstate it. */}
-    {waiting && <Text style={[s.note, { color: colors.muted }]}>Frees up in about {waiting}</Text>}
+    {/* "Resets" was asked for by name over the earlier "Frees up in about". The
+        window is rolling, so what returns at `resetsAt` is its oldest spend. */}
+    <Text style={[s.note, { color: colors.muted }]}>{reset}</Text>
   </View>;
 }
 const s = StyleSheet.create({
@@ -97,5 +113,5 @@ const s = StyleSheet.create({
   value: { fontSize: 14, fontVariant: ['tabular-nums'] },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },
-  note: { fontSize: 13, lineHeight: 18 },
+  note: { fontSize: 13, lineHeight: 18, fontVariant: ['tabular-nums'] },
 });

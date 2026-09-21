@@ -62,7 +62,8 @@ async function command(event: MessageEvent) {
     const start = () => { if (client) write(client.start(auth)); };
     socket.onopen = () => {
       if (current !== generation) return;
-      if (requestRoute === 'relay') socket?.send(JSON.stringify({ type: 'client.connect', hostId: pairing.hostId }));
+      notify({ type: 'transport-open' });
+      if (requestRoute === 'relay') socket?.send(JSON.stringify({ type: 'client.connect', hostId: pairing.hostId, token: pairing.relayToken, name: message.deviceName }));
       else start();
     };
     socket.onmessage = event => {
@@ -72,6 +73,9 @@ async function command(event: MessageEvent) {
         if (requestRoute === 'relay') {
           const envelope = JSON.parse(event.data);
           if (envelope.type === 'client.ready') { relayId = envelope.clientId; start(); return; }
+          // The relay refused before any computer was reached: its reason is
+          // the whole story ("That computer is not online…").
+          if (envelope.type === 'error') { socket?.close(); notify({ type: 'error', message: String(envelope.message || 'Vibyra Cloud refused the connection.') }); return; }
           if (envelope.type !== 'frame' || envelope.clientId !== relayId) throw new Error('Invalid relay message.');
           data = bytes(envelope.data);
         } else data = new Uint8Array(event.data);

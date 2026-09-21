@@ -37,7 +37,9 @@ impl DesktopBackend {
             return Err("Vibyra on your Mac is not showing that project".into());
         }
         if method == "project.forget" {
-            return self.requests.ask(json!({"action":"forget","projectId":project}));
+            return self
+                .requests
+                .ask(json!({"action":"forget","projectId":project}));
         }
         let name = params["name"].as_str().unwrap_or("").trim();
         if name.is_empty() || name.chars().count() > 64 || name.chars().any(char::is_control) {

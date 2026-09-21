@@ -1,0 +1,48 @@
+.teammates-workspace { display:flex; flex:1; min-width:0; min-height:0; }
+.teammates-workspace[hidden],.teammate-thread[hidden] { display:none; }
+.teammate-rail>header { display:flex; align-items:center; justify-content:space-between; padding:8px 10px 14px; }
+.teammate-rail h2 { font-size:18px; font-weight:550; letter-spacing:-.5px; }
+.teammate-row { display:flex; align-items:center; gap:10px; padding:10px 8px; min-height:65px; width:100%; border:0; background:none; border-radius:8px; text-align:left; color:var(--text); }
+.teammate-row.selected,.teammate-row:hover { background:var(--hover-strong); }
+.teammate-row>img { width:34px; height:34px; object-fit:contain; }
+.teammate-row-copy { flex:1; min-width:0; }
+.teammate-row-copy>span { display:flex; gap:5px; align-items:center; margin:4px 0; }
+.teammate-row strong { flex:1; font-size:11px; font-weight:550; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.teammate-row small { color:var(--muted); font-size:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.teammate-row-copy>span:first-child small { font-size:8px; }
+.teammates-main { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; background:var(--workspace); }
+.teammate-thread { flex:1; min-height:0; display:flex; flex-direction:column; }
+.teammate-thread-header { display:flex; align-items:center; gap:10px; min-height:53px; padding:0 20px; border-bottom:1px solid var(--line); }
+.teammate-thread-header img { width:29px; height:29px; }
+.teammate-thread-header strong { font-size:12px; font-weight:550; }
+.teammate-thread-header small { font-size:10px; color:var(--muted); }
+.teammate-thread-header button { margin-left:auto; }
+.teammate-messages { flex:1; min-height:0; overflow:auto; padding:24px; }
+.teammate-turn { display:flex; flex-direction:column; gap:12px; margin-bottom:22px; }
+.teammate-bubble { max-width:80%; padding:10px 13px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
+.teammate-bubble.you { align-self:flex-end; background:#4667e8; color:white; border-radius:13px 13px 3px 13px; }
+.teammate-bubble.them { align-self:flex-start; background:var(--hover-strong); border-radius:13px 13px 13px 3px; }
+.teammate-composer { margin:10px 20px 20px; padding:10px 12px; background:var(--rail); border:1px solid var(--line); border-radius:14px; }
+.teammate-composer textarea { width:100%; min-height:35px; max-height:120px; resize:vertical; border:0; background:none; color:var(--text); outline:none; font:inherit; font-size:12px; }
+.teammate-composer>div { display:flex; justify-content:space-between; gap:10px; }
+.teammate-composer select { background:var(--rail); color:var(--muted); border:0; font-size:11px; max-width:70%; }
+.teammate-composer button,.teammate-notice button,.teammate-decision button { padding:7px 12px; border:1px solid var(--line); border-radius:6px; background:var(--hover-strong); color:var(--text); }
+.teammate-notice { padding:12px 20px; font-size:12px; color:var(--muted); display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.teammate-decision { width:355px; max-width:100%; padding:12px; border:1px solid var(--accent-border); border-radius:10px; background:var(--rail); }
+.teammate-decision pre { font-size:11px; padding:10px; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--workspace); }
+.teammate-decision-actions { display:flex; justify-content:flex-end; gap:7px; }
+.teammates-workspace .primary { background:#4667e8; color:white; border:0; border-radius:6px; padding:9px 14px; }
+.teammate-file { padding:10px; border:1px solid var(--line); border-radius:8px; align-self:flex-start; font-size:12px; }
+.teammate-welcome { margin:auto; text-align:center; color:var(--muted); }
+.teammate-welcome h2 { font-size:23px; font-weight:550; color:var(--text); }
+.teammate-setup fieldset { border:0; display:flex; flex-direction:column; gap:15px; padding:0; }
+.teammate-setup label { display:flex; flex-direction:column; gap:7px; font-size:12px; }
+.teammate-setup input,.teammate-setup textarea { background:var(--workspace); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:10px; font:inherit; }
+.teammate-setup textarea { min-height:80px; }
+.teammate-avatars { display:flex; gap:5px; flex-wrap:wrap; }
+.teammate-avatars button { background:none; border:1px solid transparent; border-radius:6px; }
+.teammate-avatars button[aria-pressed=true] { border-color:var(--accent); }
+.teammate-avatars img { width:35px; height:35px; }
+.teammate-setup>button { margin-top:15px; margin-right:10px; }
+.teammate-attach{position:relative;width:30px;height:30px;display:grid;place-items:center;overflow:hidden;cursor:pointer}.teammate-attach input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}.teammate-bubble .memory-markdown{font:inherit;padding:0;white-space:normal}.teammate-bubble .memory-markdown p{margin:0 0 8px}.teammate-bubble pre{overflow:auto;max-width:100%;white-space:pre}
+.teammate-connection{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}.teammate-grant span{display:flex;align-items:center;gap:8px}.teammate-grant input{width:auto}.teammate-setup summary{cursor:pointer;padding:12px 0}

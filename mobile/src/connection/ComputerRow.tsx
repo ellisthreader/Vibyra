@@ -2,17 +2,17 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Icon } from '../ui/primitives';
 import type { NearbyComputer } from './discoveryTypes';
-import { isConnectable } from './nearbyPairing';
+import { readiness } from './nearbyPairing';
 
 /** One computer the search found: its name, what can be done with it, and a
  *  chevron when that is "connect". Never its address, port or link type. It
  *  only becomes tappable once there is really something to connect to. */
 export function ComputerRow({ computer, onPress }: { computer: NearbyComputer; onPress: () => void }) {
   const { colors } = useTheme();
-  const ready = isConnectable(computer);
-  // A Host that resolved but published no identity is too old for code-free
-  // pairing. Say so instead of leaving the row waiting forever.
-  const older = !ready && Boolean(computer.host && computer.port) && !computer.hostId;
+  const standing = readiness(computer);
+  const ready = standing === 'ready';
+  // A Host too old for code-free pairing is said so, not left waiting forever.
+  const older = standing === 'older';
   const state = ready ? 'Ready to connect'
     : older ? 'Update Vibyra on this computer' : 'Getting ready…';
   const label = ready ? `Connect to ${computer.name}`

@@ -49,6 +49,7 @@ export interface CreateTerminalOptions {
 
 export async function createTerminal(options: CreateTerminalOptions): Promise<SessionInfo> {
   const { channel, bind } = sessionChannel();
+  (window as any).__dbg?.(`invoke create_terminal ${JSON.stringify({agentId: options.agentId, resume: options.resume, sid: options.agentSessionId, acct: options.accountId, cwd: options.cwd, rcwd: options.resumeCwd})}`);
   const info = await invoke<SessionInfo>("create_terminal", {
     onEvent: channel,
     request: {
@@ -67,7 +68,9 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Se
       agentSessionId: options.agentSessionId ?? null,
     },
   });
+  (window as any).__dbg?.(`create_terminal returned ${JSON.stringify(info)}`);
   bind(info.id);
+  (window as any).__dbg?.(`bound ${info.id}`);
   return info;
 }
 

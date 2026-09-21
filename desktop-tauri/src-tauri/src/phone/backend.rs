@@ -3,13 +3,11 @@ use super::frames;
 use super::railway::RailwayCli;
 use super::requests::TerminalRequests;
 use super::scaffold::{Scaffolder, Scaffolds, SharedScaffolds};
-use super::stream;
 use super::vault::Vault;
 use super::workspace::{SharedWorkspace, UNFILED};
 use serde_json::{json, Value};
-use std::sync::{atomic::AtomicBool, mpsc, Arc};
+use std::sync::{atomic::AtomicBool, Arc};
 use vibyra_core::pty::PtyManager;
-use vibyra_host::Backend;
 
 pub struct DesktopBackend {
     pub(super) manager: Arc<PtyManager>,
@@ -19,6 +17,7 @@ pub struct DesktopBackend {
     generation: String,
     vault: Arc<Vault>,
     railway: Arc<RailwayCli>,
+    railway_tools: super::railway_tools::RailwayTools,
     pub(super) requests: Arc<TerminalRequests>,
     pub(super) scaffolds: SharedScaffolds,
     scaffolder: Scaffolder,
@@ -39,6 +38,7 @@ impl DesktopBackend {
         let scaffolds: SharedScaffolds = Arc::new(parking_lot::Mutex::new(Scaffolds::default()));
         let scaffolder = Scaffolder::new(scaffolds.clone(), workspace.clone(), requests.clone());
         let railway = RailwayCli::start();
+        let railway_tools = super::railway_tools::RailwayTools::new(vault.state_dir());
         Ok(Self {
             manager,
             workspace,
@@ -47,6 +47,7 @@ impl DesktopBackend {
             generation,
             vault,
             railway,
+            railway_tools,
             requests,
             scaffolds,
             scaffolder,
@@ -145,75 +146,11 @@ impl DesktopBackend {
         )
     }
 }
-impl Backend for DesktopBackend {
-    fn handle(&self, device: &str, method: &str, params: Value) -> Result<Value, String> {
-        if let Some(result) = self.vault.dispatch(method, &params) {
-            return result;
-        }
-        match method {
-            "host.state" => {
-                let (sessions, unfiled) = self.sessions();
-                let count = sessions.len();
-                let mut projects = self.workspace.read().folders(unfiled);
-                if let Some(project) = self.vault.project() {
-                    projects.push(project);
-                }
-                Ok(json!({"protocol":1,
-                    "capabilities":{"readOnly":true,"canInput":self.control.typing(),"canManage":self.can_manage(),
-                        "scaffoldV1":true},
-                    "projects":projects,
-                    // The Mac's own Railway CLI, for the phone's Integrations page.
-                    "railway":self.railway.status(),
-                    "sessions":sessions,"sessionCount":count,
-                    "nextCursor":null,"approvals":[],"devices":[]}))
-            }
-            "session.list" => {
-                let (sessions, _) = self.sessions();
-                let count = sessions.len();
-                Ok(json!({"sessions":sessions,"sessionCount":count,"nextCursor":null}))
-            }
-            "session.snapshot" => self.snapshot(&params),
-            "session.resize" => self.resize(&params),
-            "session.create" => self.create_pane(&params),
-            "session.stop" => self.close(&params),
-            "session.claim" => self.claim(device, &params),
-            "session.input" => self.input(device, &params),
-            "session.release" => {
-                if let (Ok(number), Some(lease)) =
-                    (self.native_id(&params), params["lease"].as_str())
-                {
-                    self.control.release(device, number, lease);
-                }
-                Ok(json!({"ok":true}))
-            }
-            "approval.list" => Ok(json!([])),
-            // Renaming a project, and dropping it from the list. Neither touches
-            // the folder itself, so neither is the write that readOnly refuses.
-            "project.rename" | "project.forget" => self.manage_project(method, &params),
-            // Starting a project is the one thing a phone may make on this Mac.
-            // It is not a general write: the plan is the wizard's own, checked
-            // before a process runs, and the folder is new by definition.
-            method if method.starts_with("scaffold.") => self.scaffolder.handle(method, &params),
-            _ => Err("Use Vibyra on your Mac to start or stop terminals and open files.".into()),
-        }
-    }
-    fn subscribe(&self) -> mpsc::Receiver<Value> {
-        stream::stream(
-            self.manager.clone(),
-            self.workspace.clone(),
-            self.scaffolds.clone(),
-            self.typing.clone(),
-            self.generation.clone(),
-        )
-    }
-    fn disconnected(&self, device: &str) {
-        self.control.disconnected(device);
-    }
-    fn pairing_notice(&self) -> &'static str {
-        if self.vault.project().is_some() {
-            "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this Mac."
-        } else {
-            "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read your files."
-        }
-    }
-}
+/// The wire protocol — every method the phone can call — lives next door, so
+/// both halves stay inside the 200-line standard.
+///
+/// The path is spelled out because `examples/phone_typing_probe.rs` pulls this
+/// file in with `#[path]`, and a module reached that way resolves its children
+/// against the including file's directory, not its own.
+#[path = "backend/protocol.rs"]
+mod protocol;

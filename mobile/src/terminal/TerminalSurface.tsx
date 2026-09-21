@@ -1,36 +1,41 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useImperativeHandle, useRef, useState, type Ref } from 'react';
+import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { terminalHtml } from '../generated/terminal';
 import { useTheme } from '../theme';
-import { terminalState } from './terminalState';
-import type { TerminalSurfaceProps } from './TerminalSurface.types';
+import { useTerminalBridge } from './useTerminalBridge';
+import type { TerminalSurfaceHandle, TerminalSurfaceProps } from './TerminalSurface.types';
+import { NativeTerminalInput } from './NativeTerminalInput';
 
-export function TerminalSurface({ output, disabled, onInput, onResize, onPasteMode, fontSize, onFontSize }: TerminalSurfaceProps) {
+export function TerminalSurface({ ref, ...props }: TerminalSurfaceProps & { ref?: Ref<TerminalSurfaceHandle> }) {
   const view = useRef<WebView>(null);
-  const [ready, setReady] = useState(false);
-  const { colors, dark } = useTheme();
-  const send = useCallback(() => view.current?.postMessage(
-    JSON.stringify(terminalState(output, disabled, colors, dark, fontSize))), [output, disabled, colors, dark, fontSize]);
-  useEffect(() => { if (ready) send(); }, [ready, send]);
-  return <WebView ref={view} source={{ html: terminalHtml }} originWhitelist={['about:blank']}
+  const { colors } = useTheme();
+  const [request, setRequest] = useState(0);
+  const post = useCallback((message: string) => view.current?.postMessage(message), []);
+  const bridge = useTerminalBridge({ ...props, onTap: () => {
+    setRequest(current => current + 1);
+    props.onTap?.();
+  } }, post);
+  const focus = useCallback((focused: boolean) => post(JSON.stringify({
+    target: 'vibyra-terminal', type: 'keyboard', focused,
+  })), [post]);
+  useImperativeHandle(ref, () => ({ scrollToBottom: bridge.scrollToBottom }), [bridge.scrollToBottom]);
+  return <View style={{ flex: 1 }}><WebView ref={view} source={{ html: terminalHtml }} originWhitelist={['about:blank']}
     style={{ flex: 1, backgroundColor: colors.workspace }} scrollEnabled={false}
     javaScriptEnabled domStorageEnabled={false}
-    // xterm's input element is positioned at `left:-9999em`, so a tap never
-    // lands on it and the focus it calls afterwards is programmatic. Left at
-    // its `true` default, WKWebView refuses that and no keyboard ever appears.
-    keyboardDisplayRequiresUserAction={false}
-    hideKeyboardAccessoryView={false} automaticallyAdjustContentInsets={false}
+    // NativeTerminalInput owns the Apple keyboard; WebView only renders output.
+    keyboardDisplayRequiresUserAction
+    // WKWebView's own bar above the keyboard (previous/next field arrows and
+    // Done) is for web forms; over a terminal it was the "up and down" strip
+    // the user asked to lose. The keyboard's return key and a second tap on
+    // the output are all that is needed.
+    hideKeyboardAccessoryView automaticallyAdjustContentInsets={false}
     allowsLinkPreview={false} setSupportMultipleWindows={false}
     onShouldStartLoadWithRequest={request => request.url === 'about:blank'}
-    onContentProcessDidTerminate={() => { setReady(false); view.current?.reload(); }}
-    onMessage={event => {
-      let data;
-      try { data = JSON.parse(event.nativeEvent.data); } catch { return; }
-      if (data.target !== 'vibyra-terminal') return;
-      if (data.type === 'ready') { setReady(true); send(); }
-      if (data.type === 'paste-mode') onPasteMode?.(data.enabled === true);
-      if (data.type === 'font-size' && typeof data.size === 'number') onFontSize?.(data.size);
-      if (data.type === 'input' && !disabled && typeof data.data === 'string') onInput(data.data);
-      if (data.type === 'resize' && Number.isInteger(data.cols) && Number.isInteger(data.rows)) onResize(data.cols, data.rows);
-    }} />;
+    // The renderer announces itself again once it is back, and is then sent
+    // everything from the top.
+    onContentProcessDidTerminate={() => view.current?.reload()}
+    onMessage={event => bridge.receive(event.nativeEvent.data)} />
+    <NativeTerminalInput disabled={props.disabled} request={request} onInput={props.onInput} onFocusChange={focus} />
+  </View>;
 }

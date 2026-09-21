@@ -1,4 +1,6 @@
 pub mod account;
+pub mod account_billing;
+pub mod account_security;
 pub mod agent_conversations;
 #[cfg(test)]
 mod agent_conversations_tests;
@@ -8,6 +10,7 @@ pub mod ai_memory;
 pub mod ai_service;
 pub mod clipboard;
 pub mod fs;
+pub mod github_publish;
 pub mod memory;
 pub mod memory_browser;
 pub mod perf;
@@ -16,6 +19,7 @@ pub mod provider_accounts;
 pub mod registry;
 pub mod render;
 pub mod report;
+pub mod scaffold;
 pub mod screenshot;
 #[cfg(target_os = "linux")]
 mod screenshot_capture;
@@ -36,6 +40,7 @@ mod screenshot_tests;
 mod screenshot_x11;
 pub mod session;
 pub mod settings;
+pub mod speech;
 pub mod terminal;
 pub(crate) mod terminal_args;
 mod terminal_launch;
@@ -43,6 +48,7 @@ mod terminal_launch;
 mod terminal_launch_tests;
 mod terminal_prepare;
 pub mod voice;
+mod worktree_access;
 
 use vibyra_core::{CoreError, CoreResult};
 
@@ -70,3 +76,10 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
 }
 
 pub mod phone;
+
+pub mod shared_chats;
+pub mod shared_cli;
+
+pub mod teammates;
+
+pub mod teammate_upload;

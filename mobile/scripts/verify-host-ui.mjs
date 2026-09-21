@@ -2,10 +2,21 @@ import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { chromium } from 'playwright-core';
+import { chromePath } from './chrome-path.mjs';
 import { noTutorialFraming, terminalText, until } from './ui-test-helpers.mjs';
 
+// The app no longer offers a pairing-code entry, and on the web the deep link
+// this script would otherwise open (vibyra://pair) never reaches the store, so
+// there is no way in from the full app at Metro. The targeted harnesses that
+// inject an invitation (verify:reconnect, verify:nearby) cover the Host; this
+// walkthrough needs rework before it is acceptance again.
+if (!process.env.VIBYRA_HOST_UI_REWORKED) {
+  console.error('verify-host-ui.mjs needs rework: the "I have a pairing code" entry was removed from the app '
+    + 'and the web build cannot open a vibyra://pair invitation. Use verify:reconnect and verify:nearby for the Host.');
+  process.exit(2);
+}
 const hostRoot = resolve('../host');
 const metadata = JSON.parse(execFileSync('cargo', ['+1.97.1', 'metadata', '--format-version', '1', '--no-deps'], { cwd: hostRoot }));
 const binary = join(metadata.target_directory, 'debug', process.platform === 'win32' ? 'vibyra-host.exe' : 'vibyra-host');
@@ -20,7 +31,7 @@ const child = spawn(binary, ['--name', 'UI Test Computer', '--state-dir', join(f
 let hostOutput = '';
 child.stdout.on('data', bytes => { hostOutput += bytes.toString(); });
 child.stderr.on('data', () => {});
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome',
+const browser = await chromium.launch({ executablePath: chromePath(),
   headless: true, args: ['--no-sandbox'] });
 try {
   const uri = await until(() => hostOutput.match(/vibyra:\/\/pair\?data=([\w-]+)/)?.[1], 'invitation');
@@ -35,14 +46,17 @@ try {
     await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
     await page.getByRole('button', { name, exact: true }).click();
   };
-  // Naming a session is only offered from the Projects list, where choosing the
-  // folder is the point. The home composer starts a terminal in one tap instead.
+  // Naming a session is only offered inside a folder's face of the rail, where
+  // choosing the folder is the point. The home composer starts a terminal in one tap instead.
   const openTerminal = async title => {
-    await menu('Projects');
+    await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
+    // Tapping a folder's row in the rail enters it and swaps the rail to its face, where its actions are rows.
+    await page.getByRole('button', { name: new RegExp('^' + basename(fixture)) }).first().click();
     await page.getByRole('button', { name: /^New chat in / }).first().click();
-    await page.getByRole('radio', { name: 'Terminal', exact: true }).click();
+    // The New terminal sheet has no radios or "Open terminal" button: name the
+    // session, then tap the kind's row (Claude Code, Codex, Terminal) to start it.
     await page.getByRole('textbox', { name: 'Session name' }).fill(title);
-    await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
+    await page.getByRole('button', { name: 'Terminal', exact: true }).click();
     await page.getByText(title, { exact: true }).first().waitFor();
   };
   await page.goto(process.env.VIBYRA_URL ?? 'http://localhost:8081');
@@ -56,30 +70,26 @@ try {
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   const key = await until(() => hostOutput.match(/Approve or deny device ([a-f0-9]{64})/)?.[1], 'local approval request');
   child.stdin.write(`approve ${key}\n`);
-  await page.getByText('UI Test Computer', { exact: true }).first().waitFor();
   await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Get started', exact: true }).count(), 0, 'Pairing completes the welcome flow');
   await openTerminal('Verified UI terminal');
-  const input = page.getByRole('textbox', { name: 'Command for computer terminal' });
-  const send = page.getByRole('button', { name: 'Send command and Enter', exact: true });
-  await input.fill("printf 'UI_%s_VERIFIED\\n' EXECUTION | tee ui-result.txt");
-  await send.click();
+  // No box: the terminal itself is typed into.
+  const terminal = page.locator('iframe[title="Interactive terminal"]');
+  const type = async text => { await terminal.click(); await page.keyboard.type(text); await page.keyboard.press('Enter'); };
+  await type("printf 'UI_%s_VERIFIED\\n' EXECUTION | tee ui-result.txt");
   await until(() => { try { return readFileSync(join(fixture, 'ui-result.txt'), 'utf8') === 'UI_EXECUTION_VERIFIED\n'; } catch { return false; } }, 'real command effect');
   await terminalText(page, 'UI_EXECUTION_VERIFIED');
-  await input.fill('unsent draft for terminal one');
   await openTerminal('Independent UI terminal');
-  assert.equal(await input.inputValue(), '', 'New terminal starts with its own draft');
   const second = await terminalText(page, '$');
   assert.equal(await second.locator('body').innerText().then(text => text.includes('UI_EXECUTION_VERIFIED')), false,
     'The first terminal output must not appear in a new terminal');
-  await input.fill('unsent draft for terminal two');
   await menu('Verified UI terminal, Terminal');
   await page.getByText('Viewing live', { exact: true }).waitFor();
-  assert.equal(await input.inputValue(), 'unsent draft for terminal one');
-  assert.equal(await send.isDisabled(), true, 'Existing sessions begin in observation mode');
+  await page.locator('iframe[title="Terminal output, observing"]').waitFor();
   await page.getByRole('button', { name: 'Take control', exact: true }).click();
-  await input.fill('');
-  await page.getByRole('button', { name: 'Review project files and changes' }).click();
+  await terminal.waitFor();
+  await page.getByRole('button', { name: 'Session options', exact: true }).click();
+  await page.getByRole('button', { name: 'Review files and changes', exact: true }).click();
   await page.getByText('+Verified project file', { exact: false }).waitFor();
   await page.getByRole('tab', { name: 'Files', exact: true }).click();
   await page.getByText('hello.txt', { exact: true }).click();
@@ -92,10 +102,7 @@ try {
   await menu('Verified UI terminal, Terminal');
   await page.getByText('Viewing live', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Take control', exact: true }).click();
-  // In a terminal the return key runs the command; a newline in the box would
-  // otherwise become an accidental multiline paste the shell cannot submit.
-  await input.fill("printf 'UI_%s_VERIFIED\\n' RECONNECTED >> ui-result.txt");
-  await input.press('Enter');
+  await type("printf 'UI_%s_VERIFIED\\n' RECONNECTED >> ui-result.txt");
   await until(() => readFileSync(join(fixture, 'ui-result.txt'), 'utf8').includes('UI_RECONNECTED_VERIFIED'), 'continued real session');
   await page.getByRole('button', { name: 'Session options', exact: true }).click();
   await page.getByRole('button', { name: 'Stop session', exact: true }).click();

@@ -6,7 +6,7 @@ import type { OnboardingMode } from '../ui/types';
 import { OnboardingScaffold } from './OnboardingScaffold';
 import { OnboardingBrand } from './OnboardingBrand';
 import { OnboardingHeaderBackdrop } from './OnboardingHeaderBackdrop';
-import { PathCard } from './PathCard';
+import { PathChoice } from './PathChoice';
 import { useEntrance } from './welcomeMotion';
 
 export const phoneReason = 'Coding on your phone needs a Vibyra account.';
@@ -29,20 +29,23 @@ export function PathStep({ onConnect, onPhone, onSkip, onBack }: {
       </Text>
       <Text style={[s.detail, { color: colors.muted }]}>You can switch any time.</Text>
     </Animated.View>
-    <Animated.View accessibilityRole="radiogroup" accessibilityLabel="Where to code" style={[s.options, options]}>
-      <PathCard icon="desktop-outline" title="Connect your computer" badge="Recommended" selected={choice === 'computer'} onPress={() => setChoice('computer')}
-        detail="Your projects and terminals, on your phone." />
-      <PathCard icon="phone-portrait-outline" title="Code on this phone" badge="Rolling out" selected={choice === 'phone'} onPress={() => setChoice('phone')}
-        detail="Start with an idea. No computer needed." />
+    {/* The two devices stand on the page between the title and the action, with no boxes:
+        the chosen one lights up, and that is the whole signal. */}
+    <Animated.View style={[s.stage, options]}>
+      <View accessibilityRole="radiogroup" accessibilityLabel="Where to code" style={s.pair}>
+        {(['computer', 'phone'] as const).map(mode => <PathChoice key={mode} mode={mode}
+          selected={choice === mode} onPress={() => setChoice(mode)} />)}
+      </View>
     </Animated.View>
   </OnboardingScaffold>;
 }
 const s = StyleSheet.create({
-  heading: { paddingTop: 28, paddingBottom: 10, gap: 12 },
-  headingTight: { paddingTop: 8, paddingBottom: 0, gap: 8 },
+  heading: { paddingTop: 28, gap: 12 },
+  headingTight: { paddingTop: 8, gap: 8 },
   title: { fontSize: 36, lineHeight: 41, letterSpacing: -1.5, fontWeight: '700' },
   titleTight: { fontSize: 30, lineHeight: 35 },
   detail: { fontSize: 15, lineHeight: 22 },
-  options: { gap: 12 },
+  stage: { flexGrow: 1, justifyContent: 'center', paddingBottom: 24 },
+  pair: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   skip: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }, skipText: { fontSize: 14 },
 });

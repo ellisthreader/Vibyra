@@ -4,16 +4,14 @@ import { create } from "zustand";
 import { loadTerminalSession } from "../ipc/session";
 import { setTerminalVisibility } from "../ipc/terminal";
 import { toPaneStates } from "../lib/sessionRestore";
-import { getTerminal } from "../lib/terminalRegistry";
+import { requestTerminalFocus } from "../lib/terminalRegistry";
 import type { Visibility } from "../types";
 import { terminalLifecycleActions } from "./terminalLifecycleActions";
-import type { PaneState, TerminalStore } from "./terminalStoreTypes";
+import type { TerminalStore } from "./terminalStoreTypes";
 
 export type { PaneState } from "./terminalStoreTypes";
-
-export function paneLabel(pane: PaneState): string {
-  return pane.customTitle || pane.title;
-}
+// Re-exported so every list keeps importing the name from the store it reads.
+export { paneLabel } from "../lib/paneLabel";
 
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
   panes: [],
@@ -66,7 +64,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     if (get().zoomedId !== null && get().zoomedId !== id) get().toggleZoom(id);
     if (pane?.visibility === "hibernated" && pane.status === "running") void get().wake(id);
     window.requestAnimationFrame(() => {
-      if (pane?.status === "running") getTerminal(id)?.term.focus();
+      if (pane?.status === "running") requestTerminalFocus(id);
       else document.querySelector<HTMLButtonElement>(`[data-pane-id="${id}"] .pane-recovery .btn`)?.focus();
     });
   },

@@ -25,6 +25,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 minisign-verify = "0.2"
 base64 = "0.22"
 tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -40,6 +42,7 @@ serde_json = { workspace = true }
 parking_lot = { workspace = true }
 vibyra-core = { path = "crates/vibyra-core" }
 vibyra-host = { path = "../../host/crates/server", default-features = false }
+vibyra-engine = { package = "vibyra-host-engine", path = "../../host/crates/engine" }
 dirs = "6"
 image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
@@ -70,6 +73,7 @@ x11rb = { version = "0.13", features = ["randr"] }
 [target.'cfg(target_os = "macos")'.dependencies]
 cpal = "=0.18.2"
 keyring = { version = "3.6", default-features = false, features = ["apple-native"] }
+libc = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3.6", default-features = false, features = ["windows-native"] }

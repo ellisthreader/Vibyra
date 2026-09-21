@@ -1,8 +1,11 @@
-use crate::{auth, state::Shared};
+use crate::{
+    auth,
+    state::{Origin, Shared},
+};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::{sync::Arc, time::Duration};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Notify};
 use vibyra_transport::{read_handshake, responder, write_handshake, Channel, MAX_PLAINTEXT};
 
 pub type FrameSender = mpsc::Sender<Vec<u8>>;
@@ -11,12 +14,50 @@ pub type FrameReceiver = mpsc::Receiver<Vec<u8>>;
 struct ActiveDevice {
     shared: Arc<Shared>,
     id: String,
+    takeover: Arc<Notify>,
+}
+impl ActiveDevice {
+    /// Takes this device's single connection slot, asking whatever held it to
+    /// stand down. A phone reconnecting after its Wi-Fi went is the ordinary
+    /// case: the socket it left can look alive here long after the phone knows
+    /// it is gone, and refusing the new one leaves nothing able to reach it.
+    fn claim(shared: &Arc<Shared>, id: &str) -> Result<Self, String> {
+        let takeover = Arc::new(Notify::new());
+        let mut active = shared
+            .active
+            .lock()
+            .map_err(|_| "Connections unavailable")?;
+        if let Some(previous) = active.insert(id.to_owned(), takeover.clone()) {
+            previous.notify_one();
+        }
+        Ok(Self {
+            shared: shared.clone(),
+            id: id.to_owned(),
+            takeover,
+        })
+    }
 }
 impl Drop for ActiveDevice {
     fn drop(&mut self) {
-        self.shared.engine.disconnected(&self.id);
-        if let Ok(mut active) = self.shared.active.lock() {
-            active.remove(&self.id);
+        // A newer connection from this same phone may already hold the slot.
+        // Only the one that still owns it reports the device as gone, so a
+        // reconnect does not release the terminal control it has just taken on.
+        let owned = self
+            .shared
+            .active
+            .lock()
+            .map(|mut active| {
+                let owned = active
+                    .get(&self.id)
+                    .is_some_and(|slot| Arc::ptr_eq(slot, &self.takeover));
+                if owned {
+                    active.remove(&self.id);
+                }
+                owned
+            })
+            .unwrap_or(false);
+        if owned {
+            self.shared.engine.disconnected(&self.id);
         }
     }
 }
@@ -30,10 +71,23 @@ struct Request {
     params: Value,
 }
 
+/// Test harnesses connect in-process, with nowhere to have come from.
+#[cfg(test)]
 pub async fn run(
+    shared: Arc<Shared>,
+    input: FrameReceiver,
+    output: FrameSender,
+) -> Result<(), String> {
+    run_from(shared, input, output, Origin::Unknown).await
+}
+
+/// `run`, told where the connection came from so the phone's record in
+/// Settings can say when and from where it last connected.
+pub async fn run_from(
     shared: Arc<Shared>,
     mut input: FrameReceiver,
     output: FrameSender,
+    origin: Origin,
 ) -> Result<(), String> {
     let first = tokio::time::timeout(Duration::from_secs(10), input.recv())
         .await
@@ -51,42 +105,32 @@ pub async fn run(
             .ok_or("Device identity missing")?,
     );
     let authenticated = auth::authenticate(&shared, &device_id, &hello).await;
-    let result = match authenticated {
-        Ok(()) => {
-            let mut active = shared
-                .active
-                .lock()
-                .map_err(|_| "Connections unavailable")?;
-            if !active.insert(device_id.clone()) {
-                Err("Device already connected".to_string())
-            } else {
-                Ok(())
-            }
-        }
-        Err(error) => Err(error),
-    };
-    let response = match &result {
-        Ok(()) => json!({"ok":true,"protocol":1,"deviceId":device_id}),
+    let claimed = authenticated.and_then(|()| ActiveDevice::claim(&shared, &device_id));
+    if claimed.is_ok() {
+        shared.seen(&device_id, &origin);
+    }
+    let response = match &claimed {
+        Ok(_) => json!({"ok":true,"protocol":1,"deviceId":device_id}),
         Err(message) => {
             json!({"ok":false,"error":{"code":"AUTHENTICATION_FAILED","message":message}})
         }
     };
-    let guard = result.as_ref().ok().map(|_| ActiveDevice {
-        shared: shared.clone(),
-        id: device_id.clone(),
-    });
     send_frame(
         &output,
         write_handshake(&mut handshake, response.to_string().as_bytes())?,
     )
     .await?;
-    result?;
+    let guard = claimed?;
+    let takeover = guard.takeover.clone();
     let _guard = guard;
     let mut channel = Channel::from_handshake(handshake)?;
     let events = shared.engine.subscribe();
     let mut tick = tokio::time::interval(Duration::from_millis(20));
     loop {
         tokio::select! {
+            // This same phone opened a newer connection; the workspace moves
+            // there rather than the phone being told it is already connected.
+            _ = takeover.notified() => return Ok(()),
             frame = input.recv() => {
                 let Some(frame) = frame else { return Ok(()) };
                 if !shared.trusted(&device_id) { return Err("Device revoked".into()); }

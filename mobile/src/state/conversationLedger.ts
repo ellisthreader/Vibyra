@@ -42,7 +42,7 @@ function mergeItems(items: AgentItem[], next: AgentItem[]) {
     if (index < 0) merged.push(item); else merged[index] = item;
   }
   merged.sort((a, b) => (a.order ?? a.cursor ?? 0) - (b.order ?? b.cursor ?? 0));
-  while (merged.length > 512) {
+  while (merged.length > 10000) {
     const index = merged.findIndex(item => !['pending', 'responding'].includes(item.status));
     if (index < 0) break;
     merged.splice(index, 1);

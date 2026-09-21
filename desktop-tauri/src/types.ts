@@ -3,6 +3,16 @@
 import type { NotificationPrefs } from "./notificationTypes";
 
 export type { CapturedScreenshot, ClipboardPaste, Screenshot, VoiceStatus } from "./toolTypes";
+export type {
+  AccountDevice,
+  AccountProfile,
+  AccountSnapshot,
+  AccountStatus,
+  CreditsSummary,
+  TopupOption,
+  TwoFactorSetup,
+  TwoFactorState,
+} from "./accountTypes";
 
 export type Visibility = "visible" | "hidden" | "hibernated";
 
@@ -30,30 +40,6 @@ export interface AgentSpec {
 
 export interface ResolvedAgent extends AgentSpec {
   installed: boolean;
-}
-
-export type AccountStatus =
-  | "restoring"
-  | "signedOut"
-  | "authorizing"
-  | "signedIn"
-  | "connectionError";
-
-export interface AccountProfile {
-  name: string;
-  email: string;
-  provider: string;
-  plan: string;
-  emailVerified: boolean;
-  welcomeKey: string;
-}
-
-export interface AccountSnapshot {
-  status: AccountStatus;
-  profile: AccountProfile | null;
-  error: string | null;
-  pendingProvider: string | null;
-  secureStorage: boolean;
 }
 
 export interface DirEntryInfo {
@@ -96,6 +82,8 @@ export interface RendererPolicy {
 
 export interface Settings {
   theme: "auto" | "dark" | "light";
+  /** Desktop presentation only; iPhone conversations always use native chat. */
+  agentView: "terminal" | "chat";
   fontSize: number;
   fontFamily: string;
   scrollbackLines: number;

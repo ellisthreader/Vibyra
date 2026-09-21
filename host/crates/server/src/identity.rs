@@ -12,6 +12,15 @@ pub struct Device {
     pub id: String,
     pub name: String,
     pub created_at: String,
+    /// When this phone last authenticated, RFC 3339. Absent until it has.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_seen: Option<String>,
+    /// Where it came from: an IP address on this network, or the relay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_from: Option<String>,
+    /// `nearby` (direct, same network) or `cloud` (through Vibyra Cloud).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_route: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]

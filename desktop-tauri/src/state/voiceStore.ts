@@ -1,3 +1,5 @@
+import { useProductMode } from './productModeStore';
+import { stopCurrentReplySpeech } from '../lib/speechPlayback';
 import { create } from "zustand";
 
 import { writeTerminal } from "../ipc/terminal";
@@ -17,6 +19,7 @@ interface VoiceStore {
   title: string;
   sub: string;
   targetId: number | null;
+  draftTarget: { mode?: "work" | "agent"; title: string; append(text: string): void } | null;
   generation: number;
   toggle: () => void;
   cancel: () => void;
@@ -37,6 +40,7 @@ function voiceShortcut(): string {
 }
 
 export const useVoiceStore = create<VoiceStore>((set, get) => {
+  let recordingDraft: VoiceStore["draftTarget"] = null;
   const show = (phase: VoicePhase, title: string, sub: string) => set({ phase, title, sub });
 
   const hideSoon = (ms: number) => {
@@ -53,19 +57,25 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
   const start = async () => {
     const generation = get().generation + 1;
     set({ generation });
+    const candidate = get().draftTarget;
+    recordingDraft = candidate && (candidate.mode ?? "agent") === useProductMode.getState().mode ? candidate : null;
+    if (useProductMode.getState().mode === "agent" && !recordingDraft) { fail("Open a teammate conversation first"); return; }
     const panes = useTerminalStore.getState().panes;
     const focusedId = useTerminalStore.getState().focusedId;
     const target =
       panes.find((p) => p.id === focusedId && p.status === "running") ??
       panes.find((p) => p.status === "running" && p.visibility !== "hibernated");
-    if (!target) {
+    if (!target && !recordingDraft) {
       fail("Open a terminal first");
       return;
     }
-    set({ targetId: target.id });
-    show("starting", "Opening microphone", target.title);
+    set({ targetId: recordingDraft ? null : target!.id });
+    show("starting", "Opening microphone", recordingDraft?.title ?? target!.title);
     try {
+      await stopCurrentReplySpeech();
+      if (generation !== get().generation) return;
       const status = await voiceStatus();
+      if (generation !== get().generation) return;
       if (!status.recorder) {
         fail("No microphone recorder is available on this computer");
         return;
@@ -78,16 +88,15 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
       }
       if (generation !== get().generation) return;
       await voiceStart();
-      if (generation !== get().generation) {
-        await voiceStop(true).catch(() => {});
-        return;
-      }
-      show("listening", "Listening", `${target.title} · ${voiceShortcut()} to send`);
+      // Cancellation already queued its stop behind this start. Do not stop
+      // again here: a newer recording may now own the microphone.
+      if (generation !== get().generation) return;
+      show("listening", "Listening", `${recordingDraft?.title ?? target!.title} · ${voiceShortcut()} to finish`);
       maxTimer = setTimeout(() => {
         if (get().phase === "listening") void stop();
       }, 60_000);
     } catch (error) {
-      fail(String(error));
+      if (generation === get().generation) fail(String(error));
     }
   };
 
@@ -100,6 +109,10 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
     try {
       const text = await voiceStop(false);
       if (generation !== get().generation) return;
+      if (text && recordingDraft) {
+        if (recordingDraft !== get().draftTarget || useProductMode.getState().mode !== (recordingDraft.mode ?? "agent")) { get().cancel(); return; }
+        recordingDraft.append(text); show("sent", "Added to draft", recordingDraft.title); hideSoon(1800); return;
+      }
       if (!text || targetId === null) {
         fail("No speech heard");
         return;
@@ -112,7 +125,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
       show("sent", "Sent to terminal", pane.title);
       hideSoon(1800);
     } catch (error) {
-      fail(String(error));
+      if (generation === get().generation) fail(String(error));
     }
   };
 
@@ -121,6 +134,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
     title: "",
     sub: "",
     targetId: null,
+    draftTarget: null,
     generation: 0,
 
     toggle: () => {

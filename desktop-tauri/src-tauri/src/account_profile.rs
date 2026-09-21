@@ -1,4 +1,6 @@
-use crate::account_api::{request, ApiError, Endpoint};
+use base64::Engine;
+
+use crate::account_api::{base_url, request, ApiError, Endpoint};
 use crate::account_types::{profile_from_user, AccountSnapshot};
 use crate::secret_store::SecretStore;
 use crate::state::AppState;
@@ -82,6 +84,47 @@ pub async fn resend_verification(state: &AppState) -> Result<String, String> {
         Ok(response) => Ok(message_or(&response, "Verification email sent.")),
         Err(error) => Err(error.message().to_owned()),
     }
+}
+
+/// Fetches the account photo and returns it as a `data:` URL. The renderer
+/// cannot reach the network — its content policy allows `self` and `data:`
+/// only — so the bytes are collected here. The address comes from the
+/// account payload and is checked against the API's own origin before any
+/// request is made.
+pub async fn avatar(state: &AppState) -> Result<Option<String>, String> {
+    let Some(url) = state
+        .account
+        .snapshot()
+        .profile
+        .and_then(|profile| profile.avatar_url)
+    else {
+        return Ok(None);
+    };
+    if !url.starts_with(&format!("{}/", base_url())) {
+        return Ok(None);
+    }
+    let response = reqwest::Client::new()
+        .get(&url)
+        .timeout(std::time::Duration::from_secs(20))
+        .send()
+        .await
+        .map_err(|error| error.without_url().to_string())?;
+    if !response.status().is_success() {
+        return Ok(None);
+    }
+    let media = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.split(';').next().unwrap_or("").trim().to_owned())
+        .filter(|value| value.starts_with("image/"))
+        .unwrap_or_else(|| "image/png".to_owned());
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|error| error.without_url().to_string())?;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(Some(format!("data:{media};base64,{encoded}")))
 }
 
 fn message_or(value: &serde_json::Value, fallback: &str) -> String {

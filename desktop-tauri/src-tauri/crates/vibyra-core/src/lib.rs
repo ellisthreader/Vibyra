@@ -21,6 +21,7 @@ pub mod scaffold;
 pub mod settings;
 pub mod utf8;
 pub mod workspace;
+pub mod workspace_init;
 pub mod workspace_preflight;
 
 pub use error::{CoreError, CoreResult};

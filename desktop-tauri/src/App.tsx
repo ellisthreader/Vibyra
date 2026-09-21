@@ -24,6 +24,20 @@ export default function App() {
     };
   }, []);
 
+  // A subscription bought on the phone is authoritative on the next account refresh.
+  useEffect(() => {
+    if (status !== "signedIn") return;
+    const refresh = () => { if (!document.hidden) void useAccountStore.getState().refreshProfile(); };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const timer = window.setInterval(refresh, 60_000);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [status]);
+
   // Any sign-out after a successful sign-in (logout elsewhere, remote
   // revocation, expiry) reloads the window so no account-scoped renderer
   // state can leak into the next session.

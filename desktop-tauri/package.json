@@ -1,6 +1,6 @@
 {
   "name": "vibyra-desktop-tauri",
-  "version": "0.1.11",
+  "version": "0.7.8",
   "description": "Vibyra Desktop — AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
   "private": true,
   "type": "module",
@@ -37,7 +37,9 @@
     "rust:test": "cargo test --manifest-path src-tauri/Cargo.toml --workspace --locked",
     "rust:audit": "cargo audit --file src-tauri/Cargo.lock --ignore RUSTSEC-2024-0429",
     "verify": "npm run lines && npm run check:dead-code && npm test && npm run build && npm run rust:fmt && npm run rust:clippy && npm run rust:test",
-    "app:build:macos": "tauri build --bundles app"
+    "app:build:macos": "tauri build --bundles app",
+    "release:macos:publish": "node scripts/publish-macos-update.mjs",
+    "release:art": "node scripts/new-release-art.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

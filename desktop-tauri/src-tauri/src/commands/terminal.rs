@@ -3,8 +3,9 @@ use std::sync::Arc;
 use tauri::ipc::Channel;
 use tauri::State;
 use vibyra_core::pty::{LaunchSpec, SessionId, SessionInfo, Visibility};
+use vibyra_core::workspace_init::initialise_repository;
 use vibyra_core::workspace_preflight::{
-    safe_workspace_preflight as inspect_safe_workspace, SafeWorkspacePreflight,
+    is_git_work_tree, safe_workspace_preflight as inspect_safe_workspace, SafeWorkspacePreflight,
 };
 use vibyra_core::CoreError;
 
@@ -22,6 +23,11 @@ pub async fn create_terminal(
     on_event: Channel<TermEvent>,
     request: CreateTerminalRequest,
 ) -> Result<SessionInfo, CoreError> {
+    if request.workspace_mode.as_deref() == Some("safe") {
+        super::worktree_access::require_github(&state)
+            .await
+            .map_err(CoreError::Settings)?;
+    }
     let context = {
         let settings = state.settings.lock();
         LaunchContext {
@@ -45,10 +51,30 @@ pub async fn create_terminal(
     Ok(info)
 }
 
+/// Whether Safe mode applies to this folder at all. The launcher asks on every
+/// project switch, so it stays cheap and ungated: a folder with no Git in it
+/// must be able to say so without a GitHub connection or a scan of the tree.
+#[tauri::command]
+pub async fn safe_workspace_supported(project_root: String) -> Result<bool, CoreError> {
+    run_blocking_core(move || Ok(is_git_work_tree(std::path::Path::new(&project_root)))).await
+}
+
+/// Make the project folder a repository so Safe mode can branch from it:
+/// `git init` and one commit, no remote and nothing pushed. This writes to
+/// someone's folder, so it runs only from the button that says it will.
+#[tauri::command]
+pub async fn set_up_git_repository(project_root: String) -> Result<(), CoreError> {
+    run_blocking_core(move || initialise_repository(std::path::Path::new(&project_root))).await
+}
+
 #[tauri::command]
 pub async fn safe_workspace_preflight(
+    state: State<'_, AppState>,
     project_root: String,
 ) -> Result<SafeWorkspacePreflight, CoreError> {
+    super::worktree_access::require_github(&state)
+        .await
+        .map_err(CoreError::Settings)?;
     run_blocking_core(move || {
         let root = canonical_directory(Some(project_root))?
             .ok_or_else(|| CoreError::InvalidPath("project folder is required".into()))?;

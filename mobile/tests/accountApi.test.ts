@@ -22,6 +22,11 @@ test('sign-up posts the backend contract and returns the token and account', asy
   assert.deepEqual(JSON.parse(String(requests[0].init.body)), { email: 'ellis@example.com', password: 'longenough', deviceName: 'iPhone' });
   assert.equal((requests[0].init.headers as Record<string, string>)['Content-Type'], 'application/json');
 });
+test('sign-up presents a guest token so the backend can convert that same wallet', async () => {
+  const { api, requests } = fakeFetch(() => ({ status: 201, body: { ok: true, token: 'account-token', user } }));
+  await api.signup('ellis@example.com', 'longenough', 'guest-token');
+  assert.equal((requests[0].init.headers as Record<string, string>).Authorization, 'Bearer guest-token');
+});
 test('log-in names the email provider and session reads use the bearer token', async () => {
   const { api, requests } = fakeFetch(url => url.endsWith('/api/session') ? { status: 200, body: { ok: true, user } }
     : { status: 200, body: { ok: true, token: 'tok-2', user } });
@@ -73,4 +78,44 @@ test('a rate-limited link request surfaces the backend message', async () => {
   const { api } = fakeFetch(() => ({ status: 429, body: { ok: false, error: 'Please wait 240 seconds before asking for another link.' } }));
   await assert.rejects(() => api.sendHostLink('tok-9'),
     (error: AccountError) => error.status === 429 && /240 seconds/.test(error.message));
+});
+
+// The 502 a person actually hit: the gateway gave up on a sign-up that the
+// backend had already carried out, and every retry then said the address was
+// taken -- an account they owned and could not reach.
+test('a sign-up whose answer the gateway lost still ends signed in', async () => {
+  let attempt = 0;
+  const { api, requests } = fakeFetch(url => {
+    if (url.endsWith('/api/auth/login')) return { status: 200, body: { ok: true, token: 'recovered', user } };
+    attempt += 1;
+    return attempt === 1 ? { status: 502 }
+      : { status: 409, body: { ok: false, error: 'An account already exists for that email. Log in instead.' } };
+  });
+  const session = await api.signup('ellis@example.com', 'longenough');
+  assert.equal(session.token, 'recovered');
+  assert.deepEqual(requests.map(r => r.url.replace('https://api.example.test', '')),
+    ['/api/auth/signup', '/api/auth/signup', '/api/auth/login']);
+});
+test('a sign-up refused for the guest it already converted signs that account in', async () => {
+  let attempt = 0;
+  const { api } = fakeFetch(url => {
+    if (url.endsWith('/api/auth/login')) return { status: 200, body: { ok: true, token: 'recovered', user } };
+    attempt += 1;
+    return attempt === 1 ? { status: 503 }
+      : { status: 403, body: { ok: false, error: 'You are already signed in. Log out to create another account.' } };
+  });
+  assert.equal((await api.signup('ellis@example.com', 'longenough', 'guest-token')).token, 'recovered');
+});
+test('a backend that is genuinely down still says so, and a real refusal stands', async () => {
+  const down = fakeFetch(() => ({ status: 502 }));
+  await assert.rejects(down.api.signup('ellis@example.com', 'longenough'), /having trouble right now/);
+  let attempt = 0;
+  const taken = fakeFetch(url => {
+    if (url.endsWith('/api/auth/login')) return { status: 401, body: { ok: false, error: 'Email or password is incorrect.' } };
+    attempt += 1;
+    return attempt === 1 ? { status: 500 }
+      : { status: 409, body: { ok: false, error: 'An account already exists for that email. Log in instead.' } };
+  });
+  await assert.rejects(taken.api.signup('ellis@example.com', 'longenough'),
+    (error: AccountError) => error.status === 409 && /already exists/.test(error.message));
 });

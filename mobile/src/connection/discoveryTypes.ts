@@ -7,16 +7,17 @@ export interface SearchNetwork { id: string; kind: NetworkKind; label: string; s
 /** A computer seen on one of those links. `hostId`/`host`/`port` arrive from the
  *  Bonjour record and Apple's service resolution, and only a computer that has
  *  all three can be connected without a pairing code. `via` is the link it
- *  answered on. Names and records are untrusted: the Noise handshake and the
- *  approval on the computer still authenticate. */
+ *  answered on. `platform` is the OS family the Host reports (`macos`,
+ *  `windows`, `linux`, as Rust names them), absent from older Hosts; it only
+ *  decides which computer is drawn. Names and records are untrusted: the Noise
+ *  handshake and the approval on the computer still authenticate. */
 export interface NearbyComputer {
-  id: string; name: string; hostId?: string; host?: string; port?: number; via?: NetworkKind;
+  id: string; name: string; hostId?: string; host?: string; port?: number; via?: NetworkKind; platform?: string;
 }
 export type DiscoveryStatus = 'idle' | 'searching' | 'finished' | 'denied' | 'failed' | 'unavailable';
 /** How far a fallback address sweep has got. Bonjour has nothing to count, so
- *  it reports no progress and the UI shows elapsed time instead. */
-/** How far a fallback sweep has got. It drives the radar dial only: the counts
- *  and the addresses behind them are never written on the screen. */
+ *  it reports no progress. Nothing on screen reads it: the counts and the
+ *  addresses behind them are never shown. */
 export interface SearchProgress { checked: number; total: number; attempt: number }
 export interface DiscoveryUpdate {
   status: DiscoveryStatus; computers: NearbyComputer[]; networks?: SearchNetwork[];

@@ -1,3 +1,4 @@
+import { NotificationError } from './NotificationError';
 import type { AnimationEvent, CSSProperties } from "react";
 
 import type { NotificationItem } from "../../notificationTypes";
@@ -47,7 +48,8 @@ export function Toast({ item, durationMs, leaving, onDismiss, onAction, onExited
           <h3>{item.title}</h3>
           {item.count > 1 && <span className="vtoast__count">×{item.count}</span>}
         </div>
-        {item.body && <p className="vtoast__body">{item.body}</p>}
+        {item.severity === 'danger' ? <NotificationError message={item.body ?? item.title} />
+          : item.body && <p className="vtoast__body">{item.body}</p>}
         {item.action && (
           <div className="vtoast__actions">
             <button type="button" className="chip vtoast__action" onClick={() => onAction?.(item)}>

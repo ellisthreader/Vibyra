@@ -11,6 +11,9 @@ export interface Pairing {
   nearby?: boolean;
   invite?: string;
   expiresAt?: string | number;
+  /** A grant from Vibyra Cloud for one relay connection, minutes long. Never
+   *  saved: a reconnection asks the cloud for a fresh one. */
+  relayToken?: string;
 }
 
 export function parsePairing(link: string, now = Date.now()): Pairing {
@@ -53,8 +56,14 @@ export function parsePairing(link: string, now = Date.now()): Pairing {
   // encrypts every payload and the embedded Host filters peers to its LAN /64.
   const lanV6 = value.network === 'lan' && value.route === 'direct'
     && /^\[(?:[23][0-9a-f]{3}:|f[cd][0-9a-f]{2}:)/i.test(url.hostname);
-  if (url.protocol === 'ws:' && ((!local && !lanV6) || value.route === 'relay')) {
+  // A relay is on the internet by definition, so it is wss — except the one a
+  // developer runs on this very machine, which the Host also only allows there.
+  const loopback = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(url.hostname);
+  if (url.protocol === 'ws:' && (value.route === 'relay' ? !loopback : (!local && !lanV6))) {
     throw new Error('Internet connections require a secure wss address.');
+  }
+  if (value.relayToken !== undefined && (typeof value.relayToken !== 'string' || value.relayToken.length > 4096)) {
+    throw new Error('This connection carries an invalid cloud grant.');
   }
   if (value.invite !== undefined) {
     if (typeof value.invite !== 'string' || value.invite.length < 16 || value.invite.length > 256) {

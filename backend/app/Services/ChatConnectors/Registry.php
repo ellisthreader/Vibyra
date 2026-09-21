@@ -2,7 +2,7 @@
 
 namespace App\Services\ChatConnectors;
 
-use App\Services\ChatConnectors\Connectors\{GithubConnector, StripeConnector};
+use App\Services\ChatConnectors\Connectors\{GithubConnector, StripeConnector, FigmaConnector};
 
 /**
  * Routes a slug to its connector and a tool call back to the integration that owns it.
@@ -20,6 +20,7 @@ class Registry
     private const CONNECTORS = [
         'github' => GithubConnector::class,
         'stripe' => StripeConnector::class,
+        'figma' => FigmaConnector::class,
     ];
 
     /** Slugs that have both a catalogue entry and an implementation. */
@@ -52,5 +53,17 @@ class Registry
         $definitions = [];
         foreach ($slugs as $slug) if ($this->has($slug)) $definitions = [...$definitions, ...$this->for($slug)->definitions()];
         return $definitions;
+    }
+
+    /**
+     * Every prompt addendum the given integrations own, concatenated in catalogue
+     * order regardless of the order they were asked for, so the same set of
+     * integrations always produces the same prompt.
+     */
+    public function prompts(array $slugs): string
+    {
+        $text = '';
+        foreach (array_keys(self::CONNECTORS) as $slug) if ($this->has($slug) && in_array($slug, $slugs, true)) $text .= $this->for($slug)->prompt();
+        return $text;
     }
 }

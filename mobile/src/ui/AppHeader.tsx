@@ -1,8 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ReactNode } from 'react';
 import { useTheme } from '../theme';
 import { Icon, IconButton } from './primitives';
+import { isIdeas } from './ideas';
 import { APP_HEADER_HEIGHT } from './keyboardOffset';
-import type { Destination, Session, WorkspaceModel } from './types';
+import type { Destination, Project, Session, WorkspaceModel } from './types';
 
 /**
  * The one header the whole app sits under. Its middle always answers "where am
@@ -16,25 +18,34 @@ import type { Destination, Session, WorkspaceModel } from './types';
  * one with a different name.
  */
 const titles: Record<Destination, string> = {
-  work: 'Vibyra', projects: 'Projects', integrations: 'Integrations',
-  computers: 'Remote', settings: 'Settings',
+  work: 'Vibyra', integrations: 'Integrations',
+  computers: 'Remote',
   // The wallet takes the whole screen and closes with its own X, so it never
   // renders under this header. Named anyway to keep the map total.
   vibes: 'Vibyra tokens',
 };
 
-export function AppHeader({ destination, workspace, session, connected, compact, onMenu, onNewChat, onSwitchChat, onComputers }: {
+export function AppHeader({ destination, workspace, session, project, connected, compact, onMenu, onNewChat, onSwitchChat, onComputers,
+  onSessionOptions, modeSwitch, onBack }: {
+  modeSwitch?: ReactNode;
   destination: Destination; workspace: WorkspaceModel; session: Session | undefined;
+  /** The project you are in, named here while no terminal of its own is open. */
+  project?: Project;
   connected: boolean; compact: boolean; onMenu: () => void; onNewChat: () => void;
   onSwitchChat: () => void; onComputers: () => void;
+  /** Given while a terminal session is open: its ⋯ takes the action slot, so nothing else needs a row of its own. */
+  onSessionOptions?: () => void;
+  /** Given while Settings led here: the leading button returns to Settings instead of opening the menu. */
+  onBack?: () => void;
 }) {
   return <View style={[s.header, compact && { minHeight: 44, paddingVertical: 0 }]}>
-    <IconButton icon="menu-outline" label="Open navigation menu" onPress={onMenu} />
-    {destination === 'work'
-      ? <WorkTitle workspace={workspace} session={session} connected={connected} compact={compact}
+    {onBack ? <IconButton icon="chevron-back" label="Back to Settings" onPress={onBack} />
+      : <IconButton icon="menu-outline" label="Open navigation menu" onPress={onMenu} />}
+    {modeSwitch ? <View style={s.heading}>{modeSwitch}</View> : destination === 'work'
+      ? <WorkTitle workspace={workspace} session={session} project={project} connected={connected} compact={compact}
         onSwitchChat={onSwitchChat} onComputers={onComputers} />
       : <PageTitle title={titles[destination]} />}
-    <Action destination={destination} workspace={workspace} connected={connected} onNewChat={onNewChat} />
+    <Action destination={destination} onNewChat={onNewChat} onSessionOptions={onSessionOptions} />
   </View>;
 }
 
@@ -47,25 +58,30 @@ function PageTitle({ title }: { title: string }) {
 }
 
 /**
- * The chat surface. Phone only, the title is just the app's name: a computer is
- * not mentioned until one is actually connected, and then the header is where
- * you see it — tappable, because the thing it names is also the thing you switch.
+ * The work surface, which is always inside a project. Ideas is named with its
+ * spark and no computer line — a computer is not mentioned until one is actually
+ * connected, and then a folder's title carries it. The title is tappable,
+ * because the thing it names is also the thing you switch: the rail opens on
+ * that project's chats and terminals.
  */
-function WorkTitle({ workspace, session, connected, compact, onSwitchChat, onComputers }: {
-  workspace: WorkspaceModel; session: Session | undefined; connected: boolean; compact: boolean;
+function WorkTitle({ workspace, session, project, connected, compact, onSwitchChat, onComputers }: {
+  workspace: WorkspaceModel; session: Session | undefined; project?: Project; connected: boolean; compact: boolean;
   onSwitchChat: () => void; onComputers: () => void;
 }) {
   const { colors } = useTheme();
-  if (!connected && !session) return <View style={s.heading}>
+  const ideas = !session && isIdeas(project);
+  if (!connected && !session && !project) return <View style={s.heading}>
     <Text accessibilityRole="header" numberOfLines={1} style={[s.brand, { color: colors.text }]}>{titles.work}</Text>
   </View>;
-  return <Pressable accessibilityRole="button" accessibilityLabel={session ? 'Switch chat' : 'Choose computer'}
-    onPress={() => session ? onSwitchChat() : onComputers()} style={s.heading}>
+  const inside = session || project;
+  return <Pressable accessibilityRole="button" accessibilityLabel={session || ideas ? 'Switch chat' : project ? 'Switch terminal' : 'Choose computer'}
+    onPress={() => inside ? onSwitchChat() : onComputers()} style={s.heading}>
     <View style={s.headingRow}>
-      <Text numberOfLines={1} style={[s.brand, { color: colors.text }, session && s.sessionTitle]}>{session?.title ?? titles.work}</Text>
+      {!session && project && <Icon name={ideas ? 'sparkles' : 'folder'} size={15} color={colors.accent} />}
+      <Text numberOfLines={1} style={[s.brand, { color: colors.text }, session && s.sessionTitle]}>{session?.title ?? project?.name ?? titles.work}</Text>
       <Icon name="chevron-down" size={12} color={colors.muted} />
     </View>
-    {!compact && <View style={s.connection}>
+    {!compact && connected && !ideas && <View style={s.connection}>
       <View style={[s.dot, { backgroundColor: workspace.demo ? colors.muted : colors.success }]} />
       <Text numberOfLines={1} style={[s.computer, { color: colors.muted }]}>{workspace.demo ? 'Sample workspace' : workspace.host?.name}</Text>
     </View>}
@@ -73,17 +89,16 @@ function WorkTitle({ workspace, session, connected, compact, onSwitchChat, onCom
 }
 
 /**
- * One action per page, or none. Refresh belongs to Projects because the list is
- * the computer's answer and can go stale; the pages that only show what the
- * account already holds have nothing here to press.
+ * One action per page, or none. The work surface offers a new chat; the pages
+ * that only show what the account already holds have nothing here to press. An
+ * open terminal's one action is its options (project, files, stop): a new chat
+ * is a menu away, and the terminal keeps every pixel below this bar for its output.
  */
-function Action({ destination, workspace, connected, onNewChat }: {
-  destination: Destination; workspace: WorkspaceModel; connected: boolean; onNewChat: () => void;
+function Action({ destination, onNewChat, onSessionOptions }: {
+  destination: Destination; onNewChat: () => void; onSessionOptions?: () => void;
 }) {
+  if (destination === 'work' && onSessionOptions) return <IconButton icon="ellipsis-horizontal" label="Session options" onPress={onSessionOptions} />;
   if (destination === 'work') return <IconButton icon="create-outline" label="New chat" onPress={onNewChat} />;
-  if (destination === 'projects') return <IconButton icon="refresh-outline" label="Refresh projects"
-    disabled={!connected || !!workspace.syncing}
-    onPress={() => void workspace.actions.refresh().catch(() => {})} />;
   return <View style={s.slot} />;
 }
 

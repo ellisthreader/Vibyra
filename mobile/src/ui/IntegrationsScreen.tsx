@@ -1,9 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { IntegrationSheet } from '../integrations/IntegrationSheet';
 import { IntegrationRow } from '../integrations/IntegrationRow';
 import { useIntegrations } from '../integrations/IntegrationsProvider';
+import { DeviceIntegrationSheet, type VaultChat } from '../integrations/DeviceIntegrationSheet';
+import { deviceIntegrations, type DeviceWorkspace } from '../integrations/deviceIntegrations';
 import type { Integration } from '../integrations/types';
 import { Hint, Icon } from './primitives';
 
@@ -29,22 +31,29 @@ import { Hint, Icon } from './primitives';
  * server knows what an account has connected, so when it cannot be reached the
  * page says so rather than showing three integrations as though none were connected.
  */
-export function IntegrationsScreen({ onUse, signedIn, signIn }: {
+export function IntegrationsScreen({ onUse, signedIn, workspace, vault, onConnectComputer }: {
   onUse(mention: string): void;
-  /** Whether a real account is signed in; connecting needs one. */
+  /** Shows where guest connections are kept. */
   signedIn?: boolean;
-  /** The sign-in form, drawn inside an integration's own sheet. */
-  signIn?: (done: () => void) => ReactNode;
+  /** The connected computer, for the integrations that live on it (Obsidian, Railway). Absent: none are listed. */
+  workspace?: DeviceWorkspace & { actions: { refresh(): Promise<void> } };
+  vault?: VaultChat; onConnectComputer?(): void;
 }) {
   const { colors } = useTheme();
   const { catalogue, live, error, refresh } = useIntegrations();
   const [open, setOpen] = useState<Integration | null>(null);
+  // Built fresh from the computer's state on every render, so a vault chosen on the
+  // Mac while this card is open turns the row and the card connected together.
+  const device = workspace && vault && onConnectComputer ? deviceIntegrations(workspace) : [];
+  const all = [...catalogue.integrations, ...device];
+  const opened = open && (all.find(item => item.id === open.id) ?? open);
+  const openedDevice = opened?.credential.kind === 'device' ? opened : null;
   // The provider fetches once per account, so a switch turned on at the server,
   // or a failure since recovered, stayed invisible until the app restarted.
   // Opening the destination is when the answer is wanted, so ask again then.
   useEffect(() => { void refresh(); }, [refresh]);
-  const connected = catalogue.integrations.filter(integration => integration.installed);
-  const rest = catalogue.integrations.filter(integration => !integration.installed);
+  const connected = all.filter(integration => integration.installed);
+  const rest = all.filter(integration => !integration.installed);
   // Both groups filled is the only time a label earns its line.
   const label = connected.length > 0 && rest.length > 0;
   return <>
@@ -55,11 +64,17 @@ export function IntegrationsScreen({ onUse, signedIn, signIn }: {
       <Group label={label ? 'Available' : null} integrations={rest} onOpen={setOpen} />
       <View style={s.note}>
         <Icon name="lock-closed" size={13} color={colors.muted} />
-        <Text style={[s.noteText, { color: colors.muted }]}>Keys are encrypted on Vibyra and never shown again.</Text>
+        <Text style={[s.noteText, { color: colors.muted }]}>Connections are encrypted. Disconnect any time.</Text>
       </View>
     </ScrollView>
-    <IntegrationSheet integration={open} visible={open !== null} onClose={() => setOpen(null)}
-      onUse={mention => { setOpen(null); onUse(mention); }} signedIn={signedIn} signIn={signIn} />
+    {/* One card at a time: a provider's sign-in card, or the card for something on
+        the Mac. The device card is only ever built when the computer is there to
+        report it, so the page is unchanged for anyone the props are not given for. */}
+    <IntegrationSheet integration={openedDevice ? null : opened} visible={open !== null && !openedDevice} onClose={() => setOpen(null)}
+      onUse={mention => { setOpen(null); onUse(mention); }} signedIn={signedIn} />
+    {workspace && vault && onConnectComputer && <DeviceIntegrationSheet integration={openedDevice}
+      visible={openedDevice !== null} onClose={() => setOpen(null)}
+      workspace={workspace} vault={vault} onConnectComputer={onConnectComputer} />}
   </>;
 }
 

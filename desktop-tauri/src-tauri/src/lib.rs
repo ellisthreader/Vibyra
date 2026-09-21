@@ -1,8 +1,17 @@
 mod account_api;
 mod account_auth;
+mod account_billing;
+mod account_cancel;
+mod account_delete;
 mod account_device;
+mod account_devices;
+#[cfg(test)]
+mod account_endpoint_tests;
+mod account_endpoints;
+mod account_login;
 mod account_oauth;
 mod account_profile;
+mod account_security;
 mod account_session;
 #[cfg(test)]
 mod account_tests;
@@ -58,6 +67,7 @@ mod session_process_files;
 mod session_store;
 #[cfg(test)]
 mod session_store_tests;
+pub mod shared_chats;
 mod sink;
 mod state;
 
@@ -99,6 +109,8 @@ pub fn run() {
         .manage(state::AppState::new())
         .setup(|app| {
             model_watch::spawn(app.handle().clone());
+            shared_chats::desktop_stream::spawn(app.handle().clone());
+            phone::notify_window(app.handle().clone());
             Ok(())
         })
         // Closing is vetoed once so the UI can warn about live terminals and

@@ -3,63 +3,7 @@ use crate::{identifier, text, Engine};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
-pub(crate) fn pending(method: &str, rpc: &Value, p: &Value, detail: &str) -> Option<Value> {
-    let kind = match method {
-        "item/commandExecution/requestApproval" | "item/fileChange/requestApproval" => "permission",
-        "item/tool/requestUserInput" => "question",
-        "item/tool/call" if p["tool"] == super::question_tool::NAME => "question",
-        _ => return None,
-    };
-    let questions = if method == "item/tool/call" {
-        &p["arguments"]["questions"]
-    } else {
-        &p["questions"]
-    };
-    if kind == "question" && !super::question_tool::valid(questions) {
-        return None;
-    }
-    // Never approve an action whose exact payload could not be shown on the phone.
-    if p.to_string().len() + detail.len() > 7000
-        || (kind == "question" && questions.as_array()?.len() > 3)
-    {
-        return None;
-    }
-    if method == "item/fileChange/requestApproval" && !p["grantRoot"].is_null() {
-        return None;
-    }
-    if method == "item/commandExecution/requestApproval"
-        && (p["command"].as_str().is_none()
-            || p["kind"].as_str().is_some_and(|kind| kind != "command"))
-    {
-        return None;
-    }
-    if method == "item/fileChange/requestApproval" && matches!(detail, "" | "null" | "[]") {
-        return None;
-    }
-    if ["additionalPermissions", "networkApprovalContext"]
-        .iter()
-        .any(|key| !p[key].is_null())
-    {
-        return None;
-    }
-    if p["availableDecisions"].as_array().is_some_and(|choices| {
-        !choices.contains(&json!("accept")) || !choices.contains(&json!("decline"))
-    }) {
-        return None;
-    }
-    let request = uuid::Uuid::new_v4().to_string();
-    let version = format!(
-        "{:x}",
-        Sha256::digest(format!("{method}:{rpc}:{p}:{detail}"))
-    );
-    let command = p["command"].as_str().unwrap_or(detail);
-    Some(
-        json!({"id":request,"requestId":request,"turnId":p["turnId"],"kind":kind,
-        "title":if kind=="question" {"A quick question"} else if method.contains("fileChange") {"Allow these file changes?"} else {"Allow this command?"},
-        "text":p["reason"],"detail":command,"scope":p["cwd"],"status":"pending","actionVersion":version,
-        "questions":questions,"rpcId":rpc,"method":method,"action":p}),
-    )
-}
+pub(crate) use super::permission_request::pending;
 pub(super) fn answers(item: &Value, params: &Value) -> Result<Value, String> {
     let supplied = params["answers"]
         .as_object()
@@ -130,10 +74,30 @@ impl Engine {
             answers(&item, params)?
         } else if method == "decision.resolve" && item["kind"] == "permission" {
             let decision = text(params, "decision")?;
-            if !matches!(decision, "accept" | "decline") {
+            if !matches!(
+                decision,
+                "accept" | "decline" | "acceptForSession" | "acceptForProject"
+            ) {
                 return Err("Choose Allow once or Decline".into());
             }
-            json!({"decision":decision})
+            if decision == "acceptForProject"
+                && (device != "desktop" || super::policy::rule_key(&item).is_none())
+            {
+                return Err("Saved command trust must be approved on your Mac".into());
+            }
+            if decision != "acceptForProject"
+                && !item["choices"]
+                    .as_array()
+                    .is_none_or(|choices| choices.contains(&json!(decision)))
+            {
+                return Err("This approval scope is unavailable for this request".into());
+            }
+            if item["method"] == "item/permissions/requestApproval" {
+                json!({"permissions":if decision == "decline" {json!({})} else {item["action"]["permissions"].clone()},
+                    "scope":if decision == "acceptForSession" {"session"} else {"turn"}})
+            } else {
+                json!({"decision":if decision == "acceptForProject" {"accept"} else {decision}})
+            }
         } else {
             return Err("Wrong response type for this request".into());
         };
@@ -142,10 +106,16 @@ impl Engine {
         } else {
             result
         };
+        let response_hash = format!("{:x}", Sha256::digest(result.to_string()));
         if let Some(receipt) = c.receipts.get(decision_id) {
             if receipt["device"] != device
                 || receipt["requestId"] != request
-                || receipt["response"] != result
+                || if receipt["responseHash"].is_string() {
+                    receipt["responseHash"] != response_hash
+                        || receipt["scope"] != params["decision"]
+                } else {
+                    receipt["response"] != result
+                }
             {
                 return Err("Decision ID was reused for another response".into());
             }
@@ -163,13 +133,18 @@ impl Engine {
             .ok_or("Conversation process is unavailable")?;
         c.receipts.insert(
             decision_id.into(),
-            json!({"device":device,"requestId":request,"response":result,"status":"dispatching"}),
+            json!({"device":device,"requestId":request,"responseHash":response_hash,"scope":params["decision"],"status":"dispatching"}),
         );
         item["status"] = json!("responding");
-        item["decision"] = result["decision"].clone();
+        item["decision"] = params["decision"].clone();
         item["decisionId"] = json!(decision_id);
+        item["decisionScope"] = params["decision"].clone();
         // Persist before writing the provider response. A lost acknowledgement never resends execution.
         publish(&mut state, id, Some(item.clone()))?;
+        if params["decision"] == "acceptForProject" {
+            let project = state.session(id)?.meta.project_id.clone();
+            state.journal.save_trust(&project, &item)?;
+        }
         let written = runtime.write(json!({"id":item["rpcId"],"result":result}));
         if written.is_err() {
             item["status"] = json!("unknown");

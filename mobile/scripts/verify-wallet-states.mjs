@@ -24,26 +24,28 @@ export async function checkHeld(open, capture, out) {
   await page.getByRole('button', { name: 'Add 500 Vibes · £20.00', exact: true }).waitFor();
   await capture(page, `${out}/held-balance.png`);
   await page.getByRole('button', { name: 'Upgrade your plan' }).click();
-  await page.getByRole('heading', { name: 'Get more each month', exact: true }).waitFor();
-  await page.getByText('You are on the Builder plan with 1,240 Vibes.', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('radio').count(), 1, 'only Pro is left above Builder');
-  // One offer is not a choice, so it must not take a choice's full width.
-  const lone = page.getByRole('radio', { name: 'Pro, 2000 Vibes a month', checked: true });
-  await lone.waitFor();
-  assert.ok((await lone.boundingBox()).width <= 200, 'a lone offer keeps one card\'s width');
-  await page.getByRole('button', { name: 'Upgrade to Pro · £99.00', exact: true }).waitFor();
+  // Pro 10× has only Pro 20× above it: the same headline and price a free account
+  // sees, and no switch, because one size is not a choice.
+  await page.getByRole('heading', { name: 'Get Vibyra Pro', exact: true }).waitFor();
+  assert.equal(await page.getByRole('tab').count(), 0, 'one size is left, so there is nothing to switch');
+  await page.getByText('2,000 Vibes every month', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Get Pro 20× · £99.00 a month', exact: true }).waitFor();
   await capture(page, `${out}/held-upgrade.png`);
   assert.deepEqual(errors, []); await page.close();
-  console.log('PASS held: the balance says what is held, and one upgrade needs no picker.');
+  console.log('PASS held: the balance says what is held, and Pro 10× is sold Pro 20× alone.');
 }
 
 /** A runtime with no StoreKit bridge. Plans stay readable; nothing is buyable. */
 export async function checkNoStore(open, capture, out) {
   const { page, errors } = await open('bridge=off');
   const unavailable = 'Purchases are available in the installed iPhone app. Your balance stays with your account.';
-  await page.getByText(unavailable).waitFor();
+  // The balance page says nothing about the store; the upgrade page, where the
+  // purchase is, says why it cannot be made here.
+  await page.getByRole('button', { name: 'Upgrade your plan' }).waitFor();
+  assert.equal(await page.getByText(unavailable).count(), 0, 'the balance page stays bare');
   await page.getByRole('button', { name: 'Upgrade your plan' }).click();
-  await page.getByText(unavailable).waitFor();
+  await page.getByText('Available in the installed iPhone app.', { exact: true }).waitFor();
+  assert.equal(await page.getByText('Billed through your Apple Account. Renews monthly until cancelled.').count(), 0, 'nothing renews where nothing can be bought');
   await page.getByRole('button', { name: 'Purchases unavailable', exact: true }).waitFor();
   await page.getByText('2,000 Vibes every month', { exact: true }).waitFor();
   await capture(page, `${out}/no-store.png`);
@@ -61,17 +63,24 @@ export async function checkMotion(browser, url, capture, out) {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(url);
   await page.getByRole('button', { name: 'Upgrade your plan' }).click();
-  await page.getByRole('button', { name: 'Upgrade to Pro · £99.00' }).waitFor();
-  await page.getByRole('radio', { name: 'Starter, 350 Vibes a month' }).click();
-  const faded = await sample(page, '[data-testid="bullet"]', 800, node => Number(getComputedStyle(node).opacity));
-  assert.ok(faded.some(o => o < 0.9), 'the replaced lines arrive rather than appearing finished');
-  assert.equal(faded.at(-1), 1, 'and they finish fully legible');
-  await page.getByRole('radio', { name: 'Pro, 2000 Vibes a month' }).click();
-  await page.waitForTimeout(400);
+  // Opening the page is the tap it answers: the mark settles in and the lines
+  // arrive in order, both sampled from the moment the page appears.
+  const opacity = node => Number(getComputedStyle(node).opacity);
+  const [mark, lines] = await Promise.all([sample(page, '[data-testid="pro-art"]', 800, opacity),
+    sample(page, '[data-testid="bullet"]', 800, opacity)]);
+  for (const [seen, what] of [[mark, 'the mark'], [lines, 'the lines']]) {
+    assert.ok(seen.some(o => o < 0.9), `${what} arrive rather than appearing finished`);
+    assert.equal(seen.at(-1), 1, `${what} finish fully legible`);
+  }
   await capture(page, `${out}/motion.png`);
   // Vibes arriving is the one thing in this area worth watching, so the figure on
   // the page the purchase hands back to counts rather than jumping.
-  await page.getByRole('button', { name: 'Upgrade to Pro · £99.00' }).click();
+  await page.getByRole('button', { name: 'Get Pro 20× · £99.00 a month' }).click();
+  await page.getByRole('heading', { name: 'You’re Pro!', exact: true }).waitFor();
+  const confetti = await sample(page, '[data-testid="upgrade-confetti"] > div', 700, node => getComputedStyle(node).transform);
+  assert.ok(new Set(confetti).size > 2, 'confetti falls through multiple frames');
+  await page.screenshot({ path: `${out}/confetti-motion.png` });
+  await page.getByRole('button', { name: 'Let’s build' }).click();
   const counted = await sample(page, '[data-testid="balance"]', 1600, node => node.textContent);
   // The trial the fixture holds plus what the Pro product grants, written as the
   // sum so that retuning the trial moves one number here rather than two literals
@@ -80,20 +89,20 @@ export async function checkMotion(browser, url, capture, out) {
   assert.ok(counted.some(value => value !== '3' && value !== arrived), 'the balance counts to its new figure');
   assert.equal(counted.at(-1), arrived, 'and it lands on the balance the wallet reports');
   assert.deepEqual(errors, []); await page.close();
-  console.log('PASS motion: the lines arrive in order and the balance counts up to what was bought.');
+  console.log('PASS motion: the mark and lines arrive on opening, and the balance counts up to what was bought.');
 }
 
 /** Backing out of Apple must leave the upgrade page exactly as it was. */
 export async function checkCancelled(open) {
   const { page, errors } = await open('purchase=cancel');
   await page.getByRole('button', { name: 'Upgrade your plan' }).click();
-  await page.getByRole('button', { name: 'Upgrade to Pro · £99.00' }).click();
+  await page.getByRole('button', { name: 'Get Pro 20× · £99.00 a month' }).click();
   await page.waitForTimeout(400);
   assert.deepEqual((await page.evaluate(() => window.walletCalls)).filter(c => c !== 'wallet'), ['buy']);
   assert.equal(await page.getByRole('alert').count(), 0, 'a cancelled purchase says nothing at all');
-  await page.getByRole('radio', { name: 'Pro, 2000 Vibes a month', checked: true }).waitFor();
   // And it must not be mistaken for a finished one and hand the page back.
-  await page.getByRole('heading', { name: 'Get more each month', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Get Vibyra Pro', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Get Pro 20× · £99.00 a month', exact: true }).waitFor();
   assert.deepEqual(errors, []); await page.close();
   console.log('PASS cancelled: backing out of Apple leaves the upgrade page as it was.');
 }
@@ -131,39 +140,38 @@ export async function checkSpent(open, capture, out) {
   const { page, errors } = await open('plan=pro&used=full');
   await page.getByText('Next 5 hours', { exact: true }).waitFor();
   await page.getByText('0 of 400', { exact: true }).waitFor();
-  // The wait is a duration, not a clock time: the backend does not know the
-  // phone's timezone, and the wrong one is worse than no answer.
-  await page.getByText(/^Frees up in about \d+ hours?$/).waitFor();
+  // Under a day away, the reset is a countdown rather than a clock time.
+  await page.getByText(/^Resets in \d+ hr( \d+ min)?$/).waitFor();
   // The other window is not full and must not borrow the alarm.
   await page.getByText('360 of 1,000', { exact: true }).waitFor();
   await capture(page, `${out}/spent.png`);
   assert.deepEqual(errors, []); await page.close();
-  console.log('PASS spent: a full window says so and says when it frees up.');
+  console.log('PASS spent: a full window says so and says when it resets.');
 }
 
 /**
  * A window part-way through, which is the state most accounts are in and the one
- * the page is actually read in. It is also the only place the "frees up" line can
- * be proven: it used to appear only once a window hit zero, so the one fact people
- * came looking for — when does this come back — arrived too late to plan around.
+ * the page is actually read in, and where both forms of the reset line show: a
+ * countdown for the 5 hours, and the phone's own day and time for the 7 days.
  */
 export async function checkPartial(open, capture, out) {
   const { page, errors } = await open('plan=pro&used=150');
   await page.getByText('Next 5 hours', { exact: true }).waitFor();
   await page.getByText('250 of 400', { exact: true }).waitFor();
   await page.getByText('850 of 1,000', { exact: true }).waitFor();
-  // Both windows say when they come back, while both still have room left.
-  assert.equal(await page.getByText(/^Frees up in about /).count(), 2,
-    'a window says when it frees up while there is still time to act on it');
-  await page.getByText(/^Frees up in about \d+ hours$/).waitFor();
-  await page.getByText(/^Frees up in about \d+ days$/).waitFor();
+  // Both windows say when they reset, while both still have room left: the 5 hours
+  // as a countdown, the 7 days as the phone's own day and time.
+  assert.equal(await page.getByText(/^Resets /).count(), 2,
+    'a window says when it resets while there is still time to act on it');
+  await page.getByText(/^Resets in \d+ hr( \d+ min)?$/).waitFor();
+  await page.getByText(/^Resets (Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2}:\d{2}/).waitFor();
   await capture(page, `${out}/partial.png`);
   assert.deepEqual(errors, []); await page.close();
   console.log('PASS partial: a part-used window says how much is left and when it returns.');
 }
 
 /** Reads one property off an element every frame for `ms`. */
-function sample(page, selector, ms, read) {
+export function sample(page, selector, ms, read) {
   return page.evaluate(async ([selector, ms, source]) => {
     const read = new Function(`return (${source})`)();
     const seen = []; const started = performance.now();
@@ -174,4 +182,18 @@ function sample(page, selector, ms, read) {
     }
     return seen;
   }, [selector, ms, read.toString()]);
+}
+
+/** A temporary App Store error can be recovered without leaving the upgrade. */
+export async function checkPriceRetry(open) {
+  const { page, errors } = await open('prices=retry');
+  await page.getByRole('button', { name: 'Upgrade your plan' }).click();
+  await page.getByRole('button', { name: 'Retry Apple prices' }).click();
+  const purchase = page.getByRole('button', { name: 'Get Pro 20× · £99.00 a month' });
+  await purchase.waitFor();
+  assert.equal(await purchase.isEnabled(), true);
+  assert.equal(await page.getByRole('alert').count(), 0);
+  assert.equal((await page.evaluate(() => window.walletCalls)).includes('buy'), false);
+  assert.deepEqual(errors, []); await page.close();
+  console.log('PASS Apple price recovery: retry enables checkout without making a purchase.');
 }

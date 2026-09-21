@@ -46,8 +46,19 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: test -n "$TAURI_SIGNING_PRIVATE_KEY"
+      - name: Require stable Mac signing identity
+        if: runner.os == 'macOS'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: node scripts/macos-signing.mjs --check-env
       - name: Install locked frontend dependencies
         run: npm ci
+      # The desktop frontend imports the shared conversation modules out of
+      # mobile/src, so its tsconfig and types only resolve once mobile's own
+      # dependencies are present. Without this the Vite build fails on
+      # "Tsconfig not found expo/tsconfig.base".
+      - name: Install locked mobile dependencies
+        run: npm ci --prefix ../mobile
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates
@@ -69,8 +80,17 @@ jobs:
           # release cannot be offered as an in-app update.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # In-app beta update: ad-hoc Mac code signature plus Tauri authentication.
-          APPLE_SIGNING_IDENTITY: "-"
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # Notarization credentials are deliberately absent. A missing secret
+          # is an empty string here, not an unset variable, so naming APPLE_ID,
+          # APPLE_PASSWORD and APPLE_TEAM_ID at all made the bundler attempt
+          # notarization and die on "Team ID must be at least 3 characters".
+          # Add them back only alongside real Apple ID credentials.
+      - name: Verify stable Mac permission identity before staging
+        if: runner.os == 'macOS'
+        run: node scripts/macos-signing.mjs src-tauri/target/release/bundle/macos/Vibyra.app
       - name: Stage versioned artifact, checksum and update signature
         shell: bash
         run: |
@@ -103,22 +123,29 @@ jobs:
           kill -0 "$pid"
           kill "$pid"
           wait "$pid" || true
-      - name: Summarise the values needed to publish this release
+      - name: Say how to publish this release
         shell: bash
         run: |
           output="${{ steps.version.outputs.output }}"
           {
             echo "### ${{ matrix.label }} — Vibyra ${{ steps.version.outputs.version }}"
             echo
-            echo "Set these on the backend, then upload \`$output\` to the release volume:"
+            echo "Download both architecture artifacts into one folder, then:"
             echo
             echo '```'
-            echo "VERSION=${{ steps.version.outputs.version }}"
-            echo "FILENAME=$output"
-            echo "SIZE=$(wc -c < "release/$output")"
-            echo "SHA256=$(cut -d' ' -f1 < "release/$output.sha256")"
-            echo "SIGNATURE=$(cat "release/$output.sig")"
+            echo "npm --prefix desktop-tauri run release:macos:publish -- \\"
+            echo "  --dir ~/Downloads/vibyra-${{ steps.version.outputs.version }} \\"
+            echo "  --revision ${GITHUB_SHA:0:12} --from <the version to update from>"
             echo '```'
+            echo
+            echo "It re-verifies the signature, uploads to the volume, sets the"
+            echo "\`VIBYRA_MACOS_*_UPDATE_*\` variables and checks both live feeds."
+            echo "Add \`--apply\` once the dry run looks right."
+            echo
+            echo "| field | value |"
+            echo "| --- | --- |"
+            echo "| size | $(wc -c < "release/$output") |"
+            echo "| sha256 | $(cut -d' ' -f1 < "release/$output.sha256") |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload package and checksum

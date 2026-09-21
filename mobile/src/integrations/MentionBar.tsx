@@ -14,7 +14,7 @@ import type { Integration } from './types';
  * first tap only dismisses the keyboard and the mention is never inserted.
  */
 export function MentionBar({ integrations, onChoose }: { integrations: Integration[]; onChoose(id: string): void }) {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
   if (!integrations.length) return null;
   return <ScrollView horizontal keyboardShouldPersistTaps="always" showsHorizontalScrollIndicator={false}
     contentContainerStyle={s.row} style={s.bar}>
@@ -22,7 +22,7 @@ export function MentionBar({ integrations, onChoose }: { integrations: Integrati
       onPress={() => onChoose(integration.id)}
       style={({ pressed }) => [s.chip, { backgroundColor: colors.elevated, borderColor: colors.border, opacity: pressed ? 0.6 : 1 }]}>
       <Mark brand={integrationBrand(integration.id)} size={20} />
-      <Text style={[s.name, { color: colors.text }]}>{integration.mention}</Text>
+      <Text style={[s.name, { color: dark ? '#7AA2FF' : '#245BD6' }]}>{integration.name}</Text>
     </Pressable>)}
   </ScrollView>;
 }

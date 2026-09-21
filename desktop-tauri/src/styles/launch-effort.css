@@ -1,0 +1,44 @@
+/* Full-width track keeps every native effort ladder clear of its copy. */
+.launch-row.launch-effort { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; padding-block: 16px; }
+.launch-effort__heading, .launch-effort__ends { display: flex; justify-content: space-between; gap: 16px; }
+.launch-effort__heading { align-items: baseline; font-size: 13px; font-weight: 560; }
+.launch-effort__heading output { color: var(--accent); }
+.launch-effort input[type="range"] {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--action);
+}
+.launch-effort input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--action) var(--effort-fill), var(--line) var(--effort-fill));
+}
+.launch-effort input::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid var(--action);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 2px 5px #0002;
+}
+.launch-effort input::-moz-range-track { height: 4px; border-radius: 999px; background: var(--line); }
+.launch-effort input::-moz-range-progress { height: 4px; border-radius: 999px; background: var(--action); }
+.launch-effort input::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid var(--surface); border-radius: 50%; background: var(--action); box-shadow: 0 0 0 1px var(--action); }
+.launch-effort input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 5px; }
+.launch-effort__ends { color: var(--muted); font-size: 11px; }
+.launch-effort > small { min-height: 17px; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+.launch-effort__track { position: relative; height: 28px; margin-top: 5px; }
+.launch-effort__stops { position: absolute; inset: 0 5px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; z-index: 2; }
+.launch-effort__stops i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 2px var(--surface); }
+.launch-effort__stops i.is-filled { background: var(--action); }

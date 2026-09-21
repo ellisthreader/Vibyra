@@ -21,65 +21,7 @@ impl ApiError {
     }
 }
 
-/// The only account API paths this client can reach. The renderer never
-/// supplies URLs or methods; commands pick a variant.
-pub enum Endpoint<'a> {
-    Signup,
-    Login,
-    Session,
-    Rotate,
-    Logout,
-    Profile,
-    PasswordForgot,
-    EmailResend,
-    OauthStart(&'a str),
-    OauthStatus(&'a str, &'a str),
-}
-
-impl Endpoint<'_> {
-    pub(crate) fn path(&self) -> Result<String, ApiError> {
-        let invalid = || ApiError::Rejected("Unsupported sign-in provider.".into());
-        match self {
-            Endpoint::Signup => Ok("/api/auth/signup".into()),
-            Endpoint::Login => Ok("/api/auth/login".into()),
-            Endpoint::Session => Ok("/api/session".into()),
-            Endpoint::Rotate => Ok("/api/auth/session/rotate".into()),
-            Endpoint::Logout => Ok("/api/auth/logout".into()),
-            Endpoint::Profile => Ok("/api/account/profile".into()),
-            Endpoint::PasswordForgot => Ok("/api/auth/password/forgot".into()),
-            Endpoint::EmailResend => Ok("/api/auth/email/resend".into()),
-            Endpoint::OauthStart(provider) => {
-                let provider = valid_provider(provider).ok_or_else(invalid)?;
-                Ok(format!("/api/auth/desktop/{provider}/start"))
-            }
-            Endpoint::OauthStatus(provider, flow) => {
-                let provider = valid_provider(provider).ok_or_else(invalid)?;
-                let flow_ok = (40..=100).contains(&flow.len())
-                    && flow.chars().all(|c| c.is_ascii_alphanumeric());
-                if !flow_ok {
-                    return Err(ApiError::Rejected("Invalid sign-in attempt.".into()));
-                }
-                Ok(format!("/api/auth/desktop/{provider}/status/{flow}"))
-            }
-        }
-    }
-
-    fn method(&self) -> reqwest::Method {
-        match self {
-            Endpoint::Session | Endpoint::OauthStatus(..) => reqwest::Method::GET,
-            Endpoint::Logout => reqwest::Method::DELETE,
-            _ => reqwest::Method::POST,
-        }
-    }
-}
-
-fn valid_provider(provider: &str) -> Option<&'static str> {
-    match provider {
-        "google" => Some("google"),
-        "apple" => Some("apple"),
-        _ => None,
-    }
-}
+pub use crate::account_endpoints::Endpoint;
 
 pub fn base_url() -> String {
     if let Ok(url) = std::env::var("VIBYRA_DESKTOP_API_URL") {

@@ -78,7 +78,7 @@ export async function gatherSurroundings(): Promise<ReportSurroundings> {
     area: areaFor({
       settingsOpen: workspace.settingsOpen,
       companionOpen: workspace.companionOpen,
-      projectMode: workspace.projectMode,
+      projectMode: workspace.companionOpen && workspace.companionTab === "preview" ? "preview" : workspace.projectMode,
       view: project.view,
       hasPane: focused !== null,
     }),
@@ -86,7 +86,7 @@ export async function gatherSurroundings(): Promise<ReportSurroundings> {
       appVersion,
       platform: platformLabel(),
       renderer,
-      view: project.view === "project" ? workspace.projectMode : "home",
+      view: project.view === "project" ? (workspace.companionOpen && workspace.companionTab === "preview" ? "preview" : workspace.projectMode) : "home",
       project: active?.name ?? null,
       projectRoot: active?.root ?? null,
       agent: focused?.agentId ?? null,

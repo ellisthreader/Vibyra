@@ -1,7 +1,9 @@
+import { useRef } from "react";
+import { LaunchModelMenu } from "./LaunchModelMenu";
 import type { RunnerPlan } from "../../lib/modelRunners";
 import type { CatalogModel, CompanyGroup } from "../../lib/openRouterCatalog";
 import { ModelMark } from "../common/AgentMark";
-import { ChevronDownIcon, ChevronIcon } from "../common/Icons";
+import { CheckIcon, ChevronIcon, MoreIcon } from "../common/Icons";
 
 export interface LaunchableModel {
   model: CatalogModel;
@@ -20,6 +22,24 @@ interface LaunchModelPickerProps {
   onConnectAccounts: () => void;
 }
 
+const FEATURED = 3;
+
+/** The first model of each company, the selection always among them. */
+function featured(models: LaunchableModel[], selected: LaunchableModel | null) {
+  const picks: LaunchableModel[] = [];
+  for (const entry of models) {
+    if (picks.length >= FEATURED) break;
+    if (!picks.some((pick) => pick.group.company === entry.group.company)) picks.push(entry);
+  }
+  if (selected && !picks.some((pick) => pick.model.id === selected.model.id)) {
+    const index = picks.findIndex((pick) => pick.group.company === selected.group.company);
+    if (index >= 0) picks[index] = selected;
+    else picks.splice(Math.max(0, picks.length - 1), 1, selected);
+  }
+  return picks;
+}
+
+/** Which model runs: the usual ones as tiles, every other one behind More. */
 export function LaunchModelPicker({
   models,
   selected,
@@ -30,76 +50,60 @@ export function LaunchModelPicker({
   onBrowseAll,
   onConnectAccounts,
 }: LaunchModelPickerProps) {
-  return (
-    <div className="launch-model">
+  const anchor = useRef<HTMLDivElement>(null);
+  if (!selected) {
+    return (
       <button
         type="button"
-        className={`launch-model__current${!selected && !loading ? " launch-model__current--connect" : ""}`}
-        aria-label={selected ? "Choose model" : loading ? "Finding AI models" : "Connect your AI accounts"}
-        aria-haspopup={selected ? "listbox" : undefined}
-        aria-expanded={selected ? open : undefined}
+        className="launch-model__connect"
+        aria-label={loading ? "Finding AI models" : "Connect your AI accounts"}
         disabled={loading}
-        onClick={() => selected ? onOpenChange(!open) : onConnectAccounts()}
+        onClick={() => onConnectAccounts()}
       >
-        {selected ? (
-          <>
-            <ModelMark
-              modelId={selected.model.id}
-              label={selected.model.label}
-              providerKey={selected.group.providerKey}
-              accent={selected.group.accent}
-              size={26}
-            />
-            <span className="launch-model__meta">
-              <strong>{selected.model.label}</strong>
-              <small>{selected.group.company} · {selected.plan.runner?.name}</small>
-            </span>
-          </>
-        ) : (
-          <span className="launch-model__meta">
-            <strong>
-              {loading ? "Finding AI models…" : "Connect your AI accounts"}
-            </strong>
-            <small>
-              {loading ? "Checking installed AI tools" : "Open Settings → Integrations"}
-            </small>
-          </span>
-        )}
-        {selected ? <ChevronDownIcon size={12} /> : !loading ? <ChevronIcon size={12} /> : null}
+        <span>
+          <strong>{loading ? "Finding AI models…" : "Connect your AI accounts"}</strong>
+          <small>{loading ? "Checking installed AI tools" : "Open Settings → AI accounts"}</small>
+        </span>
+        {!loading && <ChevronIcon size={14} />}
       </button>
-      {open && selected && (
-        <>
-          <div className="launch-model__backdrop" onClick={() => onOpenChange(false)} />
-          <div className="launch-model__menu" role="listbox" aria-label="Model">
-            {models.map(({ model, group }) => (
-              <button
-                key={model.id}
-                type="button"
-                role="option"
-                aria-selected={model.id === selected.model.id}
-                className={`launch-model__option${model.id === selected.model.id ? " launch-model__option--active" : ""}`}
-                onClick={() => onSelect(model.id)}
-              >
-                <ModelMark
-                  modelId={model.id}
-                  label={model.label}
-                  providerKey={group.providerKey}
-                  accent={group.accent}
-                  size={22}
-                />
-                <span>{model.label}</span>
-              </button>
-            ))}
+    );
+  }
+
+  const tiles = featured(models, selected);
+  return (
+    <div className="launch-model" role="group" aria-label="Model">
+      <div className="launch-model__tiles" ref={anchor}>
+        {tiles.map(({ model, group, plan }) => {
+          const active = model.id === selected.model.id;
+          return (
             <button
+              key={model.id}
               type="button"
-              className="launch-model__option launch-model__option--more"
-              onClick={onBrowseAll}
+              className={`launch-tile${active ? " launch-tile--active" : ""}`}
+              aria-pressed={active}
+              onClick={() => onSelect(model.id)}
             >
-              All models…
+              <ModelMark modelId={model.id} label={model.label} providerKey={group.providerKey} accent={group.accent} size={34} />
+              <span className="launch-tile__copy">
+                <strong>{model.label}</strong>
+                <small>{plan.runner?.name}</small>
+              </span>
+              {active && <span className="launch-tile__check"><CheckIcon size={12} /></span>}
             </button>
-          </div>
-        </>
-      )}
+          );
+        })}
+        <button
+          type="button"
+          className="launch-tile launch-tile--more"
+          aria-expanded={open}
+          onClick={() => onOpenChange(!open)}
+        >
+          <span className="launch-tile__more"><MoreIcon size={16} /></span>
+          <span className="launch-tile__copy"><strong>More models</strong><small>{models.length} models</small></span>
+        </button>
+      </div>
+      {open && <LaunchModelMenu anchor={anchor} models={models} selectedId={selected.model.id}
+        onSelect={onSelect} onClose={() => onOpenChange(false)} onBrowseAll={onBrowseAll} />}
     </div>
   );
 }

@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright-core';
+import { serveFixture } from './fixture-server.mjs';
+const server = await serveFixture('tests/integrationSessionFixture.tsx');
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
+try {
+  const page = await browser.newPage();
+  const state = () => page.locator('output').textContent().then(JSON.parse);
+  const click = name => page.getByRole('button', { name, exact: true }).click();
+  await page.goto(server.url);
+  await page.waitForFunction(() => JSON.parse(document.querySelector('output').textContent).live);
+  await click('Authorize');
+  await click('Second request');
+  assert.match((await state()).error, /Finish the current connection/);
+  await click('Switch account');
+  await page.waitForFunction(() => !JSON.parse(document.querySelector('output').textContent).live);
+  assert.equal((await state()).account, undefined, 'The old account is hidden immediately');
+  await click('Complete old request');
+  await page.waitForFunction(() => JSON.parse(document.querySelector('output').textContent).account === 'second');
+  assert.equal((await state()).busy, null);
+  assert.equal((await state()).live, true);
+  console.log('PASS account switch during authorization refreshes the new account and rejects concurrent sign-in.');
+  await click('Authorize');
+  const beforeRefresh = (await state()).reads;
+  await click('Refresh');
+  await click('Complete old request');
+  await page.waitForFunction(() => JSON.parse(document.querySelector('output').textContent).busy === null);
+  assert.equal((await state()).live, true);
+  assert.equal((await state()).account, 'second');
+  assert.equal((await state()).reads, beforeRefresh + 1);
+  console.log('PASS refresh during sign-in is replayed after completion.');
+} finally { await browser.close(); server.close(); }

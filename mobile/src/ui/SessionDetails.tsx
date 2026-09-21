@@ -1,5 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
+import { sessionIcon } from './DrawerProjects';
+import { canStartWork } from './mode';
 import { Button, Icon } from './primitives';
 import type { Project, Session, WorkspaceModel } from './types';
 
@@ -8,9 +10,12 @@ export function SessionDetails({ session, project, workspace, busy, onReview, on
 }) {
   const { colors } = useTheme();
   const provider = session.kind === 'shell' ? 'Terminal' : session.kind === 'claude' ? 'Claude Code' : 'Codex';
+  // A Host's session is always this phone's to stop; a Mac's only when its
+  // typing switch is on, which is when it takes terminals down on request.
+  const closable = !session.readOnly || canStartWork(workspace);
   return <ScrollView contentContainerStyle={s.content}>
     <View style={[s.providerIcon, { backgroundColor: colors.elevated }]}>
-      <Icon name={session.kind === 'shell' ? 'terminal-outline' : 'code-slash-outline'} size={25} />
+      <Icon name={sessionIcon(session)} size={25} />
     </View>
     <Text style={[s.title, { color: colors.text }]}>{session.title}</Text>
     <Text style={[s.subtitle, { color: colors.muted }]}>{provider} · {workspace.host?.name ?? 'Your computer'}</Text>
@@ -26,11 +31,13 @@ export function SessionDetails({ session, project, workspace, busy, onReview, on
           : session.status === 'interrupted' ? 'Interrupted' : 'Finished'}</Text></View>
     </View>
     {!session.readOnly && <Button title="Review files and changes" icon="git-compare-outline" secondary onPress={onReview} disabled={workspace.status !== 'connected'} />}
-    <Text style={[s.note, { color: colors.muted }]}>{session.readOnly ? 'This is the live terminal from Vibyra Desktop. Use your Mac to send commands, stop sessions or review files.' : workspace.demo ? 'Sample workspace. No computer is connected.'
+    <Text style={[s.note, { color: colors.muted }]}>{session.readOnly && session.runner === 'conversation' ? `This chat is shared with Vibyra Desktop. Messages and agent requests stay in sync. ${closable ? 'Close it here or on your Mac; review files on your computer.' : 'Start or end chats and review files on your computer.'}` : session.readOnly ? session.canInput === true
+      ? `This is the live terminal from Vibyra Desktop. Take control to type into it; ${closable ? 'close it here or on your Mac, and review files on your computer.' : 'use your Mac to stop sessions or review files.'}`
+      : 'This is the live terminal from Vibyra Desktop. Use your Mac to send commands, stop sessions or review files.' : workspace.demo ? 'Sample workspace. No computer is connected.'
       : session.kind === 'shell' ? 'Commands run in your computer’s shell with access to its files and installed tools.'
         : session.runner === 'conversation' ? `${provider} runs on your computer. Tap an activity in the conversation to inspect commands and output. Questions and permissions appear inline when your response is needed.`
         : `${provider} runs on your computer. Its live terminal includes any permission requests that need your response.`}</Text>
-    {!session.readOnly && session.status === 'running' && <Button title="Stop session" danger icon="stop-circle-outline" busy={busy}
+    {closable && session.status === 'running' && <Button title="Stop session" danger icon="stop-circle-outline" busy={busy}
       disabled={workspace.status !== 'connected'} onPress={onStop} />}
   </ScrollView>;
 }

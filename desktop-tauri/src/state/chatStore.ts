@@ -22,6 +22,13 @@ interface ChatStore {
 }
 
 const MAX_CONTEXT_TURNS = 16;
+const SAMPLE_REPLIES = [
+  'Try a small change first, then see how it feels in Preview.',
+  'A simple starting point: one clear heading, a little space, and one useful action.',
+  'What would you like to try next? You can keep typing to test the conversation.',
+  'Sometimes the best next step is removing something you do not need.',
+  'You could try a shorter title and a calmer layout for this idea.',
+];
 
 async function systemPrompt(projectId: string, query: string): Promise<string> {
   const settings = useSettingsStore.getState().settings;
@@ -52,6 +59,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       sending: true,
       error: null,
     }));
+    if (!useSettingsStore.getState().settings?.openaiKeyConfigured) {
+      const reply = SAMPLE_REPLIES[Math.floor(Math.random() * SAMPLE_REPLIES.length)];
+      set(state => ({
+        threads: { ...state.threads, [projectId]: [...thread, { role: 'assistant', content: `Sample reply: ${reply}` }] },
+        sending: false,
+      }));
+      return;
+    }
     try {
       const context = thread.slice(-MAX_CONTEXT_TURNS);
       const prompt = await systemPrompt(projectId, content);

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AccountError } from '../src/account/accountApi';
 import { delay, runtimeHarness } from './runtimeHarness';
+import { pairedHere } from '../src/onboarding/welcomeOutcome';
 
 test('a cold start is unknown until storage answers, then pending on a fresh phone', async () => {
   const h = runtimeHarness();
@@ -60,6 +61,15 @@ test('sign-up validates locally, keeps the token only in secure storage and expo
   assert.deepEqual(h.calls.at(-1), ['logout', 'tok-1']);
   h.store.dispose();
 });
+test('sign-up converts the current guest and removes its secret only after success', async () => {
+  const h = runtimeHarness(); await h.store.initialize();
+  h.memory.set('vibes-guest-token', 'guest-token');
+  await h.store.actions.signUp!('ellis@example.com', 'longenough');
+  assert.deepEqual(h.calls.at(-1), ['signup', 'ellis@example.com', 'longenough', 'guest-token']);
+  assert.equal(h.memory.has('vibes-guest-token'), false);
+  assert.equal(JSON.parse(h.memory.get('account')!).token, 'tok-1');
+  h.store.dispose();
+});
 test('a saved account restores offline, refreshes quietly and is cleared only by an explicit rejection', async () => {
   const h = runtimeHarness();
   h.memory.set('account', JSON.stringify({ token: 'tok-old', email: 'ellis@example.com', name: 'Old name', plan: 'pro' }));
@@ -97,4 +107,21 @@ test('the host download link takes a guest address, and a signed-in phone its ow
   assert.equal(await h.store.actions.sendHostLink!('stranger@example.com'), 'ellis@example.com');
   assert.deepEqual(h.calls.at(-1), ['host-link', 'tok-1', undefined]);
   h.store.dispose();
+});
+
+// Reopening the welcome from Settings leaves the computer connected, and the app
+// reconnects the saved one on launch anyway. Judging the computer path by what
+// was connected when the flow started therefore stranded people on "How do you
+// want to code?": the sheet connected, said so, closed -- and that page came back.
+test('the connect sheet finishes the welcome even when the computer was already connected', () => {
+  const fresh = { connected: true, connectedAtStart: false, sheetConnected: true };
+  assert.equal(pairedHere(fresh), true, 'the ordinary first run still finishes on the computer path');
+  assert.equal(pairedHere({ ...fresh, connectedAtStart: true }), true,
+    'a computer connected before the welcome began does not disown the sheet that just connected it');
+  assert.equal(pairedHere({ connected: true, connectedAtStart: false, sheetConnected: false }), true,
+    'a vibyra://pair link followed while the flow is open still finishes it');
+  assert.equal(pairedHere({ connected: true, connectedAtStart: true, sheetConnected: false }), false,
+    'a connection standing there from before, and nothing done about it, is not an answer');
+  assert.equal(pairedHere({ connected: false, connectedAtStart: false, sheetConnected: true }), false,
+    'a connection that dropped again before the flow ended is not a finished computer path');
 });

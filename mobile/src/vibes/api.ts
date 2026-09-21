@@ -64,7 +64,7 @@ export function validateWallet(value: unknown): VibesWallet {
   // Entitlements describe an offer, not a balance, so an older backend that omits
   // them falls back to the floor instead of blocking the wallet entirely.
   const plans = (w.planEntitlements ?? {}) as Record<string, unknown>;
-  return { ...w, entitlements: normalizeEntitlements(w.entitlements),
+  return { ...w, guest: w.guest === true, entitlements: normalizeEntitlements(w.entitlements),
     trialCredits: count(w.trialCredits), trialChats: count(w.trialChats), trialChatCredits: count(w.trialChatCredits),
     planEntitlements: Object.fromEntries(Object.keys(plans).map(plan => [plan, normalizeEntitlements(plans[plan])])),
     remoteAccessLive: w.remoteAccessLive === true, limits: normalizeLimits(w.limits),
@@ -81,7 +81,7 @@ export function normalizeModel(value: unknown): VibesModel {
   const model = (value ?? {}) as VibesModel & { reasoning?: unknown };
   const raw = model.reasoning as { efforts?: unknown } | undefined;
   const reasoning = raw && Array.isArray(raw.efforts) ? raw as VibesModel['reasoning'] : normalizeReasoning(raw);
-  return { ...model, reasoning, created: typeof model.created === 'number' ? model.created : null };
+  return { ...model, reasoning, created: typeof model.created === 'number' ? model.created : null, vision: model.vision === true };
 }
 export const normalizeModels = (value: unknown): VibesModel[] =>
   (Array.isArray(value) ? value : []).filter(model => model && typeof (model as VibesModel).id === 'string').map(normalizeModel);
@@ -108,19 +108,28 @@ function unexplained(status: number): string {
   return 'Vibes is temporarily unavailable.';
 }
 export function createVibesApi(baseUrl: string, token: () => string | null, fetcher: typeof fetch = fetch): VibesApi {
-  // `anonymous` calls are the public catalogue only: no account data is read or
-  // written, so they must still answer before sign-in.
+  let guestToken: string | null = null;
+  // Anonymous calls are the public catalogue and the one-time guest bootstrap;
+  // neither may require a session that does not exist yet.
   const call = async (path: string, body?: unknown, anonymous = false) => {
-    const identity = token();
+    const identity = token() ?? guestToken;
     if (!identity && !anonymous) throw new VibesError('Sign in to use your Vibes.', 401);
-    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 25000);
+    // An upload is a form, sets its own boundary and is given longer on mobile data.
+    const form = typeof FormData !== 'undefined' && body instanceof FormData ? body : null;
+    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), form ? 60000 : 25000);
     try {
       const r = await fetcher(`${baseUrl.replace(/\/$/, '')}/api/vibes/${path}`, { method: body === undefined ? 'GET' : 'POST',
-        headers: { ...(identity ? { Authorization: `Bearer ${identity}` } : {}), Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
+        headers: { ...(identity ? { Authorization: `Bearer ${identity}` } : {}), Accept: 'application/json',
+          ...(form ? {} : { 'Content-Type': 'application/json' }) },
+        body: body === undefined ? undefined : form ?? JSON.stringify(body), signal: controller.signal });
       const data = await parse(r);
-      if (!anonymous && identity !== token()) throw new VibesError('Your account changed. Please try again.', 401);
-      if (!r.ok) throw new VibesError(data.error ?? data.message ?? unexplained(r.status), r.status);
+      if (!anonymous && identity !== (token() ?? guestToken)) throw new VibesError('Your account changed. Please try again.', 401);
+      // A server without the Vibes routes still answers in JSON, with Laravel's own
+      // sentence for developers ("The POST method is not supported for route…") in
+      // `message`. The Vibes endpoints write theirs in `error`, so for a missing route
+      // only that is shown; anything else falls back to saying what actually happened.
+      const missing = r.status === 404 || r.status === 405;
+      if (!r.ok) throw new VibesError(data.error ?? (missing ? undefined : data.message) ?? unexplained(r.status), r.status);
       return data;
     } catch (error) {
       if (error instanceof VibesError) throw error;
@@ -128,11 +137,26 @@ export function createVibesApi(baseUrl: string, token: () => string | null, fetc
     } finally { clearTimeout(timeout); }
   };
   return {
+    guest: {
+      restore: value => { guestToken = value; },
+      create: async (installId, deviceToken) => {
+        const data = await call('guest', { installId, ...(deviceToken ? { deviceToken } : {}) }, true);
+        if (typeof data.token !== 'string' || !data.token) throw new VibesError('Vibyra returned an unexpected guest session.', 502);
+        const wallet = validateWallet(data.wallet); guestToken = data.token;
+        return { token: data.token, wallet };
+      },
+    },
     wallet: async () => validateWallet((await call('wallet')).wallet), consent: async () => { await call('consent', { accepted: true }); },
     models: async () => normalizeModels((await call('models', undefined, true)).models), chats: async () => (await call('chats')).chats,
     createChat: async (id, title) => (await call('chats', { id, title })).chats,
-    quote: (chatId, text, model, effort, integrations) => call('quote', { chatId, text, model,
-      ...(effort ? { effort } : {}), ...(integrations?.length ? { integrations } : {}) }),
+    quote: (chatId, text, model, effort, integrations, attachments) => call('quote', { chatId, text, model,
+      ...(effort ? { effort } : {}), ...(integrations?.length ? { integrations } : {}), ...(attachments?.length ? { attachments } : {}) }),
+    upload: async source => {
+      const form = new FormData();
+      // The browser sends the File itself; React Native reads the file at `uri`.
+      form.append('file', (source.file ?? { uri: source.uri, name: source.name, type: source.mimeType }) as Blob, source.name);
+      return (await call('attachments', form)).attachment;
+    },
     submit: async (id, quote) => (await call('turns', { id, quote })).turn,
     turn: async id => (await call(`turns/${encodeURIComponent(id)}`)).turn,
     turns: async id => (await call(`chats/${encodeURIComponent(id)}/turns`)).turns,

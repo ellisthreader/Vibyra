@@ -73,11 +73,3 @@ export function pickMemoryFiles(): Promise<MemoryImportBatch> {
 export function searchMemorySources(key: string, query: string): Promise<MemorySnippet[]> {
   return invoke("search_memory_sources", { project: projectArg(key), query });
 }
-
-export function loadMemoryNoteIndex(key: string): Promise<MemoryNoteIndex> {
-  return invoke("memory_note_index", { project: projectArg(key) });
-}
-
-export function loadMemoryNote(key: string, path: string): Promise<MemoryNoteView> {
-  return invoke("read_memory_note", { project: projectArg(key), path });
-}

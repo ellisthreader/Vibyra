@@ -8,6 +8,8 @@ use App\Services\Auth\ProviderIdentityVerifier;
 use App\Services\Auth\ProviderChallengeService;
 use App\Services\Auth\ProviderAccountException;
 use App\Services\Auth\ProviderAccountService;
+use App\Services\Auth\TwoFactor;
+use App\Services\Auth\TwoFactorChallenge;
 use App\Services\LevelProgression;
 use App\Services\Referrals\ReferralService;
 use App\Services\Vibes\Guests;
@@ -220,6 +222,16 @@ trait AuthEndpoints
 
         if (! $user || ($user->provider ?: 'email') !== 'email' || ! Hash::check($password, $user->password)) {
             return $this->json(['ok' => false, 'error' => 'Email or password is incorrect.'], 401);
+        }
+
+        /*
+         * A correct password on an account with a second factor buys a challenge,
+         * not a session. Nothing about the account travels with it: the challenge is
+         * a random handle the cache can trade back for this user once, and only when
+         * the code that comes with it is right.
+         */
+        if (app(TwoFactor::class)->enabled($user)) {
+            return $this->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
         }
 
         return $this->json($this->sessionPayload($request, $user));

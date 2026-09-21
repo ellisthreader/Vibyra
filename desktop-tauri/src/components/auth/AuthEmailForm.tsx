@@ -4,15 +4,17 @@ import { type EmailAuthMode, validateEmailAuth } from "../../lib/accountPolicy";
 
 interface AuthEmailFormProps {
   active: boolean;
+  initialMode?: EmailAuthMode;
   busy: boolean;
   serverError: string | null;
   onLogin: (email: string, password: string) => void;
   onSignup: (name: string, email: string, password: string) => void;
   onForgot: (email: string) => Promise<string>;
   onResetError: () => void;
+  onRecoveryChange?: (recovering: boolean) => void;
 }
 
-export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, onForgot, onResetError }: AuthEmailFormProps) {
+export function AuthEmailForm({ active, initialMode = "login", busy, serverError, onLogin, onSignup, onForgot, onResetError, onRecoveryChange }: AuthEmailFormProps) {
   const [mode, setMode] = useState<EmailAuthMode>("login");
   const [recovering, setRecovering] = useState(false);
   const [name, setName] = useState("");
@@ -23,15 +25,12 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (active) { setMode(initialMode); setRecovering(false); setLocalError(null); setNotice(null); }
+  }, [initialMode, active]);
+
+  useEffect(() => {
     if (active) firstFieldRef.current?.focus();
   }, [active, mode, recovering]);
-
-  const switchMode = (next: EmailAuthMode) => {
-    setMode(next);
-    setLocalError(null);
-    setNotice(null);
-    onResetError();
-  };
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -57,25 +56,14 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
   const submitLabel = recovering
     ? busy ? "Sending…" : "Send reset link"
     : mode === "login"
-      ? busy ? "Logging in…" : "Log in"
+      ? busy ? "Signing in…" : "Sign in"
       : busy ? "Creating account…" : "Create account";
 
   return (
     <form className="auth-email" onSubmit={submit} noValidate>
-      {!recovering && (
-        <div className="auth-email__modes" data-mode={mode} role="tablist" aria-label="Email sign-in mode">
-          <button type="button" role="tab" aria-selected={mode === "login"} className={mode === "login" ? "is-active" : ""} onClick={() => switchMode("login")}>
-            Log in
-          </button>
-          <button type="button" role="tab" aria-selected={mode === "signup"} className={mode === "signup" ? "is-active" : ""} onClick={() => switchMode("signup")}>
-            Create account
-          </button>
-        </div>
-      )}
-      {recovering && <p className="auth-email__lead">Enter your email and we’ll send a password reset link.</p>}
       <div className={`auth-reveal ${!recovering && mode === "signup" ? "auth-reveal--open" : ""}`} inert={recovering || mode !== "signup"}>
         <div className="auth-reveal__inner">
-          <input
+          <label className="auth-field">Your name<input
             ref={mode === "signup" ? firstFieldRef : undefined}
             className="auth-input"
             value={name}
@@ -84,10 +72,10 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
             autoComplete="name"
             aria-label="Your name"
             tabIndex={!recovering && mode === "signup" ? 0 : -1}
-          />
+          /></label>
         </div>
       </div>
-      <input
+      <label className="auth-field">Email address<input
         ref={recovering || mode === "login" ? firstFieldRef : undefined}
         className="auth-input"
         type="email"
@@ -97,9 +85,9 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
         autoComplete="email"
         inputMode="email"
         aria-label="Email address"
-      />
+      /></label>
       {!recovering && (
-        <input
+        <label className="auth-field">Password<input
           className="auth-input"
           type="password"
           value={password}
@@ -107,7 +95,7 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
           placeholder={mode === "signup" ? "Password (8+ characters)" : "Password"}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           aria-label="Password"
-        />
+        /></label>
       )}
       <div className="auth-email__feedback" role="status" aria-live="polite">
         {error && <span className="auth-email__error">{error}</span>}
@@ -122,6 +110,7 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
           className="auth-link"
           onClick={() => {
             setRecovering(!recovering);
+            onRecoveryChange?.(!recovering);
             setLocalError(null);
             setNotice(null);
             onResetError();

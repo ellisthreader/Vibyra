@@ -1,0 +1,50 @@
+/* The build: the ring, the step list and the log. */
+
+.np-run { display: flex; flex-direction: column; align-items: center; }
+
+.np-ring { position: relative; display: grid; place-items: center; width: 168px; height: 168px;
+  --tone: var(--accent); }
+.np-ring--done { --tone: var(--success); }
+.np-ring--stalled { --tone: var(--amber); }
+.np-ring--failed { --tone: var(--danger); }
+.np-ring svg { position: absolute; inset: 0; }
+.np-ring__track { stroke: var(--border); }
+.np-ring__fill { stroke: var(--tone); transition: stroke-dashoffset .62s cubic-bezier(.22,.61,.36,1); }
+/* The sweep says work is still happening. It never claims a position: a step
+   reports that it started, not how far through it is. */
+.np-ring__sweep { stroke: var(--tone); opacity: .4; transform-origin: 50% 50%;
+  animation: np-sweep 1.5s linear infinite, np-breathe 1.8s ease-in-out infinite alternate; }
+@keyframes np-sweep { to { transform: rotate(360deg); } }
+@keyframes np-breathe { from { opacity: .25; } to { opacity: .6; } }
+
+.np-ring__middle { display: grid; place-items: center; line-height: 1; }
+.np-ring__count { font-size: 46px; font-weight: 700; letter-spacing: -1.5px; }
+.np-ring__of { margin-top: 4px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.np-ring__tick { color: var(--tone); font-size: 58px; font-weight: 700; }
+
+.np-run__status { margin: 22px 0 0; font-size: 16.5px; font-weight: 600; letter-spacing: -.3px; text-align: center; }
+.np-run__status--bad { color: var(--danger); }
+.np-run__tail { margin-top: 7px; max-width: 100%; color: var(--muted); font-family: var(--font-mono);
+  font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Every step of the plan is listed from the first moment, so what is coming is
+   as visible as what is done. */
+.np-run__steps { display: grid; gap: 13px; width: 100%; max-width: 380px; margin: 26px 0 0; padding: 0; list-style: none; }
+.np-run__steps li { display: flex; align-items: center; gap: 11px; color: var(--muted);
+  font-size: 14px; font-weight: 500; letter-spacing: -.2px; }
+.np-run__steps li.is-active { color: var(--text); font-weight: 620; }
+.np-run__bullet { flex: none; display: grid; place-items: center; width: 18px; height: 18px;
+  border: 1.5px solid var(--border); border-radius: 50%; color: #fff; }
+.np-run__steps li.is-active .np-run__bullet { border-color: var(--accent); }
+.np-run__steps li.is-done .np-run__bullet { border-color: var(--accent); background: var(--accent); }
+
+.np-run__log { width: 100%; max-height: 220px; margin: 4px 0 0; padding: 12px 14px; overflow: auto;
+  border-radius: var(--r-card); background: var(--elevated); color: var(--text);
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.55;
+  white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+
+@media (prefers-reduced-motion: reduce) {
+  .np-ring__sweep { animation: none; }
+  .np-ring__fill { transition: none; }
+  .np__step { animation: none; }
+}

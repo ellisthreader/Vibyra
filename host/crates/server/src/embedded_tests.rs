@@ -152,3 +152,88 @@ async fn verify_socket(bind: &str) {
     .unwrap();
     assert!(restarted.status()["devices"].as_array().unwrap().is_empty());
 }
+
+/// A phone on this very machine — an iOS Simulator — reaches the desktop as
+/// 127.0.0.1, so a listener pinned to one LAN address must also answer there.
+#[test]
+fn a_pinned_listener_also_answers_on_loopback() {
+    use super::embedded::companion_loopback;
+    let lan: std::net::SocketAddr = "192.168.1.118:4319".parse().unwrap();
+    assert_eq!(
+        companion_loopback(lan),
+        Some("127.0.0.1:4319".parse().unwrap()),
+        "an address on the network gains a same-machine companion"
+    );
+    let six: std::net::SocketAddr = "[2a00:23c7:9a90:fc01::10]:4319".parse().unwrap();
+    assert_eq!(companion_loopback(six), Some("[::1]:4319".parse().unwrap()));
+    // Loopback needs no companion, and an unbound port has none to share.
+    assert_eq!(companion_loopback("127.0.0.1:4319".parse().unwrap()), None);
+    assert_eq!(companion_loopback("[::1]:4319".parse().unwrap()), None);
+    assert_eq!(companion_loopback("192.168.1.118:0".parse().unwrap()), None);
+}
+
+/// The whole point of the companion listener, proven against a real socket: a
+/// desktop pinned to its network address still answers a phone that reaches it
+/// on this machine, which is how an iOS Simulator arrives. Skipped where the
+/// machine has no network address to pin to.
+#[tokio::test]
+async fn a_desktop_pinned_to_its_network_address_answers_on_loopback_too() {
+    let Some(lan) = this_machine_address() else {
+        eprintln!("skipped: no non-loopback IPv4 on this machine");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    // A fixed port, because the companion has to share it.
+    let port = free_port();
+    let _host = EmbeddedHost::start(
+        dir.path().to_owned(),
+        std::net::SocketAddr::new(lan, port),
+        Arc::new(ViewBackend::default()),
+        "Pinned Desktop",
+    )
+    .unwrap();
+    for reach in [lan, std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)] {
+        let served = ask_identity(std::net::SocketAddr::new(reach, port)).await;
+        assert!(
+            served.contains("\"version\":1"),
+            "no presence served at {reach}: {served}"
+        );
+    }
+}
+
+fn this_machine_address() -> Option<std::net::IpAddr> {
+    let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
+    socket.connect("192.0.2.1:9").ok()?;
+    let ip = socket.local_addr().ok()?.ip();
+    (!ip.is_loopback() && !ip.is_unspecified()).then_some(ip)
+}
+
+fn free_port() -> u16 {
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port()
+}
+
+async fn ask_identity(address: std::net::SocketAddr) -> String {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let Ok(Ok(mut stream)) = tokio::time::timeout(
+        std::time::Duration::from_secs(3),
+        tokio::net::TcpStream::connect(address),
+    )
+    .await
+    else {
+        return format!("could not connect to {address}");
+    };
+    let _ = stream
+        .write_all(b"GET /identity HTTP/1.1\r\nHost: x\r\n\r\n")
+        .await;
+    let mut reply = String::new();
+    let _ = tokio::time::timeout(
+        std::time::Duration::from_secs(3),
+        stream.read_to_string(&mut reply),
+    )
+    .await;
+    reply
+}

@@ -46,11 +46,11 @@ test('the window length is read from the wallet, never written by the phone', ()
 
 test('the window is sold as an entitlement, and only while the wallet says how long it is', () => {
   const sold = benefitsFor(offer, { ...wallet, planEntitlements: { free, pro } });
-  assert.ok(sold.some(b => b.label === '400 Vibes every 5 hours'));
+  assert.ok(sold.some(b => b.id === 'rate' && b.amount === 400 && b.unit === ' Vibes per 5 hours'));
   // No published window means no row, rather than a guessed "5 hours" written here.
   // The monthly allowance is a different line and stays either way.
   const quiet = benefitsFor(offer, { ...wallet, planEntitlements: { free, pro }, limits: null });
-  assert.ok(!quiet.some(b => b.label.includes('every 5 hours')));
+  assert.ok(!quiet.some(b => b.id === 'rate'));
   assert.ok(quiet.some(b => b.label === '2,000 Vibes every month'));
 });
 

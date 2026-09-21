@@ -1,14 +1,13 @@
-import type { AccountSession } from '../account/accountApi';
 
 /**
- * How an integration is connected. `oauth` signs in on the provider's own page;
- * `token` (and an older server that sends no kind) is a pasted key, described by
- * the rest of these fields.
+ * Browser authorization. Older servers may still advertise the retired token UI.
+ * `device` is the third kind: nothing to sign in to, because the integration is
+ * something on the person's own computer (a vault of notes, a logged-in CLI),
+ * reported by the computer itself rather than by the server's catalogue.
  */
 export interface IntegrationCredential {
-  kind?: 'token' | 'oauth';
-  /** The provider's sign-in also signs a person in to Vibyra, so Connect needs no Vibyra account first (GitHub can; Stripe cannot). */
-  signsIn?: boolean;
+  kind?: 'token' | 'oauth' | 'device';
+  configured?: boolean;
   label: string; placeholder: string; help: string; url: string;
 }
 export interface Integration {
@@ -29,11 +28,9 @@ export interface IntegrationCatalogue { enabled: boolean; integrations: Integrat
 export interface IntegrationFlow { flowId: string; url: string }
 export interface IntegrationFlowState {
   status: 'pending' | 'connected' | 'failed' | 'expired'; error?: string; catalogue: IntegrationCatalogue;
-  /** For a sign-in begun signed out: the Vibyra account the provider's identity signed in to. */
-  session?: AccountSession;
 }
-/** What a finished sign-in brings back: the catalogue, and the account it made or found when there was none. */
-export interface IntegrationAuthorization { catalogue: IntegrationCatalogue; session?: AccountSession }
+/** Provider approval changes integrations, never the Vibyra login. */
+export interface IntegrationAuthorization { catalogue: IntegrationCatalogue }
 export interface IntegrationsApi {
   catalogue(): Promise<IntegrationCatalogue>;
   connect(id: string, credential: string): Promise<IntegrationCatalogue>;

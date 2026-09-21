@@ -3,8 +3,7 @@ import test from 'node:test';
 import { VibesError, validateWallet } from '../src/vibes/api';
 import { VibesStore } from '../src/vibes/VibesStore';
 import { buyVibes, claimPending } from '../src/vibes/purchases';
-import { benefitsFor, defaultOffer, offers } from '../src/vibes/plans';
-import { sampleVibesApi } from '../src/demo/sampleVibes';
+import { benefitsFor, defaultOffer, offers, planNames, sizesOf } from '../src/vibes/plans';
 import type { PurchaseBridge, VibesApi, VibesModel, VibesProduct, VibesTurn, VibesWallet } from '../src/vibes/types';
 
 export const free = { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false,
@@ -15,7 +14,7 @@ export const limits = { session: { unit: 'hours' as const, span: 5, used: 0, lim
   week: { unit: 'days' as const, span: 7, used: 0, limit: 150, resetsAt: null } };
 export const wallet: VibesWallet = { version: 1, available: 3, held: 0, total: 3, paidAvailable: 0, plan: 'free',
   paidUntil: null, trialChatsRemaining: 2, trialCredits: 3, trialChats: 2, trialChatCredits: 3,
-  accountToken: 'account-one', consented: true, verified: true,
+  accountToken: 'account-one', consented: true, verified: true, guest: false,
   purchasesEnabled: true, products: [{ id: 'starter', credits: 350, pence: 2000, kind: 'subscription', plan: 'starter' }],
   entitlements: free, planEntitlements: { free, pro }, remoteAccessLive: false, usedProjects: 0, limits };
 const turn: VibesTurn = { id: 'request-one', chatId: 'chat-one', model: 'auto', status: 'queued', prompt: 'Hello',
@@ -75,6 +74,12 @@ test('store transactions finish only after server acceptance; cancellation grant
   await buyVibes(f.api, { ...bridge, buy: async () => null }, 'starter', wallet); assert.deepEqual(events, []);
   await assert.rejects(buyVibes({ ...f.api, purchase: async () => { throw new Error('Offline'); } }, bridge, 'starter', wallet));
   assert.deepEqual(events, []);
+  await assert.rejects(buyVibes(f.api, { ...bridge,
+    buy: async () => ({ transactionId: 'foreign', productId: 'starter', accountToken: 'another-account' }),
+  }, 'starter', wallet), /another Vibyra account/);
+  assert.deepEqual(events, [], 'a different account is neither granted nor finished');
+  assert.deepEqual(await buyVibes(f.api, { ...bridge, finish: async () => { throw new Error('retry acknowledgement'); } }, 'starter', wallet), wallet,
+    'a failed StoreKit acknowledgement does not hide a successful server grant');
 });
 test('restore leaves another account’s unfinished purchase untouched and restores the current account', async () => {
   const verified: string[] = []; const finished: string[] = [];
@@ -120,44 +125,29 @@ test('the upgrade page offers only higher plans and leads with the top one', () 
   assert.deepEqual(builder.map(p => p.plan), ['pro']);
   assert.equal(defaultOffer(builder), 'pro');
   assert.deepEqual(offers({ ...wallet, products, plan: 'pro' }), []);
+  // Pro is sold in two sizes, and Starter is not one of them.
+  assert.deepEqual(sizesOf(free).map(p => planNames[p.plan ?? '']), ['Pro 10×', 'Pro 20×']);
+  assert.deepEqual(sizesOf(builder).map(p => p.plan), ['pro'], 'Pro 10× is left one size to move up to');
 });
 test('an entitlement that is not switched on is shown as pending, never as ready', () => {
   const product: VibesProduct = { id: 'pro', plan: 'pro', credits: 2000, pence: 9900, kind: 'subscription' };
   const wait = benefitsFor(product, { ...wallet, planEntitlements: { pro }, remoteAccessLive: false });
-  assert.equal(wait.find(b => b.label.includes('Remote access'))?.status, 'Coming soon');
+  assert.ok(!wait.some(b => b.id === 'remote'), 'unreleased access is not sold as available');
+  assert.ok(wait.some(b => b.id === 'rollover'));
   assert.ok(wait.some(b => b.label === 'Unlimited projects'));
   // The catalogue is on every plan, so it is not a reason to upgrade and is not
   // listed as one. It returns by itself the moment some plan lacks it.
-  assert.ok(!wait.some(b => b.label === 'Every model on OpenRouter'));
+  assert.ok(!wait.some(b => b.label === 'Choose from more AI models'));
   const narrow = benefitsFor(product, { ...wallet, planEntitlements: { free, pro }, remoteAccessLive: false });
-  assert.ok(narrow.some(b => b.label === 'Every model on OpenRouter'));
+  assert.ok(narrow.some(b => b.label === 'Choose from more AI models'));
   const live = benefitsFor(product, { ...wallet, planEntitlements: { pro }, remoteAccessLive: true });
-  assert.equal(live.find(b => b.label.includes('Remote access'))?.status, undefined);
+  assert.ok(live.some(b => b.id === 'remote'));
   // A plan without the entitlement must not advertise it at all.
   const starter: VibesProduct = { id: 'starter', plan: 'starter', credits: 350, pence: 2000, kind: 'subscription' };
   const limited = benefitsFor(starter, { ...wallet, planEntitlements: { starter: { ...free, maxProjects: 3 } } });
-  assert.ok(!limited.some(b => b.label.includes('Remote access')));
+  assert.ok(!limited.some(b => b.id === 'remote'));
   assert.ok(limited.some(b => b.label === '3 projects at a time'));
 });
-test('the sample workspace has a wallet, so a signed-in demo never reads as signed out', async () => {
-  // The reported bug: demo forced `identity` to null, the wallet stayed null, and
-  // the rail read "no wallet" as "signed out" and sent the user to Settings.
-  const w = validateWallet(await sampleVibesApi.wallet());
-  assert.equal(w.plan, 'free');
-  assert.equal(w.purchasesEnabled, false, 'a sample workspace can show plans but never sell one');
-  assert.deepEqual(offers(w).map(p => p.plan), ['starter', 'builder', 'pro'], 'the upgrade page is reachable in the sample');
-  assert.equal(w.planEntitlements.pro.fullCatalogue, true);
-  assert.equal(defaultOffer(offers(w)), 'pro');
-});
-test('the sample workspace cannot spend, purchase or start real work', async () => {
-  for (const call of [
-    () => sampleVibesApi.createChat('id', 'title'),
-    () => sampleVibesApi.quote('chat', 'text', 'auto'),
-    () => sampleVibesApi.submit('id', 'quote'),
-    () => sampleVibesApi.purchase('transaction', 'product'),
-  ]) await assert.rejects(call(), /sample workspace/);
-});
-
 // Auto chooses the level as well as the model, and the composer shows no control
 // for it, so an effort held while Auto is selected is one nobody can see or change.
 // Left behind by the last model picked, it was persisted and sent alongside

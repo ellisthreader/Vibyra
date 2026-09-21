@@ -1,0 +1,164 @@
+/* Settings controls: segmented choice, stepper, disclosure, status chip, save
+   state, compact account rows. Shared by every settings page. */
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.segmented > button {
+  min-height: 26px;
+  padding: 0 11px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard);
+}
+
+.segmented > button + button {
+  border-left: 1px solid var(--line-soft);
+}
+
+.segmented > button:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.segmented > button[aria-checked="true"] {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.segmented > button:disabled {
+  opacity: 0.5;
+}
+
+/* stepper */
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.stepper > button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  color: var(--muted);
+}
+
+.stepper > button:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.stepper > button:disabled {
+  opacity: 0.4;
+}
+
+.stepper__value {
+  width: 44px;
+  height: 26px;
+  border: 0;
+  border-left: 1px solid var(--line-soft);
+  border-right: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+
+.stepper__suffix {
+  padding: 0 6px 0 0;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+/* disclosure */
+
+.disclosure {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.disclosure__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 16px;
+  color: var(--text);
+  text-align: left;
+}
+
+.disclosure__head:hover {
+  background: var(--hover);
+}
+
+.disclosure__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.disclosure__summary {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.disclosure__chev {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+  transition: transform var(--t-ui) var(--e-standard);
+}
+
+.disclosure__title + .disclosure__chev {
+  margin-left: auto;
+}
+
+.disclosure--open .disclosure__chev {
+  transform: rotate(90deg);
+}
+
+.disclosure__body {
+  border-top: 1px solid var(--line-soft);
+}
+
+.disclosure__body > .settings-group {
+  border: 0;
+  border-radius: 0;
+}
+
+.disclosure__body > .setting-row + .setting-row {
+  border-top: 1px solid var(--line-soft);
+}
+
+.disclosure__prose {
+  padding: 12px 16px 14px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.disclosure__prose strong {
+  color: var(--text);
+}

@@ -1,7 +1,7 @@
-import { isMac } from "../../lib/platform";
-import { shortcutLabel } from "../../lib/hotkeys";
 import type { Settings } from "../../types";
-import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
+import { PerformanceRow } from "./PerformanceCard";
+import { Segmented, Stepper } from "./SettingsControls";
+import { SettingRow, SettingsBlock, Switch, type SettingsPaneProps } from "./SettingsShared";
 
 const THEMES: { id: Settings["theme"]; label: string }[] = [
   { id: "auto", label: "Auto" },
@@ -9,60 +9,63 @@ const THEMES: { id: Settings["theme"]; label: string }[] = [
   { id: "light", label: "Light" },
 ];
 
-function ThemeCards({ settings, update }: SettingsPaneProps) {
-  return (
-    <div className="theme-cards" role="radiogroup" aria-label="Theme">
-      {THEMES.map((option) => (
-        <button key={option.id} role="radio" aria-checked={settings.theme === option.id} className={`theme-card ${settings.theme === option.id ? "theme-card--active" : ""}`} onClick={() => void update({ theme: option.id })}>
-          <span className={`theme-card__swatch theme-card__swatch--${option.id}`}><i /></span>
-          <span className="theme-card__label">{option.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
+const VIEWS: { id: Settings["agentView"]; label: string }[] = [
+  { id: "terminal", label: "Terminal" },
+  { id: "chat", label: "Chat" },
+];
 
+/**
+ * The page Settings opens on. Three groups, no scrolling at the modal's own
+ * size: what it looks like, whether it runs lean, and the one choice with a
+ * privacy consequence. Fonts, shells, folders and graphics live in Advanced.
+ */
 export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
   return (
     <>
-      <SettingsBlock label="Theme"><ThemeCards settings={settings} update={update} /></SettingsBlock>
-      <SettingsBlock label="Terminal">
+      <SettingsBlock label="Appearance" panel="appearance">
         <div className="settings-group">
-          <SettingRow label="Font size" hint="Terminal text size in pixels">
-            <input className="input input--sm" aria-label="Font size" type="number" min={9} max={24} value={settings.fontSize} onChange={(event) => void update({ fontSize: Number(event.target.value) || 13 })} />
+          <SettingRow label="Theme">
+            <Segmented label="Theme" value={settings.theme} options={THEMES} onChange={(theme) => void update({ theme })} />
           </SettingRow>
-          <SettingRow label="Scrollback" hint="Lines of history kept per terminal">
-            <input className="input input--sm" aria-label="Scrollback lines" type="number" min={200} max={100000} step={100} value={settings.scrollbackLines} onChange={(event) => void update({ scrollbackLines: Number(event.target.value) || 5000 })} />
+          <SettingRow
+            label="Agent view"
+            hint="How a launched agent opens on this Mac. Your iPhone always shows a chat."
+          >
+            <Segmented
+              label="Agent view"
+              value={settings.agentView === "chat" ? "chat" : "terminal"}
+              options={VIEWS}
+              onChange={(agentView) => void update({ agentView })}
+            />
           </SettingRow>
-          <SettingRow label="Font family" hint="Any monospace stack installed on this machine" stack>
-            <input className="input" aria-label="Font family" value={settings.fontFamily} onChange={(event) => void update({ fontFamily: event.target.value })} spellCheck={false} />
-          </SettingRow>
-          <SettingRow label="Default shell" hint="Blank uses the system shell" stack>
-            <input className="input" aria-label="Default shell" value={settings.defaultShell ?? ""} placeholder="/bin/zsh" onChange={(event) => void update({ defaultShell: event.target.value || null })} spellCheck={false} />
+          <SettingRow label="Terminal text size">
+            <Stepper
+              label="Terminal text size"
+              value={settings.fontSize}
+              min={9}
+              max={24}
+              suffix="px"
+              onChange={(fontSize) => void update({ fontSize })}
+            />
           </SettingRow>
         </div>
       </SettingsBlock>
-      <SettingsBlock label="Folders">
-        <div className="settings-group">
-          <SettingRow label="Workspace root" hint="New terminals start here when a project doesn't set its own folder" stack>
-            <input className="input" aria-label="Workspace root" value={settings.workspaceRoot ?? ""} placeholder="~/Projects" onChange={(event) => void update({ workspaceRoot: event.target.value || null })} spellCheck={false} />
-          </SettingRow>
-          <SettingRow label="Screenshot folder" hint={<>Where <kbd className="kbd">{shortcutLabel(settings.screenshotShortcut)}</kbd> captures are saved — blank uses ~/Pictures/Vibyra</>} stack>
-            <input className="input" aria-label="Screenshot folder" value={settings.screenshotDir ?? ""} placeholder="~/Pictures/Vibyra" onChange={(event) => void update({ screenshotDir: event.target.value || null })} spellCheck={false} />
-          </SettingRow>
-          <SettingRow label="Vibyra in captures" hint={isMac ? "Capture the main display. Hidden moves Vibyra out of the way before taking the screenshot." : "Included captures the screen as it is. Hidden moves Vibyra out of the way before capture."}>
-            <button type="button" role="switch" aria-checked={settings.screenshotHideWindow} className={`btn ${settings.screenshotHideWindow ? "btn--primary" : ""}`} onClick={() => void update({ screenshotHideWindow: !settings.screenshotHideWindow })}>
-              {settings.screenshotHideWindow ? "Hidden" : "Included"}
-            </button>
-          </SettingRow>
-        </div>
+
+      <SettingsBlock label="Performance" panel="performance">
+        <PerformanceRow settings={settings} update={update} />
       </SettingsBlock>
-      <SettingsBlock label="Saved sessions">
+
+      <SettingsBlock label="Privacy">
         <div className="settings-group">
-          <SettingRow label="Restore terminal output" hint="Your open terminals and layout always come back. This also saves the last of each terminal's output so you can read where you left off — turn it off if this machine is shared, and restored terminals will reopen blank.">
-            <button type="button" role="switch" aria-checked={settings.persistTerminalScrollback} className={`btn ${settings.persistTerminalScrollback ? "btn--primary" : ""}`} onClick={() => void update({ persistTerminalScrollback: !settings.persistTerminalScrollback })}>
-              {settings.persistTerminalScrollback ? "Saved" : "Off"}
-            </button>
+          <SettingRow
+            label="Restore terminal output"
+            hint="Reopen recent terminal output on this device. Turn it off on a shared Mac; restored terminals then reopen blank."
+          >
+            <Switch
+              checked={settings.persistTerminalScrollback}
+              label="Restore terminal output"
+              onChange={(persistTerminalScrollback) => void update({ persistTerminalScrollback })}
+            />
           </SettingRow>
         </div>
       </SettingsBlock>

@@ -31,7 +31,7 @@ final class Router
     {
         $demand = $this->demand($text, $situation);
         $ranked = $this->rank($demand, $situation);
-        if ($ranked === []) return $this->fallback($demand);
+        abort_if($ranked === [], 503, 'No suitable Auto model is available for this message right now. Please try again later.');
 
         // Scoring and affording are separate questions, answered separately: the list
         // is ranked once on fit, then walked until one candidate's effort can be
@@ -70,37 +70,12 @@ final class Router
     {
         $scored = array_map(
             fn (array $row) => $this->score($row, $demand, $situation),
-            $this->candidates($situation),
+            (new Candidates($this->catalog, $this->pricing))->for($situation),
         );
         // Ties on fit are settled by price, so an equal fit never costs the person more.
         usort($scored, fn (array $a, array $b) => ($b['score'] <=> $a['score']) ?: ($a['credits'] <=> $b['credits']));
 
         return $scored;
-    }
-
-    /**
-     * Every curated model this account could actually send to right now: priced by
-     * the live snapshot, not hidden from the picker, fundable by the credit the
-     * account holds, and able to call tools when the chat is bound to a project.
-     */
-    private function candidates(Situation $situation): array
-    {
-        $rows = [];
-        foreach (array_keys((array) config('vibes.models')) as $id) {
-            $model = $this->pricing->all()[$id] ?? null;
-            $price = is_array($model) ? ($model['pricing'] ?? null) : null;
-            // An unpriced model is one OpenRouter is not currently serving. Filtering on
-            // the live price keeps Auto off the ids the config still lists but the
-            // provider has withdrawn, with no second list to keep in step.
-            if (! is_array($price) || ! isset($price['prompt'], $price['completion'])) continue;
-            if ($this->catalog->hidden($id, $model)) continue;
-            if ($situation->trialOnly && ! $this->catalog->includedFree($id)) continue;
-            if ($situation->needsTools && ! $this->pricing->supportsTerminalToolCalling($id)) continue;
-            $rows[] = ['id' => $id, 'price' => $price, 'model' => $model,
-                'efforts' => Ladder::ordered($this->catalog->efforts($id))];
-        }
-
-        return $rows;
     }
 
     /**
@@ -156,7 +131,7 @@ final class Router
     {
         $effort = $candidate['effort'];
         $credits = $candidate['credits'];
-        while ($credits > $situation->budget) {
+        while ($credits > $candidate['budget'] || ! Candidates::fits($candidate, $situation->inputBound, $effort)) {
             $cheaper = Ladder::cheaper($candidate['efforts'], $effort);
             if ($cheaper === null) return null;
             $effort = $cheaper;
@@ -177,19 +152,6 @@ final class Router
         usort($priced, fn (array $a, array $b) => $a['credits'] <=> $b['credits']);
 
         return $priced[0];
-    }
-
-    /**
-     * No curated model is servable at all. The configured constant is the last
-     * resort, and `Catalog::resolve` raises the honest 503 if it is unservable too.
-     */
-    private function fallback(Demand $demand): Decision
-    {
-        $id = (string) config('vibes.auto_model');
-        $efforts = Ladder::ordered($this->catalog->efforts($id));
-
-        return new Decision($id, Ladder::choose($efforts, $demand->deliberation), 0,
-            'The default Auto model.', $demand, true);
     }
 
     /** Squared shortfall, and nothing at all for capability the turn does not need. */

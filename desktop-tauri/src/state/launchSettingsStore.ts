@@ -96,6 +96,9 @@ interface LaunchSettingsStore {
   byProject: StoredSettings;
   get: (projectId: string) => LaunchSettings;
   update: (projectId: string, patch: Partial<LaunchSettings>) => void;
+  /** Drops every project's own pick for one provider, so the global default
+   * chosen in Settings applies everywhere. */
+  clearAccountChoice: (runtimeId: string) => void;
 }
 
 export const useLaunchSettingsStore = create<LaunchSettingsStore>((set, get) => ({
@@ -107,6 +110,19 @@ export const useLaunchSettingsStore = create<LaunchSettingsStore>((set, get) => 
         ...state.byProject,
         [projectId]: normalise({ ...(state.byProject[projectId] ?? DEFAULT_LAUNCH_SETTINGS), ...patch }),
       };
+      persist(byProject);
+      return { byProject };
+    });
+  },
+  clearAccountChoice: (runtimeId) => {
+    set((state) => {
+      const byProject = Object.fromEntries(
+        Object.entries(state.byProject).map(([projectId, value]) => {
+          const accountByProvider = { ...value.accountByProvider };
+          delete accountByProvider[runtimeId];
+          return [projectId, { ...value, accountByProvider }];
+        }),
+      );
       persist(byProject);
       return { byProject };
     });

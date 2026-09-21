@@ -1,15 +1,34 @@
 mod acknowledgement;
 mod actions;
+mod archive;
+mod attachments;
 mod batching;
+mod commands;
 mod create;
 mod deltas;
 pub(crate) mod model;
 mod normalize;
+mod observed;
+mod permission_request;
+mod policy;
+mod provider_runtime;
 mod question_tool;
 mod requests;
+mod resume;
 mod runtime;
+mod runtime_output;
+mod settings;
 mod storage;
 mod stream;
+mod terminal_attachment;
+#[cfg(test)]
+mod terminal_attachment_tests;
+mod terminal_bridge;
+#[cfg(all(test, unix))]
+mod terminal_bridge_tests;
+mod terminal_events;
+#[cfg(unix)]
+mod terminal_socket;
 
 use crate::{
     state::{Session, State},
@@ -34,13 +53,42 @@ pub(crate) fn authorize(session: &Session, device: &str, params: &Value) -> Resu
     Ok(())
 }
 pub(crate) fn publish(state: &mut State, id: &str, item: Option<Value>) -> Result<(), String> {
+    let result = publish_inner(state, id, item);
+    if let Err(error) = &result {
+        storage_failure(state, id, error);
+    }
+    result
+}
+pub(super) fn storage_failure(state: &mut State, id: &str, error: &str) {
+    if let Some(c) = state.conversations.get_mut(id) {
+        if let Some(runtime) = &c.runtime {
+            runtime.stop();
+        }
+        c.restore();
+    }
+    if let Some(session) = state.sessions.get_mut(id) {
+        session.meta.status = "interrupted".into();
+        session.lease = None;
+    }
+    state.emit(
+        "host.warning",
+        json!({"message":format!("Conversation storage failed: {error}")}),
+    );
+}
+fn publish_inner(state: &mut State, id: &str, item: Option<Value>) -> Result<(), String> {
     let project = state.session(id)?.meta.project_id.clone();
+    let mut item = item;
+    if let Some(value) = &mut item {
+        state.journal.original_position(id, value)?;
+        state.journal.prepare_artifact(id, value)?;
+    }
     let conversation = state
         .conversations
         .get_mut(id)
         .ok_or("Conversation not found")?;
-    let event = conversation.update(id, &project, item);
+    let mut event = conversation.update(id, &project, item);
     state.journal.save_conversation(id, conversation)?;
+    archive::public_item(&mut event["item"]);
     state.emit("conversation.updated", event);
     Ok(())
 }
@@ -60,11 +108,20 @@ impl Engine {
                     .conversations
                     .get(id)
                     .ok_or("Structured conversation is unavailable for this session")?;
-                Ok(conversation.snapshot(
+                let mut snapshot = conversation.snapshot(
                     id,
                     &session.meta.project_id,
                     params["beforeCursor"].as_u64(),
-                ))
+                );
+                let (items, more) = state
+                    .journal
+                    .history_page(id, params["beforeCursor"].as_u64())?;
+                snapshot["items"] = json!(items);
+                snapshot["hasMore"] = json!(more);
+                if let Some(pending) = snapshot["pending"].as_array_mut() {
+                    pending.iter_mut().for_each(archive::public_item);
+                }
+                Ok(snapshot)
             }
             "conversation.events" => {
                 let state = self.shared.lock();
@@ -82,7 +139,9 @@ impl Engine {
                     .iter()
                     .filter(|e| e["cursor"].as_u64().unwrap_or(0) > after)
                 {
-                    size += serde_json::to_vec(event).map_err(|e| e.to_string())?.len();
+                    let mut event = event.clone();
+                    archive::public_item(&mut event["item"]);
+                    size += serde_json::to_vec(&event).map_err(|e| e.to_string())?.len();
                     if size > 45 * 1024 {
                         break;
                     }
@@ -90,7 +149,7 @@ impl Engine {
                 }
                 Ok(
                     json!({"events":events,"cursor":c.cursor,"generation":c.generation,
-                    "resetRequired":after > c.cursor || c.events.first().is_some_and(|e| after.saturating_add(1) < e["cursor"].as_u64().unwrap_or(0))}),
+                    "resetRequired":(c.events.is_empty() && after != c.cursor) || after > c.cursor || c.events.first().is_some_and(|e| after.saturating_add(1) < e["cursor"].as_u64().unwrap_or(0))}),
                 )
             }
             "turn.submissionStatus" => {
@@ -110,6 +169,18 @@ impl Engine {
                     json!({"status":receipt["status"],"turnId":receipt["turnId"],"submissionId":params["submissionId"]}),
                 )
             }
+            "conversation.artifact" => {
+                let state = self.shared.lock();
+                state.session(id)?;
+                state.journal.artifact(id, params)
+            }
+            "conversation.commands"
+            | "conversation.status"
+            | "conversation.models"
+            | "conversation.usage" => self.conversation_command(method, params),
+            "conversation.attachment" => self.conversation_attachment(device, params),
+            "conversation.trust.revoke" => self.revoke_conversation_trust(device, params),
+            "conversation.settings" => self.conversation_settings(device, params),
             "turn.submit" => self.submit_turn(device, params),
             "turn.interrupt" => self.interrupt_turn(device, params),
             "decision.resolve" | "question.answer" => self.resolve_request(device, method, params),
@@ -129,3 +200,12 @@ mod tests_errors;
 
 #[cfg(test)]
 mod tests_output;
+
+#[cfg(test)]
+mod tests_redesign;
+
+#[cfg(test)]
+mod tests_storage_failure;
+
+#[cfg(test)]
+mod tests_policy;

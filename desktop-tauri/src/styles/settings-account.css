@@ -1,0 +1,79 @@
+/* Settings › Account: the membership, credits, two-factor, devices and
+   deletion surfaces added below the identity card. The card, profile form
+   and logout chrome stay in settings-pages.css and settings-profile.css. */
+
+.account-card__photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-tint);
+}
+
+.account-card__since {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+/* ── membership ─────────────────────────────────────────────────────────── */
+
+.membership__billing {
+  align-self: center;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--muted);
+  margin-right: 10px;
+}
+
+/* ── credits ────────────────────────────────────────────────────────────── */
+
+.credits-row {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.credits-row + .setting-row,
+.setting-row + .credits-row {
+  border-top: 1px solid var(--line-soft);
+}
+
+.credits-row__head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.credits-row__value {
+  font-size: 21px;
+  font-weight: 680;
+  letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.credits-row__unit {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--muted);
+}
+
+.credits-row__held {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.credits-row__note {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.credits-topups {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}

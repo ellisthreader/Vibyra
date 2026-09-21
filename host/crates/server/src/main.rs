@@ -9,11 +9,16 @@ mod connection_tests;
 mod console;
 mod direct;
 mod discovery;
+mod discovery_watch;
 mod identity;
 mod instance;
 mod invitation;
 mod peer_policy;
+mod presence;
+#[cfg(test)]
+mod presence_tests;
 mod relay;
+mod relay_peers;
 mod state;
 #[cfg(test)]
 mod test_support;
@@ -21,7 +26,7 @@ mod test_support;
 use clap::Parser;
 use config::Config;
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap},
     sync::{Arc, Mutex},
 };
 
@@ -64,7 +69,7 @@ async fn start(config: Config) -> Result<(), String> {
         identity: Mutex::new(identity),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
-        active: Mutex::new(HashSet::new()),
+        active: Mutex::new(HashMap::new()),
         pairing_url: config.pairing_url(),
         relay: config.relay.is_some(),
         nearby: config.discover,
@@ -76,15 +81,22 @@ async fn start(config: Config) -> Result<(), String> {
         "Vibyra Host listening on {}",
         listener.local_addr().map_err(|e| e.to_string())?
     );
-    let _discovery = if config.discover {
+    let address = listener.local_addr().map_err(|e| e.to_string())?;
+    let (name, id) = {
         let identity = shared.identity.lock().map_err(|_| "Identity unavailable")?;
-        Some(discovery::Advertisement::start(
-            &identity.name,
-            &identity.id(),
-            listener.local_addr().map_err(|e| e.to_string())?,
-        )?)
-    } else {
-        None
+        (identity.name.clone(), identity.id())
+    };
+    if config.discover && address.ip().is_loopback() {
+        println!("Not advertising over Bonjour: loopback listener.");
+        println!("Phones that can reach {address} directly can still find this Host.");
+    }
+    let relay_name = name.clone();
+    let announcement = async {
+        if !config.discover {
+            std::future::pending::<()>().await;
+        }
+        discovery_watch::maintain(name, id, address, Arc::new(Mutex::new(Default::default())))
+            .await;
     };
     println!(
         "Host public key: {}",
@@ -111,9 +123,20 @@ async fn start(config: Config) -> Result<(), String> {
         if token.len() < 32 || token.len() > 4096 {
             return Err("Relay token must have between 32 and 4096 characters".into());
         }
-        tokio::spawn(relay::maintain(shared.clone(), url, token));
+        let credentials = relay::RelayCredentials {
+            url,
+            token,
+            name: relay_name,
+        };
+        let source: relay::CredentialSource = Arc::new(move || {
+            let credentials = credentials.clone();
+            Box::pin(async move { Ok(credentials) })
+        });
+        // Held for the life of the process; dropping it would end the leg.
+        std::mem::forget(relay::start(shared.clone(), source));
     }
     tokio::select! {
+        _ = announcement => Ok(()),
         result = direct::serve(listener, shared) => result,
         result = tokio::signal::ctrl_c() => result.map_err(|e| e.to_string()),
     }

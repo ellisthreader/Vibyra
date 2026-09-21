@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Animated, Linking, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { links } from '../settings/links';
 import { useTheme } from '../theme';
 import { BrandMark, Button } from '../ui/primitives';
 import { OnboardingScaffold, TextLink } from './OnboardingScaffold';
 import { OnboardingBackdrop } from './OnboardingBackdrop';
 import { useEntrance } from './welcomeMotion';
 
-const legal = (path: string) => () => { void Linking.openURL(`https://vibyra.app/legal/${path}`); };
+// vibyra.app is a parked domain; the legal pages live on the site the API runs on (settings/links.ts).
+const legal = (path: 'terms' | 'privacy') => () => { void Linking.openURL(links[path]).catch(() => {}); };
 export function WelcomeStep({ onStart, onLogIn }: { onStart: () => void; onLogIn: () => void }) {
   const { colors } = useTheme();
   const tall = useWindowDimensions().height >= 800;
