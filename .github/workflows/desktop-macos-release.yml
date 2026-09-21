@@ -83,9 +83,11 @@ jobs:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Notarization credentials are deliberately absent. A missing secret
+          # is an empty string here, not an unset variable, so naming APPLE_ID,
+          # APPLE_PASSWORD and APPLE_TEAM_ID at all made the bundler attempt
+          # notarization and die on "Team ID must be at least 3 characters".
+          # Add them back only alongside real Apple ID credentials.
       - name: Verify stable Mac permission identity before staging
         if: runner.os == 'macOS'
         run: node scripts/macos-signing.mjs src-tauri/target/release/bundle/macos/Vibyra.app
