@@ -41,25 +41,30 @@ class ChatConnectorsTest extends TestCase
     public function test_the_catalogue_is_readable_without_an_account_and_never_returns_a_credential(): void
     {
         $body = $this->withToken('')->getJson('/api/connectors')->assertOk()->json();
-        $this->assertSame(['github', 'stripe'], array_column($body['integrations'], 'id'));
+        $this->assertSame(['github', 'stripe', 'figma'], array_column($body['integrations'], 'id'));
         foreach ($body['integrations'] as $integration) {
             $this->assertFalse($integration['installed']);
             $this->assertArrayNotHasKey('credential_value', $integration);
-            $this->assertSame(['label', 'placeholder', 'help', 'url'], array_keys($integration['credential']));
+            $this->assertSame(['kind', 'configured', 'label', 'placeholder', 'help', 'url'], array_keys($integration['credential']));
+            $this->assertSame('oauth', $integration['credential']['kind']);
+            $this->assertFalse($integration['credential']['configured']);
         }
         $entries = array_column($body['integrations'], null, 'id');
-        // Every integration can change something, and each says what in a sentence
-        // of its own - a shared one would be the sort of blanket reassurance this page
-        // exists to avoid. The `writes` prose is what a person reads before pasting a
-        // key, so an empty one is a page that quietly under-promises.
+        // What an integration can change is either a sentence of its own - not a
+        // shared one, which would be the sort of blanket reassurance this page
+        // exists to avoid - or, for one that only reads, explicitly nothing.
+        // The `writes` prose is what a person reads before connecting an account,
+        // so an empty string would be a page that quietly under-promises.
         foreach ($entries as $slug => $entry) {
+            if ($entry['writes'] === null) continue;
             $this->assertIsString($entry['writes'], $slug.' must say what it can change');
             $this->assertNotSame('', trim($entry['writes']), $slug.' must say what it can change');
         }
+        $this->assertNull($entries['figma']['writes'], 'figma is read-only and must say nothing, not an empty sentence');
         $this->assertStringContainsString('touches no code', (string) $entries['github']['writes']);
         $this->assertStringContainsString('cannot charge', (string) $entries['stripe']['writes']);
-        // Searching issues needs Issues read even on a token that never writes.
-        $this->assertStringContainsString('Contents, Issues and Pull requests', $entries['github']['credential']['help']);
+        $this->assertStringContainsString('Continue to GitHub', $entries['github']['credential']['help']);
+        $this->assertStringNotContainsString('Personal access token', json_encode($body));
     }
 
     /**
@@ -120,6 +125,16 @@ class ChatConnectorsTest extends TestCase
         $this->assertSame('@ellis', $row->account_label);
         $this->assertStringNotContainsString('github_pat_example', (string) $row->credential);
         $this->getJson('/api/connectors')->assertJsonPath('integrations.0.installed', true)->assertJsonPath('integrations.0.account', '@ellis');
+    }
+
+    public function test_disconnecting_still_works_when_integrations_are_switched_off(): void
+    {
+        $this->connectGithub();
+        config(['chat_connectors.enabled' => false]);
+        $this->postJson('/api/connectors/github/disconnect')->assertOk()
+            ->assertJsonPath('enabled', false)->assertJsonPath('integrations.0.installed', false);
+        $this->assertDatabaseCount('vibes_integration_installs', 0);
+        $this->withToken('')->postJson('/api/connectors/github/disconnect')->assertUnauthorized();
     }
 
     public function test_disconnecting_removes_the_stored_account(): void
@@ -238,4 +253,5 @@ class ChatConnectorsTest extends TestCase
         app(\App\Services\ChatConnectors\ConnectorTools::class)
             ->validate('stripe', 'stripe_create_customer', ['email' => 'not-an-address']);
     }
+
 }

@@ -78,7 +78,7 @@ pub async fn save_terminal_session(
 #[tauri::command]
 pub async fn load_terminal_session(state: State<'_, AppState>) -> CoreResult<TerminalSession> {
     let path = session_path(&state);
-    run_blocking_core(move || Ok(session_store::load(&path))).await
+    run_blocking_core(move || session_store::load(&path)).await
 }
 
 #[tauri::command]

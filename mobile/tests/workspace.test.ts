@@ -30,11 +30,16 @@ test('events before snapshot reconcile and input includes active control generat
   h.store.actions.selectSession('one'); await delay();
   await assert.rejects(h.store.actions.sendInput('unsafe'), /control/);
   h.event('terminal.output', { sessionId: 'one', output: ' world', offset: 11, generation: 'g1' });
-  h.reply(snapshot, { sessionId: 'one', output: 'hello', offset: 5, generation: 'g1', status: 'running' });
+  h.reply(snapshot, { sessionId: 'one', output: 'hello', offset: 5, generation: 'g1', status: 'running', cols: 120, rows: 40 });
   await delay();
-  assert.equal(h.store.state.output, 'hello world'); assert.equal(h.store.state.control, 'readonly');
-  await h.store.actions.claimControl!();
+  assert.equal(h.store.state.output, 'hello world');
+  assert.deepEqual(h.store.state.hostGrid, { cols: 120, rows: 40 });
+  // A terminal that will take typing is taken on opening: the box is simply
+  // there, rather than behind a button that every session needed pressing.
   assert.equal(h.store.state.control, 'ready');
+  assert.equal(h.sent.filter(item => item.payload?.method === 'session.claim').length, 1);
+  await h.store.actions.claimControl!();
+  assert.equal(h.sent.filter(item => item.payload?.method === 'session.claim').length, 1, 'a held lease is not minted twice');
   await h.store.actions.sendInput('safe\r');
   const input = h.sent.find(item => item.payload?.method === 'session.input').payload.params;
   assert.equal(input.lease, 'lease1'); assert.equal(input.generation, 'g1'); assert.equal(input.sessionId, 'one');

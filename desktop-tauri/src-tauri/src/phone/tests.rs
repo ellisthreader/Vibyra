@@ -1,5 +1,8 @@
 use super::{
-    address::connection_address as private_address, backend::DesktopBackend, PhoneConnection,
+    address::connection_address as private_address,
+    backend::DesktopBackend,
+    vault::Vault,
+    workspace::{DesktopPane, DesktopProject, SharedWorkspace},
 };
 use serde_json::json;
 use std::{
@@ -43,9 +46,36 @@ fn existing_desktop_pty_is_visible_and_remote_mutations_are_rejected() {
     let original = manager
         .create_session("shell", "Existing chat", &spec)
         .unwrap();
-    let backend = DesktopBackend::new(manager.clone()).unwrap();
+    let workspace = SharedWorkspace::default();
+    workspace.write().publish(
+        vec![DesktopProject {
+            id: "p-1".into(),
+            name: "Vibyra".into(),
+            path: "~/Desktop/Vibyra".into(),
+        }],
+        vec![DesktopPane {
+            id: original.id,
+            project_id: "p-1".into(),
+            title: "Landing page".into(),
+        }],
+        None,
+    );
+    let backend = DesktopBackend::new(
+        manager.clone(),
+        workspace.clone(),
+        Default::default(),
+        Vault::empty(),
+        Default::default(),
+    )
+    .unwrap();
     let state = backend.handle("phone", "host.state", json!({})).unwrap();
-    assert_eq!(state["sessions"][0]["title"], "Existing chat");
+    // The phone lists the Mac's own projects, and each terminal under the one
+    // the desktop is showing it in — under the name the desktop shows.
+    assert_eq!(state["projects"][0]["name"], "Vibyra");
+    assert_eq!(state["projects"][0]["path"], "~/Desktop/Vibyra");
+    assert_eq!(state["projects"][1], json!(null), "no empty spare folder");
+    assert_eq!(state["sessions"][0]["projectId"], "p-1");
+    assert_eq!(state["sessions"][0]["title"], "Landing page");
     let id = state["sessions"][0]["id"].as_str().unwrap();
     let events = backend.subscribe();
     let deadline = Instant::now() + Duration::from_secs(5);
@@ -70,7 +100,6 @@ fn existing_desktop_pty_is_visible_and_remote_mutations_are_rejected() {
     for method in [
         "session.claim",
         "session.input",
-        "session.resize",
         "session.stop",
         "session.create",
         "project.read",
@@ -101,51 +130,47 @@ fn existing_desktop_pty_is_visible_and_remote_mutations_are_rejected() {
         }
     }
     assert!(found, "live desktop output must stream to the phone");
+    // A phone never sets this Mac's grid: shrinking a pane to a phone's width
+    // broke the display the person was working in. The phone draws the Mac's
+    // grid at its own zoom, and an older phone that still asks is told so.
+    let asked = backend.handle(
+        "phone",
+        "session.resize",
+        json!({"sessionId":id,"cols":46,"rows":32}),
+    );
+    assert!(asked.is_err(), "a phone must not resize a Mac's pane");
+    assert_eq!(
+        manager.list().first().map(|s| (s.cols, s.rows)),
+        Some((100, 30))
+    );
+    // The phone renders this Mac's grid rather than its own width, so the
+    // snapshot has to say what that grid is and a later resize has to reach it.
+    assert_eq!(snapshot["cols"].as_u64(), Some(100));
+    assert_eq!(snapshot["rows"].as_u64(), Some(30));
+    manager.resize(original.id, 44, 132).unwrap();
+    let mut resized = false;
+    while Instant::now() < deadline {
+        if let Ok(event) = events.recv_timeout(Duration::from_millis(250)) {
+            if event["event"] == "terminal.size" && event["data"]["cols"] == 132 {
+                assert_eq!(event["data"]["rows"], 44);
+                resized = true;
+                break;
+            }
+        }
+    }
+    assert!(resized, "a pane resized on the Mac must reach the phone");
     backend.disconnected("phone");
     assert_eq!(manager.list().len(), 1);
-    let restarted = DesktopBackend::new(manager.clone()).unwrap();
+    let restarted = DesktopBackend::new(
+        manager.clone(),
+        workspace,
+        Default::default(),
+        Vault::empty(),
+        Default::default(),
+    )
+    .unwrap();
     assert!(restarted
         .handle("phone", "session.snapshot", json!({"sessionId":id}))
-        .is_err());
-    manager.shutdown();
-}
-
-#[test]
-fn the_switch_persists_on_its_own_and_no_address_is_stored() {
-    let directory = tempfile::tempdir().unwrap();
-    let path = directory.path().join("phone");
-    let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    let phone = PhoneConnection::new(path.clone(), manager.clone());
-    {
-        let mut phone = phone.lock();
-        assert_eq!(phone.status()["enabled"], json!(false));
-        // Enabling can still fail on a machine with no usable network; the
-        // switch stays on either way so the watcher can bind later.
-        let _ = phone.enable(manager.clone());
-        assert_eq!(phone.status()["enabled"], json!(true));
-    }
-    let saved: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(path.join("connection.json")).unwrap()).unwrap();
-    assert_eq!(saved, json!({"enabled": true}));
-    assert_eq!(
-        PhoneConnection::new(path.clone(), manager.clone())
-            .lock()
-            .status()["enabled"],
-        json!(true)
-    );
-    {
-        let mut phone = phone.lock();
-        phone.disable().unwrap();
-        assert_eq!(phone.status()["enabled"], json!(false));
-        assert_eq!(phone.status()["discoverable"], json!(false));
-        assert_eq!(phone.address(), "");
-        // A connection nobody asked for is never started by the watcher.
-        phone.refresh(manager.clone());
-        assert_eq!(phone.status()["discoverable"], json!(false));
-    }
-    assert!(PhoneConnection::new(path, manager.clone())
-        .lock()
-        .host()
         .is_err());
     manager.shutdown();
 }

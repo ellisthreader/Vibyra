@@ -10,7 +10,7 @@ import { useSettingsStore } from "./settingsStore";
 import { useTerminalStore } from "./terminalStore";
 import { useWorkspaceStore } from "./workspaceStore";
 
-export type AppView = "home" | "project";
+export type AppView = "home" | "project" | "new-project";
 
 const PROJECT_COLORS = [
   "#5b7cfa",

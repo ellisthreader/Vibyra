@@ -1,27 +1,24 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useRef } from "react";
 
-import { useModelCatalogStore } from "../../state/modelCatalogStore";
 import { useProviderAccountStore } from "../../state/providerAccountStore";
-import {
-  providerAccountRuntimeUpdate,
-  providerWorking,
-} from "../../lib/providerAccountPolicy";
+import { providerAccountRuntimeUpdate, providerWorking } from "../../lib/providerAccountPolicy";
 import type { Settings } from "../../types";
-import { ProviderMark } from "../common/AgentMark";
-import { RestartIcon } from "../common/Icons";
 import { ProviderIntegrationCard } from "./ProviderIntegrationCard";
-import { TerminalIntegrations } from "./TerminalIntegrations";
+import { SettingsBlock } from "./SettingsShared";
+import { VibyraFeaturesRow } from "./VibyraFeaturesRow";
 
 interface Props {
   settings: Settings;
   update: (partial: Partial<Settings>) => Promise<void>;
 }
 
+/**
+ * AI accounts: the company accounts terminal agents sign in with, then the
+ * one Vibyra feature that runs on a key you supply. Two groups, one page, and
+ * the ownership does not blur: accounts authorize through each provider's own
+ * CLI, the key stays in the OS credential store, and neither knows the other.
+ */
 export function SettingsIntegrationsPane({ settings, update }: Props) {
-  const groups = useModelCatalogStore((state) => state.groups);
-  const loading = useModelCatalogStore((state) => state.loading);
-  const source = useModelCatalogStore((state) => state.source);
-  const refreshCatalog = useModelCatalogStore((state) => state.refresh);
   const providers = useProviderAccountStore((state) => state.providers);
   const busyKey = useProviderAccountStore((state) => state.busyKey);
   const error = useProviderAccountStore((state) => state.error);
@@ -35,12 +32,10 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
   const cancel = useProviderAccountStore((state) => state.cancel);
   const disconnect = useProviderAccountStore((state) => state.disconnect);
   const openSignInPage = useProviderAccountStore((state) => state.openSignInPage);
-  const modelCount = useMemo(() => groups.reduce((sum, group) => sum + group.models.length, 0), [groups]);
 
   useEffect(() => {
-    void refreshCatalog();
     void refreshAccounts();
-  }, [refreshAccounts, refreshCatalog]);
+  }, [refreshAccounts]);
 
   // A sign-in and an install both run as child processes whose progress only
   // the native side sees — including the moment a CLI stops and asks a
@@ -51,53 +46,63 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
     return () => window.clearInterval(timer);
   }, [providers, refreshAccounts]);
 
+  // Two rows signed in to the same identity are one account listed twice.
+  // The later one is an extra folder Vibyra created, so it is removed rather
+  // than shown; each id is tried once so a failed removal cannot loop.
+  const dedupeTried = useRef(new Set<string>());
+  useEffect(() => {
+    if (!loaded || busyKey) return;
+    for (const provider of providers) {
+      const seen = new Set<string>();
+      for (const account of provider.accounts) {
+        if (account.status !== "connected") continue;
+        const label = account.accountLabel.trim().toLowerCase();
+        if (!label) continue;
+        const key = `${provider.id}:${account.accountId}`;
+        if (seen.has(label) && account.removable && !dedupeTried.current.has(key)) {
+          dedupeTried.current.add(key);
+          void removeAccount(provider.id, account.accountId);
+          return;
+        }
+        seen.add(label);
+      }
+    }
+  }, [providers, loaded, busyKey, removeAccount]);
+
   useEffect(() => {
     const enabledAgentIds = providerAccountRuntimeUpdate(settings.enabledAgentIds, providers, loaded, error);
     if (enabledAgentIds) void update({ enabledAgentIds });
   }, [providers, error, loaded, settings.enabledAgentIds, update]);
 
-  const catalogLabel = loading ? "Refreshing" : source === "live" ? "Live" : source === "cache" ? "Cached" : "Offline fallback";
-  const catalogTone = loading ? "working" : source === "live" ? "success" : "neutral";
-
   return (
-    <section className="settings-integrations" aria-labelledby="integration-list-label">
-      <span className="section-label" id="integration-list-label">AI accounts</span>
-      <p className="integrations-intro">Connect the accounts you already use for personal AI terminals — more than one per company if you have them. Authorization stays with the official provider app.</p>
-      <div className="integration-list">
-        {!loaded ? <p className="integration-loading">Checking connected accounts…</p> : null}
-        {providers.map((provider) => (
-          <ProviderIntegrationCard
-            key={provider.id}
-            provider={provider}
-            busyKey={busyKey}
-            onAddAccount={() => void addAccount(provider.id)}
-            onInstall={() => void install(provider.id)}
-            onConnect={(account) => void connect(provider.id, account)}
-            onRemove={(account) => void removeAccount(provider.id, account)}
-            onSubmit={(account, value) => void submit(provider.id, account, value)}
-            onCancel={(account) => void cancel(provider.id, account)}
-            onDisconnect={(account) => void disconnect(provider.id, account)}
-            onOpenSignInPage={(account) => void openSignInPage(provider.id, account)}
-          />
-        ))}
-      </div>
-      {error ? <p className="integration-error" role="alert">{error}</p> : null}
-
-      <span className="section-label">Model catalog</span>
-      <article className="integration-card integration-catalog">
-        <div className="integration-card__head">
-          <ProviderMark provider="openrouter" label="OpenRouter" accent="#5b7cfa" size={40} />
-          <div className="integration-card__identity">
-            <div className="integration-card__title"><h3>OpenRouter</h3><span className={`integration-status integration-status--${catalogTone}`}><i aria-hidden="true" />{catalogLabel}</span></div>
-            <p>{modelCount} models available in agent launchers</p>
-          </div>
-          <button type="button" className="integration-refresh" disabled={loading} onClick={() => void refreshCatalog(true)}>
-            <RestartIcon size={13} />{loading ? "Refreshing" : "Refresh"}
-          </button>
+    <section className="settings-integrations">
+      <SettingsBlock
+        label="Terminal accounts"
+        panel="terminalAccounts"
+        note="Sign in with the accounts your terminal agents use. Authorization stays in each provider’s own app."
+      >
+        <div className="settings-group integration-list">
+          {!loaded ? <p className="integration-loading">Checking connected accounts…</p> : null}
+          {providers.map((provider) => (
+            <ProviderIntegrationCard
+              key={provider.id}
+              provider={provider}
+              busyKey={busyKey}
+              onAddAccount={() => void addAccount(provider.id)}
+              onInstall={() => void install(provider.id)}
+              onConnect={(account) => void connect(provider.id, account)}
+              onRemove={(account) => void removeAccount(provider.id, account)}
+              onSubmit={(account, value) => void submit(provider.id, account, value)}
+              onCancel={(account) => void cancel(provider.id, account)}
+              onDisconnect={(account) => void disconnect(provider.id, account)}
+              onOpenSignInPage={(account) => void openSignInPage(provider.id, account)}
+            />
+          ))}
         </div>
-        <p className="integration-card__note">Vibyra refreshes this public catalog automatically. It is not a connected billing account.</p>
-      </article>
-      <TerminalIntegrations settings={settings} update={update} />
+        {error ? <p className="integration-error" role="alert">{error}</p> : null}
+      </SettingsBlock>
+
+      <VibyraFeaturesRow settings={settings} update={update} />
     </section>
   );
 }

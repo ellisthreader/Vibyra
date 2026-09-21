@@ -45,7 +45,7 @@ export function ProviderAccountActions({
           disabled={busy}
           onClick={remove ? onRemove : onDisconnect}
         >
-          {remove ? "Remove account" : "Disconnect"}
+          {remove ? "Remove account" : "Sign out"}
         </button>
       </span>
     );
@@ -66,11 +66,11 @@ export function ProviderAccountActions({
       {account.status === "connected" ? (
         <button
           type="button"
-          className="btn btn--secondary"
+          className="btn btn--ghost integration-quiet"
           disabled={busy}
           onClick={() => setConfirming("disconnect")}
         >
-          Disconnect
+          Sign out
         </button>
       ) : (
         <button
@@ -82,10 +82,10 @@ export function ProviderAccountActions({
           {busy ? "Starting…" : "Sign in"}
         </button>
       )}
-      {account.removable ? (
+      {account.removable && account.status !== "connected" ? (
         <button
           type="button"
-          className="btn btn--ghost"
+          className="btn btn--ghost integration-quiet"
           disabled={busy}
           onClick={() => setConfirming("remove")}
         >

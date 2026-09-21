@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
-import { BrandLogo, ModelLogo } from './BrandLogo';
+import { BrandLogo } from './BrandLogo';
 import { Icon } from './primitives';
+import { vendorOf } from './brands';
 import { isNew, PREVIEW, type Company } from './modelGroups';
 import type { VibesModel } from '../vibes/types';
 
@@ -23,9 +24,9 @@ function ModelRow({ model, selected, onSelect, locked, onLocked, now }: {
     accessibilityLabel={`${model.name}${fresh ? ', new' : ''}${locked ? ', membership needed' : ''}`}
     aria-checked={selected} accessibilityState={{ checked: selected, disabled: locked }}
     onPress={() => (locked ? onLocked() : onSelect(model.id))}
-    style={({ pressed }) => [s.model, { borderTopColor: colors.border, opacity: pressed ? 0.6 : 1 }]}>
+    style={({ pressed }) => [s.model, { borderTopColor: colors.border, backgroundColor: selected ? colors.accentSoft : 'transparent', opacity: pressed ? 0.6 : 1 }]}>
     {/* The model's own generated artwork where one exists, its company's mark otherwise. */}
-    <View style={locked && s.dim}><ModelLogo id={model.id} size={30} /></View>
+    <View style={locked && s.dim}><BrandLogo vendor={vendorOf(model.id)} size={30} /></View>
     <View style={s.text}>
       <View style={s.nameRow}>
         <Text numberOfLines={1} style={[s.name, { color: locked ? colors.muted : colors.text }]}>{model.name}</Text>
@@ -52,19 +53,20 @@ export function CompanyGroup({ company, selection, expanded, onToggle, onSelect,
   // Closing a company forgets that it was fully open, so reopening OpenAI does
   // not silently mount forty rows again.
   useEffect(() => { if (!expanded) setAll(false); }, [expanded]);
-  const chosen = company.models.some(model => model.id === selection);
+  const selectedModel = company.models.find(model => model.id === selection);
+  const chosen = Boolean(selectedModel);
   const shown = all ? company.models : company.models.slice(0, PREVIEW);
   const hidden = company.models.length - shown.length;
-  return <View style={[s.group, { borderColor: chosen ? colors.accent : colors.border }]}>
+  return <View style={[s.group, { borderBottomColor: colors.border, backgroundColor: 'transparent' }]}>
     <Pressable accessibilityRole="button" accessibilityLabel={company.name}
       accessibilityState={{ expanded }} aria-expanded={expanded} onPress={onToggle}
       style={({ pressed }) => [s.company, { opacity: pressed ? 0.6 : 1 }]}>
-      <BrandLogo vendor={company.vendor} />
+      <BrandLogo vendor={company.vendor} size={36} />
       <View style={s.text}>
-        <View style={s.nameRow}><Text style={[s.name, { color: colors.text }]}>{company.name}</Text>
-          {company.newCount > 0 && <Text style={[s.badge, { color: colors.accent, backgroundColor: colors.accentSoft }]}>New</Text>}</View>
-        <Text style={[s.detail, { color: colors.muted }]}>{company.models.length === 1 ? '1 model'
-          : `${company.models.length} models`}{chosen ? ' · in use' : ''}</Text></View>
+        <Text style={[s.name, { color: colors.text }]}>{company.name}</Text>
+        <Text numberOfLines={1} style={[s.detail, { color: chosen ? colors.accent : colors.muted }]}>
+          {selectedModel ? selectedModel.name : company.models.length === 1 ? '1 model' : `${company.models.length} models`}</Text></View>
+      {chosen && <Icon name="checkmark-circle" size={18} color={colors.accent} />}
       <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={15} color={colors.muted} />
     </Pressable>
     {/* Buying Vibes unlocks the catalogue, so a paid balance clears every lock. */}
@@ -79,9 +81,9 @@ export function CompanyGroup({ company, selection, expanded, onToggle, onSelect,
   </View>;
 }
 const s = StyleSheet.create({
-  group: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 16, overflow: 'hidden', marginTop: -8 },
-  company: { minHeight: 68, paddingVertical: 12, paddingHorizontal: 13, flexDirection: 'row', gap: 13, alignItems: 'center' },
-  model: { minHeight: 60, paddingVertical: 11, paddingLeft: 21, paddingRight: 13, flexDirection: 'row',
+  group: { borderBottomWidth: StyleSheet.hairlineWidth },
+  company: { minHeight: 66, paddingVertical: 12, paddingHorizontal: 10, flexDirection: 'row', gap: 13, alignItems: 'center' },
+  model: { minHeight: 60, paddingVertical: 11, paddingLeft: 20, paddingRight: 12, flexDirection: 'row',
     gap: 12, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   more: { minHeight: 48, paddingLeft: 63, paddingRight: 13, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   moreText: { fontSize: 13, fontWeight: '500' },

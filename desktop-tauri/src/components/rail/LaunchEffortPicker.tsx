@@ -1,7 +1,7 @@
-import type { CSSProperties } from "react";
-
+import { useId, type CSSProperties } from "react";
 import type { EffortOption } from "../../lib/modelEffort";
 import type { LaunchEffort } from "../../state/launchSettingsStore";
+import "../../styles/launch-effort.css";
 
 interface LaunchEffortPickerProps {
   options: EffortOption[];
@@ -9,43 +9,32 @@ interface LaunchEffortPickerProps {
   onChange: (value: LaunchEffort) => void;
 }
 
+/** A keyboard-accessible slider with one stop per supported native effort. */
 export function LaunchEffortPicker({ options, value, onChange }: LaunchEffortPickerProps) {
-  const selected = options.find((option) => option.value === value) ?? options[0];
-  if (!selected) return null;
-  const selectedIndex = options.indexOf(selected);
-  const fill = options.length > 1 ? (selectedIndex / (options.length - 1)) * 100 : 0;
-  const style = { "--effort-fill": `${fill}%` } as CSSProperties;
+  const id = useId();
+  const index = Math.max(0, options.findIndex((option) => option.value === value));
+  const selected = options[index];
+  if (!selected || options.length < 2) return null;
 
   return (
-    <fieldset className="launch-field launch-effort">
-      <legend>
-        <span>Effort</span>
-        <span className="launch-effort__value">
-          <strong>{selected.label}</strong>
-          <small>{selected.hint}</small>
-        </span>
-      </legend>
-      <div className="launch-effort__control" style={style}>
-        <input
-          type="range"
-          min={0}
-          max={options.length - 1}
-          step={1}
-          value={selectedIndex}
-          aria-label="Reasoning effort"
-          aria-valuetext={selected.label}
-          onChange={(event) => onChange(options[Number(event.currentTarget.value)].value)}
-        />
-        <span className="launch-effort__ticks" aria-hidden="true">
-          {options.map((option, index) => (
-            <i key={option.value} className={index <= selectedIndex ? "is-active" : ""} />
-          ))}
-        </span>
+    <div className="launch-row launch-effort">
+      <div className="launch-effort__heading">
+        <label htmlFor={id}>Effort</label>
+        <output htmlFor={id}>{selected.label}</output>
+      </div>
+      <div className="launch-effort__track">
+      <div className="launch-effort__stops" aria-hidden="true">
+        {options.map((option, stop) => <i key={option.value} className={stop <= index ? "is-filled" : undefined} title={option.label} />)}
+      </div>
+      <input id={id} type="range" min={0} max={options.length - 1} step={1}
+        value={index} aria-valuetext={selected.label} aria-describedby={selected.hint ? `${id}-hint` : undefined}
+        style={{ "--effort-fill": `${index / (options.length - 1) * 100}%` } as CSSProperties}
+        onChange={(event) => onChange(options[Number(event.target.value)].value)} />
       </div>
       <div className="launch-effort__ends" aria-hidden="true">
-        <span>{options[0].label}</span>
-        <span>{options[options.length - 1].label}</span>
+        <span>{options[0].label}</span><span>{options.at(-1)?.label}</span>
       </div>
-    </fieldset>
+      <small id={`${id}-hint`}>{selected.hint}</small>
+    </div>
   );
 }

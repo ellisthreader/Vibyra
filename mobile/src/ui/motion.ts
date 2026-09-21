@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
 
 /**
- * Shared interface motion, and the only place a driver belongs.
- * `connection/radarMotion.ts` held duplicate breath and entrance drivers for the
- * pairing radar; both went with the radar when the connect flow was stripped to
- * plain text.
+ * Shared interface motion, and the only place a native-driven driver belongs.
+ * `connection/signalMotion.ts` keeps only what SVG geometry needs: JS-driven
+ * ripples and one-shots, which the native driver cannot reach.
  */
 
 /** A looping 0 → 1 → 0 breath, for something that is idling rather than working. */

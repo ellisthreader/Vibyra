@@ -26,3 +26,7 @@ export function unwatchWorkspace(): Promise<void> {
 export function onFsChanged(callback: (changes: FsChange[]) => void): Promise<UnlistenFn> {
   return listen<FsChange[]>("fs:changed", (event) => callback(event.payload));
 }
+
+export function fsCreateProjectFolder(parent: string, name: string): Promise<string> {
+  return invoke("fs_create_project_folder", { parent, name });
+}

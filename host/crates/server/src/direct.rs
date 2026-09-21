@@ -1,4 +1,4 @@
-use crate::{connection, peer_policy, state::Shared};
+use crate::{connection, peer_policy, presence, state::Shared};
 use futures_util::{SinkExt, StreamExt};
 use std::{sync::Arc, time::Duration};
 use tokio::{
@@ -23,7 +23,7 @@ pub async fn serve_with_policy(
     let address = listener.local_addr().map_err(|e| e.to_string())?;
     let permits = Arc::new(Semaphore::new(32));
     loop {
-        let (stream, peer) = listener.accept().await.map_err(|e| e.to_string())?;
+        let (mut stream, peer) = listener.accept().await.map_err(|e| e.to_string())?;
         if lan_only && !peer_policy::allowed(address, peer) {
             continue;
         }
@@ -33,6 +33,11 @@ pub async fn serve_with_policy(
         let shared = shared.clone();
         tokio::spawn(async move {
             let _permit = permit;
+            // A client that cannot browse Bonjour asks this address for the
+            // same presence instead. Peeked, so the WebSocket path is untouched.
+            if presence::intercept(&mut stream, &shared).await {
+                return;
+            }
             let config = WebSocketConfig::default()
                 .max_message_size(Some(vibyra_transport::MAX_FRAME))
                 .max_frame_size(Some(vibyra_transport::MAX_FRAME));

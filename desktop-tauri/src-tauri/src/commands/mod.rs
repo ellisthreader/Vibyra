@@ -36,6 +36,7 @@ mod screenshot_tests;
 mod screenshot_x11;
 pub mod session;
 pub mod settings;
+pub mod speech;
 pub mod terminal;
 pub(crate) mod terminal_args;
 mod terminal_launch;
@@ -70,3 +71,10 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
 }
 
 pub mod phone;
+
+pub mod shared_chats;
+pub mod shared_cli;
+
+pub mod teammates;
+
+pub mod teammate_upload;

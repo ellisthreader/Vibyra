@@ -6,7 +6,7 @@ use App\Http\Controllers\Concerns\UserPayloads;
 use App\Jobs\RunVibesTurn;
 use App\Models\User;
 use App\Services\Billing\OpenRouterPricingNormalizer;
-use App\Services\Vibes\{Catalog, Quotes, Turns, Wallet};
+use App\Services\Vibes\{Attachments, Catalog, Quotes, Turns, Wallet};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -30,19 +30,22 @@ class VibesController extends Controller
     /**
      * Whether this account may spend its Vibes at all.
      *
-     * An account proves it is a person by verifying an email; a guest has none, so
-     * it proves the same thing with Apple's DeviceCheck, which is what decided
-     * whether it was granted any Vibes in the first place. A guest that was denied
-     * a grant holds nothing and so cannot spend regardless of this check — the
-     * balance is the limit, not a second gate.
+     * The free trial is open to everyone: a guest gets it with no address at all,
+     * so an account that has signed up but not yet opened its verification mail
+     * must not get less than a guest would. What the trial can fund is bounded by
+     * the grant, the trial chats and the per-chat cap in `Turns`, never by this.
      *
-     * These are alternatives, never a bypass: without DeviceCheck configured, a
-     * guest's grant is the ordinary trial and the email gate is the only control
-     * left, which is why `Guests::issue` is the one place that decides an amount.
+     * Verifying the email is what unlocks everything past the trial. Purchased or
+     * granted Vibes are real money tied to an address someone must be able to
+     * reach, so an unverified account holding any of them is refused here until it
+     * proves the address; the trial it already spent is not a way around that.
      */
     private function maySpend(User $user): void
     {
-        abort_if(!$user->isGuest() && !$user->hasVerifiedEmail(), 403, 'Verify your email to use your free Vibes.');
+        if ($user->isGuest() || $user->hasVerifiedEmail()) return;
+        $paid = (int) DB::table('vibes_grants')->where('user_id', $user->id)->whereNull('revoked_at')
+            ->where('kind', '!=', 'trial')->sum('remaining');
+        abort_if($paid > 0, 403, 'Verify your email to use your purchased Vibes.');
     }
 
     public function wallet(Request $request, Wallet $wallet)
@@ -82,12 +85,13 @@ class VibesController extends Controller
                 if (!$existing) DB::table('vibes_chats')->insert([...$data, 'user_id' => $id, 'created_at' => now(), 'updated_at' => now()]);
             });
         }
-        return $this->json(['chats' => DB::table('vibes_chats')->where('user_id', $id)->orderByDesc('updated_at')->limit(100)->get()]);
+        return $this->json(['chats' => DB::table('vibes_chats')->where('user_id', $id)->whereNull('agent_id')->orderByDesc('updated_at')->limit(100)->get()]);
     }
 
     public function quote(Request $request, Quotes $quotes)
     {
         abort_unless(config('vibes.enabled'), 503, 'AI chat is not available yet. Your computer sessions still work.');
+        abort_if(trim((string) config('services.openrouter.key')) === '', 503, 'AI chat is being prepared. Please try again later.');
         $user = $this->account($request);
         $this->maySpend($user);
         // The effort is checked against the chosen model's own published ladder in
@@ -96,16 +100,21 @@ class VibesController extends Controller
             'effort' => ['nullable', 'string', Rule::in(OpenRouterPricingNormalizer::EFFORTS)],
             // Which integrations were named in the message. Quotes keeps only the ones this
             // account has really connected, so an unknown or uninstalled slug is ignored.
-            'integrations' => 'sometimes|array|max:8', 'integrations.*' => 'string|max:40']);
-        return $this->json($quotes->create($user->id, $d['chatId'], $d['text'], $d['model'], $d['effort'] ?? null, $d['integrations'] ?? []));
+            'integrations' => 'sometimes|array|max:8', 'integrations.*' => 'string|max:40',
+            // Photos and files uploaded for this message. Quotes accepts only this account's
+            // own, and only ones not already sent with another turn.
+            'attachments' => 'sometimes|array|max:'.Attachments::PER_MESSAGE, 'attachments.*' => 'uuid']);
+        return $this->json($quotes->create($user->id, $d['chatId'], $d['text'], $d['model'], $d['effort'] ?? null,
+            $d['integrations'] ?? [], $d['attachments'] ?? []));
     }
 
     public function submit(Request $request, Quotes $quotes, Turns $turns)
     {
         abort_unless(config('vibes.enabled'), 503, 'AI chat is not available yet. Your computer sessions still work.');
+        abort_if(trim((string) config('services.openrouter.key')) === '', 503, 'AI chat is being prepared. Please try again later.');
         $user = $this->account($request);
         $this->maySpend($user);
-        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:100000']);
+        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:'.Quotes::MAX_ENCODED_LENGTH]);
         $turn = $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
         if ($turn->status === 'queued') RunVibesTurn::dispatch($turn->id);
         return $this->json(['turn' => $turns->payload($turn)], 202);

@@ -3,11 +3,12 @@ import { AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Button, Hint } from '../ui/primitives';
 import type { WorkspaceModel } from '../ui/types';
+import { useGlass } from './glass';
 import { useVibes } from './VibesProvider';
 import { isProjectTool, type ProjectTool } from './types';
 
 export function ProjectTools({ workspace }: { workspace: WorkspaceModel }) {
-  const { store, chats, selected, turns, wallet } = useVibes(); const { colors } = useTheme();
+  const { store, chats, selected, turns, wallet } = useVibes(); const { colors } = useTheme(); const glass = useGlass();
   const chat = chats.find(c => c.id === selected);
   const turn = turns.find(t => t.status === 'waiting');
   // Only the calls this phone answers. An integration call in the same batch was already
@@ -41,9 +42,10 @@ export function ProjectTools({ workspace }: { workspace: WorkspaceModel }) {
     }
   }, [tool?.id, connected]);
   if (!tool) return null;
-  return <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-    <Text style={[s.title, { color: colors.text }]}>{tool.operation === 'write_file' ? 'Review this file edit' : 'Reading your project'}</Text>
-    <Text selectable style={[s.path, { color: colors.muted }]}>{tool.arguments.path || 'Project files'}</Text>
+  return <View style={[s.card, glass.sheet]}>
+    <Text style={[s.title, { color: colors.text }]}>{tool.operation === 'write_file' ? 'Review this file edit'
+      : tool.operation === 'search_files' ? 'Searching your project' : 'Reading your project'}</Text>
+    <Text selectable style={[s.path, { color: colors.muted }]}>{tool.arguments.path || tool.arguments.query || 'Project files'}</Text>
     {tool.operation === 'write_file' && <>
       <Text style={[s.detail, { color: colors.muted }]}>{tool.arguments.expectedSha256 === 'new' ? 'Create' : 'Replace'} this file with the following content in {workspace.projects.find(p => p.id === chat?.project_id)?.name ?? 'your authorized project'}.</Text>
       <ScrollView style={[s.code, { backgroundColor: colors.elevated }]}><Text selectable style={[s.codeText, { color: colors.text }]}>{tool.arguments.content}</Text></ScrollView>
@@ -54,6 +56,6 @@ export function ProjectTools({ workspace }: { workspace: WorkspaceModel }) {
     {error && <><Hint error>{error}</Hint><Button secondary title="Check this response again" disabled={!connected || busy} onPress={() => void respond(tool, lastDecision)} /></>}
   </View>;
 }
-const s = StyleSheet.create({ card: { borderWidth: 1, borderRadius: 19, padding: 16, gap: 10 }, title: { fontSize: 15, fontWeight: '600' },
-  path: { fontSize: 12 }, detail: { fontSize: 13, lineHeight: 20 }, code: { maxHeight: 140, borderRadius: 9, padding: 10 }, codeText: { fontFamily: 'monospace', fontSize: 12, lineHeight: 18 },
+const s = StyleSheet.create({ card: { borderRadius: 24, padding: 18, gap: 10 }, title: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  path: { fontSize: 12 }, detail: { fontSize: 13, lineHeight: 20 }, code: { maxHeight: 140, borderRadius: 14, padding: 12 }, codeText: { fontFamily: 'monospace', fontSize: 12, lineHeight: 18 },
   buttons: { flexDirection: 'row', gap: 10 }, button: { flex: 1 } });

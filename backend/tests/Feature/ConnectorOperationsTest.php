@@ -59,7 +59,19 @@ class ConnectorOperationsTest extends TestCase
                 'api.github.com/repos/*', [['number' => 12, 'title' => 'It crashes', 'html_url' => 'https://github.com/ellis/app/issues/12']],
                 'Opened issue #12 on ellis/app'],
 
+            ['github', 'github_pull_request', ['repository' => 'ellis/app', 'number' => 4], 'api.github.com/repos/*',
+                [['number' => 4, 'title' => 'Fix', 'head' => ['sha' => 'abc']], [], ['check_runs' => []], ['statuses' => []]], 'Read pull request'],
+            ['github', 'github_pull_request_files', ['repository' => 'ellis/app', 'number' => 4], 'api.github.com/repos/*',
+                [[['filename' => 'src/app.ts', 'patch' => '+fixed']]], 'Read changed files'],
+            ['github', 'github_repository_activity', ['repository' => 'ellis/app'], 'api.github.com/*',
+                [[], ['items' => [], 'total_count' => 0]], 'Read repository activity'],
+            ['github', 'github_read_file', ['repository' => 'ellis/app', 'path' => 'test.ts', 'ref' => 'abc'], 'api.github.com/repos/*',
+                [['type' => 'file', 'encoding' => 'base64', 'content' => 'dGVzdA==']], 'Read file'],
+
             // --- Stripe -------------------------------------------------------
+            ['stripe', 'stripe_account', [], 'api.stripe.com/*', [['id' => 'acct_test']], 'Stripe account details'],
+            ['stripe', 'stripe_projects', [], 'api.stripe.com/*', [['data' => [], 'has_more' => false]], 'Stripe project tags'],
+            ['stripe', 'stripe_revenue', ['scope' => 'account'], 'api.stripe.com/*', [['data' => [], 'has_more' => false]], 'Stripe payment report'],
             ['stripe', 'stripe_balance', [], 'api.stripe.com/*', [[
                 'available' => [['amount' => 12345, 'currency' => 'gbp']], 'pending' => [],
             ]], 'Read your Stripe balance'],
@@ -73,6 +85,27 @@ class ConnectorOperationsTest extends TestCase
                 ['data' => []],
                 ['id' => 'cus_2', 'email' => 'new@b.test'],
             ], 'Created the Stripe customer new@b.test'],
+
+            // --- Figma ----------------------------------------------------------
+            ['figma', 'figma_list_frames', ['file' => 'ABCDEFGHIJKLMNOP'], 'api.figma.com/v1/files/*', [[
+                'name' => 'Design File', 'lastModified' => '2026-09-01T00:00:00Z', 'version' => '123',
+                'document' => ['id' => '0:0', 'name' => 'Document', 'type' => 'DOCUMENT', 'children' => [
+                    ['id' => '1:0', 'name' => 'Page 1', 'type' => 'CANVAS', 'children' => [
+                        ['id' => '1:1', 'name' => 'Home', 'type' => 'FRAME', 'absoluteBoundingBox' => ['x' => 0, 'y' => 0, 'width' => 390, 'height' => 844]],
+                    ]],
+                ]],
+            ]], 'pages and frames in Figma file ABCDEFGHIJKLMNOP'],
+            ['figma', 'figma_read_frame', ['file' => 'https://www.figma.com/file/ABCDEFGHIJKLMNOP/Test?node-id=1-1'], 'api.figma.com/v1/files/*', [[
+                'nodes' => ['1:1' => ['document' => ['id' => '1:1', 'name' => 'Home', 'type' => 'FRAME',
+                    'absoluteBoundingBox' => ['x' => 0, 'y' => 0, 'width' => 390, 'height' => 844], 'children' => [
+                        ['id' => '1:2', 'name' => 'Title', 'type' => 'TEXT', 'characters' => 'Welcome',
+                            'fills' => [['type' => 'SOLID', 'color' => ['r' => 0, 'g' => 0, 'b' => 0], 'opacity' => 1]]],
+                    ]]]],
+            ]], 'a frame in Figma file ABCDEFGHIJKLMNOP'],
+            ['figma', 'figma_file_comments', ['file' => 'ABCDEFGHIJKLMNOP'], 'api.figma.com/v1/files/*', [[
+                'comments' => [['id' => 'c1', 'message' => 'Looks good', 'user' => ['handle' => 'ellis'],
+                    'created_at' => '2026-09-01T00:00:00Z', 'client_meta' => ['node_id' => ['1:1']]]],
+            ]], 'comments on Figma file ABCDEFGHIJKLMNOP'],
         ];
         return array_combine(array_map(fn ($case) => $case[1], $cases), $cases);
     }
@@ -151,18 +184,25 @@ class ConnectorOperationsTest extends TestCase
 
     /**
      * `writes()` is what the catalogue's promise is checked against, so a write that
-     * is not declared there is a write the install page swears does not happen.
+     * is not declared there is a write the install page swears does not happen - and
+     * a connector with no write must say so in the catalogue rather than leaving the
+     * sentence to look like an oversight.
      */
-    public function test_every_declared_write_is_a_real_operation_and_every_connector_has_one(): void
+    public function test_every_declared_write_is_a_real_operation_and_a_read_only_connector_says_so(): void
     {
         $registry = app(Registry::class);
         foreach ($registry->slugs() as $slug) {
             $connector = $registry->for($slug);
             $offered = array_map(fn ($definition) => $definition['function']['name'], $connector->definitions());
             $writes = $connector->writes();
-            $this->assertNotEmpty($writes, $slug.' offers no write, but the catalogue says every integration can change something');
             foreach ($writes as $write) {
                 $this->assertContains($write, $offered, $slug.' declares the write '.$write.' but never offers it');
+            }
+            $sentence = config('chat_connectors.catalogue.'.$slug.'.writes');
+            if ($writes) {
+                $this->assertNotEmpty($sentence, $slug.' can change something but the catalogue does not say so');
+            } else {
+                $this->assertNull($sentence, $slug.' says it changes something in the catalogue but offers no write');
             }
         }
     }

@@ -17,9 +17,11 @@ class AgentTools
                 'parameters' => ['type' => 'object', 'properties' => ['path' => $string], 'required' => ['path'], 'additionalProperties' => false]],
             ['name' => 'read_file', 'description' => 'Read a UTF-8 project file. Returns content and sha256. Do not edit truncated files.',
                 'parameters' => ['type' => 'object', 'properties' => ['path' => $string], 'required' => ['path'], 'additionalProperties' => false]],
-            ['name' => 'write_file', 'description' => 'Write a project file, at most 8 KB. Requires explicit user approval. Use sha256 from read_file, or new for a new file.',
+            ['name' => 'write_file', 'description' => 'Write a project file, at most 8 KB. Requires explicit user approval. Use sha256 from read_file, or new for a new file. Refused on a project opened read-only.',
                 'parameters' => ['type' => 'object', 'properties' => ['path' => $string, 'content' => $string, 'expectedSha256' => $string],
                     'required' => ['path', 'content', 'expectedSha256'], 'additionalProperties' => false]],
+            ['name' => 'search_files', 'description' => 'Search the authorized project for text, case-insensitively. Returns matching path, line number and a short excerpt per hit; bounded and possibly truncated.',
+                'parameters' => ['type' => 'object', 'properties' => ['query' => $string], 'required' => ['query'], 'additionalProperties' => false]],
         ]);
     }
 
@@ -36,11 +38,13 @@ class AgentTools
             $request = json_decode($current->request, true);
             abort_unless(!empty($request['tools']), 422, 'This conversation has no project tool access.');
             $calls = $message['tool_calls'] ?? [];
+            abort_unless(is_array($calls), 422, 'Invalid tool requests.');
             abort_if(count($calls) > 4 || count($calls) === 0, 422, 'Too many tool requests.');
             // The allowlist is the set this turn actually offered, so a tool cannot be
             // accepted here unless the priced request already contained its schema.
             $offered = array_column(array_column($request['tools'], 'function'), 'name');
             $ids = array_column($calls, 'id');
+            abort_unless(count(array_filter($ids, 'is_string')) === count($ids), 422, 'Invalid tool identifiers.');
             abort_unless(count($ids) === count($calls) && count(array_unique($ids)) === count($ids), 422, 'Invalid tool identifiers.');
             $request['messages'][] = $message;
             foreach ($calls as $call) {
@@ -48,6 +52,7 @@ class AgentTools
                     && !DB::table('vibes_tools')->where('turn_id', $turn->id)->where('provider_id', $call['id'])->exists(), 422, 'Invalid tool identifier.');
                 $name = $call['function']['name'] ?? '';
                 abort_unless(in_array($name, $offered, true), 422, 'Unsupported AI tool.');
+                abort_unless(is_string($call['function']['arguments'] ?? null), 422, 'Invalid tool arguments.');
                 $args = json_decode($call['function']['arguments'], true, flags: JSON_THROW_ON_ERROR);
                 abort_unless(is_array($args), 422, 'Invalid tool arguments.');
                 // An integration call is answered by this server against the person's own
@@ -67,7 +72,12 @@ class AgentTools
     /** The project tools' own argument check, unchanged and still the only file path gate. */
     private function fileArguments(string $name, array $args): array
     {
-        abort_unless(in_array($name, ['list_files', 'read_file', 'write_file'], true), 422, 'Unsupported AI tool.');
+        abort_unless(in_array($name, ['list_files', 'read_file', 'write_file', 'search_files'], true), 422, 'Unsupported AI tool.');
+        if ($name === 'search_files') {
+            abort_unless(is_string($args['query'] ?? null) && trim($args['query']) !== '' && strlen($args['query']) <= 200,
+                422, 'Say what to search the project for, in 200 characters or fewer.');
+            return array_intersect_key($args, array_flip(['query']));
+        }
         abort_unless(is_string($args['path'] ?? null) && strlen($args['path']) <= 2048, 422, 'Invalid tool path.');
         if ($name === 'write_file') abort_unless(is_string($args['content'] ?? null) && strlen($args['content']) <= 8192
             && is_string($args['expectedSha256'] ?? null), 422, 'Invalid file edit.');
@@ -111,6 +121,8 @@ class AgentTools
         return DB::table('vibes_tools')->where('turn_id', $turnId)->orderBy('created_at')->get()->map(fn ($t) => $t->integration ? [
             'id' => $t->id, 'operation' => $t->operation, 'integration' => $t->integration, 'summary' => $t->summary,
             'decision' => $t->decision, 'expiresAt' => \Illuminate\Support\Carbon::parse($t->created_at)->addMinutes(15)->timestamp,
+            'approval' => $t->action_state ? ['state' => $t->action_state, 'fingerprint' => $t->action_hash,
+                'arguments' => json_decode($t->arguments, true), 'answer' => $t->action_answer] : null,
         ] : [
             'id' => $t->id, 'operation' => $t->operation, 'arguments' => json_decode($t->arguments, true),
             'decision' => $t->decision, 'result' => $t->result ? json_decode($t->result, true) : null,

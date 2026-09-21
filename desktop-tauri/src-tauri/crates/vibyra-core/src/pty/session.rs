@@ -21,6 +21,11 @@ pub struct Session {
     pub output: Mutex<SessionOutput>,
     pub alive: AtomicBool,
     pub exit_code: Mutex<Option<i32>>,
+    /// The grid the program formats for, as `(cols, rows)`. `resize` pushed
+    /// straight into `portable_pty` and recorded nothing, so nothing could
+    /// answer "how wide is this terminal?" — and a phone that has to guess
+    /// re-wraps every line and clamps a TUI's cursor moves into its last cell.
+    size: Mutex<(u16, u16)>,
     writer: Mutex<Box<dyn Write + Send>>,
     master: Mutex<Box<dyn MasterPty + Send>>,
     child: Mutex<Box<dyn Child + Send + Sync>>,
@@ -107,6 +112,7 @@ impl Session {
             )),
             alive: AtomicBool::new(true),
             exit_code: Mutex::new(None),
+            size: Mutex::new((spec.cols, spec.rows)),
             writer: Mutex::new(writer),
             master: Mutex::new(pair.master),
             child: Mutex::new(child),
@@ -166,7 +172,14 @@ impl Session {
                 pixel_width: 0,
                 pixel_height: 0,
             })
-            .map_err(|e| CoreError::Pty(e.to_string()))
+            .map_err(|e| CoreError::Pty(e.to_string()))?;
+        *self.size.lock() = (cols, rows);
+        Ok(())
+    }
+
+    /// The grid this session is formatting for, as `(cols, rows)`.
+    pub fn size(&self) -> (u16, u16) {
+        *self.size.lock()
     }
 
     pub fn kill(&self) {

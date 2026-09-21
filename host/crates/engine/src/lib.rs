@@ -4,6 +4,7 @@ mod desktop_launch;
 mod embedded;
 pub use desktop_launch::DesktopConversationOptions;
 mod events;
+mod external_read;
 mod git;
 mod history;
 mod journal;
@@ -84,9 +85,14 @@ impl Engine {
             return Err("invalid authenticated request".into());
         }
         match method {
-            "vibes.bind" | "vibes.tool" => self.vibes_tool(device, method, &params),
+            "vibes.bind" | "vibes.tool" => self.vibes_tool_with(device, method, &params, None),
             method if method.starts_with("scaffold.") => self.scaffold_handle(method, &params),
-            "host.state" => Ok(self.shared.lock().snapshot()),
+            "host.state" => {
+                let mut state = self.shared.lock().snapshot();
+                state["capabilities"]["conversationProviders"] =
+                    serde_json::json!(self.conversation_launch.providers());
+                Ok(state)
+            }
             "session.create" if params["runner"] == "conversation" => {
                 self.create_conversation(device, &params)
             }

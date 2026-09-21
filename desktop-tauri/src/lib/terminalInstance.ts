@@ -22,13 +22,18 @@ import { themeFor } from "./xtermTheme";
 // of these, keyed by session; nothing here knows about the other panes.
 
 export interface TerminalEntry {
+  id: number;
   term: Terminal;
   fit: FitAddon;
   container: HTMLDivElement;
   anchor: BottomAnchorState;
 }
 
-/** Fits the grid to the host and refreshes the cached cell height. */
+/** Fits the grid to the host and refreshes the cached cell height.
+ *
+ * The single place local fitting happens. This Mac alone sizes its panes: a
+ * phone watching one draws this grid at its own zoom and never asks for a
+ * width, so nothing here ever has to yield to a remote viewer. */
 export function fitTerminal(entry: TerminalEntry): void {
   const rect = entry.container.getBoundingClientRect();
   if (rect.width <= 80 || rect.height <= 60) return;
@@ -64,6 +69,7 @@ export function createTerminalEntry(
   attachTerminalClipboard(term);
 
   const entry: TerminalEntry = {
+    id,
     term,
     fit,
     container,
@@ -84,7 +90,9 @@ export function createTerminalEntry(
     anchorNow();
     void writeTerminal(id, data).catch(() => {});
   });
-  term.onResize(({ rows, cols }) => void resizeTerminal(id, rows, cols).catch(() => {}));
+  term.onResize(({ rows, cols }) => {
+    void resizeTerminal(id, rows, cols).catch(() => {});
+  });
   term.onScroll(() => {
     if (!anchoring) anchorNow();
   });

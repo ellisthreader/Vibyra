@@ -11,6 +11,7 @@ export type NotificationCategory =
   | "preview"
   | "aiSpend"
   | "models"
+  | "appUpdate"
   | "system";
 
 export type NotificationSeverity = "info" | "success" | "warning" | "danger";
@@ -29,7 +30,8 @@ export type NotificationActionId =
   | "openAiSettings"
   | "openShortcutSettings"
   | "openModelPicker"
-  | "openPreview";
+  | "openPreview"
+  | "installUpdate";
 
 export interface NotificationAction {
   id: NotificationActionId;

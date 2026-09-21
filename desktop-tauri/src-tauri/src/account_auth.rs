@@ -107,6 +107,17 @@ async fn submit_credentials(
                 (Some(token), Some(profile)) => {
                     account.adopt_session(&SecretStore, token.to_owned(), profile);
                 }
+                // A password alone is not the whole login for an account with a second
+                // factor: the backend answers with a challenge and no session. Asking
+                // for the code here is not built yet, so this says exactly that rather
+                // than reporting the account service as broken.
+                _ if response.get("twoFactor").is_some() => account.set_status(
+                    AccountStatus::SignedOut,
+                    Some(
+                        "This account asks for a two-factor code, which Vibyra Desktop                          can't ask for yet. Sign in with Google or Apple, or use the                          phone app or the website."
+                            .into(),
+                    ),
+                ),
                 _ => account.set_status(
                     AccountStatus::SignedOut,
                     Some("The account service returned an unexpected response.".into()),

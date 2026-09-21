@@ -22,7 +22,7 @@ export async function probeIdentity(host: string, port: number,
     const response = await fetch(`http://${address}:${port}/identity`,
       { signal: timer.signal, redirect: 'error', headers: { accept: 'application/json' } });
     if (!response.ok) return undefined;
-    const value = await response.json() as { version?: number; id?: unknown; name?: unknown };
+    const value = await response.json() as { version?: number; id?: unknown; name?: unknown; platform?: unknown };
     if (value.version !== 1 || typeof value.id !== 'string' || !/^[a-f0-9]{64}$/.test(value.id)) {
       return undefined;
     }
@@ -30,8 +30,10 @@ export async function probeIdentity(host: string, port: number,
     // many of its addresses or ports answer. An unnamed Host is "Computer",
     // never its address — nobody recognises their Mac by an IP.
     const named = typeof value.name === 'string' && value.name.trim() ? value.name.trim() : undefined;
+    // The OS family only picks the logo the found computer is drawn with.
+    const platform = typeof value.platform === 'string' && /^[a-z]{1,16}$/.test(value.platform) ? value.platform : undefined;
     const computer: NearbyComputer = { id: value.id, name: named ? named.slice(0, 128) : 'Computer',
-      hostId: value.id, host: address, port };
+      hostId: value.id, host: address, port, ...(platform ? { platform } : {}) };
     return !signal.aborted && isConnectable(computer) ? computer : undefined;
   } catch {
     return undefined;

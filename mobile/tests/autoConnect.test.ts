@@ -123,6 +123,37 @@ test('a forgotten computer is never quietly connected again', async () => {
   h.store.dispose();
 });
 
+test('a computer being reconnected stays on the page while it is reached', async () => {
+  const h = await connected();
+  h.handle(message => message.type === 'open');
+  void h.store.actions.reconnect!().catch(() => {});
+  await until(() => h.store.state.status === 'connecting');
+  // Blanking it here turned every retry into the connect flow for a moment.
+  assert.equal(h.store.state.host?.id, 'host1');
+  h.store.dispose();
+});
+
+test('a pairing that never completed is not a computer, and is not retried unasked', async () => {
+  const h = runtimeHarness({ retryDelays: RETRY_DELAYS });
+  h.handle(message => {
+    if (message.type !== 'open') return false;
+    h.rpc.receive({ type: 'error', connectionId: message.connectionId, message: 'Computer refused the connection.' });
+    return true;
+  });
+  await assert.rejects(h.store.actions.connect(JSON.stringify(pairing)));
+  await delay(30);
+  assert.equal(h.store.state.host, null, 'the phone still has no computer to show');
+  assert.equal(opens(h.sent), 1, 'asking again would only queue another approval on someone’s screen');
+  // The key is kept: an approval that lands after the phone gave up must not
+  // orphan it. But on the next launch it is still not a computer.
+  assert.ok(h.memory.has('connection'));
+  const next = await relaunch(h);
+  await delay(30);
+  assert.equal(next.store.state.host, null);
+  assert.equal(opens(next.sent), 0);
+  next.store.dispose();
+});
+
 test('cancelling a handshake is not the same as putting the computer away', async () => {
   const h = await connected();
   // What ConnectingStep does when its sheet closes on an unfinished attempt.

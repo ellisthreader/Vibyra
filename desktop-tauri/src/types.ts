@@ -96,6 +96,8 @@ export interface RendererPolicy {
 
 export interface Settings {
   theme: "auto" | "dark" | "light";
+  /** Desktop presentation only; iPhone conversations always use native chat. */
+  agentView: "terminal" | "chat";
   fontSize: number;
   fontFamily: string;
   scrollbackLines: number;

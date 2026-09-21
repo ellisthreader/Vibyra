@@ -1,3 +1,4 @@
+import { openNewProject } from '../../state/newProject';
 import { keyLabel } from "../../lib/platform";
 import { useProjectStore } from "../../state/projectStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
@@ -85,8 +86,8 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       id: "act-new-project",
       group: "Actions",
       label: "New project…",
-      hint: "folder picker",
-      run: () => void projectStore.pickAndCreate(),
+      hint: "create a folder",
+      run: openNewProject,
     },
     {
       id: "act-shot",
@@ -101,6 +102,12 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       label: "Go home",
       hint: keyLabel("Mod+Shift+H"),
       run: projectStore.goHome,
+    },
+    {
+      id: "act-history",
+      group: "Actions",
+      label: "Saved history",
+      run: () => workspace.setHistoryOpen(true),
     },
     {
       id: "act-panel",

@@ -42,6 +42,8 @@ pub fn default_address() -> String {
     ] {
         let selected = UdpSocket::bind(bind)
             .and_then(|s| {
+                // Best effort: without it the listener is merely less durable.
+                let _ = prefer_stable(&s);
                 s.connect(target)?;
                 s.local_addr()
             })
@@ -52,6 +54,42 @@ pub fn default_address() -> String {
         }
     }
     String::new()
+}
+
+/// Left alone, macOS picks the *temporary* IPv6 address — the privacy one it
+/// replaces every day — for this socket, and the listener would follow it. A
+/// phone that saved that address finds nothing there a day later, and one that
+/// looks for this Mac by the address its app was served from never finds it.
+/// The stable address stays put for as long as the Mac is on this network.
+#[cfg(target_os = "macos")]
+fn prefer_stable(socket: &UdpSocket) -> std::io::Result<()> {
+    use std::os::fd::AsRawFd;
+    // <netinet6/in6.h>; libc does not export it for Apple targets.
+    const IPV6_PREFER_TEMPADDR: libc::c_int = 63;
+    if !socket.local_addr()?.is_ipv6() {
+        return Ok(());
+    }
+    let off: libc::c_int = 0;
+    // SAFETY: a valid descriptor and a live, correctly sized int option value.
+    let result = unsafe {
+        libc::setsockopt(
+            socket.as_raw_fd(),
+            libc::IPPROTO_IPV6,
+            IPV6_PREFER_TEMPADDR,
+            (&off as *const libc::c_int).cast(),
+            std::mem::size_of_val(&off) as libc::socklen_t,
+        )
+    };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(std::io::Error::last_os_error())
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn prefer_stable(_: &UdpSocket) -> std::io::Result<()> {
+    Ok(())
 }
 
 #[cfg(test)]
@@ -79,5 +117,18 @@ mod tests {
         ] {
             assert!(connection_address(ip).is_err(), "{ip}");
         }
+    }
+
+    /// The option is private to xnu, so a renumbered or dropped constant would
+    /// only show up as the listener quietly drifting back to daily addresses.
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn this_mac_accepts_a_preference_for_its_stable_ipv6_address() {
+        let Ok(socket) = UdpSocket::bind("[::]:0") else {
+            return; // No IPv6 on this machine; nothing to prefer.
+        };
+        prefer_stable(&socket).expect("IPV6_PREFER_TEMPADDR is refused");
+        let ipv4 = UdpSocket::bind("0.0.0.0:0").unwrap();
+        prefer_stable(&ipv4).expect("an IPv4 socket is left as it is");
     }
 }

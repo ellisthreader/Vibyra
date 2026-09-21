@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
 import { useReducedMotion } from '../ui/useReducedMotion';
 
-// Staggered fade-up for `count` groups. Reduced-motion users get the finished state at once.
-export function useEntrance(count: number) {
+// Staggered fade-up for `count` groups, after `delay` ms. Reduced-motion users get the finished state at once.
+export function useEntrance(count: number, delay = 0) {
   const values = useRef(Array.from({ length: count }, () => new Animated.Value(0))).current;
   useEffect(() => {
     let active = true;
@@ -11,9 +11,9 @@ export function useEntrance(count: number) {
     AccessibilityInfo.isReduceMotionEnabled().then(reduced => {
       if (!active) return;
       if (reduced) { finish(); return; }
-      Animated.stagger(90, values.map(value => Animated.timing(value, {
+      Animated.sequence([Animated.delay(delay), Animated.stagger(90, values.map(value => Animated.timing(value, {
         toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true,
-      }))).start();
+      })))]).start();
     }).catch(finish);
     return () => { active = false; };
   }, [values]);

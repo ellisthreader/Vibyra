@@ -48,7 +48,8 @@ export function makeActions(store: WorkspaceStore): Pick<WorkspaceActions, 'crea
       let result: Session;
       try {
         result = await request<Session>('session.create', { projectId, kind, title: cleanTitle, requestId,
-          ...(store.state.conversationAvailable && kind === 'codex' ? { runner: 'conversation' } : {}) });
+          // A chat, for any agent that computer runs as one; a terminal otherwise.
+          ...(store.state.conversationAvailable && (store.state.conversationProviders ?? ['codex']).includes(kind) ? { runner: 'conversation' } : {}) });
         store.creates.success(key);
         await store.persistCreates().catch(error => store.report(error));
       } catch (error) { store.creates.failed(key, error); await store.persistCreates().catch(() => {}); throw error; }

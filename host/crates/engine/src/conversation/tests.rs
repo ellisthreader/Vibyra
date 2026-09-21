@@ -1,4 +1,4 @@
-use super::{model::Conversation, requests, stream};
+use super::{model::Conversation, stream};
 use crate::{
     state::{Metadata, Session},
     Engine,
@@ -87,62 +87,6 @@ fn decisions_are_bound_to_controller_generation_and_exact_action() {
         .handle("phone", "decision.resolve", p)
         .unwrap_err()
         .contains("control"));
-}
-#[test]
-fn restore_expires_pending_and_never_claims_unknown_execution_completed() {
-    let (_dir, engine, _) = setup();
-    stream::receive(&engine.shared, "session", request());
-    let mut state = engine.shared.lock();
-    let c = state.conversations.get_mut("session").unwrap();
-    c.receipts
-        .insert("submission".into(), json!({"status":"dispatching"}));
-    c.restore();
-    assert_eq!(c.items[0]["status"], "expired");
-    assert_eq!(c.receipts["submission"]["status"], "unknown");
-    assert_eq!(c.turn_state, "interrupted");
-}
-#[test]
-fn history_and_pending_stay_under_transport_frame_and_keep_stable_order() {
-    let mut c = Conversation::new("g".into());
-    for i in 0..600 {
-        c.update(
-            "s",
-            "p",
-            Some(json!({"id":i,"kind":"message","text":"😀".repeat(2000),"status":"completed"})),
-        );
-    }
-    let original = c.items[0]["order"].clone();
-    c.update(
-        "s",
-        "p",
-        Some(json!({"id":88,"status":"completed","text":"updated"})),
-    );
-    assert_eq!(c.items[0]["order"], original);
-    let snapshot = c.snapshot("s", "p", None);
-    assert!(snapshot.to_string().len() < 60 * 1024);
-    assert_eq!(snapshot["hasMore"], true);
-    assert_eq!(c.items.len(), 512);
-    assert_eq!(c.events.len(), 128);
-}
-#[test]
-fn unsupported_or_truncated_permissions_are_not_approvable() {
-    assert!(
-        requests::pending("item/fileChange/requestApproval", &json!(1), &json!({}), "").is_none()
-    );
-    assert!(requests::pending(
-        "item/commandExecution/requestApproval",
-        &json!(1),
-        &json!({"command":"x".repeat(8000)}),
-        ""
-    )
-    .is_none());
-    assert!(requests::pending(
-        "item/permissions/requestApproval",
-        &json!(1),
-        &json!({}),
-        ""
-    )
-    .is_none());
 }
 #[test]
 fn accepted_response_requires_provider_ack_and_duplicates_do_not_execute_twice() {

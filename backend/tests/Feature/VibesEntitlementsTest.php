@@ -80,12 +80,36 @@ class VibesEntitlementsTest extends TestCase
         $this->assertSame(1, app(Wallet::class)->projectCount($user->id));
     }
 
+    public function test_a_guest_can_attach_only_its_own_chat_with_wallet_consent(): void
+    {
+        $user = $this->account();
+        $user->forceFill(['guest_at' => now()])->save();
+        $this->attach($user, 'vault')->assertOk();
+        DB::table('vibes_wallets')->where('user_id', $user->id)->update(['consented_at' => null]);
+        $this->attach($user, 'vault')->assertForbidden();
+        DB::table('vibes_wallets')->where('user_id', $user->id)->update(['consented_at' => now()]);
+        $other = User::factory()->create();
+        $this->attach($other, 'vault')->assertNotFound();
+    }
+
     public function test_a_higher_plan_raises_the_project_limit(): void
     {
         $user = $this->account('builder');
         foreach (['a', 'b', 'c', 'd'] as $project) $this->attach($user, 'project-'.$project)->assertOk();
         $this->assertSame(4, app(Wallet::class)->projectCount($user->id));
-        $this->assertSame(10, app(Wallet::class)->payload($user->id)['entitlements']['maxProjects']);
+        $this->assertNull(app(Wallet::class)->payload($user->id)['entitlements']['maxProjects']);
+    }
+
+    public function test_the_two_sizes_of_pro_differ_only_in_vibes(): void
+    {
+        // Builder and Pro are sold as Pro 10× and Pro 20×: switching size on the
+        // upgrade page changes the figures and nothing else, so the entitlements
+        // behind it must agree on everything but the two windows.
+        $plans = app(Plans::class);
+        $windows = ['sessionCredits' => null, 'weekCredits' => null];
+        $this->assertSame(array_diff_key($plans->for('pro'), $windows), array_diff_key($plans->for('builder'), $windows));
+        $this->assertSame(2 * $plans->for('builder')['sessionCredits'], $plans->for('pro')['sessionCredits']);
+        $this->assertSame(2 * $plans->for('builder')['weekCredits'], $plans->for('pro')['weekCredits']);
     }
 
     public function test_every_plan_reaches_every_model_in_the_live_catalogue(): void

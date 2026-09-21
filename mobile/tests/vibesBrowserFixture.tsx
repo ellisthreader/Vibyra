@@ -3,27 +3,30 @@ import { createRoot } from 'react-dom/client';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { palettes, ThemeContext } from '../src/theme';
-import { normalizeModels } from '../src/vibes/api';
+import { normalizeModels, VibesError } from '../src/vibes/api';
+import { fallbackModels } from '../src/vibes/catalogue';
 import { VibesProvider } from '../src/vibes/VibesProvider';
 import { VibesScreen } from '../src/vibes/VibesScreen';
 import { WalletScreen } from '../src/vibes/WalletScreen';
-import type { PurchaseBridge, VibesApi, VibesChat, VibesTurn, VibesWallet } from '../src/vibes/types';
+import type { PurchaseBridge, VibesApi, VibesAttachment, VibesChat, VibesTurn, VibesWallet } from '../src/vibes/types';
 import { fixtureWorkspace } from './conversationWorkspaceFixture';
 
 const query = new URLSearchParams(location.search);
+const guest = query.get('account') === 'guest'; let guestAttempts = 0;
 const dark = query.get('theme') !== 'light'; const colors = dark ? palettes.dark : palettes.light;
 const calls: string[] = [];
 // Kept apart from `calls` so the ordering assertions elsewhere stay about which
 // operations ran, while these stay about what was actually asked of the provider.
 const efforts: string[] = [];
-Object.assign(window, { vibesCalls: calls, vibesEfforts: efforts });
+const uploads: VibesAttachment[] = []; const quoted: string[][] = [];
+Object.assign(window, { vibesCalls: calls, vibesEfforts: efforts, vibesQuoted: quoted });
 const planEntitlements = {
   free: { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false },
   starter: { maxProjects: 3, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false },
   builder: { maxProjects: 10, concurrentReplies: 2, fullCatalogue: false, remoteAccess: false },
   pro: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true },
 };
-let wallet: VibesWallet = { version: 1, available: 3, held: 0, total: 3, paidAvailable: 0,
+let wallet: VibesWallet = { version: 1, guest, available: 3, held: 0, total: 3, paidAvailable: query.has('paid') ? 3 : 0,
   plan: 'free', paidUntil: null, trialChatsRemaining: 2, trialCredits: 3, trialChats: 2, trialChatCredits: 3,
   accountToken: '8606d4d2-bae1-4d72-8aec-6f24b3c4a274',
   consented: query.get('state') !== 'consent', verified: true, purchasesEnabled: true, products: [
@@ -55,27 +58,39 @@ const catalogue = [
   ['meta/muse-1', 'Muse 1', undefined, 12, []],
 ] as const;
 const api: VibesApi = {
+  guest: { restore() {}, create: async () => {
+    calls.push('guest'); guestAttempts++;
+    if (query.get('state') === 'route-missing' || query.get('state') === 'route-retry' && guestAttempts === 1)
+      throw new VibesError('Vibyra AI is not available on this server yet.', 405);
+    return { token: 'fixture-guest', wallet: { ...wallet } };
+  } },
   wallet: async () => ({ ...wallet }), chats: async () => [...chats],
+  upload: async source => {
+    const file: VibesAttachment = { id: `attachment-${uploads.length}`, name: source.name, bytes: source.file?.size ?? 10,
+      kind: source.mimeType.startsWith('image/') ? 'image' : 'text' };
+    uploads.push(file); return file;
+  },
   consent: async () => { wallet = { ...wallet, consented: true }; calls.push('consent'); },
   // Deliberately the raw provider shape, so the fixture proves the normalization
   // the real backend payload goes through rather than bypassing it.
-  models: async () => normalizeModels(catalogue.map(([id, name, tier, age, efforts], i) => ({ id, name,
+  models: async () => query.get('catalogue') === 'full' ? fallbackModels : query.get('catalogue') === 'empty' ? [] : normalizeModels(catalogue.map(([id, name, tier, age, efforts], i) => ({ id, name,
     family: id.split('/')[0]!, available: true, trial: i % 2 === 0, inputPerMillion: 1, outputPerMillion: 4,
     tier, released: daysAgo(age), blurb: `${name} on OpenRouter.`,
     reasoning: efforts.length ? { mandatory: false, default_effort: 'high', supported_efforts: [...efforts].reverse() } : undefined }))),
   createChat: async (id, title) => { chats = [{ id, title, trial_slot: null, trial_used: 0, host_id: 'fixture-host', project_id: 'fixture-project', binding: 'fixture-binding' }, ...chats]; return chats; },
   // The effort is recorded on the quote and echoed back, so a test can prove the
   // level that was chosen is the level that would actually be paid for.
-  quote: async (chatId, text, model, effort) => { efforts.push('quote:' + model + ':' + (effort ?? 'default'));
+  quote: async (chatId, text, model, effort, _integrations, attachments = []) => { efforts.push('quote:' + model + ':' + (effort ?? 'default')); quoted.push(attachments);
     // Sized against the trial the wallet above holds: a free account has to be able
     // to afford its first reply, or every flow past the composer is untestable.
-    return { quote: JSON.stringify({ chatId, text, model, effort }), maxCredits: effort === 'max' ? 3 : 2,
+    return { quote: JSON.stringify({ chatId, text, model, effort, attachments }), maxCredits: effort === 'max' ? 3 : 2,
       estimatedCredits: 1, model, effort: effort ?? null, expiresAt: Date.now() / 1000 + 120 }; },
   submit: async (id, quote) => {
     calls.push('submit'); efforts.push('submit:' + (JSON.parse(quote).effort ?? 'default'));
     if (query.get('state') === 'failure') throw new Error('Connection interrupted. Your draft is saved.');
     const q = JSON.parse(quote); wallet = { ...wallet, available: 1, total: 1, trialChatsRemaining: 1 };
     const t: VibesTurn = { id, chatId: q.chatId, model: q.model, status: 'completed', prompt: q.text,
+      attachments: uploads.filter(file => q.attachments.includes(file.id)),
       response: 'Let’s start with one focused screen.\n\nKeep the main action easy to reach, use clear labels, and give the content room to breathe.',
       reserved: 2, charged: 1, error: null, createdAt: new Date().toISOString() };
     if (['edit', 'offline'].includes(query.get('state') ?? '')) {
@@ -107,7 +122,7 @@ const purchases: PurchaseBridge = {
   finish: async () => { calls.push('finish'); }, pending: async () => [], restore: async () => [],
 };
 const workspace = { ...fixtureWorkspace, status: query.get('state') === 'offline' ? 'offline' as const : 'connected' as const,
-  account: { name: 'Design fixture', email: 'vibes-fixture@example.test', plan: 'free' },
+  account: guest ? null : { name: 'Design fixture', email: 'vibes-fixture@example.test', plan: 'free' },
   actions: { ...fixtureWorkspace.actions, vibesProjectRequest: async (_method: string, p: Record<string, unknown>) => {
     calls.push(String(p.decision)); return p.decision === 'allow' ? { written: true } : { declined: true };
   } } };
@@ -117,7 +132,7 @@ function Harness() {
   const [page, setPage] = React.useState(query.get('page') === 'wallet');
   return <>
     {page ? <WalletScreen signedIn onSignIn={() => calls.push('sign-in')} onClose={() => setPage(false)} />
-      : <VibesScreen workspace={workspace} onComputer={() => calls.push('computer')} onWallet={() => setPage(true)} />}
+      : <VibesScreen workspace={workspace} computer onWallet={() => setPage(true)} />}
     {/* Stands in for the app's own way back: the rail and the header's new chat. */}
     {page && <Pressable accessibilityRole="button" accessibilityLabel="Back to chat" onPress={() => setPage(false)}
       style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
@@ -128,7 +143,7 @@ createRoot(document.getElementById('root')!).render(<SafeAreaProvider>
   <ThemeContext.Provider value={{ colors, dark }}>
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 12 }}>
       <Text style={{ color: colors.muted, fontSize: 10, textAlign: 'center', marginBottom: 10 }}>Economy UI test fixture</Text>
-      <VibesProvider identity={workspace.account.email} api={api} purchases={purchases}>
+      <VibesProvider identity={workspace.account?.email ?? null} guest={guest} api={api} purchases={purchases}>
         <Harness />
       </VibesProvider>
     </View>

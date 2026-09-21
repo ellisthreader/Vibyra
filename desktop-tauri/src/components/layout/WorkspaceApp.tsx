@@ -1,3 +1,6 @@
+import { NewProjectPage } from '../home/NewProjectPage';
+import { useProductMode } from '../../state/productModeStore';
+import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
 import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
@@ -39,6 +42,8 @@ const LaunchApprovalModal = lazy(() => import("../rail/LaunchApprovalModal")
   .then((module) => ({ default: module.LaunchApprovalModal })));
 const ReportModal = lazy(() => import("../report/ReportModal")
   .then((module) => ({ default: module.ReportModal })));
+const SavedHistory = lazy(() => import("./SavedHistory")
+  .then((module) => ({ default: module.SavedHistory })));
 const ScreenshotEditor = lazy(() => import("./ScreenshotEditor")
   .then((module) => ({ default: module.ScreenshotEditor })));
 const SettingsModal = lazy(() => import("../settings/SettingsModal")
@@ -47,6 +52,7 @@ const SettingsModal = lazy(() => import("../settings/SettingsModal")
 /** The authenticated workspace. Mounted only after the account gate passes,
  * so projects, agents, models, and workspace state initialise post sign-in. */
 export function WorkspaceApp() {
+  const productMode = useProductMode(s => s.mode);
   const profile = useAccountStore((s) => s.snapshot.profile);
   const settings = useSettingsStore((s) => s.settings);
   const view = useProjectStore((s) => s.view);
@@ -54,6 +60,7 @@ export function WorkspaceApp() {
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
   const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
   const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
+  const historyOpen = useWorkspaceStore((s) => s.historyOpen);
   const filePreviewOpen = useWorkspaceStore((s) => s.preview !== null);
   const launchApprovalOpen = useLaunchApprovalStore((s) => s.pending !== null);
   const screenshotEditorOpen = useScreenshotStore((s) => s.draft !== null);
@@ -87,20 +94,26 @@ export function WorkspaceApp() {
     return <div className="boot">Starting Vibyra…</div>;
   }
 
-  const showProject = view === "project" && activeId !== null;
+  const showProject = view !== "home" && activeId !== null;
 
   return (
     <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""}`}>
       <TitleBar />
       <div className="shell">
+        <div className="product-code-shell" hidden={productMode !== "work"}>
         <ProjectStrip />
+        {view === "new-project" && <NewProjectPage />}
+        <div style={{ display: view === "new-project" ? "none" : "contents" }}>
         {showProject ? (
           <>
-            <ProjectWorkspace />
+            <ProjectWorkspace active={productMode === "work" && view !== "new-project"} />
           </>
         ) : (
           <Suspense fallback={null}><HomeView /></Suspense>
         )}
+        </div>
+        </div>
+        <TeammatesWorkspace active={productMode === "agent"} />
       </div>
       <UpdateBanner />
       <Toasts />
@@ -111,6 +124,7 @@ export function WorkspaceApp() {
       <Suspense fallback={null}>
         {screenshotEditorOpen ? <ScreenshotEditor /> : null}
         {paletteOpen ? <CommandPalette /> : null}
+        {historyOpen ? <SavedHistory /> : null}
         {agentPickerOpen ? <AgentPickerModal /> : null}
         {launchApprovalOpen ? <LaunchApprovalModal /> : null}
         {settingsOpen ? <SettingsModal /> : null}

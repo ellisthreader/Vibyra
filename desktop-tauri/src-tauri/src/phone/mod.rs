@@ -15,6 +15,9 @@ mod manage;
 mod manage_chat_tests;
 #[cfg(test)]
 mod manage_tests;
+mod railway;
+mod railway_resources;
+mod railway_tools;
 pub mod requests;
 mod scaffold;
 #[cfg(test)]

@@ -37,11 +37,18 @@ export function voiceStatus(): Promise<VoiceStatus> {
   return invoke("voice_status");
 }
 
+let voiceActions: Promise<unknown> = Promise.resolve();
+function voiceAction<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  const action = voiceActions.catch(() => {}).then(() => invoke<T>(command, args));
+  voiceActions = action;
+  return action;
+}
+
 export function voiceStart(): Promise<void> {
-  return invoke("voice_start");
+  return voiceAction("voice_start");
 }
 
 /** Stops recording; transcribes unless `discard`. Resolves to the text. */
 export function voiceStop(discard: boolean): Promise<string | null> {
-  return invoke("voice_stop", { discard });
+  return voiceAction("voice_stop", { discard });
 }

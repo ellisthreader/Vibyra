@@ -81,3 +81,17 @@ test('a provider-accepted prompt stays accepted when local receipt cleanup fails
   assert.equal(h.count(), 1); assert.equal(h.memory.has('turn.host1.one'), true);
   h.store.dispose();
 });
+
+test('Desktop handoff drops the phone lease and resync reloads conversation without terminal RPC', async () => {
+  const h = await structured();
+  h.event('conversation.controlChanged', { sessionId: 'two' });
+  assert.equal(h.store.state.control, 'ready');
+  h.event('conversation.controlChanged', { sessionId: 'one' });
+  assert.equal(h.store.state.control, 'readonly'); assert.equal(h.store.lease, null);
+  await assert.rejects(() => h.store.actions.submitTurn!('Stale controller'), /control/i);
+  await h.store.actions.claimControl!();
+  h.event('conversation.resync', {}); await delay();
+  assert.equal(h.store.state.control, 'readonly'); assert.equal(h.store.state.conversation?.items[0]?.text, 'Hello');
+  assert.equal(h.sent.some(item => item.payload?.method === 'session.snapshot'), false);
+  h.store.dispose();
+});

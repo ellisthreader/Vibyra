@@ -1,117 +1,43 @@
+import { useState } from "react";
+
 import { keyLabel, isMac } from "../../lib/platform";
-import { useEffect, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-
-import {
-  DEFAULT_SCREENSHOT_SHORTCUT,
-  DEFAULT_VOICE_SHORTCUT,
-  shortcutFromEvent,
-  shortcutLabel,
-} from "../../lib/hotkeys";
-import { setShortcutCaptureActive } from "../../lib/useGlobalShortcuts";
+import { DEFAULT_SCREENSHOT_SHORTCUT, DEFAULT_VOICE_SHORTCUT } from "../../lib/hotkeys";
+import { HotkeyRecorder } from "./HotkeyRecorder";
+import { Disclosure } from "./SettingsControls";
 import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
-
-interface RecorderProps {
-  defaultValue: string;
-  label: string;
-  otherValue: string;
-  value: string;
-  onChange: (value: string) => void;
-}
-
-function HotkeyRecorder({ defaultValue, label, otherValue, value, onChange }: RecorderProps) {
-  const [recording, setRecording] = useState(false);
-  const [error, setError] = useState("");
-
-  const finish = () => {
-    setRecording(false);
-    setShortcutCaptureActive(false);
-  };
-
-  useEffect(() => () => setShortcutCaptureActive(false), []);
-
-  const start = () => {
-    setError("");
-    setRecording(true);
-    setShortcutCaptureActive(true);
-  };
-
-  const onKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (!recording) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.key === "Escape") {
-      finish();
-      return;
-    }
-    if (event.key === "Backspace" || event.key === "Delete") {
-      onChange(defaultValue);
-      setError("");
-      finish();
-      return;
-    }
-    if (["Control", "Shift", "Alt", "Meta"].includes(event.key)) return;
-    const shortcut = shortcutFromEvent(event.nativeEvent);
-    if (!shortcut) {
-      setError("Use F1–F24 or a modifier with a letter, number, or navigation key.");
-      return;
-    }
-    if (shortcut === otherValue) {
-      setError("That shortcut is already assigned to the other tool.");
-      return;
-    }
-    setError("");
-    onChange(shortcut);
-    finish();
-  };
-
-  return (
-    <div className="hotkey-recorder-wrap">
-      <button
-        type="button"
-        className={`hotkey-recorder ${recording ? "hotkey-recorder--active" : ""}`}
-        data-hotkey-recorder
-        aria-label={`Set ${label} shortcut`}
-        onClick={start}
-        onKeyDown={onKeyDown}
-        onBlur={finish}
-      >
-        {recording ? "Press shortcut…" : shortcutLabel(value)}
-      </button>
-      {value !== defaultValue && !recording ? (
-        <button className="hotkey-reset" onClick={() => { setError(""); onChange(defaultValue); }}>Reset</button>
-      ) : null}
-      {error ? <span className="hotkey-error" role="alert">{error}</span> : null}
-    </div>
-  );
-}
 
 const APP_SHORTCUTS = [
   { label: "Open Settings", keys: keyLabel("Mod+,") },
-  { label: "Paste text or an image into a terminal", keys: isMac ? "⌘V" : "Ctrl Shift V" },
+  { label: "Find a setting", keys: keyLabel("Mod+F") },
   { label: "Open the command palette", keys: keyLabel("Mod+K") },
   { label: "Back to the home view", keys: keyLabel("Mod+Shift+H") },
   { label: "Focus terminal 1–9", keys: keyLabel("Mod+1–9") },
   { label: "Switch project 1–9", keys: keyLabel("Mod+Shift+1–9") },
+  { label: "Paste text or an image into a terminal", keys: isMac ? "⌘V" : "Ctrl Shift V" },
   { label: "Send composer line", keys: "Enter" },
   { label: "New line in composer", keys: keyLabel("Shift+Enter") },
 ];
 
+/** The two shortcuts you can change, then everything else as reference. */
 export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
+  const [showAll, setShowAll] = useState(false);
   return (
     <>
-      <SettingsBlock label="System-wide tools">
+      <SettingsBlock label="System-wide" note="These work in any app while Vibyra is running.">
         <div className="settings-group">
-          <SettingRow label="Speech to terminal" hint="Press once to record and again to transcribe into the selected terminal">
+          <SettingRow label="Voice typing" hint="Press once to record, again to type it into the focused terminal.">
             <HotkeyRecorder
-              label="speech"
+              label="voice typing"
               value={settings.voiceShortcut}
               otherValue={settings.screenshotShortcut}
               defaultValue={DEFAULT_VOICE_SHORTCUT}
               onChange={(voiceShortcut) => void update({ voiceShortcut })}
             />
           </SettingRow>
-          <SettingRow label="Screenshot editor" hint={isMac ? "Capture the main display, then crop, mark up, copy or save. Your keyboard may require Fn with F9." : "Capture the display under the pointer, then crop, mark up, copy or save"}>
+          <SettingRow
+            label="Screenshot"
+            hint={isMac ? "Capture the main display, then crop, mark up, copy or save. Some keyboards need Fn with F9." : "Capture the display under the pointer, then crop, mark up, copy or save."}
+          >
             <HotkeyRecorder
               label="screenshot"
               value={settings.screenshotShortcut}
@@ -122,7 +48,8 @@ export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
           </SettingRow>
         </div>
       </SettingsBlock>
-      <SettingsBlock label="Inside Vibyra">
+
+      <Disclosure title="All keyboard shortcuts" summary={`${APP_SHORTCUTS.length} inside Vibyra`} open={showAll} onToggle={setShowAll}>
         <div className="settings-group">
           {APP_SHORTCUTS.map((shortcut) => (
             <div key={shortcut.label} className="shortcut-row">
@@ -131,7 +58,7 @@ export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
             </div>
           ))}
         </div>
-      </SettingsBlock>
+      </Disclosure>
     </>
   );
 }

@@ -4,9 +4,11 @@ import { useTheme } from '../theme';
 import { Icon } from '../ui/primitives';
 import type { AccountMode } from './AccountForm';
 
-export function AccountEmailFields({ email, password, onEmail, onPassword, mode, busy, onSubmit }: {
+export function AccountEmailFields({ email, password, onEmail, onPassword, mode, busy, onSubmit, onPasswordFocus }: {
   email: string; password: string; onEmail: (value: string) => void; onPassword: (value: string) => void;
   mode: AccountMode; busy: boolean; onSubmit: () => void;
+  /** The password is the last field: the form brings its button up with the keyboard. */
+  onPasswordFocus?: () => void;
 }) {
   const { colors } = useTheme();
   const passwordInput = useRef<TextInput>(null);
@@ -35,7 +37,7 @@ export function AccountEmailFields({ email, password, onEmail, onPassword, mode,
           placeholder={mode === 'signup' ? 'Create a password' : 'Enter your password'} placeholderTextColor={colors.muted}
           secureTextEntry={!reveal} autoCapitalize="none" autoCorrect={false} editable={!busy} returnKeyType="go"
           textContentType={mode === 'signup' ? 'newPassword' : 'password'} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-          onSubmitEditing={onSubmit} onFocus={() => setFocus('password')} onBlur={() => setFocus(null)}
+          onSubmitEditing={onSubmit} onFocus={() => { setFocus('password'); onPasswordFocus?.(); }} onBlur={() => setFocus(null)}
           style={[s.input, { color: colors.text }]} />
         <Pressable accessibilityRole="button" accessibilityLabel={reveal ? 'Hide password' : 'Show password'}
           accessibilityState={{ checked: reveal }} onPress={() => setReveal(!reveal)} style={s.reveal}>

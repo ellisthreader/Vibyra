@@ -7,20 +7,25 @@ export interface SettingsPaneProps {
   update: (partial: Partial<Settings>) => Promise<void>;
 }
 
+/** One label + control line. `hint` is for a consequence the label does not
+ * carry on its own, never a restatement of the label. */
 export function SettingRow({
   label,
   hint,
   stack,
+  danger,
   children,
 }: {
-  label: string;
+  label: ReactNode;
   hint?: ReactNode;
   stack?: boolean;
+  danger?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
+  const cls = ["setting-row", stack ? "setting-row--stack" : "", danger ? "setting-row--danger" : ""].join(" ").trim();
   return (
-    <div role="group" aria-labelledby={`${id}-label`} className={stack ? "setting-row setting-row--stack" : "setting-row"}>
+    <div role="group" aria-labelledby={`${id}-label`} className={cls}>
       <div className="setting-row__text">
         <span id={`${id}-label`} className="setting-row__label">{label}</span>
         {hint ? <span className="setting-row__hint">{hint}</span> : null}
@@ -30,10 +35,23 @@ export function SettingRow({
   );
 }
 
-export function SettingsBlock({ label, children }: { label: string; children: ReactNode }) {
+/** A titled group. `panel` names it for deep links: the modal scrolls to and
+ * briefly outlines the block whose `panel` matches the requested target. */
+export function SettingsBlock({
+  label,
+  note,
+  panel,
+  children,
+}: {
+  label: string;
+  note?: ReactNode;
+  panel?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="settings-block">
+    <div className="settings-block" data-panel={panel}>
       <span className="section-label">{label}</span>
+      {note ? <span className="settings-block__note">{note}</span> : null}
       {children}
     </div>
   );

@@ -7,6 +7,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright-core';
+import { chromePath } from './chrome-path.mjs';
 import { serveFixture } from './fixture-server.mjs';
 import { terminalText, until } from './ui-test-helpers.mjs';
 
@@ -30,7 +31,7 @@ try {
   const pairing = JSON.parse(Buffer.from(encoded, 'base64url').toString());
   pairing.url = `ws://${address}`;
   served = await serveFixture('tests/terminalHostFixture.tsx');
-  browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome',
+  browser = await chromium.launch({ executablePath: chromePath(),
     headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage({ viewport: { width: 390, height: 844 },
     colorScheme: 'dark', isMobile: true, hasTouch: true });
@@ -38,31 +39,30 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(`${served.url}/?invitation=${encodeURIComponent(JSON.stringify(pairing))}`);
 
-  const input = page.getByRole('textbox', { name: 'Command for computer terminal' });
-  await input.waitFor({ timeout: 30000 });
+  // No box: the terminal itself is typed into, and the computer's echo is what shows.
+  const terminal = page.locator('iframe[title="Interactive terminal"]');
+  await terminal.waitFor({ timeout: 30000 });
   await terminalText(page, '$');
+  assert.equal(await page.getByRole('textbox', { name: 'Command for computer terminal' }).count(), 0, 'no box under the terminal');
 
   // Type it, press return, and let the computer answer.
-  await input.click();
-  await page.keyboard.type("printf 'TYPED_%s_VERIFIED\\n' INTO_THE_BOX | tee typed.txt");
+  await terminal.click();
+  await page.keyboard.type("printf 'TYPED_%s_VERIFIED\\n' INTO_THE_TERMINAL | tee typed.txt");
   await page.keyboard.press('Enter');
-  await until(() => { try { return readFileSync(join(fixture, 'typed.txt'), 'utf8') === 'TYPED_INTO_THE_BOX_VERIFIED\n'; }
+  await until(() => { try { return readFileSync(join(fixture, 'typed.txt'), 'utf8') === 'TYPED_INTO_THE_TERMINAL_VERIFIED\n'; }
     catch { return false; } }, 'the typed command running on the computer');
-  await terminalText(page, 'TYPED_INTO_THE_BOX_VERIFIED');
-  assert.equal(await input.inputValue(), '', 'the box clears once the command is sent');
+  await terminalText(page, 'TYPED_INTO_THE_TERMINAL_VERIFIED');
 
-  // Return runs the command rather than opening a second line in the box.
-  await input.click();
+  // Return runs the command, as in any terminal.
   await page.keyboard.type('echo second');
   await page.keyboard.press('Enter');
   await terminalText(page, 'second');
-  assert.equal(await input.inputValue(), '');
 
-  // One view only, and the keys bar still reaches the shell.
+  // One view only, and nothing under the output: no box, no key strip.
   assert.deepEqual(await page.getByRole('tab').allInnerTexts(), [], 'a terminal session shows no view tabs');
-  await page.getByRole('button', { name: 'Interrupt terminal command', exact: true }).click();
+  assert.equal(await page.getByRole('toolbar', { name: 'Terminal keys' }).count(), 0, 'no key strip under the terminal');
   assert.deepEqual(errors, []);
-  console.log('PASS terminal input: typed command runs on the computer, returns in the terminal and clears the box.');
+  console.log('PASS terminal input: a command typed into the terminal runs on the computer and returns in it.');
 } finally {
   if (browser) await browser.close();
   served?.close();

@@ -113,6 +113,8 @@ test("every looping animation is classified as feedback or decoration", () => {
     // Opacity-only emphasis on the activity dots; the colour and halo carry
     // the state on their own, and the loop ends at full opacity.
     "pulse-ring",
+    // Settings keeps its explicit busy/saving text when the decorative dot rests.
+    "status-pulse",
   ]);
   const css = readFileSync(new URL("../src/styles/performance.css", import.meta.url), "utf8");
   const kept = new Set(

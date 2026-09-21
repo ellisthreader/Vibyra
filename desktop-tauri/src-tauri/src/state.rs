@@ -17,7 +17,8 @@ use crate::secret_store::SecretStore;
 use crate::sink::ChannelSink;
 
 pub struct AppState {
-    pub account: AccountSessionManager,
+    pub shared_chats: Arc<crate::shared_chats::SharedChats>,
+    pub account: Arc<AccountSessionManager>,
     pub phone: Arc<Mutex<crate::phone::PhoneConnection>>,
     pub manager: Arc<PtyManager>,
     pub sink: Arc<ChannelSink>,
@@ -60,16 +61,26 @@ impl AppState {
             .parent()
             .map(|dir| dir.join("ai-usage.json"))
             .unwrap_or_else(|| std::env::temp_dir().join("vibyra-ai-usage.json"));
-        let phone = Arc::new(crate::phone::PhoneConnection::new(
+        let shared_chats = crate::shared_chats::SharedChats::new(
+            settings_path
+                .parent()
+                .unwrap_or(std::path::Path::new("."))
+                .join("shared-chats"),
+        );
+        let account = Arc::new(AccountSessionManager::default());
+        let phone = Arc::new(crate::phone::PhoneConnection::with_chats(
             settings_path
                 .parent()
                 .unwrap_or(std::path::Path::new("."))
                 .join("phone"),
             manager.clone(),
+            Some(shared_chats.clone()),
+            Some(account.clone()),
         ));
         crate::phone::watch(phone.clone(), manager.clone());
         Self {
-            account: AccountSessionManager::default(),
+            shared_chats,
+            account,
             phone,
             manager,
             sink,

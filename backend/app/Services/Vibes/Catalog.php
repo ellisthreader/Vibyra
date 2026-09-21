@@ -19,20 +19,7 @@ class Catalog
     public function models(string $plan = 'free'): array
     {
         if ($this->pricing->isStale()) $this->pricing->refreshPricingFor(config('vibes.auto_model'));
-        $curated = collect(config('vibes.models'))->map(fn ($entry, $id) => $this->row($id, $entry))->values();
-
-        $extra = collect($this->pricing->all())
-            ->except($curated->pluck('id')->all())
-            ->reject(fn ($model, $id) => $this->hidden($id, $model))
-            ->map(fn ($model, $id) => $this->row($id, [
-                'family' => $this->family($id), 'name' => $this->name($model, $id), 'trial' => false,
-            ]))
-            ->filter(fn ($row) => $row['available'])
-            ->sortBy([['family', 'asc'], ['name', 'asc']])
-            ->take(max(0, (int) config('vibes.catalogue_limit') - $curated->count()))
-            ->values();
-
-        return $curated->concat($extra)->all();
+        return (new CatalogMenu($this, $this->pricing->all(), ! $this->pricing->isStale()))->models();
     }
 
     /**
@@ -56,7 +43,7 @@ class Catalog
      * Public because Auto has to answer the same question: a model the picker
      * refuses to show is not one Auto may quietly choose on someone's behalf.
      */
-    public function hidden(string $id, mixed $model): bool
+    public function hidden(string $id, mixed $model, ?array $snapshot = null): bool
     {
         $vendor = str_contains($id, '/') ? explode('/', $id, 2)[0] : $id;
         if (in_array(strtolower($vendor), self::UNLISTED, true)) return true;
@@ -66,7 +53,7 @@ class Catalog
         // the cut-down twins, and the open-weights release beside the hosted line.
         if (in_array($id, ['openai/gpt-5.6-luna-mini', 'openai/gpt-5.4-nano', 'openai/gpt-oss-120b'], true)) return true;
         if (preg_match('/:(batch|free)$/i', $id) || str_starts_with($id, '~') || str_starts_with($id, 'openrouter/')) return true;
-        if (preg_match('#^openai/.*-pro$#i', $id) && isset($this->pricing->all()[preg_replace('/-pro$/i', '', $id)])) return true;
+        if (preg_match('#^openai/.*-pro$#i', $id) && isset(($snapshot ?? $this->pricing->all())[preg_replace('/-pro$/i', '', $id)])) return true;
         if (preg_match('/(^|[^a-z0-9])(preview|experimental|exp)([^a-z0-9]|$)/i', $id)) return true;
         $modalities = is_array($model) ? ($model['output_modalities'] ?? null) : null;
         return is_array($modalities) && $modalities !== ['text'];
@@ -88,6 +75,7 @@ class Catalog
         // Priced here too, so what the picker showed as included is what is funded.
         $entry['trial'] = $this->includedFree($id);
         return ['id' => $id, ...$entry, 'pricing' => $price, 'tools' => $this->pricing->supportsTerminalToolCalling($id),
+            'vision' => $this->pricing->readsImages($id),
             'efforts' => $this->efforts($id), 'defaultEffort' => $this->defaultEffort($id)];
     }
 
@@ -98,11 +86,15 @@ class Catalog
      */
     public function efforts(string $id): array
     {
-        $reasoning = $this->reasoningFor($id);
+        return self::supportedEfforts($this->reasoningFor($id));
+    }
+
+    public static function supportedEfforts(?array $reasoning): array
+    {
         if (! is_array($reasoning) || ! array_key_exists('supported_efforts', $reasoning)) return [];
-        // No live model publishes an explicit null, and a spend path must not open
-        // the whole ladder on the strength of one. The safe middle is offered instead.
-        $efforts = $reasoning['supported_efforts'] ?? ['low', 'medium', 'high'];
+        // OpenRouter explicitly defines null as every gateway effort; an omitted
+        // key above means no selector. Match the phone's normalizer at this boundary.
+        $efforts = $reasoning['supported_efforts'] ?? OpenRouterPricingNormalizer::EFFORTS;
         // A mandatory reasoner cannot be switched off, so 'none' is not offered.
         return array_values(array_filter($efforts, fn ($effort) => ! (($reasoning['mandatory'] ?? false) && $effort === 'none')));
     }
@@ -131,30 +123,16 @@ class Catalog
      * exception is `vibes.free_extra`, which is a deliberate list of picks and so
      * skips the price ceiling and the curation gate alike.
      */
-    public function includedFree(string $id): bool
+    public function includedFree(string $id, ?array $price = null): bool
     {
         // An explicit pick overrides both gates: it is a decision, not a deduction.
         if (in_array($id, (array) config('vibes.free_extra', []), true)) return true;
         if (! isset(config('vibes.models')[$id])) return false;
-        $price = $this->pricing->freshPricingFor($id) ?? $this->pricing->pricingFor($id);
+        $price ??= $this->pricing->freshPricingFor($id) ?? $this->pricing->pricingFor($id);
         if (! is_array($price) || ! isset($price['prompt'], $price['completion'])) return false;
         $ceiling = config('vibes.free_tier');
         return (float) $price['prompt'] * 1000000 <= $ceiling['input_per_million']
             && (float) $price['completion'] * 1000000 <= $ceiling['output_per_million'];
-    }
-
-    private function row(string $id, array $entry): array
-    {
-        $price = $this->pricing->freshPricingFor($id);
-        $known = is_array($price) && isset($price['prompt'], $price['completion']);
-        $entry['trial'] = $this->includedFree($id);
-        return ['id' => $id, ...$entry, 'available' => $known,
-            'inputPerMillion' => $known ? (float) $price['prompt'] * 1000000 : null,
-            'outputPerMillion' => $known ? (float) $price['completion'] * 1000000 : null,
-            // Already normalized, so the phone reads one shape whatever OpenRouter sent.
-            'reasoning' => ['efforts' => $this->efforts($id), 'defaultEffort' => $this->defaultEffort($id),
-                'mandatory' => (bool) ($this->reasoningFor($id)['mandatory'] ?? false)],
-            'created' => $this->pricing->all()[$id]['created'] ?? null];
     }
 
     /** Provider prefix of an OpenRouter slug, shown as the model's family. */

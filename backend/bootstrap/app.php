@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function (): void {
             Route::get('/ready', InfrastructureReadinessController::class);
+            require __DIR__.'/../routes/remote.php';
+            require __DIR__.'/../routes/agents.php';
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

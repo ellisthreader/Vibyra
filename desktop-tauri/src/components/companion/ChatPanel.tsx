@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { SpeakReply, useDraftDictation } from "./ChatVoice";
+import { useAccountStore } from "../../state/accountStore";
 import logoUrl from "../../assets/vibyra-cobalt.png";
 import { useChatStore, type ChatTurn } from "../../state/chatStore";
 import { useProjectStore } from "../../state/projectStore";
@@ -19,7 +21,7 @@ const STARTERS = [
   },
 ];
 
-export function ChatPanel() {
+export function ChatPanel({ active = true }: { active?: boolean }) {
   const projectId = useProjectStore((s) => s.activeId);
   const threads = useChatStore((s) => s.threads);
   const turns = (projectId ? threads[projectId] : undefined) ?? NO_TURNS;
@@ -29,7 +31,12 @@ export function ChatPanel() {
   const clear = useChatStore((s) => s.clear);
   const serviceConfigured = useSettingsStore((s) => Boolean(s.settings?.openaiKeyConfigured));
   const openKeySettings = useWorkspaceStore((s) => s.openSettingsSection);
-  const [draft, setDraft] = useState("");
+  const email = useAccountStore(s => s.snapshot.profile?.email ?? "guest");
+  const draftKey = `companion.draft.${encodeURIComponent(email)}.${projectId}`;
+  const [draft, updateDraft] = useState(() => { try { return localStorage.getItem(draftKey) ?? ""; } catch { return ""; } });
+  const [draftError, setDraftError] = useState("");
+  const setDraft = (text: string) => { updateDraft(text); try { localStorage.setItem(draftKey, text); } catch { setDraftError("This draft could not be saved. Keep Chat open until you send it."); } };
+  const voice = useDraftDictation(draftKey, active && serviceConfigured, text => setDraft([draft, text].filter(Boolean).join(" ")));
   const [menuOpen, setMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -112,7 +119,7 @@ export function ChatPanel() {
                 <button
                   key={starter.label}
                   title={serviceConfigured ? undefined : "Add your OpenAI key to use Vibyra AI"}
-                  onClick={() => (serviceConfigured ? submit(starter.prompt) : openKeySettings("ai"))}
+                  onClick={() => (serviceConfigured ? submit(starter.prompt) : openKeySettings("ai", "vibyraFeatures"))}
                 >
                   <SparklesIcon size={13} />
                   <span>{starter.label}</span>
@@ -125,7 +132,7 @@ export function ChatPanel() {
         {turns.map((turn, index) => (
           <div key={index} className={`chat-turn chat-turn--${turn.role}`}>
             {turn.role === "assistant" && <span className="chat-turn__token">❯</span>}
-            <div className="chat-turn__bubble">{turn.content}</div>
+            <div className="chat-turn__bubble">{turn.content}{turn.role === "assistant" && <div><SpeakReply text={turn.content} active={active} /></div>}</div>
           </div>
         ))}
         {sending && (
@@ -138,12 +145,12 @@ export function ChatPanel() {
             </div>
           </div>
         )}
-        {error && <p className="chat-error" role="alert">{error}</p>}
+        {(error || draftError) && <p className="chat-error" role="alert">{error || draftError}</p>}
       </div>
       {!serviceConfigured && (
         <div className="chat-setup" role="note">
           <span>Vibyra AI needs your OpenAI API key.</span>
-          <button onClick={() => openKeySettings("ai")}>Add a key</button>
+          <button onClick={() => openKeySettings("ai", "vibyraFeatures")}>Add a key</button>
         </div>
       )}
       <div className="chat-input">
@@ -156,6 +163,7 @@ export function ChatPanel() {
           aria-label="Message Vibyra"
           disabled={!serviceConfigured}
           spellCheck={false}
+          onFocus={voice.focus}
           onChange={(e) => setDraft(e.target.value)}
           onInput={(event) => {
             const field = event.currentTarget;
@@ -163,12 +171,13 @@ export function ChatPanel() {
             field.style.height = `${Math.min(field.scrollHeight, 120)}px`;
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               submit();
             }
           }}
         />
+        {voice.button}
         <button
           className="chat-input__send"
           aria-label="Send message"

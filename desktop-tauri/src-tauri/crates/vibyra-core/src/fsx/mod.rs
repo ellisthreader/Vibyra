@@ -1,4 +1,6 @@
+pub mod git_changes;
 mod private;
+pub mod project_folder;
 mod watch;
 
 pub use private::{harden, write_private_atomic};

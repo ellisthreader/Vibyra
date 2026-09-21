@@ -14,7 +14,7 @@ export function CloseConfirmModal() {
   useModalFocus(modalRef, prompting.length > 0 || Boolean(error), dismiss);
 
   if (prompting.length === 0 && !error) return null;
-  const count = `${prompting.length} terminal${prompting.length === 1 ? "" : "s"}`;
+  const count = `${prompting.length} session${prompting.length === 1 ? "" : "s"}`;
 
   return (
     <div className="modal-backdrop" onClick={() => !closing && cancel()}>

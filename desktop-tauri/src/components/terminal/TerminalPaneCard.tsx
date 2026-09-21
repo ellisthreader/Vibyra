@@ -44,7 +44,7 @@ export function TerminalPaneCard({
       aria-label={`${pane.title} terminal`} data-pane-id={pane.id}>
       <header className="pane__header">
         <AgentMark agentId={pane.agentId} name={pane.title} accent={pane.accent} size={MARK_SIZE[density]} />
-        <span className="pane__title" title={pane.osc ?? pane.title}><strong>{paneLabel(pane)}</strong></span>
+        <button className="pane__title" title={pane.osc ?? pane.title} onClick={() => useTerminalStore.getState().setFocus(pane.id)}><strong>{paneLabel(pane)}</strong></button>
         <span className={`pane__state ${attention ? "pane__state--attention" : ""}`}>{stateLabel}</span>
         {running && <PaneAccountControl pane={pane} />}
         <div className="pane__actions">
@@ -57,7 +57,7 @@ export function TerminalPaneCard({
         {suspended ? <SuspendedPaneView snapshot={pane.snapshot} /> : hibernated ? (
           <button className="pane__sleeping" onClick={() => void wake(pane.id)}><MoonIcon size={24} /><span>View paused</span><small>Your agent is still running. Click to show the terminal.</small></button>
         ) : <TerminalView id={pane.id} fontSize={fontSize} bottomAnchored={pane.agentId !== "shell" && pane.agentId !== "ssh"} />}
-        {!running && <PaneRecovery pane={pane} missingAgent={missingAgent} />}
+        {!running && <PaneRecovery compact pane={pane} missingAgent={missingAgent} />}
       </div>
     </section>
   );

@@ -84,7 +84,10 @@ class VibesApiTest extends TestCase
         $q = $this->quote();
         $this->postJson('/api/vibes/turns', ['id' => (string) Str::uuid(), 'quote' => $q['quote'].'changed'])->assertStatus(422);
         $chat = DB::table('vibes_chats')->value('id');
+        // An unverified account keeps its trial, but purchased Vibes wait for the address.
         User::query()->update(['email_verified_at' => null]);
+        DB::table('vibes_grants')->insert(['user_id' => User::value('id'), 'reference' => 'topup:t', 'kind' => 'topup',
+            'amount' => 500, 'remaining' => 500, 'created_at' => now(), 'updated_at' => now()]);
         $this->postJson('/api/vibes/quote', ['chatId' => $chat, 'text' => 'Hi', 'model' => 'auto'])->assertStatus(403);
         $this->withToken('wrong')->getJson('/api/vibes/wallet')->assertStatus(401);
         $this->assertDatabaseCount('vibes_turns', 0);

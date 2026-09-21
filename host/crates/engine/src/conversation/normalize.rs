@@ -4,48 +4,49 @@ use serde_json::{json, Value};
 pub(crate) fn item(raw: &Value, turn: &Value, completed: bool) -> Option<Value> {
     let id = raw["id"].as_str()?;
     let kind = raw["type"].as_str()?;
-    // User messages are inserted durably using client submission identity before dispatch.
-    if matches!(kind, "userMessage" | "reasoning") {
-        return None;
+    if kind == "userMessage" {
+        let text = raw["content"]
+            .as_array()?
+            .iter()
+            .filter_map(|part| part["text"].as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        return Some(json!({"id":id,"turnId":turn,"kind":"message","role":"user",
+            "text":bounded(&text,262144),"status":"completed","provenance":"provider"}));
     }
     if kind == "agentMessage" {
         return Some(
             json!({"id":id,"turnId":turn,"kind":"message","role":"assistant",
-            "text":bounded(raw["text"].as_str().unwrap_or(""),8192),
-            "truncated":raw["text"].as_str().is_some_and(|s|s.len()>8192),
+            "text":bounded(raw["text"].as_str().unwrap_or(""),262144),
+            "truncated":raw["text"].as_str().is_some_and(|s|s.len()>262144),
             "status":if completed {"completed"} else {"running"}}),
         );
     }
     let title = match kind {
         "commandExecution" => command_title(raw),
+        "reasoning" => "Thinking",
         "fileChange" => "Updating files",
         "webSearch" => "Searching the web",
-        "mcpToolCall" | "dynamicToolCall" => "Using a tool",
+        "mcpToolCall" | "dynamicToolCall" => raw["tool"].as_str().unwrap_or("Using a tool"),
         "imageView" => "Viewing an image",
         "plan" => "Planning",
         "contextCompaction" => "Organizing context",
         _ => "Working",
     };
     let status = match raw["status"].as_str() {
-        Some("failed" | "declined") => "failed",
+        Some("failed") => "failed",
+        Some("declined") => "declined",
+        Some("interrupted") => "interrupted",
         _ if completed => "completed",
         _ => "running",
     };
-    let detail = if kind == "commandExecution" {
-        format!(
-            "{}\n{}",
-            raw["command"].as_str().unwrap_or(""),
-            raw["aggregatedOutput"].as_str().unwrap_or("")
-        )
-    } else if kind == "fileChange" {
-        serde_json::to_string(&raw["changes"]).unwrap_or_default()
-    } else {
-        String::new()
-    };
+    let detail = super::observed::detail(raw);
     Some(
         json!({"id":id,"turnId":turn,"kind":"activity","title":title,
-        "detail":bounded(&detail,8192),"status":status,"exitCode":raw["exitCode"],"category":kind,
-        "truncated":detail.len()>8192}),
+        "detail":bounded(&detail,262144),"status":status,"exitCode":raw["exitCode"],"category":kind,
+        "truncated":detail.len()>262144,"durationMs":raw["durationMs"],
+        "command":raw["command"],"cwd":raw["cwd"],"actions":raw["commandActions"],
+        "provenance":"provider","changes":if kind == "fileChange" {raw["changes"].clone()} else {Value::Null}}),
     )
 }
 

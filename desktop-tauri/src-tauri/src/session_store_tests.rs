@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::session_store::{
-    clear, load, normalize, save, trim_snapshot, PersistedPane, TerminalSession,
-    TEST_MAX_PANES as MAX_PANES, TEST_MAX_SNAPSHOT_BYTES as MAX_SNAPSHOT_BYTES, VERSION,
+    clear, load, save, trim_snapshot, PersistedPane, TerminalSession,
+    TEST_MAX_SNAPSHOT_BYTES as MAX_SNAPSHOT_BYTES, VERSION,
 };
 
 struct SessionFile(PathBuf);
@@ -53,7 +53,7 @@ fn a_saved_session_round_trips_with_its_order_intact() {
     };
     save(&file.0, session).unwrap();
 
-    let loaded = load(&file.0);
+    let loaded = load(&file.0).unwrap();
     assert_eq!(loaded.version, VERSION);
     let titles: Vec<&str> = loaded.panes.iter().map(|p| p.title.as_str()).collect();
     assert_eq!(titles, ["first", "second", "third"]);
@@ -82,34 +82,39 @@ fn trimming_never_splits_a_multibyte_character() {
 }
 
 #[test]
-fn too_many_panes_are_dropped() {
+fn every_pane_is_saved_even_when_output_exceeds_the_budget() {
     let session = TerminalSession {
-        panes: (0..MAX_PANES + 10)
-            .map(|i| pane(&i.to_string(), None))
+        panes: (0..40)
+            .map(|i| pane(&i.to_string(), Some("x".repeat(MAX_SNAPSHOT_BYTES))))
             .collect(),
         ..TerminalSession::default()
     };
-    assert_eq!(normalize(session).panes.len(), MAX_PANES);
+    let file = SessionFile::new();
+    save(&file.0, session).unwrap();
+    let saved = load(&file.0).unwrap();
+    assert_eq!(saved.panes.len(), 40);
+    assert_eq!(saved.panes[39].title, "39");
+    assert!(saved.panes[39].snapshot.is_none());
 }
 
 #[test]
-fn a_foreign_version_restores_nothing_rather_than_guessing() {
+fn a_foreign_version_reports_an_error_without_overwriting() {
     let file = SessionFile::new();
     std::fs::write(&file.0, r#"{"version":999,"panes":[{"title":"old"}]}"#).unwrap();
-    assert!(load(&file.0).panes.is_empty());
+    assert!(load(&file.0).is_err());
 }
 
 #[test]
-fn a_corrupt_or_unversioned_file_never_blocks_startup() {
+fn corrupt_or_unversioned_files_cannot_start_empty_workspace_autosaves() {
     let file = SessionFile::new();
     std::fs::write(&file.0, "{not json").unwrap();
-    assert!(load(&file.0).panes.is_empty());
+    assert!(load(&file.0).is_err());
 
     std::fs::write(&file.0, r#"{"panes":[{"title":"old"}]}"#).unwrap();
-    assert!(load(&file.0).panes.is_empty());
+    assert!(load(&file.0).is_err());
 
     let missing = SessionFile::new();
-    assert!(load(&missing.0).panes.is_empty());
+    assert!(load(&missing.0).unwrap().panes.is_empty());
 }
 
 #[test]

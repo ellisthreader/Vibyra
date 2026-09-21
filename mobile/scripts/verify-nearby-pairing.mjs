@@ -44,7 +44,8 @@ try {
   const served = await presence.json();
   assert.equal(served.id, key, 'the served identity is the Host static public key');
   assert.equal(served.version, 1);
-  assert.deepEqual(Object.keys(served).sort(), ['id', 'name', 'version'], 'presence only');
+  // Presence and nothing more: the identity, the name, the OS family the phone draws it as, and the version.
+  assert.deepEqual(Object.keys(served).sort(), ['id', 'name', 'platform', 'version'], 'presence only');
   console.log(`PASS presence: /identity served id=${served.id.slice(0, 12)}… for "${served.name}"`);
 
   // The real connecting screen receives the resolved record directly: setup

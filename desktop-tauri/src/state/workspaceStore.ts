@@ -20,15 +20,26 @@ import type { FilePreview } from "../types";
 export type { CompanionTab } from "../lib/companionPreferences";
 export type ProjectMode = "terminals" | "preview";
 export type SettingsSectionId =
-  | "profile"
   | "general"
-  | "performance"
-  | "notifications"
   | "ai"
-  | "integrations"
-  | "agents"
+  | "notifications"
+  | "iphone"
   | "shortcuts"
-  | "phone";
+  | "account"
+  | "advanced";
+
+/** A group inside a section that a deep link can open and scroll to. */
+export type SettingsPanelId =
+  | "appearance"
+  | "performance"
+  | "terminalAccounts"
+  | "vibyraFeatures"
+  | "usage"
+  | "terminal"
+  | "files"
+  | "graphics"
+  | "runtimes";
+
 
 /** Routes a failure into the notification system as a sticky app error. */
 function reportProblem(message: string | null): void {
@@ -48,8 +59,12 @@ interface WorkspaceStore {
   projectMode: ProjectMode;
   settingsOpen: boolean;
   settingsSection: SettingsSectionId;
+  /** Set by a deep link; the pane opens that group, then clears it. */
+  settingsPanel: SettingsPanelId | null;
   agentPickerOpen: boolean;
   paletteOpen: boolean;
+  /** Saved chats from earlier runs, opened from the command palette. */
+  historyOpen: boolean;
   companionOpen: boolean;
   companionTab: CompanionTab;
   companionWidth: number;
@@ -59,12 +74,14 @@ interface WorkspaceStore {
   preview: FilePreview | null;
   init: () => Promise<void>;
   openSettings: () => void;
-  openSettingsSection: (section: SettingsSectionId) => void;
+  openSettingsSection: (section: SettingsSectionId, panel?: SettingsPanelId) => void;
   closeSettings: () => void;
   setSettingsSection: (section: SettingsSectionId) => void;
+  clearSettingsPanel: () => void;
   openAgentPicker: () => void;
   closeAgentPicker: () => void;
   setPaletteOpen: (open: boolean) => void;
+  setHistoryOpen: (open: boolean) => void;
   toggleCompanion: () => void;
   setCompanionTab: (tab: CompanionTab) => void;
   setCompanionWidth: (width: number) => void;
@@ -80,8 +97,10 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   projectMode: "terminals",
   settingsOpen: false,
   settingsSection: "general",
+  settingsPanel: null,
   agentPickerOpen: false,
   paletteOpen: false,
+  historyOpen: false,
   companionOpen: restoreCompanionOpen(),
   companionTab: restoreCompanionTab(),
   companionWidth: restoreCompanionWidth(),
@@ -104,11 +123,14 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
 
   openSettings: () => set({ settingsOpen: true }),
 
-  openSettingsSection: (settingsSection) => set({ settingsOpen: true, settingsSection }),
+  openSettingsSection: (settingsSection, panel) =>
+    set({ settingsOpen: true, settingsSection, settingsPanel: panel ?? null }),
 
-  closeSettings: () => set({ settingsOpen: false, settingsSection: "general" }),
+  closeSettings: () => set({ settingsOpen: false, settingsSection: "general", settingsPanel: null }),
 
-  setSettingsSection: (settingsSection) => set({ settingsSection }),
+  setSettingsSection: (settingsSection) => set({ settingsSection, settingsPanel: null }),
+
+  clearSettingsPanel: () => set({ settingsPanel: null }),
 
   openAgentPicker: () => set((state) => {
     if (state.companionSize === "full") saveCompanionOpen(false);
@@ -118,6 +140,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   closeAgentPicker: () => set({ agentPickerOpen: false }),
 
   setPaletteOpen: (open) => set({ paletteOpen: open }),
+
+  setHistoryOpen: (historyOpen) => set({ historyOpen }),
 
   toggleCompanion: () => set((state) => {
     saveCompanionOpen(!state.companionOpen);

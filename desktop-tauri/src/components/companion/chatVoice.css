@@ -1,0 +1,7 @@
+.chat-voice-button { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; color: var(--muted); }
+.chat-voice-button:hover { color: var(--text); background: var(--hover); }
+.chat-voice-button.is-recording { color: var(--danger); background: var(--danger-soft); }
+.chat-voice-button:disabled { opacity: .4; cursor: default; }
+.reply-audio { display: inline-flex; align-items: center; gap: 6px; }
+.reply-audio small { color: var(--danger); font-size: 11px; }
+.chat-turn--assistant .reply-audio { align-self: flex-start; }

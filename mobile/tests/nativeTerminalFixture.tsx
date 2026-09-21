@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { registerRootComponent } from 'expo';
 import { randomUUID } from 'expo-crypto';
-import { Text, View } from 'react-native';
+import { Keyboard, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WorkspaceStore } from '../src/state/WorkspaceStore';
 import { RpcClient } from '../src/transport/RpcClient';
@@ -30,6 +30,7 @@ function TerminalFixture() {
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const [inset, setInset] = useState(0);
   const started = useRef(false);
+  const existing = useRef(false);
   const post = (body: object) => fetch(`${endpoint}/result`, { method: 'POST',
     headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
   useEffect(() => {
@@ -37,6 +38,7 @@ function TerminalFixture() {
     void (async () => {
       await store.initialize();
       const config = await fetch(`${endpoint}/config`).then(response => response.json());
+      existing.current = config.existing === true;
       if (alive) await store.actions.connect(config.invitation);
     })().catch(error => { store.report(error); void post({ error: String(error) }); });
     return () => { alive = false; store.dispose(); };
@@ -45,7 +47,9 @@ function TerminalFixture() {
     if (state.status !== 'connected' || started.current) return;
     started.current = true;
     void (async () => {
-      await store.actions.createSession(state.projects[0].id, 'shell', 'checkout');
+      if (existing.current) {
+        await store.actions.selectSession(state.sessions[0].id);
+      } else await store.actions.createSession(state.projects[0].id, 'shell', 'checkout');
       const script = await fetch(`${endpoint}/script`).then(response => response.json());
       setInset(Number(script.keyboardInset ?? 0));
       for (const line of script.commands as string[]) {
@@ -59,10 +63,18 @@ function TerminalFixture() {
         runner: open?.runner, sessionStatus: open?.status, output: current.output.length });
     })().catch(error => { store.report(error); void post({ error: String(error) }); });
   }, [state, store]);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', event => { void post({ keyboard: true, height: event.endCoordinates.height }); });
+    const hide = Keyboard.addListener('keyboardDidHide', () => { void post({ keyboard: false }); });
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const session = state.sessions.find(item => item.id === state.selectedSessionId);
   return <SafeAreaProvider><SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: palettes.dark.background }}>
     <View style={{ flex: 1, paddingBottom: inset }}>
     <ThemeContext.Provider value={{ colors: palettes.dark, dark: true }}>
+      <View style={{ height: 64, justifyContent: 'center', paddingHorizontal: 20 }}>
+        <Text style={{ color: palettes.dark.text, fontSize: 18 }}>Mac terminal</Text>
+      </View>
       <RuntimeBridge ref={bridge} onMessage={notice => store.deps.rpc.receive(notice)} />
       {session ? <SessionScreen session={session} workspace={{ ...state, actions: store.actions }} />
         : <Text style={{ color: palettes.dark.text, margin: 20 }}>{state.error ?? 'Connecting the secure native runtime…'}</Text>}

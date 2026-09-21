@@ -1,5 +1,5 @@
 import { usePhoneStore } from "../../state/phoneStore";
-import { EyeIcon } from "../common/Icons";
+import { EyeIcon, TerminalIcon } from "../common/Icons";
 
 /** The whole point of the connection: a phone asks, this Mac answers. It is
  * mounted in the workspace rather than inside Settings because the request can
@@ -12,6 +12,9 @@ export function PhoneApprovalModal() {
   const answer = usePhoneStore((state) => state.answer);
   const request = status?.pending[0];
   if (!request) return null;
+  // The promise made here has to match what the phone will be able to do the
+  // moment it is allowed, so it follows the typing switch.
+  const typing = status?.typing === true;
   return (
     <div className="modal-backdrop">
       <section
@@ -30,13 +33,16 @@ export function PhoneApprovalModal() {
         </header>
         <div className="phone-approval__body">
           <span className="phone-approval__mark" aria-hidden="true">
-            <EyeIcon size={16} />
+            {typing ? <TerminalIcon size={16} /> : <EyeIcon size={16} />}
           </span>
           <div>
-            <strong>It can watch your terminals, and nothing else.</strong>
+            <strong>{typing
+              ? "It can view and interact with your shared work."
+              : "It can view your terminals."}</strong>
             <p>
-              Live output from every terminal on this Mac, now and later, including anything
-              printed there. It cannot type, run commands or read your files.
+              {typing
+                ? "All terminal conversations and output, now and later. This phone can type, send agent instructions and answer agent permission requests. Agents can change files when instructed."
+                : "All terminal conversations and output, now and later, including anything printed there. Sending messages and responding to agent requests is off."}
             </p>
             <p className="phone-approval__key">Device key {request.id.slice(0, 16)}…</p>
           </div>
@@ -48,7 +54,7 @@ export function PhoneApprovalModal() {
           </button>
           <button className="btn btn--primary" type="button" disabled={busy}
             onClick={() => void answer(request.id, true)}>
-            Allow viewing
+            {typing ? "Allow" : "Allow viewing"}
           </button>
         </footer>
       </section>

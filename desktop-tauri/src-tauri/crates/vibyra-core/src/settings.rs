@@ -22,6 +22,8 @@ pub struct ProjectSpec {
 #[serde(default, rename_all = "camelCase")]
 pub struct Settings {
     pub theme: String,
+    /// Desktop presentation only; never changes the shared engine or phone view.
+    pub agent_view: String,
     pub font_size: u16,
     pub font_family: String,
     pub scrollback_lines: u32,
@@ -71,6 +73,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             theme: "dark".to_string(),
+            agent_view: "terminal".to_string(),
             font_size: 13,
             font_family: "\"JetBrains Mono\", \"Fira Code\", monospace".to_string(),
             scrollback_lines: 5000,

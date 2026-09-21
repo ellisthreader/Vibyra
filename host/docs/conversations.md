@@ -2,8 +2,12 @@
 
 Additive to protocol 1. `host.state.capabilities.conversationV1:true` advertises
 Host support. Only an explicit `session.create` with `runner:"conversation"` and
-`kind:"codex"` starts the structured runner. The returned Session retains that
-runner field. Older clients/providers and existing sessions retain their PTY.
+a `kind` listed in `capabilities.conversationProviders` starts the structured
+runner: a standalone Host lists `codex`, `claude` and `gemini` (each under the
+computer user's own CLI sign-in); an account-bound Desktop engine lists its one
+provider. A client that sees no list assumes `codex` alone. The returned Session
+retains that runner field. Older clients/providers and existing sessions retain
+their PTY.
 Codex app-server uses local CLI login, `workspace-write`, `on-request`, and the
 user approval reviewer. API-key environment variables are removed as with PTYs.
 No transcript is uploaded to Vibyra's account/backend services.

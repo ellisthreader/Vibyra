@@ -33,7 +33,7 @@ export async function check(page, state, button) {
     assert.equal(await button('Search again').count(), 0, 'A live search offers no restart');
     assert.deepEqual(await calls(), [], 'Searching selects nothing on its own');
   } else if (state === 'sweep') {
-    // The sweep is an implementation detail: it drives the dial, not the words.
+    // The sweep is an implementation detail: nothing on screen counts it.
     await heading('Looking for your computer');
     assert.equal(await page.getByLabel(/^Searching \d+ network/).count(), 0,
       'a single link is not worth naming');
@@ -52,10 +52,42 @@ export async function check(page, state, button) {
     await heading('Looking for your computer');
     await text('Cellular');
   } else if (state === 'one') {
-    await heading('Found Ellis’s Studio');
-    await page.getByText('Connecting…', { exact: true }).waitFor();
-    await page.waitForFunction(() => window.discoveryCalls.includes('select:Ellis’s Studio'), null,
-      { timeout: 4000 });
+    // The computer answers at once, but the search is still seen to happen.
+    await heading('Looking for your computer');
+    await page.waitForTimeout(1200);
+    assert.equal(await page.getByRole('heading').first().innerText(), 'Looking for your computer',
+      'an instant answer still shows the search for a moment');
+    await heading('Is this your computer?');
+    await text('Ellis’s Studio');
+    await text('Ready to connect');
+    // Found is not connected: nothing happens until the person says it is theirs.
+    await page.waitForTimeout(1600);
+    assert.deepEqual(await calls(), [], 'One computer never connects on its own');
+    assert.equal(await button('Back to setup').count(), 0, 'Confirming is a plain yes or no');
+    await fullyVisible(button('Yes, connect'), page, 'Confirming the computer');
+    await fullyVisible(button('Not my computer'), page, 'Turning the computer down');
+    await button('Yes, connect').click();
+    // The stage departs for 140ms before the selection is reported, and the
+    // computer's frame is measured first, so the callback lands a beat after the tap.
+    await page.waitForFunction(() => window.discoveryCalls.length > 0, null, { timeout: 4000 });
+    assert.deepEqual(await calls(), ['select:Ellis’s Studio']);
+  } else if (state === 'windows' || state === 'linux') {
+    // The other OS families a Host reports: the same confirmation, drawn as that computer.
+    await heading('Is this your computer?');
+    await text(state === 'windows' ? 'Gaming tower' : 'Home server');
+    await page.getByLabel(`${state === 'windows' ? 'Gaming tower, Windows' : 'Home server, Linux'}, ready to connect`).waitFor();
+    await page.waitForTimeout(1600);
+    assert.deepEqual(await calls(), [], 'A found computer never connects on its own');
+  } else if (state === 'notmine') {
+    await heading('Is this your computer?');
+    await button('Not my computer').click();
+    // The search carries on without the computer that was turned down.
+    await heading('Looking for your computer');
+    assert.equal(await page.getByText('Ellis’s Studio', { exact: true }).count(), 0,
+      'a computer turned down is not offered again');
+    await page.waitForTimeout(600);
+    assert.deepEqual(await calls(), [], 'Turning a computer down connects to nothing');
+    await fullyVisible(button('Back to setup'), page, 'Setup after turning a computer down');
   } else if (state === 'many') {
     await heading('Choose your computer');
     await page.getByText('3 ready to connect. Choose the computer you want to use.', { exact: true }).waitFor();
@@ -74,6 +106,7 @@ export async function check(page, state, button) {
     await page.waitForTimeout(1600);
     assert.deepEqual(await calls(), [], 'Several computers never auto-connect, resolved or not');
     await page.getByRole('button', { name: 'Connect to Workshop MacBook Pro', exact: true }).click();
+    await page.waitForFunction(() => window.discoveryCalls.length > 0, null, { timeout: 4000 });
     assert.deepEqual(await calls(), ['select:Workshop MacBook Pro']);
   } else if (state === 'empty' || state === 'failed') {
     await heading(state === 'empty' ? 'No computer found' : 'Could not look for computers');
@@ -95,10 +128,12 @@ export async function check(page, state, button) {
     await text('Ellis’s Studio');
     assert.equal(await page.getByRole('button', { name: /Ellis’s Studio/ }).count(), 0,
       'The computer being connected to is pinned, not offered for selection again');
-    if (state === 'handshake') await text('Connecting to Ellis’s Studio');
+    if (state === 'handshake') await text('Connecting');
     if (state === 'approval') {
       await text('Approve this iPhone');
-      await text('Allow this iPhone on Ellis’s Studio');
+      await text('Open Vibyra Desktop');
+      await text('Allow the connection');
+      await text('Waiting for your approval…');
       await fullyVisible(button('Cancel'), page, 'Cancelling a pending approval');
     }
     if (state === 'connected') {

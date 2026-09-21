@@ -34,7 +34,10 @@ async function closeChat(id: string): Promise<void> {
 
 const storeDeps: RequestDeps = {
   agents,
-  launch: (agent, projectId, title) => launchConfigured(agent, projectId, { title }),
+  // The phone's page is the chat itself, so what it asks for is the Chat route:
+  // Claude and Gemini go through the conversation engine like Codex, whatever
+  // Agent view this Mac keeps for its own panes.
+  launch: (agent, projectId, title) => launchConfigured(agent, projectId, { title, view: "chat" }),
   approvalPending: () => useLaunchApprovalStore.getState().pending !== null,
   closePane: (id) => useTerminalStore.getState().close(id),
   closeChat,

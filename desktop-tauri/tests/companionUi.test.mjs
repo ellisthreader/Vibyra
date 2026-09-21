@@ -41,7 +41,7 @@ test("clamps and persists the companion width without accepting stale values", (
 
 test("restores only known companion tools", () => {
   const storage = memoryStorage({ "vibyra.desktop.companionTab": "memory" });
-  assert.equal(restoreCompanionTab(storage), "memory");
+  assert.equal(restoreCompanionTab(storage), "chat");
   saveCompanionTab("files", storage);
   assert.equal(restoreCompanionTab(storage), "files");
   storage.values.set("vibyra.desktop.companionTab", "dashboard");

@@ -20,6 +20,38 @@ export { fitTerminal, type TerminalEntry };
 const entries = new Map<number, TerminalEntry>();
 
 /**
+ * A focus asked for before the pane mounted, consumed by `mountTerminal`.
+ * `setFocus` can run a frame before the pane's mount effect — a project
+ * switch mounts its terminals only once React commits — and without this the
+ * focus would land on nothing and the pane would take no keys until clicked.
+ */
+let pendingFocus: number | null = null;
+
+/**
+ * `preventScroll` is load-bearing: the bottom anchor can leave the cursor's
+ * helper textarea below the host's clip, and letting the browser reveal it
+ * would scroll the terminal off its own pane.
+ */
+function focusEntry(entry: TerminalEntry): void {
+  const textarea = entry.term.textarea;
+  if (textarea) textarea.focus({ preventScroll: true });
+  else entry.term.focus();
+}
+
+/** Focuses `id` now; does nothing if its terminal is not mounted. */
+export function focusTerminal(id: number): void {
+  const entry = entries.get(id);
+  if (entry) focusEntry(entry);
+}
+
+/** Focuses `id`, waiting for its mount when the pane is not on screen yet. */
+export function requestTerminalFocus(id: number): void {
+  const entry = entries.get(id);
+  pendingFocus = entry ? null : id;
+  if (entry) focusEntry(entry);
+}
+
+/**
  * Rendered cell size from any live terminal, for pre-spawn size estimates and
  * for the grid layout. It reports the font it measured at: a crowded grid
  * renders below the configured size, and a caller that read those cells as the
@@ -70,12 +102,20 @@ export function mountTerminal(
     host.appendChild(existing.container);
     fitTerminal(existing);
     applyTerminalBottomAnchor(existing.term, existing.anchor);
+    takePendingFocus(id, existing);
     return existing;
   }
 
   const entry = createTerminalEntry(id, settings, host, bottomAnchored, fontSize);
   entries.set(id, entry);
+  takePendingFocus(id, entry);
   return entry;
+}
+
+function takePendingFocus(id: number, entry: TerminalEntry): void {
+  if (pendingFocus !== id) return;
+  pendingFocus = null;
+  focusEntry(entry);
 }
 
 export function getTerminal(id: number): TerminalEntry | undefined {
@@ -97,6 +137,7 @@ export function destroySession(id: number): void {
   // A pane closed before its terminal ever mounted would otherwise leave its
   // replay behind, to be shown by whichever session inherits the id.
   dropReplay(id);
+  if (pendingFocus === id) pendingFocus = null;
   disposeTerminal(id);
   clear(id);
 }

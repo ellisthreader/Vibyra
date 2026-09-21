@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 
 import { ensureOsPermission, osPermission, refreshOsPermission, type OsPermission } from "../../lib/osNotifications";
-import { SettingRow } from "./SettingsShared";
+import { StatusChip } from "./SettingsControls";
+import { SettingRow, Switch } from "./SettingsShared";
 
 const HINTS: Record<OsPermission, string> = {
-  granted: "Vibyra can raise desktop notifications while its window is in the background.",
-  unknown: "Desktop notifications appear outside Vibyra when you are working elsewhere.",
-  denied:
-    "Your desktop refused the request. Re-enable notifications for Vibyra in your system settings; in-app notifications keep working either way.",
+  granted: "System banners while Vibyra is in the background.",
+  unknown: "System banners while Vibyra is in the background. Your desktop will ask once.",
+  denied: "Your desktop refused. Re-enable notifications for Vibyra in System Settings; in-app notifications keep working.",
 };
 
-/** The grant is only ever requested from this button — prompting at startup,
- * before the user has seen a single notification, is a dark pattern. */
-export function NotificationPermissionRow({ disabled }: { disabled: boolean }) {
+/** The grant is only ever requested from this row — prompting at startup,
+ * before the user has seen a single notification, is a dark pattern. The
+ * switch is the preference; the chip is what the operating system says. */
+export function NotificationPermissionRow({
+  disabled,
+  enabled,
+  onToggle,
+}: {
+  disabled: boolean;
+  enabled: boolean;
+  onToggle: (next: boolean) => void;
+}) {
   const [state, setState] = useState<OsPermission>(osPermission);
   const [busy, setBusy] = useState(false);
 
@@ -36,19 +45,13 @@ export function NotificationPermissionRow({ disabled }: { disabled: boolean }) {
   return (
     <SettingRow label="Desktop notifications" hint={HINTS[state]}>
       {state === "granted" ? (
-        <span className="integration-status integration-status--success">
-          <i aria-hidden="true" />
-          Enabled
-        </span>
+        enabled && !disabled ? <StatusChip tone="on">Allowed</StatusChip> : null
+      ) : state === "denied" ? (
+        <StatusChip tone="warn">Blocked</StatusChip>
       ) : (
-        <button
-          className="btn"
-          disabled={disabled || busy || state === "denied"}
-          onClick={request}
-        >
-          {state === "denied" ? "Blocked" : "Enable"}
-        </button>
+        <button className="btn" disabled={disabled || busy} onClick={request}>Allow</button>
       )}
+      <Switch checked={enabled} disabled={disabled || state === "denied"} label="Desktop notifications" onChange={onToggle} />
     </SettingRow>
   );
 }

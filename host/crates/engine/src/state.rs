@@ -171,11 +171,7 @@ impl State {
         if name.is_empty() || name.chars().count() > 64 || name.chars().any(char::is_control) {
             return Err("a project name is 1-64 characters".into());
         }
-        if self
-            .projects
-            .iter()
-            .any(|p| p.id != id && p.name == name)
-        {
+        if self.projects.iter().any(|p| p.id != id && p.name == name) {
             return Err("this computer already shares a project by that name".into());
         }
         let index = self
@@ -199,7 +195,11 @@ impl State {
             .iter()
             .position(|p| p.id == id || p.name == id)
             .ok_or("project is not approved on this computer")?;
-        if self.sessions.values().any(|s| s.meta.project_id == self.projects[index].id) {
+        if self
+            .sessions
+            .values()
+            .any(|s| s.meta.project_id == self.projects[index].id)
+        {
             return Err("close this project's terminals on the computer first".into());
         }
         let project = self.projects.remove(index);

@@ -14,7 +14,7 @@ export interface SavedConnection {
 export interface HostState {
   nextCursor?: string | null;
   protocol: number;
-  capabilities?: { conversationV1?: boolean; vibesToolsV1?: boolean; scaffoldV1?: boolean; readOnly?: boolean; canInput?: boolean; canManage?: boolean };
+  capabilities?: { conversationV1?: boolean; conversationProviders?: string[]; vibesToolsV1?: boolean; scaffoldV1?: boolean; readOnly?: boolean; canInput?: boolean; canManage?: boolean };
   host: Computer;
   projects: Project[];
   sessions: Session[];

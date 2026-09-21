@@ -34,6 +34,8 @@ pub enum Endpoint<'a> {
     EmailResend,
     OauthStart(&'a str),
     OauthStatus(&'a str, &'a str),
+    /// Registers this computer for remote access and takes a relay token.
+    RemoteRegister,
 }
 
 impl Endpoint<'_> {
@@ -48,6 +50,7 @@ impl Endpoint<'_> {
             Endpoint::Profile => Ok("/api/account/profile".into()),
             Endpoint::PasswordForgot => Ok("/api/auth/password/forgot".into()),
             Endpoint::EmailResend => Ok("/api/auth/email/resend".into()),
+            Endpoint::RemoteRegister => Ok("/api/remote/hosts".into()),
             Endpoint::OauthStart(provider) => {
                 let provider = valid_provider(provider).ok_or_else(invalid)?;
                 Ok(format!("/api/auth/desktop/{provider}/start"))

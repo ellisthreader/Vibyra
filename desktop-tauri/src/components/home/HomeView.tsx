@@ -26,6 +26,7 @@ export function HomeView() {
   const recents = [...panes].sort((a, b) => b.lastFocusedAt - a.lastFocusedAt).slice(0, 4);
   const rawName = basename(homeDir);
   const name = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : "";
+  if (!projects.length) return <main className="focus-empty-project"><FolderIcon size={28} /><h2>A place for your next idea.</h2><p>Open a folder to start your first project.</p><button className="btn btn--primary" onClick={() => void pickAndCreate()}><PlusIcon size={15} />Open a folder</button></main>;
   return (
     <main className="homeview">
       <div className="homeview__inner">

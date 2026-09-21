@@ -18,7 +18,10 @@ export function describeSearch({ unavailable, denied, status, computers, only, e
     return { title: 'Allow local network access',
       detail: 'iOS is blocking Vibyra from seeing your Wi-Fi. Turn on Local Network for Vibyra in Settings, then look again.' };
   }
-  if (only) return { title: `Found ${only.name}`, detail: 'Connecting…' };
+  if (only) {
+    return { title: 'Is this your computer?',
+      detail: 'It answered your iPhone from nearby. Check the name is yours, then connect.' };
+  }
   if (computers.length > 1) {
     return { title: 'Choose your computer',
       detail: `${computers.filter(isConnectable).length} ready to connect. Choose the computer you want to use.` };

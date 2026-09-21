@@ -1,4 +1,4 @@
-export type CompanionTab = "chat" | "memory" | "files";
+export type CompanionTab = "chat" | "files";
 
 export const COMPANION_DEFAULT_WIDTH = 360;
 export const COMPANION_MIN_WIDTH = 300;
@@ -55,7 +55,7 @@ export function restoreCompanionTab(storage = browserStorage()): CompanionTab {
   if (!storage) return "chat";
   try {
     const value = storage.getItem(TAB_KEY);
-    return value === "memory" || value === "files" ? value : "chat";
+    return value === "files" ? value : "chat";
   } catch {
     return "chat";
   }

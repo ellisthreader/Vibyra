@@ -21,7 +21,7 @@ function Fixture() {
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 375, height: 667 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       <VibesProvider api={sampleVibesApi} identity={null} purchases={null}>
         <WorkScreen workspace={{ ...fixtureWorkspace, demo: true }} connected={false} cloud={cloud}
-          onConnect={() => {}} onProjects={() => {}} onAi={() => {}}
+          onProjects={() => {}} onPhoneChat={() => {}}
           onWallet={() => { (window as unknown as { walletOpened?: boolean }).walletOpened = true; }} />
       </VibesProvider>
     </SafeAreaProvider>

@@ -6,20 +6,23 @@ import {
   COMPANION_MIN_WIDTH,
   type CompanionTab,
 } from "../../lib/companionPreferences";
+import { useAccountStore } from "../../state/accountStore";
+import { useProjectStore } from "../../state/projectStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { CloseIcon, FolderIcon, MemoryIcon, SparklesIcon } from "../common/Icons";
-import { FileTree } from "../rail/FileTree";
+import { CloseIcon, FolderIcon, SparklesIcon } from "../common/Icons";
+import { FilesPanel } from "./FilesPanel";
+import { DockSizeControl } from "../layout/DockSizeControl";
 import { ChatPanel } from "./ChatPanel";
-import { MemoryPanel } from "./MemoryPanel";
 import { useCompanionResize } from "./useCompanionResize";
 
 const TABS: { id: CompanionTab; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { id: "chat", label: "Chat", icon: SparklesIcon },
-  { id: "memory", label: "Memory", icon: MemoryIcon },
   { id: "files", label: "Files", icon: FolderIcon },
 ];
 
-export function Companion() {
+export function Companion({ active = true }: { active?: boolean }) {
+  const account = useAccountStore(s => s.snapshot.profile?.email ?? "guest");
+  const projectId = useProjectStore(s => s.activeId);
   const open = useWorkspaceStore((s) => s.companionOpen);
   const size = useWorkspaceStore((s) => s.companionSize);
   const tab = useWorkspaceStore((s) => s.companionTab);
@@ -29,7 +32,6 @@ export function Companion() {
   const toggle = useWorkspaceStore((s) => s.toggleCompanion);
   const tabs = useRef<Record<CompanionTab, HTMLButtonElement | null>>({
     chat: null,
-    memory: null,
     files: null,
   });
   const resize = useCompanionResize(preferredWidth, setWidth);
@@ -51,6 +53,7 @@ export function Companion() {
 
   return (
     <aside
+      id="project-companion"
       className="companion"
       data-size={size}
       aria-label="Project companion"
@@ -94,6 +97,7 @@ export function Companion() {
             );
           })}
         </nav>
+        <DockSizeControl />
         <button className="icon-btn companion__close" aria-label="Close companion" title="Close" onClick={toggle}>
           <CloseIcon size={14} />
         </button>
@@ -104,11 +108,10 @@ export function Companion() {
         role="tabpanel"
         aria-labelledby={`companion-tab-${tab}`}
       >
-        {tab === "chat" && <ChatPanel />}
-        {tab === "memory" && <MemoryPanel />}
+        {tab === "chat" && <ChatPanel key={`${account}:${projectId}`} active={active} />}
         {tab === "files" && (
           <div className="companion-panel companion-panel--files">
-            <FileTree />
+            <FilesPanel />
           </div>
         )}
       </div>

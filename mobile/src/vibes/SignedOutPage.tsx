@@ -20,15 +20,18 @@ import { WalletPage } from './WalletChrome';
  * the backend has not been asked yet.
  */
 export function SignedOutPage({ onSignIn, onClose }: { onSignIn(): void; onClose(): void }) {
+  return <WalletPage title="Vibyra tokens" onClose={onClose}><SignedOutBody onSignIn={onSignIn} /></WalletPage>;
+}
+
+/** The page's one thing to say and one thing to do, also shown by Vibyra tokens in Settings. */
+export function SignedOutBody({ onSignIn }: { onSignIn(): void }) {
   const { colors } = useTheme();
-  return <WalletPage title="Vibyra tokens" onClose={onClose}>
-    <View style={s.body}>
-      <TokenMark size={76} />
-      <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>Vibes are what{'\n'}a reply costs.</Text>
-      <Text style={[s.line, { color: colors.muted }]}>Sign in to see your balance and your plan.</Text>
-      <View style={s.action}><Button title="Sign in" onPress={onSignIn} /></View>
-    </View>
-  </WalletPage>;
+  return <View style={s.body}>
+    <TokenMark size={76} />
+    <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>Vibes are what{'\n'}a reply costs.</Text>
+    <Text style={[s.line, { color: colors.muted }]}>Sign in to see your balance and your plan.</Text>
+    <View style={s.action}><Button title="Sign in" onPress={onSignIn} /></View>
+  </View>;
 }
 const s = StyleSheet.create({
   body: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: 18, paddingTop: 40, paddingBottom: 24 },

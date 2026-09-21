@@ -112,13 +112,13 @@ class VibesAutoRoutingTest extends TestCase
         $this->assertTrue($tight->constrained, 'the tight turn knows it was stepped back');
     }
 
-    /** An empty catalogue is a 503 from `Catalog::resolve`, not a crash in the router. */
-    public function test_an_empty_snapshot_falls_back_to_the_configured_model(): void
+    /** An empty catalogue must not invent an eligible default model. */
+    public function test_an_empty_snapshot_refuses_an_unchecked_fallback(): void
     {
         Cache::forget((string) config('billing.openrouter_pricing.cache_key'));
-        $decision = $this->router()->route('anything at all', $this->situation());
-
-        $this->assertSame(config('vibes.auto_model'), $decision->model);
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectExceptionMessage('No suitable Auto model');
+        $this->router()->route('anything at all', $this->situation());
     }
 
     /** The same prompt and the same situation must always give the same answer. */

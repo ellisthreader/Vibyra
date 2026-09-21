@@ -68,6 +68,9 @@ class OpenRouterPricingNormalizer
             'context_length' => $this->positiveInt($model['context_length'] ?? null)
                 ?? $this->positiveInt(($model['top_provider'] ?? [])['context_length'] ?? null),
             'output_modalities' => $this->modalities($model['architecture'] ?? null),
+            // What the model can read. A photo in a chat needs `image` here, and a model
+            // that cannot see one would answer as if nothing had been attached.
+            'input_modalities' => $this->modalities($model['architecture'] ?? null, 'input_modalities'),
             'reasoning' => $this->reasoning($model['reasoning'] ?? null),
         ];
     }
@@ -117,9 +120,9 @@ class OpenRouterPricingNormalizer
         return array_values(array_intersect(self::EFFORTS, array_unique($normalized)));
     }
 
-    private function modalities(mixed $architecture): ?array
+    private function modalities(mixed $architecture, string $key = 'output_modalities'): ?array
     {
-        $output = is_array($architecture) ? ($architecture['output_modalities'] ?? null) : null;
+        $output = is_array($architecture) ? ($architecture[$key] ?? null) : null;
         if (! is_array($output)) {
             return null;
         }

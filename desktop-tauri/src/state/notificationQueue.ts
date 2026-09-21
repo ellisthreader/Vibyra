@@ -32,6 +32,7 @@ const SUMMARY: Record<NotificationCategory, string> = {
   preview: "preview updates",
   aiSpend: "spend alerts",
   models: "model updates",
+  appUpdate: "Vibyra updates",
   system: "app notices",
 };
 
@@ -62,8 +63,21 @@ function exactMatch(history: NotificationItem[], input: NotificationInput, now: 
   );
 }
 
+/**
+ * Categories whose notices are distinct sentences rather than N of one event.
+ *
+ * Bursting exists so three agents failing in a blink read as "3 agents failed".
+ * The updater's two notices are not that: "0.7.6 is available" and "0.7.6 is
+ * ready — restart to finish installing" are different instructions about the
+ * same release, and a fast download puts them inside the burst window. Letting
+ * them collapse replaces the one that says what to do next with a count, and —
+ * because a collapse counts as a repeat — suppresses its notification too.
+ */
+const NEVER_BURST = new Set<NotificationCategory>(["appUpdate"]);
+
 /** Level 2: the newest item shares this category and arrived a blink ago. */
 function burstMatch(history: NotificationItem[], input: NotificationInput, now: number) {
+  if (NEVER_BURST.has(input.category)) return undefined;
   const head = history[0];
   if (!head || head.category !== input.category) return undefined;
   return now - head.at <= BURST_MS ? head : undefined;

@@ -4,7 +4,7 @@ import type { TerminalEvent } from '../terminal/previewFeed';
 import type { AccentId } from '../theme';
 import type { PreferencesApi } from '../vibes/preferencesApi';
 import type { ScaffoldActions } from '../scaffold/api';
-import type { TwoFactorPrompt, TwoFactorSetup, TwoFactorState } from '../account/twoFactorApi';
+import type { Account, AccountDeletion, AccountDevice, OnboardingMode, OnboardingState, TwoFactorPrompt, TwoFactorSetup, TwoFactorState } from './accountTypes';
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type SessionKind = 'shell' | 'claude' | 'codex';
 export type ConnectionStatus = 'offline' | 'connecting' | 'pairing' | 'connected' | 'error';
@@ -13,7 +13,7 @@ export interface Computer { id: string; name: string; platform: string; version?
  *  project behaved before it existed. A paired Vibyra Desktop sends it explicitly per project. */
 export interface Project { id: string; name: string; path: string; branch?: string; filesAvailable?: boolean;
   /** What this project is when it is not a coding folder: a Vibyra Desktop vault of notes. */
-  kind?: 'vault' }
+  kind?: 'vault' | 'railway' }
 /** Whether the computer's own Railway CLI can answer for it: present and logged in, present but signed out, or absent. */
 export interface RailwayStatus { status: 'ready' | 'signedOut' | 'missing'; account: string | null }
 export interface Session {
@@ -81,6 +81,8 @@ export interface WorkspaceActions {
   /** Keeps a session another sign-in produced, such as connecting GitHub while signed out. */
   adoptSession?(session: { token: string; user: Account }): Promise<void>;
   logOut?(): Promise<void>;
+  /** Asks the server for the account as it is now: plan, verification, photo. */
+  refreshAccount?(): Promise<void>;
   // Emails a link to install Vibyra on a computer, and resolves with the address it
   // went to. A signed-in phone needs no argument; a guest passes the address typed.
   sendHostLink?(email?: string): Promise<string>;
@@ -127,6 +129,9 @@ export interface WorkspaceModel {
   scaffoldAvailable?: boolean;
   conversation?: ConversationSnapshot | null;
   conversationAvailable?: boolean;
+  /** The agents that computer runs as a chat (`capabilities.conversationProviders`).
+   *  A computer that says nothing runs Codex alone, as every earlier one did. */
+  conversationProviders?: string[];
   demo?: boolean;
   syncing?: boolean;
   /** The whole connection only watches: a paired Vibyra Desktop, as opposed to
@@ -181,18 +186,5 @@ export interface WorkspaceModel {
   actions: WorkspaceActions;
 }
 // Settings is not a destination: it is a sheet over whichever of these is on screen.
-export type Destination = 'work' | 'projects' | 'integrations' | 'computers' | 'vibes';
-export type OnboardingMode = 'computer' | 'phone';
-export interface OnboardingState { status: 'unknown' | 'pending' | 'complete'; mode: OnboardingMode | null }
-export interface Account { email: string; name: string; plan: string; avatarUrl?: string | null;
-  provider?: 'email' | 'apple' | 'google' | 'github'; emailVerified?: boolean;
-  /** Whether the account asks for a code as well as its password, when the server says. */
-  twoFactorEnabled?: boolean;
-  /** When the account was made, and how its plan is billed — present only when the server sends them. */
-  createdAt?: string; planBillingCycle?: 'monthly' | 'annual'; planRenewsAt?: string | null; membershipEndsAt?: string | null;
-  membershipCancelAtPeriodEnd?: boolean; billingProvider?: string | null; canManageStripeBilling?: boolean }
-/** One place the account is signed in: a phone, a computer or a browser. */
-export type { TwoFactorPrompt, TwoFactorSetup, TwoFactorState } from '../account/twoFactorApi';
-export interface AccountDevice { id: string; name: string; location: string; current: boolean; lastActive: string | null }
-/** How an account proves it is theirs before it is deleted: its password, or its provider again. */
-export type AccountDeletion = { password: string } | { provider: 'apple' | 'google' | 'github' };
+export type Destination = 'work' | 'integrations' | 'computers' | 'vibes';
+export type { Account, AccountDeletion, AccountDevice, OnboardingMode, OnboardingState, TwoFactorPrompt, TwoFactorSetup, TwoFactorState } from './accountTypes';

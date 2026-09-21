@@ -4,17 +4,21 @@ use crate::{
 };
 use serde_json::{json, Value};
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap},
     sync::{Arc, Mutex},
 };
-use tokio::sync::oneshot;
+use tokio::sync::{oneshot, Notify};
 
 pub struct Shared {
     pub engine: Arc<dyn crate::backend::Backend>,
     pub identity: Mutex<Identity>,
     pub invitation: Mutex<Option<Invitation>>,
     pub pending: Mutex<BTreeMap<String, (String, oneshot::Sender<bool>)>>,
-    pub active: Mutex<HashSet<String>>,
+    /// One slot per connected device, holding the handle its connection is
+    /// asked to stand down through. A phone that comes back takes its own slot
+    /// rather than being refused, because a Wi-Fi that dropped can leave the
+    /// socket it left behind looking alive here for a long time.
+    pub active: Mutex<HashMap<String, Arc<Notify>>>,
     pub pairing_url: String,
     pub relay: bool,
     /// Nearby phones that found this Host over Bonjour may ask to pair without

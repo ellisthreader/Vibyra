@@ -38,7 +38,6 @@
     "verify:wallet": "node scripts/verify-wallet-ui.mjs",
     "verify:nearby": "node scripts/verify-nearby-pairing.mjs",
     "verify:probe": "tsx scripts/verify-probe.ts",
-    "verify:projects": "node scripts/verify-projects-ui.mjs",
     "verify:new-session": "node scripts/verify-new-session.mjs",
     "verify:new-project": "node scripts/verify-new-project.mjs",
     "verify:remote": "node scripts/verify-remote-ui.mjs",
@@ -53,7 +52,8 @@
     "verify:reconnect": "npm run assets && node scripts/verify-reconnect.mjs",
     "phone:go": "expo start --go --lan --port 8081",
     "prephone:go": "npm run assets",
-    "ios:device": "expo run:ios --device"
+    "ios:device": "expo run:ios --device",
+    "verify:agents": "node scripts/verify-agents-ui.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

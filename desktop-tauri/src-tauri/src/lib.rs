@@ -58,6 +58,7 @@ mod session_process_files;
 mod session_store;
 #[cfg(test)]
 mod session_store_tests;
+pub mod shared_chats;
 mod sink;
 mod state;
 
@@ -99,6 +100,8 @@ pub fn run() {
         .manage(state::AppState::new())
         .setup(|app| {
             model_watch::spawn(app.handle().clone());
+            shared_chats::desktop_stream::spawn(app.handle().clone());
+            phone::notify_window(app.handle().clone());
             Ok(())
         })
         // Closing is vetoed once so the UI can warn about live terminals and

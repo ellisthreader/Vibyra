@@ -1,7 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { OutputLedger, byteLength, type OutputFrame } from '../src/state/output';
+import { OutputLedger, byteLength, readableStart, type OutputFrame } from '../src/state/output';
 const frame = (output: string, offset: number, generation = 'g1'): OutputFrame => ({ sessionId: 's1', output, offset, generation });
+
+test('a tail that begins inside an escape sequence starts at the next line, with offsets untouched', () => {
+  // The computer's ring wrapped nine bytes into a truecolor escape, so the
+  // snapshot opens with the rest of it — which xterm would print as letters.
+  const cut = '2;91;124;250mfirst line\r\n\x1b[32msecond line\x1b[0m\r\n';
+  const ledger = new OutputLedger('s1');
+  ledger.snapshot({ ...frame(cut, 1000), status: 'running', truncated: true });
+  assert.equal(ledger.output, '\x1b[32msecond line\x1b[0m\r\n');
+  assert.equal(ledger.offset, 1000, 'the byte offset still counts everything the computer sent');
+  ledger.push(frame('more', 1004));
+  assert.equal(ledger.output, '\x1b[32msecond line\x1b[0m\r\nmore');
+});
+test('a complete snapshot is drawn from its first byte', () => {
+  const ledger = new OutputLedger('s1');
+  ledger.snapshot({ ...frame('$ ls\r\nREADME.md\r\n', 17), status: 'running', truncated: false });
+  assert.equal(ledger.output, '$ ls\r\nREADME.md\r\n');
+});
+test('a frame with no line breaks starts at its first escape rather than mid-sequence', () => {
+  assert.equal(readableStart('4;250mtext\x1b[1mbold'), '\x1b[1mbold');
+  assert.equal(readableStart('plain words only'), 'plain words only');
+  // A line break too far in to be the start of anything, and no escape at all: nothing to cut.
+  const long = 'x'.repeat(5000) + '\nlate';
+  assert.equal(readableStart(long), long);
+});
 
 test('snapshot reconciles buffered events using UTF-8 byte end offsets', () => {
   const output = new OutputLedger('s1');

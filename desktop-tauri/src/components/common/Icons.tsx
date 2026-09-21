@@ -69,17 +69,6 @@ export const SparklesIcon = icon(
   </>,
 );
 
-/** Settings → Performance. A bolt reads as "fast" without implying energy
-    saving, which is the opposite trade from the one this mode makes. */
-export const BoltIcon = icon(<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />);
-
-export const MemoryIcon = icon(
-  <>
-    <path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 1 5 17.5z" />
-    <path d="M5 17.5A2.5 2.5 0 0 1 7.5 15H19M9 6h6M9 10h5" />
-  </>,
-);
-
 export const SendIcon = icon(
   <>
     <path d="m4 12 16-8-6.5 16-2.2-6.1z" />
@@ -115,16 +104,46 @@ export const EyeIcon = icon(
   </>,
 );
 
-export const PencilIcon = icon(
-  <>
-    <path d="M12 20h9" />
-    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z" />
-  </>,
-);
-
 export const UserIcon = icon(
   <>
     <circle cx="12" cy="8" r="4" />
     <path d="M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5" />
+  </>,
+);
+
+export const HomeIcon = icon(
+  <>
+    <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+    <path d="M9.5 21v-6.5h5V21" />
+  </>,
+);
+
+export const TerminalIcon = icon(
+  <>
+    <path d="m5 8 3.5 3.5L5 15" />
+    <path d="M12.5 16H19" />
+  </>,
+);
+
+export const MinusIcon = icon(<path d="M5 12h14" />);
+
+export const ClockIcon = icon(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </>,
+);
+
+export const PhoneIcon = icon(
+  <>
+    <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+    <path d="M11 18h2" />
+  </>,
+);
+
+export const SlidersIcon = icon(
+  <>
+    <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
+    <path d="M1 14h6M9 8h6M17 16h6" />
   </>,
 );

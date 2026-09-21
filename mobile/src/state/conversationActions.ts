@@ -1,3 +1,4 @@
+import { conversationInspect } from './conversationInspect';
 import { RpcError } from '../transport/RpcClient';
 import { requireLease } from './session';
 import { loadConversation } from './conversationSession';
@@ -14,7 +15,7 @@ export function conversationActions(store: WorkspaceStore) {
     if (busy.has(key)) throw new Error('Your response is already being sent.');
     busy.add(key); try { await work(); } finally { busy.delete(key); }
   };
-  const respond = (itemId: string, decision?: 'accept' | 'decline', answers?: Record<string, string[]>) =>
+  const respond = (itemId: string, decision?: 'accept' | 'decline' | 'acceptForSession', answers?: Record<string, string[]>) =>
     exclusive(itemId, async () => {
       const identity = context(); const epoch = store.epoch;
       const item = store.state.conversation?.items.find(item => item.id === itemId);
@@ -45,6 +46,7 @@ export function conversationActions(store: WorkspaceStore) {
       }
     });
   return {
+    ...conversationInspect(store),
     loadEarlierConversation: () => exclusive('history', async () => {
       const conversation = store.state.conversation;
       if (!conversation || !conversation.hasMore || store.state.status !== 'connected') return;
@@ -54,7 +56,7 @@ export function conversationActions(store: WorkspaceStore) {
       if (!store.current(epoch) || store.selectionEpoch !== selection) return;
       store.conversationLedger?.prepend(page); store.update({ conversation: store.conversationLedger?.value });
     }),
-    submitTurn: (text: string) => exclusive('submit', async () => {
+    submitTurn: (text: string, sendAsText = false, attachments: string[] = []) => exclusive('submit', async () => {
       const identity = context(); const epoch = store.epoch;
       if (!text.trim() || new TextEncoder().encode(text).length > 8192) throw new Error('Use a prompt under 8 KB. Your draft is kept.');
       if (['running', 'waiting'].includes(store.state.conversation!.turnState)) throw new Error('Wait for this task or stop it before sending another.');
@@ -77,7 +79,7 @@ export function conversationActions(store: WorkspaceStore) {
         if (latest.sessionId !== identity.sessionId || latest.generation !== identity.generation || latest.lease !== identity.lease) {
           throw new Error('Control changed before your prompt was sent.');
         }
-        const result = await store.deps.rpc.request('turn.submit', { ...identity, submissionId, text });
+        const result = await store.deps.rpc.request('turn.submit', { ...identity, submissionId, text, sendAsText, attachments });
         if (result.status === 'failed') throw new RpcError(result.message ?? 'The agent could not start this task. Your draft is kept.', false);
         if (result.status !== 'accepted') throw new RpcError('Your prompt delivery is uncertain. Check this conversation before sending again.', true);
         await store.deps.storage.delete(key).catch(() => {
@@ -96,7 +98,7 @@ export function conversationActions(store: WorkspaceStore) {
       if (!turnId) return;
       await store.deps.rpc.request('turn.interrupt', { ...identity, turnId });
     }),
-    resolveDecision: (id: string, decision: 'accept' | 'decline') => respond(id, decision),
+    resolveDecision: (id: string, decision: 'accept' | 'decline' | 'acceptForSession') => respond(id, decision),
     answerQuestion: (id: string, answers: Record<string, string[]>) => respond(id, undefined, answers),
   };
 }

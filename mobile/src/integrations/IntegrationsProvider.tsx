@@ -1,75 +1,101 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { AccountSession } from '../account/accountApi';
-import { authorizeInBrowser } from './authorizeInBrowser';
+import { authorizeInBrowser, CANCELLED } from './authorizeInBrowser';
 import { fallbackCatalogue } from './catalogue';
 import type { Integration, IntegrationCatalogue, IntegrationsApi } from './types';
 
 interface IntegrationsValue {
   catalogue: IntegrationCatalogue;
-  /** What this account has actually connected, and may therefore mention in a chat. */
   installed: Integration[];
-  /** True once a server catalogue has been received; false means the shipped list. */
   live: boolean;
-  busy: boolean; error: string | null;
+  /** Which integration is working, if any. One card's sign-in must not disable the others. */
+  busy: string | null; error: string | null;
   refresh(): Promise<void>;
   connect(id: string, credential: string): Promise<void>;
-  /** Connect by signing in on the provider's own page, for an `oauth` integration. */
-  authorize(id: string): Promise<void>;
+  authorize(id: string, signal?: AbortSignal): Promise<void>;
   disconnect(id: string): Promise<void>;
 }
 const empty: IntegrationsValue = {
-  catalogue: fallbackCatalogue, installed: [], live: false, busy: false, error: null,
+  catalogue: fallbackCatalogue, installed: [], live: false, busy: null, error: null,
   refresh: async () => {}, connect: async () => {}, authorize: async () => {}, disconnect: async () => {},
 };
 const Context = createContext<IntegrationsValue>(empty);
 
-export function IntegrationsProvider({ api, identity, onSession, children }: {
-  api: IntegrationsApi | null; identity: string | null;
-  /** Keeps the Vibyra account a signed-out provider sign-in produced, so the phone is signed in to it. */
-  onSession?: (session: AccountSession) => Promise<void>;
-  children: ReactNode;
+export function IntegrationsProvider({ api, identity, children }: {
+  api: IntegrationsApi | null; identity: string | null; children: ReactNode;
 }) {
-  const [catalogue, setCatalogue] = useState<IntegrationCatalogue>(fallbackCatalogue);
+  const [catalogue, setCatalogue] = useState(fallbackCatalogue);
   const [live, setLive] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const adopt = useCallback((next: IntegrationCatalogue) => { setCatalogue(next); setLive(true); setError(null); }, []);
+  const holder = useRef({ identity, api });
+  const version = useRef(0);
+  const working = useRef<AbortController | null>(null);
+  const refreshPending = useRef(false);
+  const mounted = useRef(true);
+  if (holder.current.identity !== identity || holder.current.api !== api) {
+    holder.current = { identity, api }; version.current += 1;
+  }
+  const adopt = useCallback((next: IntegrationCatalogue) => {
+    setCatalogue(next); setLive(true); setError(null);
+  }, []);
   const refresh = useCallback(async () => {
     if (!api) return;
-    try { adopt(await api.catalogue()); }
-    // The shipped list stays on screen; what is lost is only which are connected,
-    // so the page says that rather than pretending nothing is.
-    catch (e) { setError(e instanceof Error ? e.message : 'Integrations are temporarily unavailable.'); setLive(false); }
+    if (working.current) { refreshPending.current = true; return; }
+    refreshPending.current = false;
+    const request = ++version.current;
+    try { const next = await api.catalogue(); if (request === version.current) adopt(next); }
+    catch (e) {
+      if (request !== version.current) return;
+      setError(e instanceof Error ? e.message : 'Integrations are temporarily unavailable.'); setLive(false);
+    }
   }, [api, adopt]);
-  const act = useCallback(async (run: () => Promise<IntegrationCatalogue>) => {
-    setBusy(true); setError(null);
-    try { adopt(await run()); }
-    catch (e) { setError(e instanceof Error ? e.message : 'That did not work. Please try again.'); throw e; }
-    finally { setBusy(false); }
-  }, [adopt]);
-  // Whose catalogue is on screen. A sign-in that made the account brought that
-  // account's catalogue back with it, so the change of account it causes must not
-  // wipe the card back to "checking" just as it says connected.
-  const holder = useRef(identity);
-  // Connections belong to an account, so a different account starts from the
-  // shipped list rather than showing the last person's connected services.
   useEffect(() => {
-    if (holder.current !== identity) { holder.current = identity; setCatalogue(fallbackCatalogue); setLive(false); }
+    working.current?.abort();
+    setCatalogue(fallbackCatalogue); setLive(false); setError(null);
     void refresh();
   }, [identity, refresh]);
-  const signIn = useCallback(async (id: string) => {
-    const result = await (api!.authorize ? api!.authorize(id) : authorizeInBrowser(api!, id));
-    if (result.session && onSession) { holder.current = result.session.user.email; await onSession(result.session); }
-    return result.catalogue;
-  }, [api, onSession]);
+  const refreshLatest = useRef(refresh);
+  refreshLatest.current = refresh;
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; version.current += 1; working.current?.abort(); };
+  }, []);
+  const act = useCallback(async (id: string, run: (signal: AbortSignal) => Promise<IntegrationCatalogue>, signal?: AbortSignal) => {
+    if (working.current) throw new Error('Finish the current connection first, then try again.');
+    if (!api) throw new Error('Integrations are temporarily unavailable.');
+    const control = new AbortController();
+    const cancel = () => control.abort();
+    signal?.addEventListener('abort', cancel);
+    if (signal?.aborted) control.abort();
+    working.current = control;
+    const request = ++version.current;
+    setBusy(id); setError(null);
+    try {
+      if (control.signal.aborted) throw new Error(CANCELLED);
+      const next = await run(control.signal);
+      if (request !== version.current) throw new Error('Your session changed. Please try again.');
+      if (control.signal.aborted) throw new Error(CANCELLED);
+      adopt(next);
+    } catch (e) {
+      // Backing out of a card is a choice, not a failure to report back at them.
+      const cancelled = control.signal.aborted || (e instanceof Error && e.message === CANCELLED);
+      if (request === version.current && !cancelled) setError(e instanceof Error ? e.message : 'That did not work. Please try again.');
+      throw e;
+    } finally {
+      signal?.removeEventListener('abort', cancel);
+      working.current = null;
+      if (mounted.current) {
+        setBusy(null);
+        if (refreshPending.current || request !== version.current) void refreshLatest.current();
+      }
+    }
+  }, [api, adopt]);
   const value = useMemo<IntegrationsValue>(() => ({
-    catalogue, live, busy, error,
-    installed: catalogue.integrations.filter(integration => integration.installed),
-    refresh,
-    connect: (id, credential) => act(() => api!.connect(id, credential)).then(() => {}),
-    authorize: id => act(() => signIn(id)).then(() => {}),
-    disconnect: id => act(() => api!.disconnect(id)).then(() => {}),
-  }), [catalogue, live, busy, error, api, refresh, act, signIn]);
+    catalogue, live, busy, error, installed: catalogue.integrations.filter(integration => integration.installed), refresh,
+    connect: (id, credential) => act(id, () => api!.connect(id, credential)),
+    authorize: (id, signal) => act(id, async active => (await (api!.authorize ? api!.authorize(id) : authorizeInBrowser(api!, id, active))).catalogue, signal),
+    disconnect: id => act(id, () => api!.disconnect(id)),
+  }), [catalogue, live, busy, error, refresh, api, act]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useIntegrations() { return useContext(Context); }

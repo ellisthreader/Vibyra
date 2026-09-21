@@ -1,5 +1,6 @@
+import { View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { useTheme } from '../theme';
+import { palettes, useTheme } from '../theme';
 
 /**
  * The Vibyra token: a cobalt disc with the Vibyra V struck into it in white.
@@ -23,13 +24,18 @@ import { useTheme } from '../theme';
  * gradient inside the disc for lift, a hairline "milled edge" ring — was cut on
  * report as fussy, and it stays cut: at 34pt the ring is a grey smudge and the
  * gradient is invisible. There is no glow; Graphite and Cobalt does not allow one.
- * Nothing is theme-tinted beyond `accent`, so one mark serves both palettes.
+ * The disc is the theme's *Cobalt*, not the accent a person picks in Settings: the
+ * currency is the brand's, and the white V vanishes on Graphite's near-white disc
+ * (1.2:1) and fades on Sky, Teal and Ember (about 2:1).
  */
 export function TokenMark({ size = 34 }: { size?: number }) {
-  const { colors } = useTheme();
-  return <Svg width={size} height={size} viewBox="0 0 64 64" accessibilityElementsHidden
-    importantForAccessibility="no-hide-descendants" aria-hidden>
-    <Circle cx="32" cy="32" r="31" fill={colors.accent} />
+  const { dark } = useTheme();
+  // The hiding props sit on a View: handed to <Svg>, the browser gets them as unknown
+  // attributes on its <svg> and React logs an error on every page that shows a balance.
+  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden
+    style={{ width: size, height: size }}>
+  <Svg width={size} height={size} viewBox="0 0 64 64">
+    <Circle cx="32" cy="32" r="31" fill={palettes[dark ? 'dark' : 'light'].accent} />
     {/* The V is placed by the **area centroid of the white mass**, not by its
         bounding box. A V is top-heavy — most of its area is in the two arms — so
         box-centring rode it up the coin's top-left, which is how it first drew.
@@ -46,5 +52,5 @@ export function TokenMark({ size = 34 }: { size?: number }) {
         load-bearing, not decoration — the mark is more legible without it and less
         Vibyra's. */}
     <Path fill="#FFFFFF" d="M46.518 17.883 L53.850 17.883 A0.508 0.508 0 0 1 54.290 18.645 L51.797 22.963 A2.032 2.032 0 0 1 50.037 23.979 L42.704 23.979 A0.508 0.508 0 0 1 42.264 23.217 L44.758 18.899 A2.032 2.032 0 0 1 46.518 17.883 Z" />
-  </Svg>;
+  </Svg></View>;
 }

@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
+use App\Services\ChatConnectors\Github\{ReadTools, PullRequests, Activity, Files, Prompt};
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -21,7 +22,7 @@ class GithubConnector implements Connector
     public function definitions(): array
     {
         $string = ['type' => 'string'];
-        return array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
+        return [...ReadTools::definitions(), ...array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
             ['name' => 'github_list_repositories', 'description' => 'List the repositories this token can see, most recently updated first.',
                 // An empty property list has to serialise as an object, not as a JSON array.
                 'parameters' => ['type' => 'object', 'properties' => new \stdClass, 'required' => [], 'additionalProperties' => false]],
@@ -34,7 +35,7 @@ class GithubConnector implements Connector
             ['name' => 'github_create_issue', 'description' => 'Open a new issue on an owner/name repository. This is the only thing that changes anything: it cannot close, edit or comment on an existing issue.',
                 'parameters' => ['type' => 'object', 'properties' => ['repository' => $string, 'title' => $string, 'body' => $string],
                     'required' => ['repository', 'title'], 'additionalProperties' => false]],
-        ]);
+        ])];
     }
 
     public function writes(): array
@@ -44,6 +45,7 @@ class GithubConnector implements Connector
 
     public function validate(string $operation, array $arguments): array
     {
+        if (in_array($operation, ReadTools::NAMES, true)) return ReadTools::validate($operation, $arguments);
         if ($operation === 'github_list_repositories') return [];
         $repository = $arguments['repository'] ?? null;
         if ($operation === 'github_search_issues') {
@@ -74,6 +76,21 @@ class GithubConnector implements Connector
 
     public function run(string $operation, array $arguments, string $credential): array
     {
+        if (in_array($operation, ReadTools::NAMES, true)) {
+            $result = match ($operation) {
+                'github_pull_request' => app(PullRequests::class)->read($arguments, $credential),
+                'github_pull_request_files' => app(PullRequests::class)->files($arguments, $credential),
+                'github_repository_activity' => app(Activity::class)->read($arguments, $credential),
+                'github_read_file' => app(Files::class)->read($arguments, $credential),
+            };
+            $label = match ($operation) {
+                'github_pull_request' => 'pull request #'.$arguments['number'],
+                'github_pull_request_files' => 'changed files for PR #'.$arguments['number'],
+                'github_repository_activity' => 'repository activity',
+                'github_read_file' => 'file '.$arguments['path'],
+            };
+            return ['result' => $result, 'summary' => (isset($result['error']) ? 'Could not read ' : 'Read ').$label.' on '.$arguments['repository']];
+        }
         if ($operation === 'github_list_repositories') {
             $body = $this->get($credential, '/user/repos', ['per_page' => 20, 'sort' => 'updated']);
             if ($body === null) return $this->unreachable();
@@ -137,6 +154,11 @@ class GithubConnector implements Connector
             throw new RuntimeException('That token did not work. Check it has not expired and try again.');
         }
         return '@'.$body['login'];
+    }
+
+    public function prompt(): string
+    {
+        return Prompt::text();
     }
 
     private function request(string $credential)

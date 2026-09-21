@@ -1,7 +1,11 @@
-import type { OnboardingMode, WorkspaceActions } from '../ui/types';
+import type { Account, OnboardingMode, WorkspaceActions } from '../ui/types';
 import type { SavedAccount, SavedOnboarding } from '../state/types';
 import type { WorkspaceStore } from '../state/WorkspaceStore';
-import { AccountError, type AccountSession } from './accountApi';
+import { AccountError, needsCode, type AccountSession } from './accountApi';
+import { makeProfileActions, type ProfileActionName } from './profileActions';
+import { makeTwoFactorActions, type TwoFactorActionName } from './twoFactorActions';
+import { GUEST_TOKEN_KEY } from '../vibes/guestKeys';
+import { handOverGuestState } from '../vibes/guestHandover';
 
 const invalid = 'Enter a valid email and a password with at least 8 characters.';
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -11,7 +15,8 @@ export async function restoreAccount(store: WorkspaceStore, value: string | null
   const saved = JSON.parse(value) as SavedAccount;
   if (typeof saved.token !== 'string' || typeof saved.email !== 'string') throw new Error('Saved account could not be read. Log in again.');
   store.token = saved.token;
-  store.update({ account: { email: saved.email, name: saved.name ?? '', plan: saved.plan ?? 'free' } });
+  const { token: _token, ...account } = saved;
+  store.update({ account: { ...account, name: saved.name ?? '', plan: saved.plan ?? 'free' } });
 }
 export async function restoreOnboarding(store: WorkspaceStore) {
   try {
@@ -30,20 +35,35 @@ export async function refreshAccount(store: WorkspaceStore) {
   if (!token) return;
   try {
     const user = await store.deps.account.session(token);
-    if (store.token === token) store.update({ account: user });
+    // Saved as well as shown, so the next launch opens on this photo, not the last one.
+    if (store.token === token) await rememberAccount(store, user);
   } catch (error) {
     if (error instanceof AccountError && error.status === 401 && store.token === token) await clearAccount(store);
   }
 }
-async function clearAccount(store: WorkspaceStore) {
+/** The account as the server now has it, on screen and on the phone, under the same token. */
+export async function rememberAccount(store: WorkspaceStore, user: Account) {
+  store.update({ account: user });
+  if (!store.token) return;
+  const saved: SavedAccount = { token: store.token, ...user };
+  await store.deps.storage.write('account', JSON.stringify(saved)).catch(error => store.report(error));
+}
+/** Signed out on this phone: what Log out does, without telling the server, for when the server already knows. */
+export async function clearAccount(store: WorkspaceStore) {
   store.token = null; store.update({ account: null });
   await store.deps.storage.delete('account');
 }
-async function keep(store: WorkspaceStore, session: AccountSession) {
+/** A session, kept: on screen, on the phone, and with any guest token left behind.
+ *  `converted` says the guest became this account (sign-up), so its open chat comes along. */
+export async function keepSession(store: WorkspaceStore, session: AccountSession, converted = false) {
   store.token = session.token; store.update({ account: session.user, error: null });
   const saved: SavedAccount = { token: session.token, ...session.user };
   // Failing to persist keeps this run signed in; the next launch simply asks again.
   await store.deps.storage.write('account', JSON.stringify(saved)).catch(error => store.report(error));
+  // A guest session is either converted by sign-up or deliberately left behind
+  // by login. It must never reappear as a hidden account after Log out.
+  await store.deps.storage.delete(GUEST_TOKEN_KEY).catch(error => store.report(error));
+  await handOverGuestState(store.deps.flags, session.user.email, converted).catch(error => store.report(error));
 }
 function credentials(email: string, password: string) {
   const clean = email.trim().toLowerCase();
@@ -51,8 +71,12 @@ function credentials(email: string, password: string) {
   return clean;
 }
 export function makeAccountActions(store: WorkspaceStore): Pick<WorkspaceActions,
-  'signUp' | 'logIn' | 'providerLogIn' | 'adoptSession' | 'logOut' | 'sendHostLink' | 'completeOnboarding' | 'resetOnboarding'> {
+  'signUp' | 'logIn' | 'providerLogIn' | 'adoptSession' | 'logOut' | 'refreshAccount' | 'sendHostLink' | 'completeOnboarding' | 'resetOnboarding'
+  | ProfileActionName | TwoFactorActionName> {
   return {
+    refreshAccount: () => refreshAccount(store),
+    ...makeProfileActions(store),
+    ...makeTwoFactorActions(store),
     // The setup step cannot install anything on a computer, so it emails the link
     // there instead. A signed-in phone already has an address and never asks again;
     // a guest types one, because pairing never required an account.
@@ -64,13 +88,23 @@ export function makeAccountActions(store: WorkspaceStore): Pick<WorkspaceActions
       if (!store.deps.account.socialLogin) throw new Error('Provider sign-in is unavailable. Please use email.');
       const session = await store.deps.account.socialLogin(provider, signal);
       if (!session || signal.aborted) return false;
-      await keep(store, session);
+      await keepSession(store, session);
       return true;
     },
     // A session some other sign-in already made, such as connecting GitHub while signed out.
-    adoptSession: async session => keep(store, session),
-    signUp: async (email, password) => keep(store, await store.deps.account.signup(credentials(email, password), password)),
-    logIn: async (email, password) => keep(store, await store.deps.account.login(credentials(email, password), password)),
+    adoptSession: async session => keepSession(store, session),
+    signUp: async (email, password) => {
+      const guest = await store.deps.storage.read(GUEST_TOKEN_KEY);
+      await keepSession(store, await store.deps.account.signup(credentials(email, password), password, guest ?? undefined), Boolean(guest));
+    },
+    // A password alone is not always the whole login: an account with a second factor
+    // answers with a challenge, which is handed back for the form to ask a code for.
+    logIn: async (email, password) => {
+      const result = await store.deps.account.login(credentials(email, password), password);
+      if (needsCode(result)) return result.twoFactor;
+      await keepSession(store, result);
+      return null;
+    },
     logOut: async () => {
       const token = store.token;
       await clearAccount(store);

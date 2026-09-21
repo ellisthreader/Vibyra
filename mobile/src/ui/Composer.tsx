@@ -1,16 +1,21 @@
-import { useState } from 'react';
+import { useState, type Ref, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Icon, IconButton } from './primitives';
 
-// `dense` is the terminal's box: one line to type into and the send button, with
-// no toolbar repeating the project and session controls already on the screen.
+// `dense` is the terminal's prompt line: a `❯`, one monospace line to type into
+// and a return key, with no toolbar — the session's controls are in the header.
+// It reads as the terminal's own prompt, brought down to where thumbs are.
+// `onEmptySubmit` is what the return key does with nothing typed: in a terminal,
+// that is Enter itself — the answer to "Press Enter to continue" or a menu.
 export function Composer({ value, onChange, onSend, disabled, shell, compact = false, dense = false,
-  contextLabel, onContext, onReview, onStop, working = false }: {
+  contextLabel, onContext, onReview, onCommands, leadingTools, onStop, working = false, placeholder, inputRef, onEmptySubmit }: {
   value: string; onChange: (value: string) => void; onSend: (value: string) => Promise<boolean>;
   disabled: boolean; shell: boolean; compact?: boolean; dense?: boolean;
+  leadingTools?: ReactNode; onCommands?: () => void;
   contextLabel?: string; onContext?: () => void; onReview?: () => void;
-  working?: boolean; onStop?: () => void;
+  working?: boolean; onStop?: () => void; placeholder?: string;
+  inputRef?: Ref<TextInput>; onEmptySubmit?: () => void;
 }) {
   const { colors, dark } = useTheme();
   const web = Platform.OS === 'web';
@@ -24,11 +29,14 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
     const submitted = value;
     try { if (await onSend(submitted)) onChange(''); } finally { setSending(false); }
   };
+  const submit = () => { if (!value && onEmptySubmit && !disabled) onEmptySubmit(); else void send(); };
   return <View style={[s.container, { backgroundColor: colors.background }, dense && s.denseContainer]}>
     <View style={[s.composer, { backgroundColor: colors.surface,
       borderColor: focused ? colors.muted : colors.border }, row && s.row, dense && s.denseComposer]}>
-      <TextInput accessibilityLabel={shell ? 'Command for computer terminal' : 'Prompt for coding agent'}
-        placeholder={shell ? 'Run a command…' : 'Ask Vibyra to build anything…'}
+      {dense && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+        style={[s.prompt, { color: disabled ? colors.muted : colors.accent }]}>❯</Text>}
+      <TextInput ref={inputRef} accessibilityLabel={shell ? 'Command for computer terminal' : 'Prompt for coding agent'}
+        placeholder={placeholder ?? (shell ? 'Run a command…' : 'Ask Vibyra to build anything…')}
         placeholderTextColor={colors.muted} value={value} onChangeText={onChange} multiline
         editable={!sending} autoCorrect={false} autoCapitalize="none" spellCheck={false}
         // A browser textarea is two rows unless told otherwise; the terminal box
@@ -39,22 +47,24 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
         // The browser ignores submitBehavior, so there the key event is handled.
         returnKeyType={shell ? 'go' : undefined}
         submitBehavior={shell && !web ? 'submit' : 'newline'}
-        onSubmitEditing={shell && !web ? () => void send() : undefined}
+        onSubmitEditing={shell && !web ? submit : undefined}
         onKeyPress={shell && web ? event => {
           const key = event.nativeEvent as { key?: string; shiftKey?: boolean };
           if (key.key !== 'Enter' || key.shiftKey) return;
           (event as { preventDefault?(): void }).preventDefault?.();
-          void send();
+          submit();
         } : undefined}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} keyboardAppearance={dark ? 'dark' : 'light'}
         style={[s.input, { color: colors.text }, shell && s.shellInput, row && s.rowInput,
-          dense && s.denseInput]} textAlignVertical="top" />
+          dense && s.denseInput, dense && { fontFamily: mono }]} textAlignVertical="top" />
       <View style={s.toolbar}>
         {!row && <View style={s.tools}>
-          {onReview && <IconButton icon="folder-outline" label="Browse project files" onPress={onReview} />}
+          {leadingTools}
+          {onCommands && <IconButton icon="code-slash-outline" label="Open commands" onPress={onCommands} />}
+          {onReview && <IconButton icon={onCommands ? 'git-compare-outline' : 'folder-outline'} label={onCommands ? 'Review conversation changes' : 'Browse project files'} onPress={onReview} />}
           <Pressable accessibilityRole={onContext ? 'button' : undefined} accessibilityLabel="Session details"
             disabled={!onContext} onPress={onContext} style={s.context}>
-            <Icon name={shell ? 'terminal-outline' : 'code-slash-outline'} size={14} color={colors.muted} />
+            {!onCommands && <Icon name={shell ? 'terminal-outline' : 'code-slash-outline'} size={14} color={colors.muted} />}
             <Text numberOfLines={1} style={[s.contextText, { color: colors.muted }]}>
               {contextLabel ?? (shell ? 'Terminal' : 'Coding agent')}
             </Text>
@@ -67,7 +77,7 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
           style={({ pressed }) => [s.send, dense && s.denseSend, { backgroundColor: ready ? colors.action : colors.elevated,
             opacity: pressed ? 0.65 : 1 }]}>
           {working ? <Icon name="stop" size={dense ? 15 : 18} color={colors.text} /> : sending ? <ActivityIndicator color={colors.muted} /> :
-            <Icon name="arrow-up" size={dense ? 19 : 23} color={ready ? colors.onAction : colors.muted} />}
+            <Icon name={dense ? 'return-down-back' : 'arrow-up'} size={dense ? 18 : 23} color={ready ? colors.onAction : colors.muted} />}
         </Pressable>
       </View>
     </View>
@@ -76,6 +86,7 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
     </Text>}
   </View>;
 }
+const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'ui-monospace, Menlo, monospace' });
 const s = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 5 },
   composer: { borderRadius: 27, borderWidth: StyleSheet.hairlineWidth, padding: 8 },
@@ -90,8 +101,9 @@ const s = StyleSheet.create({
   caption: { fontSize: 10, lineHeight: 16, textAlign: 'center', paddingTop: 8, paddingHorizontal: 8 },
   row: { flexDirection: 'row', alignItems: 'flex-end', padding: 5, borderRadius: 20 },
   rowInput: { flex: 1, minHeight: 40, maxHeight: 54 },
-  denseContainer: { paddingHorizontal: 12, paddingTop: 7, paddingBottom: 3 },
-  denseComposer: { padding: 4, borderRadius: 19 },
-  denseInput: { minHeight: 34, maxHeight: 108, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 7, fontSize: 15 },
-  denseSend: { width: 34, height: 34, borderRadius: 17 },
+  denseContainer: { paddingHorizontal: 10, paddingTop: 4, paddingBottom: 6 },
+  denseComposer: { padding: 4, paddingLeft: 12, borderRadius: 14, alignItems: 'center' },
+  prompt: { fontFamily: mono, fontSize: 15, fontWeight: '700', paddingRight: 2 },
+  denseInput: { minHeight: 36, maxHeight: 108, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 8, fontSize: 14.5, lineHeight: 20 },
+  denseSend: { width: 36, height: 36, borderRadius: 11 },
 });
