@@ -22,6 +22,7 @@ class Turns
             abort_if($q['expires'] < now()->timestamp, 409, 'Refresh the estimate before sending.');
             $chat = DB::table('vibes_chats')->where('id', $q['chatId'])->where('user_id', $userId)->firstOrFail();
             abort_unless($chat->revision == $q['revision'], 409, 'This chat changed. Refresh the estimate.');
+            if (!empty($q['request']['vibyraAgent'])) \App\Services\Agents\TaskContext::validate($userId, $q['request']['vibyraAgent']);
             $active = DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at');
             $entitled = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';
             $limit = app(Plans::class)->for($entitled)['concurrentReplies'];
@@ -64,6 +65,15 @@ class Turns
                 'allocations' => json_encode($allocations), 'prompt' => $q['text'], 'reserved' => $q['max'],
                 'created_at' => now(), 'updated_at' => now(),
             ]);
+            // The quote's attachments now belong to this turn, which is the only thing the
+            // job will expand and the only way one can be seen in this turn's transcript.
+            // Linked under the wallet lock, so two sends cannot both claim one photo.
+            $attached = $q['attachments'] ?? [];
+            if ($attached) {
+                $linked = DB::table('vibes_attachments')->where('user_id', $userId)->whereIn('id', $attached)
+                    ->whereNull('turn_id')->update(['turn_id' => $id, 'updated_at' => now()]);
+                abort_unless($linked === count($attached), 409, 'An attachment was already sent. Attach it again.');
+            }
             DB::table('vibes_chats')->where('id', $chat->id)->increment('revision');
             $this->wallet->record($userId, 'hold:'.$id, 'hold', -$q['max']);
             return DB::table('vibes_turns')->where('id', $id)->first();
@@ -117,6 +127,10 @@ class Turns
         return ['id' => $t->id, 'chatId' => $t->chat_id, 'model' => $t->model, 'status' => $t->status,
             'prompt' => $t->prompt, 'response' => $t->response, 'error' => $t->error,
             'tools' => app(AgentTools::class)->payload($t->id),
+            'attachments' => DB::table('vibes_attachments')->where('turn_id', $t->id)->orderBy('created_at')->get()
+                ->map(fn ($a) => app(Attachments::class)->payload($a))->all(),
+            // What this reply saved to or removed from the person's memory, for the line under it.
+            'memory' => isset($t->memory) ? json_decode($t->memory, true) : null,
             'reserved' => $t->reserved, 'charged' => $t->charged, 'createdAt' => $t->created_at];
     }
 }

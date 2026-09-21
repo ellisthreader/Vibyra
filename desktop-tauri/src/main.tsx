@@ -37,6 +37,12 @@ import "./styles/workspace.part-02.css";
 import "./styles/workspace.part-03.css";
 import "./styles/workspace.part-04.css";
 import "./styles/update-banner.css";
+import "./styles/update-chip.css";
+import "./styles/adaptive-terminals.css";
+import "./styles/project-focus.css";
+import "./styles/project-picker.css";
+import "./styles/teammates.css";
+import "./styles/workspace-font.css";
 import "./styles/notifications-toast.css";
 import "./styles/notifications-toast.part-02.css";
 import "./styles/notifications-center.css";
@@ -59,6 +65,7 @@ import "./styles/companion-memory-document.css";
 import "./styles/companion-files.css";
 import "./styles/palette.css";
 import "./styles/modals.css";
+import "./styles/whats-new.css";
 import "./styles/modals.part-02.css";
 import "./styles/modals.part-03.css";
 import "./styles/modals.part-04.css";
@@ -81,8 +88,16 @@ import "./styles/screenshot-tray.css";
 import "./styles/settings-graphics.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
+import "./styles/settings-shell.css";
+import "./styles/settings-controls.css";
+import "./styles/settings-status.css";
+import "./styles/settings-find.css";
+import "./styles/settings-pages.css";
+import "./styles/settings-pages.part-02.css";
+import "./styles/settings-pages.part-03.css";
 
 import "./styles/interface-layout.css";
+import "./styles/start-motion.css";
 import "./styles/project-tools.css";
 
 // Last: Performance mode overrides motion, blur and elevation across every

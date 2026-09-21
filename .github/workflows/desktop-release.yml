@@ -61,6 +61,11 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends
           build-essential curl file libayatana-appindicator3-dev libdbus-1-dev
           librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget xvfb
+      - name: Require stable Mac signing identity
+        if: runner.os == 'macOS'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: node scripts/macos-signing.mjs --check-env
       - name: Install locked frontend dependencies
         run: npm ci
       - name: Confirm pinned Rust toolchain
@@ -88,6 +93,9 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Verify stable Mac permission identity before staging
+        if: runner.os == 'macOS'
+        run: node scripts/macos-signing.mjs src-tauri/target/release/bundle/macos/Vibyra.app
       - name: Stage versioned artifact, checksum and update signature
         shell: bash
         run: |

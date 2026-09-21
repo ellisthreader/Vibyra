@@ -27,23 +27,27 @@ function entry(name, isDir) {
 }
 
 test("clamps and persists the companion width without accepting stale values", () => {
-  assert.equal(clampCompanionWidth(240), 300);
+  assert.equal(clampCompanionWidth(240), 320);
   assert.equal(clampCompanionWidth(420.4), 420);
-  assert.equal(clampCompanionWidth(900), 520);
+  assert.equal(clampCompanionWidth(900), 560);
 
-  assert.equal(restoreCompanionWidth(memoryStorage()), 360);
+  assert.equal(restoreCompanionWidth(memoryStorage()), 380);
 
   const storage = memoryStorage({ "vibyra.desktop.companionWidth": "900" });
-  assert.equal(restoreCompanionWidth(storage), 520);
+  assert.equal(restoreCompanionWidth(storage), 560);
   saveCompanionWidth(344, storage);
   assert.equal(storage.values.get("vibyra.desktop.companionWidth"), "344");
 });
 
 test("restores only known companion tools", () => {
   const storage = memoryStorage({ "vibyra.desktop.companionTab": "memory" });
-  assert.equal(restoreCompanionTab(storage), "memory");
+  assert.equal(restoreCompanionTab(storage), "chat");
   saveCompanionTab("files", storage);
-  assert.equal(restoreCompanionTab(storage), "files");
+  assert.equal(restoreCompanionTab(storage), "chat");
+  saveCompanionTab("worktrees", storage);
+  assert.equal(restoreCompanionTab(storage), "worktrees");
+  saveCompanionTab("preview", storage);
+  assert.equal(restoreCompanionTab(storage), "preview");
   storage.values.set("vibyra.desktop.companionTab", "dashboard");
   assert.equal(restoreCompanionTab(storage), "chat");
 });

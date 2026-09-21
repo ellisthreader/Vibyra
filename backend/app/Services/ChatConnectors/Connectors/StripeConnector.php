@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
+use App\Services\ChatConnectors\Stripe\{ReadTools, Account, Revenue, Money, Prompt};
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -20,7 +21,7 @@ class StripeConnector implements Connector
 
     public function definitions(): array
     {
-        return array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
+        return [...ReadTools::definitions(), ...array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
             ['name' => 'stripe_balance', 'description' => 'Read the available and pending balance on this Stripe account.',
                 // An empty property list has to serialise as an object, not as a JSON array.
                 'parameters' => ['type' => 'object', 'properties' => new \stdClass, 'required' => [], 'additionalProperties' => false]],
@@ -34,7 +35,7 @@ class StripeConnector implements Connector
                 'parameters' => ['type' => 'object', 'properties' => ['email' => ['type' => 'string'],
                     'name' => ['type' => 'string'], 'description' => ['type' => 'string']],
                     'required' => ['email'], 'additionalProperties' => false]],
-        ]);
+        ])];
     }
 
     public function writes(): array
@@ -44,6 +45,7 @@ class StripeConnector implements Connector
 
     public function validate(string $operation, array $arguments): array
     {
+        if (in_array($operation, ReadTools::NAMES, true)) return ReadTools::validate($operation, $arguments);
         if ($operation === 'stripe_balance') return [];
         if ($operation === 'stripe_recent_payments') {
             $limit = $arguments['limit'] ?? 10;
@@ -71,10 +73,20 @@ class StripeConnector implements Connector
 
     public function run(string $operation, array $arguments, string $credential): array
     {
+        if (in_array($operation, ReadTools::NAMES, true)) {
+            $result = match ($operation) {
+                'stripe_account' => app(Account::class)->read($credential),
+                'stripe_projects' => app(Account::class)->projects($credential),
+                'stripe_revenue' => app(Revenue::class)->read($arguments, $credential),
+            };
+            return ['result' => $result, 'summary' => (isset($result['error']) ? 'Could not finish ' : 'Read ').match ($operation) {
+                'stripe_account' => 'your Stripe account details', 'stripe_projects' => 'Stripe project tags', default => 'your Stripe payment report',
+            }];
+        }
         if ($operation === 'stripe_balance') {
             $body = $this->get($credential, '/balance');
             if ($body === null) return $this->unreachable();
-            return ['result' => ['available' => $this->amounts($body['available'] ?? []),
+            return ['result' => ['livemode' => $body['livemode'] ?? null, 'available' => $this->amounts($body['available'] ?? []),
                 'pending' => $this->amounts($body['pending'] ?? [])], 'summary' => 'Read your Stripe balance'];
         }
         if ($operation === 'stripe_recent_payments') {
@@ -83,8 +95,8 @@ class StripeConnector implements Connector
             if ($body === null) return $this->unreachable();
             $payments = array_map(fn ($charge) => [
                 'id' => (string) ($charge['id'] ?? ''), 'amount' => (int) ($charge['amount'] ?? 0),
-                'formatted' => $this->formatted((int) ($charge['amount'] ?? 0)), 'currency' => $charge['currency'] ?? null,
-                'status' => $charge['status'] ?? null, 'description' => $charge['description'] ?? null,
+                'formatted' => Money::format((int) ($charge['amount'] ?? 0), $charge['currency'] ?? ''), 'currency' => $charge['currency'] ?? null,
+                'livemode' => $charge['livemode'] ?? null, 'status' => $charge['status'] ?? null, 'description' => $charge['description'] ?? null,
                 'email' => $charge['billing_details']['email'] ?? null,
                 'createdAt' => gmdate('c', (int) ($charge['created'] ?? 0)),
             ], array_slice($body['data'] ?? [], 0, $limit));
@@ -108,6 +120,7 @@ class StripeConnector implements Connector
             // is invisible until someone is billed twice, so an existing record is
             // handed back instead of a second one being made.
             $existing = $this->get($credential, '/customers', ['email' => $email, 'limit' => 1]);
+            if ($existing === null) return ['result' => ['error' => 'Could not check for an existing customer. Nothing was created.'], 'summary' => 'Stripe customer lookup failed'];
             if (!empty($existing['data'][0]['id'])) {
                 return ['result' => ['created' => false, 'id' => (string) $existing['data'][0]['id'], 'email' => $email,
                     'note' => 'A Stripe customer with that email already existed, so nothing was created.'],
@@ -146,16 +159,15 @@ class StripeConnector implements Connector
         return 'Stripe account';
     }
 
-    /** Stripe amounts arrive in the currency's smallest unit, so this assumes a two-decimal currency. */
-    private function formatted(int $amount): string
+    public function prompt(): string
     {
-        return number_format($amount / 100, 2);
+        return Prompt::text();
     }
 
     private function amounts(array $entries): array
     {
         return array_map(fn ($entry) => ['amount' => (int) ($entry['amount'] ?? 0),
-            'formatted' => $this->formatted((int) ($entry['amount'] ?? 0)),
+            'formatted' => Money::format((int) ($entry['amount'] ?? 0), $entry['currency'] ?? ''),
             'currency' => $entry['currency'] ?? null], array_slice($entries, 0, 20));
     }
 

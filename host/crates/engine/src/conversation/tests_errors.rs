@@ -1,4 +1,10 @@
-use super::{runtime::Runtime, stream, tests::setup};
+use super::{
+    model::Conversation,
+    requests,
+    runtime::Runtime,
+    stream,
+    tests::{request, setup},
+};
 use serde_json::json;
 use std::{
     process::{Command, Stdio},
@@ -91,4 +97,62 @@ fn missing_submission_status_is_explicit_and_does_not_create_a_receipt() {
     assert!(engine.shared.lock().conversations["session"]
         .receipts
         .is_empty());
+}
+
+#[test]
+fn history_and_pending_stay_under_transport_frame_and_keep_stable_order() {
+    let mut c = Conversation::new("g".into());
+    for i in 0..600 {
+        c.update(
+            "s",
+            "p",
+            Some(json!({"id":i,"kind":"message","text":"😀".repeat(2000),"status":"completed"})),
+        );
+    }
+    let original = c.items[0]["order"].clone();
+    c.update(
+        "s",
+        "p",
+        Some(json!({"id":88,"status":"completed","text":"updated"})),
+    );
+    assert_eq!(c.items[0]["order"], original);
+    let snapshot = c.snapshot("s", "p", None);
+    assert!(snapshot.to_string().len() < 60 * 1024);
+    assert_eq!(snapshot["hasMore"], true);
+    assert_eq!(c.items.len(), 512);
+    assert_eq!(c.events.len(), 128);
+}
+#[test]
+fn unsupported_or_truncated_permissions_are_not_approvable() {
+    assert!(
+        requests::pending("item/fileChange/requestApproval", &json!(1), &json!({}), "").is_none()
+    );
+    assert!(requests::pending(
+        "item/commandExecution/requestApproval",
+        &json!(1),
+        &json!({"command":"x".repeat(300000)}),
+        ""
+    )
+    .is_none());
+    assert!(requests::pending(
+        "item/permissions/requestApproval",
+        &json!(1),
+        &json!({}),
+        ""
+    )
+    .is_none());
+}
+
+#[test]
+fn restore_expires_pending_and_never_claims_unknown_execution_completed() {
+    let (_dir, engine, _) = setup();
+    stream::receive(&engine.shared, "session", request());
+    let mut state = engine.shared.lock();
+    let c = state.conversations.get_mut("session").unwrap();
+    c.receipts
+        .insert("submission".into(), json!({"status":"dispatching"}));
+    c.restore();
+    assert_eq!(c.items[0]["status"], "expired");
+    assert_eq!(c.receipts["submission"]["status"], "unknown");
+    assert_eq!(c.turn_state, "interrupted");
 }

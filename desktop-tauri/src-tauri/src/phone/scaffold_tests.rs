@@ -97,7 +97,11 @@ fn only_a_folder_this_mac_was_asked_to_build_can_be_opened() {
     // Nothing has been built, so no folder is adoptable — least of all one the
     // phone simply named.
     assert!(backend(vec![])
-        .handle("phone", "scaffold.adopt", json!({"dir":"/Users/someone/Secrets"}))
+        .handle(
+            "phone",
+            "scaffold.adopt",
+            json!({"dir":"/Users/someone/Secrets"})
+        )
         .is_err());
 }
 

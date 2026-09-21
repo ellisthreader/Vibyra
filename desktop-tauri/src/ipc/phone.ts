@@ -3,6 +3,11 @@ import { invoke } from "@tauri-apps/api/core";
 export interface PhoneDevice {
   id: string;
   name: string;
+  /** RFC 3339, set by the host when the phone last authenticated. */
+  lastSeen?: string;
+  /** An IP address on this network, or "Vibyra Cloud". */
+  lastFrom?: string;
+  lastRoute?: "nearby" | "cloud";
 }
 
 /** The outbound leg to Vibyra Cloud: `waiting` until this Mac is signed in,
@@ -70,6 +75,10 @@ export function phoneInvite(): Promise<string> {
 
 export function phoneAnswer(id: string, approve: boolean): Promise<void> {
   return invoke("phone_answer", { id, approve });
+}
+
+export function phoneDisconnectDevice(id: string): Promise<void> {
+  return invoke("phone_disconnect_device", { id });
 }
 
 export function phoneRevoke(id: string): Promise<void> {

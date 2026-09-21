@@ -4,10 +4,11 @@ import type { WorkspaceActions } from '../ui/types';
 export function vibesActions(store: WorkspaceStore): Pick<WorkspaceActions, 'vibesProjectRequest'> {
   return {
     vibesProjectRequest: async (method, params) => {
+      // A secure guest wallet can own tools; desktop login is separate from pairing.
       const epoch = store.epoch; const account = store.token;
-      if (!account || !store.state.vibesToolsAvailable || store.state.status !== 'connected'
+      if (typeof params.accountToken !== 'string' || !params.accountToken || !store.state.vibesToolsAvailable || store.state.status !== 'connected'
         || params.hostId !== store.state.host?.id || !store.state.projects.some(p => p.id === params.projectId)) {
-        throw new Error('Reconnect to the authorized computer and sign in before using project tools.');
+        throw new Error('Reconnect to the authorized computer and open an AI chat before using project tools.');
       }
       const result = await store.deps.rpc.request<Record<string, unknown>>(method, params);
       store.assertCurrent(epoch);

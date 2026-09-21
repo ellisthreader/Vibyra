@@ -1,0 +1,25 @@
+/* Hardware silhouettes stay outside the exact, unscaled CSS viewport. */
+.preview-device { box-sizing: border-box; padding: var(--device-bezel-y) var(--device-bezel-x); box-shadow: 0 20px 50px #0003, 0 3px 8px #0002, inset 0 0 0 1px #ffffff20; }
+.preview-device__screen { box-sizing: content-box; flex-shrink: 0; }
+.preview-device--phone { border-color: #777b83; background: linear-gradient(115deg,#8a8d93,#1a1c20 5%,#08090b 94%,#656970); }
+.preview-device--tablet { border-color: #7a7e86; background: #111216; }
+.preview-device--laptop { border-color: #777b83; background: #131416; }
+.preview-device__camera, .preview-device__home, .preview-device__earpiece, .preview-device__tablet-lens, .preview-device__laptop-lens { pointer-events: none; }
+.preview-device__camera--notch { top: var(--device-bezel); width: 154px; height: 30px; border: 0; border-radius: 0 0 21px 21px; background: #08090b; }
+.preview-device[data-landscape="true"] .preview-device__camera { top: 50%; left: calc(var(--device-bezel) + 8px); transform: translate(-50%,-50%) rotate(-90deg); }
+.preview-device[data-landscape="true"] .preview-device__camera--notch { left: calc(var(--device-bezel) + 15px); }
+.preview-device[data-landscape="true"] .preview-device__camera--island { left: calc(var(--device-bezel) + 20px); }
+.preview-device__home { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); width: 38px; height: 38px; border: 2px solid #62656b; box-shadow: inset 0 0 0 2px #08090b; border-radius: 50%; background: #131418; }
+.preview-device__earpiece { position: absolute; top: 28px; left: 50%; width: 48px; height: 5px; transform: translateX(-50%); border-radius: 8px; background: #33363c; }
+.preview-device[data-landscape="true"] .preview-device__home { bottom: auto; top: 50%; left: auto; right: 12px; transform: translateY(-50%); }
+.preview-device[data-landscape="true"] .preview-device__earpiece { top: 50%; left: 28px; width: 5px; height: 48px; transform: translateY(-50%); }
+.preview-device__tablet-lens, .preview-device__laptop-lens { position: absolute; top: 8px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle,#34425a,#08090b 65%); transform: translateX(-50%); }
+.preview-device__tablet-lens { top: 50%; left: 10px; transform: translateY(-50%); }
+.preview-device[data-landscape="true"] .preview-device__tablet-lens { top: 10px; left: 50%; transform: translateX(-50%); }
+.preview-device__laptop-base { background: linear-gradient(#b5b8be,#73777e 18%,#34373d 75%,#1f2227); height: 25px; }
+.preview-device--desktop { border-radius: 10px; border-color: #51555d; }
+.preview-device--tv { border-radius: 4px; border-color: #454951; }
+.preview-device--custom { border-radius: 8px; }
+
+.preview-device[data-model^="macbook-"] .preview-device__laptop-lens { top: 13px; width: 130px; height: 20px; border-radius: 0 0 7px 7px; background: #101114; z-index: 4; }
+.preview-device[data-model^="macbook-"] .preview-device__laptop-lens::after { content: ""; position: absolute; width: 5px; height: 5px; top: 7px; left: 50%; border-radius: 50%; background: #253047; }

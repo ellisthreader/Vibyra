@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReleaseArtifact;
+use App\Services\ReleaseChannel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Throwable;
@@ -48,7 +49,9 @@ class ReleaseUpdateController extends Controller
             return $this->upToDate();
         }
 
-        $release = (array) config("releases.platforms.{$platform}", []);
+        // Never the download entry: on macOS that is the .dmg a human wants,
+        // which this app cannot install into itself.
+        $release = ReleaseChannel::updater($platform);
         if ($release === []) {
             return $this->upToDate();
         }
@@ -82,9 +85,18 @@ class ReleaseUpdateController extends Controller
             'version' => $version,
             'notes' => (string) ($release['notes'] ?? ''),
             'pub_date' => $this->pubDate($release),
-            'url' => url("/downloads/{$platform}"),
+            'url' => url($this->artifactUrl($platform)),
             'signature' => $signature,
         ]);
+    }
+
+    /** Platforms whose update is its own file need their own path; the rest
+     * keep serving the one artifact the download page already publishes. */
+    private function artifactUrl(string $platform): string
+    {
+        return ReleaseChannel::hasSeparateUpdateArtifact($platform)
+            ? "/downloads/{$platform}/update"
+            : "/downloads/{$platform}";
     }
 
     /** Tauri reads any 204 as "nothing to do" and stays quiet. */

@@ -13,6 +13,9 @@ function NativeDrawerFixture() {
   const [visible, setVisible] = useState(true);
   const [destination, setDestination] = useState<Destination>('work');
   const workspace = useDemoWorkspace({ themePreference: dark ? 'dark' : 'light', setTheme: () => {}, exitDemo: () => {} });
+  // Opening a terminal puts the rail in its project's face, as WorkspaceApp does.
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const project = workspace.projects.find(item => item.id === projectId) ?? null;
   return <SafeAreaProvider><ThemeContext.Provider value={{ colors, dark }}>
     <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -21,8 +24,9 @@ function NativeDrawerFixture() {
           <Text style={{ color: colors.text }}>Sidebar design fixture · {destination}</Text>
         </Pressable>
       </View>
-      <NavigationDrawer visible={visible} destination={destination} workspace={workspace}
-        onClose={() => setVisible(false)} onNavigate={setDestination} onNew={() => workspace.actions.selectSession(null)} />
+      <NavigationDrawer visible={visible} destination={destination} workspace={workspace} project={project}
+        onClose={() => setVisible(false)} onNavigate={setDestination} onEnterProject={setProjectId}
+        onNew={() => workspace.actions.selectSession(null)} onLeaveProject={() => { setProjectId(null); workspace.actions.selectSession(null); }} />
     </SafeAreaView>
   </ThemeContext.Provider></SafeAreaProvider>;
 }

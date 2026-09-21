@@ -21,11 +21,9 @@ pub(crate) struct ManagedChild {
     pub child: Child,
     pub port: u16,
 }
-
 pub(crate) fn new_logs() -> LogBuffer {
     Arc::new(Mutex::new(VecDeque::with_capacity(160)))
 }
-
 pub(crate) fn push_log(logs: &LogBuffer, line: impl Into<String>) {
     let mut logs = logs.lock();
     let line = line.into();
@@ -38,7 +36,6 @@ pub(crate) fn push_log(logs: &LogBuffer, line: impl Into<String>) {
         logs.pop_front();
     }
 }
-
 pub(crate) fn snapshot_logs(logs: &LogBuffer) -> Vec<String> {
     logs.lock().iter().cloned().collect()
 }
@@ -98,6 +95,15 @@ pub(crate) fn spawn_process(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    if spec.label == "Expo web" {
+        // Node can otherwise bind localhost only on ::1 while readiness and the frame use IPv4.
+        let options = std::env::var("NODE_OPTIONS").unwrap_or_default();
+        command.env(
+            "NODE_OPTIONS",
+            format!("{options} --dns-result-order=ipv4first"),
+        );
+        command.env("BROWSER", "none");
+    }
     configure_process_group(&mut command);
     let mut child = command.spawn().map_err(|error| {
         CoreError::Preview(format!("could not start {}: {error}", spec.program))

@@ -1,3 +1,4 @@
+import { useConversationTerminals } from '../state/conversationTerminalStore';
 import { useEffect } from "react";
 
 import { onModelsReleased } from "../ipc/models";
@@ -48,7 +49,11 @@ function useAppStartup(): void {
           // project other than the last one opened — the file tree, the
           // preview and the pane visibility all have to follow them.
           const project = useProjectStore.getState();
-          const restored = restoredProjectId(useTerminalStore.getState().panes, project.activeId);
+          await useConversationTerminals.getState().refresh();
+          const chats = useConversationTerminals.getState();
+          const shared = chats.sessions.filter(session => chats.open.includes(session.id));
+          const restored = restoredProjectId(useTerminalStore.getState().panes, project.activeId)
+            ?? shared.find(session => session.projectId === project.activeId)?.projectId ?? shared[0]?.projectId;
           if (restored) await project.activate(restored);
         },
         refreshAgents: () => useAgentStore.getState().refresh(),

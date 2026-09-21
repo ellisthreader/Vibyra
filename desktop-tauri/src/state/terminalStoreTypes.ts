@@ -68,7 +68,9 @@ export interface TerminalStore {
   sessionReady: boolean;
   relaunching: number[];
   relaunchErrors: Record<number, string>;
-  spawnAgent: (agent: ResolvedAgent, projectId: string, options?: SpawnAgentOptions) => Promise<void>;
+  /** Resolves to the new pane's id, or null when the launch failed and the
+   * error went to the workspace banner instead. */
+  spawnAgent: (agent: ResolvedAgent, projectId: string, options?: SpawnAgentOptions) => Promise<number | null>;
   spawnSsh: (target: string, projectId: string, options?: SpawnSshOptions) => Promise<void>;
   restart: (id: number) => Promise<void>;
   /** Relaunch one pane on a different provider account, in place. */

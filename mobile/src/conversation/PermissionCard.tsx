@@ -5,7 +5,8 @@ import { Button, Icon } from '../ui/primitives';
 import { RequestFrame } from './RequestFrame';
 import type { ConversationPermission, ConversationViewProps } from './types';
 
-export function PermissionCard({ item, canRespond, onDecision }: {
+export function PermissionCard({ item, canRespond, onDecision, onInspect }: {
+  onInspect?: (item: import('../state/conversationTypes').AgentItem) => void;
   item: ConversationPermission; canRespond: boolean; onDecision: ConversationViewProps['onDecision'];
 }) {
   const { colors } = useTheme();
@@ -13,7 +14,7 @@ export function PermissionCard({ item, canRespond, onDecision }: {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>();
   const inFlight = useRef(false);
-  const respond = async (decision: 'accept' | 'decline') => {
+  const respond = async (decision: 'accept' | 'decline' | 'acceptForSession') => {
     if (inFlight.current || !canRespond || item.status !== 'pending') return;
     inFlight.current = true; setSending(true); setError(undefined);
     try { await onDecision(item.id, decision); }
@@ -33,9 +34,11 @@ export function PermissionCard({ item, canRespond, onDecision }: {
       <Text style={[s.detailsLabel, { color: colors.muted }]}>Action details</Text>
       <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color={colors.muted} />
     </Pressable>{expanded && <Text selectable style={[s.detail, { color: colors.text }]}>{item.detail}</Text>}</View>}
+    {item.source?.hasDetail && onInspect && <Pressable accessibilityRole="button" style={s.detailsButton} onPress={() => onInspect(item.source!)}><Text style={{ color: colors.accent }}>Review complete action</Text></Pressable>}
     {item.status === 'pending' && <View style={s.actions}>
       <View style={s.action}><Button title="Decline" secondary disabled={disabled} onPress={() => void respond('decline')} /></View>
-      <View style={s.action}><Button title="Allow once" disabled={disabled} onPress={() => void respond('accept')} /></View>
+      <View style={s.action}><Button title={item.allowLabel ?? 'Allow once'} disabled={disabled} onPress={() => void respond('accept')} /></View>
+      {item.choices?.includes('acceptForSession') && <View style={s.action}><Button title="Allow for this session" secondary disabled={disabled} onPress={() => void respond('acceptForSession')} /></View>}
     </View>}
   </RequestFrame>;
 }

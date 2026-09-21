@@ -5,19 +5,27 @@ import { Button, Hint, Icon } from '../ui/primitives';
 import { useAction } from '../ui/useAction';
 import type { WorkspaceModel } from '../ui/types';
 import type { AccountProvider } from '../account/accountApi';
+import type { TwoFactorPrompt } from '../ui/types';
+import { AccountCodeStep } from './AccountCodeStep';
+import { links } from '../settings/links';
 import { ProviderButtons } from './ProviderButtons';
 import { AccountEmailFields } from './AccountEmailFields';
+import { AccountSignedIn } from './AccountSignedIn';
 
 export type AccountMode = 'signup' | 'login';
-export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary, continueLabel = 'Continue' }: {
+export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary, continueLabel = 'Continue', onFocusPassword }: {
   workspace: WorkspaceModel; mode: AccountMode; onMode: (mode: AccountMode) => void; onDone: () => void;
   reason?: string; secondary?: ReactNode; continueLabel?: string;
+  /** Focusing the password raises the keyboard over the button below it; the page scrolls it back into view. */
+  onFocusPassword?: () => void;
 }) {
   const { colors } = useTheme();
   const { busy, error, run, clearError } = useAction();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [provider, setProvider] = useState<AccountProvider | null>(null);
+  // Set when the password was right and this account asks for a code as well.
+  const [challenge, setChallenge] = useState<TwoFactorPrompt | null>(null);
   const attempt = useRef<AbortController | null>(null);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; attempt.current?.abort(); }; }, []);
@@ -27,8 +35,26 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
     const action = mode === 'signup' ? workspace.actions.signUp : workspace.actions.logIn;
     if (!action) return;
     Keyboard.dismiss();
-    if (await run(() => action(email, password)) && mounted.current) { setPassword(''); onDone(); }
+    // A login can end in a challenge rather than a session. Nothing is cleared and
+    // nothing is done in that case: the same form asks the second question instead.
+    let asked: TwoFactorPrompt | null = null;
+    const done = await run(async () => { asked = (await action(email, password)) ?? null; });
+    if (!done || !mounted.current) return;
+    if (asked) { setChallenge(asked); return; }
+    setPassword(''); onDone();
   };
+  const answer = async (code: string) => {
+    if (busy || !challenge) return;
+    Keyboard.dismiss();
+    const send = workspace.actions.submitTwoFactorCode;
+    if (!send) return;
+    if (await run(() => send(challenge.challengeId, code)) && mounted.current) {
+      setPassword(''); setChallenge(null); onDone();
+    }
+  };
+  // Leaving the code step abandons the challenge; the password is asked for again,
+  // which is what the server would want anyway once this one has expired.
+  const leaveCode = () => { clearError(); setChallenge(null); setPassword(''); };
   const social = async (selected: AccountProvider) => {
     if (busy || attempt.current) return;
     const controller = new AbortController(); attempt.current = controller;
@@ -42,18 +68,14 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
     attempt.current = null; setProvider(null);
     if (completed && !controller.signal.aborted) { setPassword(''); onDone(); }
   };
+  if (challenge && !workspace.account) return <View style={s.form}>
+    {reason && <Hint>{reason}</Hint>}
+    <AccountCodeStep email={email.trim().toLowerCase()} busy={busy} error={error}
+      onSubmit={code => void answer(code)} onBack={leaveCode} />
+  </View>;
   if (workspace.account) return <View style={s.form}>
     {reason && <Hint>{reason}</Hint>}
-    <View style={[s.signedIn, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-      <View style={[s.avatar, { backgroundColor: colors.accentSoft }]}>
-        <Text style={[s.avatarText, { color: colors.accent }]}>{(workspace.account.name || workspace.account.email).slice(0, 1).toUpperCase()}</Text>
-      </View>
-      <View style={s.signedInText}>
-        <Text numberOfLines={1} style={[s.signedInTitle, { color: colors.text }]}>{workspace.account.name || 'Signed in'}</Text>
-        <Text numberOfLines={1} style={[s.signedInEmail, { color: colors.muted }]}>{workspace.account.email}</Text>
-      </View>
-      <Icon name="checkmark-circle" size={22} color={colors.success} />
-    </View>
+    <AccountSignedIn account={workspace.account} />
     <Button title={continueLabel} onPress={onDone} />
   </View>;
   return <View style={s.form}>
@@ -71,7 +93,7 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
       <View style={[s.rule, { backgroundColor: colors.border }]} />
     </View>
     <AccountEmailFields key={mode} mode={mode} email={email} password={password} onEmail={setEmail} onPassword={setPassword}
-      busy={busy} onSubmit={() => void submit()} />
+      busy={busy} onSubmit={() => void submit()} onPasswordFocus={onFocusPassword} />
     {error && <View accessibilityRole="alert" style={[s.error, { backgroundColor: colors.errorSoft }]}>
       <Icon name="alert-circle-outline" size={19} color={colors.error} /><View style={s.errorText}><Hint error>{error}</Hint></View>
     </View>}
@@ -85,9 +107,9 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
       </Pressable>
     </View>
     <Text style={[s.legal, { color: colors.muted }]}>By continuing, you agree to our{' '}
-      <Text accessibilityRole="link" onPress={() => { void Linking.openURL('https://vibyra.app/legal/terms'); }}
+      <Text accessibilityRole="link" onPress={() => { void Linking.openURL(links.terms).catch(() => {}); }}
         style={s.legalLink}>Terms</Text> and{' '}
-      <Text accessibilityRole="link" onPress={() => { void Linking.openURL('https://vibyra.app/legal/privacy'); }}
+      <Text accessibilityRole="link" onPress={() => { void Linking.openURL(links.privacy).catch(() => {}); }}
         style={s.legalLink}>Privacy Policy</Text>.</Text>
     {secondary}
   </View>;
@@ -103,7 +125,4 @@ const s = StyleSheet.create({
   switchLinkText: { fontSize: 14, fontWeight: '600' },
   legal: { fontSize: 12, lineHeight: 18, textAlign: 'center', maxWidth: 300, alignSelf: 'center', marginTop: -6 },
   legalLink: { textDecorationLine: 'underline' },
-  signedIn: { flexDirection: 'row', alignItems: 'center', gap: 13, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, padding: 14 },
-  avatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' }, avatarText: { fontSize: 17, fontWeight: '700' },
-  signedInText: { flex: 1, gap: 2 }, signedInTitle: { fontSize: 15, fontWeight: '600' }, signedInEmail: { fontSize: 13 },
 });

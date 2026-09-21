@@ -51,7 +51,7 @@ export function loadViewport(
   }
   return {
     deviceKey: recommendedDevice(hint).key,
-    landscape,
+    landscape: landscape && recommendedDevice(hint).width < recommendedDevice(hint).height,
     zoom: 1,
     customWidth: 1280,
     customHeight: 800,

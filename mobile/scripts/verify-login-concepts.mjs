@@ -1,0 +1,77 @@
+import { chromium, webkit } from 'playwright-core';
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+const url = 'http://127.0.0.1:8874';
+const out = '../output/login-concepts/screenshots';
+await mkdir(out, { recursive: true });
+const browser = process.env.VIBYRA_TEST_WEBKIT ? await webkit.launch() : await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
+const errors = [];
+try {
+  for (const concept of (process.env.VIBYRA_CONCEPT ? [process.env.VIBYRA_CONCEPT] : ['pocket','everywhere','connected'])) for (const theme of ['light','dark']) {
+    const page = await browser.newPage({ viewport: { width:1280, height:800 } });
+    page.on('pageerror', e => errors.push(e.message)); page.setDefaultTimeout(5000);
+    await page.goto(`${url}/concept.html?concept=${concept}&theme=${theme}`);
+    await page.getByRole('heading', { level:1 }).waitFor(); await page.waitForTimeout(1400);
+    assert.equal(await page.locator(`.${concept}-layout`).evaluate(el => getComputedStyle(el).display), 'grid', 'campaign stylesheet loads');
+    assert.notEqual(await page.locator(`.${concept}-campaign`).evaluate(el => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)', 'campaign surface is painted');
+    if (concept === 'pocket') {
+      assert.match(await page.locator('.pocket-campaign h2').innerText(), /Build from\s+your pocket\./);
+      const ad = await page.locator('.pocket-campaign').boundingBox();
+      const login = await page.locator('.pocket-signin').boundingBox();
+      assert.ok(ad.x + ad.width <= login.x, 'the ad is left of the login');
+      assert.equal(await page.locator('.brand > span').count(), 0, 'standalone V without the adjacent wordmark');
+      assert.ok((await page.locator('.brand img').boundingBox()).width >= 100, 'prominent logo');
+      const phoneTone = await page.locator('.pocket-visual .iphone-screen').evaluate(el => getComputedStyle(el).backgroundColor);
+      assert.equal(phoneTone, theme === 'dark' ? 'rgb(20, 25, 34)' : 'rgb(252, 252, 254)');
+    }
+    await page.screenshot({ path:`${out}/${concept}-${theme}.png` });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.getByRole('button', { name:'Explore the iPhone app', exact:false }).click();
+    await page.getByRole('dialog').waitFor();
+    assert.match(await page.locator('#notice-text').textContent(), /Vibyra for iPhone/);
+    await page.getByRole('button', { name:'Back to the design' }).click();
+    await page.getByRole('button', { name:'Continue with Apple', exact:true }).click();
+    await page.getByRole('dialog').waitFor(); await page.getByRole('button', { name:'Back to the design' }).click();
+    await page.getByRole('button', { name:'Continue with email' }).click();
+    await page.getByLabel('Email address').fill('sample@example.test');
+    await page.getByLabel('Password',{exact:true}).fill('sample-password');
+    await page.getByRole('button', { name:'Sign in', exact:false }).click();
+    assert.match(await page.getByRole('status').textContent(), /Preview only/);
+    assert.equal(await page.getByLabel('Password',{exact:true}).inputValue(), '');
+    await page.getByRole('button', { name:'Forgot password?' }).click();
+    await page.getByLabel('Email address').fill('sample@example.test');
+    await page.getByRole('button', { name:'Send reset link', exact:false }).click();
+    assert.match(await page.getByRole('status').textContent(), /no reset email/);
+    await page.getByRole('button', { name:'All sign-in options', exact:false }).click();
+    await page.getByRole('button', { name:'Create an account', exact:true }).click();
+    await page.setViewportSize({ width:960, height:640 });
+    await page.getByLabel('Your name').fill('Sample'); await page.getByLabel('Email address').fill('sample@example.test');
+    await page.getByLabel('Password',{exact:true}).fill('sample-password');
+    await page.getByRole('button', { name:'Create account', exact:false }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path:`${out}/${concept}-${theme}-signup.png` });
+    await page.getByRole('button', { name:'Create account', exact:false }).click();
+    await page.setViewportSize({ width:390, height:720 });
+    await page.getByRole('button', { name:'All sign-in options', exact:false }).click();
+    await page.screenshot({ path:`${out}/${concept}-${theme}-narrow.png` });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.getByRole('button', { name:'Explore the iPhone app', exact:false }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path:`${out}/${concept}-${theme}-ios-narrow.png` });
+    await page.getByRole('button', { name:'Explore the iPhone app', exact:false }).click();
+    await page.getByRole('dialog').waitFor();
+    await page.getByRole('button', { name:'Back to the design' }).click();
+    await page.emulateMedia({ reducedMotion:'reduce' });
+    assert.equal(await page.locator('.login').evaluate(el => getComputedStyle(el).animationName), 'none');
+    await page.close();
+  }
+  const page = await browser.newPage({ viewport:{ width:1440, height:1000 } });
+  await page.goto(url); await page.waitForTimeout(1300); await page.screenshot({ path:`${out}/gallery.png` });
+  await page.getByRole('tab', { name:'B Everywhere', exact:false }).click();
+  assert.match(await page.locator('#preview').getAttribute('src'), /everywhere/);
+  await page.getByRole('button',{ name:'Compare', exact:true }).click(); await page.waitForTimeout(1400);
+  assert.equal(await page.locator('.compare-card').count(),3); await page.screenshot({ path:`${out}/comparison.png` });
+  await page.locator('.compare-card').last().click(); assert.match(await page.locator('#preview').getAttribute('src'), /connected/);
+  await page.getByRole('button',{ name:'Switch to light theme' }).click(); assert.match(await page.locator('#preview').getAttribute('src'), /theme=light/);
+  await page.getByRole('button',{ name:'Reduce motion' }).click(); assert.match(await page.locator('#preview').getAttribute('src'), /reduce=1/);
+  assert.deepEqual(errors,[]);
+  console.log('PASS: 3 concepts × 2 themes, provider/email/signup/recovery previews, cleared demo fields, narrow/short windows, reduced motion, gallery switching and compare.');
+} finally { await browser.close(); }

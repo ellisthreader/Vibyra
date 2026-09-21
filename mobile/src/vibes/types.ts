@@ -19,6 +19,8 @@ export interface VibesWindow { unit: 'hours' | 'days'; span: number; used: numbe
 export interface VibesLimits { session: VibesWindow; week: VibesWindow }
 export interface VibesWallet {
   chatEnabled?: boolean;
+  /** Guests prove trial eligibility at creation instead of by verifying email. */
+  guest?: boolean;
   version: 1; available: number; held: number; total: number; paidAvailable: number;
   plan: string; paidUntil: string | null; trialChatsRemaining: number;
   // The trial as the backend defines it, so nothing on the phone keeps its own
@@ -41,11 +43,18 @@ export interface VibesModel {
   // The reasoning ladder this model publishes on OpenRouter. Absent, or empty,
   // means its thinking cannot be steered and no effort is sent for it.
   reasoning?: Reasoning; created?: number | null;
+  /** Whether it can see a photo. The server refuses a photo for a model that cannot. */
+  vision?: boolean;
 }
+/** A photo or file uploaded for a message; `kind` is how the model receives it. */
+export interface VibesAttachment { id: string; kind: 'image' | 'pdf' | 'text'; name: string; bytes: number }
+/** A local file about to be uploaded. `file` is the browser's own File; the phone sends by `uri`. */
+export interface AttachmentSource { uri: string; name: string; mimeType: string; file?: Blob }
 export interface VibesChat { id: string; title: string; trial_slot: number | null; trial_used: number; host_id?: string | null; project_id?: string | null; binding?: string | null }
-export const PROJECT_OPERATIONS = ['read_file', 'list_files', 'write_file'] as const;
+export const PROJECT_OPERATIONS = ['read_file', 'list_files', 'write_file', 'search_files'] as const;
 export type ProjectOperation = (typeof PROJECT_OPERATIONS)[number];
-export interface ProjectToolArguments { path: string; content?: string; expectedSha256?: string }
+/** `path` names a file or folder; `search_files` names a query instead and carries no path. */
+export interface ProjectToolArguments { path?: string; content?: string; expectedSha256?: string; query?: string }
 /**
  * One tool call inside a turn. A project call names a file and is answered by this
  * phone. An integration call carries `integration` and was answered by the
@@ -54,6 +63,7 @@ export interface ProjectToolArguments { path: string; content?: string; expected
  */
 export interface VibesTool {
   id: string; expiresAt: number; operation: string; decision: string | null;
+  approval?: { state: string; fingerprint: string; arguments: Record<string, unknown>; answer: 'allow' | 'decline' | null } | null;
   integration?: string | null; summary?: string | null;
   arguments?: ProjectToolArguments; result?: Record<string, unknown> | null;
 }
@@ -64,8 +74,12 @@ export const isProjectTool = (tool: VibesTool): tool is ProjectTool =>
 export interface VibesTurn {
   id: string; chatId: string; model: string; status: 'queued' | 'running' | 'waiting' | 'reconciling' | 'completed' | 'failed' | 'cancelled';
   tools?: VibesTool[];
+  attachments?: VibesAttachment[];
+  /** What this reply saved to or removed from Settings > Memory; null when it changed nothing. */
+  memory?: VibesTurnMemory | null;
   prompt: string; response: string | null; error: string | null; reserved: number; charged: number; createdAt: string;
 }
+export interface VibesTurnMemory { saved?: { id: string; text: string }[]; forgotten?: string[]; full?: boolean }
 /**
  * `auto` is present only when the model sent was 'auto': it names the model the
  * router chose and why, so the composer can show a decision the person did not
@@ -78,13 +92,19 @@ export interface VibesQuote { quote: string; maxCredits: number; estimatedCredit
   /** The integrations actually attached and priced, which is not always the ones asked for. */
   integrations?: string[] }
 export interface VibesApi {
+  guest?: {
+    restore(token: string | null): void;
+    create(installId: string, deviceToken?: string): Promise<{ token: string; wallet: VibesWallet }>;
+  };
   wallet(): Promise<VibesWallet>; consent(): Promise<void>; models(): Promise<VibesModel[]>;
   chats(): Promise<VibesChat[]>; createChat(id: string, title: string): Promise<VibesChat[]>;
   // The effort is a request, not a promise: the server validates it against the
   // model's own ladder and the quote reports back the effort it actually priced.
   // `integrations` are the connectors named in the message. The server keeps only the
   // ones this account has really connected and reports back which it attached.
-  quote(chatId: string, text: string, model: string, effort?: Effort | null, integrations?: string[]): Promise<VibesQuote>;
+  // `attachments` are uploaded first; the quote prices them and the turn carries them.
+  quote(chatId: string, text: string, model: string, effort?: Effort | null, integrations?: string[], attachments?: string[]): Promise<VibesQuote>;
+  upload?(source: AttachmentSource): Promise<VibesAttachment>;
   submit(id: string, quote: string): Promise<VibesTurn>; turn(id: string): Promise<VibesTurn>;
   turns(chatId: string): Promise<VibesTurn[]>; cancel(id: string): Promise<void>;
   purchase(transactionId: string, productId: string): Promise<VibesWallet>;

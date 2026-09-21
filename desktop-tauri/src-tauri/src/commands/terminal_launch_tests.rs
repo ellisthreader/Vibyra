@@ -178,6 +178,9 @@ fn rejects_out_of_range_terminal_sizes() {
 fn isolates_only_builtin_personal_account_runtimes() {
     let mut builtin = LaunchSpec::shell(None, None);
     isolate_account_environment(&mut builtin, "codex", false, vec!["OPENAI_API_KEY".into()]);
+    assert!(builtin
+        .args
+        .contains(&"check_for_update_on_startup=false".into()));
     assert_eq!(builtin.env_remove, ["OPENAI_API_KEY"]);
 
     let mut custom = LaunchSpec::shell(None, None);

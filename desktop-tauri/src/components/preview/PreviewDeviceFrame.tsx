@@ -6,6 +6,8 @@ import type {
   PreviewTarget,
   PreviewViewportState,
 } from "../../previewTypes";
+import { previewFrameMetrics } from "../../lib/previewFrameMetrics";
+import "./previewFrames.css";
 import { PreviewOverlay } from "./PreviewOverlay";
 
 interface Props {
@@ -18,20 +20,6 @@ interface Props {
   onScaleChange: (scale: number) => void;
   onRun: () => void;
   onRetryInspect: () => void;
-}
-
-function frameMetrics(kind: PreviewDevice["kind"], width: number, height: number) {
-  const bezel = kind === "phone" || kind === "foldable" ? 12 : kind === "tablet" ? 15 : 13;
-  const extraWidth = kind === "laptop" ? 74 : 0;
-  const extraHeight = kind === "laptop" ? 38 : kind === "desktop" ? 82 : kind === "tv" ? 54 : 0;
-  return {
-    bezel,
-    shellWidth: width + bezel * 2,
-    shellHeight: height + bezel * 2,
-    outerWidth: width + bezel * 2 + extraWidth,
-    outerHeight: height + bezel * 2 + extraHeight,
-    offsetX: extraWidth / 2,
-  };
 }
 
 export function PreviewDeviceFrame({
@@ -48,12 +36,13 @@ export function PreviewDeviceFrame({
   const stage = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState(0.5);
   const [loaded, setLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const sourceWidth = device.key === "custom" ? viewport.customWidth : device.width;
   const sourceHeight = device.key === "custom" ? viewport.customHeight : device.height;
   const width = viewport.landscape ? sourceHeight : sourceWidth;
   const height = viewport.landscape ? sourceWidth : sourceHeight;
-  const metrics = useMemo(() => frameMetrics(device.kind, width, height), [device.kind, height, width]);
-  const scale = Math.max(0.06, Math.min(1.25, fit * viewport.zoom));
+  const metrics = useMemo(() => previewFrameMetrics(device, width, height, viewport.landscape), [device, height, width, viewport.landscape]);
+  const scale = Math.max(0.02, Math.min(1.25, fit * viewport.zoom));
 
   useEffect(() => {
     const host = stage.current;
@@ -62,8 +51,8 @@ export function PreviewDeviceFrame({
       const rect = host.getBoundingClientRect();
       const next = Math.min(
         1,
-        Math.max(0.06, (rect.width - 64) / metrics.outerWidth),
-        Math.max(0.06, (rect.height - 64) / metrics.outerHeight),
+        Math.max(0.02, (rect.width - 64) / metrics.outerWidth),
+        Math.max(0.02, (rect.height - 64) / metrics.outerHeight),
       );
       setFit(next);
     };
@@ -74,13 +63,20 @@ export function PreviewDeviceFrame({
   }, [metrics.outerHeight, metrics.outerWidth]);
 
   useEffect(() => onScaleChange(scale), [onScaleChange, scale]);
-  useEffect(() => setLoaded(false), [revision, status.url]);
+  useEffect(() => {
+    setLoaded(false); setLoadFailed(false);
+    if (!status.url) return;
+    const timer = window.setTimeout(() => setLoadFailed(true), 15000);
+    return () => window.clearTimeout(timer);
+  }, [revision, status.url]);
 
   const running = status.phase === "running" && status.url;
   const style = {
     "--device-w": width + "px",
     "--device-h": height + "px",
     "--device-bezel": metrics.bezel + "px",
+    "--device-bezel-x": metrics.bezelX + "px",
+    "--device-bezel-y": metrics.bezelY + "px",
     "--device-radius": device.radius + "px",
     "--screen-radius": device.screenRadius + "px",
     width: metrics.shellWidth,
@@ -91,11 +87,15 @@ export function PreviewDeviceFrame({
 
   return (
     <div ref={stage} className="preview-stage">
-      <div
+      {running && !loaded && loadFailed && <div className="preview-frame-help" role="status">
+        The page hasn’t loaded. Check the URL and that your server is running, or choose Open in browser from Preview options.
+      </div>}
+      {!running && <PreviewOverlay inspecting={inspecting} status={status} target={target} onRun={onRun} onRetryInspect={onRetryInspect} />}
+      <div hidden={!running}
         className="preview-stage__sizer"
         style={{ width: metrics.outerWidth * scale, height: metrics.outerHeight * scale }}
       >
-        <div className={"preview-device preview-device--" + device.kind} style={style}>
+        <div className={"preview-device preview-device--" + device.kind} data-landscape={viewport.landscape} data-legacy={metrics.legacy} data-model={device.key} style={style}>
           <div className="preview-device__screen">
             {running && (
               <iframe
@@ -104,25 +104,21 @@ export function PreviewDeviceFrame({
                 src={status.url ?? undefined}
                 sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin allow-downloads"
                 referrerPolicy="no-referrer"
-                onLoad={() => setLoaded(true)}
+                onLoad={() => { setLoaded(true); setLoadFailed(false); }}
+                onError={() => { setLoaded(false); setLoadFailed(true); }}
               />
             )}
             {running && !loaded && (
               <div className="preview-device__loading">
                 <span className="preview-spinner" />
-                <strong>Loading project…</strong>
+                <strong>Loading…</strong>
               </div>
             )}
-            {!running && (
-              <PreviewOverlay
-                inspecting={inspecting}
-                status={status}
-                target={target}
-                onRun={onRun}
-                onRetryInspect={onRetryInspect}
-              />
-            )}
+
           </div>
+          {metrics.legacy && <><span className="preview-device__home" /><span className="preview-device__earpiece" /></>}
+          {device.kind === "tablet" && <span className="preview-device__tablet-lens" />}
+          {device.kind === "laptop" && <span className="preview-device__laptop-lens" />}
           {device.camera !== "none" && (
             <span className={"preview-device__camera preview-device__camera--" + device.camera} />
           )}

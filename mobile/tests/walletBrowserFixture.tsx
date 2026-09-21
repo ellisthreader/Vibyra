@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaFrameContext, SafeAreaInsetsContext, SafeAreaProvider } from 'react-native-safe-area-context';
 import { palettes, ThemeContext } from '../src/theme';
+import type { WorkspaceModel } from '../src/ui/types';
+import { DrawerBalance } from '../src/vibes/DrawerBalance';
 import { VibesProvider } from '../src/vibes/VibesProvider';
-import { VibesBalanceRow } from '../src/vibes/VibesBalanceRow';
+import { VibesSettingsPage } from '../src/vibes/VibesSettingsPage';
 import { WalletScreen } from '../src/vibes/WalletScreen';
 import type { PurchaseBridge, VibesApi, VibesWallet } from '../src/vibes/types';
 
@@ -20,7 +22,8 @@ Object.assign(window, { walletCalls: calls });
 const planEntitlements = {
   free: { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false, sessionCredits: 60, weekCredits: 150 },
   starter: { maxProjects: 3, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false, sessionCredits: 70, weekCredits: 175 },
-  builder: { maxProjects: 10, concurrentReplies: 2, fullCatalogue: false, remoteAccess: false, sessionCredits: 200, weekCredits: 500 },
+  // Pro 10×: Pro's entitlements, half its Vibes, as `config/vibes.plans` has it.
+  builder: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true, sessionCredits: 200, weekCredits: 500 },
   pro: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true, sessionCredits: 400, weekCredits: 1000 },
 };
 // `used=` drives the two meters, so the full and nearly-full states are drivable
@@ -67,7 +70,7 @@ const api: VibesApi = {
     const gained = planEntitlements[next as keyof typeof planEntitlements] ?? wallet.entitlements;
     wallet = { ...wallet, plan: next, entitlements: gained,
       paidUntil: bought.kind === 'subscription' ? '2026-10-09T00:00:00Z' : wallet.paidUntil,
-      available: wallet.available + bought.credits, paidAvailable: wallet.paidAvailable + bought.credits,
+      total: wallet.total + bought.credits, available: wallet.available + bought.credits, paidAvailable: wallet.paidAvailable + bought.credits,
       // The windows widen with the plan, exactly as `Wallet::payload` re-derives
       // them from the entitled plan on the next read. A fixture that left them at
       // the old plan's figures would prove the meters never move when money does.
@@ -76,9 +79,13 @@ const api: VibesApi = {
     return wallet;
   },
 };
+let priceRequests = 0;
 const purchases: PurchaseBridge | null = query.get('bridge') === 'off' ? null : {
-  products: async () => [{ id: 'starter', displayPrice: '£20.00' }, { id: 'builder', displayPrice: '£49.00' },
-    { id: 'pro', displayPrice: '£99.00' }, { id: 'topup', displayPrice: '£20.00' }],
+  products: async () => {
+    if (query.get('prices') === 'retry' && priceRequests++ < 2) throw new Error('Store unavailable');
+    return [{ id: 'starter', displayPrice: '£20.00' }, { id: 'builder', displayPrice: '£49.00' },
+      { id: 'pro', displayPrice: '£99.00' }, { id: 'topup', displayPrice: '£20.00' }];
+  },
   buy: async productId => { calls.push('buy'); await new Promise(resolve => setTimeout(resolve, 200));
     return query.get('purchase') === 'cancel' ? null : { productId, transactionId: '10001' }; },
   finish: async () => { calls.push('finish'); }, pending: async () => [], restore: async () => [],
@@ -89,17 +96,27 @@ const account = { name: 'Design fixture', email: 'wallet-fixture@example.test', 
 // wallet at all. A fixture that kept the identity would poll one and prove nothing.
 const identity = query.get('signedIn') === '0' ? null : account.email;
 
-// The page is a destination that takes the whole screen and hands itself back
-// with its own X. `entry=1` puts the balance row in front of it, which is the tap
-// that used to go nowhere at all.
+// The balance is Vibyra tokens, a page of the Settings sheet; the upgrade is the
+// `vibes` destination it opens, which hands back to the balance with Back or a
+// finished purchase and leaves the area with its X. `entry=1` starts on the rail's
+// balance pill, which is how the page is reached without going through Settings.
+const signedIn = query.get('signedIn') !== '0';
+const workspace = { account: signedIn ? account : null } as unknown as WorkspaceModel;
+type Place = 'rail' | 'settings' | 'upgrade';
 function Harness() {
-  const [page, setPage] = React.useState(query.get('entry') !== '1');
-  return page
-    ? <WalletScreen signedIn={query.get('signedIn') !== '0'} onSignIn={() => calls.push('sign-in')}
-      onClose={() => { calls.push('close'); setPage(query.get('entry') !== '1'); }} />
-    : <View style={{ flex: 1, justifyContent: 'center', padding: 12 }}>
-      <VibesBalanceRow signedIn onWallet={() => setPage(true)} onSignIn={() => calls.push('sign-in')} />
-    </View>;
+  const home: Place = query.get('entry') === '1' ? 'rail' : 'settings';
+  const [view, setView] = React.useState<Place>(home);
+  const nav = { push() {}, back() {}, close: (then?: () => void) => then?.() };
+  if (view === 'upgrade') return <WalletScreen signedIn={signedIn} onSignIn={() => calls.push('sign-in')}
+    onBack={() => setView('settings')} onClose={() => { calls.push('close'); setView(home); }} />;
+  if (view === 'settings') return <View style={{ flex: 1, backgroundColor: colors.rail, paddingTop: 24 }}>
+    <VibesSettingsPage workspace={workspace} nav={nav}
+      routes={{ wallet: () => setView('upgrade'), plugins() {}, remote() {}, connect() {} }}
+      onSignIn={() => calls.push('sign-in')} />
+  </View>;
+  return <View style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'flex-end', padding: 16, backgroundColor: colors.rail }}>
+    <DrawerBalance onPress={() => setView('settings')} />
+  </View>;
 }
 // The inset the page is actually drawn under. Left at zero, this fixture proved
 // the light against a screen no phone has: `Wash` reached the top of the viewport
@@ -118,7 +135,9 @@ createRoot(document.getElementById('root')!).render(<SafeAreaProvider>
   <SafeAreaFrameContext.Provider value={fixtureFrame}>
     <SafeAreaInsetsContext.Provider value={fixtureInsets}>
       <ThemeContext.Provider value={{ colors, dark }}>
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* The bottom inset is the destination's `SafeAreaView`'s, which the upgrade
+            page's pinned purchase sits above on a phone with a home indicator. */}
+        <View style={{ flex: 1, backgroundColor: colors.background, paddingBottom: fixtureInsets.bottom }}>
           <VibesProvider identity={identity} api={api} purchases={purchases}>
             <Harness />
           </VibesProvider>

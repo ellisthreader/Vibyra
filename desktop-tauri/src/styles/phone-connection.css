@@ -35,6 +35,8 @@
 @media (prefers-reduced-motion: reduce) {
   .phone-state__dot--new { animation: none; }
 }
+/* The emergency action sits under the cloud line, only while phones are on it. */
+.phone-remote__cut { margin-top: 10px; }
 
 /* The approval prompt, shown wherever the person happens to be working. */
 .phone-approval { width: min(460px, 92vw); }

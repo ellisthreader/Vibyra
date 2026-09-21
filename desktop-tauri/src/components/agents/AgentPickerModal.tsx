@@ -150,7 +150,7 @@ export function AgentPickerModal() {
                 className="btn btn--secondary"
                 onClick={() => {
                   close();
-                  openSettingsSection("integrations");
+                  openSettingsSection("ai", "terminalAccounts");
                 }}
               >
                 Connect your AI accounts

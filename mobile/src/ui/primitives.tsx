@@ -20,13 +20,15 @@ export function IconButton({ icon, label, onPress, disabled, selected }: {
     <Icon name={icon} />
   </Pressable>;
 }
-export function Button({ title, onPress, icon, secondary, busy, disabled, danger }: {
+export function Button({ title, label = title, onPress, icon, secondary, busy, disabled, danger }: {
   title: string; onPress: () => void; icon?: IconName; secondary?: boolean;
   busy?: boolean; disabled?: boolean; danger?: boolean;
+  /** What assistive tech hears when the visible words need a place or object named. */
+  label?: string;
 }) {
   const { colors } = useTheme();
   const textColor = danger ? colors.error : secondary ? colors.text : colors.onAction;
-  return <Pressable accessibilityRole="button" accessibilityLabel={title}
+  return <Pressable accessibilityRole="button" accessibilityLabel={label}
     aria-disabled={disabled || busy} aria-busy={busy} accessibilityState={{ disabled: disabled || busy, busy }} onPress={onPress} disabled={disabled || busy}
     style={({ pressed }) => [s.button, { backgroundColor: secondary || danger ? colors.elevated : colors.action,
       opacity: disabled ? 0.4 : pressed ? 0.75 : 1 }]}>

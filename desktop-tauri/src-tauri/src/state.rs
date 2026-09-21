@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -17,7 +18,8 @@ use crate::secret_store::SecretStore;
 use crate::sink::ChannelSink;
 
 pub struct AppState {
-    pub account: AccountSessionManager,
+    pub shared_chats: Arc<crate::shared_chats::SharedChats>,
+    pub account: Arc<AccountSessionManager>,
     pub phone: Arc<Mutex<crate::phone::PhoneConnection>>,
     pub manager: Arc<PtyManager>,
     pub sink: Arc<ChannelSink>,
@@ -30,6 +32,10 @@ pub struct AppState {
     pub secret_store_available: Mutex<bool>,
     pub watcher: Mutex<Option<WorkspaceWatcher>>,
     pub voice: Mutex<Option<VoiceRecording>>,
+    /// The cancel flag of every scaffold the window has running, by run id.
+    /// A build lives on a blocking thread, so cancelling is a flag it reads
+    /// between lines rather than a handle anything here can join.
+    pub scaffold_runs: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     /// Set once the user has confirmed the close. Without it the
     /// `CloseRequested` veto would fire again on our own `window.close()` and
     /// the window could never actually shut.
@@ -60,16 +66,26 @@ impl AppState {
             .parent()
             .map(|dir| dir.join("ai-usage.json"))
             .unwrap_or_else(|| std::env::temp_dir().join("vibyra-ai-usage.json"));
-        let phone = Arc::new(crate::phone::PhoneConnection::new(
+        let shared_chats = crate::shared_chats::SharedChats::new(
+            settings_path
+                .parent()
+                .unwrap_or(std::path::Path::new("."))
+                .join("shared-chats"),
+        );
+        let account = Arc::new(AccountSessionManager::default());
+        let phone = Arc::new(crate::phone::PhoneConnection::with_chats(
             settings_path
                 .parent()
                 .unwrap_or(std::path::Path::new("."))
                 .join("phone"),
             manager.clone(),
+            Some(shared_chats.clone()),
+            Some(account.clone()),
         ));
         crate::phone::watch(phone.clone(), manager.clone());
         Self {
-            account: AccountSessionManager::default(),
+            shared_chats,
+            account,
             phone,
             manager,
             sink,
@@ -82,6 +98,7 @@ impl AppState {
             secret_store_available: Mutex::new(secret_store_available),
             watcher: Mutex::new(None),
             voice: Mutex::new(None),
+            scaffold_runs: Arc::new(Mutex::new(HashMap::new())),
             closing: AtomicBool::new(false),
             close_guard_armed: AtomicBool::new(false),
             close_requested_ack: AtomicBool::new(false),

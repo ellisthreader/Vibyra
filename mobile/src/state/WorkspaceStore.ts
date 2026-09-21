@@ -1,4 +1,5 @@
 import { hostSnapshot } from './hostSnapshot';
+import { acceptHost } from './acceptHost';
 import { vibesActions } from './vibesActions';
 import { makeAccountActions } from '../account/accountActions';
 import { conversationActions } from './conversationActions';
@@ -6,7 +7,7 @@ import { ConversationLedger } from './conversationLedger';
 import { receiveConversation, loadConversation } from './conversationSession';
 import { cachedConversation } from './conversationContinuity';
 import type { Notice } from '../transport/RpcClient';
-import type { RailwayStatus, WorkspaceActions, ThemePreference } from '../ui/types';
+import type { WorkspaceActions, ThemePreference } from '../ui/types';
 import { restoreAccent, restoreTerminalFontSize, setAccent } from './preferences';
 import { CreateRequests } from './createRequest';
 import { AutoConnect } from './autoConnect';
@@ -93,29 +94,7 @@ export class WorkspaceStore {
     this.update({ selectedSessionId: null, output: '', conversation: null, control: 'none', syncing: false,
       hostGrid: null });
   }
-  acceptHost(result: HostState) {
-    if (result.protocol !== 1 || result.host?.id !== this.saved?.pairing.hostId || !Array.isArray(result.sessions) ||
-        !Array.isArray(result.projects) || !Array.isArray(result.devices) || !Array.isArray(result.approvals)) {
-      throw new Error('The computer returned an unsupported workspace. Pair it again.');
-    }
-    const sessions = result.sessions.map(item => item.status === 'exited' ? { ...item,
-      exitCode: item.exitCode ?? this.state.sessions.find(previous => previous.id === item.id)?.exitCode } : item);
-    this.update({ host: result.host, projects: result.projects, sessions,
-      railway: railwayStatus(result.railway),
-      vibesToolsAvailable: result.capabilities?.vibesToolsV1 === true, scaffoldAvailable: result.capabilities?.scaffoldV1 === true,
-      remembered: result.projects.length > 0 ? { projects: result.projects, seenAt: new Date().toISOString() } : this.state.remembered,
-      // A Vibyra Desktop says so up front. Without keeping it, every screen
-      // outside a session offers work this connection will refuse to start.
-      viewOnly: result.capabilities?.readOnly === true,
-      // Separate from viewOnly: a desktop that still refuses to start or stop
-      // work can nonetheless let a phone type into the terminals it shares.
-      canType: result.capabilities?.canInput === true, canManage: result.capabilities?.canManage === true,
-      conversationAvailable: this.deps.iosConversations === true && result.capabilities?.conversationV1 === true,
-      devices: result.devices.map(item => ({ id: item.id, name: item.name, current: item.id === this.saved?.deviceId })),
-      approvals: result.approvals.filter(item => item.deviceId === this.saved?.deviceId)
-        .map(item => ({ id: item.id, title: item.title, detail: item.description, expiresAt: item.expiresAt })) });
-    if (this.state.selectedSessionId && !result.sessions.some(item => item.id === this.state.selectedSessionId)) this.clearSession();
-  }
+  acceptHost(result: HostState) { acceptHost(this, result); }
   refresh = async (terminal = false) => {
     if (this.state.status !== 'connected') throw new Error('Reconnect to refresh your workspace.');
     if (this.refreshPending) return this.refreshPending;
@@ -198,12 +177,4 @@ export class WorkspaceStore {
       if (event.data?.sessionId === this.state.selectedSessionId) { this.lease = null; this.update({ control: 'none' }); }
     }
   };
-}
-
-/** Only the three states the Mac can actually be in; anything else reads as "said nothing". */
-function railwayStatus(value: HostState['railway']): RailwayStatus | null {
-  if (!value || typeof value !== 'object') return null;
-  const status = value.status;
-  if (status !== 'ready' && status !== 'signedOut' && status !== 'missing') return null;
-  return { status, account: typeof value.account === 'string' && value.account ? value.account : null };
 }

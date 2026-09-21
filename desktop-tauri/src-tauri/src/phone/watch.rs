@@ -16,3 +16,14 @@ pub fn watch(phone: Arc<Mutex<PhoneConnection>>, manager: Arc<PtyManager>) {
             phone.lock().refresh(manager.clone());
         });
 }
+
+/// Lets the window hear at once when a phone asks it to start or close a
+/// terminal, rather than on its next poll: the phone is waiting on the answer.
+pub fn notify_window(app: tauri::AppHandle) {
+    use tauri::{Emitter, Manager};
+    let state = app.state::<crate::state::AppState>();
+    let requests = state.phone.lock().requests.clone();
+    requests.attach(Box::new(move |request| {
+        let _ = app.emit("phone:terminal-request", request);
+    }));
+}

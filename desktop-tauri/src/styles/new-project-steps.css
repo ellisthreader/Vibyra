@@ -1,0 +1,109 @@
+/* The stack list, the search, the naming screen and the setup switches. */
+
+/* No surface, like the fork before it: the stacks sit on the page and take a
+   ground only under the pointer. The list is pulled out by the rows' own
+   padding so each mark starts on the heading's left edge. */
+.np-list { display: flex; flex-direction: column; margin: 0 -14px;
+  /* Scrolls inside the page rather than pushing Continue past the bottom of an
+     unmaximised window. The bottom edge fades so a clipped row reads as more
+     to come rather than as a row that has been cut off. The padding is what
+     the fade lands on once you reach the end, so a list short enough not to
+     scroll never has its last row dimmed. */
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 22px;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent 100%); }
+
+/* The setup step, transparent like the rest. The rows keep their label, hint
+   and switch and lose the card and the hairlines between them; the switch is
+   the only drawn control on the screen, which is what it should be. */
+.np-options__rows { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.np-options__rows .setting-row { padding: 15px 0 15px 44px; gap: 28px; }
+.np-options__rows .setting-row + .setting-row { border-top: 0; }
+.np-options__rows .setting-row__label { font-size: 14px; }
+.np-options__rows .setting-row__hint { font-size: 12.5px; }
+
+/* The GitHub row: the same shape as a Settings row, led by the provider's own
+   mark so it is clear this one leaves the computer. */
+/* The mark sits in the gutter every row in this list leaves for it, so all
+   four labels start on the same line whether or not they carry one. */
+.np-github { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 0; }
+.np-github__mark { flex: none; display: grid; place-items: center; width: 26px; height: 26px; color: var(--text); }
+.np-github .setting-row__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.np-github .setting-row__label { font-size: 14px; }
+.np-github .setting-row__hint { font-size: 12.5px; }
+.np-github__repo { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+.np-github__link { align-self: flex-start; margin-top: 2px; }
+
+/* One row at a time, top to bottom. The delay is the only thing that differs
+   per row; `backwards` holds each one at the first frame while it waits, so
+   nothing flashes in at full opacity before its turn. Reduce Motion lands them
+   all at rest. */
+.np-list--enter > * { animation: np-row-in .44s cubic-bezier(.22, .61, .36, 1) backwards;
+  /* Capped: a twelve-stack list would otherwise still be arriving a second in,
+     and the cascade is legible long before the last row's turn. */
+  animation-delay: calc(min(var(--i, 0), 7) * 45ms); }
+@keyframes np-row-in {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .np-list--enter > * { animation: none; } }
+
+/* One stack, led by its own mark. A missing toolchain is named, not merely
+   greyed: "Needs flutter" is the whole reason the row cannot be picked. */
+.np-stack { display: flex; align-items: center; gap: 14px; min-height: 62px; padding: 11px 14px;
+  text-align: left; border-radius: var(--r-card); transition: background .14s ease; }
+.np-stack:hover:not(:disabled) { background: var(--hover); }
+.np-stack--on { background: var(--accent-soft); }
+.np-stack:disabled { opacity: .55; cursor: default; }
+.np-stack__text { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.np-stack__name { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.np-stack__name strong { font-size: 14.5px; font-weight: 600; letter-spacing: -.2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-stack__text small { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.np-stack__tag { flex: none; padding: 2px 7px; border-radius: 999px; background: var(--elevated);
+  color: var(--muted); font-size: 10.5px; font-style: normal; font-weight: 640; }
+.np-stack__tag--rec { background: var(--accent-soft); color: var(--accent); }
+.np-stack__need { flex: none; max-width: 140px; padding: 3px 8px; border: 1px solid var(--amber);
+  border-radius: 999px; color: var(--amber); font-size: 11px; font-weight: 640;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-stack__tick { flex: none; display: grid; place-items: center; width: 20px; color: var(--accent); }
+.np-stack--other .np-stack__name strong { color: var(--accent); }
+.np-stack--other .np-stack__tick { color: var(--accent); }
+
+/* A mark keeps its own colour only where that colour can be seen. A near-black
+   one disappears on the dark ground and a near-white one on the light ground;
+   on that side each follows the theme's ink, which is how its owner draws it
+   there anyway. `StackMark` decides which is which from the colour itself. */
+.np-mark { flex: none; display: grid; place-items: center; color: var(--brand, var(--text)); }
+.np-mark--ink, .np-mark--initial { color: var(--text); }
+.np-mark--kind { color: var(--muted); }
+.np-mark--initial { font-weight: 700; }
+:root:not([data-theme="light"]) .np-mark--deep { color: var(--text); }
+:root[data-theme="light"] .np-mark--pale { color: var(--text); }
+
+.np-search { display: flex; align-items: center; gap: 9px; min-height: 44px; margin-bottom: 12px;
+  padding: 0 13px; border-radius: var(--r-control); background: var(--elevated); color: var(--muted); }
+.np-search__input { flex: 1; min-width: 0; border: 0; background: none; color: var(--text);
+  font: inherit; font-size: 14px; outline: none; }
+
+/* The name is the whole screen: one large field, the way a document is named,
+   with a rule under it that turns when the name cannot be used. */
+.np-where__stacks { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }
+.np-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px 5px 8px;
+  border-radius: 999px; background: var(--elevated); color: var(--muted); font-size: 12px; font-weight: 600; }
+.np-where__name { width: 100%; border: 0; background: none; color: var(--text); padding: 4px 0;
+  font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -.8px; outline: none; }
+.np-where__rule { height: 2px; margin-top: 6px; border-radius: 1px; background: var(--accent);
+  transition: height .14s ease; }
+.np-where__name:focus-visible { outline: none; }
+.np-where__name:focus-visible + .np-where__rule { height: 3px; }
+.np-where__rule--bad { background: var(--danger); }
+.np-where__folder { display: flex; align-items: center; gap: 9px; margin-top: 18px; min-height: 34px;
+  color: var(--muted); }
+.np-where__path { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 12.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-where__path strong { color: var(--text); font-weight: 600; }
+.np-where__error { margin: 14px 0 0; color: var(--danger); font-size: 13px; }
+
+.np-commands { margin: 10px 0 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--line);
+  color: var(--muted); font-family: var(--font-mono); font-size: 11.5px; line-height: 1.75;
+  white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }

@@ -6,6 +6,7 @@ return [
     // is real money, and `devicecheck_*` below is what keeps one device to one.
     'guests_enabled' => env('VIBES_GUESTS_ENABLED', false),
     'purchases_enabled' => env('VIBES_PURCHASES_ENABLED', false),
+    'attachments_disk' => env('VIBES_ATTACHMENTS_DISK', 'local'),
     // The free trial, and the only free spend Vibyra ever funds. Three Vibes buys
     // about three replies on a cheap model, which is a taste of the product rather
     // than a usable amount of it. Every number here is read at runtime - `Wallet`,
@@ -59,12 +60,17 @@ return [
     // 'sessionCredits' and 'weekCredits' are the two rolling usage windows, sized
     // below. They bound the *rate* Vibes leave the account, never the amount: a
     // balance is still spent in full, just not all in one afternoon.
+    //
+    // Builder and Pro are sold on the phone as Pro 10× and Pro 20×, and the two sizes
+    // differ only in Vibes: the monthly allowance and the two windows it sizes. Every
+    // other entitlement is Pro's on both, so the upgrade page can switch sizes and
+    // change nothing but the figures.
     'plans' => [
         'free' => ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
             'sessionCredits' => 60, 'weekCredits' => 150],
         'starter' => ['maxProjects' => 3, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
             'sessionCredits' => 70, 'weekCredits' => 175],
-        'builder' => ['maxProjects' => 10, 'concurrentReplies' => 2, 'fullCatalogue' => true, 'remoteAccess' => false,
+        'builder' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
             'sessionCredits' => 200, 'weekCredits' => 500],
         'pro' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
             'sessionCredits' => 400, 'weekCredits' => 1000],
@@ -99,9 +105,11 @@ return [
         'week_days' => (int) env('VIBES_WEEK_WINDOW_DAYS', 7),
     ],
 
-    // The internet-reachable relay is not qualified yet. While this is false the
-    // phone must present remote access as included but not yet available.
-    'remote_access_live' => env('VIBES_REMOTE_ACCESS_LIVE', false),
+    // Whether the phone may connect through Vibyra Cloud (config/remote.php).
+    // Follows the relay being configured, so a deployment with a relay address
+    // and secret is live; set it to false to hold remote access back on purpose,
+    // in which case the phone presents it as included but not yet available.
+    'remote_access_live' => (bool) env('VIBES_REMOTE_ACCESS_LIVE', env('VIBYRA_RELAY_URL') && env('VIBYRA_RELAY_SECRET')),
 
     // Upper bound on models returned to a full-catalogue account, so one stale
     // OpenRouter sync cannot push an unbounded list to the phone.

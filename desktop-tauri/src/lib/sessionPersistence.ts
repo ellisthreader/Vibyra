@@ -1,3 +1,6 @@
+import { saveConversationLayoutNow } from '../state/conversationTerminalStore';
+import { flushSettings } from '../state/settingsStore';
+import { useWorkspaceStore } from '../state/workspaceStore';
 import { saveTerminalSession } from "../ipc/session";
 import { useTerminalStore } from "../state/terminalStore";
 import { toPersistedPanes } from "./sessionRestore";
@@ -20,6 +23,7 @@ let heartbeat: ReturnType<typeof setInterval> | null = null;
 let unsubscribe: (() => void) | null = null;
 let lastSignature = "";
 let saves: Promise<void> = Promise.resolve();
+const reportSaveFailure = (error: unknown) => useWorkspaceStore.getState().setError(`Terminals could not be saved: ${String(error)}. Keep Vibyra open until saving succeeds.`);
 
 /** Identity of the persisted layout — activity ticks and focus must not save. */
 function signature(): string {
@@ -33,7 +37,9 @@ function signature(): string {
 
 export async function saveSessionNow(includeSnapshots: boolean): Promise<void> {
   const save = saves.catch(() => {}).then(async () => {
-    if (!useTerminalStore.getState().sessionReady) return;
+    if (!useTerminalStore.getState().sessionReady) throw new Error("Saved terminals have not finished restoring.");
+    await flushSettings();
+    saveConversationLayoutNow();
     await refreshSessionIdentities();
     const panes = toPersistedPanes(useTerminalStore.getState().panes);
     await saveTerminalSession(panes, includeSnapshots);
@@ -51,15 +57,15 @@ export function startSessionPersistence(): () => void {
     lastSignature = next;
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      void saveSessionNow(false).catch(() => {});
+      void saveSessionNow(false).catch(reportSaveFailure);
     }, METADATA_DEBOUNCE_MS);
   });
 
   heartbeat = setInterval(() => {
-    void saveSessionNow(true).catch(() => {});
+    void saveSessionNow(true).catch(reportSaveFailure);
   }, SNAPSHOT_INTERVAL_MS);
   const identities = setInterval(() => { void refreshSessionIdentities(); }, 10_000);
-  const checkpoint = () => { void saveSessionNow(true).catch(() => {}); };
+  const checkpoint = () => { void saveSessionNow(true).catch(reportSaveFailure); };
   window.addEventListener("blur", checkpoint);
   window.addEventListener("pagehide", checkpoint);
 

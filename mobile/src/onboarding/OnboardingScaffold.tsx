@@ -1,18 +1,22 @@
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useTheme } from '../theme';
+import { useMeasuredKeyboardOffset } from '../ui/keyboardOffset';
 import { IconButton } from '../ui/primitives';
 
 const steps = 3;
-export function OnboardingScaffold({ step, onBack, children, footer, backdrop, header, headerRight }: {
+export function OnboardingScaffold({ step, onBack, children, footer, backdrop, header, headerRight, scrollRef }: {
   step: number; onBack?: () => void; children: ReactNode; footer?: ReactNode; backdrop?: ReactNode;
-  header?: ReactNode; headerRight?: ReactNode;
+  header?: ReactNode; headerRight?: ReactNode; scrollRef?: RefObject<ScrollView | null>;
 }) {
   const { colors } = useTheme();
+  // The frame starts under the status bar; the avoiding view measures against
+  // the frame but the keyboard against the window, so it is told the difference.
+  const top = useMeasuredKeyboardOffset();
   return <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
     {backdrop && <View pointerEvents="none" aria-hidden style={s.backdrop}>{backdrop}</View>}
-    <View style={s.frame}>
+    <View ref={top.frame} onLayout={top.onLayout} style={s.frame}>
       <View style={s.header}>
         {onBack ? <IconButton icon="chevron-back" label="Back" onPress={onBack} /> : <View style={s.spacer} />}
         {header ? <View style={s.headerTitle}>{header}</View> : <View accessible accessibilityRole="progressbar" accessibilityLabel={`Step ${step} of ${steps}`}
@@ -22,8 +26,8 @@ export function OnboardingScaffold({ step, onBack, children, footer, backdrop, h
         </View>}
         {headerRight ?? <View style={s.spacer} />}
       </View>
-      <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={top.offset}>
+        <ScrollView ref={scrollRef} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>{children}</ScrollView>
         {footer && <View style={s.footer}>{footer}</View>}
       </KeyboardAvoidingView>

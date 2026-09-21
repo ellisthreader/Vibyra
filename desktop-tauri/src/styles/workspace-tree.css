@@ -1,0 +1,27 @@
+/* Workspace-first navigation: names, disclosure, count, then quiet session dots. */
+.workspace-tree__heading { display:flex; align-items:center; justify-content:space-between; min-height:48px; padding:0 10px 8px; color:var(--dim); font-size:13px; font-weight:600; letter-spacing:.02em; }
+.workspace-tree__heading .icon-btn { color:var(--muted); }
+.workspace-tree { padding:0 2px; }
+.workspace-tree section { margin-bottom:4px; }
+.workspace-tree__row { display:flex; align-items:center; gap:12px; width:100%; min-height:40px; padding:0 12px; border-radius:9px; color:var(--muted); text-align:left; font-size:15px; letter-spacing:.01em; }
+.workspace-tree__row:hover { background:var(--hover); color:var(--text); }
+.workspace-tree__row.is-active { background:var(--hover-strong); color:var(--text); font-weight:600; }
+.workspace-tree__count { display:grid; place-items:center; min-width:24px; height:22px; padding:0 5px; border-radius:20px; background:var(--hover-strong); color:var(--muted); font-size:12px; font-weight:500; }
+.workspace-tree__collapsed { transform:rotate(-90deg); }
+.workspace-tree__sessions { padding:2px 0 5px 23px; }
+.focus-rail .workspace-tree__sessions .pstrip__row { min-height:35px; font-size:14px; font-weight:400; gap:12px; padding-left:12px; }
+.workspace-tree__sessions .pstrip__trail--rest { visibility:hidden; }
+.workspace-tree__sessions .pstrip__row--active { background:transparent; color:var(--text); }
+/* Opening a project is what offers a new terminal, the way the iPhone drawer
+   does it: a quiet last row under the sessions rather than a control that only
+   exists while the pointer happens to be on the name. */
+.workspace-tree__new { display:flex; align-items:center; gap:12px; width:100%; min-height:35px; padding:0 12px; border-radius:9px; color:var(--dim); font-size:14px; text-align:left; }
+.workspace-tree__new:hover { background:var(--hover); color:var(--text); }
+/* The + rides in the same 6px slot the session dots use, so every label in an
+   open project starts on one line. */
+.workspace-tree__mark { display:flex; align-items:center; justify-content:center; flex:0 0 6px; min-width:0; }
+.workspace-tree__mark svg { flex-shrink:0; overflow:visible; }
+
+.workspace-tree__row.is-active .workspace-tree__count { background:var(--hover); }
+
+.workspace-tree__sessions .pstrip__list { grid-template-columns:minmax(0, 1fr); }

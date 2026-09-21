@@ -35,7 +35,7 @@ function errorStatus(targetId: string, error: unknown): PreviewStatus {
   };
 }
 
-export function useProjectPreview(projectId: string, root: string) {
+export function useProjectPreview(projectId: string, root: string, projectRoot = root) {
   const [inspection, setInspection] = useState<PreviewInspection | null>(null);
   const [targetId, setTargetId] = useState("");
   const [statuses, setStatuses] = useState<Record<string, PreviewStatus>>({});
@@ -114,8 +114,8 @@ export function useProjectPreview(projectId: string, root: string) {
         next.targets.find((target) => target.runnable) ??
         next.targets[0];
       setInspecting(false);
+      setTargetId(selected?.id ?? "");
       if (selected) {
-        setTargetId(selected.id);
         savePreferredTarget(projectId, selected.id);
       }
       hydrateStatuses(next.targets);
@@ -150,7 +150,7 @@ export function useProjectPreview(projectId: string, root: string) {
       error: null,
     });
     try {
-      const next = await startPreview(root, targetId);
+      const next = await startPreview(root, targetId, projectRoot);
       if (lifecycle.current === instance && targetRequests.current[targetId] === version) {
         rememberStatus(next);
       }
@@ -159,7 +159,7 @@ export function useProjectPreview(projectId: string, root: string) {
         rememberStatus(errorStatus(targetId, error));
       }
     }
-  }, [rememberStatus, root, statuses, targetId]);
+  }, [rememberStatus, root, projectRoot, statuses, targetId]);
 
   const stop = useCallback(async () => {
     if (!targetId) return;

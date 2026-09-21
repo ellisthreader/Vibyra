@@ -43,3 +43,18 @@ pub async fn unwatch_workspace(state: State<'_, AppState>) -> Result<(), CoreErr
     *state.watcher.lock() = None;
     Ok(())
 }
+
+#[tauri::command]
+pub async fn fs_changes(root: String) -> Result<fsx::git_changes::Changes, CoreError> {
+    run_blocking_core(move || fsx::git_changes::changes(&root)).await
+}
+
+#[tauri::command]
+pub async fn workspace_worktrees(root: String) -> Result<fsx::worktrees::Inventory, CoreError> {
+    run_blocking_core(move || fsx::worktrees::inventory(&root)).await
+}
+
+#[tauri::command]
+pub async fn fs_change_preview(root: String, path: String) -> Result<String, CoreError> {
+    run_blocking_core(move || fsx::git_changes::change_preview(&root, &path)).await
+}

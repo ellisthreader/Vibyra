@@ -22,9 +22,13 @@ final class Situation
         public readonly bool $needsTools = false,
         public readonly int $historyBytes = 0,
         public readonly int $historyTurns = 0,
+        /** A photo is attached, so the model must be able to see it. */
+        public readonly bool $needsVision = false,
+        /** Purchased credit alone; trial credit cannot fund a paid-only model. */
+        public readonly ?int $paidBudget = null,
     ) {}
 
-    public static function of(int $inputBound, int $spendable, bool $trialOnly, bool $needsTools, int $historyBytes, int $historyTurns): self
+    public static function of(int $inputBound, int $spendable, bool $trialOnly, bool $needsTools, int $historyBytes, int $historyTurns, bool $needsVision = false, ?int $paidBudget = null): self
     {
         return new self(
             inputBound: max(0, $inputBound),
@@ -36,6 +40,8 @@ final class Situation
             needsTools: $needsTools,
             historyBytes: max(0, $historyBytes),
             historyTurns: max(0, $historyTurns),
+            needsVision: $needsVision,
+            paidBudget: $paidBudget === null ? null : max(0, min(TurnPrice::CEILING, $paidBudget)),
         );
     }
 }

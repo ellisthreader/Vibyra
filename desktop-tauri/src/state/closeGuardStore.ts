@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { listSharedChats } from "../ipc/sharedChats";
 import { confirmClose } from "../ipc/session";
 import { saveSessionNow } from "../lib/sessionPersistence";
 import { useTerminalStore } from "./terminalStore";
@@ -21,6 +22,8 @@ export const useCloseGuardStore = create<CloseGuardStore>((set, get) => ({
     if (get().closing || get().prompting.length) return;
     const running = useTerminalStore.getState().panes.filter((p) => p.status === "running")
       .map((p) => p.customTitle || p.osc || p.title);
+    try { running.push(...(await listSharedChats()).filter(chat => chat.status === "running").map(chat => `${chat.title} · Codex terminal`)); }
+    catch { running.push("Codex terminals could not be checked"); }
     if (!running.length) { await get().confirm(); return; }
     set({ prompting: running, error: null });
   },

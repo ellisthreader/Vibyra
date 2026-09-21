@@ -38,6 +38,45 @@ fn only_approved_projects_and_contained_utf8_files_are_read() {
     assert_eq!(files["entries"].as_array().unwrap().len(), 2);
 }
 
+#[test]
+fn search_matches_text_across_files_directly_over_project_search() {
+    let host = Harness::new();
+    std::fs::write(
+        host.path.join("a.md"),
+        "first line\nsecond LINE about vibyra\n",
+    )
+    .unwrap();
+    std::fs::create_dir(host.path.join("sub")).unwrap();
+    std::fs::write(
+        host.path.join("sub/b.md"),
+        "nothing relevant\nvibyra again\n",
+    )
+    .unwrap();
+    let result = host
+        .engine
+        .handle(
+            "phone-a",
+            "project.search",
+            json!({"projectId":host.project,"query":"vibyra"}),
+        )
+        .unwrap();
+    let matches = result["matches"].as_array().unwrap();
+    assert_eq!(
+        matches.len(),
+        2,
+        "case-insensitive match in both files: {matches:?}"
+    );
+    assert!(result["matches"][0]["line"].is_number());
+    assert!(host
+        .engine
+        .handle(
+            "phone-a",
+            "project.search",
+            json!({"projectId":host.project,"query":""})
+        )
+        .is_err());
+}
+
 #[cfg(unix)]
 #[test]
 fn symlinks_cannot_escape_project_and_regular_internal_links_work() {

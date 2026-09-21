@@ -12,40 +12,33 @@ use std::{
     sync::Arc,
 };
 
-pub(crate) fn configure(input: Vec<(String, PathBuf)>) -> Result<Vec<Project>, String> {
-    if input.is_empty() || input.len() > 32 {
-        return Err("approve between 1 and 32 projects locally".into());
+pub(crate) const MAX_PROJECTS: usize = 32;
+
+/// One approved folder as the protocol names it. The id is the canonical path
+/// hashed, so the same folder is the same project however it was added.
+pub(crate) fn build(name: String, path: PathBuf, read_only: bool) -> Result<Project, String> {
+    if name.is_empty() || name.len() > 80 || name.chars().any(char::is_control) {
+        return Err("project names must contain 1–80 bytes".into());
     }
-    let mut names = HashSet::new();
-    let mut projects = Vec::new();
-    for (name, path) in input {
-        if name.is_empty()
-            || name.len() > 80
-            || name.chars().any(char::is_control)
-            || !names.insert(name.clone())
-        {
-            return Err("project names must be unique and contain 1–80 bytes".into());
-        }
-        let path =
-            std::fs::canonicalize(path).map_err(|e| format!("project is unavailable: {e}"))?;
-        if !path.is_dir() {
-            return Err("project must be a directory".into());
-        }
-        let digest = Sha256::digest(path.to_string_lossy().as_bytes());
-        let id = format!("project-{:x}", digest)[..40].to_owned();
-        if projects.iter().any(|project: &Project| project.id == id) {
-            return Err("project was configured twice".into());
-        }
-        let directory =
-            Arc::new(Dir::open_ambient_dir(&path, ambient_authority()).map_err(|e| e.to_string())?);
-        projects.push(Project {
-            id,
-            name,
-            path,
-            directory,
-        });
+    let path = std::fs::canonicalize(path).map_err(|e| format!("project is unavailable: {e}"))?;
+    if !path.is_dir() {
+        return Err("project must be a directory".into());
     }
-    if serde_json::to_vec(&projects)
+    let digest = Sha256::digest(path.to_string_lossy().as_bytes());
+    let id = format!("project-{:x}", digest)[..40].to_owned();
+    let directory =
+        Arc::new(Dir::open_ambient_dir(&path, ambient_authority()).map_err(|e| e.to_string())?);
+    Ok(Project {
+        id,
+        name,
+        path,
+        directory,
+        read_only,
+    })
+}
+
+pub(crate) fn within_limit(projects: &[Project]) -> Result<(), String> {
+    if serde_json::to_vec(projects)
         .map_err(|e| e.to_string())?
         .len()
         > 16 * 1024
@@ -54,6 +47,58 @@ pub(crate) fn configure(input: Vec<(String, PathBuf)>) -> Result<Vec<Project>, S
             "project metadata exceeds the protocol limit; configure fewer project roots".into(),
         );
     }
+    Ok(())
+}
+
+/// Folders earlier runs adopted, added after the configured ones. A folder that
+/// is gone, already configured, or would break a limit is left out quietly:
+/// the Host must still start, and the phone lists what is really there.
+pub(crate) fn with_adopted(
+    mut projects: Vec<Project>,
+    adopted: Vec<(String, PathBuf)>,
+) -> Vec<Project> {
+    for (name, path) in adopted {
+        if projects.len() >= MAX_PROJECTS {
+            break;
+        }
+        let Ok(project) = build(name, path, false) else {
+            continue;
+        };
+        if projects
+            .iter()
+            .any(|existing| existing.id == project.id || existing.name == project.name)
+        {
+            continue;
+        }
+        projects.push(project);
+        if within_limit(&projects).is_err() {
+            projects.pop();
+            break;
+        }
+    }
+    projects
+}
+
+pub(crate) fn configure(input: Vec<(String, PathBuf)>) -> Result<Vec<Project>, String> {
+    if input.is_empty() || input.len() > MAX_PROJECTS {
+        return Err("approve between 1 and 32 projects locally".into());
+    }
+    let mut names = HashSet::new();
+    let mut projects = Vec::new();
+    for (name, path) in input {
+        if !names.insert(name.clone()) {
+            return Err("project names must be unique and contain 1–80 bytes".into());
+        }
+        let project = build(name, path, false)?;
+        if projects
+            .iter()
+            .any(|existing: &Project| existing.id == project.id)
+        {
+            return Err("project was configured twice".into());
+        }
+        projects.push(project);
+    }
+    within_limit(&projects)?;
     Ok(projects)
 }
 

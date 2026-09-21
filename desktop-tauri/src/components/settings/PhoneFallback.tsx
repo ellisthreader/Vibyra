@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
-import { SettingsBlock } from "./SettingsShared";
 import { phoneInvite } from "../../ipc/phone";
+import { Disclosure } from "./SettingsControls";
 
 const LIFETIME_MS = 120_000;
 
 /** Bonjour is blocked on some guest and corporate Wi-Fi, and neither Expo Go
  * nor the web build can browse for services at all. The code stays available
- * for those phones, tucked away so nobody types anything in the normal case. */
+ * for those phones, folded away so nobody types anything in the normal case. */
 export function PhoneFallback({ ready }: { ready: boolean }) {
   const [open, setOpen] = useState(false);
   const [invite, setInvite] = useState("");
@@ -32,34 +32,28 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
       setError(String(cause));
     }
   };
-  return <SettingsBlock label="If your phone cannot find this Mac">
-    <p className="phone-connection__hint">
-      Some Wi-Fi networks block the announcement. A one-time code pairs the same way.
-    </p>
-    {!open
-      ? <button className="btn" type="button" disabled={!ready} onClick={() => setOpen(true)}>
-        Show a pairing code
-      </button>
-      : <>
-        <button className="btn btn--primary" type="button" onClick={() => void create()}>
-          {invite ? "New code" : "Create code"}
-        </button>
+  const liveCode = invite && seconds > 0;
+  return (
+    <Disclosure title="Can’t see this Mac on your phone?" summary="Pair with a code instead" open={open} onToggle={setOpen}>
+      <div className="phone-fallback">
+        <p className="phone-connection__hint">Some Wi-Fi networks block the announcement. A one-time code pairs the same way and still needs your approval here.</p>
+        <div className="phone-connection__actions">
+          <button className="btn btn--primary" type="button" disabled={!ready} onClick={() => void create()}>
+            {invite ? "New code" : "Create code"}
+          </button>
+          {liveCode ? <span role="status">Expires in {seconds}s · single use</span> : null}
+          {invite && seconds === 0 ? <span role="status">That code expired. Create another one.</span> : null}
+        </div>
         {error && <p role="alert" className="phone-connection__error">{error}</p>}
-        {invite && seconds > 0 && <div className="phone-connection__invite">
-          <QRCodeSVG value={invite} size={200} marginSize={4} title="Scan with the Vibyra iPhone app" />
-          <textarea className="input" aria-label="Pairing link" readOnly value={invite} rows={3}
-            onFocus={(event) => event.target.select()} />
-          <div className="phone-connection__actions">
-            <button className="btn" type="button" onClick={() => {
-              void navigator.clipboard.writeText(invite);
-              setCopied(true);
-            }}>{copied ? "Copied" : "Copy link"}</button>
-            <span role="status">Expires in {seconds}s · Single use · Still needs your approval</span>
+        {liveCode && (
+          <div className="phone-connection__invite">
+            <QRCodeSVG value={invite} size={180} marginSize={4} title="Scan with the Vibyra phone app" />
+            <button className="btn" type="button" onClick={() => { void navigator.clipboard.writeText(invite); setCopied(true); }}>
+              {copied ? "Copied" : "Copy link"}
+            </button>
           </div>
-        </div>}
-        {invite && seconds === 0 && <p role="status" className="phone-connection__hint">
-          That code expired. Create another one.
-        </p>}
-      </>}
-  </SettingsBlock>;
+        )}
+      </div>
+    </Disclosure>
+  );
 }

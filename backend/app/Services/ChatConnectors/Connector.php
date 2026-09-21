@@ -47,4 +47,11 @@ interface Connector
      * rather than in the middle of someone's reply.
      */
     public function connect(string $credential): string;
+
+    /**
+     * Appended to the system prompt only when this integration is in play this
+     * turn. Owning its own prompt text here is what lets a new connector be added
+     * without editing a hardcoded chain that has nothing to do with it.
+     */
+    public function prompt(): string;
 }

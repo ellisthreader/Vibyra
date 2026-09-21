@@ -3,15 +3,19 @@ import { useState } from "react";
 import { openOpenAiKeyPage } from "../../ipc/ai";
 import { useAiServiceStore } from "../../state/aiServiceStore";
 import type { AiServiceStatus } from "../../types";
-import { CheckIcon, EyeIcon, LinkIcon } from "../common/Icons";
+import { EyeIcon, LinkIcon } from "../common/Icons";
 
 const STEPS = [
-  <>Open <strong>platform.openai.com/api-keys</strong> and sign in to your OpenAI account.</>,
-  <>Add a payment method under <strong>Billing</strong> — new accounts have no credit, and a key without it returns a quota error.</>,
-  <>Choose <strong>Create new secret key</strong>, name it “Vibyra”, and copy the value. OpenAI shows it once.</>,
-  <>Paste it below. Vibyra checks the key with OpenAI before saving it.</>,
+  <>Open <strong>platform.openai.com/api-keys</strong> and sign in.</>,
+  <>Add a payment method under <strong>Billing</strong>; a key with no credit returns a quota error.</>,
+  <>Choose <strong>Create new secret key</strong>, name it “Vibyra”, copy it. OpenAI shows it once.</>,
 ];
 
+/**
+ * The key itself: the steps to get one only while there is none, then the
+ * paste field, then what happens to it. The key goes to the operating
+ * system's credential store and nowhere else.
+ */
 export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
   const busy = useAiServiceStore((state) => state.busy);
   const error = useAiServiceStore((state) => state.error);
@@ -20,6 +24,7 @@ export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
   const remove = useAiServiceStore((state) => state.remove);
   const [draft, setDraft] = useState("");
   const [reveal, setReveal] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const submit = async () => {
     if (!draft.trim() || busy) return;
@@ -27,29 +32,12 @@ export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
   };
 
   return (
-    <article className="ai-key">
-      <div className="ai-key__state">
-        <span className={`ai-key__badge ai-key__badge--${status.keyConfigured ? "on" : "off"}`}>
-          {status.keyConfigured ? <CheckIcon size={12} /> : null}
-          {status.keyConfigured ? "Key installed" : "No key yet"}
-        </span>
-        {status.keyConfigured ? <code className="ai-key__hint">{status.keyHint}</code> : null}
-        {status.keyConfigured ? (
-          <button type="button" className="ai-key__remove" disabled={busy} onClick={() => void remove()}>
-            Remove key
-          </button>
-        ) : null}
-      </div>
-
-      <ol className="ai-key__steps">
-        {STEPS.map((step, index) => (
-          <li key={index}>{step}</li>
-        ))}
-      </ol>
-
-      <button type="button" className="ai-key__link" onClick={() => void openOpenAiKeyPage()}>
-        <LinkIcon size={13} />Open the OpenAI keys page
-      </button>
+    <article className="ai-key ai-key--inset">
+      {!status.keyConfigured ? (
+        <ol className="ai-key__steps">
+          {STEPS.map((step, index) => <li key={index}>{step}</li>)}
+        </ol>
+      ) : null}
 
       <div className="ai-key__entry">
         <div className="ai-key__field">
@@ -67,14 +55,7 @@ export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
               if (event.key === "Enter") void submit();
             }}
           />
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label={reveal ? "Hide key" : "Show key"}
-            aria-pressed={reveal}
-            title={reveal ? "Hide key" : "Show key"}
-            onClick={() => setReveal((value) => !value)}
-          >
+          <button type="button" className="icon-btn" aria-label={reveal ? "Hide key" : "Show key"} aria-pressed={reveal} onClick={() => setReveal((value) => !value)}>
             <EyeIcon size={14} />
           </button>
         </div>
@@ -83,20 +64,34 @@ export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
         </button>
       </div>
 
+      <div className="ai-key__foot">
+        <button type="button" className="ai-key__link" onClick={() => void openOpenAiKeyPage()}>
+          <LinkIcon size={13} />Open the OpenAI keys page
+        </button>
+        {status.keyConfigured ? (
+          confirmRemove ? (
+            <span className="ai-key__confirm">
+              <button type="button" className="btn" onClick={() => setConfirmRemove(false)}>Keep</button>
+              <button type="button" className="btn btn--danger" disabled={busy} onClick={() => { setConfirmRemove(false); void remove(); }}>Remove key</button>
+            </span>
+          ) : (
+            <button type="button" className="ai-key__remove" disabled={busy} onClick={() => setConfirmRemove(true)}>Remove key</button>
+          )
+        ) : null}
+      </div>
+
       {error ? <p className="ai-key__error" role="alert">{error}</p> : null}
       {saved && !error ? <p className="ai-key__ok" role="status">Key verified with OpenAI and stored.</p> : null}
 
       <p className="ai-key__note">
-        The key is written to your operating system’s credential store — never to
-        settings.json, never to a log, and never to a Vibyra server. Requests go
-        straight from this desktop to api.openai.com, so usage bills to your own
-        OpenAI account.
+        Stored in your operating system’s credential store, never in settings.json or on a
+        Vibyra server. Requests go straight to api.openai.com and bill to your own OpenAI account.
+        {status.recorderAvailable ? "" : " Dictation needs the arecord command, which is missing on this machine."}
       </p>
       {!status.secureStorageAvailable ? (
         <p className="ai-key__warn" role="alert">
-          This machine’s credential store is unavailable, so the key cannot be
-          saved securely. On Linux, install and unlock a keyring such as
-          gnome-keyring, then try again.
+          This machine’s credential store is unavailable, so the key cannot be saved securely.
+          On Linux, install and unlock a keyring such as gnome-keyring, then try again.
         </p>
       ) : null}
     </article>

@@ -22,6 +22,11 @@ pub async fn create_terminal(
     on_event: Channel<TermEvent>,
     request: CreateTerminalRequest,
 ) -> Result<SessionInfo, CoreError> {
+    if request.workspace_mode.as_deref() == Some("safe") {
+        super::worktree_access::require_github(&state)
+            .await
+            .map_err(CoreError::Settings)?;
+    }
     let context = {
         let settings = state.settings.lock();
         LaunchContext {
@@ -47,8 +52,12 @@ pub async fn create_terminal(
 
 #[tauri::command]
 pub async fn safe_workspace_preflight(
+    state: State<'_, AppState>,
     project_root: String,
 ) -> Result<SafeWorkspacePreflight, CoreError> {
+    super::worktree_access::require_github(&state)
+        .await
+        .map_err(CoreError::Settings)?;
     run_blocking_core(move || {
         let root = canonical_directory(Some(project_root))?
             .ok_or_else(|| CoreError::InvalidPath("project folder is required".into()))?;

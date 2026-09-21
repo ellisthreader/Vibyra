@@ -21,4 +21,6 @@ pub use types::{PreviewDeviceHint, PreviewInspection, PreviewPhase, PreviewStatu
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_detection;
+#[cfg(test)]
 mod tests_static;

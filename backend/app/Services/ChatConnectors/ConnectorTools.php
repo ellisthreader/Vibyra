@@ -30,6 +30,11 @@ class ConnectorTools
         return $this->registry->definitions($slugs);
     }
 
+    public function prompts(array $slugs): string
+    {
+        return $this->registry->prompts($slugs);
+    }
+
     /**
      * The integration that owns a tool call, or null for a project tool. The caller has
      * already proved the name was one this turn offered, which is the real gate.

@@ -1,0 +1,184 @@
+/* Settings pages, continued: integrations rows and Advanced insets. */
+
+/* integrations */
+
+.integration-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+.disclosure__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 14px;
+}
+
+.disclosure__stack > .settings-group {
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+}
+
+/* phone */
+
+.phone-fallback {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+
+.phone-fallback .phone-connection__hint {
+  margin: 0;
+}
+
+.phone-fallback .phone-connection__invite {
+  justify-items: start;
+  margin-top: 4px;
+}
+
+/* an off switch still needs a visible track on the flat page */
+
+.settings-modal--tiles .vswitch[aria-checked="false"] {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+:root[data-theme="light"] .settings-modal--tiles .vswitch[aria-checked="false"] {
+  background: #c9ced8;
+}
+
+.phone-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  vertical-align: middle;
+}
+
+.phone-dot--on {
+  background: var(--success);
+}
+
+/* phone list: Find My style device silhouettes */
+
+.device-row {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 260ms var(--e-standard), opacity 200ms var(--e-standard);
+}
+
+.device-row__inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 16px;
+}
+
+.device-row--leaving {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.device-row--leaving .device-row__inner {
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: padding 260ms var(--e-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .device-row, .device-row--leaving .device-row__inner { transition: none; }
+}
+
+.device-row + .device-row {
+  border-top: 1px solid var(--line-soft);
+}
+
+.device-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.device-row__name {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.device-row__where {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.device-row__tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--hover-strong);
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.device-row--example .device-icon {
+  opacity: 0.9;
+}
+
+.device-icon {
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+/* integration logos */
+
+.integration-logo {
+  display: inline-grid;
+  place-items: center;
+  margin-right: 8px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.integration-logo--github {
+  background: #24292f;
+}
+
+.integration-logo--obsidian {
+  background: #1e1533;
+}
+
+.integration-unavailable {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.setting-row__label > .agent-mark,
+.setting-row__label > .provider-mark {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.settings-modal--tiles .setting-row__label {
+  display: flex;
+  align-items: center;
+}

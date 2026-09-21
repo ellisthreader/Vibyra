@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
-import logoUrl from "../../assets/vibyra-cobalt.png";
+import { SpeakReply, useDraftDictation } from "./ChatVoice";
+import { useAccountStore } from "../../state/accountStore";
 import { useChatStore, type ChatTurn } from "../../state/chatStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { MoreIcon, SendIcon, SparklesIcon } from "../common/Icons";
+import { SendIcon, SparklesIcon } from "../common/Icons";
+
+import { ChatPanelHeader } from "./ChatPanelHeader";
+import "./chatDesign.css";
 
 const NO_TURNS: ChatTurn[] = [];
 const STARTERS = [
@@ -19,7 +23,7 @@ const STARTERS = [
   },
 ];
 
-export function ChatPanel() {
+export function ChatPanel({ active = true }: { active?: boolean }) {
   const projectId = useProjectStore((s) => s.activeId);
   const threads = useChatStore((s) => s.threads);
   const turns = (projectId ? threads[projectId] : undefined) ?? NO_TURNS;
@@ -29,32 +33,19 @@ export function ChatPanel() {
   const clear = useChatStore((s) => s.clear);
   const serviceConfigured = useSettingsStore((s) => Boolean(s.settings?.openaiKeyConfigured));
   const openKeySettings = useWorkspaceStore((s) => s.openSettingsSection);
-  const [draft, setDraft] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const email = useAccountStore(s => s.snapshot.profile?.email ?? "guest");
+  const draftKey = `companion.draft.${encodeURIComponent(email)}.${projectId}`;
+  const [draft, updateDraft] = useState(() => { try { return localStorage.getItem(draftKey) ?? ""; } catch { return ""; } });
+  const [draftError, setDraftError] = useState("");
+  const setDraft = (text: string) => { updateDraft(text); try { localStorage.setItem(draftKey, text); } catch { setDraftError("This draft could not be saved. Keep Chat open until you send it."); } };
+  const voice = useDraftDictation(draftKey, active && serviceConfigured, text => setDraft([draft, text].filter(Boolean).join(" ")));
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [turns, sending]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const closeMenu = (event: globalThis.PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("pointerdown", closeMenu);
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      window.removeEventListener("pointerdown", closeMenu);
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [menuOpen]);
 
   if (!projectId) return null;
 
@@ -68,51 +59,19 @@ export function ChatPanel() {
 
   return (
     <div className="companion-panel companion-panel--chat">
-      <div className="chat-identity">
-        <img src={logoUrl} alt="" />
-        <div>
-          <strong>Vibyra AI</strong>
-          <span>Project companion</span>
-        </div>
-        {turns.length > 0 && (
-          <div className="chat-menu" ref={menuRef}>
-            <button
-              className="icon-btn"
-              aria-label="Conversation options"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              title="Conversation options"
-              onClick={() => setMenuOpen((value) => !value)}
-            >
-              <MoreIcon size={14} />
-            </button>
-            {menuOpen && (
-              <div className="chat-menu__popover" role="menu">
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    clear(projectId);
-                    setMenuOpen(false);
-                  }}
-                >
-                  Clear conversation
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="chat-scroll" ref={scrollRef}>
+      <ChatPanelHeader hasTurns={turns.length > 0} onClear={() => clear(projectId)} />
+      <div className="chat-scroll" ref={scrollRef} role="log" aria-label="Conversation">
         {turns.length === 0 && (
           <div className="chat-empty">
-            <h3>How can I help?</h3>
-            <p>Understand the codebase, trace a problem, or plan the next move.</p>
+            <div className="chat-empty__mark"><SparklesIcon size={24}/></div>
+            <h3>What are we building?</h3>
+            <p>A question, an idea, a place to start.</p>
             <div className="chat-starters">
               {STARTERS.map((starter) => (
                 <button
                   key={starter.label}
                   title={serviceConfigured ? undefined : "Add your OpenAI key to use Vibyra AI"}
-                  onClick={() => (serviceConfigured ? submit(starter.prompt) : openKeySettings("ai"))}
+                  onClick={() => (serviceConfigured ? submit(starter.prompt) : openKeySettings("advanced", "vibyraFeatures"))}
                 >
                   <SparklesIcon size={13} />
                   <span>{starter.label}</span>
@@ -124,13 +83,13 @@ export function ChatPanel() {
         )}
         {turns.map((turn, index) => (
           <div key={index} className={`chat-turn chat-turn--${turn.role}`}>
-            {turn.role === "assistant" && <span className="chat-turn__token">❯</span>}
-            <div className="chat-turn__bubble">{turn.content}</div>
+            {turn.role === "assistant" && <span className="chat-turn__token" aria-hidden="true"><SparklesIcon size={14}/></span>}
+            <div className="chat-turn__bubble">{turn.content}{turn.role === "assistant" && <div><SpeakReply text={turn.content} active={active} /></div>}</div>
           </div>
         ))}
         {sending && (
           <div className="chat-turn chat-turn--assistant">
-            <span className="chat-turn__token">❯</span>
+            <span className="chat-turn__token" aria-hidden="true"><SparklesIcon size={14}/></span>
             <div className="chat-turn__bubble chat-turn__bubble--thinking">
               <i />
               <i />
@@ -138,12 +97,12 @@ export function ChatPanel() {
             </div>
           </div>
         )}
-        {error && <p className="chat-error" role="alert">{error}</p>}
+        {(error || draftError) && <p className="chat-error" role="alert">{error || draftError}</p>}
       </div>
       {!serviceConfigured && (
         <div className="chat-setup" role="note">
           <span>Vibyra AI needs your OpenAI API key.</span>
-          <button onClick={() => openKeySettings("ai")}>Add a key</button>
+          <button onClick={() => openKeySettings("advanced", "vibyraFeatures")}>Add a key</button>
         </div>
       )}
       <div className="chat-input">
@@ -156,6 +115,7 @@ export function ChatPanel() {
           aria-label="Message Vibyra"
           disabled={!serviceConfigured}
           spellCheck={false}
+          onFocus={voice.focus}
           onChange={(e) => setDraft(e.target.value)}
           onInput={(event) => {
             const field = event.currentTarget;
@@ -163,12 +123,14 @@ export function ChatPanel() {
             field.style.height = `${Math.min(field.scrollHeight, 120)}px`;
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               submit();
             }
           }}
         />
+        <div className="chat-composer-tools"><span title="Enter to send · Shift + Enter for a new line">Shift + Enter for a new line</span>
+        {voice.button}
         <button
           className="chat-input__send"
           aria-label="Send message"
@@ -178,6 +140,7 @@ export function ChatPanel() {
         >
           <SendIcon size={14} />
         </button>
+        </div>
       </div>
     </div>
   );

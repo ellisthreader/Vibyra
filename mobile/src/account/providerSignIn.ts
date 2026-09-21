@@ -2,26 +2,27 @@ import { Platform } from 'react-native';
 import * as Apple from 'expo-apple-authentication';
 import * as Browser from 'expo-web-browser';
 import type { AccountProvider, ProviderApi } from './accountApi';
+import { appleSheet, appleSheetError, appleSheetMissing } from './appleSheet';
 import { browserProvider } from './browserProvider';
 
 export async function signInWithProvider(api: ProviderApi, provider: AccountProvider, signal: AbortSignal) {
   if (signal.aborted) return null;
+  // Apple on an iPhone is only ever Apple's own sheet; see appleSheet.ts.
   if (provider === 'apple' && Platform.OS === 'ios') {
-    if (!await Apple.isAvailableAsync()) throw new Error('Apple sign-in isn’t available on this device. Please use Google or email.');
+    if (!appleSheet) throw new Error(appleSheetMissing);
     const challenge = await api.appleChallenge(signal);
     if (signal.aborted) return null;
+    let credential: Apple.AppleAuthenticationCredential;
     try {
-      const credential = await Apple.signInAsync({ nonce: challenge.nonce,
+      credential = await Apple.signInAsync({ nonce: challenge.nonce,
         requestedScopes: [Apple.AppleAuthenticationScope.FULL_NAME, Apple.AppleAuthenticationScope.EMAIL] });
-      if (signal.aborted) return null;
-      if (!credential.identityToken) throw new Error('Apple did not return a sign-in token. Please try again.');
-      const name = credential.fullName ? Apple.formatFullName(credential.fullName) : '';
-      return await api.providerToken(credential.identityToken, challenge.challengeId, name, signal);
-    } catch (error) {
-      if ((error as { code?: string }).code === 'ERR_REQUEST_CANCELED') return null;
-      throw error;
-    }
+    } catch (error) { const failure = appleSheetError(error); if (!failure) return null; throw failure; }
+    if (signal.aborted) return null;
+    if (!credential.identityToken) throw new Error('Apple did not return a sign-in token. Please try again.');
+    const name = credential.fullName ? Apple.formatFullName(credential.fullName) : '';
+    return await api.providerToken(credential.identityToken, challenge.challengeId, name, signal);
   }
+  // Google, and Apple off the iPhone, sign in on the provider's page in the system browser.
   let closed = false;
   let opened = false;
   let failure: unknown;

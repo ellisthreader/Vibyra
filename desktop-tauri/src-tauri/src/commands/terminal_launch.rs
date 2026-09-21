@@ -92,6 +92,10 @@ pub fn isolate_account_environment(
 ) {
     if !custom && matches!(agent_id, "codex" | "claude" | "gemini") {
         spec.env_remove = credential_names;
+        if agent_id == "codex" {
+            spec.args
+                .extend(["-c".into(), "check_for_update_on_startup=false".into()]);
+        }
     }
 }
 

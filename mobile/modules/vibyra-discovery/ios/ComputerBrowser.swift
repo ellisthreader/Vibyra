@@ -21,6 +21,7 @@ final class ComputerBrowser {
     let id: String
     let name: String
     let hostId: String?
+    let platform: String?
     let via: String?
     let endpoint: NWEndpoint
   }
@@ -112,6 +113,7 @@ final class ComputerBrowser {
         id: id,
         name: String(name.prefix(128)),
         hostId: hostId,
+        platform: Self.platform(from: result.metadata),
         via: NetworkScope.kind(of: result.interfaces),
         endpoint: result.endpoint
       )
@@ -140,6 +142,18 @@ final class ComputerBrowser {
     return value
   }
 
+  /// The Host's OS family (`macos`, `windows`, `linux`), which only decides
+  /// which computer the phone draws. Anything but a short lowercase word is
+  /// dropped, so a record cannot put arbitrary text on the screen.
+  private static func platform(from metadata: NWBrowser.Result.Metadata) -> String? {
+    guard case let .bonjour(record) = metadata,
+          case let .string(value) = record.getEntry(for: "os"),
+          !value.isEmpty, value.count <= 16,
+          value.allSatisfy({ $0.isLetter && $0.isLowercase && $0.isASCII })
+    else { return nil }
+    return value
+  }
+
   private func finish(_ status: String) {
     stop()
     self.status = status
@@ -152,6 +166,7 @@ final class ComputerBrowser {
       .map { candidate in
         var value: [String: Any] = ["id": candidate.id, "name": candidate.name]
         if let hostId = candidate.hostId { value["hostId"] = hostId }
+        if let platform = candidate.platform { value["platform"] = platform }
         if let via = candidate.via { value["via"] = via }
         if let address = resolver.address(for: candidate.id) {
           value["host"] = address.host

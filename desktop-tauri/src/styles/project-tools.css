@@ -8,9 +8,10 @@
 .cmdbar svg { flex-shrink: 0; }
 .chrome__sep { height: 20px; width: 1px; background: var(--line); margin: 0 6px; }
 .dock-sizes { display: flex; gap: 2px; }
-.project-workspace > .companion { position: absolute; z-index: 24; top: 60px; right: 8px; bottom: 8px; min-width: 0; width: min(var(--companion-width), calc(100% - 16px)); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--e-panel); }
-.project-workspace > .companion[data-size="wide"] { width: 55%; }
-.project-workspace > .companion[data-size="full"] { left: 8px; width: auto; }
+/* The approved right sidebar is docked flush to the workspace. */
+.project-workspace > .workspace-sidebar { position: absolute; z-index: 24; top: 0; right: 0; bottom: 0; min-width: 0; width: min(var(--companion-width), 100%); border: 0; border-left: 1px solid var(--line); border-radius: 0; background: var(--surface); box-shadow: none; }
+.project-workspace > .workspace-sidebar[data-size="wide"] { width: 55%; }
+.project-workspace > .workspace-sidebar[data-size="full"] { left: 0; width: auto; }
 .project-workspace[data-tools="compact"] #project-terminal-panel,
 .project-workspace[data-tools="wide"] #project-terminal-panel { right: var(--tools-reserve); }
 .companion__resize { left: 0; }
@@ -22,6 +23,6 @@
 @media (max-width: 1100px) {
   .project-workspace[data-tools="compact"] #project-terminal-panel,
   .project-workspace[data-tools="wide"] #project-terminal-panel { right: 0; }
-  .project-workspace > .companion[data-size="wide"] { width: 75%; }
+  .project-workspace > .workspace-sidebar[data-size="wide"] { width: 75%; }
   .chrome__drag { padding: 0 12px; }
 }

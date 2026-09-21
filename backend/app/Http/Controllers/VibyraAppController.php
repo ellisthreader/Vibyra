@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AccountEndpoints;
 use App\Http\Controllers\Concerns\AccountVerificationEndpoints;
 use App\Http\Controllers\Concerns\AutoModelRouteEndpoint;
+use App\Http\Controllers\Concerns\AvatarEndpoints;
 use App\Http\Controllers\Concerns\AuthEndpoints;
 use App\Http\Controllers\Concerns\AuthRecoveryEndpoints;
 use App\Http\Controllers\Concerns\ChatEndpoint;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Concerns\NativeTerminalEndpoint;
 use App\Http\Controllers\Concerns\ProjectMemoryEndpoints;
 use App\Http\Controllers\Concerns\ReferralEndpoints;
 use App\Http\Controllers\Concerns\TeamPlanEndpoint;
+use App\Http\Controllers\Concerns\TwoFactorEndpoints;
 use App\Http\Controllers\Concerns\UserPayloads;
 use App\Services\Community\ProjectSafetyReview;
 use App\Services\ContentModeration;
@@ -34,6 +36,7 @@ class VibyraAppController extends Controller
     use AccountEndpoints;
     use AccountVerificationEndpoints;
     use AutoModelRouteEndpoint;
+    use AvatarEndpoints;
     use AuthEndpoints;
     use AuthRecoveryEndpoints;
     use ChatEndpoint;
@@ -52,6 +55,7 @@ class VibyraAppController extends Controller
     use ProjectMemoryEndpoints;
     use ReferralEndpoints;
     use TeamPlanEndpoint;
+    use TwoFactorEndpoints;
     use UserPayloads;
 
     private const FREE_CREDITS = 50;

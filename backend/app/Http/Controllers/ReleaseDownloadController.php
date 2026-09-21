@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReleaseArtifact;
+use App\Services\ReleaseChannel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -19,7 +20,7 @@ class ReleaseDownloadController extends Controller
         $metadata = collect(self::PLATFORMS)
             ->map(fn (string $platform) => $this->metadata(
                 $platform,
-                (array) config('releases.platforms.'.$platform, []),
+                ReleaseChannel::download($platform),
             ));
         $macVariants = $metadata->filter(
             fn (array $release) => str_starts_with($release['platform'], 'macos-'),
@@ -41,11 +42,29 @@ class ReleaseDownloadController extends Controller
 
     public function download(string $platform): JsonResponse|StreamedResponse
     {
+        return $this->stream($platform, ReleaseChannel::download($platform));
+    }
+
+    /**
+     * The signed package the installed app replaces itself with. Separate from
+     * `download()` because on macOS the two are different files: a browser gets
+     * the .dmg, the updater gets the .app.tar.gz it can actually verify.
+     */
+    public function updateArtifact(string $platform): JsonResponse|StreamedResponse
+    {
+        if (! ReleaseChannel::hasSeparateUpdateArtifact($platform)) {
+            abort(404);
+        }
+
+        return $this->stream($platform, ReleaseChannel::updater($platform));
+    }
+
+    private function stream(string $platform, array $release): JsonResponse|StreamedResponse
+    {
         if (! in_array($platform, self::PLATFORMS, true)) {
             abort(404);
         }
 
-        $release = (array) config("releases.platforms.{$platform}", []);
         if ($release === []) {
             abort(404);
         }

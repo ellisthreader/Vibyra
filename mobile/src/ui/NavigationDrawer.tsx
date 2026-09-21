@@ -1,37 +1,57 @@
+import { FocusDrawer } from './FocusDrawer';
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, StatusBar, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
-import { DrawerActions } from './DrawerActions';
-import { DrawerHeader } from './DrawerHeader';
-import { SessionRow, SessionsEmpty } from './DrawerSessionList';
-import { computerMode, computerPlaces } from './mode';
-import { Icon, type IconName } from './primitives';
-import type { Destination, WorkspaceModel } from './types';
+import { ProjectActionsSheet } from './newProject/ProjectActionsSheet';
+import type { Destination, Project, WorkspaceModel } from './types';
 import { useReducedMotion } from './useReducedMotion';
 
-const places: Record<string, { label: string; icon: IconName }> = {
-  computers: { label: 'Remote', icon: 'desktop-outline' },
-  projects: { label: 'Projects', icon: 'folder-outline' },
-};
-// Every rail row is an icon and then its text, in one column. These two sit below
-// the computer's own rows because neither depends on a computer being connected.
-const always: { id: Destination; label: string; icon: IconName }[] = [
-  { id: 'integrations', label: 'Integrations', icon: 'link-outline' },
-  { id: 'vibes', label: 'Vibyra tokens', icon: 'sparkles-outline' },
-];
-export function NavigationDrawer({ visible, destination, workspace, onClose, onNavigate, onNew, extraChats }: {
-  extraChats?: (query: string) => ReactNode; visible: boolean; destination: Destination; workspace: WorkspaceModel;
+/** Native edge-to-edge presentation for the workspace tree (or Agents roster).
+ * Disclosures live in FocusDrawer; closeThen preserves iOS sheet handoff.
+ */
+export function NavigationDrawer({ visible, destination, workspace, project, currentProjectId, onClose, onNavigate, onNew, onSettings,
+  onNewTerminal, onNewProject, onEnterProject, chats, content }: {
+  content?: (closeThen: (action: () => void) => void) => ReactNode;
+  /** The phone's chats as rows: those in a project, or with none named, every one that matches a search. */
+  chats?: (query: string, projectId?: string) => ReactNode; visible: boolean; destination: Destination; workspace: WorkspaceModel;
+  /** The folder you are in, which turns the rail into that folder's own column. Ideas has no face: it is the home. */
+  project?: Project | null;
+  /** The project open on the work surface, marked on the home face even from another page. */
+  currentProjectId?: string | null;
   onClose: () => void; onNavigate: (destination: Destination) => void; onNew: () => void;
+  /** A project row on the home face: the screen enters it, and this rail becomes its face. */
+  onEnterProject?: (projectId: string) => void;
+  /** The home face's pinned action. A computer builds the project, so without one this opens the way to add one. */
+  onNewProject?: () => void;
+  /** Back out of the project face: the rail returns to the projects, the screen to Ideas. */
+  onLeaveProject?: () => void;
+  /** The folder face's pinned action: a named terminal in that folder. */
+  onNewTerminal?: (projectId: string) => void;
+  /** Opens the Settings sheet. It is drawn in the app's own tree, so it rises as this rail closes. */
+  onSettings?: () => void;
+  /** Opens Vibyra tokens, from the balance pill beside the avatar. The same sheet, one page in. */
+  onBalance?: () => void;
 }) {
   const { colors, dark } = useTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const [mounted, setMounted] = useState(visible);
-  const [searching, setSearching] = useState(false);
-  const [query, setQuery] = useState('');
+  const [optionsFor, setOptionsFor] = useState<Project | null>(null);
+  const afterDismiss = useRef<(() => void) | null>(null);
+  const finishDismiss = () => {
+    const action = afterDismiss.current;
+    afterDismiss.current = null;
+    action?.();
+  };
+  // iOS cannot present a sibling sheet while this native modal is still closing.
+  const closeThen = (action: () => void) => {
+    if (afterDismiss.current || !visible) return;
+    afterDismiss.current = action;
+    onClose();
+  };
   const panelWidth = Math.min(width - 52, 344);
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
   useEffect(() => {
@@ -42,17 +62,24 @@ export function NavigationDrawer({ visible, destination, workspace, onClose, onN
     motion.start(({ finished }) => { if (finished && !visible) setMounted(false); });
     return () => motion.stop();
   }, [visible, reducedMotion, progress]);
-  useEffect(() => { if (visible) { setQuery(''); setSearching(false); } }, [visible]);
-  const projectName = (id: string) => workspace.projects.find(project => project.id === id)?.name ?? '';
-  const term = query.trim().toLowerCase();
-  const sessions = workspace.sessions.filter(session =>
-    `${session.title} ${projectName(session.projectId)}`.toLowerCase().includes(term));
+  useEffect(() => { if (visible) { afterDismiss.current = null; setOptionsFor(null); } }, [visible]);
+  useEffect(() => {
+    // Android/web do not provide the native iOS dismissal acknowledgement.
+    if (!mounted && !visible && Platform.OS !== 'ios') finishDismiss();
+  }, [mounted, visible]);
   const navigate = (to: Destination) => { onNavigate(to); onClose(); };
-  const connected = computerMode(workspace);
-  const rows = computerPlaces(workspace);
   const hidden = !visible;
+  const connected = workspace.status === 'connected';
+  const host = workspace.demo ? 'Sample workspace' : workspace.host?.name ?? 'your computer';
+  // Renaming or removing a folder here needs the computer, and a Desktop needs its typing switch on.
+  const manageReason = workspace.actions.renameProject === undefined || workspace.actions.forgetProject === undefined
+    ? `Update Vibyra on ${host} to rename or remove projects from your phone.`
+    : !connected ? `${host} is away. Reconnect to rename or remove projects.`
+      : workspace.viewOnly !== true || workspace.canManage === true ? null
+        : `Turn on typing from your phone in Vibyra on ${host} to rename or remove projects.`;
   return <Modal visible={mounted} transparent presentationStyle="overFullScreen" animationType="none"
-    statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}>
+    statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}
+    onDismiss={() => { if (!visible) finishDismiss(); }}>
     {mounted && <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />}
     <View style={s.overlay}>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim, opacity: progress }]} />
@@ -63,54 +90,14 @@ export function NavigationDrawer({ visible, destination, workspace, onClose, onN
           paddingLeft: insets.left, paddingTop: insets.top,
           shadowOpacity: dark ? 0.4 : 0.12,
           transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [-panelWidth - 30, 0] }) }] }]}>
-        <DrawerHeader searching={searching} query={query} onQuery={setQuery} onClose={onClose}
-          onOpenSearch={() => setSearching(true)} onCloseSearch={() => { setQuery(''); setSearching(false); }} />
-        <View style={s.body}>
-          <ScrollView style={s.list} contentContainerStyle={s.listContent} keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag" contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false}
-            indicatorStyle={dark ? 'white' : 'black'}>
-            <View style={s.nav}>
-              {rows.map(id => {
-                const place = places[id]!;
-                const active = destination === id;
-                return <Pressable key={id} accessibilityRole="button" accessibilityLabel={place.label}
-                  accessibilityState={{ selected: active }} onPress={() => navigate(id)}
-                  style={({ pressed }) => [s.navRow, { backgroundColor: active || pressed ? colors.elevated : 'transparent' }]}>
-                  <View style={s.icon}>
-                    <Icon name={place.icon} size={21} color={active ? colors.accent : colors.muted} />
-                  </View>
-                  <Text style={[s.navText, { color: colors.text }]}>{place.label}</Text>
-                </Pressable>;
-              })}
-              {always.map(place => {
-                const active = destination === place.id;
-                return <Pressable key={place.id} accessibilityRole="button" accessibilityLabel={place.label}
-                  accessibilityState={{ selected: active }} onPress={() => navigate(place.id)}
-                  style={({ pressed }) => [s.navRow, { backgroundColor: active || pressed ? colors.elevated : 'transparent' }]}>
-                  <View style={s.icon}>
-                    <Icon name={place.icon} size={21} color={active ? colors.accent : colors.muted} />
-                  </View>
-                  <Text style={[s.navText, { color: colors.text }]}>{place.label}</Text>
-                </Pressable>;
-              })}
-            </View>
-            {/* One Recents list. The AI chats and the computer's own sessions are
-                both conversations, so they are not two separate stacks. */}
-            <View style={s.listHeader}>
-              <Text accessibilityRole="header" style={[s.section, { color: colors.muted }]}>Recents</Text>
-            </View>
-            <View style={s.sessions}>
-              {extraChats?.(term)}
-              {connected && sessions.map(session => <SessionRow key={session.id} session={session} project={projectName(session.projectId)}
-                selected={destination === 'work' && session.id === workspace.selectedSessionId}
-                onPress={() => { workspace.actions.selectSession(session.id); navigate('work'); }} />)}
-              {connected && !sessions.length && !extraChats && <SessionsEmpty query={term} />}
-            </View>
-          </ScrollView>
-          <DrawerActions bottom={Math.max(insets.bottom, 14)} settingsSelected={destination === 'settings'}
-            onChat={() => { onNew(); onClose(); }} onSettings={() => navigate('settings')} />
-        </View>
+        {content ? content(closeThen) : <FocusDrawer workspace={workspace} project={project} currentProjectId={currentProjectId} bottom={Math.max(insets.bottom, 14)}
+          onClose={onClose} onEnter={id => onEnterProject?.(id)} onOptions={setOptionsFor} onNavigate={navigate}
+          onNew={onNew} onTerminal={id => onNewTerminal?.(id)} onProject={() => onNewProject?.()} onSettings={() => onSettings?.()}
+          chats={chats} closeThen={closeThen} />}
       </Animated.View>
+      <ProjectActionsSheet project={optionsFor} host={host} reason={manageReason} onClose={() => setOptionsFor(null)}
+        onRename={name => workspace.actions.renameProject!(optionsFor!.id, name)}
+        onForget={() => workspace.actions.forgetProject!(optionsFor!.id)} />
     </View>
   </Modal>;
 }
@@ -120,15 +107,7 @@ const s = StyleSheet.create({
   panel: { position: 'absolute', top: 0, bottom: 0, left: 0, borderRightWidth: StyleSheet.hairlineWidth,
     shadowColor: '#000', shadowRadius: 22, shadowOffset: { width: 8, height: 0 }, elevation: 20 },
   body: { flex: 1, minHeight: 0 },
-  nav: { paddingHorizontal: 12, gap: 2 },
-  navRow: { minHeight: 50, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
-    flexDirection: 'row', alignItems: 'center', gap: 12 },
-  navText: { flex: 1, fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
-  icon: { width: 24, alignItems: 'center', justifyContent: 'center' },
-  listHeader: { paddingHorizontal: 20, paddingTop: 26, paddingBottom: 8, gap: 12 },
-  section: { fontSize: 13, fontWeight: '600', letterSpacing: 0.1 },
   list: { flex: 1 },
-  // The actions float over this list, so the last conversation still scrolls clear of them.
+  // The actions float over this list, so the last row still scrolls clear of them.
   listContent: { paddingBottom: 92 },
-  sessions: { paddingHorizontal: 12, gap: 3 },
 });

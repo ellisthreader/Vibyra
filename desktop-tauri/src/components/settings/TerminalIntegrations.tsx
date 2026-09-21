@@ -6,10 +6,14 @@ import { accentFor } from "../../lib/providerAccents";
 import { useAgentStore } from "../../state/agentStore";
 import type { Settings } from "../../types";
 import { AgentMark } from "../common/AgentMark";
+import { SettingRow, Switch } from "./SettingsShared";
 
 interface Props {
   settings: Settings;
   update: (partial: Partial<Settings>) => Promise<void>;
+  /** `installed`: CLIs on this Mac, as switches (the accounts page).
+   * `missing`: supported CLIs that are not installed (Advanced). */
+  mode: "installed" | "missing";
 }
 
 const MODEL_SCOPE: Record<string, string> = {
@@ -18,18 +22,29 @@ const MODEL_SCOPE: Record<string, string> = {
   opencode: "Other OpenRouter models",
 };
 
-export function TerminalIntegrations({ settings, update }: Props) {
+/**
+ * Optional local runtimes that need no company account. Only an installed CLI
+ * can be switched on for the launcher; a missing one is listed under Advanced
+ * with the command it looks for, so "not installed" is something to act on.
+ */
+/** The optional runtimes in one state, so a page can decide whether the
+ * group is worth drawing before it draws the frame around it. */
+export function useOptionalRuntimes(mode: Props["mode"]) {
   const agents = useAgentStore((state) => state.agents);
   const refresh = useAgentStore((state) => state.refresh);
-  const selected = new Set(settings.enabledAgentIds);
-  const integrations = MODEL_RUNNER_IDS
-    .filter((id) => !isAccountRuntime(id))
-    .map((id) => agents.find((agent) => agent.id === id))
-    .filter((agent) => Boolean(agent));
-
   useEffect(() => {
     void refresh();
   }, [refresh]);
+  return MODEL_RUNNER_IDS
+    .filter((id) => !isAccountRuntime(id))
+    .map((id) => agents.find((agent) => agent.id === id))
+    .filter((agent): agent is NonNullable<typeof agent> => Boolean(agent))
+    .filter((agent) => (mode === "installed" ? agent.installed : !agent.installed));
+}
+
+export function TerminalIntegrations({ settings, update, mode }: Props) {
+  const integrations = useOptionalRuntimes(mode);
+  const selected = new Set(settings.enabledAgentIds);
 
   const toggle = (id: string) => {
     const enabledAgentIds = selected.has(id)
@@ -42,44 +57,21 @@ export function TerminalIntegrations({ settings, update }: Props) {
 
   return (
     <>
-      <span className="section-label">Additional runtimes</span>
-      <div className="integration-list integration-list--terminal">
-        {integrations.map((agent) => {
-          if (!agent) return null;
-          const active = selected.has(agent.id);
-          const accent = accentFor(agent.id, agent.accent);
-          return (
-            <button
-              key={agent.id}
-              type="button"
-              className={`terminal-integration${active ? " terminal-integration--active" : ""}`}
-              aria-pressed={active}
-              disabled={!agent.installed}
-              onClick={() => toggle(agent.id)}
-            >
-              <AgentMark agentId={agent.id} name={agent.name} accent={accent} size={34} />
-              <span className="terminal-integration__copy">
-                <strong>{agent.name}</strong>
-                {/* Naming the command it looks for turns "Not installed" from
-                    a dead end into something the user can act on. */}
-                <small>
-                  {agent.installed
-                    ? MODEL_SCOPE[agent.id] ?? agent.description
-                    : `Needs the “${agent.program}” command on your PATH`}
-                </small>
-              </span>
-              <span className={`integration-status${active ? " integration-status--success" : ""}`}>
-                <i aria-hidden="true" />
-                {!agent.installed ? "Not installed" : active ? "Selected" : "Available"}
-              </span>
-              <span className="terminal-integration__switch" aria-hidden="true"><i /></span>
-            </button>
-          );
-        })}
-      </div>
-      <p className="integrations-footnote">
-        Optional local runtimes can support model families without a connected company account.
-      </p>
+      {integrations.map((agent) => {
+        const active = selected.has(agent.id);
+        const accent = accentFor(agent.id, agent.accent);
+        return (
+          <SettingRow
+            key={agent.id}
+            label={<><AgentMark agentId={agent.id} name={agent.name} accent={accent} size={22} />{agent.name}</>}
+            hint={agent.installed ? MODEL_SCOPE[agent.id] ?? agent.description : `Needs the “${agent.program}” command on your PATH`}
+          >
+            {agent.installed ? (
+              <Switch checked={active} label={`Show ${agent.name} in the launcher`} onChange={() => toggle(agent.id)} />
+            ) : null}
+          </SettingRow>
+        );
+      })}
     </>
   );
 }

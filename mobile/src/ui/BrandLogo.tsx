@@ -10,8 +10,8 @@ import { modelArtwork } from './modelArtwork';
  * xAI are black on white and white on black — follows the theme instead, which is
  * the colour its owner actually uses rather than one invented for it.
  */
-export function BrandLogo({ vendor, size = 38 }: { vendor: string; size?: number }) {
-  return <Mark brand={brandFor(vendor)} size={size} />;
+export function BrandLogo({ vendor, size = 38, bare = false }: { vendor: string; size?: number; bare?: boolean }) {
+  return <Mark brand={brandFor(vendor)} size={size} bare={bare} />;
 }
 
 /**
@@ -19,14 +19,14 @@ export function BrandLogo({ vendor, size = 38 }: { vendor: string; size?: number
  * brand table rather than OpenRouter's vendor slugs, so they need the drawing
  * without the lookup; the rules above are the same for both.
  */
-export function Mark({ brand, size = 38 }: { brand: Brand; size?: number }) {
+export function Mark({ brand, size = 38, bare = false }: { brand: Brand; size?: number; bare?: boolean }) {
   const { colors } = useTheme();
   // A brand that ships its own tile is an app icon, and an app icon's glyph sits
   // larger in its square than a bare mark does on our neutral one. The hairline
   // is what keeps a white tile from dissolving into a light-mode card.
-  const mark = size * (brand.tile ? 0.62 : 0.52);
+  const mark = size * (bare ? 0.7 : brand.tile ? 0.62 : 0.52);
   return <View style={[s.tile, { width: size, height: size, borderRadius: size / 3,
-    backgroundColor: brand.tile ?? colors.elevated },
+    backgroundColor: brand.tile ?? (bare ? 'transparent' : colors.elevated) },
     brand.tile ? { borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(0,0,0,0.09)' } : null]}>
     {brand.paths ? <Svg width={mark} height={mark} viewBox="0 0 24 24">
       {brand.paths.map(part => <Path key={part.fill} d={part.d} fill={part.fill} />)}

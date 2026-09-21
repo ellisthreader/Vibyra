@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Mark } from '../ui/BrandLogo';
 import { Icon } from '../ui/primitives';
+import { connectedDetail } from './deviceIntegrations';
 import { integrationBrand } from './integrationBrands';
 import type { Integration } from './types';
 
@@ -20,10 +21,11 @@ import type { Integration } from './types';
  */
 export function IntegrationRow({ integration, onPress }: { integration: Integration; onPress(): void }) {
   const { colors } = useTheme();
-  const detail = integration.installed ? integration.account ? 'Connected as ' + integration.account : 'Connected'
-    : integration.tagline;
+  const unavailable = !integration.installed && integration.credential.configured === false;
+  const detail = integration.installed ? connectedDetail(integration)
+    : unavailable ? 'Not available yet' : integration.tagline;
   return <Pressable accessibilityRole="button"
-    accessibilityLabel={`${integration.name}, ${integration.installed ? 'connected' : 'not connected'}`}
+    accessibilityLabel={`${integration.name}, ${integration.installed ? 'connected' : unavailable ? 'not available yet' : 'not connected'}`}
     onPress={onPress} style={({ pressed }) => [s.row, { opacity: pressed ? 0.55 : 1 }]}>
     <Mark brand={integrationBrand(integration.id)} size={46} />
     <View style={s.text}>

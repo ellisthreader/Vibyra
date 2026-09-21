@@ -67,9 +67,11 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
           lastFocusedAt: Date.now(),
         };
         set((state) => insertPane(state, pane, options?.replaces));
+        return info.id;
       } catch (error) {
         if (options?.replaces !== undefined) throw error;
         useWorkspaceStore.getState().setError(String(error));
+        return null;
       }
     },
 

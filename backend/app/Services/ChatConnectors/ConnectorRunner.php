@@ -17,8 +17,15 @@ class ConnectorRunner
 
     public function run(string $turnId, int $userId): void
     {
+        $request = json_decode(DB::table('vibes_turns')->where('id', $turnId)->where('user_id', $userId)->value('request'), true);
+        if (!empty($request['vibyraAgent'])) {
+            app(\App\Services\Agents\ToolActions::class)->prepare($turnId, $userId);
+            return;
+        }
         $pending = DB::table('vibes_tools')->where('turn_id', $turnId)
             ->whereNotNull('integration')->whereNull('result')->orderBy('created_at')->get();
+        \App\Services\ChatConnectors\Github\Client::beginBatch();
+        try {
         foreach ($pending as $row) {
             $outcome = $this->tools->run($userId, $row->integration, $row->operation, (array) json_decode($row->arguments, true));
             DB::table('vibes_tools')->where('id', $row->id)->update(['summary' => $outcome['summary'], 'updated_at' => now()]);
@@ -26,5 +33,6 @@ class ConnectorRunner
             // answer here is what restarts the model - or the phone's, if one is owed.
             $this->agent->respond($userId, $row->id, 'auto', $outcome['result']);
         }
+        } finally { \App\Services\ChatConnectors\Github\Client::endBatch(); }
     }
 }

@@ -22,7 +22,7 @@
 
 .companion-panel--chat .chat-input {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 30px;
+  grid-template-columns: minmax(0, 1fr) 30px 30px;
   align-items: end;
   gap: 7px;
   margin: 0 10px 10px;

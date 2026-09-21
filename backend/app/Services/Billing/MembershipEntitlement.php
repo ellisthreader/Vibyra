@@ -12,6 +12,7 @@ class MembershipEntitlement
 
     public function active(User $user, ?CarbonInterface $at = null): bool
     {
+        if (app(\App\Services\Vibes\AccountMembership::class)->for($user, $at)) return true;
         $plan = strtolower(trim((string) ($user->plan ?: 'free')));
         $provider = strtolower(trim((string) ($user->billing_provider ?? '')));
         $endsAt = $user->membership_ends_at;

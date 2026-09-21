@@ -8,6 +8,7 @@ import { AuthEmailForm } from "./AuthEmailForm";
 import { AuthProviders } from "./AuthProviders";
 import { AuthSpinner } from "./authMarks";
 import { ResizeHandles, WindowControls } from "../layout/WindowChrome";
+import { StartSculpture } from "../common/StartSculpture";
 
 type Attempt = "google" | "apple" | "email" | null;
 
@@ -37,17 +38,18 @@ export function AuthScreen() {
       </header>
       <main className="auth__viewport">
         <section className="auth-intro" aria-label="Your workspace, together">
-          <span className="auth-intro__eyebrow">A space to build</span>
-          <h2>Ideas in motion.<br /><span>Everything in place.</span></h2>
-          <p>Your projects, AI tools and conversations.<br />Together in one thoughtful workspace.</p>
-          <div className="auth-intro__features"><span>Projects</span><span>AI terminals</span><span>Live preview</span></div>
+          <StartSculpture />
+          <span className="auth-intro__eyebrow">Welcome to Vibyra</span>
+          <h2>A space that<br /><span>feels like you.</span></h2>
+          <p>Your ideas, your projects, your possibilities.<br />Make yourself at home.</p>
+          <div className="auth-intro__features"><span>Think</span><span>Build</span><span>Make it yours</span></div>
         </section>
         <section className="auth-card" aria-label="Sign in to Vibyra">
           <div className="auth-card__hero">
             <h1>
-              Welcome to Vibyra
+              Come on in.
             </h1>
-            <p>Sign in to make yourself at home.</p>
+            <p>Sign in to your Vibyra workspace.</p>
           </div>
           {restoring && (
             <div className="auth-wait" role="status" aria-live="polite">

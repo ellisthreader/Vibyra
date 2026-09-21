@@ -1,28 +1,37 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { TerminalSurface } from '../terminal/TerminalSurface';
-import { composerInput } from '../terminal/composerInput';
+import type { TerminalSurfaceHandle } from '../terminal/TerminalSurface.types';
 import { DemoPreviewSheet } from '../demo/DemoPreviewSheet';
 import { DemoConversation } from '../demo/DemoConversation';
 import { isDemoWorkspace } from '../demo/data';
 import { useTheme } from '../theme';
+import { useKeyboardOffset } from './keyboardOffset';
 import { Composer } from './Composer';
 import { ConversationSessionScreen } from './ConversationSessionScreen';
 import { confirmAction } from './confirm';
-import { Button, EmptyState, Hint, Icon, IconButton } from './primitives';
+import { Button, EmptyState, Hint } from './primitives';
 import { ReviewSheet } from './ReviewSheet';
 import { SessionDetails } from './SessionDetails';
+import { LatestPill, SessionStatus } from './SessionStatus';
+import { describeSession, typableSession } from './sessionState';
 import { Sheet } from './Sheet';
-import { TerminalKeys } from './TerminalKeys';
 import { useAction } from './useAction';
+import { useAutoControl } from './useAutoControl';
 import { useDraft } from './useDraft';
 import type { Session, WorkspaceModel } from './types';
 
-export function SessionScreen({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
+interface Props {
+  session: Session; workspace: WorkspaceModel;
+  /** The session sheet, opened from the ⋯ in the app header; the screen owns the sheet, the header the button. */
+  options?: boolean; onCloseOptions?: () => void;
+  onPhoneChat?(model: string): Promise<void>; onUpgrade?(): void;
+}
+export function SessionScreen({ session, workspace, options = false, onCloseOptions = () => {}, onPhoneChat, onUpgrade }: Props) {
   if (session.runner === 'conversation') return Platform.OS === 'ios'
-    ? <ConversationSessionScreen session={session} workspace={workspace} />
+    ? <ConversationSessionScreen session={session} workspace={workspace} onPhoneChat={onPhoneChat} onUpgrade={onUpgrade} />
     : <PhoneConversationNotice session={session} workspace={workspace} />;
-  return <TerminalSessionScreen session={session} workspace={workspace} />;
+  return <TerminalSessionScreen session={session} workspace={workspace} options={options} onCloseOptions={onCloseOptions} />;
 }
 function PhoneConversationNotice({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
   const [review, setReview] = useState(false);
@@ -36,115 +45,90 @@ function PhoneConversationNotice({ session, workspace }: { session: Session; wor
     <ReviewSheet visible={review} onClose={() => setReview(false)} project={project} workspace={workspace} initialMode="files" />
   </View>;
 }
-function TerminalSessionScreen({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
+/** Legacy PTYs retain their truthful terminal stream in an output card above a
+ * draft composer. The raw surface remains available for full-screen CLI prompts;
+ * both input paths use the same Mac-controlled lease. Structured sessions use
+ * ConversationSessionScreen and never infer approvals or message roles from ANSI. */
+function TerminalSessionScreen({ session, workspace, options, onCloseOptions }: Required<Omit<Props, 'onPhoneChat' | 'onUpgrade'>>) {
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
+  const offset = useKeyboardOffset();
   const compact = width > height && height < 500;
-  const [tab, setTab] = useState<'chat' | 'terminal'>(session.kind === 'shell' ? 'terminal' : 'chat');
+  const chat = isDemoWorkspace(workspace) && session.kind !== 'shell';
   const [review, setReview] = useState<'files' | 'changes' | null>(null);
-  const [details, setDetails] = useState(false);
   const [preview, setPreview] = useState(false);
   const [inputError, setInputError] = useState<string | null>(null);
-  const [bracketedPaste, setBracketedPaste] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
+  const surface = useRef<TerminalSurfaceHandle>(null);
   const [draft, setDraft] = useDraft(`${workspace.host?.id}:${session.projectId}:${session.id}`);
   const { busy, error, run } = useAction();
   const project = workspace.projects.find(item => item.id === session.projectId);
   const provider = session.kind === 'shell' ? 'Terminal' : session.kind === 'claude' ? 'Claude Code' : 'Codex';
   const connected = workspace.status === 'connected';
   const controlReady = workspace.demo || workspace.control === 'ready';
-  const canInput = !session.readOnly && connected && (workspace.demo ? session.status !== 'interrupted' : session.status === 'running' && controlReady);
-  const showTerminal = tab === 'terminal' || !isDemoWorkspace(workspace);
+  // `readOnly` still means what it meant — no file browsing, no stopping, no
+  // starting — so it is not reused here. Typing is its own permission.
+  const typable = typableSession(session);
+  const canInput = typable && connected && (workspace.demo ? session.status !== 'interrupted' : session.status === 'running' && controlReady);
+  useAutoControl(session, workspace);
+  const status = describeSession(session, workspace);
   const stop = () => confirmAction('Stop this session?', workspace.demo
     ? 'Stop this sample session. No computer process is affected.'
     : 'The process running on your computer will be stopped. Saved files will remain.',
     'Stop session', () => { void run(() => workspace.actions.stopSession(session.id)).then(stopped => {
-      if (stopped) setDetails(false);
+      if (stopped) onCloseOptions();
     }); });
   const input = (data: string) => {
     if (!canInput) return;
     setInputError(null);
     void workspace.actions.sendInput(data).catch(cause => setInputError(cause instanceof Error ? cause.message : 'Input could not be sent.'));
   };
-  return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-    {!compact && <View style={s.context}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Open session project" disabled={!connected || session.readOnly}
-        onPress={() => setReview('files')} style={s.project}>
-        <Icon name="folder-outline" size={13} color={colors.muted} />
-        <Text numberOfLines={1} style={[s.contextText, { color: colors.muted }]}>{project?.name ?? 'Project'}</Text>
-        {project?.branch && <><Text style={{ color: colors.border }}> / </Text>
-          <Text numberOfLines={1} style={[s.branch, { color: colors.muted }]}>{project.branch}</Text></>}
-      </Pressable>
-      <IconButton icon="ellipsis-horizontal" label="Session options" onPress={() => setDetails(true)} />
-    </View>}
-    <View style={[s.tabBar, { borderBottomColor: colors.border }]}>
-      <View style={[s.tabs, { backgroundColor: colors.elevated }]}>
-        {(session.kind === 'shell' ? ['terminal'] as const : ['chat', 'terminal'] as const).map(item =>
-          <Pressable key={item} accessibilityRole="tab" accessibilityLabel={item === 'chat' ? 'Chat' : 'Terminal'}
-            aria-selected={tab === item} accessibilityState={{ selected: tab === item }}
-            onPress={() => setTab(item)} style={[s.tab, { backgroundColor: tab === item ? colors.surface : 'transparent' }]}>
-            <Icon name={item === 'chat' ? 'chatbubble-outline' : 'terminal-outline'} size={14}
-              color={tab === item ? colors.text : colors.muted} />
-            <Text style={[s.tabText, { color: tab === item ? colors.text : colors.muted }]}>{item === 'chat' ? 'Chat' : 'Terminal'}</Text>
-          </Pressable>)}
-      </View>
-      <View style={s.spacer} />
-      {!session.readOnly && <IconButton icon="git-compare-outline" label="Review project files and changes" disabled={!connected} onPress={() => setReview('changes')} />}
-      {compact && <IconButton icon="ellipsis-horizontal" label="Session options" onPress={() => setDetails(true)} />}
-    </View>
-    {!connected && <View style={[s.status, { backgroundColor: colors.elevated }]}>
-      <Hint>Connection paused</Hint>
-      {workspace.actions.reconnect && <Button title="Reconnect" secondary busy={busy} onPress={() => void run(workspace.actions.reconnect!)} />}
-    </View>}
-    {!workspace.demo && session.status !== 'running' && <View style={s.status}><Hint>{session.status === 'interrupted'
-      ? 'Session interrupted. Start a new chat to continue.' : `Session ended${session.exitCode === undefined ? '.' : ` · exit ${session.exitCode}`}`}</Hint></View>}
-    {connected && !controlReady && session.status === 'running' && <View style={[s.observe, { backgroundColor: colors.surface }]}>
-      <View style={s.observing}><View style={[s.dot, { backgroundColor: colors.success }]} />
-        <Text style={[s.statusText, { color: colors.muted }]}>{session.readOnly ? 'Viewing Mac desktop · Read only' : workspace.control === 'claiming' ? 'Requesting control…' : 'Viewing live'}</Text></View>
-      {!session.readOnly && workspace.actions.claimControl && workspace.control !== 'claiming' && <Pressable accessibilityRole="button"
-        accessibilityLabel="Take control" disabled={busy} onPress={() => void run(workspace.actions.claimControl!)} style={s.claim}>
-        <Text style={[s.claimText, { color: colors.accent }]}>Take control</Text><Icon name="arrow-forward" size={14} color={colors.accent} />
-      </Pressable>}
-    </View>}
-    {(error || inputError) && <View style={s.status}><Hint error>{error || inputError}</Hint></View>}
-    {!showTerminal && isDemoWorkspace(workspace) ?
-      <DemoConversation workspace={workspace} onReview={() => setReview('changes')} onPreview={() => setPreview(true)} /> :
-      <View style={[s.terminal, { backgroundColor: colors.workspace }]}>
-        {tab === 'chat' && <View style={[s.agentLabel, { borderBottomColor: colors.border }]}>
-          <Icon name="code-slash-outline" size={15} color={colors.muted} />
-          <Text style={[s.agentText, { color: colors.muted }]}>{provider} · live terminal conversation</Text>
-        </View>}
-        <TerminalSurface output={workspace.output} onPasteMode={setBracketedPaste} onInput={input}
-          onResize={(cols, rows) => { void Promise.resolve(workspace.actions.resize(cols, rows)).catch(cause =>
-            setInputError(cause instanceof Error ? cause.message : 'Terminal size could not be updated.')); }} disabled={!canInput} />
-        {!session.readOnly && !compact && <TerminalKeys disabled={!canInput} onInput={input} />}
-      </View>}
-    {!session.readOnly && <Composer compact={compact} value={draft} onChange={setDraft} disabled={!canInput} demo={workspace.demo}
-      shell={session.kind === 'shell' || tab === 'terminal'} contextLabel={provider} onContext={() => setDetails(true)}
-      onReview={connected ? () => setReview('files') : undefined}
-      onSend={value => run(() => workspace.actions.sendInput(workspace.demo ? `${value}\r` : composerInput(value, bracketedPaste)))} />}
+  // A tap on the output is a request to type. When the terminal is already
+  // this phone's, the surface raises the keyboard itself; otherwise the tap
+  // takes the terminal — from another phone too — or shows why it cannot.
+  const claim = workspace.actions.claimControl;
+  const tap = () => {
+    if (canInput || !claim || !connected || workspace.demo || session.status !== 'running' || busy) return;
+    setInputError(null);
+    void run(claim);
+  };
+  const sheets = <>
     {workspace.demo && <DemoPreviewSheet visible={preview} onClose={() => setPreview(false)}
-      onFeedback={value => { setDraft(value); setTab('chat'); setPreview(false); }} />}
+      onFeedback={value => { setDraft(value); setPreview(false); }} />}
     <ReviewSheet visible={review !== null} onClose={() => setReview(null)} project={project} workspace={workspace} initialMode={review ?? 'changes'} />
-    <Sheet title="Session details" visible={details} onClose={() => setDetails(false)} scroll={false}>
+    <Sheet title="Session details" visible={options} onClose={onCloseOptions} scroll={false}>
       <SessionDetails session={session} project={project} workspace={workspace} busy={busy}
-        onReview={() => { setDetails(false); setReview('changes'); }} onStop={stop} />
+        onReview={() => { onCloseOptions(); setReview('changes'); }} onStop={stop} />
     </Sheet>
+  </>;
+  if (chat) return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={offset}>
+    {error && <View style={s.notice}><Hint error>{error}</Hint></View>}
+    <DemoConversation workspace={workspace} onReview={() => setReview('changes')} onPreview={() => setPreview(true)} />
+    <Composer compact={compact} value={draft} onChange={setDraft} disabled={!canInput} shell={false} contextLabel={provider}
+      onReview={() => setReview('files')}
+      onSend={value => run(() => workspace.actions.sendInput(`${value}\r`))} />
+    {sheets}
+  </KeyboardAvoidingView>;
+  return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={offset}>
+    <SessionStatus model={status} busy={busy}
+      onReconnect={workspace.actions.reconnect && (() => void run(workspace.actions.reconnect!))}
+      onTakeControl={workspace.actions.claimControl && (() => void run(workspace.actions.claimControl!))} />
+    {(error || inputError) && <View style={s.notice}><Hint error>{error || inputError}</Hint></View>}
+    <View style={[s.terminal, { backgroundColor: colors.elevated, margin: 14, borderRadius: 13, padding: 10 }]}>
+      <View style={{ paddingBottom: 8 }}><Hint>Terminal output</Hint></View>
+      <TerminalSurface key={`${workspace.host?.id}:${session.id}`} ref={surface} output={workspace.output} grid={workspace.hostGrid} mirror={session.readOnly === true}
+        onFollow={setAtBottom} onInput={input} onTap={tap}
+        fontSize={workspace.terminalFontSize} onFontSize={workspace.actions.setTerminalFontSize}
+        onResize={(cols, rows) => { void Promise.resolve(workspace.actions.resize(cols, rows)).catch(cause =>
+          setInputError(cause instanceof Error ? cause.message : 'Terminal size could not be updated.')); }} disabled={!canInput} />
+      {!atBottom && <LatestPill onPress={() => surface.current?.scrollToBottom()} />}
+    </View>
+    <Composer compact={compact} value={draft} onChange={setDraft} disabled={!canInput} shell={session.kind === 'shell'} contextLabel={provider}
+      onReview={() => setReview('files')} onSend={value => run(() => workspace.actions.sendInput(`${value}\r`))} />
+    {sheets}
   </KeyboardAvoidingView>;
 }
 const s = StyleSheet.create({
-  body: { flex: 1 }, context: { flexDirection: 'row', alignItems: 'center', paddingLeft: 23, paddingRight: 12 },
-  project: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  contextText: { fontSize: 12, flexShrink: 1 }, branch: { fontSize: 11, flexShrink: 2 },
-  tabBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth },
-  tabs: { flexDirection: 'row', padding: 3, borderRadius: 16 },
-  tab: { minHeight: 44, paddingHorizontal: 16, borderRadius: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  tabText: { fontSize: 13, fontWeight: '600' }, spacer: { flex: 1 }, terminal: { flex: 1, minHeight: 60 },
-  status: { paddingHorizontal: 22, paddingVertical: 10, gap: 10 },
-  observe: { paddingHorizontal: 22, minHeight: 45, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
-  observing: { flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 1 }, dot: { width: 5, height: 5, borderRadius: 3 },
-  statusText: { fontSize: 12, flexShrink: 1 }, claim: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  claimText: { fontSize: 12, fontWeight: '600' }, agentLabel: { paddingHorizontal: 20, minHeight: 42,
-    flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  agentText: { fontSize: 11 },
+  body: { flex: 1 }, terminal: { flex: 1, minHeight: 60 },
+  notice: { paddingHorizontal: 22, paddingVertical: 8 },
 });

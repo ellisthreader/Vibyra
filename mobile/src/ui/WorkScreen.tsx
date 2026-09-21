@@ -4,34 +4,56 @@ import { useTheme } from '../theme';
 import { useKeyboardOffset } from './keyboardOffset';
 import { useVibes } from '../vibes/VibesProvider';
 import { AgentSheet } from './AgentSheet';
+import { sessionIcon, sessionsInProject } from './DrawerProjects';
 import { AUTO, autoAgent, defaultProjectId, modelLabel, sessionTitle } from './agents';
+import { canStartWork } from './mode';
 import { BrandMark, Hint, Icon } from './primitives';
 import { NewChatComposer } from './NewChatComposer';
 import { useAction } from './useAction';
 import { setDraftForScope, useDraft } from './useDraft';
-import type { SessionKind, WorkspaceModel } from './types';
+import { vibesDraftKey } from '../vibes/draftScope';
+import type { Project, SessionKind, WorkspaceModel } from './types';
 
-// The computer home. Without a computer this is only the browser and Android
-// fallback for the phone chat, so every terminal and project affordance goes.
-export function WorkScreen({ workspace, connected, onConnect, onProjects, onAi, onWallet, cloud }: {
-  workspace: WorkspaceModel; connected: boolean; onConnect: () => void; onProjects: () => void;
-  onAi: () => void; onWallet?: () => void; cloud: boolean;
+// A computer project's home: the composer starts a terminal there, and the
+// terminals offered back are its own. It is also the browser and Android stand-in
+// for the phone chat, where that chat does not run; then it mentions no computer
+// — nothing under a text box may demand hardware — and says where the chat is.
+export function WorkScreen({ workspace, project, connected, onProjects, onPhoneChat, onWallet, cloud }: {
+  workspace: WorkspaceModel; project?: Project; connected: boolean; onProjects: () => void;
+  /** Shows the phone chat the store has selected — Ideas, or the project the chat is bound to. */
+  onPhoneChat: () => void; onWallet?: () => void; cloud: boolean;
 }) {
   const { colors } = useTheme();
   const { models, store } = useVibes();
   const offset = useKeyboardOffset();
   const [draft, setDraft] = useDraft(`${workspace.demo ? 'sample' : 'live'}:new-chat`);
   const [pick, setPick] = useState(false);
-  const [elsewhere, setElsewhere] = useState(false);
+  // Why the last thing pressed did not happen here: a send with no computer, a
+  // send a watching Mac cannot take, or a model kept for the phone chat.
+  const [elsewhere, setElsewhere] = useState<'send' | 'model' | null>(null);
   const { busy, error, run } = useAction();
-  const projectId = defaultProjectId(workspace.projects, workspace.sessions);
+  // A Vibyra Desktop whose typing switch is on starts terminals in its own grid
+  // when asked from here; one that only watches cannot open anything.
+  const watching = !canStartWork(workspace);
+  const projectId = project?.id ?? defaultProjectId(workspace.projects, workspace.sessions);
+  const recent = project ? sessionsInProject(workspace.sessions, project.id) : workspace.sessions;
+  // Hands the draft to the phone's own chat and opens it there.
+  const toPhoneChat = (scope: string) => {
+    setDraftForScope(vibesDraftKey(workspace.account?.email, scope), draft);
+    setDraft(''); onPhoneChat();
+  };
   // Sending resolves everything itself: Auto picks the agent, the most recent
   // shared project is used, and the prompt becomes both the title and the draft.
   const launch = (kind: SessionKind | typeof AUTO) => {
-    if (!connected) { onConnect(); return; }
-    // A Vibyra Desktop connection watches; it cannot open a session. Saying so
-    // beats dispatching a call whose rejection arrives as a server string.
-    if (workspace.viewOnly) { setElsewhere(true); return; }
+    if (!connected) { setElsewhere('send'); return; }
+    // A watching Vibyra Desktop cannot open a session. On the iPhone the prompt
+    // starts a new chat on the phone instead. Elsewhere, saying so beats
+    // dispatching a call whose rejection arrives as a server string.
+    if (watching) {
+      if (!cloud) { setElsewhere('send'); return; }
+      void store.select(null).catch(cause => store.error(cause));
+      toPhoneChat('new'); return;
+    }
     if (!projectId) return;
     const resolved = kind === AUTO ? autoAgent(Platform.OS === 'ios' && workspace.conversationAvailable) : kind;
     const prompt = draft.trim();
@@ -44,25 +66,24 @@ export function WorkScreen({ workspace, connected, onConnect, onProjects, onAi, 
   // Every row in the picker is an OpenRouter model, so choosing one is choosing
   // the AI chat and the draft moves with it. Auto stays here and resolves itself.
   const select = (id: string) => {
-    if (id === AUTO) { setElsewhere(false); return; }
+    if (id === AUTO) { setElsewhere(null); return; }
     store.setModel(id);
     // Where the chat cannot run, the choice is still kept and said out loud. It
     // is never silently dropped: the catalogue is readable on every runtime, so
     // tapping a row here has to mean something everywhere too.
-    if (!cloud) { setElsewhere(true); return; }
-    setDraftForScope(`vibes:${workspace.account?.email ?? 'guest'}:${store.state.draftScope}`, draft);
-    setDraft(''); onAi();
+    if (!cloud) { setElsewhere('model'); return; }
+    toPhoneChat(store.state.draftScope);
   };
-  const note = !connected ? 'Connect your computer to start coding.'
-    : workspace.viewOnly ? 'Watching your Mac. Start work on the computer.'
-    : !projectId ? 'Share a folder in Vibyra Host to start a chat.' : 'Your computer. Your workspace.';
+  const note = !connected ? 'Chats run in the Vibyra iPhone app.'
+    : watching ? (cloud ? 'New chats run here on your iPhone.' : 'Watching your Mac. Start work on the computer.')
+    : !projectId ? 'Share a folder in Vibyra Host to start a chat.' : project ? `Working in ${project.name}.` : 'Your computer. Your workspace.';
   return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={offset}>
     <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       <View style={s.hero}>
         <BrandMark size={48} />
         <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>What are we{'\n'}building?</Text>
         {connected && <View style={s.actions}>
-          {!workspace.viewOnly && <Pressable accessibilityRole="button" accessibilityLabel="Open terminal" onPress={() => launch('shell')}
+          {!watching && <Pressable accessibilityRole="button" accessibilityLabel="Open terminal" onPress={() => launch('shell')}
             style={[s.action, { borderColor: colors.border }]}>
             <Icon name="terminal-outline" size={17} color={colors.muted} /><Text style={[s.actionText, { color: colors.text }]}>Open terminal</Text>
           </Pressable>}
@@ -73,26 +94,20 @@ export function WorkScreen({ workspace, connected, onConnect, onProjects, onAi, 
           </Pressable>
         </View>}
       </View>
-      {!connected && <Pressable accessibilityRole="button" accessibilityLabel="Connect computer" onPress={onConnect}
-        style={[s.connect, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={[s.device, { backgroundColor: colors.elevated }]}><Icon name="desktop-outline" size={21} /></View>
-        <View style={s.connectionText}><Text style={[s.connectionTitle, { color: colors.text }]}>Connect your computer</Text>
-          <Text style={[s.connectionDetail, { color: colors.muted }]}>Your code and agents, right here.</Text></View>
-        <Icon name="arrow-forward" size={19} color={colors.muted} />
-      </Pressable>}
-      {connected && workspace.sessions.length > 0 && <View style={s.recent}>
+      {connected && recent.length > 0 && <View style={s.recent}>
         <Text style={[s.section, { color: colors.muted }]}>Jump back in</Text>
-        {workspace.sessions.slice(0, 2).map(session => <Pressable key={session.id} accessibilityRole="button"
+        {recent.slice(0, 2).map(session => <Pressable key={session.id} accessibilityRole="button"
           accessibilityLabel={`Continue ${session.title}`} onPress={() => workspace.actions.selectSession(session.id)}
           style={s.recentRow}>
-          <Icon name={session.kind === 'shell' ? 'terminal-outline' : 'chatbubble-outline'} size={18} color={colors.muted} />
+          <Icon name={sessionIcon(session)} size={18} color={colors.muted} />
           <Text numberOfLines={1} style={[s.recentTitle, { color: colors.text }]}>{session.title}</Text>
           <Icon name="arrow-up-outline" size={17} color={colors.muted} />
         </Pressable>)}
       </View>}
-      {elsewhere && <View style={s.error}><Hint>{workspace.viewOnly
-        ? 'This connection watches your Mac. Start a chat or terminal on the computer, then follow it here.'
-        : `${modelLabel(store.state.model, models)} is saved for your next AI chat. Those chats run on your iPhone.`}</Hint></View>}
+      {elsewhere && <View style={s.error}><Hint>{elsewhere === 'model'
+        ? `${modelLabel(store.state.model, models)} is saved for your next AI chat. Those chats run on your iPhone.`
+        : !connected ? 'Chats run in the Vibyra iPhone app.'
+          : 'This connection watches your Mac. Start a chat or terminal on the computer, then follow it here.'}</Hint></View>}
       {(error || workspace.error) && <View style={s.error}><Hint error>{error || workspace.error}</Hint></View>}
     </ScrollView>
     <NewChatComposer value={draft} onChange={setDraft} onSend={() => launch(AUTO)} onPick={() => setPick(true)}
@@ -113,9 +128,6 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 9, flexWrap: 'wrap', justifyContent: 'center', marginTop: 3 },
   action: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 23, paddingHorizontal: 15 },
   actionText: { fontSize: 13, fontWeight: '500' },
-  connect: { padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth },
-  device: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  connectionText: { flex: 1, gap: 5 }, connectionTitle: { fontSize: 14, fontWeight: '600' }, connectionDetail: { fontSize: 12 },
   recent: { paddingBottom: 2 }, section: { fontSize: 12, fontWeight: '500', paddingBottom: 5 },
   recentRow: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 11 }, recentTitle: { flex: 1, fontSize: 14 },
   error: { paddingTop: 12 },

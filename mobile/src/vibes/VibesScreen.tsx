@@ -1,36 +1,43 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { Teammate } from '../agents/types';
+import type { VibesTool, VibesTurn } from './types';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { useKeyboardOffset } from '../ui/keyboardOffset';
 import { AccountSheet } from '../ui/AccountSheet';
-import { AgentSheet } from '../ui/AgentSheet';
-import { EffortSheet } from '../ui/EffortSheet';
-import { effortLabel } from '../ui/effort';
+import { ComposerModelPicker } from './ComposerModelPicker';
 import { AUTO, modelLabel } from '../ui/agents';
 import { Button, Hint, Icon } from '../ui/primitives';
 import { setDraftForScope, useDraft } from '../ui/useDraft';
 import type { WorkspaceModel } from '../ui/types';
 import { useIntegrations } from '../integrations/IntegrationsProvider';
-import { mentionedIds } from '../integrations/mentions';
+import { chatReferences, missingQuotedReferences, referenceIds } from '../integrations/chatReferences';
 import { useVibes } from './VibesProvider';
+import { AttachMenu } from './AttachMenu';
+import { appendWords } from './appendWords';
+import { useAttachFlow } from './useAttachFlow';
+import { useChatQuote } from './useChatQuote';
 import { ProjectSheet } from './ProjectSheet';
 import { ProjectTools } from './ProjectTools';
 import { VibesComposer } from './VibesComposer';
 import { VibesConversation } from './VibesConversation';
-import { vibeWord, vibes } from './count';
-import { activeTurn, type VibesQuote } from './types';
+import { Spark } from './Spark';
+import { useGlass } from './glass';
+import { chatUnlocked, sendBlockReason, unverifiedNotice } from './composerGate';
+import { activeTurn, type Effort } from './types';
 
-// The phone's own chat. `onComputer` is supplied only while a computer is
-// connected, and it is the one thing here that mentions one.
-export function VibesScreen({ workspace, onComputer, onWallet }: {
-  workspace: WorkspaceModel; onComputer?: () => void; onWallet(): void;
+// The phone's own chat. It mentions no computer: `computer` only lets the attach
+// menu offer a connected one's folders as project tools. `onMemory` opens
+// Settings > Memory, which every reply here reads and may add to.
+export function VibesScreen({ workspace, computer = false, onWallet, onIntegrations, onMemory, teammate, renderTool, readOnly = false, active = true }: {
+  teammate?: Teammate; renderTool?: (tool: VibesTool, turn: VibesTurn) => ReactNode; readOnly?: boolean; active?: boolean;
+  workspace: WorkspaceModel; computer?: boolean; onWallet(): void; onIntegrations?: () => void; onMemory?: () => void;
 }) {
-  const { colors } = useTheme(); const { store, wallet, chats, turns, model, models, effort, selected, draftScope, pending, ready, error } = useVibes();
+  const { colors } = useTheme(); const glass = useGlass(); const { store, wallet, chats, turns, model, models, effort, selected, draftScope, pending, ready, error, revision, selectionVersion } = useVibes();
   const offset = useKeyboardOffset();
-  // Only a model whose ladder the catalogue actually reported can be steered, so
-  // Auto and unsteerable models simply show no effort control.
+  // Only a ladder the catalogue actually reported can be steered; the composer
+  // shows no effort control for a model without one.
   const chosen = models.find(entry => entry.id === model);
-  const steerable = (chosen?.reasoning?.efforts.length ?? 0) > 1;
   const chat = chats.find(c => c.id === selected);
   const draftPrefix = 'vibes:' + (workspace.account?.email ?? 'guest') + ':';
   const [text, setText, draftError] = useDraft(draftPrefix + draftScope, true);
@@ -42,98 +49,108 @@ export function VibesScreen({ workspace, onComputer, onWallet }: {
   }, [selected, draftScope, draftPrefix, text, store]);
   const [projectOpen, setProjectOpen] = useState(false);
   const [compactEmpty, setCompactEmpty] = useState(false);
-  const [modelOpen, setModelOpen] = useState(false); const [effortOpen, setEffortOpen] = useState(false);
+  const [modelOpen, setModelOpen] = useState(false);
+  useEffect(() => setModelOpen(false), [draftPrefix, selectionVersion]);
   const [accountOpen, setAccountOpen] = useState(false);
   // The integrations this message points at. They change the request and the price, so
   // they are part of the quote's identity below exactly as the effort is.
-  const { installed } = useIntegrations();
-  const mentioned = useMemo(() => mentionedIds(text, installed.map(integration => integration.id)), [text, installed]);
-  const integrationKey = mentioned.join(',');
-  const [quote, setQuote] = useState<{ text: string; model: string; effort: string | null; integrations: string; value: VibesQuote } | null>(null);
-  const [quoteError, setQuoteError] = useState<string | null>(null); const quoting = useRef(0);
-  const [quoteRevision, setQuoteRevision] = useState(0);
+  const integrations = useIntegrations();
+  const installed = useMemo(() => teammate ? integrations.installed.filter(app => teammate.integrations.includes(app.id)) : integrations.installed, [integrations.installed, teammate?.integrations]);
+  const references = chatReferences(text, installed, workspace, chat, teammate?.integrations);
+  const integrationKey = references.connectors.join(',');
+  // Photos and files for this message: priced by the quote, so part of its identity too.
+  const attach = useAttachFlow(store.api.upload, draftPrefix + selectionVersion);
+  const attachmentKey = attach.files.ids.join(',');
+  // A photo for a model that cannot see it is refused by the server; saying so here
+  // saves the round trip and names the fix.
+  const blind = attach.files.photos && model !== AUTO && chosen?.vision === false
+    ? `${chosen.name} can’t see photos. Choose Auto or a model that can.` : null;
+  const holding = attach.files.uploading || attach.files.failed || Boolean(blind);
   const busy = Boolean(pending || turns.some(activeTurn));
-  useEffect(() => {
-    const version = ++quoting.current; setQuote(null); setQuoteError(null);
-    if (!text.trim() || !ready || busy || !wallet?.consented || !wallet.verified || wallet.chatEnabled === false) return;
-    const timer = setTimeout(() => {
-      void store.chat(text).then(id => store.api.quote(id, text.trim(), model, effort, mentioned)).then(value => {
-        if (version === quoting.current) setQuote({ text, model, effort, integrations: integrationKey, value });
-      }).catch(e => { if (version === quoting.current) setQuoteError(e.message); });
-    }, 650);
-    return () => { clearTimeout(timer); ++quoting.current; };
-  }, [text, model, effort, integrationKey, selected, ready, busy, wallet?.consented, wallet?.verified, wallet?.chatEnabled, store, quoteRevision]);
-  useEffect(() => {
-    if (!quote) return;
-    const timer = setTimeout(() => setQuoteRevision(r => r + 1), Math.max(0, quote.value.expiresAt * 1000 - Date.now() - 5000));
-    return () => clearTimeout(timer);
-  }, [quote]);
-  // Effort belongs in this comparison: it changes both the request and the price,
-  // so a quote taken at one level must never be spent at another.
-  // Integrations are in it for the same reason: a quote taken without one must never be
-  // spent with it, and connecting one mid-draft changes what the reply may read.
-  const currentQuote = quote?.text === text && quote.model === model && quote.effort === effort
-    && quote.integrations === integrationKey ? quote.value : null;
+  // The server decides who may chat; an unverified address is a notice, not a lock, once it has opened the trial.
+  const unlocked = chatUnlocked(wallet);
+  const verifyNotice = unverifiedNotice(wallet);
+  // Refresh re-reads both halves of the gate: the wallet, and the account the verification lives on.
+  const refreshAll = () => Promise.all([store.refresh(), workspace.actions.refreshAccount?.()]).then(() => {});
+  const estimate = useChatQuote({ store, chatId: selected, text, model, effort, integrations: integrationKey, attachments: attachmentKey,
+    enabled: Boolean(active && !readOnly && ready && !busy && !holding && !references.issue && !references.project && wallet?.consented && unlocked), revision });
+  const rejectedReferences = missingQuotedReferences(references.connectors, estimate.quote?.integrations);
+  const currentQuote = rejectedReferences ? null : estimate.quote; const quoteError = estimate.error;
+  const referenceError = references.issue ?? (rejectedReferences ? 'A referenced integration is no longer available. Refresh your connections before sending.' : null);
+  const liveDraft = useRef({ text, selected, store }); liveDraft.current = { text, selected, store };
   // What Auto settled on for this draft. The quote has always carried it; showing
   // it is the difference between "Auto" meaning a choice and meaning a shrug.
   const auto = model === AUTO ? currentQuote?.auto ?? null : null;
   const canAfford = Boolean(currentQuote && wallet && wallet.available >= currentQuote.maxCredits);
   const send = async () => {
-    if (!currentQuote || !canAfford) return;
-    if (currentQuote.expiresAt * 1000 <= Date.now()) { setQuote(null); setQuoteRevision(r => r + 1); return; }
-    if (await store.send(currentQuote.quote)) { setText(''); setQuote(null); }
-    else if (store.state.error?.toLowerCase().includes('vibes') || store.state.error?.includes('Upgrade')) onWallet();
+    if (!active || readOnly || !currentQuote || !canAfford) return;
+    if (currentQuote.expiresAt * 1000 <= Date.now()) { estimate.invalidate(); return; }
+    if (await store.send(currentQuote.quote)) {
+      // Typing the next message or switching chats during the request must not erase it.
+      const live = liveDraft.current;
+      if (live.store === store && live.selected === selected && live.text === text) setText('');
+      attach.sent();
+    } else if (store.state.errorStatus === 402) onWallet();
+    estimate.invalidate();
   };
   const consent = async () => {
     try { await store.api.consent(); await store.refresh(); } catch (e) { store.error(e); }
   };
+  // Under Auto the router owns the level and ignores one sent beside it, so the
+  // composer shows Auto's pick for this draft and offers the picker instead.
+  const composerEffort = { ladder: chosen?.reasoning?.efforts ?? [], value: model === AUTO ? currentQuote?.effort ?? null : currentQuote?.effort ?? effort,
+    onChange: (value: Effort) => store.setEffort(value), automatic: model === AUTO, onChooseModel: () => setModelOpen(true) };
+  // A watch-only Mac serves no project tools, so it is not offered as one.
+  const projects = wallet?.consented && computer && !workspace.viewOnly;
   return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={offset}>
-    <View style={[s.top, !onComputer && s.topEnd]}>{onComputer && <Pressable accessibilityRole="button" accessibilityLabel="Use computer agents" onPress={onComputer} style={s.link}>
-      <Icon name="desktop-outline" size={16} color={colors.muted} /><Text style={[s.small, { color: colors.muted }]}>Computer agents</Text></Pressable>}
-      <Pressable accessibilityRole="button" accessibilityLabel="Open Vibes balance" onPress={() => workspace.account ? onWallet() : setAccountOpen(true)} style={[s.balance, { backgroundColor: colors.elevated }]}>
-        <Icon name="sparkles-outline" size={14} color={colors.accent} /><Text style={[s.small, { color: colors.text }]}>{wallet ? vibes(wallet.available) : 'Free Vibes'}</Text></Pressable></View>
-    {turns.length ? <VibesConversation turns={turns} tools={<ProjectTools workspace={workspace} />} /> : <ScrollView contentContainerStyle={s.empty} keyboardShouldPersistTaps="handled" onLayout={e => setCompactEmpty(e.nativeEvent.layout.height < 240)}>
-      {!compactEmpty && <View style={[s.spark, { backgroundColor: colors.accentSoft }]}><Icon name="sparkles-outline" size={26} color={colors.accent} /></View>}
-      <Text accessibilityRole="header" style={[s.title, compactEmpty && { fontSize: 23, lineHeight: 30 }, { color: colors.text }]}>{compactEmpty ? 'Let’s build something.' : 'From a spark\nto something real.'}</Text>
-      {!compactEmpty && <Text style={[s.subtitle, { color: colors.muted }]}>Think it through. Write the code.{'\n'}Find your next good idea.</Text>}
+    {/* The chat shows the chat. The balance lives in the rail and in Settings. */}
+    {turns.length ? <VibesConversation teammate={Boolean(teammate)} renderTool={renderTool} turns={turns} previews={attach.previews} onMemory={onMemory} tools={teammate ? undefined : <ProjectTools workspace={workspace} />} /> : <ScrollView contentContainerStyle={s.empty} keyboardShouldPersistTaps="handled" onLayout={e => setCompactEmpty(e.nativeEvent.layout.height < 240)}>
+      {!compactEmpty && !teammate && <Spark size={104} />}
+      <Text accessibilityRole="header" style={[s.title, teammate && {fontSize:23,lineHeight:30,fontFamily:'DM Sans'}, compactEmpty && { fontSize: 23, lineHeight: 30, letterSpacing: -0.6 }, { color: colors.text }]}>{teammate ? `Message ${teammate.name}` : compactEmpty ? 'Let’s build something.' : 'From a spark\nto something real.'}</Text>
+      {!compactEmpty && <Text style={[s.subtitle, { color: colors.muted }]}>{teammate?.brief ?? 'Think it through. Write the code.\nFind your next good idea.'}</Text>}
       {!workspace.account && <Button title="Create a free account" onPress={() => setAccountOpen(true)} />}
-      {/* The trial is described from the wallet, never from copy: the grant, the
-          number of chats it spreads across and the per-chat cap are all enforced in
-          `config/vibes.php`, and a sentence here that repeats them is a sentence
-          that goes stale the moment they are retuned. */}
-      {wallet?.plan === 'free' && !compactEmpty && wallet.trialCredits !== null && wallet.trialChats !== null
-        && <Text style={[s.trial, { color: colors.muted }]}>{wallet.trialCredits} free {vibeWord(wallet.trialCredits)} across {wallet.trialChats} {wallet.trialChats === 1 ? 'chat' : 'chats'}</Text>}
     </ScrollView>}
-    {wallet && wallet.chatEnabled !== false && !wallet.consented && <View style={[s.consent, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    {wallet && wallet.chatEnabled !== false && !wallet.consented && <View style={[s.consent, glass.sheet]}>
       <Text style={[s.consentTitle, { color: colors.text }]}>Before your first chat</Text>
       <Text style={[s.consentText, { color: colors.muted }]}>Your messages are sent to Vibyra, OpenRouter and your chosen AI provider to answer you. Computer files are not shared in this chat.</Text>
       <Button title="Allow AI processing" onPress={() => void consent()} />
     </View>}
-    {wallet && !wallet.verified && <View style={s.notice}><Hint>Verify your email, then refresh to unlock your trial.</Hint><Button secondary title="Refresh account" onPress={() => void store.refresh()} /></View>}
-    {wallet?.chatEnabled === false && <View style={s.notice}><Hint>AI chats are being prepared. Your balance and history are safe{onComputer ? ', and computer agents are available' : ''}.</Hint></View>}
+    {verifyNotice && <View style={s.notice}><Hint>{verifyNotice}</Hint><Button secondary title="Refresh account" onPress={() => void refreshAll()} /></View>}
+    {wallet?.chatEnabled === false && <View style={s.notice}><Hint>AI chats are being prepared. Your balance and history are safe.</Hint></View>}
+    {references.project && !referenceError && <View style={s.notice}><Hint>Allow this chat to use {references.project.name} on your computer before sending. Each read still needs your approval.</Hint>
+      <Button title={`Use ${references.device === 'obsidian' ? 'Obsidian' : 'Railway'} in this chat`} disabled={busy || !wallet?.consented || !active || readOnly} onPress={() => setProjectOpen(true)} /></View>}
+    {referenceError && <View style={s.notice}><Hint error>{referenceError}</Hint>
+      {onIntegrations && <Button title="Open integrations" secondary onPress={onIntegrations} />}</View>}
     {(error || quoteError || draftError) && <View style={s.notice}><Hint error>{error ?? quoteError ?? draftError}</Hint>
       <Pressable accessibilityRole="button" onPress={() => void store.refresh()} style={s.link}><Text style={{ color: colors.accent }}>Refresh</Text></Pressable></View>}
     {currentQuote && !canAfford && <View style={s.notice}><Button title="Get more Vibes" onPress={onWallet} /></View>}
-    {wallet?.consented && onComputer && <Pressable accessibilityRole="button" accessibilityLabel="Attach a project" onPress={() => setProjectOpen(true)} style={[s.link, { paddingHorizontal: 22 }]}><Icon name="folder-outline" size={16} color={colors.muted} /><Text style={[s.small, { color: colors.muted }]}>Use a project</Text></Pressable>}
-    <VibesComposer text={text} onChange={setText} onModel={() => setModelOpen(true)}
-      model={auto ? 'Auto · ' + auto.name : modelLabel(model, models)} modelHint={auto?.reason}
-      effort={steerable ? effortLabel(effort) : auto && currentQuote?.effort ? effortLabel(currentQuote.effort) : null}
-      onEffort={steerable ? () => setEffortOpen(true) : undefined} mentions={installed}
+    {readOnly && <View style={s.notice}><Hint>{teammate?.archived ? 'Archived · restore this teammate to send another task.' : 'Teammate tasks are paused. Your history is available.'}</Hint></View>}
+    <VibesComposer teammate={Boolean(teammate)} quietGeneration={Boolean(teammate)} placeholder={teammate ? `Message ${teammate.name}…` : undefined} inputLabel={teammate ? `Message ${teammate.name}` : undefined} text={text} onChange={setText} onModel={() => setModelOpen(true)} onAdd={attach.open}
+      modelPicker={modelOpen ? <ComposerModelPicker onClose={() => setModelOpen(false)} selection={model} paid={Boolean(wallet?.paidAvailable)}
+        onSelect={id => store.setModel(id)} models={models} onUpgrade={onWallet} /> : undefined}
+      attachments={attach.files.items} onRemoveAttachment={attach.files.remove}
+      notice={blind ?? (attach.files.failed ? attach.notice ?? 'Remove the attachment that did not upload.' : attach.notice)}
+      model={auto ? auto.name : modelLabel(model, models)} modelId={model !== AUTO ? model : auto ? currentQuote?.model : null}
+      chosenByAuto={Boolean(auto)} modelHint={auto?.reason}
+      effort={composerEffort} mentions={references.available} knownMentions={referenceIds}
       trialRemaining={chat?.trial_slot && wallet?.trialChatCredits != null ? Math.max(0, wallet.trialChatCredits - chat.trial_used) : undefined} maximum={currentQuote?.maxCredits} busy={busy}
-      disabled={!ready || !currentQuote || !canAfford || !wallet?.consented} onSend={() => void send()}
+      disabled={!active || readOnly || !ready || holding || !currentQuote || !canAfford || !wallet?.consented || !unlocked} onSend={() => void send()}
+      blocked={sendBlockReason({ active, readOnly, ready, wallet, text, uploading: attach.files.uploading, failed: attach.files.failed, blind,
+        referenceIssue: referenceError, project: references.project?.name ?? null, quoted: Boolean(currentQuote), canAfford })}
       onStop={() => void store.stop().catch(e => store.error(e))} />
-    <ProjectSheet visible={projectOpen} onClose={() => setProjectOpen(false)} workspace={workspace} />
-    <AgentSheet visible={modelOpen} onClose={() => setModelOpen(false)} selection={model} paid={Boolean(wallet?.paidAvailable)}
-      onSelect={id => store.setModel(id)} models={models} onUpgrade={onWallet} />
-    <EffortSheet visible={effortOpen} onClose={() => setEffortOpen(false)} model={chosen}
-      selection={effort} onSelect={value => store.setEffort(value)} />
+    <ProjectSheet visible={projectOpen} onClose={() => setProjectOpen(false)} workspace={workspace} requestedProject={references.project ?? undefined} />
+    <AttachMenu anchor={attach.anchor} onClose={attach.close} full={attach.files.full}
+      onCamera={attach.camera} onPhotos={attach.photos} onFiles={attach.documents} apps={references.available}
+      onMention={mention => setText(appendWords(text, mention) + ' ')}
+      onProject={projects ? () => setProjectOpen(true) : undefined} onConnectApps={onIntegrations} />
     <AccountSheet visible={accountOpen} workspace={workspace} onClose={() => setAccountOpen(false)} />
   </KeyboardAvoidingView>;
 }
-const s = StyleSheet.create({ body: { flex: 1 }, top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, gap: 8 }, topEnd: { justifyContent: 'flex-end' },
-  link: { minHeight: 44, flexDirection: 'row', gap: 7, alignItems: 'center' }, small: { fontSize: 12 }, balance: { minHeight: 44, paddingHorizontal: 12, flexDirection: 'row', gap: 6, alignItems: 'center', borderRadius: 22 },
-  empty: { flexGrow: 1, paddingVertical: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, gap: 19 }, spark: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 34, lineHeight: 41, letterSpacing: -1.2, fontWeight: '500', textAlign: 'center' }, subtitle: { fontSize: 15, lineHeight: 23, textAlign: 'center' }, trial: { fontSize: 12 },
-  consent: { padding: 16, gap: 10, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18, marginHorizontal: 18, marginTop: 8 }, consentTitle: { fontSize: 15, fontWeight: '600' },
-  consentText: { fontSize: 13, lineHeight: 20 }, notice: { paddingHorizontal: 22, paddingTop: 8, gap: 5 },
+const s = StyleSheet.create({ body: { flex: 1 },
+  link: { height: 30, borderRadius: 15, paddingHorizontal: 11, flexDirection: 'row', gap: 6, alignItems: 'center' },
+  empty: { flexGrow: 1, paddingVertical: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, gap: 14 },
+  title: { fontSize: 34, lineHeight: 40, letterSpacing: -1.3, fontWeight: '600', textAlign: 'center' },
+  subtitle: { fontSize: 16, lineHeight: 24, textAlign: 'center', marginBottom: 6 },
+  consent: { padding: 18, gap: 10, borderRadius: 24, marginHorizontal: 14, marginTop: 8 }, consentTitle: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  consentText: { fontSize: 14, lineHeight: 21 }, notice: { paddingHorizontal: 22, paddingTop: 8, gap: 5 },
 });

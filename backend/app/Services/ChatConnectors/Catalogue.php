@@ -9,7 +9,8 @@ namespace App\Services\ChatConnectors;
  */
 class Catalogue
 {
-    public function __construct(private readonly Registry $registry, private readonly Installs $installs) {}
+    public function __construct(private readonly Registry $registry, private readonly Installs $installs,
+        private readonly ConnectorOAuth $oauth) {}
 
     public function payload(?int $userId): array
     {
@@ -34,6 +35,8 @@ class Catalogue
             'reads' => $entry['reads'] ?? null,
             'writes' => $entry['writes'] ?? null,
             'credential' => [
+                'kind' => 'oauth',
+                'configured' => $this->oauth->configured($slug),
                 'label' => (string) ($credential['label'] ?? ''),
                 'placeholder' => (string) ($credential['placeholder'] ?? ''),
                 'help' => (string) ($credential['help'] ?? ''),

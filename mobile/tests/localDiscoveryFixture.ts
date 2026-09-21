@@ -19,22 +19,31 @@ const subnet: SearchNetwork = { id: '192.168.1', kind: 'wifi', label: '192.168.1
 // the very machine running it and loopback is the whole search.
 const here: SearchNetwork = { id: 'here', kind: 'wifi', label: 'this computer', searched: true };
 const studio: NearbyComputer = { id: 'Studio._vibyra-host._tcp.local.', name: 'Ellis’s Studio',
-  hostId: key('ab'), host: '192.168.1.24', port: 4318, via: 'wifi' };
+  hostId: key('ab'), host: '192.168.1.24', port: 4318, via: 'wifi', platform: 'macos' };
 const laptop: NearbyComputer = { id: 'Workshop._vibyra-host._tcp.local.', name: 'Workshop MacBook Pro',
-  hostId: key('cd'), host: '192.168.1.31', port: 4318, via: 'direct' };
+  hostId: key('cd'), host: '192.168.1.31', port: 4318, via: 'direct', platform: 'macos' };
 // A computer reached over a VPN rather than the current Wi-Fi.
 const tunnel: NearbyComputer = { id: 'Office._vibyra-host._tcp.local.', name: 'Office desktop',
-  hostId: key('ef'), host: '10.8.0.14', port: 4318, via: 'vpn' };
+  hostId: key('ef'), host: '10.8.0.14', port: 4318, via: 'vpn', platform: 'windows' };
+// The other two families a Host reports, each found alone so the drawn computer can be checked.
+const tower: NearbyComputer = { id: 'Tower._vibyra-host._tcp.local.', name: 'Gaming tower',
+  hostId: key('12'), host: '192.168.1.52', port: 4318, via: 'wifi', platform: 'windows' };
+const server: NearbyComputer = { id: 'Server._vibyra-host._tcp.local.', name: 'Home server',
+  hostId: key('34'), host: '192.168.1.60', port: 4318, via: 'wifi', platform: 'linux' };
 const arriving: NearbyComputer = { id: 'Mini._vibyra-host._tcp.local.', name: 'Living room mini',
   via: 'wifi' };
 // Resolved, but advertising no identity: an older Host that still needs a code.
 const older: NearbyComputer = { id: 'Attic._vibyra-host._tcp.local.', name: 'Attic tower',
   host: '192.168.1.44', port: 4318, via: 'wifi' };
 
+const found: DiscoveryUpdate[] = [{ status: 'searching', computers: [], networks: links },
+  { status: 'searching', computers: [studio], networks: links }];
 const scripts: Record<string, DiscoveryUpdate[]> = {
   searching: [{ status: 'searching', computers: [], networks: links }],
-  one: [{ status: 'searching', computers: [], networks: links },
-    { status: 'searching', computers: [studio], networks: links }],
+  // The same single find, confirmed in one and turned down in the other.
+  one: found, notmine: found,
+  windows: [{ status: 'searching', computers: [], networks: links }, { status: 'searching', computers: [tower], networks: links }],
+  linux: [{ status: 'searching', computers: [], networks: links }, { status: 'searching', computers: [server], networks: links }],
   many: [{ status: 'searching', computers: [studio], networks: links },
     { status: 'searching', computers: [studio, laptop, tunnel, arriving, older], networks: links }],
   denied: [{ status: 'searching', computers: [], networks: links },

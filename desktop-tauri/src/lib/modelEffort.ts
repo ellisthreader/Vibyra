@@ -15,7 +15,7 @@ const OPTION: Record<LaunchEffort, EffortOption> = {
   high: { value: "high", label: "High", hint: "Deep reasoning" },
   xhigh: { value: "xhigh", label: "X-high", hint: "Long agentic coding" },
   max: { value: "max", label: "Max", hint: "Deepest single task" },
-  ultra: { value: "ultra", label: "Ultra", hint: "Automatic delegation" },
+  ultra: { value: "ultra", label: "Ultra", hint: "" },
   ultracode: { value: "ultracode", label: "Ultra code", hint: "X-high + workflows" },
 };
 

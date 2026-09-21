@@ -1,0 +1,16 @@
+.adaptive-stage { display:flex; flex-direction:column; min-height:0; padding:8px; gap:8px; }
+.adaptive-layout { flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; }
+.adaptive-grid { display:grid; flex:1; min-width:0; min-height:0; gap:8px; overflow:hidden; }
+.adaptive-grid>.adaptive-pane-host { width:100%; height:100%; min-width:0; min-height:0; }
+.adaptive-max { display:flex; min-width:0; min-height:0; flex:1; }
+.adaptive-pane-host { flex:1 0 380px; min-width:min(380px,100%); max-width:100%; }
+.adaptive-max,.adaptive-dock-body { display:flex; min-width:0; min-height:0; flex:1; }
+.adaptive-pane-host { min-width:0; min-height:0; display:flex; flex:1; overflow:hidden; }
+.adaptive-pane-host>.pane { flex:1; width:100%; min-height:0; }
+.adaptive-tabs { display:flex; flex-wrap:wrap; gap:4px; overflow:auto; flex-shrink:0; scrollbar-width:thin; }
+.adaptive-tabs button { white-space:nowrap; border:0; border-radius:6px; padding:7px 10px; background:none; color:var(--muted); font-size:11px; }
+.adaptive-tabs button[aria-pressed=true] { background:var(--hover-strong); color:var(--text); }
+.adaptive-stage [hidden] { display:none!important; }
+.adaptive-stage .pane__header { min-height:34px; }
+
+.pane-recovery--compact{padding:7px 10px}.pane-recovery--compact .pane-recovery__card{gap:6px}.pane-recovery--compact summary{font-size:11px;color:var(--muted);cursor:pointer}.pane-recovery--compact .btn{font-size:11px;padding:5px 7px;min-height:28px}.pane-recovery--compact .pane-recovery__actions{gap:5px;flex-wrap:nowrap}

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { launchConfigured } from "../../lib/configuredLaunch";
+import { homeRelative } from "../../lib/homeRelative";
 import { modelEffortOptions, resolvedModelEffort } from "../../lib/modelEffort";
 import { planRunner } from "../../lib/modelRunners";
+import { keyLabel } from "../../lib/platform";
 import { useAgentStore } from "../../state/agentStore";
 import {
   useLaunchSettingsStore,
@@ -11,9 +13,10 @@ import {
 import { useModelCatalogStore } from "../../state/modelCatalogStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useProviderAccountStore } from "../../state/providerAccountStore";
-import { useSettingsStore } from "../../state/settingsStore";
+import { useProjects, useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 import { connectedAccounts } from "../../lib/providerAccountPolicy";
+import { useProviderDefaultStore } from "../../state/providerDefaultStore";
 import { LaunchAccountPicker } from "./LaunchAccountPicker";
 import { LaunchAdvancedOptions } from "./LaunchAdvancedOptions";
 import { LaunchEffortPicker } from "./LaunchEffortPicker";
@@ -21,10 +24,10 @@ import { LaunchModelPicker, type LaunchableModel } from "./LaunchModelPicker";
 import { LaunchTerminalCount } from "./LaunchTerminalCount";
 
 const NO_AGENT_IDS: string[] = [];
-
-/** The launcher: model first, then how many terminals and how they run. */
+/** The launcher: one card. Model first, then how it runs, then Launch. */
 export function LaunchSettingsPanel() {
   const projectId = useProjectStore((state) => state.activeId);
+  const project = useProjects().find((candidate) => candidate.id === projectId) ?? null;
   const settings = useProjectLaunchSettings(projectId);
   const update = useLaunchSettingsStore((state) => state.update);
   const agents = useAgentStore((s) => s.agents);
@@ -63,14 +66,16 @@ export function LaunchSettingsPanel() {
     : null;
   const patch = (value: Partial<typeof settings>) => update(projectId, value);
 
-  // Only the provider this launch will actually use has an account to choose,
-  // and only when more than one of its accounts is signed in.
+  // Show accounts only for this launch provider.
   const runnerId = selected?.plan.runner?.id ?? null;
   const provider = providers.find((candidate) => candidate.runtimeId === runnerId) ?? null;
   const accounts = provider ? connectedAccounts(provider) : [];
+  // Project pick, then the default chosen in Settings, then the first account.
+  const defaultAccount = useProviderDefaultStore((s) => s.byRuntime[runnerId ?? ""]);
   const selectedAccount =
     accounts.find((account) => account.accountId === settings.accountByProvider[runnerId ?? ""])
       ?.accountId ??
+    accounts.find((account) => account.accountId === defaultAccount)?.accountId ??
     accounts[0]?.accountId ??
     "";
 
@@ -92,44 +97,54 @@ export function LaunchSettingsPanel() {
   };
 
   return (
-    <section className="launch-config launch-config--open">
-      <div className="launch-config__body launch-config__body--flat">
-        <LaunchModelPicker
-          models={launchable}
-          selected={selected}
-          loading={!agentsLoaded || !accountsLoaded}
-          open={modelMenuOpen}
-          onOpenChange={setModelMenuOpen}
-          onSelect={(modelId) => {
-            const next = launchable.find(({ model }) => model.id === modelId);
-            const effort = next?.plan.runner
-              ? resolvedModelEffort(next.model, next.plan.runner.id, settings.effort)
-              : null;
-            patch({ modelId, ...(effort ? { effort } : {}) });
-            setModelMenuOpen(false);
-          }}
-          onBrowseAll={() => {
-            setModelMenuOpen(false);
-            openPicker();
-          }}
-          onConnectAccounts={() => openSettingsSection("integrations")}
-        />
+    <section
+      className="launch-card"
+      aria-label="New terminal"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void launch();
+      }}
+    >
+      <header className="launch-card__head">
+        <h2>New terminal</h2>
+        <p>{project ? `${project.name} · ${homeRelative(project.root)}` : "This project"}</p>
+      </header>
 
-        {selected && (
-          <>
+      <LaunchModelPicker
+        models={launchable}
+        selected={selected}
+        loading={!agentsLoaded || !accountsLoaded}
+        open={modelMenuOpen}
+        onOpenChange={setModelMenuOpen}
+        onSelect={(modelId) => {
+          const next = launchable.find(({ model }) => model.id === modelId);
+          const effort = next?.plan.runner
+            ? resolvedModelEffort(next.model, next.plan.runner.id, settings.effort)
+            : null;
+          patch({ modelId, ...(effort ? { effort } : {}) });
+          setModelMenuOpen(false);
+        }}
+        onBrowseAll={() => {
+          setModelMenuOpen(false);
+          openPicker();
+        }}
+        onConnectAccounts={() => openSettingsSection("ai", "terminalAccounts")}
+      />
+
+      {selected && (
+        <>
+          <div className="launch-card__rows">
             <LaunchTerminalCount
               value={settings.terminalCount}
               onChange={(terminalCount) => patch({ terminalCount })}
             />
-
             {selectedEffort && (
               <LaunchEffortPicker
+                provider={runnerId ?? undefined}
                 options={effortOptions}
                 value={selectedEffort}
                 onChange={(effort) => patch({ effort })}
               />
             )}
-
             {provider && runnerId ? (
               <LaunchAccountPicker
                 product={provider.product}
@@ -142,12 +157,25 @@ export function LaunchSettingsPanel() {
                 }
               />
             ) : null}
-
             <LaunchAdvancedOptions settings={settings} patch={patch} />
+          </div>
 
+          <footer className="launch-card__foot">
             <button
               type="button"
-              className="btn btn--primary launch-config__go"
+              className={`launch-safe${settings.safeMode ? " launch-safe--active" : ""}`}
+              aria-pressed={settings.safeMode}
+              onClick={() => patch({ safeMode: !settings.safeMode })}
+            >
+              <span className="launch-switch" aria-hidden="true"><i /></span>
+              <span className="launch-safe__copy">
+                <strong>Safe mode</strong>
+                <small>{settings.safeMode ? "Own branch per terminal" : "Works on the current branch"}</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary launch-card__go"
               data-welcome-focus
               disabled={launching}
               onClick={() => void launch()}
@@ -157,10 +185,11 @@ export function LaunchSettingsPanel() {
                 : settings.terminalCount > 1
                   ? `Launch ${settings.terminalCount} terminals`
                   : "Launch terminal"}
+              <kbd>{keyLabel("Mod+Enter")}</kbd>
             </button>
-          </>
-        )}
-      </div>
+          </footer>
+        </>
+      )}
     </section>
   );
 }

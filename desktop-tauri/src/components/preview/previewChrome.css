@@ -1,0 +1,21 @@
+/* One address, one device. All secondary actions live in disclosures. */
+.workspace-sidebar .preview-address { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 18px 14px 8px; border: 0; background: var(--surface); z-index: 16; }
+.workspace-sidebar .preview-omnibox { display: flex; flex: 1; min-width: 0; align-items: center; gap: 9px; height: 42px; padding: 0 6px 0 13px; border: 1px solid var(--line); border-radius: 24px; background: var(--workspace); box-shadow: 0 2px 4px #00000004; transition: border-color .15s, box-shadow .15s; }
+.workspace-sidebar .preview-omnibox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.workspace-sidebar .preview-omnibox > svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--dim); }
+.workspace-sidebar .preview-omnibox input { padding: 0; border: 0; outline: 0; box-shadow: none; background: transparent; font-size: 12px; height: 100%; }
+.workspace-sidebar .preview-omnibox input::placeholder { color: var(--dim); }
+.preview-omnibox button { display: grid; place-items: center; width: 29px; height: 29px; border: 0; border-radius: 50%; color: var(--accent); background: var(--accent-soft); cursor: pointer; flex-shrink: 0; }
+.preview-omnibox button:hover { background: var(--accent); color: var(--on-action); }
+.preview-omnibox button svg { width: 16px; height: 16px; }
+.preview-address > p { flex-basis: 100%; margin: 5px 10px; }
+.preview-controls { display: flex; align-items: center; gap: 8px; padding: 0 17px 12px; background: var(--surface); border-bottom: 1px solid var(--line-soft); position: relative; z-index: 15; }
+.preview-dimensions { display: none; font-size: 10px; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.workspace-sidebar[data-size="full"] .preview-dimensions { display: block; }
+.preview-controls .icon-btn { width: 28px; height: 28px; flex-shrink: 0; }
+.preview-controls .preview-options { flex-shrink: 0; }
+.preview-controls .preview-options summary { padding: 8px 5px; }
+.preview-controls .preview-options__body { right: 0; top: 33px; width: min(270px, calc(100vw - 60px)); }
+.workspace-sidebar .preview-stage { background: var(--workspace); }
+.workspace-sidebar[data-size="full"] .preview-address { padding-left: max(20px, calc((100% - 780px) / 2)); padding-right: max(20px, calc((100% - 780px) / 2)); }
+.workspace-sidebar[data-size="full"] .preview-controls { padding-left: max(22px, calc((100% - 768px) / 2)); padding-right: max(22px, calc((100% - 768px) / 2)); }

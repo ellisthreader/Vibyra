@@ -1,95 +1,124 @@
-.launch-model { position: relative; }
+/* Model tiles: the one place the launcher is allowed to be loud. Three usual
+ * models plus More, each tile artwork-led, the chosen one ringed in cobalt.
+ * Every menu the launcher opens shares one floating surface (`.launch-menu`). */
 
-.launch-model__current {
+.launch-model { position: relative; padding: 16px 24px 20px; }
+
+.launch-model__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+
+.launch-tile {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 40px;
-  padding: 6px 8px;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r-shell);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 108px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
   background: var(--workspace);
   text-align: left;
-  transition: border-color var(--t-base) var(--e-standard), background var(--t-base) var(--e-standard);
+  transition: border-color var(--t-base) var(--e-standard), background var(--t-base) var(--e-standard), box-shadow var(--t-base) var(--e-standard);
 }
 
-.launch-model__current:hover:not(:disabled) { background: var(--hover); border-color: var(--line); }
-.launch-model__current:disabled { opacity: .55; }
-.launch-model__current > svg { flex: 0 0 auto; margin-left: auto; color: var(--dim); }
+.launch-tile:hover { border-color: var(--border); background: var(--hover); }
+.launch-tile--active { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+.launch-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.launch-model__current--connect {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
+.launch-tile__copy { display: grid; width: 100%; min-width: 0; gap: 2px; margin-top: auto; }
+.launch-tile__copy strong { overflow: hidden; color: var(--text); font-size: 12.5px; font-weight: 600; letter-spacing: -.1px; text-overflow: ellipsis; white-space: nowrap; }
+.launch-tile__copy small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 
-.launch-model__current--connect:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-.launch-model__current--connect .launch-model__meta strong,
-.launch-model__current--connect > svg { color: var(--accent); }
-
-.launch-model__meta { display: grid; min-width: 0; gap: 1px; }
-.launch-model__meta strong {
-  overflow: hidden;
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 680;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.launch-model__meta small {
-  overflow: hidden;
-  color: var(--dim);
-  font-size: 9px;
-  font-weight: 540;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.launch-model__backdrop { position: fixed; inset: 0; z-index: 60; }
-
-.launch-model__menu {
+.launch-tile__check {
   position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  right: 0;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.launch-tile--more { border-style: dashed; background: transparent; }
+.launch-tile--more:hover, .launch-tile--more[aria-expanded="true"] { border-style: solid; }
+.launch-tile__more {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--hover-strong);
+  color: var(--muted);
+}
+
+.launch-model__connect {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  margin: 16px 24px 20px;
+  width: calc(100% - 48px);
+  padding: 16px 18px;
+  border: 1px solid var(--accent-border);
+  border-radius: 11px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-align: left;
+}
+
+.launch-model__connect:disabled { opacity: .6; }
+.launch-model__connect > span { display: grid; gap: 2px; }
+.launch-model__connect strong { font-size: 14px; font-weight: 600; }
+.launch-model__connect small { color: var(--muted); font-size: 12px; }
+
+
+/* --- the shared floating surface --- */
+
+.launch-menu {
+  position: absolute;
   z-index: 61;
   display: grid;
-  gap: 1px;
-  max-height: 320px;
-  padding: 4px;
+  gap: 2px;
+  padding: 6px;
   border: 1px solid var(--border);
-  border-radius: var(--r-menu);
+  border-radius: 12px;
   background: var(--elevated);
   box-shadow: var(--e-menu), var(--e-inset-hi);
-  overflow-y: auto;
   animation: fade-up 160ms var(--e-hero);
 }
 
-.launch-model__option {
+.launch-menu--right { top: calc(100% - 6px); right: 20px; min-width: 240px; }
+
+.launch-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  padding: 5px 7px;
-  border-radius: var(--r-shell);
+  min-height: 42px;
+  padding: 6px 10px;
+  border-radius: 8px;
   color: var(--text);
-  font-size: 10.5px;
-  font-weight: 640;
+  font-size: 13px;
+  font-weight: 520;
   text-align: left;
   transition: background var(--t-base) var(--e-standard);
 }
 
-.launch-model__option:hover { background: var(--hover-strong); }
-.launch-model__option--active { background: var(--accent-soft); }
-.launch-model__option span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.launch-option:hover { background: var(--hover-strong); }
+.launch-option[aria-selected="true"] { background: var(--accent-soft); }
+.launch-option[aria-selected="true"] > svg:last-child { color: var(--accent); }
+.launch-option > svg:last-child { flex: 0 0 auto; margin-left: auto; }
 
-.launch-model__option--more {
-  justify-content: center;
-  color: var(--dim);
-  font-weight: 600;
-}
+.launch-option__copy { display: grid; min-width: 0; gap: 1px; }
+.launch-option__copy strong { overflow: hidden; font-weight: 560; text-overflow: ellipsis; white-space: nowrap; }
+.launch-option__copy small { overflow: hidden; color: var(--muted); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+
+.launch-option--more { justify-content: center; min-height: 38px; margin-top: 2px; border-top: 1px solid var(--line-soft); border-radius: 0 0 8px 8px; color: var(--muted); }
+.launch-option--more:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) { .launch-menu { animation: none; } .launch-tile { transition: none; } }

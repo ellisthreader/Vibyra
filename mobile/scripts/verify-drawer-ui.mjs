@@ -38,23 +38,24 @@ try {
       assert.equal(await button('Open navigation menu').count(), 0, 'Background navigation is hidden from accessibility');
       await fullyVisible(button('Settings'), page, 'Pinned settings');
       // Chat and Settings are pinned to the rail, not the list, so they survive a scroll.
-      await fullyVisible(button('New chat'), page, 'Pinned chat action');
-      // The home face is the map of the app and the phone's chats. The computer's
-      // folders and terminals are not drawn in it: Projects is a place, and a
-      // project opened there brings its own face of this rail.
+      await fullyVisible(button('New project'), page, 'Pinned project action');
+      // The home face is the map of the app and its projects: Ideas first, then
+      // the computer's folders, the places, and Ideas' chats. Terminals are not
+      // drawn in it: a folder row swaps the rail to that folder's own face.
       assert.equal(await page.getByRole('tab').count(), 0, 'The rail carries no filter tabs');
       const project = name => page.getByRole('button', { name: new RegExp(`^${name}, `) });
       const terminal = button('Development server, Terminal, Working');
       await button('Remote').waitFor();
       await button('Integrations').waitFor();
-      assert.equal(await project('Studio').count(), 0, 'The home face lists no project');
+      await page.getByRole('button', { name: /^Ideas, / }).waitFor();
+      await project('Studio').waitFor();
       assert.equal(await terminal.count(), 0, 'The home face lists no terminal');
-      assert.equal(await button('Back to chats').count(), 0, 'The home face has nothing to go back to');
+      assert.equal(await button('Back to chats').count() + await button('Back to projects').count(), 0, 'The home face has nothing to go back to');
       await shot('home');
       await openSearch();
       await search.fill('nothing-matches-this');
-      // The chats section answers for itself; without the phone chat the rail's one empty state does.
-      await page.getByText(/No chats match|No results/).first().waitFor();
+      // The projects answer for themselves; with the phone chat, its chats do too.
+      await page.getByText(/No projects match|No chats match/).first().waitFor();
       await shot('search-empty');
       const closeBounds = await button('Close search').boundingBox();
       assert.ok(closeBounds && closeBounds.width >= 44 && closeBounds.height >= 44, 'Close search has a 44pt touch target');
@@ -63,7 +64,6 @@ try {
       // Entering a project from the Projects page opens the rail at once on that
       // project's own face: its name at the top, its terminals under it, and none
       // of the places or chats that belong to the app as a whole.
-      await button('Projects').click();
       await project('Studio').click();
       await settled();
       const title = panel.getByRole('heading', { name: 'Studio', exact: true });
@@ -86,36 +86,38 @@ try {
       await title.waitFor();
       assert.notEqual(await background(terminal), await background(button('A calmer checkout, Claude, Finished')));
       await shot('selected');
-      // The back arrow leaves the project: the rail returns to all chats and stays open.
-      await button('Back to chats').click();
+      // The back arrow leaves the project: the rail returns to the projects and stays open.
+      await button('Back to projects').click();
       await button('Remote').waitFor();
       assert.equal(await title.count(), 0, 'Leaving the project takes its face with it');
       assert.equal(await terminal.count(), 0, 'Leaving the project takes its terminals with it');
       await button('Close navigation menu').click();
+      // Leaving a folder lands in Ideas, the home.
       await page.getByRole('textbox', { name: 'Prompt for new chat', exact: true }).waitFor();
       // Opening a terminal from anywhere puts the rail in its project's face.
       await open();
-      await button('Projects').click();
       await project('Orbit').click();
       await settled();
       await panel.getByRole('heading', { name: 'Orbit', exact: true }).waitFor();
       await button('Add keyboard shortcuts, Codex, Working').click();
       await open();
       await panel.getByRole('heading', { name: 'Orbit', exact: true }).waitFor();
-      await button('Back to chats').click();
-      await button('Projects').click();
-      await open();
-      assert.notEqual(await background(button('Projects')), await background(button('Remote')));
+      await button('Back to projects').click();
+      // Home again: Ideas is the current project, so its row is the one filled.
+      assert.notEqual(await background(page.getByRole('button', { name: /^Ideas, / })), await background(button('Remote')));
       await button('Remote').click();
       await open();
-      assert.notEqual(await background(button('Remote')), await background(button('Projects')));
+      assert.notEqual(await background(button('Remote')), await background(button('Integrations')));
       // Settings is a sheet over the screen, not a page: the rail closes and the sheet rises.
       await button('Settings').click();
       const settings = page.getByRole('dialog', { name: 'Settings' });
       await settings.waitFor();
       await button('Close Settings').click();
       await settings.waitFor({ state: 'detached' });
+      // Remote is still the page; the Ideas row takes the screen home, and the rail steps aside.
       await open();
+      await page.getByRole('button', { name: /^Ideas, / }).click();
+      await page.getByRole('textbox', { name: 'Prompt for new chat', exact: true }).waitFor();
       await button('New chat').click();
       await page.getByRole('textbox', { name: 'Prompt for new chat', exact: true }).waitFor();
       await open();
@@ -129,12 +131,12 @@ try {
       await button('Skip for now').click();
       await button('Skip — I’ll decide later').click();
       await open();
-      // A phone that has never paired a computer has no projects to remember, so
-      // the rail drops that section and offers the one way to add a computer.
-      // A computer that is merely away keeps its Projects row — see mode.test.ts.
+      // A phone that has never paired a computer still has its projects: Ideas,
+      // and nothing else. Remote is the one way to add a computer.
       assert.equal(await page.getByRole('tab').count(), 0, 'No session filters anywhere');
-      assert.equal(await button('Projects').count(), 0, 'No Projects without a computer');
-      assert.equal(await button('Back to chats').count(), 0, 'No project face without a computer');
+      await page.getByRole('button', { name: /^Ideas, / }).waitFor();
+      assert.equal(await project('Studio').count(), 0, 'No folders without a computer');
+      assert.equal(await button('Back to projects').count(), 0, 'No project face without a computer');
       await button('Remote').scrollIntoViewIfNeeded();
       await shot('empty');
       await fullyVisible(button('Settings'), page, 'Settings in an empty workspace');

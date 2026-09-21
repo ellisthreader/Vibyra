@@ -64,9 +64,12 @@ export const AppIcon = icon(
 
 export const PlayIcon = icon(<path d="M8 5.5v13l11-6.5-11-6.5z" />);
 
-export const MonitorIcon = icon(
+/** An update waiting to be fetched: an arrow landing in a tray. Distinct from
+ * `RestartIcon`, which is what the same chip becomes once it is staged. */
+export const DownloadIcon = icon(
   <>
-    <rect x="3" y="4" width="18" height="12" rx="2" />
-    <path d="M9 20h6M12 16v4" />
+    <path d="M12 3v11" />
+    <path d="m7 10 5 5 5-5" />
+    <path d="M4 20h16" />
   </>,
 );

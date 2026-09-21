@@ -18,13 +18,23 @@ namespace App\Services\Vibes\Auto;
  * too; that is the maintenance contract, and it is why no number here claims to be
  * a measurement.
  *
- * A curated model with no entry is not an error. `derive()` builds a profile from
- * the model's live price and context window instead, so adding a model to the
- * config gets it routed sensibly on the same day rather than making Auto ignore it.
+ * Auto requires an explicit reviewed profile. The legacy derive helper remains
+ * available to callers, but Candidates never admits an unreviewed model merely
+ * because its price looks high. Price is not a quality benchmark.
  */
 final class Profiles
 {
     private const PROFILES = [
+        // Conservative routing preferences for current families, not measured rankings.
+        'openai/gpt-5.6-sol' => ['r' => 0.85, 'c' => 0.88, 'x' => 0.80, 'a' => ['code' => 0.08]],
+        'openai/gpt-5.6-terra' => ['r' => 0.84, 'c' => 0.89, 'x' => 0.80, 'a' => ['code' => 0.10]],
+        'anthropic/claude-fable-5.1' => ['r' => 0.90, 'c' => 0.92, 'x' => 0.85, 'a' => ['code' => 0.10, 'frontend' => 0.08]],
+        'google/gemini-3.5-flash-lite' => ['r' => 0.55, 'c' => 0.56, 'x' => 0.80, 'a' => []],
+        'deepseek/deepseek-v4.1-flash' => ['r' => 0.72, 'c' => 0.76, 'x' => 0.74, 'a' => ['code' => 0.05]],
+        'qwen/qwen3.8-max-0902' => ['r' => 0.80, 'c' => 0.82, 'x' => 0.78, 'a' => ['code' => 0.06]],
+        'moonshotai/kimi-k3' => ['r' => 0.80, 'c' => 0.85, 'x' => 0.82, 'a' => ['code' => 0.08]],
+        'mistralai/mistral-medium-3-5' => ['r' => 0.70, 'c' => 0.76, 'x' => 0.75, 'a' => ['code' => 0.05]],
+        'mistralai/mistral-small-2603' => ['r' => 0.55, 'c' => 0.60, 'x' => 0.70, 'a' => []],
         'openai/gpt-6-astra' => ['r' => 0.97, 'c' => 0.92, 'x' => 0.85, 'a' => ['math' => 0.12, 'analysis' => 0.08]],
         'anthropic/claude-opus-5' => ['r' => 0.94, 'c' => 0.96, 'x' => 0.92, 'a' => ['code' => 0.12, 'frontend' => 0.06]],
         'anthropic/claude-sonnet-5' => ['r' => 0.85, 'c' => 0.90, 'x' => 0.88, 'a' => ['code' => 0.10, 'frontend' => 0.08]],

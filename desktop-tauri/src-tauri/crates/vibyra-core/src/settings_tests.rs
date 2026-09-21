@@ -6,6 +6,7 @@ fn roundtrips_through_disk() {
     let path = tmp.path().join("nested").join("settings.json");
     let settings = Settings {
         font_size: 16,
+        agent_view: "chat".into(),
         workspace_root: Some("/somewhere".into()),
         enabled_agent_ids: vec!["codex".into()],
         ..Settings::default()
@@ -13,6 +14,7 @@ fn roundtrips_through_disk() {
     settings.save_to(&path).unwrap();
     let loaded = Settings::load_from(&path);
     assert_eq!(loaded.font_size, 16);
+    assert_eq!(loaded.agent_view, "chat");
     assert_eq!(loaded.workspace_root.as_deref(), Some("/somewhere"));
     assert_eq!(loaded.voice_shortcut, "F8");
     assert_eq!(loaded.screenshot_shortcut, "F9");
@@ -45,6 +47,7 @@ fn spend_caps_default_in_when_absent_from_an_older_settings_file() {
     std::fs::write(&path, r#"{"theme":"light"}"#).unwrap();
     let loaded = Settings::load_from(&path);
     assert_eq!(loaded.ai_hourly_call_cap, 60);
+    assert_eq!(loaded.agent_view, "terminal");
     assert!(loaded.persist_terminal_scrollback);
     assert_eq!(loaded.ai_monthly_spend_cap_usd, 20.0);
 }
@@ -60,8 +63,15 @@ fn notifications_default_in_for_a_pre_feature_settings_file() {
     let loaded = Settings::load_from(&path);
     assert!(loaded.notifications.enabled);
     assert!(loaded.notifications.sound_enabled);
-    assert_eq!(loaded.notifications.categories.len(), 8);
+    assert_eq!(loaded.notifications.categories.len(), 9);
     assert_eq!(loaded.notifications.categories["agentFailed"].cue, "fail");
+    // An existing install must gain the update category already reaching the
+    // desktop, or the person who upgrades into this feature is the one person
+    // who never hears about the next release.
+    assert_eq!(
+        loaded.notifications.categories["appUpdate"].channel,
+        "system"
+    );
     assert!((0.0..=1.0).contains(&loaded.notifications.volume));
 }
 

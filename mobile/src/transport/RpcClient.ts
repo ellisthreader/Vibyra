@@ -11,13 +11,26 @@ export class RpcClient {
   private ready = false;
   private connected = false;
   private connectionId: string | undefined;
-  constructor(private post: (message: unknown) => void, private uuid: () => string) {}
+  private queue: Notice[] = [];
+  private delivering = false;
+  constructor(private post: (message: unknown) => void, private uuid: () => string, private openTimeout = 8000) {}
   listen(callback: (notice: Notice) => void) {
     this.listeners.add(callback); return () => { this.listeners.delete(callback); };
   }
+  /** Notices are delivered one at a time, in order. A listener may close the
+   *  connection while a notice is still being handed out, and `close()` reports
+   *  'closed' from inside that loop; delivered on the spot, that echo reached
+   *  later listeners before the notice that caused it, so an attempt the
+   *  computer refused read "Connection closed." instead of the reason. */
   receive = (raw: unknown) => {
     if (!raw || typeof raw !== 'object' || !('type' in raw)) return;
-    const notice = raw as Notice;
+    this.queue.push(raw as Notice);
+    if (this.delivering) return;
+    this.delivering = true;
+    try { for (let next = this.queue.shift(); next; next = this.queue.shift()) this.deliver(next); }
+    finally { this.delivering = false; }
+  };
+  private deliver(notice: Notice) {
     if (notice.connectionId && notice.connectionId !== this.connectionId) return;
     if (notice.type === 'ready') this.ready = true;
     if (notice.type === 'connected') this.connected = true;
@@ -33,7 +46,7 @@ export class RpcClient {
       }
     }
     for (const listener of this.listeners) listener(notice);
-  };
+  }
   async waitFor(type: string, action?: () => void, timeout = 15000): Promise<Notice> {
     if (type === 'ready' && this.ready) return { type: 'ready' };
     return new Promise((resolve, reject) => {
@@ -54,8 +67,18 @@ export class RpcClient {
   async open(pairing: Pairing, privateKey: string) {
     await this.waitFor('ready');
     this.connectionId = this.uuid();
-    return this.waitFor('connected', () => this.post({ target: 'vibyra-runtime', type: 'open',
-      pairing, privateKey, connectionId: this.connectionId, deviceName: 'Vibyra mobile' }), 110000);
+    const connectionId = this.connectionId;
+    // A dead Wi-Fi address must fail promptly. Once its socket opens, retain
+    // the longer Noise/owner-approval deadline so approval is never hurried.
+    const timer = setTimeout(() => this.receive({ type: 'error', connectionId,
+      message: 'The network connection to your computer timed out.' }), this.openTimeout);
+    const dispose = this.listen(notice => {
+      if (notice.type === 'transport-open' || notice.type === 'connected') clearTimeout(timer);
+    });
+    try {
+      return await this.waitFor('connected', () => this.post({ target: 'vibyra-runtime', type: 'open',
+        pairing, privateKey, connectionId, deviceName: 'Vibyra mobile' }), 110000);
+    } finally { clearTimeout(timer); dispose(); }
   }
   request<T = any>(method: string, params: object = {}, timeout = 20000): Promise<T> {
     if (!this.connected) return Promise.reject(new RpcError('Connect to your computer first.'));
@@ -70,8 +93,11 @@ export class RpcClient {
       catch { clearTimeout(timer); this.pending.delete(id); reject(this.interrupted(method, 'Connection interrupted.')); }
     });
   }
+  /** Never throws. With no runtime to tell there is no socket left to close, and
+   *  a close that stopped half way left this client believing it was connected. */
   close() {
-    this.post({ target: 'vibyra-runtime', type: 'close' }); this.connectionId = undefined;
+    try { this.post({ target: 'vibyra-runtime', type: 'close' }); } catch { /* nothing to close */ }
+    this.connectionId = undefined;
     this.receive({ type: 'closed' });
   }
   private interrupted(method: string, message: string) {

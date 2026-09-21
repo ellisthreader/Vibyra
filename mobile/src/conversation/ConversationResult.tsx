@@ -4,7 +4,7 @@ import { Icon } from '../ui/primitives';
 import { ConversationText } from './ConversationText';
 import type { ConversationResult as Result } from './types';
 
-export function ConversationResult({ item, onReview }: { item: Result; onReview?: () => void }) {
+export function ConversationResult({ item, onReview, summary }: { item: Result; summary?: string; onReview?: () => void }) {
   const { colors } = useTheme();
   const label = item.status === 'completed' ? 'Finished' : item.status === 'interrupted' ? 'Stopped' : 'Needs attention';
   const normalized = item.text.trim().replace(/[.!]+$/, '').toLowerCase();
@@ -13,14 +13,14 @@ export function ConversationResult({ item, onReview }: { item: Result; onReview?
   return <View style={s.root}>
     <View style={s.status}><Icon size={16} color={item.status === 'failed' ? colors.error : colors.muted}
       name={item.status === 'completed' ? 'checkmark-circle-outline' : item.status === 'interrupted' ? 'stop-circle-outline' : 'alert-circle-outline'} />
-      <Text style={[s.label, { color: colors.muted }]}>{label}</Text></View>
+      <Text style={[s.label, { color: colors.muted }]}>{label}{summary ? ` · ${summary}` : ''}</Text></View>
     {Boolean(item.text) && !repeated && <ConversationText text={item.text} />}
     {item.checks?.map((check, index) => <Text key={index} style={[s.check, { color: colors.muted }]}>{check}</Text>)}
-    {onReview && <Pressable onPress={onReview} accessibilityRole="button" accessibilityLabel="Review project changes"
+    {onReview && <Pressable onPress={onReview} accessibilityRole="button" accessibilityLabel="Review conversation changes"
       style={({ pressed }) => [s.review, { borderColor: colors.border, backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 }]}>
       <View style={[s.icon, { backgroundColor: colors.elevated }]}><Icon name="git-compare-outline" size={20} color={colors.muted} /></View>
-      <View style={s.copy}><Text style={[s.title, { color: colors.text }]}>Review project changes</Text>
-        <Text style={[s.detail, { color: colors.muted }]}>Current changes across this project</Text></View>
+      <View style={s.copy}><Text style={[s.title, { color: colors.text }]}>Review conversation changes</Text>
+        <Text style={[s.detail, { color: colors.muted }]}>Recorded changes from this conversation</Text></View>
       <Icon name="chevron-forward" size={15} color={colors.muted} />
     </Pressable>}
   </View>;

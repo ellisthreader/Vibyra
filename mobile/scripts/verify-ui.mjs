@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
-import { capture, fullyVisible, terminalText } from './ui-test-helpers.mjs';
+import { chromePath } from './chrome-path.mjs';
+import { capture, fullyVisible, openSession, terminalText } from './ui-test-helpers.mjs';
 
 const out = process.env.VIBYRA_SHOTS ?? '/tmp/vibyra-ios-screenshots';
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome',
+const browser = await chromium.launch({ executablePath: chromePath(),
   headless: true, args: ['--no-sandbox'] });
 const url = process.env.VIBYRA_URL ?? 'http://localhost:8081';
 let activePage;
@@ -20,8 +21,8 @@ try {
       const shot = name => capture(page, `${out}/${device}-${colorScheme}-${name}.png`);
       const drawer = () => page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
       const menu = async name => { await drawer(); await page.getByRole('button', { name, exact: true }).click(); };
-      // Recents is one list with no filter tabs, so a session is one click from the rail.
-      const session = async name => { await drawer(); await page.getByRole('button', { name, exact: true }).click(); };
+      // A session sits in its project's face of the rail; the sample's Codex chat is in Orbit, the rest in Studio.
+      const session = name => openSession(page, name, name.startsWith('Add keyboard shortcuts') ? 'Orbit' : 'Studio');
       await page.goto(url);
       await page.getByRole('button', { name: 'Get started', exact: true }).waitFor();
       await shot('welcome');
@@ -44,30 +45,37 @@ try {
       await page.getByRole('button', { name: 'Skip for now', exact: true }).click();
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
       await shot('computer-setup');
-      // Setup emails a download link now; there is no pairing-code page behind it.
-      await page.getByRole('button', { name: 'Send me an email link', exact: true }).waitFor();
+      // Setup emails a download link now (src/connection/HostLinkAction.tsx); there is no pairing-code page behind it.
+      await page.getByRole('button', { name: 'Email me the download link', exact: true }).waitFor();
       await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
       await shot('computer-network');
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
       await page.getByRole('button', { name: 'Skip — I’ll decide later', exact: true }).click();
+      // The app opens in Ideas, the phone's chat, and asks for no computer.
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
       await page.reload();
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
       assert.equal(await page.getByRole('button', { name: 'Get started', exact: true }).count(), 0, 'The welcome flow stays dismissed after a reload');
       await shot('home');
-      await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+      // A computer is added from the rail's + Project, from Remote or from Settings; never from the chat.
+      await menu('New project');
       await shot('computer-setup');
       await page.getByRole('button', { name: 'I’ve installed it', exact: true }).click();
       await shot('connect');
       await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
       await menu('Settings');
-      await page.getByRole('button', { name: 'Open sample workspace', exact: true }).click();
-      await page.getByText('Sample workspace', { exact: true }).first().waitFor();
+      await page.getByRole('button', { name: 'Advanced', exact: true }).click();
+      await page.getByRole('switch', { name: 'Sample workspace', exact: true }).click();
+      await page.getByRole('button', { name: 'Open terminal', exact: true }).waitFor();
       await shot('sample-home');
       await session('A calmer checkout, Claude');
-      await page.getByRole('tab', { name: 'Chat', exact: true }).waitFor();
-      await shot('chat');
       const composer = page.getByRole('textbox', { name: 'Prompt for coding agent' });
+      await composer.waitFor();
+      // A chat is the app header and the conversation: no view switch, no project row.
+      assert.equal(await page.getByRole('tab').count(), 0, 'A chat shows no Chat/Terminal switch');
+      assert.equal(await page.getByRole('button', { name: 'Open session project', exact: true }).count(), 0,
+        'A chat shows no project row');
+      await shot('chat');
       const draft = 'Keep the summary clear.\nLeave room for the next step.';
       await composer.fill(draft);
       await page.setViewportSize({ width, height: Math.max(450, height - 270) });
@@ -101,20 +109,26 @@ try {
       assert.equal(await page.getByText('CHAT_A_ISOLATION_MARKER', { exact: true }).count(), 0,
         'Chat messages cannot leak into another conversation');
       await session('Development server, Terminal');
-      const terminalInput = page.getByRole('textbox', { name: 'Command for computer terminal' });
-      await terminalInput.fill('TERMINAL_ISOLATION_MARKER');
-      await page.getByRole('button', { name: 'Send command and Enter', exact: true }).click();
-      await terminalText(page, 'TERMINAL_ISOLATION_MARKER');
+      // No box: the terminal itself is typed into, and the sample shell echoes the line.
+      const typeIntoTerminal = async text => {
+        await page.locator('iframe[title="Interactive terminal"]').click();
+        await page.keyboard.type(text);
+        await page.keyboard.press('Enter');
+      };
+      await typeIntoTerminal('TERMINAL_ISOLATION_MARKER');
+      const frame = await terminalText(page, 'TERMINAL_ISOLATION_MARKER');
+      assert.equal(await frame.locator('body').innerText().then(text => text.includes('CHAT_A_ISOLATION_MARKER')), false,
+        'Terminal output cannot leak between sessions');
+      // A terminal has no project row: its options sit in the header's action slot instead.
+      assert.equal(await page.getByRole('button', { name: 'Open session project', exact: true }).count(), 0,
+        'A terminal shows no project row');
+      await page.getByRole('button', { name: 'Session options', exact: true }).waitFor();
       await page.setViewportSize({ width: height, height: width });
-      await fullyVisible(page.getByRole('button', { name: 'Send command and Enter', exact: true }), page, 'Landscape terminal send button');
+      await fullyVisible(page.locator('iframe[title="Interactive terminal"]'), page, 'Landscape terminal output');
       await shot('terminal-landscape');
       await page.setViewportSize({ width, height });
-      await session('A calmer checkout, Claude');
-      await page.getByRole('tab', { name: 'Terminal', exact: true }).click();
-      const frame = await terminalText(page, 'CHAT_A_ISOLATION_MARKER');
-      assert.equal(await frame.locator('body').innerText().then(text => text.includes('TERMINAL_ISOLATION_MARKER')), false,
-        'Terminal output cannot leak between sessions');
-      await page.getByRole('button', { name: 'New chat', exact: true }).click();
+      // An open terminal's header action is its options, so a new chat starts from the menu.
+      await menu('New chat');
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).fill('A draft carried into a new chat');
       await page.getByRole('button', { name: 'Choose AI model', exact: true }).click();
       assert.equal(await page.getByRole('radio', { name: 'Auto', exact: true }).getAttribute('aria-checked'), 'true',
@@ -139,9 +153,11 @@ try {
       assert.equal(await page.getByRole('button', { name: 'Create chat', exact: true }).count(), 0,
         'Sending a chat never opens a session configuration sheet');
       assert.equal(await composer.inputValue(), 'A draft carried into a new chat', 'New chat prompt remains unsent');
-      await page.getByRole('button', { name: 'New chat', exact: true }).click();
+      await menu('New chat');
       await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
-      assert.equal(await terminalInput.inputValue(), '', 'New terminal does not inherit the new chat prompt');
+      const fresh = await terminalText(page, '$');
+      assert.equal((await fresh.locator('body').innerText()).includes('A draft carried into a new chat'), false,
+        'New terminal does not inherit the new chat prompt');
       await drawer();
       assert.equal(await page.getByRole('tab').count(), 0, 'Recents carries no filter tabs');
       // Search opens from the icon beside the logo, so the rail's top stays one line.
@@ -149,20 +165,23 @@ try {
       await page.getByRole('textbox', { name: 'Search chats' }).fill('QA new terminal');
       await shot('drawer');
       await page.getByRole('button', { name: 'Close search', exact: true }).click();
-      await page.getByRole('button', { name: 'Projects', exact: true }).click();
+      await page.getByRole('button', { name: /^Studio, / }).click();
       await shot('projects');
+      await page.getByRole('button', { name: 'Close navigation menu', exact: true }).click();
       await menu('Remote'); await shot('computers');
-      await menu('Settings'); await shot('settings');
-      await page.getByRole('button', { name: 'Appearance', exact: true }).click();
+      await menu('Settings'); await page.getByRole('dialog', { name: 'Settings' }).waitFor(); await shot('settings');
+      // Appearance is set right in the sheet's list, as tiles.
       await page.getByRole('radio', { name: colorScheme === 'dark' ? 'Light' : 'Dark', exact: true }).click();
       await shot('switched-appearance');
-      await page.getByRole('button', { name: 'Leave sample workspace', exact: true }).click();
-      await page.getByRole('button', { name: 'Connect computer', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Advanced', exact: true }).click();
+      await page.getByRole('switch', { name: 'Sample workspace', exact: true }).click();
+      await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
       await menu('Settings');
-      await page.getByRole('button', { name: 'Sign in or create account', exact: true }).click();
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
       await page.getByRole('button', { name: 'Log in', exact: true }).waitFor();
       await shot('account-sheet');
       await page.getByRole('button', { name: 'Close Your Vibyra account', exact: true }).click();
+      await page.getByRole('button', { name: 'Advanced', exact: true }).click();
       await page.getByRole('button', { name: 'Show welcome again', exact: true }).click();
       await page.getByRole('button', { name: 'Get started', exact: true }).waitFor();
       assert.deepEqual(errors, []);

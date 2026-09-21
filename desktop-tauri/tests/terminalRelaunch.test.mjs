@@ -2,6 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { registerHooks } from "node:module";
 
+// Browser diagnostics are optional in the app; supply its browser boundary in Node.
+globalThis.window = {};
+test.after(() => { delete globalThis.window; });
+
 // Exercise the real coordinator; replace only its native/renderer boundaries.
 const operations = {};
 globalThis.__vibyraResumeTest = operations;
@@ -95,7 +99,20 @@ test("New chat requests a new conversation and a newly inspected workspace", asy
   assert.equal(options.agentSessionId, null);
   assert.equal(options.resumeCwd, undefined);
   assert.equal(options.safeSnapshotFingerprint, "fresh");
-  assert.equal(options.replaySnapshot, null);
+});
+
+// The pane a user reaches this way is usually one whose provider history is
+// gone: the only copy of that conversation left is the snapshot on screen.
+test("New chat in a suspended pane keeps the output that is its only copy", async () => {
+  const fixture = setup();
+  await fixture.run(false);
+  assert.equal(fixture.calls[0][1].replaySnapshot, "Saved output");
+});
+
+test("New chat replacing a live process starts the pane clean", async () => {
+  const fixture = setup({ id: 7, status: "running", snapshot: null });
+  await fixture.run(false);
+  assert.equal(fixture.calls[0][1].replaySnapshot, null);
 });
 
 test("an exited live pane reads its native history before replacing its process", async () => {

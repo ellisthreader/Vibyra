@@ -48,6 +48,7 @@ const CATEGORY: Record<NotificationCategory, CategoryMark> = {
   preview: { Icon: EyeIcon, label: "Preview" },
   aiSpend: { Icon: CoinIcon, label: "AI usage" },
   models: { Icon: SparklesIcon, label: "Models" },
+  appUpdate: { Icon: AppIcon, label: "Update" },
   system: { Icon: AppIcon, label: "Vibyra" },
 };
 

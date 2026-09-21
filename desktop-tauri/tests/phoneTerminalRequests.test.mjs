@@ -71,6 +71,8 @@ test("the window answers every request through the same chain the phone waits on
   const requests = await read("src/lib/phoneTerminalRequests.ts");
   assert.match(requests, /listen<PhoneTerminalRequest>\("phone:terminal-request"/, "a request is heard the moment Rust has it");
   assert.match(requests, /phoneTerminalRequests\(\)/, "and one asked before the listener existed is still found");
+  assert.match(requests, /launchConfigured\(agent, projectId, \{ title, view: "chat" \}\)/,
+    "a phone's request is a chat page, so Claude and Gemini launch as conversations whatever the Mac's Agent view is");
   assert.match(requests, /chatRequest\("session\.stop"/, "a shared chat is ended on the engine");
   assert.match(requests, /terminals\.dismiss\(id\)/, "and its card comes down");
   const lifecycle = await read("src/lib/useSessionLifecycle.ts");

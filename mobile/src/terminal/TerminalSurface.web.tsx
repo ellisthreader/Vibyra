@@ -1,32 +1,25 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 import { terminalHtml } from '../generated/terminal';
 import { useTheme } from '../theme';
-import { terminalState } from './terminalState';
-import type { TerminalSurfaceProps } from './TerminalSurface.types';
+import { useTerminalBridge } from './useTerminalBridge';
+import type { TerminalSurfaceHandle, TerminalSurfaceProps } from './TerminalSurface.types';
 
-export function TerminalSurface({ output, disabled, onInput, onResize, onPasteMode, fontSize, onFontSize }: TerminalSurfaceProps) {
+export function TerminalSurface({ ref, ...props }: TerminalSurfaceProps & { ref?: Ref<TerminalSurfaceHandle> }) {
   const frame = useRef<HTMLIFrameElement>(null);
-  const ready = useRef(false);
-  const { colors, dark } = useTheme();
-  const send = useCallback(() => frame.current?.contentWindow?.postMessage(
-    JSON.stringify(terminalState(output, disabled, colors, dark, fontSize)), '*'), [output, disabled, colors, dark, fontSize]);
+  const { colors } = useTheme();
+  const post = useCallback((message: string) => frame.current?.contentWindow?.postMessage(message, '*'), []);
+  const bridge = useTerminalBridge(props, post);
+  const { receive } = bridge;
+  useImperativeHandle(ref, () => ({ scrollToBottom: bridge.scrollToBottom }), [bridge.scrollToBottom]);
   useEffect(() => {
-    const receive = (event: MessageEvent) => {
+    const listen = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || typeof event.data !== 'string') return;
-      let data;
-      try { data = JSON.parse(event.data); } catch { return; }
-      if (data.target !== 'vibyra-terminal') return;
-      if (data.type === 'ready') { ready.current = true; send(); }
-      if (data.type === 'paste-mode') onPasteMode?.(data.enabled === true);
-      if (data.type === 'font-size' && typeof data.size === 'number') onFontSize?.(data.size);
-      if (data.type === 'input' && !disabled && typeof data.data === 'string') onInput(data.data);
-      if (data.type === 'resize' && Number.isInteger(data.cols) && Number.isInteger(data.rows)) onResize(data.cols, data.rows);
+      receive(event.data);
     };
-    window.addEventListener('message', receive);
-    if (ready.current) send();
-    return () => window.removeEventListener('message', receive);
-  }, [send, disabled, onInput, onResize, onPasteMode]);
-  return <iframe ref={frame} title={disabled ? 'Terminal output, observing' : 'Interactive terminal'}
+    window.addEventListener('message', listen);
+    return () => window.removeEventListener('message', listen);
+  }, [receive]);
+  return <iframe ref={frame} title={props.disabled ? 'Terminal output, observing' : 'Interactive terminal'}
     srcDoc={terminalHtml} sandbox="allow-scripts" style={{ width: '100%', height: '100%', flex: 1,
       border: 0, background: colors.workspace }} />;
 }

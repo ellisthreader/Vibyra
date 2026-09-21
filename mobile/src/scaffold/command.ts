@@ -42,9 +42,14 @@ export function buildScaffoldRequest(entry: ProjectTemplate, dir: string, option
     steps, gitInit: options.git };
 }
 
-/** The commands as the review step shows them: one line each, quoted the way
- *  a shell would need, though nothing is ever run through a shell. */
+/** The commands as the setup step shows them: one line each, quoted the way a
+ *  shell would need, though nothing is ever run through a shell.
+ *
+ *  `git init` is listed too. It is not one of the template's steps — the
+ *  computer runs it after them, from `gitInit` — but a switch that is on and a
+ *  command list that never mentions it reads as a switch that does nothing. */
 export function describeSteps(request: ScaffoldRequest): string[] {
-  return request.steps.map(step => [step.program, ...step.args]
+  const commands = request.steps.map(step => [step.program, ...step.args]
     .map(token => (/[\s"']/.test(token) ? JSON.stringify(token) : token)).join(' '));
+  return request.gitInit ? [...commands, 'git init'] : commands;
 }

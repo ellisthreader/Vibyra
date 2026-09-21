@@ -1,6 +1,6 @@
 use crate::{identity::Identity, state::Shared};
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap},
     sync::{Arc, Mutex},
 };
 
@@ -26,7 +26,7 @@ fn state_with_nearby(nearby: bool) -> (tempfile::TempDir, Arc<Shared>) {
         identity: Mutex::new(identity),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
-        active: Mutex::new(HashSet::new()),
+        active: Mutex::new(HashMap::new()),
         pairing_url: "ws://127.0.0.1:4318".into(),
         relay: false,
         nearby,
