@@ -37,6 +37,7 @@ import "./styles/workspace.part-02.css";
 import "./styles/workspace.part-03.css";
 import "./styles/workspace.part-04.css";
 import "./styles/update-banner.css";
+import "./styles/update-chip.css";
 import "./styles/notifications-toast.css";
 import "./styles/notifications-toast.part-02.css";
 import "./styles/notifications-center.css";

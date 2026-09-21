@@ -4,6 +4,7 @@ import { NotificationBellHost } from "../notifications/NotificationBellHost";
 import { AccountMenu } from "./AccountMenu";
 import { CommandBar } from "./CommandBar";
 import { DockSizeControl } from "./DockSizeControl";
+import { UpdateChip } from "./UpdateChip";
 import { ResizeHandles, WindowControls } from "./WindowChrome";
 
 export function TitleBar() {
@@ -17,6 +18,7 @@ export function TitleBar() {
       <div className="chrome__drag" data-tauri-drag-region><CommandBar /></div>
       <div className="chrome__right">
         {inProject && <><DockSizeControl /><span className="chrome__sep" aria-hidden="true" /></>}
+        <UpdateChip />
         <NotificationBellHost /><AccountMenu /><WindowControls />
       </div>
     </header>

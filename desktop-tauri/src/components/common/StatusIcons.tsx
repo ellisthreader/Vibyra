@@ -70,3 +70,13 @@ export const MonitorIcon = icon(
     <path d="M9 20h6M12 16v4" />
   </>,
 );
+
+/** An update waiting to be fetched: an arrow landing in a tray. Distinct from
+ * `RestartIcon`, which is what the same chip becomes once it is staged. */
+export const DownloadIcon = icon(
+  <>
+    <path d="M12 3v11" />
+    <path d="m7 10 5 5 5-5" />
+    <path d="M4 20h16" />
+  </>,
+);

@@ -23,7 +23,7 @@
 }
 
 /* Exempt: animations that ARE the feedback, not decoration. A frozen spinner
-   says "hung" rather than "working", and `vupdate-sweep` ends its cycle
+   says "hung" rather than "working", and the update sweeps end their cycle
    translated off the end of its track, so a stopped update bar reads as empty.
    All of these run only while an operation is in flight, so they cost nothing
    at rest — which is what this mode is actually protecting. The same judgement
@@ -51,6 +51,12 @@
 
 :root[data-performance="on"] .vupdate__bar--indeterminate {
   animation: vupdate-sweep 1.1s ease-in-out infinite !important;
+}
+
+/* Same judgement as the banner bar above: the title-bar chip's sweep is the
+   only signal that a download with no content length is still moving. */
+:root[data-performance="on"] .update-chip--indeterminate::after {
+  animation: update-chip-sweep 1.1s ease-in-out infinite !important;
 }
 
 :root[data-performance="on"] .chat-turn__bubble--thinking i {

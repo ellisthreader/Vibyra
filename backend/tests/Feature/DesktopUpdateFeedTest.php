@@ -160,4 +160,84 @@ class DesktopUpdateFeedTest extends TestCase
 
         $this->check('appimage', '0.1.3')->assertNoContent();
     }
+
+    /**
+     * macOS is the one platform where the download and the update are different
+     * files. Before the `updater` overlay existed, the single config entry had
+     * to be a .dmg for the download page — and `ReleaseArtifact::ready()` then
+     * rejected it for the feed on the extension check, so every Mac was told
+     * "up to date" forever whatever was configured.
+     */
+    private function macos(): void
+    {
+        $dmg = 'mac-dmg-bytes';
+        $archive = 'mac-updater-archive';
+        Storage::disk('releases')->put('private/Vibyra.dmg', $dmg);
+        Storage::disk('releases')->put('private/Vibyra.app.tar.gz', $archive);
+        config(['releases.platforms.macos-arm64' => [
+            'label' => 'Vibyra for macOS (Apple Silicon)',
+            'architecture' => 'arm64',
+            'version' => '0.7.0',
+            'path' => 'private/Vibyra.dmg',
+            'filename' => 'Vibyra.dmg',
+            'size_bytes' => strlen($dmg),
+            'sha256' => hash('sha256', $dmg),
+            'minimum_system_version' => '12.0',
+            'signature' => self::SIGNATURE,
+            'expected_extension' => 'dmg',
+            'require_complete_metadata' => true,
+            'updater' => [
+                'version' => '0.7.5',
+                'path' => 'private/Vibyra.app.tar.gz',
+                'filename' => 'Vibyra.app.tar.gz',
+                'size_bytes' => strlen($archive),
+                'sha256' => hash('sha256', $archive),
+                'signature' => self::SIGNATURE,
+                'notes' => 'Live updates.',
+                'published_at' => '2026-09-21T09:00:00Z',
+                'expected_extension' => 'gz',
+            ],
+        ]]);
+    }
+
+    public function test_a_mac_client_is_offered_the_signed_archive_not_the_dmg(): void
+    {
+        $this->macos();
+
+        $this->check('app', '0.7.4', 'darwin', 'aarch64')
+            ->assertOk()
+            ->assertJsonPath('version', '0.7.5')
+            ->assertJsonPath('notes', 'Live updates.')
+            ->assertJsonPath('pub_date', '2026-09-21T09:00:00Z')
+            ->assertJsonPath('url', url('/downloads/macos-arm64/update'));
+    }
+
+    /** The updater version is its own line: a Mac on 0.7.5 is current even
+     * though the public .dmg is still back at 0.7.0. */
+    public function test_the_mac_update_version_is_independent_of_the_download(): void
+    {
+        $this->macos();
+
+        $this->check('app', '0.7.5', 'darwin', 'aarch64')->assertNoContent();
+        $this->get('/downloads/macos-arm64')->assertOk()
+            ->assertHeader('content-disposition', 'attachment; filename=Vibyra.dmg');
+        $this->get('/downloads/macos-arm64/update')->assertOk()
+            ->assertHeader('content-disposition', 'attachment; filename=Vibyra.app.tar.gz');
+    }
+
+    /** An empty overlay must read as "not configured" and fall through, not as
+     * "configured with nothing" — unset Railway variables arrive as '' and 0. */
+    public function test_an_unconfigured_overlay_falls_back_to_the_single_artifact(): void
+    {
+        config(['releases.platforms.linux' => array_merge(
+            $this->platform('Vibyra.AppImage', self::APPIMAGE, 'appimage', '0.2.0'),
+            ['updater' => ['version' => '', 'path' => '', 'size_bytes' => 0]],
+        )]);
+
+        $this->check('appimage', '0.1.3')
+            ->assertOk()
+            ->assertJsonPath('version', '0.2.0')
+            ->assertJsonPath('url', url('/downloads/linux'));
+        $this->get('/downloads/linux/update')->assertNotFound();
+    }
 }

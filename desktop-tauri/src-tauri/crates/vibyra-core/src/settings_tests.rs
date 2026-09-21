@@ -60,8 +60,15 @@ fn notifications_default_in_for_a_pre_feature_settings_file() {
     let loaded = Settings::load_from(&path);
     assert!(loaded.notifications.enabled);
     assert!(loaded.notifications.sound_enabled);
-    assert_eq!(loaded.notifications.categories.len(), 8);
+    assert_eq!(loaded.notifications.categories.len(), 9);
     assert_eq!(loaded.notifications.categories["agentFailed"].cue, "fail");
+    // An existing install must gain the update category already reaching the
+    // desktop, or the person who upgrades into this feature is the one person
+    // who never hears about the next release.
+    assert_eq!(
+        loaded.notifications.categories["appUpdate"].channel,
+        "system"
+    );
     assert!((0.0..=1.0).contains(&loaded.notifications.volume));
 }
 

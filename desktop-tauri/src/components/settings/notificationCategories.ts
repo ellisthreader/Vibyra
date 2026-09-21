@@ -55,6 +55,12 @@ export const CATEGORY_DESCRIPTORS: CategoryDescriptor[] = [
     osCapable: false,
   },
   {
+    id: "appUpdate",
+    label: "Vibyra updates",
+    hint: "A new version of Vibyra is ready to install.",
+    osCapable: true,
+  },
+  {
     id: "system",
     label: "App problems",
     hint: "Failures Vibyra cannot recover from on its own.",

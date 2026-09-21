@@ -30,6 +30,11 @@ Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
 Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])
     ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
 
+// The signed package the in-app updater fetches. Only macOS has one of its own
+// today; every other platform updates from the download URL above.
+Route::get('/downloads/{platform}/update', [ReleaseDownloadController::class, 'updateArtifact'])
+    ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
+
 // The installed desktop app polls this every 20 minutes; 204 is the usual answer.
 Route::get('/web-api/updates/{target}/{arch}/{bundleType}/{current}', [ReleaseUpdateController::class, 'check'])
     ->whereIn('target', ['linux', 'windows', 'darwin'])
