@@ -18,7 +18,10 @@ use std::{
 /// Under the phone's own 20 s request timeout, so the phone hears this Mac's
 /// answer rather than its own clock.
 pub const WINDOW_TIMEOUT: Duration = Duration::from_secs(15);
-pub const NO_WINDOW: &str = "Vibyra on your Mac did not answer. Open it there and try again.";
+pub const NO_WINDOW: &str = crate::platform_text::for_computer(
+    "Vibyra on your Mac did not answer. Open it there and try again.",
+    "Vibyra on your computer did not answer. Open it there and try again.",
+);
 
 type Notify = Box<dyn Fn(&Value) + Send + Sync>;
 

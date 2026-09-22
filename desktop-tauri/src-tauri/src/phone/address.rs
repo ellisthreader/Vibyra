@@ -2,9 +2,12 @@ use std::net::{IpAddr, SocketAddr, UdpSocket};
 
 pub fn connection_address(value: &str) -> Result<IpAddr, String> {
     let value = value.trim().trim_start_matches('[').trim_end_matches(']');
-    let ip: IpAddr = value
-        .parse()
-        .map_err(|_| "Enter this Mac's IPv4 or IPv6 address")?;
+    let ip: IpAddr = value.parse().map_err(|_| {
+        crate::platform_text::for_computer(
+            "Enter this Mac's IPv4 or IPv6 address",
+            "Enter this computer's IPv4 or IPv6 address",
+        )
+    })?;
     let allowed = match ip {
         IpAddr::V4(v4) => {
             let b = v4.octets();

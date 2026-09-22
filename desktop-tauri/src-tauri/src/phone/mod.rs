@@ -53,8 +53,10 @@ use workspace::SharedWorkspace;
 
 use preferences::computer_name;
 
-pub const NO_NETWORK: &str =
-    "Connect this Mac to Wi-Fi or a private VPN. Vibyra will find the address itself.";
+pub const NO_NETWORK: &str = crate::platform_text::for_computer(
+    "Connect this Mac to Wi-Fi or a private VPN. Vibyra will find the address itself.",
+    "Connect this computer to Wi-Fi or a private VPN. Vibyra will find the address itself.",
+);
 
 /// The iPhone connection is one switch. `enabled` is what the person asked for
 /// and survives restarts; the listener address is detected, never typed, and is

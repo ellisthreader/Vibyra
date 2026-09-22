@@ -9,7 +9,10 @@ use serde_json::json;
 use std::sync::Arc;
 use vibyra_host::{CredentialSource, RelayCredentials};
 
-pub const SIGNED_OUT: &str = "Sign in to Vibyra on this Mac to reach it from anywhere.";
+pub const SIGNED_OUT: &str = crate::platform_text::for_computer(
+    "Sign in to Vibyra on this Mac to reach it from anywhere.",
+    "Sign in to Vibyra on this computer to reach it from anywhere.",
+);
 
 /// Fetches a fresh relay registration from the account API before every relay
 /// connection. Registering is what tells the account this Mac exists, so a

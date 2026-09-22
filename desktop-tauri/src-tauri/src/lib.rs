@@ -33,6 +33,7 @@ mod model_watch_tests;
 mod openai_key;
 mod perf;
 mod phone;
+mod platform_text;
 mod provider_auth;
 mod provider_auth_attempt;
 mod provider_auth_claude;

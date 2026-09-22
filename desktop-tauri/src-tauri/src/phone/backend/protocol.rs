@@ -69,7 +69,11 @@ impl Backend for DesktopBackend {
             // It is not a general write: the plan is the wizard's own, checked
             // before a process runs, and the folder is new by definition.
             method if method.starts_with("scaffold.") => self.scaffolder.handle(method, &params),
-            _ => Err("Use Vibyra on your Mac to start or stop terminals and open files.".into()),
+            _ => Err(crate::platform_text::for_computer(
+                "Use Vibyra on your Mac to start or stop terminals and open files.",
+                "Use Vibyra on your computer to start or stop terminals and open files.",
+            )
+            .into()),
         }
     }
     fn subscribe(&self) -> mpsc::Receiver<Value> {
@@ -86,7 +90,7 @@ impl Backend for DesktopBackend {
     }
     fn pairing_notice(&self) -> &'static str {
         if self.vault.project().is_some() {
-            "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this Mac."
+            crate::platform_text::for_computer("Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this Mac.", "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this computer.")
         } else {
             "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read your files."
         }

@@ -8,7 +8,7 @@ use super::backend::DesktopBackend;
 use super::workspace::UNFILED;
 use serde_json::{json, Value};
 
-pub const MANAGE_OFF: &str = "Typing from your phone is off. Turn it on in Vibyra on your Mac (Settings > iPhone connection) to start or close terminals from your phone.";
+pub const MANAGE_OFF: &str = crate::platform_text::for_computer("Typing from your phone is off. Turn it on in Vibyra on your Mac (Settings > iPhone connection) to start or close terminals from your phone.", "Typing from your phone is off. Turn it on in Vibyra on your computer (Settings > iPhone connection) to start or close terminals from your phone.");
 
 /// What the window started: a pane of its own, or a shared chat that the
 /// combined backend names from the chat list.
@@ -34,7 +34,11 @@ impl DesktopBackend {
             .filter(|id| *id != UNFILED)
             .ok_or("Choose a project")?;
         if !self.workspace.read().has_project(project) {
-            return Err("Vibyra on your Mac is not showing that project".into());
+            return Err(crate::platform_text::for_computer(
+                "Vibyra on your Mac is not showing that project",
+                "Vibyra on your computer is not showing that project",
+            )
+            .into());
         }
         if method == "project.forget" {
             return self
@@ -57,7 +61,11 @@ impl DesktopBackend {
             .filter(|id| *id != UNFILED)
             .ok_or("Choose a project")?;
         if !self.workspace.read().has_project(project) {
-            return Err("This project is not open in Vibyra on your Mac.".into());
+            return Err(crate::platform_text::for_computer(
+                "This project is not open in Vibyra on your Mac.",
+                "This project is not open in Vibyra on your computer.",
+            )
+            .into());
         }
         let kind = match params["kind"].as_str() {
             Some(kind @ ("shell" | "codex" | "claude")) => kind,
@@ -88,7 +96,10 @@ impl DesktopBackend {
         }
         let pane = answer["paneId"]
             .as_u64()
-            .ok_or("Vibyra on your Mac did not name the new terminal")?;
+            .ok_or(crate::platform_text::for_computer(
+                "Vibyra on your Mac did not name the new terminal",
+                "Vibyra on your computer did not name the new terminal",
+            ))?;
         Ok(Created::Pane(
             json!({"id":self.id(pane),"projectId":project,"title":title,
             "kind":kind,"status":"running","createdAt":"1970-01-01T00:00:00Z",
@@ -109,7 +120,11 @@ impl DesktopBackend {
         }
         let number = self.native_id(params)?;
         if !self.manager.list().iter().any(|s| s.id == number) {
-            return Err("Terminal closed on the Mac".into());
+            return Err(crate::platform_text::for_computer(
+                "Terminal closed on the Mac",
+                "Terminal closed on the computer",
+            )
+            .into());
         }
         self.requests
             .ask(json!({"action":"close","paneId":number}))?;
@@ -132,6 +147,10 @@ impl DesktopBackend {
     /// it what to do.
     pub(super) fn resize(&self, params: &Value) -> Result<Value, String> {
         self.native_id(params)?;
-        Err("This Mac keeps its own terminal size. Update Vibyra on your phone to view it.".into())
+        Err(crate::platform_text::for_computer(
+            "This Mac keeps its own terminal size. Update Vibyra on your phone to view it.",
+            "This computer keeps its own terminal size. Update Vibyra on your phone to view it.",
+        )
+        .into())
     }
 }

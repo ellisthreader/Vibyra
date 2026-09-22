@@ -89,7 +89,7 @@ pub async fn speech_active(id: String) -> Result<bool, String> {
         if owner != &id { return Ok(false); }
         match child.try_wait().map_err(|e| e.to_string())? {
             None => Ok(true),
-            Some(status) => { playback.take(); if status.success() { Ok(false) } else { Err("Spoken reply could not finish. Check the computer's speech voice and audio output.".into()) } }
+            Some(status) => { playback.take(); if status.success() { Ok(false) } else { Err(crate::platform_text::for_computer("Spoken reply could not finish. Check the Mac's speech voice and audio output.", "Spoken reply could not finish. Check the computer's speech voice and audio output.").into()) } }
         }
     }).await
 }

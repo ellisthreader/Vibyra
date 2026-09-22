@@ -68,7 +68,7 @@ impl RailwayTools {
         let account = slot.account.clone();
         // The engine checks binding, decision, expiry and replay before the CLI callback.
         Some(engine.external_read(device, method, params, |operation, p| {
-            let binary = railway::locate().ok_or("Railway CLI is unavailable on the Mac")?;
+            let binary = railway::locate().ok_or(crate::platform_text::for_computer("Railway CLI is unavailable on the Mac", "Railway CLI is unavailable on the computer"))?;
             let identity = railway::run(Command::new(&binary).arg("whoami"), Duration::from_secs(3))
                 .and_then(|s| railway::parse_whoami(&s));
             if identity.as_deref() != Some(account.as_str()) {
@@ -76,7 +76,7 @@ impl RailwayTools {
             }
             railway_resources::read(operation, p, |args| {
                 railway::run(Command::new(&binary).args(args), Duration::from_secs(8))
-                    .ok_or_else(|| "Railway read failed, timed out, or exceeded its size limit. Check CLI access on the Mac.".into())
+                    .ok_or_else(|| crate::platform_text::for_computer("Railway read failed, timed out, or exceeded its size limit. Check CLI access on the Mac.", "Railway read failed, timed out, or exceeded its size limit. Check CLI access on the computer.").into())
             })
         }))
     }
