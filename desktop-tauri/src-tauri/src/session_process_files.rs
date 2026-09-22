@@ -48,6 +48,7 @@ pub fn capture(program: &str, args: &[&str]) -> Result<String, String> {
     }
 }
 
+#[cfg(any(target_os = "macos", test))]
 pub fn process_parents(raw: &str) -> HashMap<u32, u32> {
     raw.lines()
         .filter_map(|line| {
@@ -78,6 +79,7 @@ pub fn process_family(root: u32, parents: &HashMap<u32, u32>) -> Vec<(u32, usize
     family
 }
 
+#[cfg(any(target_os = "macos", test))]
 pub fn open_files(raw: &str) -> HashMap<u32, Vec<String>> {
     let mut files: HashMap<u32, Vec<String>> = HashMap::new();
     let mut pid = None;

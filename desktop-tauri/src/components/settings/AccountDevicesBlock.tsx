@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useCallback, useEffect, useState } from "react";
 
 import { accountDeviceRevoke, accountDevices, accountDevicesRevokeAll } from "../../ipc/accountSecurity";
@@ -74,7 +75,7 @@ export function AccountDevicesBlock() {
             label={device.name}
             hint={[device.location, lastActive(device.lastActive)].filter(Boolean).join(" · ")}
           >
-            {device.current && <StatusChip tone="on">This Mac</StatusChip>}
+            {device.current && <StatusChip tone="on">This {computerName}</StatusChip>}
             <button
               className="btn"
               disabled={busy !== null}
@@ -87,7 +88,7 @@ export function AccountDevicesBlock() {
         {confirming ? (
           <SettingRow
             label="Sign out everywhere?"
-            hint={`This signs out every device, this Mac included.${warning ? ` ${warning}` : ""}`}
+            hint={`This signs out every device, this ${computerName} included.${warning ? ` ${warning}` : ""}`}
             danger
           >
             <button className="btn" disabled={busy !== null} onClick={() => setConfirming(false)}>Cancel</button>

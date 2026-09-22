@@ -1,9 +1,9 @@
 //! Match Codex panes by the rollout file their process holds open. Recency
 //! cannot distinguish simultaneous chats in the same working directory.
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
 use std::collections::{HashMap, HashSet};
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,7 @@ pub struct SessionIdentity {
     pub session_id: Option<String>,
 }
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
 pub fn rollout_id(path: &Path, root: &Path) -> Option<String> {
     path.strip_prefix(root.join("sessions")).ok()?;
     let name = path.file_name()?.to_str()?;
@@ -32,7 +32,7 @@ pub fn rollout_id(path: &Path, root: &Path) -> Option<String> {
     Some(id.to_owned())
 }
 
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
 pub fn choose_identity(
     family: &[(u32, usize)],
     files: &HashMap<u32, Vec<String>>,
@@ -55,7 +55,7 @@ pub fn choose_identity(
     None
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub fn identify(
     manager: &vibyra_core::pty::PtyManager,
     requests: &[IdentityRequest],
@@ -82,26 +82,35 @@ pub fn identify(
     identify_targets(&targets)
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn identify_targets(
     targets: &[(u64, u32, std::path::PathBuf)],
 ) -> Result<Vec<SessionIdentity>, String> {
-    use crate::session_process_files::{capture, open_files, process_family, process_parents};
-    let parents = process_parents(&capture("/bin/ps", &["-axo", "pid=,ppid="])?);
-    let families: Vec<_> = targets
-        .iter()
-        .map(|(_, pid, _)| process_family(*pid, &parents))
-        .collect();
-    let pids: HashSet<_> = families
-        .iter()
-        .flatten()
-        .map(|(pid, _)| pid.to_string())
-        .collect();
-    let pids = pids.into_iter().collect::<Vec<_>>().join(",");
-    let files = open_files(&capture(
-        "/usr/sbin/lsof",
-        &["-n", "-P", "-a", "-p", &pids, "-Fn"],
-    )?);
+    #[cfg(target_os = "macos")]
+    let (families, files) = {
+        use crate::session_process_files::{capture, open_files, process_family, process_parents};
+        let parents = process_parents(&capture("/bin/ps", &["-axo", "pid=,ppid="])?);
+        let families: Vec<_> = targets
+            .iter()
+            .map(|(_, pid, _)| process_family(*pid, &parents))
+            .collect();
+        let pids: HashSet<_> = families
+            .iter()
+            .flatten()
+            .map(|(pid, _)| pid.to_string())
+            .collect();
+        let pids = pids.into_iter().collect::<Vec<_>>().join(",");
+        let files = open_files(&capture(
+            "/usr/sbin/lsof",
+            &["-n", "-P", "-a", "-p", &pids, "-Fn"],
+        )?);
+        (families, files)
+    };
+    #[cfg(target_os = "linux")]
+    let (families, files) = crate::session_process_linux::inspect(
+        Path::new("/proc"),
+        &targets.iter().map(|(_, pid, _)| *pid).collect::<Vec<_>>(),
+    )?;
     Ok(targets
         .iter()
         .zip(&families)
@@ -116,7 +125,7 @@ fn identify_targets(
         .collect())
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
 pub fn identify(
     _: &vibyra_core::pty::PtyManager,
     requests: &[IdentityRequest],

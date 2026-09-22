@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 
 import type { PhoneDevice } from "../../ipc/phone";
@@ -107,7 +108,7 @@ export function SettingsPhonePane() {
     <div className="phone-connection">
       <SettingsBlock label="Phone">
         <div className="settings-group">
-          <SettingRow label="Remote phone control" hint="Use Vibyra on your phone, nearby or from anywhere. Open the app on your phone and tap this Mac.">
+          <SettingRow label="Remote phone control" hint={`Use Vibyra on your phone, nearby or from anywhere. Open the app on your phone and tap this ${computerName}.`}>
             <Switch checked={enabled} disabled={busy || !status} label="Remote phone control" onChange={(next) => void toggle(next)} />
           </SettingRow>
           {enabled && (

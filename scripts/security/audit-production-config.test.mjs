@@ -96,3 +96,19 @@ test("environment audit never includes secret values in findings", () => {
   assert.equal(results.filter((item) => item.status === "fail").length, 0);
   assert.equal(JSON.stringify(results).includes(secret), false);
 });
+
+
+test("local reusable workflows inherit verified callee execution timeouts", () => {
+  const caller = "permissions:\n  contents: read\njobs:\n  frontend:\n    uses: ./.github/workflows/frontend.yml\n";
+  const bounded = "jobs:\n  build:\n    runs-on: ubuntu-22.04\n    timeout-minutes: 15\n";
+  const timeout = (text, read) => auditWorkflowText(".github/workflows/release.yml", text, read)
+    .find((item) => item.id.endsWith(".timeouts")).status;
+  assert.equal(timeout(caller, () => bounded), "pass");
+  assert.equal(timeout(caller, () => bounded.replace("    timeout-minutes: 15\n", "")), "fail");
+  assert.equal(timeout(caller, () => { throw new Error("missing"); }), "fail");
+  assert.equal(timeout(caller, () => ""), "fail");
+  assert.equal(timeout(caller, () => caller), "fail", "recursive workflow cycles cannot evade a timeout");
+  assert.equal(timeout(caller), "fail", "a callee that has not been read is unverified");
+  const remote = caller.replace("./.github/workflows/frontend.yml", `owner/repo/.github/workflows/build.yml@${pinnedSha}`);
+  assert.equal(timeout(remote, () => bounded), "fail", "remote callees are not covered by local inspection");
+});

@@ -62,8 +62,10 @@ mod report_tests;
 mod report_text;
 mod secret_store;
 mod session_identity;
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
 mod session_process_files;
+#[cfg(any(target_os = "linux", test))]
+mod session_process_linux;
 mod session_store;
 #[cfg(test)]
 mod session_store_tests;

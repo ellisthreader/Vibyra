@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useDialogFocus } from './useDialogFocus';
 import { ToolGrants } from './ToolGrants';
 import { useRef, useState } from 'react';
@@ -11,7 +12,7 @@ export function Setup({ agent, identity, enabled, onClose, onSaved }: { agent?: 
   const [pending, setPending] = useState<Record<string, unknown> | null>(() => restore().pending ?? null);
   const lock = useRef(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const update = (key: string, value: unknown) => { const next = { ...fields, [key]: value }; setFields(next); try { localStorage.setItem(storage, JSON.stringify({ fields: next, pending })); } catch { setError('Setup could not be saved on this Mac.'); } };
+  const update = (key: string, value: unknown) => { const next = { ...fields, [key]: value }; setFields(next); try { localStorage.setItem(storage, JSON.stringify({ fields: next, pending })); } catch { setError(`Setup could not be saved on this ${computerName}.`); } };
   const save = async () => {
     if (lock.current) return; lock.current = true; setBusy(true); setError('');
     try {

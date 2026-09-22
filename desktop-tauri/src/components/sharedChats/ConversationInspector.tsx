@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useRef, useState } from 'react';
 import { chatRequest, type AgentItem, type ConversationSnapshot, type SharedSession } from '../../ipc/sharedChats';
 import { changedFiles, readArtifact, type ArtifactPage, type CommandCatalogue, type InspectorMode, type ModelChoice } from '../../../../mobile/src/conversation/inspection';
@@ -65,7 +66,7 @@ export function ConversationInspector({ mode, selected, session, snapshot, items
       {!selected && mode === 'status' && data && <ConversationStatus value={data} />}
       {!selected && mode === 'usage' && data && <ConversationUsage value={data} />}
       {!selected && mode === 'permissions' && data && <><InspectorData value={{ approvalPolicy: data.settings?.approvalPolicy, sandbox: data.settings?.sandbox }} />
-        <h3>Saved command rules</h3><p className="inspector-muted">Exact command, project and working directory. Managed on this Mac.</p>
+        <h3>Saved command rules</h3><p className="inspector-muted">Exact command, project and working directory. Managed on this {computerName}.</p>
         {(data.savedRules ?? []).map((rule: any) => <div className="inspector-rule" key={rule.id}><code>{rule.command}</code><small>{rule.cwd}</small><button className="btn" onClick={() => void run(() => chatRequest('conversation.trust.revoke', { sessionId: session.id, ruleId: rule.id })).then(ok => { if (ok) setData({ ...data, savedRules: data.savedRules.filter((r: any) => r.id !== rule.id) }); })}>Revoke</button></div>)}
         {!data.savedRules?.length && <p>No saved rules for this project.</p>}</>}
     </div>

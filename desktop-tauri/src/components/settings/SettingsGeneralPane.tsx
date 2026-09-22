@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import type { Settings } from "../../types";
 import { PerformanceRow } from "./PerformanceCard";
 import { Segmented, Stepper } from "./SettingsControls";
@@ -29,7 +30,7 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
           </SettingRow>
           <SettingRow
             label="Agent view"
-            hint="How a launched agent opens on this Mac. Your iPhone always shows a chat."
+            hint={`How a launched agent opens on this ${computerName}. Your iPhone always shows a chat.`}
           >
             <Segmented
               label="Agent view"
@@ -59,7 +60,7 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
         <div className="settings-group">
           <SettingRow
             label="Restore terminal output"
-            hint="Reopen recent terminal output on this device. Turn it off on a shared Mac; restored terminals then reopen blank."
+            hint={`Reopen recent terminal output on this device. Turn it off on a shared ${computerName}; restored terminals then reopen blank.`}
           >
             <Switch
               checked={settings.persistTerminalScrollback}

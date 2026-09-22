@@ -8,7 +8,11 @@ permissions:
   contents: read
 
 jobs:
+  frontend:
+    uses: ./.github/workflows/desktop-frontend.yml
+
   package:
+    needs: frontend
     name: ${{ matrix.label }} Rust package
     strategy:
       fail-fast: false
@@ -65,6 +69,16 @@ jobs:
         run: npm run verify
       - name: Verify encrypted embedded phone transport
         run: cargo test --manifest-path ../host/Cargo.toml -p vibyra-host --no-default-features --lib --locked
+      - name: Remove independently built frontend output
+        run: >-
+          node -e "require('node:fs').rmSync('dist', { recursive: true, force: true })"
+      - name: Download the shared frontend archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vibyra-desktop-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: desktop-tauri
+      - name: Verify shared frontend bytes, version and revision
+        run: node scripts/frontend-artifact.mjs verify
       - name: Read the version being released
         id: version
         shell: bash
@@ -74,7 +88,9 @@ jobs:
           echo "output=Vibyra-Desktop-$version-${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
 
       - name: Build native package
-        run: ${{ matrix.command }}
+        run: >-
+          ${{ matrix.command }} -- --config
+          '{"build":{"beforeBuildCommand":"node scripts/frontend-artifact.mjs verify"}}'
         env:
           # Without these the bundler silently skips the .sig files and the
           # release cannot be offered as an in-app update.
@@ -108,6 +124,7 @@ jobs:
           # a failed release, not a warning.
           test -f "${matches[0]}.sig"
           cp "${matches[0]}.sig" "release/$output.sig"
+          cp release/frontend-manifest.json "release/$output.frontend.json"
       - name: Verify macOS code signature, microphone entitlement and launch
         if: runner.os == 'macOS'
         shell: bash
@@ -156,6 +173,7 @@ jobs:
             desktop-tauri/release/${{ steps.version.outputs.output }}
             desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
             desktop-tauri/release/${{ steps.version.outputs.output }}.sig
+            desktop-tauri/release/${{ steps.version.outputs.output }}.frontend.json
           if-no-files-found: error
           retention-days: 30
 

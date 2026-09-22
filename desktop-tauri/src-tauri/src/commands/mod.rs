@@ -33,6 +33,8 @@ mod screenshot_capture;
 #[path = "screenshot_capture_unsupported.rs"]
 mod screenshot_capture;
 mod screenshot_png;
+#[cfg(target_os = "linux")]
+mod screenshot_portal;
 pub mod screenshot_reveal;
 #[cfg(test)]
 mod screenshot_tests;

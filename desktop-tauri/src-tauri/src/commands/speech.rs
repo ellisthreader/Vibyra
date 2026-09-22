@@ -44,9 +44,26 @@ fn start(id: String, text: String) -> Result<(), String> {
     *playback = Some((id, child));
     Ok(())
 }
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "linux")]
+fn start(id: String, text: String) -> Result<(), String> {
+    let mut playback = PLAYBACK.lock();
+    if let Some((_, mut child)) = playback.take() {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+    let command = linux::command(vibyra_core::agents::program_in_path)?;
+    let child = linux::speak(command, text)?;
+    *playback = Some((id, child));
+    Ok(())
+}
+
+#[cfg(any(target_os = "linux", test))]
+#[path = "speech_linux.rs"]
+mod linux;
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
 fn start(_id: String, _text: String) -> Result<(), String> {
-    Err("Local spoken replies are currently available on Mac.".into())
+    Err("Local spoken replies are currently available on Mac and Linux.".into())
 }
 
 #[tauri::command]
@@ -72,7 +89,7 @@ pub async fn speech_active(id: String) -> Result<bool, String> {
         if owner != &id { return Ok(false); }
         match child.try_wait().map_err(|e| e.to_string())? {
             None => Ok(true),
-            Some(status) => { playback.take(); if status.success() { Ok(false) } else { Err("Spoken reply could not finish. Check the Mac's speech voice and audio output.".into()) } }
+            Some(status) => { playback.take(); if status.success() { Ok(false) } else { Err("Spoken reply could not finish. Check the computer's speech voice and audio output.".into()) } }
         }
     }).await
 }

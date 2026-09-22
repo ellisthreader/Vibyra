@@ -1,3 +1,4 @@
+import { platformName } from "../../lib/platform";
 import { useEffect, useRef } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 
@@ -46,7 +47,7 @@ export function WhatsNew() {
             : (
               <span className="whatsnew__hero-fallback">
                 <span className="whatsnew__hero-version">{entry.version}</span>
-                <span className="whatsnew__hero-label">Vibyra for Mac</span>
+                <span className="whatsnew__hero-label">Vibyra for {platformName}</span>
               </span>
             )}
         </div>

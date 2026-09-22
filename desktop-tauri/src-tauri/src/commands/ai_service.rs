@@ -1,6 +1,5 @@
 use serde::Serialize;
 use tauri::State;
-use vibyra_core::agents::program_in_path;
 
 use crate::ai_usage::{
     AiLimits, CHAT_INPUT_USD_PER_MTOK, CHAT_OUTPUT_USD_PER_MTOK, VOICE_USD_PER_MINUTE,
@@ -86,7 +85,7 @@ fn view(state: &AppState) -> AiServiceView {
         key_configured: state.openai_key().is_some(),
         key_hint: state.openai_key().as_deref().map(openai_key::hint),
         secure_storage_available: *state.secret_store_available.lock(),
-        recorder_available: program_in_path("arecord"),
+        recorder_available: super::voice::recorder_available(),
         key_page_url: openai_key::KEY_PAGE_URL,
         limits: state.ai_limits(),
         usage: UsageView {

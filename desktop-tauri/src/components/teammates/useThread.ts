@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { invoke } from '@tauri-apps/api/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { teammateApi, message } from './api';
@@ -29,7 +30,7 @@ export function useThread(agent: Teammate, identity: string, active: boolean) {
     void teammateApi<{ models: typeof models }>('vibes/models').then(d => { if (!stopped) setModels(d.models); }).catch(e => { if (!stopped) setError(message(e)); });
     return () => { stopped = true; clearTimeout(timer); };
   }, [active, refresh]);
-  const edit = (text: string) => { version.current++; setDraft(text); setQuote(null); try { persist(text, pending); } catch { setError('Your draft could not be saved on this Mac.'); } };
+  const edit = (text: string) => { version.current++; setDraft(text); setQuote(null); try { persist(text, pending); } catch { setError(`Your draft could not be saved on this ${computerName}.`); } };
   const run = async (task: () => Promise<void>) => { if (lock.current) return; lock.current = true; setBusy(true); setError(''); try { await task(); } catch (e) { if (alive.current) setError(message(e)); } finally { lock.current = false; if (alive.current) setBusy(false); } };
   const estimate = () => run(async () => { const requested = version.current; const result = await teammateApi<Quote>('vibes/quote', { chatId: agent.chatId, text: draft, model, ...(effort ? {effort} : {}), attachments: attachments.map(a => a.id) }); if (alive.current && requested === version.current) setQuote(result); });
   const accept = () => run(async () => { await teammateApi('vibes/consent', { accepted: true }); if (alive.current) setConsented(true); });

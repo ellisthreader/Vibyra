@@ -129,6 +129,13 @@ pub fn capture_screen_image(
     window: &tauri::Window,
     hide_window: bool,
 ) -> Result<RgbaImage, String> {
+    // XWayland's root contains only X11 clients, not the Wayland desktop.
+    // The compositor's portal is the only complete capture on that session.
+    if std::env::var("WAYLAND_DISPLAY").is_ok_and(|value| !value.is_empty())
+        || std::env::var("XDG_SESSION_TYPE").is_ok_and(|value| value == "wayland")
+    {
+        return super::screenshot_portal::capture(window, hide_window);
+    }
     let window_id = x11_window_id(window)?;
     let mut restored = Ok(());
     let captured = if hide_window {

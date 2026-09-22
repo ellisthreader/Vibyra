@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -34,7 +35,7 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
   };
   const liveCode = invite && seconds > 0;
   return (
-    <Disclosure title="Can’t see this Mac on your phone?" summary="Pair with a code instead" open={open} onToggle={setOpen}>
+    <Disclosure title={`Can’t see this ${computerName} on your phone?`} summary="Pair with a code instead" open={open} onToggle={setOpen}>
       <div className="phone-fallback">
         <p className="phone-connection__hint">Some Wi-Fi networks block the announcement. A one-time code pairs the same way and still needs your approval here.</p>
         <div className="phone-connection__actions">

@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useRef } from "react";
 
 import { useProviderAccountStore } from "../../state/providerAccountStore";
@@ -106,7 +107,7 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
       </SettingsBlock>
 
       {otherRuntimes.length > 0 && (
-        <SettingsBlock label="Other" note="Command-line tools already on this Mac. Switch one on to launch it from Vibyra.">
+        <SettingsBlock label="Other" note={`Command-line tools already on this ${computerName}. Switch one on to launch it from Vibyra.`}>
           <div className="settings-group">
             <TerminalIntegrations settings={settings} update={update} mode="installed" />
           </div>

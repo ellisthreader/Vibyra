@@ -112,9 +112,9 @@ import "./styles/performance.css";
 import App from "./App";
 import { installAppDropGuard } from "./lib/terminalDrop";
 import { initRendererPolicy } from "./lib/xtermRenderer";
-import { isMac } from "./lib/platform";
+import { desktopPlatform } from "./lib/platform";
 
-document.documentElement.dataset.platform = isMac ? "mac" : "desktop";
+document.documentElement.dataset.platform = desktopPlatform;
 
 // Resolves long before the first terminal can mount (post sign-in).
 void initRendererPolicy();

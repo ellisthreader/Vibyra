@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 
 import { accountOpenLegal } from "../../ipc/account";
@@ -56,7 +57,7 @@ export function SettingsAccountPane() {
               </button>
             </SettingRow>
           ) : (
-            <SettingRow label="Signed in on this Mac" hint={running ? `${running} terminal${running === 1 ? "" : "s"} running.` : undefined}>
+            <SettingRow label={`Signed in on this ${computerName}`} hint={running ? `${running} terminal${running === 1 ? "" : "s"} running.` : undefined}>
               <button
                 className="btn profile-logout"
                 disabled={busy}

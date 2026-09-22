@@ -1,3 +1,4 @@
+import { platformName } from "../../lib/platform";
 import { useCallback, useEffect, useState } from "react";
 
 import { accountBillingTopup, accountCredits, accountTopupOptions } from "../../ipc/accountBilling";
@@ -89,7 +90,7 @@ export function AccountCredits({
           <span className="ai-meter__fill" style={{ width: `${fill}%` }} />
         </div>
         <span className="credits-row__note">
-          {resets}Spent by Vibyra AI and the phone app; Mac terminals use your own accounts.
+          {resets}Spent by Vibyra AI and the phone app; {platformName} terminals use your own accounts.
         </span>
       </div>
       {credits.purchasesEnabled && topups.length > 0 && (

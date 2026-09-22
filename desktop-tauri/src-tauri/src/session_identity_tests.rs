@@ -50,9 +50,9 @@ fn other_accounts_and_malformed_rollout_ids_are_rejected() {
     .is_none());
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[test]
-fn mac_identifies_two_real_pty_processes_with_open_rollouts() {
+fn identifies_two_real_pty_processes_with_open_rollouts() {
     use std::sync::Arc;
     use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
     struct Sink;

@@ -5,6 +5,7 @@
     ]
   },
   "entry": [
+    "tests/desktopParityFixture.tsx",
     "tests/*.test.mjs",
     "tests/sharedChatsFixture.tsx",
     "tests/nativeRedesignFixture.tsx",

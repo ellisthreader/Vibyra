@@ -12,6 +12,15 @@ mod capture;
 mod capture;
 pub use capture::VoiceRecording;
 
+#[cfg(all(target_os = "macos", test))]
+#[allow(dead_code)]
+#[path = "voice_capture_process.rs"]
+mod process_capture;
+
+pub(super) fn recorder_available() -> bool {
+    capture::available()
+}
+
 pub(super) struct CapturedAudio {
     pub raw: Vec<u8>,
     pub sample_rate: u32,
@@ -29,7 +38,7 @@ pub const VOICE_MODEL: &str = "whisper-1";
 #[tauri::command]
 pub async fn voice_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
     Ok(VoiceStatus {
-        recorder: capture::available(),
+        recorder: recorder_available(),
         key_configured: state.openai_key().is_some(),
     })
 }

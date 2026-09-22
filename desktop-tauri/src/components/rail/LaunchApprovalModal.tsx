@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useRef, useState } from "react";
 import { useLaunchApprovalStore } from "../../state/launchApprovalStore";
 import { CloseIcon, FolderIcon, CheckIcon } from "../common/Icons";
@@ -39,7 +40,7 @@ export function LaunchApprovalModal() {
         </div>
         <div className="launch-approval__step"><span>1</span><div><strong>Keep a local checkpoint</strong><p>Save the current state of {pending.changedFiles.toLocaleString()} changed {pending.changedFiles === 1 ? 'file' : 'files'}.</p></div></div>
         <div className="launch-approval__step"><span>2</span><div><strong>Work in separate copies</strong><p>Each worker gets its own folder and branch. Your current files and staged changes stay as they are.</p></div></div>
-        <p className="launch-approval__note">The checkpoint stays on this Mac. Safe mode separates files; it doesn’t change the AI’s access permissions.</p>
+        <p className="launch-approval__note">The checkpoint stays on this {computerName}. Safe mode separates files; it doesn’t change the AI’s access permissions.</p>
         {error && <p className="launch-approval__error" role="alert">{error}</p>}
       </div>
       <footer className="launch-approval__actions">
