@@ -47,6 +47,10 @@ Route::get('api/connectors/callback/{integration}', [ChatConnectorsController::c
 Route::prefix('api/connectors')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [ChatConnectorsController::class, 'index']);
     Route::get('flows/{flow}', [ChatConnectorsController::class, 'flow'])->whereUuid('flow');
+    // Ahead of the {integration} routes: a literal segment would otherwise be
+    // captured as an integration slug.
+    Route::post('github/repositories', [ChatConnectorsController::class, 'createRepository'])
+        ->middleware('throttle:10,1');
     Route::post('{integration}/start', [ChatConnectorsController::class, 'start'])->middleware('throttle:10,1');
     Route::post('{integration}/connect', [ChatConnectorsController::class, 'connect'])->middleware('throttle:10,1');
     Route::post('{integration}/disconnect', [ChatConnectorsController::class, 'disconnect']);

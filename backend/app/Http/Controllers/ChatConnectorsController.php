@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UserPayloads;
 use App\Services\Auth\{ProviderAccountException, ProviderAccountService};
+use App\Services\ChatConnectors\Github\Repositories;
 use App\Services\ChatConnectors\{Catalogue, ConnectorOAuth, Installs, Registry};
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -103,6 +104,32 @@ class ChatConnectorsController extends Controller
             .'font:16px/1.5 -apple-system,system-ui,sans-serif;background:#0E0F12;color:#F5F7FA">'
             .'<main style="text-align:center;padding:24px"><h1 style="font-size:23px;margin:0 0 8px">'.e($title).'</h1>'
             .'<p style="margin:0;color:#A6ADBA">'.e($detail).'</p></main>')->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * Create an empty GitHub repository for a project the desktop just built.
+     *
+     * Not a chat tool on purpose: a model must not be able to make repositories,
+     * and this is only ever reached by a person turning on the switch in the New
+     * project wizard. It takes a name and a visibility and nothing else, and it
+     * does not push — the computer does that with its own git credentials.
+     */
+    public function createRepository(Request $request, Installs $installs, Repositories $repositories)
+    {
+        $user = $this->available($request, 'github');
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'private' => 'sometimes|boolean',
+        ]);
+        $result = $repositories->create(
+            $installs->credential($user->id, 'github'),
+            trim($data['name']),
+            (bool) ($data['private'] ?? true),
+        );
+        // Not `abort_if`: PHP builds the message argument whether or not the
+        // condition holds, and there is no message on the way through.
+        if (isset($result['error'])) abort(422, $result['error']);
+        return $this->json($result['data']);
     }
 
     private function available(Request $request, string $integration)
