@@ -1,5 +1,7 @@
 #[path = "../src/phone/address.rs"]
 mod address;
+#[path = "../src/platform_text.rs"]
+mod platform_text;
 
 fn main() {
     let selected = address::default_address();
