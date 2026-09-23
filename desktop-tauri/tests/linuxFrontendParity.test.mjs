@@ -6,7 +6,7 @@ import { desktopPlatformFor } from "../src/lib/platform.ts";
 
 const source = (path) => readFile(new URL(`../src/${path}`, import.meta.url), "utf8");
 
-test("shared typography resolves to bundled fonts instead of a platform-specific system face", async () => {
+test("Linux uses bundled fonts while the installed Mac font stack is preserved", async () => {
   const [tokens, main, workspace, conversation] = await Promise.all([
     source("styles/tokens.css"), source("main.tsx"), source("styles/workspace-font.css"),
     source("components/terminal/conversationTerminal.css"),
@@ -16,13 +16,14 @@ test("shared typography resolves to bundled fonts instead of a platform-specific
   assert.match(main, /import "@fontsource-variable\/inter"/);
   assert.match(main, /import "@fontsource-variable\/jetbrains-mono"/);
   assert.match(workspace, /@font-face\s*\{[^}]*font-family:'DM Sans';[^}]*DMSans\.ttf/);
-  assert.doesNotMatch(conversation, /--font-sans/, "the transcript must not fall back through an undeclared font token");
-  assert.match(conversation, /font-family:var\(--font-ui\)/);
+  assert.match(conversation, /font-family:var\(--font-sans,Inter,system-ui,sans-serif\)/);
+  assert.match(tokens, /:root\[data-platform="mac"\]\s*\{[^}]*--font-ui:\s*-apple-system/);
+  assert.doesNotMatch(tokens, /:root\[data-platform="linux"\]\s*\{[^}]*--font-ui:/);
   const files = await readdir(new URL("../src/", import.meta.url), { recursive: true });
   for (const path of files.filter((path) => path.endsWith(".css"))) {
     const css = await source(path);
-    assert.doesNotMatch(css, /data-platform[^{}]*\{[^{}]*(?:--font-ui\s*:|font(?:-family)?\s*:)/,
-      `${path} must not select a different UI font by operating system`);
+    assert.doesNotMatch(css, /data-platform="linux"[^{}]*\{[^{}]*(?:--font-ui\s*:|font(?:-family)?\s*:)/,
+      `${path} must not override Linux's bundled UI font`);
   }
 });
 

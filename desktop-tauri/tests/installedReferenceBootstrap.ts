@@ -35,7 +35,6 @@ for (const file of manifest.stores) {
   }
 }
 function seedReferenceStores() {
-  const matched: string[] = [];
   for (const store of stores) {
     const current = store.getState();
     const source = snapshots.find(snapshot => {
@@ -43,13 +42,8 @@ function seedReferenceStores() {
         .find(key => key in snapshot);
       return discriminator && discriminator in current;
     });
-    if (source) {
-      matched.push(Object.keys(current).slice(0, 4).join(','));
-      store.setState(source);
-    }
+    if (source) store.setState(source);
   }
-  void originalFetch('/evidence', { method: 'POST', body: JSON.stringify({ referenceSeed: matched,
-    stores: stores.map(store => Object.fromEntries(Object.entries(store.getState()).filter(([key]) => ['view', 'activeId', 'snapshot', 'settings', 'panes'].includes(key)))) }) });
 }
 seedReferenceStores();
 await import(/* @vite-ignore */ manifest.entry);
@@ -57,5 +51,9 @@ await import(/* @vite-ignore */ manifest.entry);
 // after that effect settles so both views show exactly the same sample panes.
 window.setTimeout(() => {
   seedReferenceStores();
+  if (parityScreen === 'workspace' || ['chat', 'files', 'preview'].includes(parityScreen)) {
+    const project = stores.find(store => 'activate' in store.getState() && 'view' in store.getState());
+    void (project?.getState().activate as ((id: string) => Promise<void>) | undefined)?.('studio');
+  }
   void reportParityLayout();
 }, 600);

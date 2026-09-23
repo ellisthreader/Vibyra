@@ -99,6 +99,11 @@
   --term-dim: #939baa;
 }
 
+/* Preserve the installed Mac type stack; Linux uses the bundled Inter face. */
+:root[data-platform="mac"] {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Inter Variable", sans-serif;
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
 
