@@ -94,7 +94,11 @@ try {
       await driver.execute(`const button = [...document.querySelectorAll('button')]
         .find(button => button.textContent.trim() === 'Continue with email'); button.click();`);
     });
-  await driver.until(() => driver.execute(`return document.querySelector('input[aria-label="Email address"]')?.getBoundingClientRect().height > 0`), "email form");
+  await driver.until(() => driver.execute(`const input = document.querySelector('input[aria-label="Email address"]');
+    const reveal = document.querySelector('.auth-reveal--form.auth-reveal--open');
+    const form = reveal?.querySelector('.auth-email');
+    return Boolean(input && form && !reveal.inert && input.getBoundingClientRect().height > 0
+      && Number(getComputedStyle(form).opacity) > 0.99);`), "interactive email form");
   await driver.keys('input[aria-label="Email address"]', user.email);
   await driver.keys('input[aria-label="Password"]', "local-only-password");
   await driver.click(".auth-email button[type='submit']");
