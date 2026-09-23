@@ -8,7 +8,7 @@ use crate::discord::Attachment;
 use crate::report::{Report, ReportContext};
 use crate::report_privacy::redact_unapproved_diagnostics;
 
-fn receive(mut stream: TcpStream) -> String {
+fn receive(mut stream: TcpStream, readiness_available: bool) -> String {
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
         .unwrap();
@@ -35,13 +35,20 @@ fn receive(mut stream: TcpStream) -> String {
         bytes.extend_from_slice(&chunk[..count]);
     }
     let request = String::from_utf8_lossy(&bytes).into_owned();
-    let reply = if request.starts_with("GET ") {
+    let reply = if request.starts_with("GET ") && !readiness_available {
+        r#"{"ok":false,"error":"Temporary failure"}"#
+    } else if request.starts_with("GET ") {
         r#"{"ok":true,"ready":true}"#
     } else {
         r#"{"ok":true,"id":"VR-TEST01"}"#
     };
+    let status = if request.starts_with("GET ") && !readiness_available {
+        "503 Service Unavailable"
+    } else {
+        "200 OK"
+    };
     let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{reply}",
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{reply}",
         reply.len()
     );
     stream.write_all(response.as_bytes()).unwrap();
@@ -58,7 +65,7 @@ fn authenticated_ready_and_report_multipart_match_the_live_api_contract() {
         let mut requests = Vec::new();
         while requests.len() < 3 && Instant::now() < deadline {
             match listener.accept() {
-                Ok((stream, _)) => requests.push(receive(stream)),
+                Ok((stream, _)) => requests.push(receive(stream, true)),
                 Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                     thread::sleep(Duration::from_millis(10));
                 }
@@ -85,7 +92,7 @@ fn authenticated_ready_and_report_multipart_match_the_live_api_contract() {
         ..Report::default()
     };
     tauri::async_runtime::block_on(async {
-        assert!(ready_at(&base, "test-token").await);
+        assert_eq!(ready_at(&base, "test-token").await, Ok(true));
         redact_unapproved_diagnostics(&mut report);
         assert_eq!(
             deliver_at(&base, "test-token", &report, None, vec![], None)
@@ -144,4 +151,15 @@ fn authenticated_ready_and_report_multipart_match_the_live_api_contract() {
     assert!(requests[2].contains("opted-in terminal tail"));
     assert!(requests[2].contains("name=\"screenshot\""));
     assert!(requests[2].contains("name=\"images[]\""));
+}
+
+#[test]
+fn failed_readiness_is_not_a_false_channel_disabled_result() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let server = thread::spawn(move || receive(listener.accept().unwrap().0, false));
+    tauri::async_runtime::block_on(async {
+        assert!(ready_at(&base, "test-token").await.is_err());
+    });
+    assert!(server.join().unwrap().starts_with("GET /api/reports/ready"));
 }

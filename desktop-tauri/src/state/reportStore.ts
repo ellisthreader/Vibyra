@@ -75,7 +75,7 @@ export const useReportStore = create<ReportStore>((set, get) => ({
       recentErrors,
       draft: state.draft ?? { ...emptyDraft(surroundings.area), ...prefill },
     }));
-    const channelReady = await reportChannelReady().catch(() => false);
+    const channelReady = await reportChannelReady().catch(() => null);
     if (get().open) set({ channelReady });
   },
 

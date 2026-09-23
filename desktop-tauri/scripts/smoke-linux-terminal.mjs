@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { NativeDriver } from "./linux-terminal-webdriver.mjs";
+import { receiveReport, verifyProjectActions, verifyReport } from "./linux-terminal-ux.mjs";
 
 if (process.platform !== "linux") throw new Error("Native terminal verification requires Linux");
 const application = resolve(process.argv[2] || "");
@@ -31,6 +32,7 @@ writeFileSync(join(config, "settings.json"), JSON.stringify({
 const user = { id: "native-terminal-smoke", name: "Linux QA",
   email: "linux-qa@example.invalid", provider: "email", plan: "free",
   emailVerified: true };
+const reports = [];
 const api = createServer((request, response) => {
   const send = (status, body) => {
     response.writeHead(status, { "Content-Type": "application/json" });
@@ -47,10 +49,12 @@ const api = createServer((request, response) => {
     send(200, { ok: true, user });
   } else if (request.url === "/api/reports/ready" && request.method === "GET") {
     if (request.headers.authorization === "Bearer terminal-smoke-local-token") {
-      send(200, { ok: true, ready: true });
+      send(503, { ok: false, error: "Temporary readiness failure" });
     } else {
       send(401, { ok: false, error: "Sign in to report a problem." });
     }
+  } else if (request.url === "/api/reports" && request.method === "POST") {
+    receiveReport(request, send, reports);
   } else {
     send(404, { ok: false, error: "Unavailable in isolated terminal smoke" });
   }
@@ -112,14 +116,7 @@ try {
   await driver.execute(`document.querySelector('.auth-email').requestSubmit()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
   await driver.dismissWorkspaceOverlays();
-  await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="Report a bug"]'))`),
-    "visible Report a bug action");
-  await driver.click('button[aria-label="Report a bug"]');
-  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.report-modal[role="dialog"]'))`),
-    "Report a problem dialog");
-  await driver.until(async () => await driver.invoke("report_channel_ready") === true,
-    "authenticated report channel");
-  await driver.click('button[aria-label="Close report"]');
+  await verifyReport(driver, reports);
   await driver.dismissWorkspaceOverlays();
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="New terminal in input-repro"]'))`), "test project");
   await driver.until(() => driver.execute(`const card = document.querySelector('button[aria-label="Open input-repro"]');
@@ -172,11 +169,13 @@ try {
   await driver.keyboard("\uE008\uE004\uE000\uE007");
   await driver.until(async () => (await snapshot(id)).slice(beforeShiftTab).includes("^[[Z"),
     "Shift+Tab arrived at the Linux PTY as Escape [ Z");
+  await verifyProjectActions(driver);
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
     burstCommands: 12, burstToOutputMs, backspace: true, shiftTabEscape: true,
-    accountService: "loopback fixture", reportBugVisible: true, reportChannelReady: true,
+    accountService: "loopback fixture", reportBugVisible: true, reportDeliveredAfterReadinessFailure: true,
+    projectRightClick: true, projectRename: true, projectCloseConfirmation: true,
   }, null, 2));
   console.log(`Native Linux PTY typing passed. Evidence: ${output}`);
 } catch (error) {

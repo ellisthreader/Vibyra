@@ -26,8 +26,8 @@ const MAX_SCREENSHOT_BYTES: usize = MAX_ATTACHMENT_BYTES - 512 * 1024;
 /// than after the user has written a paragraph.
 #[tauri::command]
 pub async fn report_channel_ready(state: State<'_, AppState>) -> Result<bool, String> {
-    if remote_ready(&state).await {
-        return Ok(true);
+    if let Some(token) = state.account.token() {
+        return crate::report_relay::ready(&token).await;
     }
     run_blocking(|| Ok(configured_webhook()?.is_some())).await
 }
@@ -55,23 +55,12 @@ pub async fn submit_report(
     // of them being on a slow disk must not stall a runtime worker.
     let paths = report.image_paths.clone();
     let images = run_blocking(move || load_all(&paths)).await?;
-    if remote_ready(&state).await {
-        let token = state
-            .account
-            .token()
-            .ok_or("Sign in again to send this report")?;
+    if let Some(token) = state.account.token() {
         return report_relay::deliver(&token, &report, screenshot, images, tail).await;
     }
     let webhook = configured_webhook()?
         .ok_or_else(|| "Reporting is unavailable right now. Please try again later.".to_string())?;
     deliver(&webhook, &report, screenshot, images, tail).await
-}
-
-async fn remote_ready(state: &AppState) -> bool {
-    let Some(token) = state.account.token() else {
-        return false;
-    };
-    report_relay::ready(&token).await
 }
 
 /// Decodes the editor's PNG and brings it under Discord's ceiling if it is

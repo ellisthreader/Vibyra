@@ -9,6 +9,7 @@
 
 import { LINUX_RELEASE_080 } from "./changelogRelease080.ts";
 import { LINUX_RELEASE_081 } from "./changelogRelease081.ts";
+import { LINUX_RELEASE_082 } from "./changelogRelease082.ts";
 
 export interface ChangelogSection {
   heading: string;
@@ -31,6 +32,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  LINUX_RELEASE_082,
   LINUX_RELEASE_081,
   LINUX_RELEASE_080,
   {

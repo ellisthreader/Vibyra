@@ -81,6 +81,16 @@ export class NativeDriver {
     ));
   }
 
+  async rightClick(selector) {
+    const id = await this.element(selector);
+    await this.request("POST", `/session/${this.session}/actions`, {
+      actions: [{ type: "pointer", id: "project-context-mouse", parameters: { pointerType: "mouse" }, actions: [
+        { type: "pointerMove", duration: 0, origin: { [ELEMENT]: id }, x: 0, y: 0 },
+        { type: "pointerDown", button: 2 }, { type: "pointerUp", button: 2 },
+      ] }],
+    });
+  }
+
   async keys(selector, text) {
     const id = await this.element(selector);
     await this.request("POST", `/session/${this.session}/element/${id}/value`, {

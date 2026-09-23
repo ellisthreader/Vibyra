@@ -9,11 +9,11 @@ use crate::account_api::{self, Endpoint};
 use crate::discord::Attachment;
 use crate::report::Report;
 
-pub async fn ready(token: &str) -> bool {
+pub async fn ready(token: &str) -> Result<bool, String> {
     ready_at(&account_api::base_url(), token).await
 }
 
-async fn ready_at(base: &str, token: &str) -> bool {
+async fn ready_at(base: &str, token: &str) -> Result<bool, String> {
     let path = Endpoint::ReportReady.path().expect("fixed report path");
     let response = reqwest::Client::new()
         .get(format!("{base}{path}"))
@@ -21,15 +21,17 @@ async fn ready_at(base: &str, token: &str) -> bool {
         .header("Accept", "application/json")
         .timeout(Duration::from_secs(12))
         .send()
-        .await;
-    let Ok(response) = response else { return false };
-    response.status().is_success()
-        && response
-            .json::<Value>()
-            .await
-            .ok()
-            .and_then(|body| body.get("ready").and_then(Value::as_bool))
-            == Some(true)
+        .await
+        .map_err(|_| "Could not check reporting right now.".to_string())?;
+    if !response.status().is_success() {
+        return Err("Could not check reporting right now.".into());
+    }
+    response
+        .json::<Value>()
+        .await
+        .ok()
+        .and_then(|body| body.get("ready").and_then(Value::as_bool))
+        .ok_or_else(|| "Could not check reporting right now.".into())
 }
 
 pub async fn deliver(

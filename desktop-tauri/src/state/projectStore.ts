@@ -191,5 +191,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     }
     await persist(list, activeId);
     set({ activeId, view: activeId ? get().view : "home" });
+    if (activeId === null) await adoptRoot(get().homeDir, get().homeDir);
+    orchestrateVisibility(activeId);
   },
 }));

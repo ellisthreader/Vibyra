@@ -79,4 +79,23 @@ try{for(const theme of ['light','dark']){const p=await browser.newPage({viewport
  assert.equal(await p.evaluate(()=>window.agentPicker()),true,'New terminal opens that project launcher');
  await p.close();
 }
+{
+ const p=await browser.newPage({viewport:{width:1100,height:720}});await p.goto(`http://127.0.0.1:${server.address().port}/?light&tree`);
+ await p.getByRole('button',{name:'vibyra-website',exact:true}).click({button:'right'});
+ const actions=p.getByRole('dialog',{name:'Project actions for vibyra-website'});
+ await actions.getByRole('button',{name:'Rename project'}).click();
+ await actions.getByRole('textbox',{name:'Project name'}).fill('Client website');
+ await actions.getByRole('button',{name:'Save name'}).click();
+ await p.getByRole('button',{name:'Client website',exact:true}).waitFor();
+ await p.getByRole('button',{name:'vibyra-api 1',exact:true}).click({button:'right'});
+ const apiActions=p.getByRole('dialog',{name:'Project actions for vibyra-api'});
+ await apiActions.getByRole('button',{name:'Close project'}).click();
+ assert.match(await apiActions.innerText(),/1 open session will close/);
+ await apiActions.getByRole('button',{name:'Cancel'}).click();
+ assert.equal(await p.getByRole('button',{name:'vibyra-api 1',exact:true}).count(),1);
+ await apiActions.getByRole('button',{name:'Close project'}).click();
+ await apiActions.getByRole('button',{name:'Close project'}).click();
+ await p.getByRole('button',{name:'vibyra-api 1',exact:true}).waitFor({state:'detached'});
+ await p.close();
+}
 console.log('PASS native components: empty/1/2/6/10/20 panes, modes, preserved hosts, dictation, exact send recovery, maximise and restore, terminal-only workspace disclosure.');}finally{await browser.close();server.close();}
