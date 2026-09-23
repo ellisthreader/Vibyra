@@ -22,6 +22,7 @@
     "app:build": "npm run app:install",
     "app:build:linux": "node scripts/build-linux.mjs --bundles appimage",
     "verify:linux:smoke": "node scripts/smoke-linux.mjs",
+    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs",
     "app:install": "node scripts/install.mjs",
     "app:install:only": "node scripts/install.mjs --no-build",
     "discord:configure": "bash scripts/configure-discord-webhook.sh configure",

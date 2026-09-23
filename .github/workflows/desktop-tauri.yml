@@ -114,6 +114,13 @@ jobs:
           images=(src-tauri/target/release/bundle/appimage/*.AppImage)
           test "${#images[@]}" = 1
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux.mjs "${images[0]}"
+      - name: Verify real Linux terminal keyboard input and PTY output
+        working-directory: desktop-tauri
+        timeout-minutes: 10
+        run: |
+          images=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          test "${#images[@]}" = 1
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs "${images[0]}"
       - name: Preserve Linux package, frontend manifest and native evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -123,6 +130,7 @@ jobs:
             desktop-tauri/src-tauri/target/release/bundle/appimage/*.AppImage
             desktop-tauri/release/frontend-manifest.json
             desktop-tauri/release/linux-smoke/
+            desktop-tauri/release/linux-terminal-smoke/
           if-no-files-found: warn
           retention-days: 14
 
