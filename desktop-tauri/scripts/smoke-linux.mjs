@@ -97,7 +97,10 @@ try {
   });
   await request("POST", `/session/${session}/element/${emailButton["element-6066-11e4-a52e-4f735466cecf"]}/click`, {});
   await until(() => execute(`const input = document.querySelector('input[aria-label="Email address"]');
-    return document.querySelector('.auth-card h1')?.textContent === 'Welcome back.' && input && input.getBoundingClientRect().height > 0`), "Email form navigation");
+    const form = document.querySelector('.auth-reveal--form.auth-reveal--open .auth-email');
+    return document.querySelector('.auth-card h1')?.textContent === 'Welcome back.'
+      && input && form && input.getBoundingClientRect().height > 0
+      && Number(getComputedStyle(form).opacity) > 0.99`), "Visible email form navigation");
   await capture("email-form");
   writeFileSync(join(output, "native-smoke.json"), `${JSON.stringify({ ...initial, nativeVersion: nativeVersion.version, emailNavigation: true }, null, 2)}\n`);
   console.log(`Native Linux AppImage sign-in, assets, IPC and email navigation passed. Evidence: ${output}`);

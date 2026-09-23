@@ -27,7 +27,7 @@ pub(crate) mod shared_backend;
 mod stream;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod typing_tests;
 pub mod vault;
 #[cfg(test)]

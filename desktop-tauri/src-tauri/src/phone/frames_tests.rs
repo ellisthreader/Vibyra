@@ -1,31 +1,33 @@
-use super::{
-    backend::DesktopBackend,
-    frames::{pieces, tail, TEXT_BUDGET},
-    vault::Vault,
-    workspace::SharedWorkspace,
-};
-use serde_json::{json, Value};
+use super::frames::{pieces, tail, TEXT_BUDGET};
+#[cfg(unix)]
+use super::{backend::DesktopBackend, vault::Vault, workspace::SharedWorkspace};
+use serde_json::json;
+#[cfg(unix)]
+use serde_json::Value;
+#[cfg(unix)]
 use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+#[cfg(unix)]
 use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
-use vibyra_host::{Backend, MAX_PLAINTEXT};
-
+#[cfg(unix)]
+use vibyra_host::Backend;
+use vibyra_host::MAX_PLAINTEXT;
+#[cfg(unix)]
 struct Sink;
+#[cfg(unix)]
 impl OutputSink for Sink {
     fn on_output(&self, _: u64, _: String) {}
     fn on_resync(&self, _: u64, _: String) {}
     fn on_exit(&self, _: u64, _: Option<i32>) {}
 }
-
 fn encoded(text: &str) -> usize {
     serde_json::to_string(text).unwrap().len() - 2
 }
 
-/// What an agent's truecolor repaint looks like, with every character the
-/// encoder has to escape: ESC, other controls, quotes, backslashes, and
-/// multi-byte text that must never be split.
+/// A truecolor repaint with controls, quotes, escapes and multi-byte text
+/// that must never be split.
 fn repaint(lines: usize) -> String {
     (0..lines)
         .map(|n| format!("\x1b[38;2;91;124;250m{n:05} \"✔ │ é\" \\ \x07\t🦀\x1b[0m\r\n"))
@@ -85,9 +87,7 @@ fn the_largest_output_event_and_snapshot_reply_fit_the_channel() {
     assert!(serde_json::to_vec(&reply).unwrap().len() <= MAX_PLAINTEXT);
 }
 
-/// The phone's step after "Connecting securely". A Mac terminal that had
-/// already printed more than one message's worth used to end the connection
-/// there, and opening it came back "Result exceeds remote frame limit".
+/// Busy terminals must stay within the remote frame limit when opened.
 #[cfg(unix)]
 #[test]
 fn a_busy_terminal_streams_and_opens_within_the_message_limit() {
