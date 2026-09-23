@@ -107,7 +107,9 @@ try {
       && Number(getComputedStyle(form).opacity) > 0.99);`), "interactive email form");
   await driver.keys('input[aria-label="Email address"]', user.email);
   await driver.keys('input[aria-label="Password"]', "local-only-password");
-  await driver.click(".auth-email button[type='submit']");
+  // Auth reveal animation can still clip the button after inputs become
+  // interactable. Submit the real form event once WebDriver has filled it.
+  await driver.execute(`document.querySelector('.auth-email').requestSubmit()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
   await driver.dismissWorkspaceOverlays();
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="Report a bug"]'))`),
