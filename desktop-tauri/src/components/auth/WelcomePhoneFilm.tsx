@@ -29,7 +29,15 @@ export function WelcomePhoneFilm({ time, playing, reduced }: { time:number; play
     else element.pause();
   };
   useEffect(sync, [time,playing,reduced,light]);
-  useEffect(() => { const element = video.current; return () => element?.pause(); }, [reduced]);
+  useEffect(() => {
+    const element = video.current;
+    return () => {
+      if (!element) return;
+      element.pause();
+      element.removeAttribute('src');
+      element.load();
+    };
+  }, [reduced]);
   useEffect(() => setFailed(false), [light]);
   const poster = light ? lightSearch : darkSearch;
   const fallback = time < 5 ? poster : light ? lightApproval : darkApproval;
