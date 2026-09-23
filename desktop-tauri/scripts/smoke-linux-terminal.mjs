@@ -80,7 +80,7 @@ async function enterAndCheck(id, command, marker, name) {
   const started = performance.now();
   // One WebDriver request emits the whole key burst, including Enter, without
   // a round trip that could accidentally give unordered IPC writes time to settle.
-  await driver.keys(".pane .xterm-helper-textarea", `${command}\uE007`);
+  await driver.keyboard(`${command}\uE007`);
   await driver.until(async () => {
     const raw = await snapshot(id);
     return new RegExp(`(?:\\r|\\n)${marker}(?:\\r|\\n)`).test(raw);
@@ -141,39 +141,37 @@ try {
 
   // Every character must be echoed by the PTY before the next arrives. This
   // detects the reported one-character lag, not merely eventual completion.
-  const stepMarker = "VIBYRA_STEP_123456789";
+  const stepMarker = "vibyrastep123456789";
   const stepCommand = `echo ${stepMarker}`;
   for (let index = 0; index < stepCommand.length; index += 1) {
-    await driver.keys(".pane .xterm-helper-textarea", stepCommand[index]);
+    await driver.keyboard(stepCommand[index]);
     const expected = stepCommand.slice(0, index + 1);
     await driver.until(async () => (await snapshot(id)).includes(expected),
       `character ${index + 1} echoed by PTY`, 3_000);
   }
-  await driver.keys(".pane .xterm-helper-textarea", "\uE007");
+  await driver.keyboard("\uE007");
   await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
     "single-character command output");
 
   const burstToOutputMs = [];
   for (let index = 0; index < 12; index += 1) {
-    const marker = `VIBYRA_BURST_${String(index).padStart(2, "0")}_abcdefghijklmnopqrstuvwxyz`;
+    const marker = `vibyraburst${String(index).padStart(2, "0")}abcdefghijklmnopqrstuvwxyz`;
     burstToOutputMs.push(await enterAndCheck(id, `echo ${marker}`, marker, `burst ${index + 1}`));
   }
-  await driver.keys(".pane .xterm-helper-textarea",
-    `echo VIBYRA_WRONG${"\uE003".repeat(5)}RIGHT\uE007`);
-  await driver.until(async () => /(?:\r|\n)VIBYRA_RIGHT(?:\r|\n)/.test(await snapshot(id)),
+  await driver.keyboard(`echo vibyrawrong${"\uE003".repeat(5)}right\uE007`);
+  await driver.until(async () => /(?:\r|\n)vibyaright(?:\r|\n)/.test(await snapshot(id)),
     "backspace-corrected command output");
 
   // Codex Plan mode uses Shift+Tab. Check its underlying xterm translation
   // against a real PTY, with cat -v making the Escape [ Z bytes observable.
-  await driver.keys(".pane .xterm-helper-textarea", "cat -v\uE007");
-  await driver.keys(".pane .xterm-helper-textarea", "VIBYRA_CAT_READY\uE007");
-  await driver.until(async () => (await snapshot(id)).split("VIBYRA_CAT_READY").length >= 3,
+  await driver.keyboard("cat -v\uE007");
+  await driver.keyboard("vibyracatready\uE007");
+  await driver.until(async () => (await snapshot(id)).split("vibyracatready").length >= 3,
     "cat -v ready to receive terminal control keys");
   const beforeShiftTab = (await snapshot(id)).length;
-  await driver.keys(".pane .xterm-helper-textarea", "\uE008\uE004\uE000\uE007");
+  await driver.keyboard("\uE008\uE004\uE000\uE007");
   await driver.until(async () => (await snapshot(id)).slice(beforeShiftTab).includes("^[[Z"),
     "Shift+Tab arrived at the Linux PTY as Escape [ Z");
-
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
