@@ -125,7 +125,10 @@ try {
   driver.stdout.destroy();
   driver.stderr.destroy();
   writeFileSync(join(output, "tauri-driver.log"), log);
-  rmSync(profile, { recursive: true, force: true });
+  // Mesa/WebKit children may still be writing shader-cache files briefly
+  // after tauri-driver exits. Cleanup must not turn a passed app check red.
+  try { rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); }
+  catch (error) { console.warn(`Disposable smoke profile cleanup deferred: ${error}`); }
 }
 // WebKit children can inherit the driver's pipes and keep Node alive after a
 // successful session. All evidence is already written synchronously above.
