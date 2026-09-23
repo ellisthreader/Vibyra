@@ -51,11 +51,10 @@ complete metadata, a 64-hex checksum, positive exact file size, DMG extension,
 and a real non-empty stored artifact. Browser detection may recommend macOS but
 must never guess Apple Silicon versus Intel.
 
-The current Linux beta is app version `0.1.1` (product name `Vibyra`, blue V
-icon). Its volume artifact is `releases/linux/Vibyra_0.1.1_amd64.AppImage`,
-served to browsers as `Vibyra.AppImage`. Windows remains
-`Vibyra-Desktop-0.1.0-beta.1-x64-setup.exe` until its next rebuild. 0.1.1
-fixed a fatal launch bug: the AppImage's bundled GLib scanned host gio modules
+As of 2026-09-23, the public Linux AppImage and Debian/Ubuntu channels are
+`0.8.0`; Windows remains on its own release version. The Linux update feed
+routes AppImage and Debian separately because each has its own signed bytes.
+The older 0.1.1 AppImage fixed a fatal launch bug: its bundled GLib scanned host gio modules
 (gvfs built against newer GLib), which killed WebKitWebProcess and left a
 frozen blank window; `run()` now sets `GIO_MODULE_DIR` to the bundled modules
 dir when `APPDIR` is set. `bundleMediaFramework` is enabled so autoaudiosink
