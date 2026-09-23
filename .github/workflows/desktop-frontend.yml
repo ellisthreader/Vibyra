@@ -38,9 +38,10 @@ jobs:
       - name: Upload the exact assets every native package will embed
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: vibyra-desktop-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          name: vibyra-desktop-frontend-${{ github.run_id }}
           path: |
             desktop-tauri/dist/
             desktop-tauri/release/frontend-manifest.json
           if-no-files-found: error
           retention-days: 30
+          overwrite: true
