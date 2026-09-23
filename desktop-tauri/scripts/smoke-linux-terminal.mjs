@@ -179,7 +179,8 @@ try {
   api.closeAllConnections();
   api.close();
   writeFileSync(join(output, "tauri-driver.log"), log);
-  rmSync(profile, { recursive: true, force: true });
+  try { rmSync(profile, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 }); }
+  catch (error) { console.warn(`Temporary profile cleanup raced a WebKit child: ${error}`); }
 }
 // WebKit children inherit driver pipes, so explicit exit matches smoke-linux.
 process.exit(failure ? 1 : 0);
