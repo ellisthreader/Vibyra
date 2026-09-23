@@ -1,0 +1,163 @@
+// Exercise keyboard -> WebKitGTK -> xterm -> Tauri IPC -> a real Linux PTY.
+// Run: dbus-run-session -- xvfb-run -a node scripts/smoke-linux-terminal.mjs app.AppImage
+import { spawn } from "node:child_process";
+import { createServer } from "node:http";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+import { NativeDriver } from "./linux-terminal-webdriver.mjs";
+
+if (process.platform !== "linux") throw new Error("Native terminal verification requires Linux");
+const application = resolve(process.argv[2] || "");
+if (!application.endsWith(".AppImage") || !existsSync(application)) {
+  throw new Error("Pass an existing Linux .AppImage");
+}
+const output = resolve(process.argv[3] || "release/linux-terminal-smoke");
+mkdirSync(output, { recursive: true });
+chmodSync(application, 0o755);
+const profile = mkdtempSync(join(tmpdir(), "vibyra-terminal-smoke-"));
+const project = join(profile, "input-repro");
+mkdirSync(project, { recursive: true });
+const config = join(profile, "config", "vibyra-desktop");
+mkdirSync(config, { recursive: true });
+writeFileSync(join(config, "settings.json"), JSON.stringify({
+  defaultShell: "/bin/sh",
+  projects: [{ id: "input-repro", name: "input-repro", root: project,
+    color: "#5b7cfa", lastOpenedMs: Date.now() }],
+  activeProjectId: "input-repro",
+}));
+
+const user = { id: "native-terminal-smoke", name: "Linux QA",
+  email: "linux-qa@example.invalid", provider: "email", plan: "free",
+  emailVerified: true };
+const api = createServer((request, response) => {
+  const send = (status, body) => {
+    response.writeHead(status, { "Content-Type": "application/json" });
+    response.end(JSON.stringify(body));
+  };
+  if (request.url === "/api/auth/login" && request.method === "POST") {
+    request.resume();
+    send(200, { ok: true, token: "terminal-smoke-local-token", user });
+  } else if (request.url === "/api/session") {
+    send(200, { ok: true, user });
+  } else if (request.url === "/api/auth/session/rotate") {
+    send(200, { ok: true, token: "terminal-smoke-local-token" });
+  } else if (request.url === "/api/account/profile") {
+    send(200, { ok: true, user });
+  } else {
+    send(404, { ok: false, error: "Unavailable in isolated terminal smoke" });
+  }
+});
+await new Promise((done) => api.listen(0, "127.0.0.1", done));
+const apiPort = api.address().port;
+const env = {
+  ...process.env, APPIMAGE_EXTRACT_AND_RUN: "1", GDK_BACKEND: "x11",
+  VIBYRA_DESKTOP_API_URL: `http://127.0.0.1:${apiPort}`,
+  XDG_CONFIG_HOME: join(profile, "config"), XDG_DATA_HOME: join(profile, "data"),
+  XDG_CACHE_HOME: join(profile, "cache"),
+};
+const port = Number(process.env.VIBYRA_TERMINAL_WEBDRIVER_PORT || 4446);
+const processDriver = spawn("tauri-driver", ["--port", String(port), "--native-port", String(port + 1)], { env });
+const driver = new NativeDriver(port, processDriver);
+let log = "";
+let failure;
+for (const stream of [processDriver.stdout, processDriver.stderr]) {
+  stream.on("data", bytes => { log += bytes.toString(); });
+}
+processDriver.on("error", error => { failure = error; });
+
+async function snapshot(id) {
+  return driver.invoke("terminal_snapshot", { id });
+}
+async function enterAndCheck(id, command, marker, name) {
+  await driver.keys(".pane .xterm-helper-textarea", command);
+  await driver.keys(".pane .xterm-helper-textarea", "\uE007");
+  await driver.until(async () => {
+    const raw = await snapshot(id);
+    return new RegExp(`(?:\\r|\\n)${marker}(?:\\r|\\n)`).test(raw);
+  }, `${name}: exact command result`);
+}
+
+try {
+  console.log("Opening the real AppImage against a local account fixture");
+  await driver.start(application);
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.auth-card h1'))`), "sign-in UI");
+  await driver.click("button.auth-email-toggle, button[title='Continue with email']")
+    .catch(async () => {
+      const button = await driver.execute(`return [...document.querySelectorAll('button')]
+        .find(button => button.textContent.trim() === 'Continue with email')?.outerHTML`);
+      if (!button) throw new Error("Continue with email button was absent");
+      await driver.execute(`const button = [...document.querySelectorAll('button')]
+        .find(button => button.textContent.trim() === 'Continue with email'); button.click();`);
+    });
+  await driver.until(() => driver.execute(`return document.querySelector('input[aria-label="Email address"]')?.getBoundingClientRect().height > 0`), "email form");
+  await driver.keys('input[aria-label="Email address"]', user.email);
+  await driver.keys('input[aria-label="Password"]', "local-only-password");
+  await driver.click(".auth-email button[type='submit']");
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
+  if (await driver.execute(`return Boolean(document.querySelector('.first-welcome'))`)) {
+    await driver.click(".first-welcome__skip");
+    await driver.until(() => driver.execute(`return !document.querySelector('.first-welcome')`), "welcome overlay dismissed");
+  }
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="New terminal in input-repro"]'))`), "test project");
+  await driver.click('button[aria-label="New terminal in input-repro"]');
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[title="Launch Terminal"]'))`), "system shell in terminal picker");
+  await driver.click('button[title="Launch Terminal"]');
+  const id = await driver.until(async () => {
+    const id = await driver.execute(`return Number(document.querySelector('.pane[data-pane-id]')?.dataset.paneId || 0)`);
+    return id || false;
+  }, "real PTY pane");
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.pane .xterm-helper-textarea'))`), "xterm input");
+  await driver.execute(`document.querySelector('.pane .xterm-helper-textarea').focus()`);
+  await driver.until(async () => (await snapshot(id)).length > 0, "shell prompt");
+
+  // Every character must be echoed by the PTY before the next arrives. This
+  // detects the reported one-character lag, not merely eventual completion.
+  const stepMarker = "VIBYRA_STEP_123456789";
+  const stepCommand = `echo ${stepMarker}`;
+  for (let index = 0; index < stepCommand.length; index += 1) {
+    await driver.keys(".pane .xterm-helper-textarea", stepCommand[index]);
+    const expected = stepCommand.slice(0, index + 1);
+    await driver.until(async () => (await snapshot(id)).includes(expected),
+      `character ${index + 1} echoed by PTY`, 3_000);
+  }
+  await driver.keys(".pane .xterm-helper-textarea", "\uE007");
+  await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
+    "single-character command output");
+
+  for (let index = 0; index < 12; index += 1) {
+    const marker = `VIBYRA_BURST_${String(index).padStart(2, "0")}_abcdefghijklmnopqrstuvwxyz`;
+    await enterAndCheck(id, `echo ${marker}`, marker, `burst ${index + 1}`);
+  }
+  await driver.keys(".pane .xterm-helper-textarea", "echo VIBYRA_WRONG");
+  await driver.keys(".pane .xterm-helper-textarea", "\uE003".repeat(5));
+  await driver.keys(".pane .xterm-helper-textarea", "RIGHT");
+  await driver.keys(".pane .xterm-helper-textarea", "\uE007");
+  await driver.until(async () => /(?:\r|\n)VIBYRA_RIGHT(?:\r|\n)/.test(await snapshot(id)),
+    "backspace-corrected command output");
+
+  writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
+  writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
+    appImage: application, nativePty: id, characterEcho: stepCommand.length,
+    burstCommands: 12, backspace: true, accountService: "loopback fixture",
+  }, null, 2));
+  console.log(`Native Linux PTY typing passed. Evidence: ${output}`);
+} catch (error) {
+  failure = error;
+  console.error(error);
+  if (driver.session) {
+    try { writeFileSync(join(output, "failure.png"), await driver.screenshot()); }
+    catch { /* Keep the original error. */ }
+  }
+} finally {
+  processDriver.kill("SIGKILL");
+  processDriver.stdout.destroy();
+  processDriver.stderr.destroy();
+  api.closeAllConnections();
+  api.close();
+  writeFileSync(join(output, "tauri-driver.log"), log);
+  rmSync(profile, { recursive: true, force: true });
+}
+// WebKit children inherit driver pipes, so explicit exit matches smoke-linux.
+process.exit(failure ? 1 : 0);
