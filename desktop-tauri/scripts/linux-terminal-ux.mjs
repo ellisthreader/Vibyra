@@ -37,8 +37,8 @@ export async function verifyProjectActions(driver) {
     "project close confirmation");
   await driver.click('.project-context__buttons button:first-child');
   await driver.click('.project-context__choices button:first-child');
-  await driver.keys('#project-context-name', 'Linux QA project');
+  await driver.keys('#project-context-name', 'linux qa project');
   await driver.click('.project-context__primary');
   await driver.until(() => driver.execute(`return [...document.querySelectorAll('.workspace-tree__row')]
-    .some(row => row.textContent.includes('Linux QA project'))`), "project renamed from native menu");
+    .some(row => row.textContent.includes('linux qa project'))`), "project renamed from native menu");
 }
