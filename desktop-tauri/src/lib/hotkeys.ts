@@ -1,9 +1,12 @@
-import { isMac } from "./platform";
+// Extension spelled out so the test runner, which strips types rather than
+// resolving like a bundler, can reach this module.
+import { isMac } from "./platform.ts";
 
-export type HotkeyAction = "voice" | "screenshot";
+export type HotkeyAction = "voice" | "screenshot" | "talk";
 
 export const DEFAULT_VOICE_SHORTCUT = "F8";
 export const DEFAULT_SCREENSHOT_SHORTCUT = "F9";
+export const DEFAULT_TALK_SHORTCUT = "F10";
 
 const NAMED_KEYS: Record<string, string> = {
   ArrowDown: "Down",
@@ -43,8 +46,15 @@ export function shortcutFromEvent(event: KeyboardEvent): string | null {
   return parts.join("+");
 }
 
+const MAC_CAPS: Record<string, string> = { CommandOrControl: "⌘", Control: "⌃", Shift: "⇧", Alt: "⌥" };
+const PC_CAPS: Record<string, string> = { CommandOrControl: "Ctrl" };
+
+/** A recorded shortcut split the way it is pressed, one entry per key, so the
+ * page can draw a cap for each rather than one run of glyphs. */
+export function shortcutCaps(shortcut: string): string[] {
+  return shortcut.split("+").map((part) => (isMac ? MAC_CAPS : PC_CAPS)[part] ?? part);
+}
+
 export function shortcutLabel(shortcut: string): string {
-  return isMac
-    ? shortcut.replace("CommandOrControl", "⌘").replace("Control", "⌃").replace("Shift", "⇧").replace("Alt", "⌥").replaceAll("+", "")
-    : shortcut.replace("CommandOrControl", "Ctrl").replaceAll("+", " + ");
+  return shortcutCaps(shortcut).join(isMac ? "" : " + ");
 }

@@ -24,8 +24,6 @@
 
 .np-run__status { margin: 22px 0 0; font-size: 16.5px; font-weight: 600; letter-spacing: -.3px; text-align: center; }
 .np-run__status--bad { color: var(--danger); }
-.np-run__tail { margin-top: 7px; max-width: 100%; color: var(--muted); font-family: var(--font-mono);
-  font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Every step of the plan is listed from the first moment, so what is coming is
    as visible as what is done. */

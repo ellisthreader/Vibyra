@@ -32,6 +32,7 @@ export type SettingsSectionId =
 export type SettingsPanelId =
   | "appearance"
   | "performance"
+  | "privacy"
   | "identity"
   | "membership"
   | "credits"
@@ -39,9 +40,8 @@ export type SettingsPanelId =
   | "devices"
   | "danger"
   | "terminalAccounts"
-  | "vibyraFeatures"
-  | "usage"
   | "integrations"
+  | "voice"
   | "terminal"
   | "files"
   | "graphics"

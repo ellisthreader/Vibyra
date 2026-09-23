@@ -18,12 +18,24 @@
 
 /* ── membership ─────────────────────────────────────────────────────────── */
 
-.membership__billing {
+.membership__billed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.membership__billed svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Quiet, and narrow: a chip here crowded the row's own button. */
+.device-row__current {
   align-self: center;
-  font-size: 12px;
-  font-weight: 560;
-  color: var(--muted);
   margin-right: 10px;
+  font-size: 11.5px;
+  font-weight: 560;
+  color: var(--dim);
 }
 
 /* ── credits ────────────────────────────────────────────────────────────── */

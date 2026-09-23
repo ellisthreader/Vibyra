@@ -42,6 +42,13 @@
   --danger: #f06472;
   --danger-soft: rgba(240, 100, 114, 0.15);
 
+  /* keycaps — a cap sits above the panel it rests on, never cut into it */
+  --key-face: #31353f;
+  --key-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0));
+  --key-edge: rgba(255, 255, 255, 0.14);
+  --key-lip: rgba(0, 0, 0, 0.5);
+  --key-text: #f1f3f8;
+
   /* states */
   --hover: rgba(255, 255, 255, 0.04);
   --hover-strong: rgba(255, 255, 255, 0.07);
@@ -92,6 +99,11 @@
   --term-dim: #939baa;
 }
 
+/* Preserve the installed Mac type stack; Linux uses the bundled Inter face. */
+:root[data-platform="mac"] {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Inter Variable", sans-serif;
+}
+
 :root[data-theme="light"] {
   color-scheme: light;
 
@@ -125,6 +137,12 @@
   --amber-soft: rgba(169, 104, 18, 0.12);
   --danger: #c9364b;
   --danger-soft: rgba(201, 54, 75, 0.1);
+
+  --key-face: #ffffff;
+  --key-gloss: linear-gradient(180deg, #ffffff, #f4f6f9);
+  --key-edge: #ccd2dc;
+  --key-lip: rgba(28, 31, 42, 0.16);
+  --key-text: #1c2029;
 
   --hover: rgba(30, 28, 31, 0.045);
   --hover-strong: rgba(30, 28, 31, 0.075);

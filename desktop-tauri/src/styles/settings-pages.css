@@ -66,12 +66,6 @@
   border-radius: 0;
 }
 
-.perf-effects--inset {
-  margin: 0;
-  padding: 12px 16px 14px;
-  gap: 8px;
-}
-
 /* provider cards, compacted inside one group */
 
 .settings-group.integration-list {

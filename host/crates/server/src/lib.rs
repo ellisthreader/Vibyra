@@ -9,6 +9,7 @@ mod embedded_api;
 mod identity;
 mod instance;
 mod invitation;
+pub mod notifications;
 mod peer_policy;
 mod presence;
 mod relay;
@@ -30,3 +31,6 @@ mod relay_test_support;
 mod relay_tests;
 #[cfg(test)]
 mod relay_wait_tests;
+
+#[cfg(test)]
+mod notifications_audit_tests;

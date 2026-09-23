@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import type { RefObject } from "react";
 
+/** True while a popup layered over a dialog is handling Escape and Tab itself. */
+function popupOwnsKeys(): boolean {
+  const owner = document.querySelector("[data-escape-owner]");
+  return owner instanceof HTMLElement && owner.getClientRects().length > 0;
+}
+
 const FOCUSABLE =
   "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), " +
   "textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
@@ -26,12 +32,21 @@ export function useModalFocus(
     node.querySelector<HTMLElement>(FOCUSABLE)?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" && event.key !== "Tab") return;
+      // A popup layered over the dialog owns both keys while it is open. This
+      // listener is on `window` in the capture phase, so without standing down
+      // a portalled menu's own handlers never run: Escape would close the whole
+      // dialog under it, and Tab — which sees the portal as "outside" the
+      // dialog — would fling focus back to the dialog's first control. Such a
+      // layer marks itself `data-escape-owner`; the attribute lives on the
+      // popup element, so it cannot outlive it. It must also be rendered: a
+      // hidden node carrying it would silently disable Escape app-wide.
+      if (popupOwnsKeys()) return;
       if (event.key === "Escape") {
         event.stopPropagation();
         onClose();
         return;
       }
-      if (event.key !== "Tab") return;
       const items = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE));
       if (items.length === 0) return;
       const first = items[0];

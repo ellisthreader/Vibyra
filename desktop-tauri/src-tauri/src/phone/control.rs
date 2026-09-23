@@ -9,7 +9,7 @@ use std::{
 };
 
 pub const TYPING_OFF: &str =
-    "Typing from your phone is off. Turn it on in Vibyra on your Mac: Settings > iPhone connection.";
+    crate::platform_text::for_computer("Typing from your phone is off. Turn it on in Vibyra on your Mac: Settings > iPhone connection.", "Typing from your phone is off. Turn it on in Vibyra on your computer: Settings > iPhone connection.");
 /// The phone's store matches this text to drop back to watching; keep them in step.
 pub const LEASE_TAKEN: &str = "Another phone took this terminal. Tap it to type here again.";
 

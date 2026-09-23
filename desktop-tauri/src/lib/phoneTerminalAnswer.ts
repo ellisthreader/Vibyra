@@ -1,3 +1,4 @@
+import { computerName } from "./platform.ts";
 import type { PhoneProjectOpened, PhoneTerminalRequest, PhoneTerminalStarted } from "../ipc/phone";
 import type { LaunchedSession } from "./configuredLaunch";
 import type { ResolvedAgent } from "../types";
@@ -26,7 +27,7 @@ export type Reply = { result?: PhoneTerminalStarted | PhoneProjectOpened | { ok:
 const AGENT_NAMES: Record<string, string> = { shell: "Terminal", codex: "Codex", claude: "Claude Code" };
 
 export const APPROVAL_WAITING =
-  "Safe mode is waiting for a checkpoint to be approved on your Mac. Approve it there, then find the terminal here.";
+  `Safe mode is waiting for a checkpoint to be approved on your ${computerName}. Approve it there, then find the terminal here.`;
 
 export async function answerTerminalRequest(request: PhoneTerminalRequest, deps: RequestDeps): Promise<Reply> {
   try {
@@ -38,7 +39,7 @@ export async function answerTerminalRequest(request: PhoneTerminalRequest, deps:
     }
     if (request.action === "rename") {
       const project = await deps.rename(request.projectId, request.name);
-      if (!project) return { error: "That project is not open on this Mac." };
+      if (!project) return { error: `That project is not open on this ${computerName}.` };
       return { result: project };
     }
     if (request.action === "forget") {
@@ -52,14 +53,14 @@ export async function answerTerminalRequest(request: PhoneTerminalRequest, deps:
       return { result: { ok: true } };
     }
     const agent = (await deps.agents()).find((candidate) => candidate.id === request.kind);
-    if (!agent) return { error: `${AGENT_NAMES[request.kind] ?? request.kind} is not available on this Mac.` };
-    if (!agent.installed && agent.id !== "shell") return { error: `${agent.name} is not installed on this Mac.` };
+    if (!agent) return { error: `${AGENT_NAMES[request.kind] ?? request.kind} is not available on this ${computerName}.` };
+    if (!agent.installed && agent.id !== "shell") return { error: `${agent.name} is not installed on this ${computerName}.` };
     const [started] = await deps.launch(agent, request.projectId, request.title);
     if (started) return { result: started };
     if (deps.approvalPending()) return { error: APPROVAL_WAITING };
     // The launch's own reason went to the Mac's notifications; the phone gets
     // the short of it and where to look.
-    return { error: "The terminal did not start. Check Vibyra on your Mac." };
+    return { error: `The terminal did not start. Check Vibyra on your ${computerName}.` };
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
   }

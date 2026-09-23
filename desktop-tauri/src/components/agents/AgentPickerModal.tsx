@@ -147,7 +147,7 @@ export function AgentPickerModal() {
               <span>Select an installed terminal integration to see its models.</span>
               <button
                 type="button"
-                className="btn btn--secondary"
+                className="btn"
                 onClick={() => {
                   close();
                   openSettingsSection("ai", "terminalAccounts");

@@ -1,90 +1,191 @@
-import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 
-import { searchMemorySources } from "../ipc/memory";
-import { formatMemoryContext } from "../lib/memoryImport";
-import { useMemoryStore } from "./memoryStore";
-import { useSettingsStore } from "./settingsStore";
+import { aiChat, aiChatStop, type ChatMessage } from "../ipc/ai";
+import { toolSchemas } from "../lib/vibyraTools";
+import { actOnToolCalls } from "./chatAct";
+import { buildPrompt } from "./chatSystemPrompt";
+import { applyDelta, contextFor, dropTurn, settleTurn } from "./chatLedger";
+import type { ChatTurn } from "./chatTypes";
 
-export interface ChatTurn {
-  role: "user" | "assistant";
-  content: string;
-}
+export type { ChatTurn } from "./chatTypes";
 
 // One conversation per project — context stops leaking between codebases.
 
 interface ChatStore {
   threads: Record<string, ChatTurn[]>;
+  /** The one reply being written, and the request that owns it. */
+  active: { projectId: string; turnId: string; requestId: string } | null;
+  /** Transitional: `ChatPanel` still reads this; it is `active !== null`. */
   sending: boolean;
   error: string | null;
-  send: (projectId: string, text: string) => Promise<void>;
+  send: (projectId: string, text: string, options?: SendOptions) => Promise<void>;
+  /** Re-runs a failed or stopped reply from the question it answered, without
+   * asking that question a second time. */
+  retry: (projectId: string, turnId: string) => Promise<void>;
+  stop: () => void;
   clear: (projectId: string) => void;
 }
 
-const MAX_CONTEXT_TURNS = 16;
-const SAMPLE_REPLIES = [
-  'Try a small change first, then see how it feels in Preview.',
-  'A simple starting point: one clear heading, a little space, and one useful action.',
-  'What would you like to try next? You can keep typing to test the conversation.',
-  'Sometimes the best next step is removing something you do not need.',
-  'You could try a shorter title and a calmer layout for this idea.',
-];
-
-async function systemPrompt(projectId: string, query: string): Promise<string> {
-  const settings = useSettingsStore.getState().settings;
-  const project = settings?.projects.find((p) => p.id === projectId);
-  await useMemoryStore.getState().load(projectId);
-  const localMemory = useMemoryStore.getState().contents[projectId] ?? "";
-  const snippets = await searchMemorySources(projectId, query).catch(() => []);
-  const memory = formatMemoryContext(localMemory, snippets);
-  let prompt =
-    "You are the Vibyra workspace assistant inside a desktop app for running AI CLI terminals. " +
-    "Be concise and practical; prefer shell commands and concrete steps.";
-  if (project) prompt += `\nProject: ${project.name} at ${project.root}`;
-  if (memory) prompt += `\n${memory}`;
-  return prompt;
+export interface SendOptions {
+  /** The reply will be read aloud, so it is written to be heard rather than
+   * read: a couple of spoken sentences, no markdown, no code blocks. */
+  spoken?: boolean;
 }
 
-export const useChatStore = create<ChatStore>((set, get) => ({
-  threads: {},
-  sending: false,
-  error: null,
+let counter = 0;
+const newId = () => `t-${Date.now().toString(36)}-${(counter += 1).toString(36)}`;
 
-  send: async (projectId, text) => {
-    const content = text.trim();
-    if (!content || get().sending) return;
-    const thread = [...(get().threads[projectId] ?? []), { role: "user" as const, content }];
+// Rust admits one chat at a time, and a stopped stream takes a moment to let
+// go of that slot. Holding the previous call here means a Retry fired straight
+// after Stop waits for it instead of bouncing off "a request is already running".
+let lastCall: Promise<unknown> = Promise.resolve();
+
+export const useChatStore = create<ChatStore>((set, get) => {
+  const patch = (projectId: string, turnId: string, fields: Partial<ChatTurn>) =>
     set((state) => ({
-      threads: { ...state.threads, [projectId]: thread },
-      sending: true,
-      error: null,
+      threads: {
+        ...state.threads,
+        [projectId]: settleTurn(state.threads[projectId] ?? [], turnId, fields),
+      },
     }));
-    if (!useSettingsStore.getState().settings?.openaiKeyConfigured) {
-      const reply = SAMPLE_REPLIES[Math.floor(Math.random() * SAMPLE_REPLIES.length)];
-      set(state => ({
-        threads: { ...state.threads, [projectId]: [...thread, { role: 'assistant', content: `Sample reply: ${reply}` }] },
-        sending: false,
-      }));
-      return;
-    }
-    try {
-      const context = thread.slice(-MAX_CONTEXT_TURNS);
-      const prompt = await systemPrompt(projectId, content);
-      const reply = await invoke<string>("ai_chat", {
-        messages: [{ role: "system", content: prompt }, ...context],
-      });
-      set((state) => ({
-        threads: {
-          ...state.threads,
-          [projectId]: [...(state.threads[projectId] ?? []), { role: "assistant", content: reply }],
-        },
-        sending: false,
-      }));
-    } catch (error) {
-      set({ sending: false, error: String(error) });
-    }
-  },
 
-  clear: (projectId) =>
-    set((state) => ({ threads: { ...state.threads, [projectId]: [] }, error: null })),
-}));
+  const append = (projectId: string, turns: ChatTurn[]) =>
+    set((state) => ({
+      threads: { ...state.threads, [projectId]: [...(state.threads[projectId] ?? []), ...turns] },
+    }));
+
+  const stream = (projectId: string, turnId: string, text: string) =>
+    set((state) => ({
+      threads: { ...state.threads, [projectId]: applyDelta(state.threads[projectId] ?? [], turnId, text) },
+    }));
+
+  /** What the acting half needs from this store, named once. */
+  const actContext = (requestId: string) => ({
+    newId,
+    reply,
+    patch,
+    append,
+    stream,
+    context: (id: string) => contextFor(get().threads[id] ?? []),
+    prompt: buildPrompt,
+    live: () => get().active?.requestId === requestId,
+  });
+
+  /** Drives one reply into an assistant turn that is already on screen. */
+  const run = async (projectId: string, turn: ChatTurn, query: string) => {
+    const requestId = newId();
+    set({ active: { projectId, turnId: turn.id, requestId }, sending: true, error: null });
+    try {
+      await lastCall.catch(() => {});
+      const prompt = await buildPrompt(projectId, query, turn.spoken ?? false);
+      // Stopped while the brief was still being read: never pay for a reply
+      // nobody is waiting for.
+      if (get().active?.requestId !== requestId) return patch(projectId, turn.id, { status: "complete" });
+      const messages: ChatMessage[] = [
+        { role: "system", content: prompt },
+        ...contextFor(get().threads[projectId] ?? []),
+      ];
+      const call = aiChat(
+        requestId,
+        messages,
+        ({ text }) => {
+          // A delta belonging to a reply that was stopped or replaced is stale.
+          if (get().active?.requestId === requestId) stream(projectId, turn.id, text);
+        },
+        // A spoken turn acts too: "open three terminals" is the same request
+        // whether it was typed or said.
+        toolSchemas(),
+      );
+      lastCall = call;
+      const outcome = await call;
+      // The returned text wins over everything accumulated from the channel.
+      patch(projectId, turn.id, {
+        content: outcome.text,
+        status: "complete",
+        stopped: outcome.stopped,
+      });
+      if (outcome.toolCalls?.length && !outcome.stopped) {
+        // A turn that only asked for an action has nothing to say yet; the
+        // actions and the sentence after them are the reply.
+        if (!outcome.text) {
+          set((state) => ({
+            threads: { ...state.threads, [projectId]: dropTurn(state.threads[projectId] ?? [], turn.id) },
+          }));
+        }
+        await actOnToolCalls(actContext(requestId), projectId, turn, outcome.toolCalls);
+      }
+    } catch (error) {
+      // Whatever arrived before it broke is kept: a half reply is still worth
+      // reading, and the question above it stays there to be retried. The
+      // composer is only told when it was not the person who ended it.
+      patch(projectId, turn.id, { status: "failed", error: String(error) });
+      if (get().active?.requestId === requestId) set({ error: String(error) });
+    } finally {
+      if (get().active?.requestId === requestId) set({ active: null, sending: false });
+    }
+  };
+
+  const reply = (replyTo: string, spoken?: boolean): ChatTurn => ({
+    id: newId(),
+    role: "assistant",
+    content: "",
+    status: "streaming",
+    createdAt: Date.now(),
+    replyTo,
+    spoken,
+  });
+
+  return {
+    threads: {},
+    active: null,
+    sending: false,
+    error: null,
+
+    send: async (projectId, text, options) => {
+      const content = text.trim();
+      if (!content || get().active) return;
+      const question: ChatTurn = {
+        id: newId(),
+        role: "user",
+        content,
+        status: "complete",
+        createdAt: Date.now(),
+      };
+      const answer = reply(question.id, options?.spoken);
+      set((state) => ({
+        threads: { ...state.threads, [projectId]: [...(state.threads[projectId] ?? []), question, answer] },
+        error: null,
+      }));
+      await run(projectId, answer, content);
+    },
+
+    retry: async (projectId, turnId) => {
+      if (get().active) return;
+      const turns = get().threads[projectId] ?? [];
+      const failed = turns.find((entry) => entry.id === turnId);
+      const question = turns.find((entry) => entry.id === failed?.replyTo);
+      if (!failed || !question) return;
+      const answer = reply(question.id, failed.spoken);
+      set((state) => ({
+        threads: { ...state.threads, [projectId]: [...dropTurn(state.threads[projectId] ?? [], turnId), answer] },
+        error: null,
+      }));
+      await run(projectId, answer, question.content);
+    },
+
+    stop: () => {
+      const active = get().active;
+      if (!active) return;
+      // Marked and released in the same frame: the real settle arrives a
+      // moment later with the text Rust actually sent.
+      patch(active.projectId, active.turnId, { stopped: true });
+      set({ active: null, sending: false });
+      void aiChatStop(active.requestId).catch(() => {});
+    },
+
+    clear: (projectId) => {
+      if (get().active?.projectId === projectId) get().stop();
+      set((state) => ({ threads: { ...state.threads, [projectId]: [] }, error: null }));
+    },
+  };
+});

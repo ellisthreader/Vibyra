@@ -14,6 +14,18 @@ export interface ScaffoldOutcome {
   stalled: boolean;
 }
 
+/** Whether a project can be built at a path, as the name is typed. */
+export type DestinationState = "free" | "used" | "notAFolder";
+
+export function scaffoldDestination(path: string): Promise<DestinationState> {
+  return invoke("scaffold_destination", { path });
+}
+
+/** A name whose folder is free: only the native side can see the disk. */
+export function scaffoldFreeName(parent: string, base: string): Promise<string> {
+  return invoke("scaffold_free_name", { parent, base });
+}
+
 /** Which toolchains are on PATH. Asked once when the wizard opens. */
 export function scaffoldPreflight(tools: ToolId[]): Promise<Record<string, boolean>> {
   return invoke("scaffold_preflight", { tools });

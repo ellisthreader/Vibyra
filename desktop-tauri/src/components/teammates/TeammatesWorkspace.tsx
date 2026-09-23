@@ -20,7 +20,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
   const refresh = useCallback(async () => { const data = await teammateApi<Roster>('agents/v1/teammates'); if (data.version !== 1 || !Array.isArray(data.teammates)) throw new Error('Unsupported teammate response.'); setRoster(data); setError(''); }, []);
   useEffect(() => { if (!active || !identity) return; let stopped = false; let timer: ReturnType<typeof setTimeout>;
     const poll = async () => { try { await refresh(); } catch (e) { if (!stopped) setError(message(e)); } if (!stopped) timer = setTimeout(poll, 10000); }; void poll(); return () => { stopped = true; clearTimeout(timer); }; }, [active, identity, refresh]);
-  const open = (agent: Teammate) => { setSelected(agent.id); setVisited(ids => ids.includes(agent.id) ? ids : [...ids, agent.id]); };
+  const open = (agent: Teammate) => { setSetup(null); setSelected(agent.id); setVisited(ids => ids.includes(agent.id) ? ids : [...ids, agent.id]); };
   const rows = (roster?.teammates ?? []).filter(a => a.archived === archived && `${a.name} ${a.brief}`.toLowerCase().includes(query.toLowerCase()));
   const saved = (agent: Teammate) => { setRoster(r => r ? { ...r, teammates: [agent, ...r.teammates.filter(a => a.id !== agent.id)] } : r); setSetup(null); open(agent); };
   return <div className="teammates-workspace" hidden={!active}>
@@ -36,10 +36,10 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
     <main className="teammates-main">
       {error && <div className="teammate-notice" role="alert">{error}<button onClick={() => void refresh().catch(e => setError(message(e)))}>Refresh teammates</button></div>}
       {roster && !roster.enabled && <p className="teammate-notice">Teammate tasks are paused. Your history remains available.</p>}
-      {!selected && <div className="teammate-welcome"><h2>Your teammates</h2><p>One conversation for each person on your team.</p>{roster?.enabled && <button className="primary" onClick={() => setSetup({})}>New teammate</button>}</div>}
-      {visited.map(id => { const agent = roster?.teammates.find(a => a.id === id); return agent ? <Thread key={id} agent={agent} identity={identity} active={active && id === selected} enabled={roster?.enabled === true && !error} onDetails={() => setSetup({ agent })} /> : null; })}
+      {!selected && !setup && <div className="teammate-welcome"><h2>Your teammates</h2><p>One conversation for each person on your team.</p>{roster?.enabled && <button className="primary" onClick={() => setSetup({})}>New teammate</button>}</div>}
+      {visited.map(id => { const agent = roster?.teammates.find(a => a.id === id); return agent ? <Thread key={id} agent={agent} identity={identity} active={active && id === selected && !setup} enabled={roster?.enabled === true && !error} onDetails={() => setSetup({ agent })} /> : null; })}
+    {setup && <Setup key={setup.agent?.id ?? 'new'} agent={setup.agent} identity={identity} enabled={roster?.enabled === true} onClose={() => setSetup(null)} onSaved={saved} />}
     </main>
     {skills && <Skills teammates={roster?.teammates ?? []} identity={identity} onClose={() => { setSkills(false); void refresh().catch(e => setError(message(e))); }} />}
-    {setup && <Setup key={setup.agent?.id ?? 'new'} agent={setup.agent} identity={identity} enabled={roster?.enabled === true} onClose={() => setSetup(null)} onSaved={saved} />}
   </div>;
 }

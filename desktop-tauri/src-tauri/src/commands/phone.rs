@@ -49,6 +49,13 @@ pub fn phone_set_remote(state: State<'_, AppState>, enabled: bool) -> Result<Val
     Ok(phone.status())
 }
 
+#[tauri::command]
+pub fn phone_set_notifications(state: State<'_, AppState>, enabled: bool) -> Result<Value, String> {
+    let mut phone = state.phone.lock();
+    phone.set_notifications(enabled)?;
+    Ok(phone.status())
+}
+
 /// Ends every session that came through the cloud, at once.
 #[tauri::command]
 pub fn phone_remote_disconnect_all(state: State<'_, AppState>) -> Value {

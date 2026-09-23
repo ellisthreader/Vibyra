@@ -165,7 +165,11 @@ pub(super) fn open_in_window(requests: &Arc<TerminalRequests>, dir: &str) -> Res
         .unwrap_or("Project");
     let project = requests.ask(json!({"action":"adopt","path":dir,"name":name}))?;
     if project["id"].as_str().is_none_or(str::is_empty) {
-        return Err("Vibyra on your Mac did not open the new folder.".into());
+        return Err(crate::platform_text::for_computer(
+            "Vibyra on your Mac did not open the new folder.",
+            "Vibyra on your computer did not open the new folder.",
+        )
+        .into());
     }
     Ok(project)
 }

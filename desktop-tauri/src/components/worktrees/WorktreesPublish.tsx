@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { createGithubRepository, githubPublish } from '../../lib/githubPublish';
@@ -87,6 +88,6 @@ export function WorktreesPublish({ root, name, onPublished }: Props) {
       {failure} <button className="worktree-link" onClick={() => useWorkspaceStore.getState().openSettingsSection('ai', 'integrations')}>Check GitHub</button>
     </p>}
     <small>Creates {visibility === 'private' ? 'a private' : 'a public'} repository named {wanted || '…'} on your
-      GitHub account and pushes this folder to it. Needs GitHub connected and git credentials on this Mac.</small>
+      GitHub account and pushes this folder to it. Needs GitHub connected and git credentials on this {computerName}.</small>
   </div>;
 }

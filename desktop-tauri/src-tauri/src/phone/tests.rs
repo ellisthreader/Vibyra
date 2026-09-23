@@ -1,18 +1,25 @@
+use super::address::connection_address as private_address;
+#[cfg(unix)]
 use super::{
-    address::connection_address as private_address,
     backend::DesktopBackend,
     vault::Vault,
     workspace::{DesktopPane, DesktopProject, SharedWorkspace},
 };
+#[cfg(unix)]
 use serde_json::json;
+#[cfg(unix)]
 use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+#[cfg(unix)]
 use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+#[cfg(unix)]
 use vibyra_host::Backend;
 
+#[cfg(unix)]
 struct Sink;
+#[cfg(unix)]
 impl OutputSink for Sink {
     fn on_output(&self, _: u64, _: String) {}
     fn on_resync(&self, _: u64, _: String) {}

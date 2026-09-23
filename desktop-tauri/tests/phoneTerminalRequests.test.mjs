@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { answerTerminalRequest, APPROVAL_WAITING } from "../src/lib/phoneTerminalAnswer.ts";
+import { computerName } from "../src/lib/platform.ts";
 
 // A phone paired to this Mac asks the window for a terminal, or for one to
 // close, and waits on the answer. These are the answers, with the stores
@@ -50,7 +51,7 @@ test("an agent that is not installed is refused by name, not launched", async ()
 test("a launch that opened nothing says why, and a waiting checkpoint says where", async () => {
   const refused = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q" },
     deps({ launch: async () => [] }));
-  assert.match(refused.error, /Check Vibyra on your Mac/);
+  assert.equal(refused.error, `The terminal did not start. Check Vibyra on your ${computerName}.`);
   const waiting = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q" },
     deps({ launch: async () => [], approvalPending: () => true }));
   assert.equal(waiting.error, APPROVAL_WAITING);
@@ -116,7 +117,7 @@ test("a project can be renamed from the phone, and the window answers with it", 
 test("renaming a project this window does not have is a reason, not a hang", async () => {
   const reply = await answerTerminalRequest({ id: "r", action: "rename", projectId: "gone", name: "Shop" },
     deps({ rename: async () => null }));
-  assert.match(reply.error, /not open on this Mac/);
+  assert.equal(reply.error, `That project is not open on this ${computerName}.`);
 });
 
 test("forgetting drops it from the list and says so plainly", async () => {

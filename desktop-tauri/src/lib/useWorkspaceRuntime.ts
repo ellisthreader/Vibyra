@@ -12,7 +12,7 @@ import { useWorkspaceStore } from "../state/workspaceStore";
 import { restoredProjectId } from "./sessionRestore";
 import { startAppRuntime } from "./appStartup";
 import { notifyModelsReleased, notifySessionExit } from "./notificationTriggers";
-import { startupPrefetchEnabled } from "./performanceMode";
+import { startupPrefetchEnabled, normalizePerformanceMode } from "./performanceMode";
 import { providerAccountRuntimeUpdate } from "./providerAccountPolicy";
 import { setSessionExitHandler, setSessionTitleHandler } from "./terminalEvents";
 
@@ -87,7 +87,7 @@ function useModelReleaseWatch(): void {
  * asked for Performance mode, which takes the opposite side of that trade. */
 function useScreenshotEditorPrefetch(): void {
   const enabled = startupPrefetchEnabled(
-    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+    useSettingsStore((state) => normalizePerformanceMode(state.settings?.performanceMode)),
   );
   useEffect(() => {
     if (!enabled) return;

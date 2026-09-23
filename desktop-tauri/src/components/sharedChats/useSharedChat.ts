@@ -3,8 +3,10 @@ import { listen } from '@tauri-apps/api/event';
 import { ConversationLedger } from '../../../../mobile/src/state/conversationLedger';
 import type { ConversationEvent } from '../../../../mobile/src/state/conversationTypes';
 import { chatRequest, type ConversationSnapshot } from '../../ipc/sharedChats';
+import { usePageVisible } from '../../lib/usePageVisible';
 import { sendPrompt } from './delivery';
 export function useSharedChat(sessionId: string, active = true) {
+  const visible = usePageVisible();
   const [snapshot, setSnapshot] = useState<ConversationSnapshot | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -28,8 +30,9 @@ export function useSharedChat(sessionId: string, active = true) {
     if (alive.current && (!latest.current || latest.current.generation !== next.generation || latest.current.cursor < next.cursor)) { latest.current = next; setSnapshot(next); }
     if (alive.current) setConnected(true);
   }, [sessionId]);
+  // The poll only catches missed events; the listener below keeps running.
   useEffect(() => {
-    if (!active) return;
+    if (!active || !visible) return;
     let polling = true;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
@@ -38,7 +41,7 @@ export function useSharedChat(sessionId: string, active = true) {
     };
     void poll();
     return () => { polling = false; clearTimeout(timer); };
-  }, [refresh, active]);
+  }, [refresh, active, visible]);
   useEffect(() => {
     if (!active) return;
     let disposed = false; let unlisten: (() => void) | undefined;
@@ -53,12 +56,15 @@ export function useSharedChat(sessionId: string, active = true) {
     }).then(stop => { if (disposed) stop(); else unlisten = stop; }).catch(() => {});
     return () => { disposed = true; unlisten?.(); };
   }, [active, refresh, sessionId]);
-  const run = async (work: () => Promise<unknown>) => {
+  // Stable across renders (its state lives in refs), so memoised transcript
+  // rows that take it keep their memo while events stream in.
+  const run = useCallback(async (work: () => Promise<unknown>) => {
     if (locked.current) return false;
     locked.current = true; setBusy(true); setError('');
     try { await work(); await refresh().catch(e => { if (alive.current) { setError(String(e)); setConnected(false); } }); return true; }
     catch (e) { if (alive.current) setError(String(e)); return false; }
     finally { locked.current = false; if (alive.current) setBusy(false); }
-  };
-  return { snapshot, error, busy, connected, run, send: (text: string, sendAsText = false, attachments: string[] = []) => run(() => sendPrompt(sessionId, text, sendAsText, attachments)) };
+  }, [refresh]);
+  const send = useCallback((text: string, sendAsText = false, attachments: string[] = []) => run(() => sendPrompt(sessionId, text, sendAsText, attachments)), [run, sessionId]);
+  return { snapshot, error, busy, connected, run, send };
 }

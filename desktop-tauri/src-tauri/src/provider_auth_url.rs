@@ -5,6 +5,7 @@ pub fn open(url: &str) -> Result<(), String> {
         return Err("The provider sign-in link is unavailable.".into());
     }
     let mut command = browser_command(url);
+    vibyra_core::launch_env::sanitize_command(&mut command);
     command.stdout(Stdio::null()).stderr(Stdio::null());
     command
         .spawn()

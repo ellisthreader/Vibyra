@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { fsHomeDir, unwatchWorkspace, watchWorkspace } from "../ipc/fs";
 import { removeSharedChatProject } from "../ipc/sharedChats";
 import { stopProjectPreviews } from "../ipc/preview";
+import { projectBrief } from "../ipc/projectBrief";
 import { setTerminalVisibility } from "../ipc/terminal";
 import type { ProjectSpec } from "../types";
 import { useSettingsStore } from "./settingsStore";
@@ -13,14 +14,7 @@ import { useWorkspaceStore } from "./workspaceStore";
 export type AppView = "home" | "project" | "new-project";
 
 const PROJECT_COLORS = [
-  "#5b7cfa",
-  "#ff9b6a",
-  "#37c78a",
-  "#bd8cff",
-  "#6aa8ff",
-  "#e8a94b",
-  "#f472b6",
-  "#69d6c7",
+  "#5b7cfa", "#ff9b6a", "#37c78a", "#bd8cff", "#6aa8ff", "#e8a94b", "#f472b6", "#69d6c7",
 ];
 
 export function basename(path: string): string {
@@ -173,6 +167,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     void persist(touched, id);
     orchestrateVisibility(id);
     await adoptRoot(project.root, get().homeDir);
+    // Warm the assistant's brief: reading git state allows itself 5 s, so
+    // without this the first question looks hung before the request leaves.
+    void projectBrief(project, "").catch(() => {});
   },
 
   goHome: () => {

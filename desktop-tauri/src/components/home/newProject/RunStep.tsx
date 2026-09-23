@@ -40,7 +40,6 @@ export function RunStep() {
   return <div className="np-run">
     <BuildRing phase={phase} index={index} total={total} label={status} />
     <p className={`np-run__status ${phase === 'failed' ? 'np-run__status--bad' : ''}`} role="status">{status}</p>
-    {running && log.length > 0 && <code className="np-run__tail">{log[log.length - 1]}</code>}
     {steps.length > 0 && <ol className="np-run__steps">
       {steps.map((step, at) => {
         const finished = done || at < index;

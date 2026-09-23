@@ -147,3 +147,19 @@ export const SlidersIcon = icon(
     <path d="M1 14h6M9 8h6M17 16h6" />
   </>,
 );
+
+export const PencilIcon = icon(
+  <>
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7.5 18.5 3 20l1.5-4.5z" />
+    <path d="M14.5 5.5l3 3" />
+  </>,
+);
+
+
+export const HelpIcon = icon(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.8 9.3a2.3 2.3 0 0 1 4.5.7c0 1.5-2.3 2-2.3 3.5" />
+    <path d="M12 17h.01" />
+  </>,
+);

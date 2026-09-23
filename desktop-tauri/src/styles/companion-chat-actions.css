@@ -1,0 +1,36 @@
+/* One line per thing Vibyra did to the workspace, in the chat thread.
+   Its own sheet because it belongs to the assistant acting, not to the voice
+   surfaces the rest of companion-voice describes. */
+
+/* An action sits between the turns as a quiet line rather than a bubble: it is
+   a record, not something anyone needs to reply to. */
+.chat-did {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -12px 0;
+  padding: 2px 0;
+  color: var(--dim);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.chat-did__mark {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.chat-did--failed .chat-did__mark {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.chat-did--failed .chat-did__text {
+  color: var(--muted);
+}

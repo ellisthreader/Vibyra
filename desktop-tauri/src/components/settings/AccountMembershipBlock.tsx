@@ -3,14 +3,16 @@ import { useState } from "react";
 import { accountBillingPage, accountBillingPortal } from "../../ipc/accountBilling";
 import { membershipView, sameDay } from "../../lib/membership";
 import type { AccountProfile } from "../../types";
+import { AppleMark } from "../auth/authMarks";
 import { AccountCredits } from "./AccountCreditsBlock";
 import { StatusChip } from "./SettingsControls";
 import { SettingRow, SettingsBlock } from "./SettingsShared";
 
 /**
  * One card for what this account is on: the plan and when it renews or ends,
- * what is left to spend, buying more, and how it is paid for. Vibyra never
- * claims to cancel what a store sold.
+ * what is left to spend, buying more, and where it is paid for. The billing
+ * row is a mark and a word — Vibyra never claims to cancel what a store sold,
+ * and tapping through to Apple says that better than a sentence does.
  */
 export function AccountMembershipBlock({ profile }: { profile: AccountProfile }) {
   const [busy, setBusy] = useState(false);
@@ -51,19 +53,14 @@ export function AccountMembershipBlock({ profile }: { profile: AccountProfile })
 
         {view.paid && view.billing && (
           <SettingRow
-            label="Billing"
-            hint={
-              view.manage === "appstore"
-                ? "Bought on your iPhone. Apple owns changing and cancelling it."
-                : view.manage === "stripe"
-                  ? "Change your card, your plan, or cancel."
-                  : "Managed where it was bought."
+            label={
+              view.manage === "appstore" ? (
+                <span className="membership__billed"><AppleMark /> App Store</span>
+              ) : (
+                `${view.billing}${view.cycle ? ` · ${view.cycle}` : ""}`
+              )
             }
           >
-            <span className="membership__billing">
-              {view.billing}
-              {view.cycle ? ` · ${view.cycle}` : ""}
-            </span>
             {view.manage === "stripe" && (
               <button className="btn" disabled={busy} onClick={() => void run(accountBillingPortal)}>
                 {busy ? "Opening…" : "Manage billing"}

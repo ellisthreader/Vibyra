@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { recoveryCopy, resumableAgent } from "../../lib/resumePolicy";
 import { useTerminalStore, type PaneState } from "../../state/terminalStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
@@ -15,7 +16,7 @@ export function PaneRecovery({ pane, missingAgent, compact = false }: { pane: Pa
       <div className="pane-recovery__card">
         <details className="pane-recovery__copy" open={!compact || empty}>
           <summary>{missingAgent ? "Reconnect your AI tool" : copy.title}</summary>
-          <p>{missingAgent ? `${pane.agentId} is not available on this Mac. Connect it in Integrations, then return to this chat.` : copy.detail}</p>
+          <p>{missingAgent ? `${pane.agentId} is not available on this ${computerName}. Connect it in Integrations, then return to this chat.` : copy.detail}</p>
           {error && <p className="pane-recovery__error" role="alert">{error}</p>}
         </details>
         <div className="pane-recovery__actions">

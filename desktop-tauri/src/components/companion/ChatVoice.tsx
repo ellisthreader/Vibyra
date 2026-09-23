@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { startReplySpeech, stopReplySpeech } from '../../lib/speechPlayback';
 import { invoke } from '@tauri-apps/api/core';
 import { useVoiceStore } from '../../state/voiceStore';
@@ -28,20 +28,28 @@ export function useDraftDictation(identity: string, active: boolean, append: (te
   </button> };
 }
 
-export function SpeakReply({ text, active = true }: { text: string; active?: boolean }) {
+// Memoised: a transcript re-renders per keystroke, and every finished reply has one.
+export const SpeakReply = memo(function SpeakReply({ text, active = true }: { text: string; active?: boolean }) {
   const [playing, setPlaying] = useState(false), [error, setError] = useState('');
   const id = useRef(crypto.randomUUID());
   const pending = useRef(false), alive = useRef(true);
+  // Only a reply this instance started needs stopping. Every stop queues an IPC
+  // behind the shared playback chain, so N silent replies stopping on each tab
+  // switch would delay the next real start by N round trips.
+  const started = useRef(false);
   useEffect(() => {
     const owner = id.current; alive.current = active;
     if (!active) setPlaying(false);
-    return () => { alive.current = false; void stopReplySpeech(owner).catch(() => {}); };
+    return () => {
+      alive.current = false;
+      if (started.current) { started.current = false; void stopReplySpeech(owner).catch(() => {}); }
+    };
   }, [active]);
   useEffect(() => {
     if (!playing) return;
     let alive = true, timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
-      try { if (!await invoke<boolean>('speech_active', { id: id.current })) { if (alive) setPlaying(false); return; } }
+      try { if (!await invoke<boolean>('speech_active', { id: id.current })) { started.current = false; if (alive) setPlaying(false); return; } }
       catch (error) { if (alive) { setError(String(error)); setPlaying(false); } return; }
       if (alive) timer = setTimeout(poll, 400);
     };
@@ -52,6 +60,7 @@ export function SpeakReply({ text, active = true }: { text: string; active?: boo
     if (pending.current || !active) return;
     pending.current = true; setError('');
     try {
+      started.current = !playing;
       await (playing ? stopReplySpeech(id.current) : startReplySpeech(id.current, text));
       if (alive.current) setPlaying(!playing);
     } catch (error) { setError(String(error)); setPlaying(false); }
@@ -60,4 +69,4 @@ export function SpeakReply({ text, active = true }: { text: string; active?: boo
   return <span className="reply-audio"><button type="button" className="chat-voice-button" aria-label={playing ? 'Stop reading' : 'Read reply aloud'} title={playing ? 'Stop reading' : 'Read reply aloud'} onClick={() => void toggle()}>
     {playing ? <span aria-hidden="true">■</span> : <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M11 4 5 9H2v6h3l6 5V4ZM15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></svg>}
   </button>{error && <small role="alert">{error}</small>}</span>;
-}
+});

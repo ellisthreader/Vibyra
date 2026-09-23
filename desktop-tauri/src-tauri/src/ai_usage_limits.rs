@@ -23,6 +23,7 @@ pub(crate) fn admit(
     let busy = match kind {
         AiCall::Chat => inner.chat_in_flight,
         AiCall::Voice => inner.voice_in_flight,
+        AiCall::Speech => inner.speech_in_flight,
     };
     if busy {
         return Err("A request is already running — wait for it to finish.".into());
@@ -57,7 +58,10 @@ pub(crate) fn budget(
     limits: AiLimits,
     estimate_usd: f64,
 ) -> Result<(), String> {
-    const RAISE: &str = "Raise it in Settings › Vibyra AI.";
+    const RAISE: &str = crate::platform_text::for_computer(
+        "It resets on its own; nothing on this Mac can raise it.",
+        "It resets on its own; nothing on this computer can raise it.",
+    );
     if limits.hourly_calls > 0 && recent.len() as u32 >= limits.hourly_calls {
         return Err(format!(
             "Hourly limit reached ({} requests). {RAISE}",

@@ -1,6 +1,8 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
+import { CopyButton } from "../common/CopyButton";
 import { phoneInvite } from "../../ipc/phone";
 import { Disclosure } from "./SettingsControls";
 
@@ -15,7 +17,6 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
   const [expires, setExpires] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   useEffect(() => {
     const tick = () => setSeconds(Math.max(0, Math.ceil((expires - Date.now()) / 1000)));
     tick();
@@ -27,14 +28,13 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
     try {
       setInvite(await phoneInvite());
       setExpires(Date.now() + LIFETIME_MS);
-      setCopied(false);
     } catch (cause) {
       setError(String(cause));
     }
   };
   const liveCode = invite && seconds > 0;
   return (
-    <Disclosure title="Can’t see this Mac on your phone?" summary="Pair with a code instead" open={open} onToggle={setOpen}>
+    <Disclosure title={`Can’t see this ${computerName} on your phone?`} summary="Pair with a code instead" open={open} onToggle={setOpen}>
       <div className="phone-fallback">
         <p className="phone-connection__hint">Some Wi-Fi networks block the announcement. A one-time code pairs the same way and still needs your approval here.</p>
         <div className="phone-connection__actions">
@@ -48,9 +48,7 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
         {liveCode && (
           <div className="phone-connection__invite">
             <QRCodeSVG value={invite} size={180} marginSize={4} title="Scan with the Vibyra phone app" />
-            <button className="btn" type="button" onClick={() => { void navigator.clipboard.writeText(invite); setCopied(true); }}>
-              {copied ? "Copied" : "Copy link"}
-            </button>
+            <CopyButton className="btn" value={invite} label="Copy link" />
           </div>
         )}
       </div>

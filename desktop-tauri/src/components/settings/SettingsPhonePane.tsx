@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 
 import type { PhoneDevice } from "../../ipc/phone";
@@ -107,9 +108,12 @@ export function SettingsPhonePane() {
     <div className="phone-connection">
       <SettingsBlock label="Phone">
         <div className="settings-group">
-          <SettingRow label="Remote phone control" hint="Use Vibyra on your phone, nearby or from anywhere. Open the app on your phone and tap this Mac.">
+          <SettingRow label="Remote phone control" hint={`Use Vibyra on your phone, nearby or from anywhere. Open the app on your phone and tap this ${computerName}.`}>
             <Switch checked={enabled} disabled={busy || !status} label="Remote phone control" onChange={(next) => void toggle(next)} />
           </SettingRow>
+          {enabled && status?.remote?.signedIn && <SettingRow label="Computer updates on your phone" hint="Share task status with Vibyra Cloud for private alerts. No prompts or terminal text. Enable again after restarting or signing in.">
+            <Switch checked={status.notifications ?? false} disabled={busy} label="Computer updates on your phone" onChange={(next) => void usePhoneStore.getState().setNotifications(next)} />
+          </SettingRow>}
           {enabled && (
             <SettingRow label="Typing from your phone" hint="Type into terminals and answer agent requests from your phone.">
               <Switch checked={typing} disabled={busy || !status} label="Typing from your phone" onChange={(next) => void setTyping(next)} />
@@ -138,9 +142,9 @@ export function SettingsPhonePane() {
                       <span className="device-row__where">{whereabouts(device, online)}</span>
                     </div>
                     {online ? (
-                      <button className="btn btn--ghost integration-quiet" type="button" disabled={busy} onClick={() => disconnect(device.id, showingExamples)}>Disconnect</button>
+                      <button className="btn btn--ghost" type="button" disabled={busy} onClick={() => disconnect(device.id, showingExamples)}>Disconnect</button>
                     ) : (
-                      <button className="btn btn--ghost integration-quiet" type="button" disabled={busy || leaving.has(device.id)} onClick={() => remove(device.id, showingExamples)}>Remove</button>
+                      <button className="btn btn--ghost" type="button" disabled={busy || leaving.has(device.id)} onClick={() => remove(device.id, showingExamples)}>Remove</button>
                     )}
                   </div>
                 </div>

@@ -51,6 +51,16 @@ pub fn builtin_agents() -> Vec<AgentSpec> {
             "OpenCode agent CLI",
         ),
         agent("qwen", "Qwen Code", "qwen", "#c084fc", "Qwen Code CLI"),
+        agent(
+            "copilot",
+            "GitHub Copilot",
+            "copilot",
+            "#8b949e",
+            "GitHub Copilot CLI",
+        ),
+        agent("amp", "Amp", "amp", "#f59e0b", "Sourcegraph Amp CLI"),
+        agent("crush", "Crush", "crush", "#22d3ee", "Charm Crush CLI"),
+        agent("continue", "Continue", "cn", "#94a3b8", "Continue CLI"),
     ]
 }
 
@@ -71,7 +81,16 @@ pub fn resolve_agents(custom: &[AgentSpec]) -> Vec<ResolvedAgent> {
         .into_iter()
         .map(|spec| {
             let installed = program_in_path(&spec.program);
-            ResolvedAgent { spec, installed }
+            let install = if spec.custom {
+                None
+            } else {
+                super::install_hint(&spec.id)
+            };
+            ResolvedAgent {
+                spec,
+                installed,
+                install,
+            }
         })
         .collect()
 }

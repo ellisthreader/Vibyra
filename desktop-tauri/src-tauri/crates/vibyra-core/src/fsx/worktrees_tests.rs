@@ -59,8 +59,8 @@ fn inventories_exact_nested_paths_and_preserves_dirty_files() {
     let safe = &result.worktrees[1];
     assert_eq!(safe.branch, "vibyra/task");
     assert_eq!(
-        safe.directory,
-        tree.canonicalize().unwrap().join("app").to_string_lossy()
+        Path::new(&safe.directory).canonicalize().unwrap(),
+        tree.join("app").canonicalize().unwrap()
     );
     assert!(safe.available);
     assert_eq!(

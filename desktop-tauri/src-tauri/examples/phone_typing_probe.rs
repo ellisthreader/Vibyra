@@ -32,6 +32,8 @@ mod frames;
 #[allow(dead_code)]
 #[path = "../src/phone/manage.rs"]
 mod manage;
+#[path = "../src/platform_text.rs"]
+mod platform_text;
 #[allow(dead_code)]
 #[path = "../src/phone/railway.rs"]
 mod railway;

@@ -36,7 +36,7 @@ export function ProviderAccountActions({
     const remove = confirming === "remove";
     return (
       <span className="integration-account__confirm">
-        <button type="button" className="btn btn--secondary" onClick={() => setConfirming(null)}>
+        <button type="button" className="btn" onClick={() => setConfirming(null)}>
           Keep
         </button>
         <button
@@ -54,7 +54,7 @@ export function ProviderAccountActions({
   if (accountWorking(account)) {
     return (
       <span className="integration-account__actions">
-        <button type="button" className="btn btn--secondary" disabled={busy} onClick={onCancel}>
+        <button type="button" className="btn" disabled={busy} onClick={onCancel}>
           Cancel
         </button>
       </span>
@@ -66,7 +66,7 @@ export function ProviderAccountActions({
       {account.status === "connected" ? (
         <button
           type="button"
-          className="btn btn--ghost integration-quiet"
+          className="btn btn--ghost"
           disabled={busy}
           onClick={() => setConfirming("disconnect")}
         >
@@ -85,7 +85,7 @@ export function ProviderAccountActions({
       {account.removable && account.status !== "connected" ? (
         <button
           type="button"
-          className="btn btn--ghost integration-quiet"
+          className="btn btn--ghost"
           disabled={busy}
           onClick={() => setConfirming("remove")}
         >

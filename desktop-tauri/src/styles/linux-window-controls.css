@@ -1,0 +1,30 @@
+/* Match the native Mac overlay coordinates; the actions belong to Linux's
+   window manager. Absolute placement leaves the shared titlebar layout intact. */
+.window-controls--leading {
+  position: absolute;
+  left: 16px;
+  top: 24px;
+  gap: 8px;
+  z-index: 2;
+}
+.window-controls--leading button {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .18);
+  color: rgba(0, 0, 0, .65);
+  transition: none;
+}
+.window-controls--leading button.close,
+.window-controls--leading button.close:hover { background: #ff5f57; color: rgba(0, 0, 0, .65); }
+.window-controls--leading button.minimize,
+.window-controls--leading button.minimize:hover { background: #febc2e; color: rgba(0, 0, 0, .65); }
+.window-controls--leading button.maximize,
+.window-controls--leading button.maximize:hover { background: #28c840; color: rgba(0, 0, 0, .65); }
+.window-controls--leading button svg { width: 8px; height: 8px; opacity: 0; }
+.window-controls--leading:hover button svg,
+.window-controls--leading button:focus-visible svg { opacity: 1; }
+.window-controls--leading[data-focused="false"]:not(:hover) button { background: #56575b; }
+:root[data-theme="light"] .window-controls--leading[data-focused="false"]:not(:hover) button { background: #d1d1d1; }
+.window-controls--leading button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

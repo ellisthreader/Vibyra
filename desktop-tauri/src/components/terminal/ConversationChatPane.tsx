@@ -1,6 +1,6 @@
 import { SpeakReply, useDraftDictation } from '../companion/ChatVoice';
 import { ResumeConversation } from './ResumeConversation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { chatRequest, type SharedSession, type ConversationSnapshot, type AgentItem } from '../../ipc/sharedChats';
 import { useConversationTerminals } from '../../state/conversationTerminalStore';
 import { useSettingsStore } from '../../state/settingsStore';
@@ -52,8 +52,12 @@ export function ConversationChatPane({ session, hidden, active, fontSize }: {
   const restoredScroll = useRef(false);
   const working = snapshot?.turnState === 'running' || snapshot?.turnState === 'waiting';
   const ready = connected && snapshot?.processState === 'running';
-  const latestIds = new Set(snapshot?.items.map(item => item.id));
-  const items = [...earlier.filter(item => !latestIds.has(item.id)), ...(snapshot?.items ?? [])];
+  // Derived once per transcript change, not per keystroke: every draft edit
+  // re-renders this pane, and memoised rows only hold with stable inputs.
+  const items = useMemo(() => {
+    const latestIds = new Set(snapshot?.items.map(item => item.id));
+    return [...earlier.filter(item => !latestIds.has(item.id)), ...(snapshot?.items ?? [])];
+  }, [earlier, snapshot?.items]);
   const stateLabel = !connected ? 'Connecting…' : !ready ? 'Saved' : snapshot?.turnState === 'waiting'
     ? 'Needs input' : working ? 'Running' : snapshot?.turnState === 'failed' ? 'Failed' : 'Ready';
   useEffect(() => {
@@ -74,7 +78,9 @@ export function ConversationChatPane({ session, hidden, active, fontSize }: {
     try { localStorage.setItem(draftKey, value); setDraftError(''); } catch { setDraftError('This draft could not be saved on this device.'); }
   };
   const voice = useDraftDictation(`conversation:${session.id}`, active && !hidden && !busy, text => edit([draft, text].filter(Boolean).join(' ')));
-  const openInspector = (mode: InspectorMode, item?: AgentItem) => setInspector({ mode, item });
+  const openInspector = useCallback((mode: InspectorMode, item?: AgentItem) => setInspector({ mode, item }), []);
+  const inspectContext = useCallback((item: AgentItem) => setInspector({ mode: 'context', item }), []);
+  const inspectActivity = useCallback((item: AgentItem) => setInspector({ mode: item.category === 'fileChange' ? 'diff' : 'context', item }), []);
   const submit = async (asText = false, text = draft) => {
     if (busy || !connected) return;
     if (!asText && text.trimStart().startsWith('/')) {
@@ -100,13 +106,22 @@ export function ConversationChatPane({ session, hidden, active, fontSize }: {
     if (working || !ready) return;
     if (await send(draft, asText, attachments.map(a => a.id))) { edit(''); setAttachments([]); setCommandError(''); stick.current = true; }
   };
-  const groups: AgentItem[][] = [];
-  for (const item of items) {
-    const previous = groups.at(-1);
-    if (item.kind === 'activity' && previous?.[0].kind === 'activity' && previous[0].turnId === item.turnId) previous.push(item);
-    else groups.push([item]);
-  }
-  const files = changedFiles(items, snapshot?.turnId);
+  const { groups, summaries } = useMemo(() => {
+    const groups: AgentItem[][] = [];
+    const turns = new Map<string, AgentItem[]>();
+    for (const item of items) {
+      const previous = groups.at(-1);
+      if (item.kind === 'activity' && previous?.[0].kind === 'activity' && previous[0].turnId === item.turnId) previous.push(item);
+      else groups.push([item]);
+      const turn = turns.get(item.turnId);
+      if (turn) turn.push(item); else turns.set(item.turnId, [item]);
+    }
+    // One pass per turn: only a turn's result row shows its summary.
+    const summaries = new Map<string, string>();
+    for (const [turnId, turn] of turns) if (turn.some(item => item.kind === 'result')) summaries.set(turnId, turnSummary(turn, turnId));
+    return { groups, summaries };
+  }, [items]);
+  const files = useMemo(() => changedFiles(items, snapshot?.turnId), [items, snapshot?.turnId]);
   const jump = () => { stick.current = true; setShowLatest(false); scroll.current?.scrollTo({ top: scroll.current.scrollHeight }); };
   const close = async () => {
     if (snapshot?.processState === 'running' || session.status === 'running') {
@@ -137,8 +152,8 @@ export function ConversationChatPane({ session, hidden, active, fontSize }: {
         setEarlier(old => [...page.items, ...old]); setMore(page.hasMore);
       })}>Load earlier output</button>}
       {!snapshot ? <p className="shared-result">Loading conversation…</p> : !items.length && <div className="conversation-welcome"><AgentMark agentId={agent.id} name={agent.name} accent={agent.accent} size={30} /><h2>What shall we build?</h2><p>A small fix, a fresh idea, or the next step.</p></div>}
-      {groups.map(group => group[0].kind === 'activity' ? <ActivityTimeline memoryKey={session.id} key={group[0].id} items={group} onInspect={item => openInspector(item.category === 'fileChange' ? 'diff' : 'context', item)} />
-        : <div key={group[0].id} data-request={group[0].status === 'pending' ? group[0].id : undefined}><ChatItem item={group[0]} summary={turnSummary(items, group[0].turnId)} sessionId={session.id} disabled={!ready || busy} run={run} onInspect={item => openInspector('context', item)} />{group[0].kind === 'message' && group[0].role === 'assistant' && group[0].status === 'completed' && group[0].text && <SpeakReply text={group[0].text} active={active && !hidden} />}</div>)}
+      {groups.map(group => group[0].kind === 'activity' ? <ActivityTimeline memoryKey={session.id} key={group[0].id} items={group} onInspect={inspectActivity} />
+        : <div key={group[0].id} data-request={group[0].status === 'pending' ? group[0].id : undefined}><ChatItem item={group[0]} summary={group[0].kind === 'result' ? summaries.get(group[0].turnId) : undefined} sessionId={session.id} disabled={!ready || busy} run={run} onInspect={inspectContext} />{group[0].kind === 'message' && group[0].role === 'assistant' && group[0].status === 'completed' && group[0].text && <SpeakReply text={group[0].text} active={active && !hidden} />}</div>)}
       {working && !hasLiveActivity(items) && <p className="shared-live" role="status"><span className="activity-dot is-active" />{operationLabel(items, snapshot?.turnState === 'waiting')}</p>}
     </div>
     {showLatest && <button className="conversation-jump" onClick={() => {

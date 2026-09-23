@@ -1,6 +1,5 @@
 use serde::Serialize;
 use tauri::State;
-use vibyra_core::agents::program_in_path;
 
 use crate::ai_usage::{
     AiLimits, CHAT_INPUT_USD_PER_MTOK, CHAT_OUTPUT_USD_PER_MTOK, VOICE_USD_PER_MINUTE,
@@ -14,6 +13,7 @@ use crate::state::AppState;
 #[serde(rename_all = "camelCase")]
 pub struct AiServiceView {
     key_configured: bool,
+    key_from_environment: bool,
     /// Masked fragment ("sk-…wxyz"), never the key itself.
     key_hint: Option<String>,
     secure_storage_available: bool,
@@ -84,9 +84,10 @@ fn view(state: &AppState) -> AiServiceView {
     let (calls_last_minute, calls_last_hour) = state.usage.recent_counts();
     AiServiceView {
         key_configured: state.openai_key().is_some(),
+        key_from_environment: state.openai_key_from_environment(),
         key_hint: state.openai_key().as_deref().map(openai_key::hint),
         secure_storage_available: *state.secret_store_available.lock(),
-        recorder_available: program_in_path("arecord"),
+        recorder_available: super::voice::recorder_available(),
         key_page_url: openai_key::KEY_PAGE_URL,
         limits: state.ai_limits(),
         usage: UsageView {

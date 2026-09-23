@@ -1,0 +1,46 @@
+name: Shared desktop frontend
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Build one frontend for every native platform
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: |
+            desktop-tauri/package-lock.json
+            mobile/package-lock.json
+      - name: Install locked shared and desktop dependencies
+        run: |
+          npm ci --prefix mobile
+          npm ci --prefix desktop-tauri
+      - name: Verify and build the shared frontend
+        working-directory: desktop-tauri
+        run: |
+          npm run lines
+          npm test
+          npm run build
+          node scripts/frontend-artifact.mjs create
+      - name: Upload the exact assets every native package will embed
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-desktop-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            desktop-tauri/dist/
+            desktop-tauri/release/frontend-manifest.json
+          if-no-files-found: error
+          retention-days: 30

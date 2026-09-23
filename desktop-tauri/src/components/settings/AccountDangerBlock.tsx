@@ -91,7 +91,7 @@ export function AccountDangerBlock({ profile }: { profile: AccountProfile }) {
             </button>
             {provider === "email" && (
               <button
-                className="btn profile-logout"
+                className="btn btn--danger"
                 disabled={waiting || password.length === 0}
                 onClick={() => void finish(() => accountDeleteWithPassword(password))}
               >
@@ -100,7 +100,7 @@ export function AccountDangerBlock({ profile }: { profile: AccountProfile }) {
             )}
             {provider === "provider" && (
               <button
-                className="btn profile-logout"
+                className="btn btn--danger"
                 disabled={waiting}
                 onClick={() => void finish(() => accountDeleteWithProvider(profile.provider))}
               >

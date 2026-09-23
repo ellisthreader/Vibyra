@@ -18,6 +18,8 @@ use vibyra_host::{Backend, EmbeddedHost};
 #[allow(dead_code)]
 #[path = "../src/phone/address.rs"]
 mod address;
+#[path = "../src/platform_text.rs"]
+mod platform_text;
 
 struct Idle;
 impl Backend for Idle {

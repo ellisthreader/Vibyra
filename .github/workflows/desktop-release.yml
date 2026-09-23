@@ -12,7 +12,12 @@ permissions:
   contents: read
 
 jobs:
+  frontend:
+    if: ${{ !inputs.macos_only }}
+    uses: ./.github/workflows/desktop-frontend.yml
+
   package:
+    needs: frontend
     if: ${{ !inputs.macos_only }}
     name: ${{ matrix.label }} Rust package
     strategy:
@@ -57,10 +62,7 @@ jobs:
           cache-dependency-path: desktop-tauri/package-lock.json
       - name: Install Linux build and smoke-test dependencies
         if: runner.os == 'Linux'
-        run: >-
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          build-essential curl file libayatana-appindicator3-dev libdbus-1-dev
-          librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget xvfb
+        run: bash scripts/setup-linux.sh --ci
       - name: Require stable Mac signing identity
         if: runner.os == 'macOS'
         env:
@@ -68,10 +70,22 @@ jobs:
         run: node scripts/macos-signing.mjs --check-env
       - name: Install locked frontend dependencies
         run: npm ci
+      - name: Install locked shared conversation dependencies
+        run: npm ci --prefix ../mobile
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates
         run: npm run verify
+      - name: Remove independently built frontend output
+        run: >-
+          node -e "require('node:fs').rmSync('dist', { recursive: true, force: true })"
+      - name: Download the shared frontend archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vibyra-desktop-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: desktop-tauri
+      - name: Verify shared frontend bytes, version and revision
+        run: node scripts/frontend-artifact.mjs verify
       - name: Read the version being released
         id: version
         shell: bash
@@ -81,7 +95,9 @@ jobs:
           echo "output=Vibyra-Desktop-$version-${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
 
       - name: Build native package
-        run: ${{ matrix.command }}
+        run: >-
+          ${{ matrix.command }} -- --config
+          '{"build":{"beforeBuildCommand":"node scripts/frontend-artifact.mjs verify"}}'
         env:
           # Without these the bundler silently skips the .sig files and the
           # release cannot be offered as an in-app update.
@@ -113,6 +129,7 @@ jobs:
           # a failed release, not a warning.
           test -f "${matches[0]}.sig"
           cp "${matches[0]}.sig" "release/$output.sig"
+          cp release/frontend-manifest.json "release/$output.frontend.json"
       - name: Verify macOS signing, notarization and launch
         if: runner.os == 'macOS'
         shell: bash
@@ -127,18 +144,22 @@ jobs:
           kill -0 "$pid"
           kill "$pid"
           wait "$pid" || true
+      - name: Install pinned native Linux WebDriver
+        if: runner.os == 'Linux'
+        run: cargo install tauri-driver --locked --version 2.0.6
       - name: Smoke-test Linux AppImage launch
         if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          artifact="release/${{ steps.version.outputs.output }}"
-          chmod +x "$artifact"
-          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "$artifact" &
-          pid=$!
-          sleep 12
-          kill -0 "$pid"
-          kill "$pid"
-          wait "$pid" || true
+        run: >-
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
+          node scripts/smoke-linux.mjs "release/${{ steps.version.outputs.output }}"
+      - name: Preserve native Linux screenshots and logs
+        if: ${{ always() && runner.os == 'Linux' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-linux-native-smoke-${{ github.sha }}
+          path: desktop-tauri/release/linux-smoke/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Smoke-test Windows installer and app launch
         if: runner.os == 'Windows'
         shell: pwsh
@@ -179,6 +200,7 @@ jobs:
             desktop-tauri/release/${{ steps.version.outputs.output }}
             desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
             desktop-tauri/release/${{ steps.version.outputs.output }}.sig
+            desktop-tauri/release/${{ steps.version.outputs.output }}.frontend.json
           if-no-files-found: error
           retention-days: 30
 

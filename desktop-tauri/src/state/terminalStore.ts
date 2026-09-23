@@ -13,6 +13,8 @@ export type { PaneState } from "./terminalStoreTypes";
 // Re-exported so every list keeps importing the name from the store it reads.
 export { paneLabel } from "../lib/paneLabel";
 
+const FOCUS_STAMP_MS = 15_000;
+
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
   panes: [],
   focusedId: null,
@@ -70,11 +72,23 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
 
   markFocused: (id) => {
-    set((state) => ({
-      focusedId: id,
-      panes: state.panes.map((pane) =>
-        pane.id === id ? { ...pane, lastFocusedAt: Date.now() } : pane),
-    }));
+    set((state) => {
+      // Every mousedown lands here, and a new `panes` array re-renders every
+      // list. Clicks inside the pane already in front, which is already the
+      // most recently focused, only refresh the stamp once it could read
+      // differently ("just now" lasts 45 s); the recency order never changes.
+      const now = Date.now();
+      const pane = state.panes.find((candidate) => candidate.id === id);
+      if (
+        state.focusedId === id && pane && now - pane.lastFocusedAt < FOCUS_STAMP_MS &&
+        state.panes.every((other) => other.lastFocusedAt <= pane.lastFocusedAt)
+      ) return state;
+      return {
+        focusedId: id,
+        panes: state.panes.map((candidate) =>
+          candidate.id === id ? { ...candidate, lastFocusedAt: now } : candidate),
+      };
+    });
   },
 
   rename: (id, title) => {

@@ -4,15 +4,34 @@ on:
   pull_request:
     paths:
       - "desktop-tauri/**"
+      - "host/**"
+      - "mobile/src/**"
+      - "mobile/tsconfig.json"
+      - "mobile/package*.json"
+      - ".github/workflows/desktop-frontend.yml"
+      - ".github/workflows/desktop-release.yml"
+      - ".github/workflows/desktop-macos-release.yml"
       - "scripts/check-desktop-lines.mjs"
       - ".github/workflows/desktop-tauri.yml"
   push:
     branches: [main]
     paths:
       - "desktop-tauri/**"
+      - "host/**"
+      - "mobile/src/**"
+      - "mobile/tsconfig.json"
+      - "mobile/package*.json"
+      - ".github/workflows/desktop-frontend.yml"
+      - ".github/workflows/desktop-release.yml"
+      - ".github/workflows/desktop-macos-release.yml"
       - "scripts/check-desktop-lines.mjs"
       - ".github/workflows/desktop-tauri.yml"
   workflow_dispatch:
+    inputs:
+      linux_only:
+        description: Validate and package only the Linux candidate
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,8 +43,8 @@ concurrency:
 jobs:
   verify:
     name: Frontend, native, and policy gates
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
     env:
       CARGO_INCREMENTAL: "0"
     steps:
@@ -40,15 +59,14 @@ jobs:
           cache: npm
           cache-dependency-path: desktop-tauri/package-lock.json
       - name: Install Linux desktop build dependencies
-        run: >-
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends
-          build-essential curl file libayatana-appindicator3-dev libdbus-1-dev
-          librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget
+        run: bash desktop-tauri/scripts/setup-linux.sh --ci
       - name: Install pinned Rust toolchain
         working-directory: desktop-tauri
         run: rustup show active-toolchain
       - name: Install locked frontend dependencies
         run: npm ci --prefix desktop-tauri
+      - name: Install locked shared conversation dependencies
+        run: npm ci --prefix mobile
       - name: Enforce desktop source limits
         run: node scripts/check-desktop-lines.mjs
       - name: Check dead code and dependency declarations
@@ -67,8 +85,49 @@ jobs:
         run: cargo install cargo-audit --locked --version 0.22.2
       - name: Audit Rust dependencies
         run: npm --prefix desktop-tauri run rust:audit
+      - name: Verify encrypted embedded phone transport
+        run: cargo test --manifest-path host/Cargo.toml -p vibyra-host --no-default-features --lib --locked
+      - name: Record the frontend embedded in the Linux candidate
+        working-directory: desktop-tauri
+        run: node scripts/frontend-artifact.mjs create
+      - name: Build and verify the unsigned Linux candidate AppImage
+        working-directory: desktop-tauri
+        run: >-
+          npm run app:build:linux -- --config
+          '{"bundle":{"createUpdaterArtifacts":false},"build":{"beforeBuildCommand":"node scripts/frontend-artifact.mjs verify"}}'
+      - name: Install pinned native Linux WebDriver
+        working-directory: desktop-tauri
+        run: cargo install tauri-driver --locked --version 2.0.6
+      - name: Preserve the built Linux package before runtime verification
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-linux-package-${{ github.sha }}
+          path: |
+            desktop-tauri/src-tauri/target/release/bundle/appimage/*.AppImage
+            desktop-tauri/release/frontend-manifest.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Exercise the actual Linux AppImage and capture its frontend
+        working-directory: desktop-tauri
+        timeout-minutes: 10
+        run: |
+          images=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          test "${#images[@]}" = 1
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux.mjs "${images[0]}"
+      - name: Preserve Linux package, frontend manifest and native evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-linux-candidate-${{ github.sha }}
+          path: |
+            desktop-tauri/src-tauri/target/release/bundle/appimage/*.AppImage
+            desktop-tauri/release/frontend-manifest.json
+            desktop-tauri/release/linux-smoke/
+          if-no-files-found: warn
+          retention-days: 14
 
   windows:
+    if: ${{ !inputs.linux_only }}
     name: Windows native gates
     runs-on: windows-latest
     timeout-minutes: 45
@@ -90,6 +149,8 @@ jobs:
         run: rustup show active-toolchain
       - name: Install locked frontend dependencies
         run: npm ci --prefix desktop-tauri
+      - name: Install locked shared conversation dependencies
+        run: npm ci --prefix mobile
       # The Linux job cannot compile the `cfg(target_os = "windows")` branches
       # at all, so a Windows-only regression there stays invisible until a user
       # hits it. Lint and test the native crate on a real Windows runner.

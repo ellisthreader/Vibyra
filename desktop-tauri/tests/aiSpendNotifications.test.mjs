@@ -34,5 +34,6 @@ test("the warning explains what happens next, the alarm is sticky", () => {
   assert.equal(spendNotification("near").severity, "warning");
   assert.equal(spendNotification("near").osEligible, false);
   assert.equal(spendNotification("reached").timeoutMs, 0);
-  assert.equal(spendNotification("reached").action.id, "openAiSettings");
+  assert.equal(spendNotification("reached").dedupeKey, "aiSpend:reached");
+  assert.match(spendNotification("reached").body, /paused until the cap resets/);
 });

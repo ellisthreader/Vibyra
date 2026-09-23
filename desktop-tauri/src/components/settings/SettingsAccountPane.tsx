@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 
 import { accountOpenLegal } from "../../ipc/account";
@@ -51,14 +52,14 @@ export function SettingsAccountPane() {
           {confirmingLogout && confirmCopy ? (
             <SettingRow label="Log out?" hint={confirmCopy} danger>
               <button className="btn" onClick={() => setConfirmingLogout(false)}>Cancel</button>
-              <button className="btn profile-logout" disabled={busy} onClick={() => void useAccountStore.getState().logout()}>
+              <button className="btn btn--danger" disabled={busy} onClick={() => void useAccountStore.getState().logout()}>
                 {busy ? "Logging out…" : "Log out"}
               </button>
             </SettingRow>
           ) : (
-            <SettingRow label="Signed in on this Mac" hint={running ? `${running} terminal${running === 1 ? "" : "s"} running.` : undefined}>
+            <SettingRow label={`Signed in on this ${computerName}`} hint={running ? `${running} terminal${running === 1 ? "" : "s"} running.` : undefined}>
               <button
-                className="btn profile-logout"
+                className="btn btn--danger"
                 disabled={busy}
                 onClick={() => (confirmCopy ? setConfirmingLogout(true) : void useAccountStore.getState().logout())}
               >

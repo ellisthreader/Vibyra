@@ -16,26 +16,38 @@ pub fn available() -> bool {
 pub struct VoiceRecording {
     stop: Option<mpsc::Sender<()>>,
     worker: Option<JoinHandle<Result<CapturedAudio, String>>>,
+    samples: Arc<Mutex<Vec<u8>>>,
+    sample_rate: u32,
 }
 
 impl VoiceRecording {
     pub fn start() -> Result<Self, String> {
         let (stop, stopped) = mpsc::channel();
         let (ready, started) = mpsc::sync_channel(1);
+        let samples = Arc::new(Mutex::new(Vec::new()));
+        let output = Arc::clone(&samples);
         let worker = std::thread::spawn(move || {
-            let result = record(stopped, &ready);
+            let result = record(stopped, &ready, output);
             if let Err(error) = &result {
                 let _ = ready.send(Err(error.clone()));
             }
             result
         });
-        let recording = Self {
+        let sample_rate = started.recv_timeout(Duration::from_secs(30))
+            .map_err(|_| "Microphone startup timed out. Check System Settings → Privacy & Security → Microphone.".to_string())??;
+        Ok(Self {
             stop: Some(stop),
             worker: Some(worker),
-        };
-        started.recv_timeout(Duration::from_secs(30))
-            .map_err(|_| "Microphone startup timed out. Check System Settings → Privacy & Security → Microphone.".to_string())??;
-        Ok(recording)
+            samples,
+            sample_rate,
+        })
+    }
+
+    /// How loud the last `window` of audio was, and how long the microphone
+    /// has been open. A spoken conversation reads these to tell talking from a
+    /// pause, so it can take its turn without another keypress.
+    pub(super) fn level(&self, window: Duration) -> (f32, f64) {
+        super::meter::level(&self.samples.lock(), self.sample_rate, window)
     }
 
     pub(super) fn finish(mut self) -> Result<CapturedAudio, String> {
@@ -60,7 +72,8 @@ impl Drop for VoiceRecording {
 
 fn record(
     stopped: mpsc::Receiver<()>,
-    ready: &mpsc::SyncSender<Result<(), String>>,
+    ready: &mpsc::SyncSender<Result<u32, String>>,
+    output: Arc<Mutex<Vec<u8>>>,
 ) -> Result<CapturedAudio, String> {
     let device = cpal::default_host()
         .default_input_device()
@@ -76,7 +89,7 @@ fn record(
         );
     }
     let capacity = sample_rate as usize * 2 * 120;
-    let output = Arc::new(Mutex::new(Vec::with_capacity(capacity)));
+    output.lock().reserve(capacity);
     let error = Arc::new(Mutex::new(None));
     let stream = match format {
         SampleFormat::F32 => stream::<f32>(&device, config, channels, capacity, &output, &error),
@@ -87,7 +100,7 @@ fn record(
         _ => return Err("This microphone's audio format is not supported.".into()),
     }?;
     stream.play().map_err(microphone_error)?;
-    if ready.send(Ok(())).is_err() {
+    if ready.send(Ok(sample_rate)).is_err() {
         return Err("Recording was cancelled".into());
     }
     // Stop the microphone even if the webview never sends Stop.

@@ -50,7 +50,11 @@ impl SharedChats {
             return Err("Close this shared chat on Desktop".into());
         }
         if method == "conversation.trust.revoke" || params["decision"] == "acceptForProject" {
-            return Err("Manage saved permission rules on your Mac".into());
+            return Err(crate::platform_text::for_computer(
+                "Manage saved permission rules on your Mac",
+                "Manage saved permission rules on your computer",
+            )
+            .into());
         }
         let id = params["sessionId"]
             .as_str()

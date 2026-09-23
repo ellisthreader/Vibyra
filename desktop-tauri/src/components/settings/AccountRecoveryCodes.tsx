@@ -1,17 +1,8 @@
-import { useState } from "react";
+import { CopyButton } from "../common/CopyButton";
 
 /** The only sight of a set of recovery codes. Said plainly, because the
  * next screen cannot show them again. */
 export function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(codes.join("\n"));
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  };
   return (
     <>
       <p className="two-factor__lead">
@@ -24,7 +15,7 @@ export function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () =
         ))}
       </ul>
       <div className="two-factor__confirm">
-        <button className="btn" onClick={() => void copy()}>{copied ? "Copied" : "Copy codes"}</button>
+        <CopyButton className="btn" value={() => codes.join("\n")} label="Copy codes" />
         <button className="btn btn--primary" onClick={onDone}>Done</button>
       </div>
     </>

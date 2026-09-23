@@ -16,7 +16,10 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::State;
-use vibyra_core::scaffold::{git_init, installed_tools, prepare, ScaffoldPlan, StepOutcome};
+use vibyra_core::scaffold::{
+    destination_state, free_name, git_init, installed_tools, prepare, DestinationState,
+    ScaffoldPlan, StepOutcome,
+};
 
 use super::run_blocking;
 use crate::state::AppState;
@@ -50,6 +53,16 @@ pub struct ScaffoldResult {
 #[tauri::command]
 pub async fn scaffold_preflight(tools: Vec<String>) -> Result<HashMap<String, bool>, String> {
     run_blocking(move || Ok(installed_tools(&tools))).await
+}
+
+#[tauri::command]
+pub async fn scaffold_destination(path: String) -> Result<DestinationState, String> {
+    run_blocking(move || Ok(destination_state(std::path::Path::new(&path)))).await
+}
+
+#[tauri::command]
+pub async fn scaffold_free_name(parent: String, base: String) -> Result<String, String> {
+    run_blocking(move || Ok(free_name(std::path::Path::new(&parent), &base))).await
 }
 
 #[tauri::command]

@@ -1,17 +1,23 @@
+#[cfg(unix)]
+use super::requests::TerminalRequests;
 use super::{
     backend::DesktopBackend,
     manage::MANAGE_OFF,
-    requests::TerminalRequests,
     vault::Vault,
     workspace::{DesktopProject, SharedWorkspace},
 };
-use serde_json::{json, Value};
+use serde_json::json;
+#[cfg(unix)]
+use serde_json::Value;
+use std::sync::{atomic::AtomicBool, Arc};
+#[cfg(unix)]
 use std::{
-    sync::{atomic::AtomicBool, Arc},
     thread,
     time::{Duration, Instant},
 };
-use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+#[cfg(unix)]
+use vibyra_core::pty::LaunchSpec;
+use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
 use vibyra_host::Backend;
 
 pub(super) struct Sink;
@@ -37,6 +43,7 @@ fn published() -> SharedWorkspace {
 
 /// Stands in for the window: answers every request the way the grid would,
 /// and counts how many it was asked so a retry can be seen not to start twice.
+#[cfg(unix)]
 pub(super) fn window(
     requests: Arc<TerminalRequests>,
     answer: impl Fn(&Value) -> Result<Value, String> + Send + 'static,

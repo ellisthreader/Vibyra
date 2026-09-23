@@ -19,6 +19,7 @@ mod account_types;
 mod ai_usage;
 mod ai_usage_guard;
 mod ai_usage_limits;
+mod ai_usage_permit;
 #[cfg(test)]
 mod ai_usage_tests;
 mod close_guard;
@@ -33,6 +34,7 @@ mod model_watch_tests;
 mod openai_key;
 mod perf;
 mod phone;
+mod platform_text;
 mod provider_auth;
 mod provider_auth_attempt;
 mod provider_auth_claude;
@@ -62,8 +64,10 @@ mod report_tests;
 mod report_text;
 mod secret_store;
 mod session_identity;
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
 mod session_process_files;
+#[cfg(any(target_os = "linux", all(test, unix)))]
+mod session_process_linux;
 mod session_store;
 #[cfg(test)]
 mod session_store_tests;

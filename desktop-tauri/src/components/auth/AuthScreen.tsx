@@ -1,6 +1,7 @@
+import { platformName } from "../../lib/platform";
 import { useState } from "react";
 
-import logoUrl from "../../assets/vibyra-cobalt.png";
+import { vibyraLogoUrl as logoUrl } from "../../assets/vibyraLogo";
 import { accountOpenLegal } from "../../ipc/account";
 import { useAccountStore } from "../../state/accountStore";
 import { AuthMobileCampaign } from "./AuthMobileCampaign";
@@ -46,7 +47,7 @@ export function AuthScreen() {
           <div className="brand brand--spotlight"><div className="brand__mark"><img src={logoUrl} alt="" /></div></div>
           <div className="login-heading">
             <h1>{emailOpen ? recovering ? "A fresh start." : signup ? "Make it your own." : "Welcome back." : "Welcome to Vibyra"}</h1>
-            <p>{twoFactor ? "One more step." : emailOpen ? recovering ? "Enter your email to reset your password." : signup ? "Create your Vibyra account." : "Sign in with your email address." : "Sign in to your Mac workspace."}</p>
+            <p>{twoFactor ? "One more step." : emailOpen ? recovering ? "Enter your email to reset your password." : signup ? "Create your Vibyra account." : "Sign in with your email address." : `Sign in to your ${platformName} workspace.`}</p>
           </div>
           {restoring && (
             <div className="auth-wait" role="status" aria-live="polite">

@@ -1,8 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import { safeConversationLink } from '../../../../mobile/src/conversation/safeLink';
-import { Fragment, useState } from 'react';
-/** Text-only Markdown renderer: agent content never enters an HTML parser. */
-export function ConversationProse({ text }: { text: string }) {
+import { Fragment, memo, useState } from 'react';
+/** Text-only Markdown renderer: agent content never enters an HTML parser.
+ * Memoised on its text: the split, inline pass and highlight rerun only for
+ * the message that actually changed. */
+export const ConversationProse = memo(function ConversationProse({ text }: { text: string }) {
   return <div className="conversation-prose">{text.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean).map((block, index) => {
     if (block.startsWith('```')) {
       const first = block.indexOf('\n');
@@ -15,7 +17,7 @@ export function ConversationProse({ text }: { text: string }) {
       return paragraph ? <p key={row}>{inline(paragraph)}</p> : null;
     })}</Fragment>;
   })}</div>;
-}
+});
 function inline(text: string) {
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
     if (part.startsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;

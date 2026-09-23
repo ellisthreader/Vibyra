@@ -1,5 +1,6 @@
 use super::{append_frames, append_sample, CapturedAudio, VoiceRecording};
-use std::sync::mpsc;
+use parking_lot::Mutex;
+use std::sync::{mpsc, Arc};
 use std::time::Duration;
 
 fn samples(bytes: &[u8]) -> Vec<i16> {
@@ -39,6 +40,10 @@ fn signed_and_unsigned_microphones_preserve_silence_and_polarity() {
 }
 
 fn recording() -> (VoiceRecording, mpsc::Receiver<()>) {
+    recording_with(Vec::new())
+}
+
+fn recording_with(captured: Vec<u8>) -> (VoiceRecording, mpsc::Receiver<()>) {
     let (stop, stopped) = mpsc::channel();
     let (completed, completion) = mpsc::channel();
     let worker = std::thread::spawn(move || {
@@ -55,9 +60,43 @@ fn recording() -> (VoiceRecording, mpsc::Receiver<()>) {
         VoiceRecording {
             stop: Some(stop),
             worker: Some(worker),
+            samples: Arc::new(Mutex::new(captured)),
+            sample_rate: 48_000,
         },
         completion,
     )
+}
+
+fn tone(seconds: f64, amplitude: f32) -> Vec<u8> {
+    let mut raw = Vec::new();
+    for index in 0..(48_000.0 * seconds) as usize {
+        append_sample(&mut raw, amplitude * ((index as f32) * 0.1).sin());
+    }
+    raw
+}
+
+#[test]
+fn the_level_reads_the_latest_window_so_a_pause_ends_a_spoken_turn() {
+    let mut captured = tone(1.0, 0.8);
+    captured.extend(tone(1.0, 0.0));
+    let (recording, _completed) = recording_with(captured);
+    let (quiet, seconds) = recording.level(Duration::from_millis(400));
+    assert!(quiet < 0.01, "a silent tail must read as a pause: {quiet}");
+    assert!(
+        (seconds - 2.0).abs() < 0.05,
+        "elapsed seconds track the whole recording: {seconds}"
+    );
+    let (loud, _) = recording.level(Duration::from_secs(2));
+    assert!(
+        loud > 0.1,
+        "speech in the window must read as sound: {loud}"
+    );
+}
+
+#[test]
+fn an_empty_recording_reads_as_silence_rather_than_dividing_by_zero() {
+    let (recording, _completed) = recording();
+    assert_eq!(recording.level(Duration::from_millis(400)), (0.0, 0.0));
 }
 
 #[test]

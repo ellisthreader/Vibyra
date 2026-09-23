@@ -24,11 +24,6 @@ export interface MemoryImportBatch {
   skipped: number;
 }
 
-export interface MemorySnippet {
-  path: string;
-  content: string;
-}
-
 export interface MemoryNoteIndex {
   paths: string[];
   limited: boolean;
@@ -68,8 +63,4 @@ export function disconnectMemoryVault(key: string): Promise<MemorySourcesState> 
 
 export function pickMemoryFiles(): Promise<MemoryImportBatch> {
   return invoke("pick_memory_files");
-}
-
-export function searchMemorySources(key: string, query: string): Promise<MemorySnippet[]> {
-  return invoke("search_memory_sources", { project: projectArg(key), query });
 }

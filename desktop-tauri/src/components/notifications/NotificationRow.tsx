@@ -29,18 +29,18 @@ export function NotificationRow({ item, onAction, onDismiss }: NotificationRowPr
         {item.severity === 'danger' ? <NotificationError message={item.body ?? item.title} />
           : item.body && <p className="nrow__body">{item.body}</p>}
         <div className="nrow__meta">
-          <category.Icon size={11} />
           <span>{category.label}</span>
           <span className="nrow__sep" aria-hidden="true">
             ·
           </span>
           <time dateTime={new Date(item.at).toISOString()}>{relativeTime(item.at)}</time>
+
+        </div>
           {item.action && (
             <button type="button" className="nrow__action" onClick={() => onAction?.(item)}>
               {item.action.label}
             </button>
           )}
-        </div>
       </div>
 
       {onDismiss && (

@@ -1,6 +1,7 @@
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 
 import { abbreviateHome } from '../../../lib/relativeTime';
+import { useDestinationState } from '../../../lib/useDestinationState';
 import { usePlannedProject, useProjectCreateStore } from '../../../state/projectCreateStore';
 import { useProjectStore } from '../../../state/projectStore';
 import { FolderIcon } from '../../common/Icons';
@@ -25,7 +26,16 @@ export function WhereStep() {
   const homeDir = useProjectStore(s => s.homeDir);
   const planned = usePlannedProject();
   const { destination } = planned;
-  const ready = !destination.error;
+  // The build refuses a folder that holds someone's files. Say so here, where
+  // changing the name is one keystroke, instead of on the build screen.
+  const folder = useDestinationState(destination.error ? '' : destination.path);
+  const occupied = folder === 'used'
+    ? 'That folder already has files in it. Give the project another name.'
+    : folder === 'notAFolder'
+      ? 'A file of that name is already there. Give the project another name.'
+      : '';
+  const problem = destination.error ?? occupied;
+  const ready = !problem;
   const stacks = [planned.entry, ...planned.extras].filter(entry => entry.id !== 'empty');
   const shown = abbreviateHome(destination.path, homeDir);
   const cut = shown.lastIndexOf('/');
@@ -56,7 +66,7 @@ export function WhereStep() {
       </span>
       <button className="np-quiet np-quiet--inline" type="button" onClick={() => void choose()}>Change</button>
     </div>
-    {destination.error && <p className="np-where__error" role="alert">{destination.error}</p>}
+    {problem && <p className="np-where__error" role="alert">{problem}</p>}
     <footer className="np-foot">
       <button className="btn btn--primary" type="button" disabled={!ready} onClick={() => go('options')}>
         Continue

@@ -148,6 +148,9 @@ impl Backend for SharedBackend {
         });
         rx
     }
+    fn subscribe_conversations(&self) -> mpsc::Receiver<Value> {
+        self.chats.subscribe()
+    }
     fn disconnected(&self, device: &str) {
         self.terminal.disconnected(device);
         self.chats.disconnected(device);

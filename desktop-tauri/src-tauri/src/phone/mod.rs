@@ -1,5 +1,6 @@
 mod access;
 pub mod address;
+mod notifications;
 mod preferences;
 mod remote;
 use preferences::save;
@@ -26,7 +27,7 @@ pub(crate) mod shared_backend;
 mod stream;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod typing_tests;
 pub mod vault;
 #[cfg(test)]
@@ -53,8 +54,10 @@ use workspace::SharedWorkspace;
 
 use preferences::computer_name;
 
-pub const NO_NETWORK: &str =
-    "Connect this Mac to Wi-Fi or a private VPN. Vibyra will find the address itself.";
+pub const NO_NETWORK: &str = crate::platform_text::for_computer(
+    "Connect this Mac to Wi-Fi or a private VPN. Vibyra will find the address itself.",
+    "Connect this computer to Wi-Fi or a private VPN. Vibyra will find the address itself.",
+);
 
 /// The iPhone connection is one switch. `enabled` is what the person asked for
 /// and survives restarts; the listener address is detected, never typed, and is
@@ -78,16 +81,15 @@ pub struct PhoneConnection {
     /// signed in to a Vibyra account, and only that account's phones get in.
     remote_enabled: bool,
     remote: Option<RelayHandle>,
+    notifications: Option<vibyra_host::notifications::NotificationHandle>,
     account: Option<Arc<AccountSessionManager>>,
     pub error: Option<String>,
-    /// The one folder, if any, this Mac reads out to its phone. Independent of
-    /// `chats`: a vault has no account and no conversation, only a folder.
     pub vault: Arc<vault::Vault>,
     /// Terminals a phone asked the window to start or close, awaiting it.
     pub requests: Arc<requests::TerminalRequests>,
 }
 impl PhoneConnection {
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub fn new(path: PathBuf, manager: Arc<PtyManager>) -> Mutex<Self> {
         Self::with_chats(path, manager, None, None)
     }
@@ -112,6 +114,7 @@ impl PhoneConnection {
             typing: Arc::new(AtomicBool::new(saved["typing"].as_bool() == Some(true))),
             remote_enabled: saved["remote"].as_bool() == Some(true),
             remote: None,
+            notifications: None,
             account,
             error: None,
             requests: Arc::default(),
@@ -136,6 +139,7 @@ impl PhoneConnection {
     pub fn disable(&mut self) -> Result<(), String> {
         // Stop network access even if writing the preference fails.
         self.enabled = false;
+        self.notifications = None;
         self.remote = None;
         self.host = None;
         self.address = String::new();
@@ -153,6 +157,7 @@ impl PhoneConnection {
         if self.host.is_some() && (current.is_empty() || current == self.address) {
             return;
         }
+        self.notifications = None;
         self.remote = None;
         self.host = None;
         self.address = String::new();

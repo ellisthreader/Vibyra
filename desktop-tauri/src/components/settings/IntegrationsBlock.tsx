@@ -39,23 +39,23 @@ function ConnectorRow({
   return (
     <SettingRow label={<><IntegrationLogo id={connector.id} />{connector.name}</>} hint={hint}>
       {!signedIn ? (
-        <button className="btn btn--ghost integration-quiet" onClick={() => openAccount("account")}>Sign in to Vibyra first</button>
+        <button className="btn btn--ghost" onClick={() => openAccount("account")}>Sign in to Vibyra first</button>
       ) : connector.installed ? (
         confirm ? (
           <>
-            <button className="btn btn--ghost integration-quiet" onClick={() => setConfirm(false)}>Keep</button>
+            <button className="btn btn--ghost" onClick={() => setConfirm(false)}>Keep</button>
             <button className="btn btn--danger" disabled={busy} onClick={() => { setConfirm(false); onDisconnect(); }}>Disconnect</button>
           </>
         ) : (
           <>
             <StatusChip tone="on">Connected</StatusChip>
-            <button className="btn btn--ghost integration-quiet" disabled={busy} onClick={() => setConfirm(true)}>Disconnect</button>
+            <button className="btn btn--ghost" disabled={busy} onClick={() => setConfirm(true)}>Disconnect</button>
           </>
         )
       ) : pending ? (
         <>
           <StatusChip tone="busy">Waiting for browser</StatusChip>
-          <button className="btn btn--ghost integration-quiet" onClick={onCancel}>Cancel</button>
+          <button className="btn btn--ghost" onClick={onCancel}>Cancel</button>
         </>
       ) : available ? (
         <button className="btn btn--primary" disabled={busy} onClick={onConnect}>{busy ? "Opening…" : "Connect"}</button>
@@ -101,13 +101,13 @@ function ObsidianRow() {
       {vault ? (
         confirm ? (
           <>
-            <button className="btn btn--ghost integration-quiet" onClick={() => setConfirm(false)}>Keep</button>
+            <button className="btn btn--ghost" onClick={() => setConfirm(false)}>Keep</button>
             <button className="btn btn--danger" disabled={busy} onClick={() => { setConfirm(false); void disconnect(MEMORY_KEY); }}>Disconnect</button>
           </>
         ) : (
           <>
             <StatusChip tone="on">Connected</StatusChip>
-            <button className="btn btn--ghost integration-quiet" disabled={busy} onClick={() => setConfirm(true)}>Disconnect</button>
+            <button className="btn btn--ghost" disabled={busy} onClick={() => setConfirm(true)}>Disconnect</button>
           </>
         )
       ) : choosing ? (
@@ -116,7 +116,7 @@ function ObsidianRow() {
             {suggestions.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             <option value="__other">Another folder…</option>
           </select>
-          <button className="btn btn--ghost integration-quiet" onClick={() => setChoosing(false)}>Cancel</button>
+          <button className="btn btn--ghost" onClick={() => setChoosing(false)}>Cancel</button>
           <button className="btn btn--primary" disabled={busy} onClick={finish}>Use this vault</button>
         </>
       ) : (

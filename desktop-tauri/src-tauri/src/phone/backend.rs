@@ -84,8 +84,16 @@ impl DesktopBackend {
         let sessions = self.manager.list();
         match sessions.iter().find(|s| s.id == number) {
             Some(s) if s.alive => Ok((number, sessions.iter().map(|s| s.id).collect())),
-            Some(_) => Err("This terminal has stopped on the Mac".into()),
-            None => Err("Terminal closed on the Mac".into()),
+            Some(_) => Err(crate::platform_text::for_computer(
+                "This terminal has stopped on the Mac",
+                "This terminal has stopped on the computer",
+            )
+            .into()),
+            None => Err(crate::platform_text::for_computer(
+                "Terminal closed on the Mac",
+                "Terminal closed on the computer",
+            )
+            .into()),
         }
     }
     fn claim(&self, device: &str, params: &Value) -> Result<Value, String> {
@@ -130,7 +138,10 @@ impl DesktopBackend {
             .list()
             .into_iter()
             .find(|s| s.id == number)
-            .ok_or("Terminal closed on the Mac")?;
+            .ok_or(crate::platform_text::for_computer(
+                "Terminal closed on the Mac",
+                "Terminal closed on the computer",
+            ))?;
         let (output, offset, truncated) = self
             .manager
             .remote_snapshot(number)

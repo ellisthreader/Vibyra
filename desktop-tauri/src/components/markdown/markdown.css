@@ -1,0 +1,91 @@
+/* Rendered markdown — the one sheet behind every model reply.
+
+   It owns structure and colour and deliberately owns no size: the same
+   renderer serves the 13px sidebar chat, the 15px conversation terminal and
+   the teammates thread, so every length here is in `em` and `font-size` is
+   inherited from whichever surface mounted it.
+
+   Nothing in this file animates. The streaming caret is a steady bar on
+   purpose — a loop would need an exemption in `performance.css` and an edit to
+   `tests/performanceMode.test.mjs`, for worse feedback than a still mark
+   beside text that is visibly moving. */
+
+/* `base.css` turns selection off for chrome; a reply is content, not chrome. */
+.md-doc { color:inherit; user-select:text; }
+.md-doc > :first-child { margin-top:0; }
+.md-doc > :last-child { margin-bottom:0; }
+
+/* ---------- prose ---------- */
+
+/* Soft breaks are meaningful: the model put them where it wanted them. */
+.md-doc p { margin:0 0 .85em; white-space:pre-wrap; }
+.md-doc h4,.md-doc h5,.md-doc h6 { margin:1.35em 0 .5em; font-weight:600; letter-spacing:-.01em; }
+.md-doc h4 { font-size:1.1em; }
+.md-doc h5 { font-size:1em; }
+.md-doc h6 { font-size:.94em; color:var(--muted); }
+/* A quote is not AI activity, so it stays graphite — never the cobalt nerve. */
+.md-doc blockquote { margin:0 0 .85em; padding-left:.9em; border-left:2px solid var(--line); color:var(--muted); white-space:pre-wrap; }
+.md-rule { margin:1.2em 0; border:0; border-top:1px solid var(--line); }
+
+/* ---------- lists ---------- */
+
+.md-doc .md-list { margin:0 0 .85em; padding-left:1.5em; }
+.md-doc li { margin:.22em 0; }
+.md-doc li > .md-list { margin:.22em 0 0; }
+/* A task line carries its own mark, so the bullet beside it is noise. */
+.md-doc .md-task-item { list-style:none; margin-left:-1.5em; }
+.md-task { display:inline-block; width:.92em; height:.92em; margin-right:.45em; vertical-align:-.12em;
+  border:1px solid var(--border); border-radius:3px; background:var(--surface); }
+.md-task[aria-checked="true"] { border-color:var(--muted); }
+.md-task[aria-checked="true"]::after { content:""; display:block; width:.24em; height:.48em; margin:.04em auto 0;
+  border:solid var(--muted); border-width:0 1.5px 1.5px 0; transform:rotate(45deg); }
+
+/* ---------- inline ---------- */
+
+.md-doc code { font-family:var(--font-mono); font-size:.9em; }
+.md-doc p code,.md-doc li code,.md-doc th code,.md-doc td code,.md-doc blockquote code {
+  padding:.1em .34em; background:var(--surface-tint); border:1px solid var(--line-soft); border-radius:4px; }
+/* Cobalt earns links — one of its four approved jobs. */
+.md-link { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--line-accent); }
+.md-link:hover { border-bottom-color:var(--accent); }
+.md-link:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+.md-doc small { color:var(--muted); }
+
+/* ---------- code blocks ---------- */
+
+.md-code { margin:0 0 .9em; border:1px solid var(--border); border-radius:var(--r-card); background:var(--workspace); overflow:hidden; }
+/* `user-select` so dragging across a reply cannot harvest "Copy" and "Run".
+   `wrap` because a tool's label can grow — a Run that could not open a terminal
+   says so — and a 320px sidebar has no width to give it. */
+.md-code header { display:flex; flex-wrap:wrap; align-items:center; gap:.5em; min-height:2.1em;
+  padding:.3em .45em .3em .8em; background:var(--surface); border-bottom:1px solid var(--line); user-select:none; }
+.md-code__lang { font-size:.78em; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.md-code__tools { display:flex; align-items:center; gap:.3em; margin-left:auto; }
+/* `CopyButton` ships no styling of its own, so the compact look lives here. */
+.md-code .copy-btn--compact,.md-run { padding:.2em .6em; border:1px solid var(--line); border-radius:var(--r-sm);
+  font-size:.82em; color:var(--muted); background:transparent;
+  transition:color var(--t-base) var(--e-standard),border-color var(--t-base) var(--e-standard),background var(--t-base) var(--e-standard); }
+.md-run { color:var(--text); white-space:nowrap; }
+.md-code .copy-btn--compact:hover,.md-run:hover { color:var(--text); border-color:var(--border); background:var(--hover); }
+.md-code .copy-btn--compact:focus-visible,.md-run:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+/* The chat bubble sets `overflow-wrap: anywhere`, which would shred code. */
+.md-doc pre { margin:0; padding:.75em .85em; overflow:auto; tab-size:4; white-space:pre;
+  overflow-wrap:normal; word-break:normal; font:.9em/1.65 var(--font-mono); }
+/* Meaningful AI activity, which is cobalt's other approved job. */
+.md-code__caret { display:inline-block; width:2px; height:1em; margin-left:1px; vertical-align:-.16em; background:var(--accent); }
+/* Syntax colour is the documented exception to graphite + cobalt. */
+.md-doc .syntax-string { color:var(--success); }
+.md-doc .syntax-keyword { color:var(--accent); }
+.md-doc .syntax-comment { color:var(--muted); }
+.md-doc .syntax-number { color:var(--amber); }
+
+/* ---------- tables ---------- */
+
+.md-table { margin:0 0 .9em; max-width:100%; overflow-x:auto; border:1px solid var(--border); border-radius:var(--r-card); }
+/* Inset: at 320px an outward ring clips against the bubble's own edge. */
+.md-table:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+.md-table table { table-layout:fixed; border-collapse:collapse; font-size:.95em; }
+.md-table th,.md-table td { padding:.45em .7em; vertical-align:top; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+.md-table th { font-weight:600; color:var(--text); background:var(--surface); }
+.md-table td { color:var(--muted); }
+.md-table tbody tr:last-child td { border-bottom:0; }

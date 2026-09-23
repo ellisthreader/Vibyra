@@ -27,6 +27,7 @@ pub struct AppState {
     pub settings: Mutex<Settings>,
     pub settings_path: PathBuf,
     pub openai_api_key: Mutex<Option<String>>,
+    env_openai_key: Option<String>,
     pub usage: Arc<AiUsageGuard>,
     pub provider_auth: Arc<ProviderAuthManager>,
     pub secret_store_available: Mutex<bool>,
@@ -62,6 +63,7 @@ impl AppState {
         let secret_store = SecretStore;
         let (openai_api_key, secret_store_available) =
             load_and_migrate_key(&secret_store, &mut settings, &settings_path);
+        let env_openai_key = crate::openai_key::from_environment(settings_path.parent());
         let usage_path = settings_path
             .parent()
             .map(|dir| dir.join("ai-usage.json"))
@@ -93,6 +95,7 @@ impl AppState {
             settings: Mutex::new(settings),
             settings_path,
             openai_api_key: Mutex::new(openai_api_key),
+            env_openai_key,
             usage: Arc::new(AiUsageGuard::new(usage_path)),
             provider_auth: Arc::new(ProviderAuthManager::default()),
             secret_store_available: Mutex::new(secret_store_available),
@@ -106,7 +109,14 @@ impl AppState {
     }
 
     pub fn openai_key(&self) -> Option<String> {
-        self.openai_api_key.lock().clone()
+        self.openai_api_key
+            .lock()
+            .clone()
+            .or_else(|| self.env_openai_key.clone())
+    }
+
+    pub fn openai_key_from_environment(&self) -> bool {
+        self.openai_api_key.lock().is_none() && self.env_openai_key.is_some()
     }
 
     /// Writes the key to the operating-system credential store first: if that

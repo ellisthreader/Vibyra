@@ -48,9 +48,6 @@ export function runNotificationAction(action: NotificationAction): void {
     case "openGraphicsSettings":
       workspace.openSettingsSection("general", "performance");
       return;
-    case "openAiSettings":
-      workspace.openSettingsSection("advanced", "vibyraFeatures");
-      return;
     case "openShortcutSettings":
       workspace.openSettingsSection("shortcuts");
       return;

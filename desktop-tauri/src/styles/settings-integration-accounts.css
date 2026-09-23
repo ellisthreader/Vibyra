@@ -70,16 +70,14 @@
 }
 
 /* A quieter third action. Remove sits next to Disconnect and must read as the
- * rarer, heavier of the two without shouting for attention first. */
+ * rarer, heavier of the two without shouting for attention first. The look is
+ * the global `.btn--ghost`; only the extra fade is local. */
 .integration-account__actions .btn--ghost {
-  background: transparent;
-  border-color: transparent;
   opacity: 0.6;
 }
 
 .integration-account__actions .btn--ghost:hover:not(:disabled) {
   opacity: 1;
-  border-color: var(--vb-border, rgba(127, 127, 127, 0.24));
 }
 
 /* Which account a pane is running as, in its header. Only rendered when the
