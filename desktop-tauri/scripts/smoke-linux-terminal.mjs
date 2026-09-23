@@ -71,8 +71,9 @@ async function snapshot(id) {
   return driver.invoke("terminal_snapshot", { id });
 }
 async function enterAndCheck(id, command, marker, name) {
-  await driver.keys(".pane .xterm-helper-textarea", command);
-  await driver.keys(".pane .xterm-helper-textarea", "\uE007");
+  // One WebDriver request emits the whole key burst, including Enter, without
+  // a round trip that could accidentally give unordered IPC writes time to settle.
+  await driver.keys(".pane .xterm-helper-textarea", `${command}\uE007`);
   await driver.until(async () => {
     const raw = await snapshot(id);
     return new RegExp(`(?:\\r|\\n)${marker}(?:\\r|\\n)`).test(raw);
@@ -130,10 +131,8 @@ try {
     const marker = `VIBYRA_BURST_${String(index).padStart(2, "0")}_abcdefghijklmnopqrstuvwxyz`;
     await enterAndCheck(id, `echo ${marker}`, marker, `burst ${index + 1}`);
   }
-  await driver.keys(".pane .xterm-helper-textarea", "echo VIBYRA_WRONG");
-  await driver.keys(".pane .xterm-helper-textarea", "\uE003".repeat(5));
-  await driver.keys(".pane .xterm-helper-textarea", "RIGHT");
-  await driver.keys(".pane .xterm-helper-textarea", "\uE007");
+  await driver.keys(".pane .xterm-helper-textarea",
+    `echo VIBYRA_WRONG${"\uE003".repeat(5)}RIGHT\uE007`);
   await driver.until(async () => /(?:\r|\n)VIBYRA_RIGHT(?:\r|\n)/.test(await snapshot(id)),
     "backspace-corrected command output");
 
