@@ -71,6 +71,7 @@ async function snapshot(id) {
   return driver.invoke("terminal_snapshot", { id });
 }
 async function enterAndCheck(id, command, marker, name) {
+  const started = performance.now();
   // One WebDriver request emits the whole key burst, including Enter, without
   // a round trip that could accidentally give unordered IPC writes time to settle.
   await driver.keys(".pane .xterm-helper-textarea", `${command}\uE007`);
@@ -78,6 +79,7 @@ async function enterAndCheck(id, command, marker, name) {
     const raw = await snapshot(id);
     return new RegExp(`(?:\\r|\\n)${marker}(?:\\r|\\n)`).test(raw);
   }, `${name}: exact command result`);
+  return Math.round(performance.now() - started);
 }
 
 try {
@@ -127,9 +129,10 @@ try {
   await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
     "single-character command output");
 
+  const burstToOutputMs = [];
   for (let index = 0; index < 12; index += 1) {
     const marker = `VIBYRA_BURST_${String(index).padStart(2, "0")}_abcdefghijklmnopqrstuvwxyz`;
-    await enterAndCheck(id, `echo ${marker}`, marker, `burst ${index + 1}`);
+    burstToOutputMs.push(await enterAndCheck(id, `echo ${marker}`, marker, `burst ${index + 1}`));
   }
   await driver.keys(".pane .xterm-helper-textarea",
     `echo VIBYRA_WRONG${"\uE003".repeat(5)}RIGHT\uE007`);
@@ -150,7 +153,7 @@ try {
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
-    burstCommands: 12, backspace: true, shiftTabEscape: true,
+    burstCommands: 12, burstToOutputMs, backspace: true, shiftTabEscape: true,
     accountService: "loopback fixture",
   }, null, 2));
   console.log(`Native Linux PTY typing passed. Evidence: ${output}`);
