@@ -1,5 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { dispatch } from "../lib/terminalBus";
+import { createOrderedTerminalWriter } from "../lib/orderedTerminalInput";
 import type { SessionInfo, TermEvent, Visibility } from "../types";
 
 // Each terminal gets its own IPC channel; Rust batches output (~16 ms under
@@ -104,9 +105,9 @@ export async function createSshTerminal(
   return info;
 }
 
-export function writeTerminal(id: number, data: string): Promise<void> {
-  return invoke("write_terminal", { id, data });
-}
+export const writeTerminal = createOrderedTerminalWriter<number>((id, data) =>
+  invoke("write_terminal", { id, data }),
+);
 
 export function resizeTerminal(id: number, rows: number, cols: number): Promise<void> {
   return invoke("resize_terminal", { id, rows, cols });
