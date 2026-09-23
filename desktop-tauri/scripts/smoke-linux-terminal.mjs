@@ -136,10 +136,22 @@ try {
   await driver.until(async () => /(?:\r|\n)VIBYRA_RIGHT(?:\r|\n)/.test(await snapshot(id)),
     "backspace-corrected command output");
 
+  // Codex Plan mode uses Shift+Tab. Check its underlying xterm translation
+  // against a real PTY, with cat -v making the Escape [ Z bytes observable.
+  await driver.keys(".pane .xterm-helper-textarea", "cat -v\uE007");
+  await driver.keys(".pane .xterm-helper-textarea", "VIBYRA_CAT_READY\uE007");
+  await driver.until(async () => (await snapshot(id)).split("VIBYRA_CAT_READY").length >= 3,
+    "cat -v ready to receive terminal control keys");
+  const beforeShiftTab = (await snapshot(id)).length;
+  await driver.keys(".pane .xterm-helper-textarea", "\uE008\uE004\uE000\uE007");
+  await driver.until(async () => (await snapshot(id)).slice(beforeShiftTab).includes("^[[Z"),
+    "Shift+Tab arrived at the Linux PTY as Escape [ Z");
+
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
-    burstCommands: 12, backspace: true, accountService: "loopback fixture",
+    burstCommands: 12, backspace: true, shiftTabEscape: true,
+    accountService: "loopback fixture",
   }, null, 2));
   console.log(`Native Linux PTY typing passed. Evidence: ${output}`);
 } catch (error) {
