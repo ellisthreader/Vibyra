@@ -103,12 +103,16 @@ try {
   await driver.keys('input[aria-label="Password"]', "local-only-password");
   await driver.click(".auth-email button[type='submit']");
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
-  if (await driver.execute(`return Boolean(document.querySelector('.first-welcome'))`)) {
-    await driver.click(".first-welcome__skip");
-    await driver.until(() => driver.execute(`return !document.querySelector('.first-welcome')`), "welcome overlay dismissed");
-  }
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="New terminal in input-repro"]'))`), "test project");
-  await driver.click('button[aria-label="New terminal in input-repro"]');
+  await driver.dismissWorkspaceOverlays();
+  await driver.until(() => driver.execute(`const card = document.querySelector('button[aria-label="Open input-repro"]');
+    if (!card) return false; const rect = card.getBoundingClientRect();
+    return card.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2));`),
+  "project card unobscured");
+  // The card's plus is deliberately opacity:0 until hover at desktop widths.
+  // Invoke its real React handler after overlays settle; only terminal keys
+  // themselves are under test and those go through WebDriver and the PTY.
+  await driver.execute(`document.querySelector('button[aria-label="New terminal in input-repro"]').click()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[title="Launch Terminal"]'))`), "system shell in terminal picker");
   await driver.click('button[title="Launch Terminal"]');
   const id = await driver.until(async () => {

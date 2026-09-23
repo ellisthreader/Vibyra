@@ -88,6 +88,21 @@ export class NativeDriver {
     });
   }
 
+  async dismissWorkspaceOverlays() {
+    let clearSince = 0;
+    await this.until(async () => {
+      const blocked = await this.execute(`const welcome = document.querySelector('.first-welcome');
+        if (welcome && !welcome.classList.contains('first-welcome--leaving')) {
+          welcome.querySelector('.first-welcome__skip')?.click();
+        }
+        document.querySelector('.whatsnew__close')?.click();
+        return Boolean(document.querySelector('.first-welcome, .modal-backdrop, [role="dialog"]'));`);
+      if (blocked) { clearSince = 0; return false; }
+      if (!clearSince) clearSince = Date.now();
+      return Date.now() - clearSince >= 800;
+    }, "workspace overlays to settle");
+  }
+
   screenshot() {
     return this.request("GET", `/session/${this.session}/screenshot`)
       .then(value => Buffer.from(value, "base64"));
