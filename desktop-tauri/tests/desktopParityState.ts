@@ -26,7 +26,7 @@ export function seedParityFixture() {
   mockWindows('main');
   mockIPC(parityIpc);
   const projects = [{ id:'studio', name:'Studio', root:'/fixture/studio', color:'#5b7cfa', lastOpenedMs:0 }];
-  useAccountStore.setState({ snapshot:{status:parityScreen === 'auth' ? 'signedOut' : 'signedIn', profile:{name:'Barbara',email:'fixture@example.test',plan:'free'},secureStorage:true,error:null,pendingProvider:null} as any });
+  useAccountStore.setState({ snapshot:{status:parityScreen === 'auth' ? 'signedOut' : 'signedIn', profile:{name:'Barbara',email:'fixture@example.test',plan:'free',welcomeKey:'vw_parity_fixture'},secureStorage:true,error:null,pendingProvider:null} as any });
   useSettingsStore.setState({ settings:{projects,theme,fontSize:13,fontFamily:'monospace',scrollbackLines:5000,
     customAgents:[],enabledAgentIds:[],agentView:'terminal',defaultShell:null,workspaceRoot:null,screenshotDir:null,
     screenshotHideWindow:false,openaiKeyConfigured:false,secureStorageAvailable:true,voiceShortcut:'F8',screenshotShortcut:'F9',
