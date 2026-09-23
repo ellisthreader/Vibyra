@@ -7,6 +7,8 @@
 //
 // Add the newest entry at the top when cutting a release.
 
+import { LINUX_RELEASE_080 } from "./changelogRelease080.ts";
+
 export interface ChangelogSection {
   heading: string;
   body: string;
@@ -28,6 +30,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  LINUX_RELEASE_080,
   {
     version: "0.7.8",
     date: "2026-09-21",

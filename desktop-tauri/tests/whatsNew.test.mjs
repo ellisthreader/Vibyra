@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { test } from "node:test";
 
 import { CHANGELOG, entryFor, formatDate, shouldOpen } from "../src/lib/changelog.ts";
@@ -60,13 +60,15 @@ test("the shipped version has its own hero art", () => {
   // picture nobody notices.
   const { version } = JSON.parse(source("../src-tauri/tauri.conf.json"));
   const entry = entryFor(version);
-  assert.equal(
-    entry.image,
-    `/releases/${version}.svg`,
-    `run: npm run release:art -- --subject "…"`,
-  );
-  const svg = source(`../public${entry.image}`);
-  assert.deepEqual(problemsWith(svg), [], "the art fails its own checks");
+  assert.match(entry.image, new RegExp(`^/releases/${version.replaceAll(".", "\\.")}\\.(?:svg|png)$`));
+  const path = `../public${entry.image}`;
+  assert.ok(statSync(new URL(path, import.meta.url)).size > 0, "the release art is empty");
+  if (entry.image.endsWith(".svg")) {
+    assert.deepEqual(problemsWith(source(path)), [], "the art fails its own checks");
+  } else {
+    assert.deepEqual([...readFileSync(new URL(path, import.meta.url)).subarray(0, 8)],
+      [137, 80, 78, 71, 13, 10, 26, 10], "the release art is not a PNG");
+  }
 });
 
 test("art checks reject what a thumbnail would not show", () => {

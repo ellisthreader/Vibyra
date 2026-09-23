@@ -130,6 +130,27 @@ jobs:
           test -f "${matches[0]}.sig"
           cp "${matches[0]}.sig" "release/$output.sig"
           cp release/frontend-manifest.json "release/$output.frontend.json"
+      - name: Build signed Debian package from the same frontend
+        if: runner.os == 'Linux'
+        run: >-
+          npm exec -- tauri build --bundles deb --config
+          '{"build":{"beforeBuildCommand":"node scripts/frontend-artifact.mjs verify"}}'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Stage signed Debian package
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          package="Vibyra-Desktop-${{ steps.version.outputs.version }}-amd64.deb"
+          matches=( src-tauri/target/release/bundle/deb/*.deb )
+          test "${#matches[@]}" = 1
+          test -f "${matches[0]}.sig"
+          cp "${matches[0]}" "release/$package"
+          sha256sum "release/$package" > "release/$package.sha256"
+          cp "${matches[0]}.sig" "release/$package.sig"
+          cp release/frontend-manifest.json "release/$package.frontend.json"
+          dpkg-deb --info "release/$package" | grep -F "Version: ${{ steps.version.outputs.version }}"
       - name: Verify macOS signing, notarization and launch
         if: runner.os == 'macOS'
         shell: bash
@@ -191,6 +212,20 @@ jobs:
             echo "SIGNATURE=$(cat "release/$output.sig")"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            package="Vibyra-Desktop-${{ steps.version.outputs.version }}-amd64.deb"
+            {
+              echo
+              echo "### Debian package"
+              echo '```'
+              echo "VERSION=${{ steps.version.outputs.version }}"
+              echo "FILENAME=$package"
+              echo "SIZE=$(wc -c < "release/$package")"
+              echo "SHA256=$(cut -d' ' -f1 < "release/$package.sha256")"
+              echo "SIGNATURE=$(cat "release/$package.sig")"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload package and checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -201,6 +236,10 @@ jobs:
             desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
             desktop-tauri/release/${{ steps.version.outputs.output }}.sig
             desktop-tauri/release/${{ steps.version.outputs.output }}.frontend.json
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb.sha256
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb.sig
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb.frontend.json
           if-no-files-found: error
           retention-days: 30
 
