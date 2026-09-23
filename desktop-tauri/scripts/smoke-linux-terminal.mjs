@@ -101,7 +101,9 @@ try {
       && Number(getComputedStyle(form).opacity) > 0.99);`), "interactive email form");
   await driver.keys('input[aria-label="Email address"]', user.email);
   await driver.keys('input[aria-label="Password"]', "local-only-password");
-  await driver.click(".auth-email button[type='submit']");
+  // The reveal's grid clip can still hide its submit button for a frame after
+  // fields become interactable. Submitting the real form avoids that setup race.
+  await driver.execute(`document.querySelector('.auth-email').requestSubmit()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="New terminal in input-repro"]'))`), "test project");
   await driver.dismissWorkspaceOverlays();
