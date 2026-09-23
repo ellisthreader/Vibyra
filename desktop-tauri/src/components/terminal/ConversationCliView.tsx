@@ -6,14 +6,10 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { attachTerminalClipboard } from '../../lib/terminalClipboard';
 import { attachRenderer } from '../../lib/xtermRenderer';
 import { terminalFont } from '../../lib/terminalFont';
-import { createOrderedTerminalWriter } from '../../lib/orderedTerminalInput';
 import { dropCarriesText, terminalDropText } from '../../lib/terminalDrop';
 import { themeFor } from '../../lib/xtermTheme';
 import { useSettingsStore } from '../../state/settingsStore';
 import type { TermEvent } from '../../types';
-
-const writeSharedCli = createOrderedTerminalWriter<string>((sessionId, data) =>
-  invoke('shared_cli_write', { sessionId, data }));
 
 export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
   sessionId: string; visible: boolean; fontSize: number; onFocus: () => void;
@@ -42,7 +38,7 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
     const fitNow = () => { if (element.clientWidth > 80 && element.clientHeight > 60) fit.fit(); };
     fitNow();
     const fail = (error: unknown) => { if (!disposed) setError(String(error)); };
-    term.onData(data => { void writeSharedCli(sessionId, data).catch(fail); });
+    term.onData(data => { void invoke('shared_cli_write', { sessionId, data }).catch(fail); });
     term.onResize(({ rows, cols }) => { if (attached) void invoke('shared_cli_resize', { sessionId, rows, cols }).catch(fail); });
     const channel = new Channel<TermEvent>();
     channel.onmessage = event => {
