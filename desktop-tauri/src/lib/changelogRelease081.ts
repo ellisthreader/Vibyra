@@ -3,7 +3,7 @@ import type { ChangelogEntry } from "./changelog";
 export const LINUX_RELEASE_081: ChangelogEntry = {
   version: "0.8.1",
   date: "2026-09-23",
-  summary: "Sorry for the errors in 0.8.0. This release repairs Linux terminal input and window controls.",
+  summary: "Sorry for the errors in 0.8.0. This release repairs Linux terminal input and window controls. — Taylor",
   image: "/releases/0.8.1.svg",
   sections: [
     {
