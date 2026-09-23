@@ -27,7 +27,7 @@ test("Linux uses bundled fonts while the installed Mac font stack is preserved",
   }
 });
 
-test("Linux desktop architectures select the shared leading chrome without changing Mac or Windows", () => {
+test("Linux desktop architectures are detected without changing Mac or Windows", () => {
   for (const platform of ["Linux x86_64", "Linux aarch64", "Linux armv8l"]) {
     assert.equal(desktopPlatformFor(platform), "linux", platform);
   }
@@ -37,6 +37,17 @@ test("Linux desktop architectures select the shared leading chrome without chang
   for (const platform of ["Win32", "Win64", ""]) {
     assert.equal(desktopPlatformFor(platform), "desktop", platform);
   }
+});
+
+test("Linux's native title bar preserves base window settings after Tauri's array replacement", async () => {
+  const [base, linux] = await Promise.all([
+    readFile(new URL("../src-tauri/tauri.conf.json", import.meta.url), "utf8"),
+    readFile(new URL("../src-tauri/tauri.linux.conf.json", import.meta.url), "utf8"),
+  ]).then((values) => values.map(JSON.parse));
+  const original = base.app.windows[0];
+  const native = linux.app.windows[0];
+  assert.deepEqual(native, { ...original, decorations: true });
+  assert.equal(original.decorations, false, "Windows retains its custom controls");
 });
 
 test("the detected computer determines native copy and keyboard actions together", async () => {

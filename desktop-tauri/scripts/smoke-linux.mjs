@@ -77,6 +77,12 @@ try {
       window.__TAURI_INTERNALS__.invoke('plugin:app|version')
         .then(version => done({ version }), error => done({ error: String(error) }));`, args: [],
   });
+  const nativeDecoration = await request("POST", `/session/${session}/execute/async`, {
+    script: `const done = arguments[arguments.length - 1];
+      window.__TAURI_INTERNALS__.invoke('plugin:window|is_decorated', { label: 'main' })
+        .then(decorated => done({ decorated }), error => done({ error: String(error) }));`, args: [],
+  });
+  assert.equal(nativeDecoration.decorated, true, `Linux must use native window-manager controls: ${nativeDecoration.error || "undecorated"}`);
   const configPath = resolve(dirname(fileURLToPath(import.meta.url)), "../src-tauri/tauri.conf.json");
   assert.equal(nativeVersion.version, JSON.parse(readFileSync(configPath, "utf8")).version, "The running native app version is stale or native IPC failed.");
   const initial = await execute(`return {
@@ -86,9 +92,11 @@ try {
     background: getComputedStyle(document.body).backgroundColor,
     imageFailures: [...document.images].filter(img => !img.complete || !img.naturalWidth).map(img => img.src),
     nativeIpc: Boolean(window.__TAURI_INTERNALS__),
+    syntheticWindowControls: document.querySelectorAll('.window-controls, .resize-handle').length,
     horizontalOverflow: document.documentElement.scrollWidth > innerWidth
   }`);
   assert.equal(initial.nativeIpc, true, "The native IPC bridge did not initialize.");
+  assert.equal(initial.syntheticWindowControls, 0, "Linux still renders webview window controls over its native title bar.");
   assert.deepEqual(initial.imageFailures, [], "An embedded image failed to load.");
   assert.equal(initial.horizontalOverflow, false, "The native sign-in view overflows its window.");
   await capture("sign-in");
@@ -102,7 +110,7 @@ try {
       && input && form && input.getBoundingClientRect().height > 0
       && Number(getComputedStyle(form).opacity) > 0.99`), "Visible email form navigation");
   await capture("email-form");
-  writeFileSync(join(output, "native-smoke.json"), `${JSON.stringify({ ...initial, nativeVersion: nativeVersion.version, emailNavigation: true }, null, 2)}\n`);
+  writeFileSync(join(output, "native-smoke.json"), `${JSON.stringify({ ...initial, nativeVersion: nativeVersion.version, decorated: nativeDecoration.decorated, emailNavigation: true }, null, 2)}\n`);
   console.log(`Native Linux AppImage sign-in, assets, IPC and email navigation passed. Evidence: ${output}`);
 } catch (error) {
   smokeError = error;
