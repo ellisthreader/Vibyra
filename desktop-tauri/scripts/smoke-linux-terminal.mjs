@@ -45,6 +45,12 @@ const api = createServer((request, response) => {
     send(200, { ok: true, token: "terminal-smoke-local-token" });
   } else if (request.url === "/api/account/profile") {
     send(200, { ok: true, user });
+  } else if (request.url === "/api/reports/ready" && request.method === "GET") {
+    if (request.headers.authorization === "Bearer terminal-smoke-local-token") {
+      send(200, { ok: true, ready: true });
+    } else {
+      send(401, { ok: false, error: "Sign in to report a problem." });
+    }
   } else {
     send(404, { ok: false, error: "Unavailable in isolated terminal smoke" });
   }
@@ -107,6 +113,14 @@ try {
     await driver.click(".first-welcome__skip");
     await driver.until(() => driver.execute(`return !document.querySelector('.first-welcome')`), "welcome overlay dismissed");
   }
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="Report a bug"]'))`),
+    "visible Report a bug action");
+  await driver.click('button[aria-label="Report a bug"]');
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.report-modal[role="dialog"]'))`),
+    "Report a problem dialog");
+  await driver.until(async () => await driver.invoke("report_channel_ready") === true,
+    "authenticated report channel");
+  await driver.click('button[aria-label="Close report"]');
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="New terminal in input-repro"]'))`), "test project");
   await driver.click('button[aria-label="New terminal in input-repro"]');
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[title="Launch Terminal"]'))`), "system shell in terminal picker");
@@ -158,7 +172,7 @@ try {
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
     burstCommands: 12, burstToOutputMs, backspace: true, shiftTabEscape: true,
-    accountService: "loopback fixture",
+    accountService: "loopback fixture", reportBugVisible: true, reportChannelReady: true,
   }, null, 2));
   console.log(`Native Linux PTY typing passed. Evidence: ${output}`);
 } catch (error) {

@@ -18,13 +18,6 @@ export const CameraIcon = icon(
   </>,
 );
 
-export const TerminalIcon = icon(
-  <>
-    <rect x="3" y="4" width="18" height="16" rx="2" />
-    <path d="m7 9 3 3-3 3M13 15h4" />
-  </>,
-);
-
 export const TrashIcon = icon(<path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13" />);
 
 export const ImageIcon = icon(
