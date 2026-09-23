@@ -55,6 +55,7 @@ async function capture(name) {
   writeFileSync(join(output, `${name}.png`), Buffer.from(screenshot, "base64"));
 }
 
+let smokeError;
 try {
   console.log("Waiting for the Linux WebKit driver.");
   await until(() => request("GET", "/status"), "WebKit driver startup");
@@ -100,12 +101,21 @@ try {
   await capture("email-form");
   writeFileSync(join(output, "native-smoke.json"), `${JSON.stringify({ ...initial, nativeVersion: nativeVersion.version, emailNavigation: true }, null, 2)}\n`);
   console.log(`Native Linux AppImage sign-in, assets, IPC and email navigation passed. Evidence: ${output}`);
+} catch (error) {
+  smokeError = error;
+  console.error(error);
 } finally {
-  if (session) {
-    try { await capture("final"); } catch { /* Preserve logs even when the web process failed. */ }
-    try { await request("DELETE", `/session/${session}`); } catch { /* Driver cleanup below. */ }
+  console.log("Closing the native verification session.");
+  if (session && smokeError) {
+    try { await Promise.race([capture("failure"), delay(5_000)]); }
+    catch { /* Preserve logs even when the web process failed. */ }
   }
-  driver.kill("SIGTERM");
+  driver.kill("SIGKILL");
+  driver.stdout.destroy();
+  driver.stderr.destroy();
   writeFileSync(join(output, "tauri-driver.log"), log);
   rmSync(profile, { recursive: true, force: true });
 }
+// WebKit children can inherit the driver's pipes and keep Node alive after a
+// successful session. All evidence is already written synchronously above.
+process.exit(smokeError ? 1 : 0);
