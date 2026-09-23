@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::io::Read;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
@@ -9,6 +9,7 @@ use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize}
 use crate::error::{CoreError, CoreResult};
 
 use super::buffer::SessionOutput;
+use super::writer::SessionWriter;
 use super::{LaunchSpec, SessionId, Visibility};
 
 /// A live PTY with its process, writer and shared output state.
@@ -26,7 +27,7 @@ pub struct Session {
     /// answer "how wide is this terminal?" — and a phone that has to guess
     /// re-wraps every line and clamps a TUI's cursor moves into its last cell.
     size: Mutex<(u16, u16)>,
-    writer: Mutex<Box<dyn Write + Send>>,
+    writer: SessionWriter,
     master: Mutex<Box<dyn MasterPty + Send>>,
     child: Mutex<Box<dyn Child + Send + Sync>>,
 }
@@ -113,7 +114,7 @@ impl Session {
             alive: AtomicBool::new(true),
             exit_code: Mutex::new(None),
             size: Mutex::new((spec.cols, spec.rows)),
-            writer: Mutex::new(writer),
+            writer: SessionWriter::spawn(options.id, writer)?,
             master: Mutex::new(pair.master),
             child: Mutex::new(child),
         });
@@ -157,10 +158,7 @@ impl Session {
         if !self.alive.load(Ordering::SeqCst) {
             return Err(CoreError::SessionExited(self.id));
         }
-        let mut writer = self.writer.lock();
-        writer.write_all(data)?;
-        writer.flush()?;
-        Ok(())
+        self.writer.queue(self.id, data)
     }
 
     pub fn resize(&self, rows: u16, cols: u16) -> CoreResult<()> {

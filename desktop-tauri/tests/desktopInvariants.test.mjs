@@ -116,3 +116,20 @@ test("only an explicit count opens more than one terminal", async () => {
   );
   assert.match(launch, /options\.count \?\? 1/, "launches must default to a single terminal");
 });
+
+test("terminal keys post immediately and native PTY writers preserve order", async () => {
+  const [ipc, cli, command, writer] = await Promise.all([
+    read("src/ipc/terminal.ts"),
+    read("src/components/terminal/ConversationCliView.tsx"),
+    read("src-tauri/src/commands/terminal.rs"),
+    read("src-tauri/crates/vibyra-core/src/pty/writer.rs"),
+  ]);
+  assert.match(ipc, /export function writeTerminal\([^)]*\): Promise<void> \{\s*return invoke\("write_terminal"/);
+  assert.doesNotMatch(ipc, /createOrderedTerminalWriter|createTerminalInputQueue/,
+    "waiting for the previous IPC reply makes typing appear one key behind");
+  assert.doesNotMatch(cli, /createOrderedTerminalWriter|createTerminalInputQueue/);
+  assert.match(command, /#\[tauri::command\]\s+pub fn write_terminal/,
+    "async commands can reorder keys before they reach the PTY");
+  assert.match(writer, /fn queue\(/,
+    "the synchronous IPC command must hand blocking writes to a per-session writer");
+});

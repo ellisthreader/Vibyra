@@ -99,8 +99,11 @@ pub async fn create_ssh_terminal(
     Ok(info)
 }
 
+/// Runs inline in Tauri's ordered IPC dispatch. Queueing is nonblocking, so
+/// the webview can post every key immediately while the PTY writer thread
+/// preserves byte order even if the child temporarily stops reading.
 #[tauri::command]
-pub async fn write_terminal(
+pub fn write_terminal(
     state: State<'_, AppState>,
     id: SessionId,
     data: String,
