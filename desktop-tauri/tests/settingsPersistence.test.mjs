@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { registerHooks } from 'node:module';
+// The real repair, not a stand-in: the store runs it over everything it loads,
+// so faking it here would hide a settings.json that no longer resolves.
+import { normalizePerformanceMode } from '../src/lib/performanceMode.ts';
+globalThis.performanceModeFixture = { normalizePerformanceMode };
 let disk = { agentView: 'terminal', theme: 'dark', enabledAgentIds: [] };
 const pending = [];
 globalThis.settingsFixture = { read: async () => disk, save: settings => new Promise((resolve, reject) => pending.push({ settings, resolve: () => { disk = settings; resolve(); }, reject })) };
@@ -15,7 +19,7 @@ const hooks = registerHooks({
   const sources = {
    'fixture:../ipc/settings': 'export const getSettings=()=>settingsFixture.read(); export const saveSettings=s=>settingsFixture.save(s);',
    'fixture:../lib/notificationPrefs': 'export const DEFAULT_NOTIFICATIONS={}; export const normalizeNotifications=v=>v??{};',
-   'fixture:../lib/performanceMode': 'export const applyPerformanceMode=()=>{}; export const normalizePerformanceMode=(value)=>value===true?"best":value===false?"balanced":value;',
+   'fixture:../lib/performanceMode': 'export const applyPerformanceMode=()=>{}; export const normalizePerformanceMode=performanceModeFixture.normalizePerformanceMode;',
    'fixture:../lib/terminalRegistry': 'export const applySettingsToAll=()=>{};',
    'fixture:../lib/xtermTheme': 'export const resolveTheme=t=>t;',
   };
@@ -76,4 +80,4 @@ test('quit checkpoint also drains typed values staged during a disk write', asyn
  pending.shift().resolve(); await checkpoint;
  assert.equal(disk.fontSize, 19);
 });
-test.after(() => { hooks.deregister(); delete globalThis.settingsFixture; delete globalThis.window; delete globalThis.document; });
+test.after(() => { hooks.deregister(); delete globalThis.settingsFixture; delete globalThis.performanceModeFixture; delete globalThis.window; delete globalThis.document; });

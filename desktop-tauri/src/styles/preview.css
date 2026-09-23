@@ -131,8 +131,4 @@
   .preview-toolbar__divider {
     display: none;
   }
-
-  .preview-picker {
-    min-width: 168px;
-  }
 }

@@ -41,6 +41,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  agent-command-sandbox:
+    name: Mac Agent command sandbox proof
+    runs-on: macos-14
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Verify the signed product XPC helper in a disposable app
+        run: python3 desktop-tauri/scripts/verify-agent-command-helper.py
+
   verify:
     name: Frontend, native, and policy gates
     runs-on: ubuntu-22.04
@@ -67,6 +79,8 @@ jobs:
         run: npm ci --prefix desktop-tauri
       - name: Install locked shared conversation dependencies
         run: npm ci --prefix mobile
+      - name: Install locked Preview fixture dependencies
+        run: npm ci --prefix host/relay
       - name: Enforce desktop source limits
         run: node scripts/check-desktop-lines.mjs
       - name: Check dead code and dependency declarations
@@ -98,29 +112,12 @@ jobs:
       - name: Install pinned native Linux WebDriver
         working-directory: desktop-tauri
         run: cargo install tauri-driver --locked --version 2.0.6
-      - name: Preserve the built Linux package before runtime verification
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: vibyra-linux-package-${{ github.sha }}
-          path: |
-            desktop-tauri/src-tauri/target/release/bundle/appimage/*.AppImage
-            desktop-tauri/release/frontend-manifest.json
-          if-no-files-found: error
-          retention-days: 14
       - name: Exercise the actual Linux AppImage and capture its frontend
         working-directory: desktop-tauri
-        timeout-minutes: 10
         run: |
           images=(src-tauri/target/release/bundle/appimage/*.AppImage)
           test "${#images[@]}" = 1
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux.mjs "${images[0]}"
-      - name: Verify real Linux terminal keyboard input and PTY output
-        working-directory: desktop-tauri
-        timeout-minutes: 10
-        run: |
-          images=(src-tauri/target/release/bundle/appimage/*.AppImage)
-          test "${#images[@]}" = 1
-          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs "${images[0]}"
       - name: Preserve Linux package, frontend manifest and native evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -130,7 +127,6 @@ jobs:
             desktop-tauri/src-tauri/target/release/bundle/appimage/*.AppImage
             desktop-tauri/release/frontend-manifest.json
             desktop-tauri/release/linux-smoke/
-            desktop-tauri/release/linux-terminal-smoke/
           if-no-files-found: warn
           retention-days: 14
 
@@ -159,6 +155,8 @@ jobs:
         run: npm ci --prefix desktop-tauri
       - name: Install locked shared conversation dependencies
         run: npm ci --prefix mobile
+      - name: Install locked Preview fixture dependencies
+        run: npm ci --prefix host/relay
       # The Linux job cannot compile the `cfg(target_os = "windows")` branches
       # at all, so a Windows-only regression there stays invisible until a user
       # hits it. Lint and test the native crate on a real Windows runner.

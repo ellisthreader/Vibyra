@@ -34,15 +34,16 @@ function ListLevel({ ordered, items, depth }: { ordered: boolean; items: ListIte
   return <Tag className="md-list">{nodes}</Tag>;
 }
 
-function Block({
-  block,
-  headingOffset,
-  onRun,
-}: {
-  block: MarkdownBlock;
-  headingOffset: number;
-  onRun?: RunHandler;
-}): ReactNode {
+type BlockProps = { block: MarkdownBlock; headingOffset: number; onRun?: RunHandler };
+
+/** A streamed reply is re-parsed per delta into fresh but mostly identical
+ *  blocks; comparing their content keeps every settled block (and its code
+ *  highlighting) out of the render, leaving only the one still growing. */
+const sameBlock = (a: BlockProps, b: BlockProps) =>
+  a.headingOffset === b.headingOffset && a.onRun === b.onRun &&
+  (a.block === b.block || JSON.stringify(a.block) === JSON.stringify(b.block));
+
+const Block = memo(function Block({ block, headingOffset, onRun }: BlockProps): ReactNode {
   if (block.kind === "heading") {
     // A reply's own headings must never outrank the surrounding panel's `h3`.
     const Tag = `h${Math.min(block.heading.level + headingOffset, 6)}` as "h4" | "h5" | "h6";
@@ -69,7 +70,7 @@ function Block({
     return <CodeBlock language={block.language} code={block.text} closed={block.closed} onRun={onRun} />;
   if (block.kind === "rule") return <hr className="md-rule" />;
   return <MarkdownTable headers={block.headers} rows={block.rows} alignments={block.alignments} />;
-}
+}, sameBlock);
 
 /**
  * The one markdown renderer. `headingOffset` maps the model's `#` to

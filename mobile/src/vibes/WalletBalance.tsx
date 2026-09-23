@@ -33,7 +33,13 @@ import type { WalletHeadline } from './walletHeadline';
  * component for the first time only once the balance has already changed, so a
  * counter started here would open at the new total and animate nothing.
  */
-export function WalletBalance({ wallet, shown, headline }: { wallet: VibesWallet | null; shown: number;
+export function WalletBalance({
+  wallet,
+  shown,
+  headline,
+}: {
+  wallet: VibesWallet | null;
+  shown: number;
   /** The figure and unit the owner chose to lead with; see `walletHeadline`. */
   headline: WalletHeadline | null;
 }) {
@@ -43,32 +49,58 @@ export function WalletBalance({ wallet, shown, headline }: { wallet: VibesWallet
   const held = wallet && wallet.held > 0 ? wallet.held : 0;
   // Centred on the page: it is the one thing the page is for, and it was asked to
   // sit in the middle of it rather than against the left edge.
-  return <View style={s.block}>
-    {/* The mark sits *beside* the figure, on its line, rather than stacked above
+  return (
+    <View style={s.block}>
+      {/* The mark sits *beside* the figure, on its line, rather than stacked above
         it. Above, it was a third thing to look at before reaching the number; on
         the line it reads as the number's unit — the way a currency symbol does —
         and the block collapses from three rows to two. It is the figure's own
         height: at 34 it read as too small beside a 44pt number, and was asked to be
         bigger. */}
-    <View style={s.head}>
-      <TokenMark size={50} />
-      {/* Labelled from the wallet, not from the counter, so assistive technology is
+      <View style={s.head}>
+        <TokenMark size={50} />
+        {/* Labelled from the wallet, not from the counter, so assistive technology is
           told the balance rather than whichever frame it is passing through. */}
-      <Text testID="balance" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit
-        accessibilityLabel={headline ? headline.label : 'Balance loading'}
-        style={[s.figure, { color: colors.text }]}>{wallet ? shown.toLocaleString() : '—'}</Text>
+        <Text
+          testID="balance"
+          accessibilityRole="header"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          accessibilityLabel={headline ? headline.label : 'Balance loading'}
+          style={[s.figure, { color: colors.text }]}
+        >
+          {wallet ? shown.toLocaleString() : '—'}
+        </Text>
+      </View>
+      <Text style={[s.unit, { color: colors.muted }]}>{headline?.unit ?? 'Vibes available'}</Text>
+      {held > 0 && (
+        <Text style={[s.held, { color: colors.muted }]}>
+          {held.toLocaleString()} held while replies finish
+        </Text>
+      )}
     </View>
-    <Text style={[s.unit, { color: colors.muted }]}>{headline?.unit ?? 'Vibes available'}</Text>
-    {held > 0 && <Text style={[s.held, { color: colors.muted }]}>
-      {held.toLocaleString()} held while replies finish</Text>}
-  </View>;
+  );
 }
 const s = StyleSheet.create({
-  block: { alignItems: 'center', paddingVertical: 12 },
+  block: { alignItems: 'center', paddingTop: 18, paddingBottom: 6 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
   // `flexShrink` so `adjustsFontSizeToFit` still has room to work on a long figure
   // now that the mark is taking part of the line.
-  figure: { flexShrink: 1, fontSize: 44, lineHeight: 50, fontWeight: '700', letterSpacing: -1.8, fontVariant: ['tabular-nums'] },
-  unit: { fontSize: 14, lineHeight: 21, letterSpacing: -0.2, textAlign: 'center' },
+  figure: {
+    flexShrink: 1,
+    fontSize: 44,
+    lineHeight: 50,
+    fontWeight: '700',
+    letterSpacing: -1.8,
+    fontVariant: ['tabular-nums'],
+  },
+  unit: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+    letterSpacing: -0.1,
+    textAlign: 'center',
+    marginTop: 4,
+  },
   held: { fontSize: 13, lineHeight: 19, marginTop: 6, textAlign: 'center' },
 });

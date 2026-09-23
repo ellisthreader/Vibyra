@@ -23,9 +23,26 @@ import { Icon, type IconName } from './primitives';
  */
 export type RailState = 'running' | 'input' | 'stopped' | null;
 
-export function RailRow({ icon, mark, label, detail, selected = false, state = null, expanded, indented = false, faded = false,
-  accessibilityLabel, accessibilityHint, onPress, onLongPress }: {
-  icon?: IconName; label: string; selected?: boolean; state?: RailState; expanded?: boolean;
+export function RailRow({
+  icon,
+  mark,
+  label,
+  detail,
+  selected = false,
+  state = null,
+  expanded,
+  indented = false,
+  faded = false,
+  accessibilityLabel,
+  accessibilityHint,
+  onPress,
+  onLongPress,
+}: {
+  icon?: IconName;
+  label: string;
+  selected?: boolean;
+  state?: RailState;
+  expanded?: boolean;
   /** What it names is away: the row is read, not entered, and drawn quieter. */
   faded?: boolean;
   /** Holding the row, for what can be done to the thing it names. */
@@ -36,37 +53,86 @@ export function RailRow({ icon, mark, label, detail, selected = false, state = n
   detail?: string;
   /** A terminal under its project. The row is the same; only where it starts changes. */
   indented?: boolean;
-  accessibilityLabel?: string; accessibilityHint?: string; onPress: () => void;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  onPress: () => void;
 }) {
   const { colors } = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label}
-    accessibilityHint={accessibilityHint} accessibilityState={{ selected, expanded }} aria-selected={selected}
-    onPress={onPress} onLongPress={onLongPress} delayLongPress={onLongPress ? 400 : undefined}
-    style={({ pressed }) => [s.row, indented && s.indented, detail !== undefined && s.tall,
-      { backgroundColor: selected || pressed ? colors.elevated : 'transparent', opacity: faded ? 0.62 : 1 }]}>
-    {mark ?? <View style={s.icon}><Icon name={icon ?? 'ellipse-outline'} size={19} color={selected ? colors.text : colors.muted} /></View>}
-    <View style={s.text}>
-      <Text numberOfLines={1} style={[s.label, { color: colors.text }]}>{label}</Text>
-      {detail !== undefined && <Text numberOfLines={1} style={[s.detail, { color: state === 'input' ? colors.warning : colors.muted }]}>{detail}</Text>}
-    </View>
-    <View style={s.trail}>{state && <RailDot state={state} />}</View>
-    {expanded !== undefined &&
-      <Icon name={expanded ? 'chevron-down' : 'chevron-forward'} size={13} color={colors.muted} />}
-  </Pressable>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ selected, expanded }}
+      aria-selected={selected}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={onLongPress ? 400 : undefined}
+      style={({ pressed }) => [
+        s.row,
+        indented && s.indented,
+        detail !== undefined && s.tall,
+        {
+          backgroundColor: selected || pressed ? colors.elevated : 'transparent',
+          opacity: faded ? 0.62 : 1,
+        },
+      ]}
+    >
+      {mark ?? (
+        <View style={s.icon}>
+          <Icon
+            name={icon ?? 'ellipse-outline'}
+            size={19}
+            color={selected ? colors.text : colors.muted}
+          />
+        </View>
+      )}
+      <View style={s.text}>
+        <Text numberOfLines={1} style={[s.label, { color: colors.text }]}>
+          {label}
+        </Text>
+        {detail !== undefined && (
+          <Text
+            numberOfLines={1}
+            style={[s.detail, { color: state === 'input' ? colors.warning : colors.muted }]}
+          >
+            {detail}
+          </Text>
+        )}
+      </View>
+      <View style={s.trail}>{state && <RailDot state={state} />}</View>
+      {expanded !== undefined && (
+        <Icon name={expanded ? 'chevron-down' : 'chevron-forward'} size={13} color={colors.muted} />
+      )}
+    </Pressable>
+  );
 }
 
 /** Projects and terminals report state through the same dot in the same slot. */
 export function RailDot({ state }: { state: Exclude<RailState, null> }) {
   const { colors } = useTheme();
-  const tone = state === 'running' ? colors.success : state === 'input' ? colors.warning : colors.error;
-  return <View style={[s.dot, { backgroundColor: tone }, state === 'input' && { shadowColor: tone, shadowOpacity: 0.9, shadowRadius: 4 }]} />;
+  const tone =
+    state === 'running' ? colors.success : state === 'input' ? colors.warning : colors.error;
+  return (
+    <View
+      style={[
+        s.dot,
+        { backgroundColor: tone },
+        state === 'input' && { shadowColor: tone, shadowOpacity: 0.9, shadowRadius: 4 },
+      ]}
+    />
+  );
 }
 
 /** A section is named by a quiet label and never carries its own button: an action
  *  in this column is a row, because a row is the thing the column already draws. */
 export function RailSection({ children }: { children: ReactNode }) {
   const { colors } = useTheme();
-  return <Text accessibilityRole="header" style={[s.section, { color: colors.muted }]}>{children}</Text>;
+  return (
+    <Text accessibilityRole="header" style={[s.section, { color: colors.muted }]}>
+      {children}
+    </Text>
+  );
 }
 
 /** What a section says when it has nothing in it: one quiet line, never a panel. */
@@ -81,7 +147,14 @@ export function RailGroup({ children }: { children: ReactNode }) {
 }
 
 const s = StyleSheet.create({
-  row: { minHeight: 46, borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  row: {
+    minHeight: 46,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   // Terminals start under their project's name, so the tree is read from the
   // text column rather than from a rule drawn beside it.
   indented: { marginLeft: 18 },
@@ -92,7 +165,14 @@ const s = StyleSheet.create({
   detail: { fontSize: 12.5, lineHeight: 16 },
   trail: { width: 10, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 6, height: 6, borderRadius: 3 },
-  section: { fontSize: 13, fontWeight: '600', letterSpacing: 0.1, paddingHorizontal: 24, paddingTop: 26, paddingBottom: 8 },
+  section: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    paddingHorizontal: 24,
+    paddingTop: 26,
+    paddingBottom: 8,
+  },
   note: { fontSize: 13, lineHeight: 19, paddingHorizontal: 12, paddingVertical: 7 },
   group: { paddingHorizontal: 12, gap: 2 },
 });

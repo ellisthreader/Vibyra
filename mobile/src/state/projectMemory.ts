@@ -31,7 +31,7 @@ const key = (hostId: string) => `projects.${hostId}`;
 
 function clean(value: unknown): Project[] {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, MAX_PROJECTS).flatMap(item => {
+  return value.slice(0, MAX_PROJECTS).flatMap((item) => {
     if (typeof item !== 'object' || item === null) return [];
     const { id, name, path, branch } = item as Record<string, unknown>;
     if (typeof id !== 'string' || typeof name !== 'string' || typeof path !== 'string') return [];
@@ -41,11 +41,17 @@ function clean(value: unknown): Project[] {
 }
 
 /** Keeps what the computer just reported, under that computer's own id. */
-export async function rememberProjects(store: WorkspaceStore, hostId: string, projects: Project[]): Promise<void> {
+export async function rememberProjects(
+  store: WorkspaceStore,
+  hostId: string,
+  projects: Project[],
+): Promise<void> {
   const kept = clean(projects);
   if (kept.length === 0) return void (await forgetRemembered(store, hostId));
-  await store.deps.flags.write(key(hostId),
-    JSON.stringify({ version: VERSION, seenAt: new Date().toISOString(), projects: kept }));
+  await store.deps.flags.write(
+    key(hostId),
+    JSON.stringify({ version: VERSION, seenAt: new Date().toISOString(), projects: kept }),
+  );
 }
 
 /**
@@ -53,7 +59,10 @@ export async function rememberProjects(store: WorkspaceStore, hostId: string, pr
  * cannot be read is a page with nothing on it, not a phone that will not
  * reconnect — `initialize` runs auto-connect after this.
  */
-export async function recallProjects(store: WorkspaceStore, hostId: string): Promise<RememberedProjects | null> {
+export async function recallProjects(
+  store: WorkspaceStore,
+  hostId: string,
+): Promise<RememberedProjects | null> {
   try {
     const value = await store.deps.flags.read(key(hostId));
     if (!value) return null;
@@ -62,10 +71,16 @@ export async function recallProjects(store: WorkspaceStore, hostId: string): Pro
     const projects = clean(saved.projects);
     const seenAt = typeof saved.seenAt === 'string' ? saved.seenAt : '';
     return projects.length > 0 && seenAt ? { projects, seenAt } : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** Forgetting a computer forgets its folders with it. */
 export async function forgetRemembered(store: WorkspaceStore, hostId: string): Promise<void> {
-  try { await store.deps.flags.delete(key(hostId)); } catch { /* a cache that will not clear is not worth failing over */ }
+  try {
+    await store.deps.flags.delete(key(hostId));
+  } catch {
+    /* a cache that will not clear is not worth failing over */
+  }
 }

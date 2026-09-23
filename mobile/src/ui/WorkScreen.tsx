@@ -84,25 +84,27 @@ export function WorkScreen({ workspace, project, connected, onProjects, onPhoneC
         <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>What are we{'\n'}building?</Text>
         {connected && <View style={s.actions}>
           {!watching && <Pressable accessibilityRole="button" accessibilityLabel="Open terminal" onPress={() => launch('shell')}
-            style={[s.action, { borderColor: colors.border }]}>
-            <Icon name="terminal-outline" size={17} color={colors.muted} /><Text style={[s.actionText, { color: colors.text }]}>Open terminal</Text>
+            style={({ pressed }) => [s.action, { borderColor: colors.border, backgroundColor: pressed ? colors.elevated : colors.surface }]}>
+            <Icon name="terminal-outline" size={16} color={colors.muted} /><Text style={[s.actionText, { color: colors.text }]}>Open terminal</Text>
           </Pressable>}
           <Pressable accessibilityRole="button" accessibilityLabel={workspace.viewOnly ? 'Watch Mac terminals' : 'Browse projects'} onPress={onProjects}
-            style={[s.action, { borderColor: colors.border }]}>
-            <Icon name={workspace.viewOnly ? 'eye-outline' : 'folder-outline'} size={17} color={colors.muted} />
+            style={({ pressed }) => [s.action, { borderColor: colors.border, backgroundColor: pressed ? colors.elevated : colors.surface }]}>
+            <Icon name={workspace.viewOnly ? 'eye-outline' : 'folder-outline'} size={16} color={colors.muted} />
             <Text style={[s.actionText, { color: colors.text }]}>{workspace.viewOnly ? 'Watch terminals' : 'Projects'}</Text>
           </Pressable>
         </View>}
       </View>
       {connected && recent.length > 0 && <View style={s.recent}>
         <Text style={[s.section, { color: colors.muted }]}>Jump back in</Text>
-        {recent.slice(0, 2).map(session => <Pressable key={session.id} accessibilityRole="button"
+        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {recent.slice(0, 2).map((session, index) => <Pressable key={session.id} accessibilityRole="button"
           accessibilityLabel={`Continue ${session.title}`} onPress={() => workspace.actions.selectSession(session.id)}
-          style={s.recentRow}>
-          <Icon name={sessionIcon(session)} size={18} color={colors.muted} />
+          style={({ pressed }) => [s.recentRow, index > 0 && [s.ruled, { borderTopColor: colors.border }], pressed && { backgroundColor: colors.elevated }]}>
+          <Icon name={sessionIcon(session)} size={17} color={colors.muted} />
           <Text numberOfLines={1} style={[s.recentTitle, { color: colors.text }]}>{session.title}</Text>
-          <Icon name="arrow-up-outline" size={17} color={colors.muted} />
+          <Icon name="chevron-forward" size={15} color={colors.muted} />
         </Pressable>)}
+        </View>
       </View>}
       {elsewhere && <View style={s.error}><Hint>{elsewhere === 'model'
         ? `${modelLabel(store.state.model, models)} is saved for your next AI chat. Those chats run on your iPhone.`
@@ -122,13 +124,15 @@ export function WorkScreen({ workspace, project, connected, onProjects, onPhoneC
   </KeyboardAvoidingView>;
 }
 const s = StyleSheet.create({
-  body: { flex: 1 }, content: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 12 },
-  hero: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 28, paddingBottom: 30, gap: 22, minHeight: 270 },
-  title: { fontSize: 35, lineHeight: 42, fontWeight: '500', letterSpacing: -1.2, textAlign: 'center' },
-  actions: { flexDirection: 'row', gap: 9, flexWrap: 'wrap', justifyContent: 'center', marginTop: 3 },
-  action: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 23, paddingHorizontal: 15 },
-  actionText: { fontSize: 13, fontWeight: '500' },
-  recent: { paddingBottom: 2 }, section: { fontSize: 12, fontWeight: '500', paddingBottom: 5 },
-  recentRow: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 11 }, recentTitle: { flex: 1, fontSize: 14 },
+  body: { flex: 1 }, content: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 12 },
+  hero: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 28, paddingBottom: 30, gap: 18, minHeight: 270 },
+  title: { fontSize: 30, lineHeight: 36, fontWeight: '700', letterSpacing: -1, textAlign: 'center' },
+  actions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 },
+  action: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, paddingHorizontal: 14 },
+  actionText: { fontSize: 14, fontWeight: '600', letterSpacing: -0.15 },
+  recent: { paddingBottom: 2 }, section: { fontSize: 13, lineHeight: 18, fontWeight: '600', letterSpacing: -0.05, paddingBottom: 7, marginLeft: 16 },
+  card: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  recentRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14 }, ruled: { borderTopWidth: StyleSheet.hairlineWidth },
+  recentTitle: { flex: 1, fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
   error: { paddingTop: 12 },
 });

@@ -2,7 +2,6 @@ use base64::Engine;
 
 use crate::account_api::{base_url, request, ApiError, Endpoint};
 use crate::account_types::{profile_from_user, AccountSnapshot};
-use crate::secret_store::SecretStore;
 use crate::state::AppState;
 
 /// Re-reads the safe profile from the backend. An authoritative 401/403
@@ -22,7 +21,7 @@ pub async fn refresh(state: &AppState) -> Result<AccountSnapshot, String> {
             Ok(account.snapshot())
         }
         Err(ApiError::Unauthorized(_)) => {
-            account.clear_session(&SecretStore);
+            crate::account_auth::teardown(state);
             Ok(account.snapshot())
         }
         Err(error) => Err(error.message().to_owned()),
@@ -51,7 +50,7 @@ pub async fn update(
             Ok(account.snapshot())
         }
         Err(ApiError::Unauthorized(_)) => {
-            account.clear_session(&SecretStore);
+            crate::account_auth::teardown(state);
             Err("Your session expired. Please log in again.".to_owned())
         }
         Err(error) => Err(error.message().to_owned()),
@@ -103,7 +102,7 @@ pub async fn avatar(state: &AppState) -> Result<Option<String>, String> {
     if !url.starts_with(&format!("{}/", base_url())) {
         return Ok(None);
     }
-    let response = reqwest::Client::new()
+    let response = crate::http_client::shared()
         .get(&url)
         .timeout(std::time::Duration::from_secs(20))
         .send()

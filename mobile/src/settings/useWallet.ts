@@ -12,6 +12,10 @@ const nothing = () => null;
  */
 export function useWallet() {
   const store = useVibesStore();
-  const state = useSyncExternalStore(store ? store.subscribe : idle, store ? store.snapshot : nothing, store ? store.snapshot : nothing);
+  const state = useSyncExternalStore(
+    store ? store.subscribe : idle,
+    store ? store.snapshot : nothing,
+    store ? store.snapshot : nothing,
+  );
   return state?.wallet ?? null;
 }

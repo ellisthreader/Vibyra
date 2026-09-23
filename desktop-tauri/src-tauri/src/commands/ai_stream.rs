@@ -2,6 +2,7 @@
 //! settlement that happens on every way out of it.
 
 use std::sync::atomic::AtomicBool;
+use std::sync::LazyLock;
 use std::time::Duration;
 
 use tauri::ipc::Channel;
@@ -18,6 +19,14 @@ pub(super) const FLUSH: Duration = Duration::from_millis(16);
 /// watching it, rather than sit out the total timeout.
 const SILENT: Duration = Duration::from_secs(30);
 const TOTAL: Duration = Duration::from_secs(90);
+/// Built once, like `http_client::shared`, so the connection to OpenAI stays
+/// warm between turns; only the read timeout sets it apart.
+static CLIENT: LazyLock<Result<reqwest::Client, String>> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .read_timeout(SILENT)
+        .build()
+        .map_err(|error| error.to_string())
+});
 /// How often the loop looks up from the socket to see whether Stop was
 /// pressed. The model can pause for a second or two before its first token,
 /// and Stop has to work during that pause, not only after it.
@@ -57,9 +66,8 @@ pub(super) async fn run(
         body["tools"] = tools;
         body["tool_choice"] = serde_json::json!("auto");
     }
-    let client = reqwest::Client::builder()
-        .read_timeout(SILENT)
-        .build()
+    let client = CLIENT
+        .as_ref()
         .map_err(|error| format!("chat request failed: {error}"))?;
     let response = client
         .post("https://api.openai.com/v1/chat/completions")

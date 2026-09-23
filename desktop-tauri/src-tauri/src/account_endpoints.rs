@@ -9,7 +9,6 @@ pub enum Endpoint<'a> {
     /// The second half of a password login: a challenge id and a code.
     LoginTwoFactor,
     Session,
-    ReportReady,
     Rotate,
     Logout,
     Profile,
@@ -37,6 +36,7 @@ pub enum Endpoint<'a> {
     RemoteRegister,
     HostNotificationCredential,
     HostNotificationEvents,
+    ReportReady,
     OauthStart(&'a str),
     OauthStatus(&'a str, &'a str),
 }
@@ -49,7 +49,6 @@ impl Endpoint<'_> {
             Endpoint::Login => Ok("/api/auth/login".into()),
             Endpoint::LoginTwoFactor => Ok("/api/auth/login/2fa".into()),
             Endpoint::Session => Ok("/api/session".into()),
-            Endpoint::ReportReady => Ok("/api/reports/ready".into()),
             Endpoint::Rotate => Ok("/api/auth/session/rotate".into()),
             Endpoint::Logout => Ok("/api/auth/logout".into()),
             Endpoint::Profile => Ok("/api/account/profile".into()),
@@ -67,11 +66,12 @@ impl Endpoint<'_> {
             Endpoint::BillingCheckout => Ok("/api/billing/checkout".into()),
             Endpoint::BillingPlans => Ok("/api/billing/plans".into()),
             Endpoint::VibesWallet => Ok("/api/vibes/wallet".into()),
-            Endpoint::RemoteRegister => Ok("/api/remote/hosts".into()),
             Endpoint::HostNotificationCredential => {
                 Ok("/api/notifications/v1/host-credential".into())
             }
             Endpoint::HostNotificationEvents => Ok("/api/notifications/v1/host-events".into()),
+            Endpoint::ReportReady => Ok("/api/reports/ready".into()),
+            Endpoint::RemoteRegister => Ok("/api/remote/hosts".into()),
             Endpoint::RevokeDevice(device) => {
                 // The backend's device id is a SHA-256 hex digest. Checking the
                 // shape here is what stops any other string reaching a path.
@@ -100,12 +100,12 @@ impl Endpoint<'_> {
     pub(crate) fn method(&self) -> reqwest::Method {
         match self {
             Endpoint::Session
-            | Endpoint::ReportReady
             | Endpoint::OauthStatus(..)
             | Endpoint::TwoFactorStatus
             | Endpoint::AccountSessions
             | Endpoint::BillingPlans
-            | Endpoint::VibesWallet => reqwest::Method::GET,
+            | Endpoint::VibesWallet
+            | Endpoint::ReportReady => reqwest::Method::GET,
             Endpoint::Logout
             | Endpoint::TwoFactorDisable
             | Endpoint::RevokeDevice(_)

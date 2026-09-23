@@ -3,8 +3,15 @@ use super::git_changes::git;
 use crate::{CoreError, CoreResult};
 use serde::Serialize;
 use std::path::Path;
+use std::sync::LazyLock;
+use std::time::Duration;
 
-#[derive(Debug, Serialize)]
+/// The worktree view and the project brief both ask within moments of each
+/// other; four Git processes answer once for both.
+static RECENT: LazyLock<super::git_memo::Recent<String, Inventory>> =
+    LazyLock::new(|| super::git_memo::Recent::new(Duration::from_secs(3)));
+
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Worktree {
     pub root: String,
@@ -15,7 +22,7 @@ pub struct Worktree {
     pub upstream: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Inventory {
     pub repository: Option<String>,
@@ -75,9 +82,23 @@ fn parse(raw: &str, relative: &Path) -> Vec<Worktree> {
 }
 
 pub fn inventory(root: &str) -> CoreResult<Inventory> {
+    if let Some(mut inventory) = RECENT.get(&root.to_string()) {
+        // Only Git's answers are reused; whether a folder is still there is
+        // one stat and must never lag behind the disk.
+        for tree in &mut inventory.worktrees {
+            tree.available = Path::new(&tree.directory).is_dir();
+        }
+        return Ok(inventory);
+    }
+    let inventory = read_inventory(root)?;
+    RECENT.put(root.to_string(), inventory.clone());
+    Ok(inventory)
+}
+
+fn read_inventory(root: &str) -> CoreResult<Inventory> {
     let project = Path::new(root).canonicalize()?;
-    let repo = git(&project, &["rev-parse", "--show-toplevel"], 32_768)?;
-    let repo = Path::new(repo.trim_end()).canonicalize()?;
+    let repo = super::git_memo::toplevel(&project)?;
+    let repo = Path::new(&repo).canonicalize()?;
     let relative = project
         .strip_prefix(&repo)
         .map_err(|_| CoreError::InvalidPath("Project is outside its repository".into()))?;

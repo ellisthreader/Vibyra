@@ -60,19 +60,13 @@ pub async fn shared_chat_create(
         })
         .transpose()?;
     let chats = state.shared_chats.clone();
+    let accounts = std::sync::Arc::clone(&state.provider_auth);
     super::run_blocking(move || {
         let provider = options
             .as_ref()
             .and_then(|o| o.provider.as_deref())
             .unwrap_or("codex");
-        let home = crate::provider_auth_registry::Registry::load().home(provider, &account_id)?;
-        let connected = match provider {
-            "codex" => crate::provider_auth_codex::probe("codex", &home).connected,
-            "claude" => crate::provider_auth_claude::probe("claude", &home).connected,
-            "gemini" => crate::provider_auth_gemini::probe(&home).connected,
-            _ => false,
-        };
-        if !connected {
+        if !accounts.signed_in(provider, &account_id)? {
             return Err(format!(
                 "Connect this {provider} account in Settings > Agents first."
             ));

@@ -145,6 +145,15 @@ fn binding_survives_restart_but_wrong_account_and_chat_are_rejected() {
         vec![("test".into(), root.path().into())],
     )
     .unwrap();
+    let rebound = engine
+        .handle(
+            "phone",
+            "vibes.bind",
+            json!({"projectId":scope["projectId"],
+        "chatId":scope["chatId"],"accountToken":scope["accountToken"]}),
+        )
+        .unwrap();
+    assert_eq!(rebound["binding"], scope["binding"]);
     let p = tool(&scope, "list_files", "");
     assert!(engine.handle("phone", "vibes.tool", p.clone()).unwrap()["entries"].is_array());
     for key in ["chatId", "accountToken"] {

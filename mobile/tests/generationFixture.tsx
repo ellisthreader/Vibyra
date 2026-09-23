@@ -14,7 +14,7 @@ export function GenerationFixture({ initialStage = 'working', initialDark = true
   const Frame = Platform.OS === 'ios' ? SafeAreaView : View;
   const working = ['thinking', 'working', 'streaming', 'offline'].includes(stage);
   const workspace = { ...fixtureWorkspace, themePreference: dark ? 'dark' as const : 'light' as const,
-    status: stage === 'offline' ? 'disconnected' as const : 'connected' as const,
+    status: stage === 'offline' ? 'offline' as const : 'connected' as const,
     conversation: { ...fixtureWorkspace.conversation!, items: generationItems(stage), turnId: 'generation-turn',
       turnState: working ? 'running' as const : stage === 'waiting' ? 'waiting' as const : stage === 'stopped' ? 'interrupted' as const : 'completed' as const },
     actions: { ...fixtureWorkspace.actions, submitTurn: async () => { setSent(n => n + 1); setStage('thinking'); },
@@ -35,6 +35,6 @@ export function GenerationFixture({ initialStage = 'working', initialDark = true
             <Text style={{ color: stage === value ? colors.text : colors.muted, fontSize: 12 }}>{value}</Text></Pressable>)}
       </ScrollView>
     </View>
-    <ConversationSessionScreen session={fixtureSession} workspace={workspace} />
+    <ConversationSessionScreen session={fixtureSession} workspace={workspace} options={false} onCloseOptions={() => {}} />
   </Frame></ThemeContext.Provider>;
 }

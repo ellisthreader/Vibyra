@@ -80,6 +80,36 @@ impl DesktopWorkspace {
         self.projects.iter().any(|project| project.id == id)
     }
 
+    /// The current root published for this project, used when checking that a
+    /// Preview grant still belongs to the Mac's active workspace.
+    pub fn project_root(&self, id: &str) -> Option<std::path::PathBuf> {
+        self.projects
+            .iter()
+            .find(|project| project.id == id && !project.path.is_empty())
+            .and_then(|project| {
+                let path = project.path.as_str();
+                if path == "~" {
+                    return dirs::home_dir();
+                }
+                if let Some(relative) = path.strip_prefix("~/") {
+                    return dirs::home_dir().map(|home| home.join(relative));
+                }
+                let path = std::path::PathBuf::from(path);
+                path.is_absolute().then_some(path)
+            })
+    }
+
+    /// Current Mac folders eligible for project-local website discovery.
+    pub fn preview_projects(&self) -> Vec<(String, std::path::PathBuf)> {
+        self.projects
+            .iter()
+            .filter_map(|project| {
+                self.project_root(&project.id)
+                    .map(|root| (project.id.clone(), root))
+            })
+            .collect()
+    }
+
     /// The roots the window is showing, for choosing where a new project goes.
     /// Only real paths: the unfiled grouping has none.
     pub fn roots(&self) -> Vec<std::path::PathBuf> {

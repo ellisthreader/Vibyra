@@ -18,7 +18,10 @@ async function resolvePlan() {
   // construction, since the app itself arrived over it. The device's own
   // address supplements it, and can name the wrong interface on a Mac with
   // several, so it does not lead.
-  return probePlan([expo?.hostUri, Constants.expoGoConfig?.debuggerHost,
-    await deviceAddress(), page]);
+  return probePlan([
+    expo?.hostUri,
+    Constants.expoGoConfig?.debuggerHost,
+    await deviceAddress(),
+    page,
+  ]);
 }
-

@@ -1,5 +1,4 @@
-import React from 'react';
-import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConnectingStep } from '../src/connection/ConnectingStep';
 import { DiscoveryStep } from '../src/connection/DiscoveryStep';

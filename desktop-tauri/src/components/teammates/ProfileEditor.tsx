@@ -1,11 +1,11 @@
-import { useId, useState, type KeyboardEvent } from 'react';
+import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { avatarUrl } from './api';
 import { ToolGrants } from './ToolGrants';
 import { EnginePicker } from './EnginePicker';
 import { ProfileChoices } from './ProfileChoices';
 export interface ProfileFields { name: string; brief: string; memory: string; budget: number; avatar: string; integrations: string[]; model?: string; skillIds?: string[] }
 const tabs = ['Profile', 'Skills', 'Memory', 'Access'] as const;
-export function ProfileEditor({ fields, update, disabled, storage, onSkillEditing }: { storage: string; onSkillEditing(value: boolean): void; fields: ProfileFields; update(key: string, value: unknown): void; disabled: boolean }) {
+export function ProfileEditor({ fields, update, disabled, storage, onSkillEditing, accessExtra }: { storage: string; onSkillEditing(value: boolean): void; fields: ProfileFields; update(key: string, value: unknown): void; disabled: boolean; accessExtra?: ReactNode }) {
   const [tab, setTab] = useState<typeof tabs[number]>('Profile'); const id = useId();
   const navigate = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : -1;
@@ -29,7 +29,7 @@ export function ProfileEditor({ fields, update, disabled, storage, onSkillEditin
           {name === 'Memory' && <div className="profile-basics"><h3>Memory</h3><p className="profile-help">Preferences and context to include with every task.</p><label>Saved context<textarea maxLength={4000} value={fields.memory} placeholder="Your preferences, project context and important facts…" onChange={e => update('memory', e.target.value)} /></label></div>}
           {name === 'Access' && <div className="profile-grid"><div className="profile-basics"><h3>Tools</h3><ToolGrants selected={fields.integrations} onChange={ids => update('integrations', ids)} /></div>
             <div className="profile-basics"><h3>Task budget</h3><p className="profile-help">Maximum Vibes per task. Unused Vibes return to your balance.</p><div className="profile-providers">{[5,10,20].map(value => <button key={value} type="button" aria-pressed={fields.budget === value} onClick={() => update('budget', value)}>{value} Vibes</button>)}</div><label>Custom budget<input type="number" min={1} max={50} value={fields.budget} onChange={e => update('budget', Number(e.target.value))} /></label></div>
-          </div>}
+          </div>}{name === 'Access' && accessExtra}
         </fieldset>
       </section>)}
     </div>

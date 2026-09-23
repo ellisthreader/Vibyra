@@ -25,8 +25,6 @@ const NATIVE_RUNNERS: NativeRunner[] = [
 const OPENROUTER_RUNNERS = ["aider", "opencode"];
 const ACCOUNT_RUNNERS = new Set(["codex", "claude", "gemini"]);
 
-export const MODEL_RUNNER_IDS = ["codex", "claude", "gemini", "qwen", ...OPENROUTER_RUNNERS];
-
 export interface RunnerPlan {
   runner: ResolvedAgent | null;
   launchModel: string | null;

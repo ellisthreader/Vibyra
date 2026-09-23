@@ -46,9 +46,13 @@ export function UsageLimits({ limits }: { limits: VibesLimits }) {
     const tick = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(tick);
   }, []);
-  return <View style={[s.block, { borderTopColor: colors.border }]}>
-    {[limits.session, limits.week].map(w => <Meter key={w.unit} window={w} now={now} />)}
-  </View>;
+  return (
+    <View style={[s.block, { borderTopColor: colors.border }]}>
+      {[limits.session, limits.week].map((w) => (
+        <Meter key={w.unit} window={w} now={now} />
+      ))}
+    </View>
+  );
 }
 
 /**
@@ -89,29 +93,35 @@ function Meter({ window, now }: { window: VibesWindow; now: number }) {
   // "Next", not "Every": what someone is deciding is whether to send now, and the
   // window they are deciding against is the one ahead of them.
   const label = `Next ${spanOf(window)}`;
-  return <View style={s.meter} accessibilityRole="progressbar"
-    accessibilityLabel={`${label}, ${left.toLocaleString()} of ${window.limit.toLocaleString()} Vibes left. ${reset}`}
-    accessibilityValue={{ min: 0, max: window.limit, now: left }}>
-    <View style={s.row}>
-      <Text style={[s.label, { color: colors.text }]}>{label}</Text>
-      <Text style={[s.value, { color: left === 0 ? colors.error : colors.muted }]}>
-        {left.toLocaleString()} of {window.limit.toLocaleString()}</Text>
-    </View>
-    <View style={[s.track, { backgroundColor: colors.elevated }]}>
-      <View style={[s.fill, { backgroundColor: bar, width: `${Math.round(share * 100)}%` }]} />
-    </View>
-    {/* "Resets" was asked for by name over the earlier "Frees up in about". The
+  return (
+    <View
+      style={s.meter}
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${label}, ${left.toLocaleString()} of ${window.limit.toLocaleString()} Vibes left. ${reset}`}
+      accessibilityValue={{ min: 0, max: window.limit, now: left }}
+    >
+      <View style={s.row}>
+        <Text style={[s.label, { color: colors.text }]}>{label}</Text>
+        <Text style={[s.value, { color: left === 0 ? colors.error : colors.muted }]}>
+          {left.toLocaleString()} of {window.limit.toLocaleString()}
+        </Text>
+      </View>
+      <View style={[s.track, { backgroundColor: colors.elevated }]}>
+        <View style={[s.fill, { backgroundColor: bar, width: `${Math.round(share * 100)}%` }]} />
+      </View>
+      {/* "Resets" was asked for by name over the earlier "Frees up in about". The
         window is rolling, so what returns at `resetsAt` is its oldest spend. */}
-    <Text style={[s.note, { color: colors.muted }]}>{reset}</Text>
-  </View>;
+      <Text style={[s.note, { color: colors.muted }]}>{reset}</Text>
+    </View>
+  );
 }
 const s = StyleSheet.create({
-  block: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 18, gap: 16 },
-  meter: { gap: 8 },
+  block: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 22, gap: 22 },
+  meter: { gap: 9 },
   row: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
-  label: { fontSize: 15, fontWeight: '500', letterSpacing: -0.2 },
-  value: { fontSize: 14, fontVariant: ['tabular-nums'] },
-  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  fill: { height: 6, borderRadius: 3 },
-  note: { fontSize: 13, lineHeight: 18, fontVariant: ['tabular-nums'] },
+  label: { fontSize: 15, fontWeight: '600', letterSpacing: -0.25 },
+  value: { fontSize: 14, fontWeight: '500', fontVariant: ['tabular-nums'] },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  fill: { height: 8, borderRadius: 4 },
+  note: { fontSize: 13, lineHeight: 18, marginTop: -1, fontVariant: ['tabular-nums'] },
 });

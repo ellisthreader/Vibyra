@@ -43,12 +43,12 @@ try {
   assert.equal(await page.locator('.nbell__badge').innerText(),'99+');
   await page.evaluate(()=>window.dispatchEvent(new CustomEvent('fixture-notifications',{detail:0})));
   const input=page.getByRole('textbox',{name:'Message Vibyra'});
-  await input.fill('Draft before dictation.');
-  await page.getByRole('button',{name:'Dictate message'}).click();
-  await page.getByRole('button',{name:'Finish dictation'}).click();
-  await page.waitForFunction(()=>document.querySelector('textarea').value.includes('Please review these changes.'));
-  assert.equal(await input.inputValue(),'Draft before dictation. Please review these changes.');
-  assert.equal(await count('ai_chat'),0);assert.equal(await count('write_terminal'),0,'dictation must never reach a hidden terminal');
+  await input.fill('Draft before dictation. Please review these changes.');
+  // One voice control in the composer, not two microphones a few pixels apart.
+  assert.equal(await page.getByRole('button',{name:'Dictate message'}).count(),0,'the composer offers one voice control');
+  assert.equal(await page.locator('.chat-input .chat-voice-button').count(),1);
+  await page.getByRole('button',{name:'Start a voice conversation'}).waitFor();
+  assert.equal(await count('ai_chat'),0);assert.equal(await count('write_terminal'),0,'a draft must never reach a hidden terminal');
   await page.getByRole('button',{name:'Read reply aloud'}).click();
   await page.getByRole('button',{name:'Stop reading'}).waitFor();
   await page.getByRole('button',{name:'Stop reading'}).click();
@@ -76,10 +76,7 @@ try {
   assert.equal(await page.getByRole('button',{name:'src',exact:true}).getAttribute('aria-expanded'),'true','live refresh preserves expanded folders');
   await page.getByRole('tab',{name:'Chat',exact:true}).click();
   assert.equal(await input.inputValue(),'Draft before dictation. Please review these changes.');
-  await page.getByRole('button',{name:'Dictate message'}).click();
-  await page.getByRole('button',{name:'Finish dictation'}).waitFor();
   await page.getByRole('button',{name:'Open project files',exact:true}).click();
-  assert.ok(await page.evaluate(()=>window.fixtureCalls.some(c=>c.command==='voice_stop'&&c.args.discard)));
   await page.getByRole('tab',{name:'Chat',exact:true}).click();
   await page.getByRole('button',{name:'Send message',exact:true}).click();
   await page.getByText('The changes are ready for review.',{exact:false}).waitFor();
@@ -92,22 +89,26 @@ try {
   const demo = await browser.newPage({viewport:{width:960,height:600}});
   await demo.goto(`http://127.0.0.1:${server.address().port}/?theme=${theme}&no-key`);
   const demoInput = demo.getByRole('textbox',{name:'Message Vibyra'});
-  await demo.getByText('Test chat · sample replies',{exact:true}).waitFor();
+  const demoCalls=command=>demo.evaluate(command=>window.fixtureCalls.filter(c=>c.command===command).length,command);
+  const keyError=demo.getByRole('alert').filter({hasText:'Add your OpenAI API key'});
+  await demo.getByText('↵ Send',{exact:true}).waitFor();
+  assert.equal(await demo.getByText('sample',{exact:false}).count(),0,'chat never offers sample replies');
   assert.equal(await demo.getByRole('button',{name:'Add a key',exact:true}).count(),0);
   assert.ok(await demoInput.isEnabled());
+  const seeded=await demo.locator('.chat-turn--assistant').count();
   await demoInput.fill('Hello, testing without an API key');
   await demoInput.press('Enter');
-  await demo.locator('.chat-turn--assistant').filter({hasText:'Sample reply:'}).waitFor();
+  await keyError.waitFor();
   assert.equal(await demoInput.inputValue(),'');
-  await demoInput.fill('A second message');
-  await demo.getByRole('button',{name:'Send message',exact:true}).click();
-  assert.equal(await demo.locator('.chat-turn--assistant').filter({hasText:'Sample reply:'}).count(),2);
-  await demo.screenshot({path:`${out}/test-chat-${theme}.png`});
+  assert.equal(await demo.locator('.chat-turn--assistant').count(),seeded,'a missing key never invents a reply');
+  assert.equal(await demoCalls('ai_chat'),1,'every message goes to the model');
+  await demo.screenshot({path:`${out}/no-key-chat-${theme}.png`});
   await demo.getByRole('button',{name:'Conversation options'}).click();
   await demo.getByRole('menuitem',{name:'Clear conversation'}).click();
   await demo.getByRole('button',{name:'Explain this project'}).click();
-  await demo.locator('.chat-turn--assistant').filter({hasText:'Sample reply:'}).waitFor();
-  assert.equal(await demo.evaluate(()=>window.fixtureCalls.filter(c=>['ai_chat','memory_read','memory_search_sources'].includes(c.command)).length),0,'test replies stay local');
+  await keyError.waitFor();
+  assert.equal(await demo.locator('.chat-turn--assistant').count(),0,'starters go to the model too');
+  assert.equal(await demoCalls('ai_chat'),2);
   await demo.close();
   const failure = await browser.newPage({viewport:{width:600,height:450}});
   await failure.goto(`http://127.0.0.1:${server.address().port}/?theme=${theme}&error-test`);
@@ -134,5 +135,5 @@ try {
   assert.equal(await historyError.textContent(),message,'full error remains available in notification history');
   await failure.close();
  }
- console.log('PASS workspace menu, Chat/Files, live changes/diff refresh, draft continuity, dictation without sending, explicit speech/stop and cleanup, both themes/compact (mock IPC).');
+ console.log('PASS workspace menu, Chat/Files, live changes/diff refresh, draft continuity, one composer voice control, explicit speech/stop and cleanup, both themes/compact (mock IPC).');
 } finally {await browser.close();server.close();}

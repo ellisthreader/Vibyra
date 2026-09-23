@@ -1,15 +1,25 @@
 // What a preview keeps of a character's look: its foreground, and whether it is
 // bold or dim. Backgrounds are dropped — at thumbnail size they only add noise.
-export interface Style { color?: number | string; bold?: boolean; dim?: boolean }
+export interface Style {
+  color?: number | string;
+  bold?: boolean;
+  dim?: boolean;
+}
 export const plain: Style = {};
 
-const hex = (value: number) => Math.max(0, Math.min(255, value || 0)).toString(16).padStart(2, '0');
+const hex = (value: number) =>
+  Math.max(0, Math.min(255, value || 0))
+    .toString(16)
+    .padStart(2, '0');
 const rgb = (r: number, g: number, b: number) => `#${hex(r)}${hex(g)}${hex(b)}`;
 // xterm's 256-colour table: the 16 named colours, a 6×6×6 cube, then 24 greys.
 function indexed(index: number): number | string | undefined {
   if (!Number.isInteger(index) || index < 0 || index > 255) return undefined;
   if (index < 16) return index;
-  if (index >= 232) { const grey = 8 + (index - 232) * 10; return rgb(grey, grey, grey); }
+  if (index >= 232) {
+    const grey = 8 + (index - 232) * 10;
+    return rgb(grey, grey, grey);
+  }
   const level = (step: number) => (step ? 55 + step * 40 : 0);
   const cube = index - 16;
   return rgb(level(Math.floor(cube / 36)), level(Math.floor(cube / 6) % 6), level(cube % 6));
@@ -38,8 +48,10 @@ export function applySgr(style: Style, params: string): Style {
     if (code === 0) next = {};
     else if (code === 1) next.bold = true;
     else if (code === 2) next.dim = true;
-    else if (code === 22) { next.bold = false; next.dim = false; }
-    else if (code >= 30 && code <= 37) next.color = code - 30;
+    else if (code === 22) {
+      next.bold = false;
+      next.dim = false;
+    } else if (code >= 30 && code <= 37) next.color = code - 30;
     else if (code >= 90 && code <= 97) next.color = code - 82;
     else if (code === 39) delete next.color;
     else if (code === 38 || code === 48) {
@@ -53,14 +65,46 @@ export function applySgr(style: Style, params: string): Style {
 
 // Characters that take no cell of their own: combining marks, joiners and
 // variation selectors ride on the character before them.
-const zero: [number, number][] = [[0x0300, 0x036F], [0x1AB0, 0x1AFF], [0x1DC0, 0x1DFF], [0x200B, 0x200F],
-  [0x20D0, 0x20FF], [0xFE00, 0xFE0F], [0xFE20, 0xFE2F], [0x1F3FB, 0x1F3FF], [0xE0100, 0xE01EF]];
+const zero: [number, number][] = [
+  [0x0300, 0x036f],
+  [0x1ab0, 0x1aff],
+  [0x1dc0, 0x1dff],
+  [0x200b, 0x200f],
+  [0x20d0, 0x20ff],
+  [0xfe00, 0xfe0f],
+  [0xfe20, 0xfe2f],
+  [0x1f3fb, 0x1f3ff],
+  [0xe0100, 0xe01ef],
+];
 // Characters drawn two cells wide: CJK, Hangul, full-width forms and emoji.
-const wide: [number, number][] = [[0x1100, 0x115F], [0x231A, 0x231B], [0x23E9, 0x23EC], [0x23F0, 0x23F3],
-  [0x2614, 0x2615], [0x26A1, 0x26A1], [0x2705, 0x2705], [0x2728, 0x2728], [0x274C, 0x274C],
-  [0x2753, 0x2757], [0x2B50, 0x2B55], [0x2E80, 0x303E], [0x3041, 0x33FF], [0x3400, 0x4DBF],
-  [0x4E00, 0x9FFF], [0xA000, 0xA4CF], [0xAC00, 0xD7A3], [0xF900, 0xFAFF], [0xFE30, 0xFE4F],
-  [0xFF00, 0xFF60], [0xFFE0, 0xFFE6], [0x1F300, 0x1F64F], [0x1F680, 0x1F6FF], [0x1F900, 0x1F9FF],
-  [0x1FA70, 0x1FAFF], [0x20000, 0x3FFFD]];
-const within = (code: number, ranges: [number, number][]) => ranges.some(([from, to]) => code >= from && code <= to);
+const wide: [number, number][] = [
+  [0x1100, 0x115f],
+  [0x231a, 0x231b],
+  [0x23e9, 0x23ec],
+  [0x23f0, 0x23f3],
+  [0x2614, 0x2615],
+  [0x26a1, 0x26a1],
+  [0x2705, 0x2705],
+  [0x2728, 0x2728],
+  [0x274c, 0x274c],
+  [0x2753, 0x2757],
+  [0x2b50, 0x2b55],
+  [0x2e80, 0x303e],
+  [0x3041, 0x33ff],
+  [0x3400, 0x4dbf],
+  [0x4e00, 0x9fff],
+  [0xa000, 0xa4cf],
+  [0xac00, 0xd7a3],
+  [0xf900, 0xfaff],
+  [0xfe30, 0xfe4f],
+  [0xff00, 0xff60],
+  [0xffe0, 0xffe6],
+  [0x1f300, 0x1f64f],
+  [0x1f680, 0x1f6ff],
+  [0x1f900, 0x1f9ff],
+  [0x1fa70, 0x1faff],
+  [0x20000, 0x3fffd],
+];
+const within = (code: number, ranges: [number, number][]) =>
+  ranges.some(([from, to]) => code >= from && code <= to);
 export const cellWidth = (code: number) => (within(code, zero) ? 0 : within(code, wide) ? 2 : 1);

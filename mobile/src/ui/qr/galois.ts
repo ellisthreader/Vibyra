@@ -34,7 +34,7 @@ const generators = new Map<number, Uint8Array>();
 /** The `count` error-correction codewords that follow one block of data. */
 export function remainder(data: Uint8Array, count: number): Uint8Array {
   let poly = generators.get(count);
-  if (!poly) generators.set(count, poly = generator(count));
+  if (!poly) generators.set(count, (poly = generator(count)));
   const result = new Uint8Array(count);
   for (const byte of data) {
     const factor = byte ^ result[0];

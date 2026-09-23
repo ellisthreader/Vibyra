@@ -7,6 +7,26 @@ pub(crate) struct Journal {
     _instance_lock: std::fs::File,
 }
 
+/// Deletes `remove` when no live engine owns the journal in `state_dir`: the
+/// same exclusive `engine.lock` an open journal holds is taken first, so a
+/// directory another engine (or another app instance) still uses is left
+/// alone. Returns whether it was removed.
+pub fn remove_unowned_state(state_dir: &Path, remove: &Path) -> bool {
+    let Ok(lock) = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(state_dir.join("engine.lock"))
+    else {
+        return false;
+    };
+    if fs2::FileExt::try_lock_exclusive(&lock).is_err() {
+        return false;
+    }
+    let removed = std::fs::remove_dir_all(remove).is_ok();
+    drop(lock);
+    removed
+}
+
 impl Journal {
     pub fn open(directory: &Path) -> Result<Self, String> {
         std::fs::create_dir_all(directory).map_err(|e| e.to_string())?;

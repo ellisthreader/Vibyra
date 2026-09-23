@@ -18,17 +18,29 @@ export class VibesStore {
     draftScope: 'new', model: 'auto', effort: null, ready: false, error: null, errorStatus: null, pending: null,
     revision: 0, selectionVersion: 0 };
   private listeners = new Set<() => void>();
+  private chatListeners = new Set<() => void>();
+  private chatState = { chats: this.state.chats, selected: this.state.selected };
   private generation = 0;
   private refreshPromise: Promise<void> | null = null;
   private chatPromise: Promise<string> | null = null;
   private modelsPromise: Promise<void> | null = null;
+  private savePending: Promise<void> = Promise.resolve();
   constructor(readonly api: VibesApi, readonly uuid: () => string,
     readonly persistence: { read(): Promise<string | null>; write(value: string): Promise<void> },
     readonly purchases: PurchaseBridge | null = null, readonly prepare?: () => Promise<void>) {}
   snapshot = () => this.state;
+  chatsSnapshot = () => this.chatState;
   get needsPolling() { return Boolean(this.state.pending || this.state.turns.some(activeTurn)); }
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
-  update(patch: Partial<VibesState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(fn => fn()); }
+  subscribeChats = (fn: () => void) => { this.chatListeners.add(fn); return () => { this.chatListeners.delete(fn); }; };
+  update(patch: Partial<VibesState>) {
+    this.state = { ...this.state, ...patch };
+    if (this.chatState.chats !== this.state.chats || this.chatState.selected !== this.state.selected) {
+      this.chatState = { chats: this.state.chats, selected: this.state.selected };
+      this.chatListeners.forEach(fn => fn());
+    }
+    this.listeners.forEach(fn => fn());
+  }
   error(e: unknown) { this.update({ error: e instanceof Error ? e.message : 'Something went wrong. Please try again.',
     errorStatus: e instanceof VibesError ? e.status : null }); }
   async initialize() {
@@ -46,9 +58,14 @@ export class VibesStore {
     await this.refresh();
   }
   private save() {
-    return this.persistence.write(JSON.stringify({ pending: this.state.pending, selected: this.state.selected,
-      model: this.state.model, effort: this.state.effort }));
+    const value = JSON.stringify({ pending: this.state.pending, selected: this.state.selected,
+      model: this.state.model, effort: this.state.effort });
+    const write = () => this.persistence.write(value);
+    this.savePending = this.savePending.then(write, write);
+    return this.savePending;
   }
+  /** Wait for every state snapshot queued before this call to reach device storage. */
+  flushPersistence() { return this.savePending; }
   /**
    * Keeps the chosen effort legal for the chosen model. An unknown model is not
    * proof that it has no levels - before the catalogue answers, every model is

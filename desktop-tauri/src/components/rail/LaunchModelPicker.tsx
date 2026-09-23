@@ -81,6 +81,7 @@ export function LaunchModelPicker({
               type="button"
               className={`launch-tile${active ? " launch-tile--active" : ""}`}
               aria-pressed={active}
+              style={{ "--pick-accent": group.accent } as React.CSSProperties}
               onClick={() => onSelect(model.id)}
             >
               <ModelMark modelId={model.id} label={model.label} providerKey={group.providerKey} accent={group.accent} size={34} />
@@ -88,6 +89,7 @@ export function LaunchModelPicker({
                 <strong>{model.label}</strong>
                 <small>{plan.runner?.name}</small>
               </span>
+              {model.isNew && <em className="launch-tile__badge">New</em>}
               {active && <span className="launch-tile__check"><CheckIcon size={12} /></span>}
             </button>
           );

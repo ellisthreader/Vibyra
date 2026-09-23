@@ -1,7 +1,11 @@
 //! A user-submitted report, on its way to the maintainer's Discord channel.
 //!
-//! The frontend gathers version, platform, project and pane context and shows
-//! it to the user before sending.
+//! The shape is deliberately wider than "what went wrong": a report that
+//! cannot say *where* it happened costs a round trip to find out, and the user
+//! who hit the bug is rarely still there to answer. So the frontend gathers
+//! the surrounding state — version, platform, project, agent, model, the pane
+//! that was in front — and shows the user exactly what it collected before
+//! they send it.
 
 use serde::{Deserialize, Serialize};
 
@@ -37,7 +41,7 @@ pub struct ReportContext {
     pub screen: Option<String>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Report {
     pub kind: String,
@@ -145,9 +149,6 @@ pub async fn deliver(
 }
 
 /// A short, unambiguous, quotable id — `VR-8F3K2Q`.
-///
-/// The alphabet drops the characters that are misread when someone types an id
-/// back from a screenshot: no O/0, no I/1, no U (which pairs badly with V).
 pub(crate) fn report_id() -> String {
     const ALPHABET: &[u8] = b"ABCDEFGHJKLMNPQRSTVWXYZ23456789";
     let mut bytes = [0_u8; 6];

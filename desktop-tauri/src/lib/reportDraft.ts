@@ -82,7 +82,6 @@ export interface ReportDraft {
   images: string[];
   /** Whether the focused pane's output rides along. */
   includeTerminal: boolean;
-  includeDiagnostics: boolean;
 }
 
 const MAX_SUMMARY = 300;
@@ -105,7 +104,6 @@ export function emptyDraft(area: string): ReportDraft {
     screenshot: null,
     images: [],
     includeTerminal: false,
-    includeDiagnostics: false,
   };
 }
 

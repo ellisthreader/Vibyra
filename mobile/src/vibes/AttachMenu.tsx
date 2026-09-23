@@ -35,12 +35,24 @@ export function AttachMenu({ anchor, onClose, onCamera, onPhotos, onFiles, apps,
       setShown(anchor);
       progress.setValue(0);
       if (reduced) progress.setValue(1);
-      else Animated.spring(progress, { toValue: 1, damping: 20, stiffness: 320, mass: 0.8, useNativeDriver: true }).start();
+      else {
+        const opening = Animated.spring(progress, { toValue: 1, damping: 20, stiffness: 320, mass: 0.8, useNativeDriver: true });
+        opening.start();
+        return () => opening.stop();
+      }
       return;
     }
-    Animated.timing(progress, { toValue: 0, duration: reduced ? 0 : 150, easing: Easing.in(Easing.quad), useNativeDriver: true })
-      .start(() => { setShown(null); const action = next.current; next.current = null; if (action) setTimeout(action, 60); });
-  }, [anchor]);
+    let active = true;
+    const closing = Animated.timing(progress, { toValue: 0, duration: reduced ? 0 : 150,
+      easing: Easing.in(Easing.quad), useNativeDriver: true });
+    closing.start(({ finished }) => {
+      if (!active || !finished) return;
+      setShown(null);
+      const action = next.current; next.current = null;
+      if (action) setTimeout(action, 60);
+    });
+    return () => { active = false; closing.stop(); };
+  }, [anchor, progress, reduced]);
   if (!shown) return null;
   const then = (action: () => void) => () => { next.current = action; onClose(); };
   const panel = Math.min(320, width - 32);
@@ -96,13 +108,13 @@ function Row({ icon, mark, title, detail, label, onPress }: {
   </Pressable>;
 }
 const s = StyleSheet.create({
-  panel: { position: 'absolute', borderRadius: 26, padding: 8, gap: 4 },
+  panel: { position: 'absolute', borderRadius: 22, padding: 8, gap: 4 },
   tiles: { flexDirection: 'row', gap: 6 },
-  tile: { flex: 1, height: 78, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 7 },
-  tileText: { fontSize: 12.5, fontWeight: '500' },
-  full: { fontSize: 11.5, textAlign: 'center', paddingVertical: 4 },
+  tile: { flex: 1, height: 76, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 7 },
+  tileText: { fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
+  full: { fontSize: 12, textAlign: 'center', paddingVertical: 4 },
   rule: { height: StyleSheet.hairlineWidth, marginVertical: 4, marginHorizontal: 6 },
-  row: { minHeight: 50, borderRadius: 14, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 11 },
-  rowIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  rowText: { flex: 1, gap: 2 }, rowTitle: { fontSize: 14, fontWeight: '500' }, rowDetail: { fontSize: 11.5 },
+  row: { minHeight: 52, borderRadius: 10, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowIcon: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  rowText: { flex: 1, gap: 1 }, rowTitle: { fontSize: 15, fontWeight: '500', letterSpacing: -0.2 }, rowDetail: { fontSize: 12.5, lineHeight: 17 },
 });

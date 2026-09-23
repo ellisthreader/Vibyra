@@ -1,59 +1,72 @@
-.workspace-sidebar .chat-context { display: flex; align-items: center; padding: 10px 18px; min-height: 44px; gap: 8px; }
-.chat-context__label { font-size: 11px; color: var(--dim); letter-spacing: .01em; }
-.workspace-sidebar .chat-files { display: flex; align-items: center; gap: 6px; margin-left: auto; padding: 6px 8px; border-radius: 6px; color: var(--muted); font-size: 11px; }
-.workspace-sidebar .chat-files:hover { background: var(--hover); color: var(--text); }
-.workspace-sidebar .companion-panel--chat .chat-scroll { padding: 18px 22px 24px; gap: 28px; scrollbar-width: thin; }
-.workspace-sidebar .chat-turn { min-width: 0; }
-.workspace-sidebar .chat-turn--assistant { gap: 10px; }
-.workspace-sidebar .chat-turn__token { display: grid; place-items: center; width: 22px; height: 26px; flex-shrink: 0; color: var(--dim); }
-.workspace-sidebar .companion-panel--chat .chat-turn__bubble { font-size: 13px; line-height: 1.8; letter-spacing: -.1px; overflow-wrap: anywhere; }
-.workspace-sidebar .companion-panel--chat .chat-turn--user .chat-turn__bubble { padding: 11px 15px; border: 1px solid var(--line-soft); border-radius: 16px 16px 4px 16px; background: var(--hover); font-size: 13px; }
-/* A reply is block markup, so it lays out as blocks; `markdown.css` puts
-   `pre-wrap` back on the `p` and `pre` where the model's own breaks matter. */
-.workspace-sidebar .companion-panel--chat .chat-turn--assistant .chat-turn__bubble { white-space: normal; font-weight: 450; }
-/* A steady bar on the next line, exactly where the next word will land. Never
-   a blink: a loop would need a `performance.css` exemption and a
-   `performanceMode.test.mjs` edit, for worse feedback than a still mark. */
-.chat-caret { display: block; width: 2px; height: 1.05em; margin-top: 2px; border-radius: 1px; background: var(--accent); }
-/* Hover-revealed, never a permanent button bar — but the height is reserved
-   for good, so the row cannot grow mid-stream and fight the auto-scroll.
-   `opacity` rather than `display:none`, so Tab still reaches the buttons. */
-.workspace-sidebar .chat-actions { display: flex; align-items: center; gap: 6px; min-height: 22px; margin-top: 7px; opacity: 0; transition: opacity var(--t-base) var(--e-standard); }
-.workspace-sidebar .chat-turn--assistant:hover .chat-actions, .workspace-sidebar .chat-actions:focus-within { opacity: 1; }
-/* `CopyButton` ships no styling of its own, so the compact look lives here. */
-.workspace-sidebar .chat-actions .copy-btn--compact, .workspace-sidebar .chat-action { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: transparent; color: var(--muted); font-size: 10.5px; font-weight: 500; }
-.workspace-sidebar .chat-actions .copy-btn--compact:hover, .workspace-sidebar .chat-action:hover { color: var(--text); border-color: var(--border); background: var(--hover); }
-.workspace-sidebar .chat-actions .copy-btn--compact:focus-visible, .workspace-sidebar .chat-action:focus-visible, .workspace-sidebar .chat-actions .chat-voice-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-/* A reply that produced nothing is a notice with a way back, not a bubble. */
-.workspace-sidebar .chat-turn--failed { flex-direction: column; align-items: flex-start; gap: 7px; }
-.workspace-sidebar .chat-turn--assistant .reply-audio { display: flex; }
-/* Sized to the row it joins, so the reserved height still holds when Speak
-   appears on completion — a taller button would reflow at exactly the wrong
-   moment, and a 30px icon beside 19px chips reads as a mistake anyway. */
-.workspace-sidebar .chat-actions .chat-voice-button { width: 22px; height: 22px; border-radius: var(--r-sm); }
-.workspace-sidebar .chat-turn--assistant .chat-voice-button { opacity: .65; }
-.workspace-sidebar .chat-turn--assistant .chat-voice-button:hover, .workspace-sidebar .chat-turn--assistant .chat-voice-button:focus-visible { opacity: 1; }
-.workspace-sidebar .companion-panel--chat .chat-empty { width: 100%; max-width: 300px; margin: auto; padding: 20px 0 40px; gap: 10px; align-items: flex-start; }
-/* The V is its own chip; a second one around it would be a badge on a badge. */
-.chat-empty__mark { display: flex; margin-bottom: 10px; }
-.workspace-sidebar .chat-empty h3 { font-size: 23px; font-weight: 550; line-height: 1.25; letter-spacing: -.7px; }
-.workspace-sidebar .companion-panel--chat .chat-empty p { font-size: 12px; font-weight: 400; color: var(--dim); }
-.workspace-sidebar .chat-starters { width: 100%; gap: 7px; margin-top: 20px; border: 0; }
-.workspace-sidebar .chat-starters button { min-height: 43px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; font-size: 11px; font-weight: 450; background: var(--surface); }
-.workspace-sidebar .chat-starters button:hover { border-color: var(--accent-border); background: var(--hover); }
-.workspace-sidebar .companion-panel--chat .chat-input { display: flex; flex-direction: column; align-items: stretch; gap: 12px; margin: 8px 14px 14px; padding: 14px 12px 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--workspace); box-shadow: 0 2px 6px #00000005; }
-.workspace-sidebar .companion-panel--chat .chat-input:focus-within { border-color: var(--accent-border); box-shadow: 0 0 0 3px var(--accent-soft); }
-.workspace-sidebar .companion-panel--chat .chat-input__area { font-size: 13px; font-weight: 400; width: 100%; min-height: 44px; max-height: 120px; padding: 0 2px; line-height: 1.6; resize: none; }
-.chat-composer-tools { display: flex; align-items: center; gap: 7px; }
-.chat-composer-tools > span { margin-right: auto; color: var(--dim); font-size: 9px; line-height: 1.4; max-width: 170px; }
-.workspace-sidebar .chat-composer-tools .chat-input__send { width: 30px; height: 30px; border-radius: 9px; }
-/* Two microphones side by side are one icon twice. Only the conversation
-   starter carries `aria-pressed`, so cobalt marks the one that answers back
-   and the plain one stays what it is: words into the box. */
-.workspace-sidebar .chat-composer-tools .chat-voice-button[aria-pressed] { color: var(--accent); background: var(--accent-soft); }
-/* Stop is the same slot, not the same invitation: it must not read as "go". */
-.workspace-sidebar .chat-composer-tools .chat-input__send--stop { color: var(--text); background: var(--elevated); border: 1px solid var(--line); }
-.workspace-sidebar .chat-composer-tools .chat-input__send--stop:hover:not(:disabled) { background: var(--hover-strong); transform: none; }
-.workspace-sidebar[data-size="full"] .companion-panel--chat > * { width: min(100%, 760px); margin-left: auto; margin-right: auto; }
-.workspace-sidebar[data-size="full"] .companion-panel--chat .chat-input { width: min(calc(100% - 40px), 716px); }
-@media (max-height: 650px) { .workspace-sidebar .companion-panel--chat .chat-empty { padding: 6px 0 16px; } .chat-empty__mark { margin-bottom: 0; } }
+/* Chat owns its surface in every tool size; all colours come from the app theme. */
+.workspace-sidebar .chat-context { display:flex; align-items:center; flex-shrink:0; min-height:67px; gap:10px; padding:12px 18px; border-bottom:1px solid var(--line-soft); }
+.chat-context__identity { display:flex; flex:1; min-width:0; flex-direction:column; gap:4px; }
+.chat-context__identity h2 { display:flex; align-items:center; gap:6px; color:var(--text); font-size:13px; font-weight:600; letter-spacing:-.2px; }
+.chat-context__identity h2 > span { border:1px solid var(--line); border-radius:4px; padding:1px 4px; color:var(--muted); font-size:8px; font-weight:500; letter-spacing:.04em; }
+.chat-context__project { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:10.5px; }
+.chat-context__project svg { flex-shrink:0; }
+.chat-context__project > span { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.chat-context__working { display:flex; align-items:center; gap:4px; color:var(--muted); font-size:9px; }
+.chat-context__working i { width:4px; height:4px; border-radius:50%; background:var(--accent); }
+.workspace-sidebar .chat-files { display:flex; align-items:center; gap:5px; padding:6px 7px; border-radius:7px; color:var(--muted); font-size:10.5px; }
+.workspace-sidebar .chat-files:hover { background:var(--hover); color:var(--text); }
+.workspace-sidebar .chat-menu > .icon-btn { width:25px; height:28px; }
+.workspace-sidebar .chat-menu__popover { width:174px; padding:5px; background:var(--surface); }
+.workspace-sidebar .chat-menu__popover button { font-size:12px; font-weight:450; min-height:34px; }
+.chat-transcript { display:flex; flex:1; flex-direction:column; position:relative; min-width:0; min-height:0; }
+.workspace-sidebar .companion-panel--chat .chat-scroll { padding:24px 20px 20px; gap:26px; scrollbar-width:thin; scroll-behavior:auto; }
+.workspace-sidebar .chat-turn { min-width:0; flex-shrink:0; }
+.workspace-sidebar .chat-turn--assistant { gap:10px; }
+.workspace-sidebar .chat-turn__token { display:grid; place-items:center; width:22px; height:26px; flex-shrink:0; color:var(--muted); }
+.workspace-sidebar .companion-panel--chat .chat-turn__bubble { font-size:13px; line-height:1.8; letter-spacing:-.05px; overflow-wrap:anywhere; }
+.workspace-sidebar .companion-panel--chat .chat-turn--user .chat-turn__bubble { padding:11px 14px; border:1px solid var(--line-soft); border-radius:15px 15px 5px 15px; background:var(--hover); font-weight:400; max-width:88%; }
+.workspace-sidebar .companion-panel--chat .chat-turn--assistant .chat-turn__bubble { white-space:normal; font-weight:400; flex:1; }
+.chat-caret { display:block; width:2px; height:1.05em; margin-top:2px; border-radius:1px; background:var(--accent); }
+.workspace-sidebar .chat-actions { display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:25px; margin-top:8px; opacity:0; transition:opacity var(--t-base) var(--e-standard); }
+.workspace-sidebar .chat-turn--assistant:hover .chat-actions, .workspace-sidebar .chat-actions:focus-within { opacity:1; }
+.workspace-sidebar .chat-actions .copy-btn--compact, .workspace-sidebar .chat-action { padding:3px 7px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--muted); font-size:10.5px; font-weight:450; }
+.workspace-sidebar .chat-actions .copy-btn--compact:hover, .workspace-sidebar .chat-action:hover { color:var(--text); background:var(--hover); }
+.workspace-sidebar .chat-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.workspace-sidebar .chat-turn--failed { flex-direction:column; align-items:flex-start; gap:8px; }
+.workspace-sidebar .chat-error { width:100%; padding:11px 12px; border:1px solid color-mix(in srgb,var(--danger) 30%,transparent); border-radius:9px; background:var(--danger-soft); font-size:12px; line-height:1.65; overflow-wrap:anywhere; user-select:text; }
+.workspace-sidebar .chat-turn--assistant .reply-audio { display:flex; }
+.workspace-sidebar .chat-actions .chat-voice-button { width:25px; height:25px; border-radius:6px; }
+.workspace-sidebar .chat-turn--assistant .chat-voice-button { color:var(--muted); }
+.workspace-sidebar .companion-panel--chat .chat-empty { width:100%; max-width:320px; margin:auto; padding:18px 2px 28px; gap:12px; align-items:flex-start; text-align:left; }
+.chat-empty__mark { display:flex; margin-bottom:8px; }
+.workspace-sidebar .chat-empty h3 { font-size:25px; font-weight:550; line-height:1.18; letter-spacing:-.8px; max-width:245px; }
+.workspace-sidebar .companion-panel--chat .chat-empty p { font-size:12px; line-height:1.7; font-weight:400; color:var(--muted); max-width:265px; }
+.workspace-sidebar .chat-starters { width:100%; gap:6px; margin-top:16px; border:0; }
+.workspace-sidebar .chat-starters button { min-height:59px; padding:10px 12px; gap:11px; border:1px solid var(--line-soft); border-radius:10px; font-size:11.5px; font-weight:450; background:var(--workspace); }
+.workspace-sidebar .chat-starters button:hover { border-color:var(--accent-border); background:var(--hover); }
+.workspace-sidebar .chat-starters button svg { color:var(--muted); }
+.workspace-sidebar .chat-starters button > span:last-child { color:var(--muted); }
+.chat-starter-copy { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.chat-starter-copy > span { color:var(--text); }
+.chat-starter-copy small { font-size:10px; line-height:1.5; font-weight:400; color:var(--muted); }
+.workspace-sidebar .companion-panel--chat .chat-input { display:flex; flex-direction:column; align-items:stretch; flex-shrink:0; gap:10px; margin:10px 14px 14px; padding:14px 12px 10px; border-radius:15px; border:1px solid var(--border); background:var(--workspace); box-shadow:var(--e-inset-hi); }
+.workspace-sidebar .companion-panel--chat .chat-input:focus-within { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.workspace-sidebar .companion-panel--chat .chat-input__area { font-family:inherit; font-size:13px; font-weight:400; width:100%; min-height:48px; max-height:144px; padding:0 2px; line-height:1.65; resize:none; }
+.workspace-sidebar .chat-input__area::placeholder { color:var(--muted); font-weight:400; }
+.chat-composer-tools { display:flex; align-items:center; gap:8px; }
+.chat-composer-hint { flex:1; min-width:0; padding:0 2px; color:var(--muted); font-size:9px; text-align:right; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.workspace-sidebar .chat-composer-tools .chat-voice-start { display:flex; align-items:center; justify-content:center; gap:6px; width:auto; height:31px; padding:0 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--muted); font-size:10.5px; }
+.workspace-sidebar .chat-composer-tools .chat-voice-start:hover:not(:disabled) { color:var(--text); background:var(--hover-strong); }
+.workspace-sidebar .chat-composer-tools .chat-voice-start[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent); border-color:var(--accent-border); }
+.workspace-sidebar .chat-composer-tools .chat-input__send { width:32px; height:32px; border-radius:9px; flex-shrink:0; }
+.workspace-sidebar .chat-composer-tools .chat-input__send--stop { color:var(--text); background:var(--elevated); border:1px solid var(--line); }
+.workspace-sidebar .chat-composer-tools .chat-input__send--stop:hover:not(:disabled) { background:var(--hover-strong); transform:none; }
+.workspace-sidebar .chat-jump { position:absolute; z-index:2; bottom:10px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:6px; white-space:nowrap; padding:7px 11px; border:1px solid var(--line); border-radius:20px; background:var(--elevated); color:var(--text); box-shadow:var(--e-panel); font-size:11px; }
+.workspace-sidebar .chat-jump:hover { border-color:var(--accent-border); }
+.workspace-sidebar[data-size="full"] .companion-panel--chat > * { width:min(100%,760px); margin-left:auto; margin-right:auto; }
+.workspace-sidebar[data-size="full"] .companion-panel--chat .chat-input { width:min(calc(100% - 40px),716px); margin-bottom:20px; }
+.workspace-sidebar[data-size="full"] .chat-empty { max-width:380px; }
+.workspace-sidebar[data-size="full"] .chat-empty h3 { max-width:none; font-size:30px; }
+@media (max-height:650px) {
+  .workspace-sidebar .companion-panel--chat .chat-empty { padding:8px 0 16px; }
+  .workspace-sidebar .chat-empty h3 { font-size:23px; }
+  .workspace-sidebar .chat-empty__mark { margin-bottom:0; }
+  .workspace-sidebar .chat-starters { margin-top:8px; }
+  .workspace-sidebar .chat-context { min-height:58px; padding-top:8px; padding-bottom:8px; }
+}
+@media (prefers-reduced-motion:reduce) { .workspace-sidebar .chat-actions { transition:none; } }

@@ -9,11 +9,13 @@
     "android": "expo run:android",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write",
     "test": "tsx --test tests/*.test.ts",
     "export": "expo export --platform ios --platform web",
     "doctor": "npx expo-doctor",
     "assets": "node scripts/build-runtime.mjs",
-    "check": "npm run assets && npm run typecheck && npm test && npm run lines",
+    "check": "npm run assets && npm run typecheck && npm run lint && npm test && npm run lines",
     "prestart": "npm run assets",
     "preweb": "npm run assets",
     "preexport": "npm run assets",
@@ -53,30 +55,32 @@
     "phone:go": "expo start --go --lan --port 8081",
     "prephone:go": "npm run assets",
     "ios:device": "expo run:ios --device",
-    "verify:agents": "node scripts/verify-agents-ui.mjs"
+    "verify:agents": "node scripts/verify-agents-ui.mjs",
+    "verify:chat-markdown": "node scripts/verify-chat-markdown.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-unicode11": "0.8.0",
     "@xterm/xterm": "^5.5.0",
-    "expo": "~57.0.17",
-    "expo-apple-authentication": "~57.0.1",
+    "expo": "~57.0.24",
+    "expo-apple-authentication": "~57.0.2",
     "expo-asset": "~57.0.16",
-    "expo-camera": "~57.0.4",
-    "expo-crypto": "~57.0.2",
-    "expo-dev-client": "~57.0.18",
+    "expo-camera": "~57.0.5",
+    "expo-crypto": "~57.0.3",
+    "expo-dev-client": "~57.0.19",
     "expo-document-picker": "~57.0.2",
     "expo-file-system": "~57.0.6",
     "expo-font": "~57.0.3",
     "expo-glass-effect": "~57.0.3",
     "expo-haptics": "~57.0.3",
-    "expo-image-manipulator": "~57.0.17",
-    "expo-image-picker": "~57.0.17",
-    "expo-linking": "~57.0.9",
-    "expo-network": "~57.0.1",
-    "expo-secure-store": "~57.0.3",
-    "expo-web-browser": "~57.0.2",
+    "expo-image-manipulator": "~57.0.19",
+    "expo-image-picker": "~57.0.19",
+    "expo-linking": "~57.0.10",
+    "expo-network": "~57.0.2",
+    "expo-notifications": "~57.0.20",
+    "expo-secure-store": "~57.0.4",
+    "expo-web-browser": "~57.0.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -86,13 +90,29 @@
     "react-native-webview": "13.16.1"
   },
   "devDependencies": {
+    "@expo/plist": "^0.8.1",
     "@types/node": "^22.20.1",
     "@types/react": "~19.2.0",
     "@types/react-dom": "^19.2.7",
     "esbuild": "^0.25.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
     "jsqr": "^1.4.0",
     "playwright-core": "^1.63.0",
+    "prettier": "^3.9.9",
     "tsx": "^4.20.0",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
+  },
+  "expo": {
+    "doctor": {
+      "appConfigFieldsNotSyncedCheck": {
+        "enabled": false
+      }
+    }
   }
 }

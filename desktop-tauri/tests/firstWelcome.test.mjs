@@ -18,21 +18,30 @@ class MemoryStorage {
 }
 
 const profile = (welcomeKey, name = "Ada Lovelace") => ({
-  name, email: "ada@vibyra.app", provider: "email", plan: "free",
-  emailVerified: true, welcomeKey,
+  name,
+  email: "ada@vibyra.app",
+  provider: "email",
+  plan: "free",
+  emailVerified: true,
+  welcomeKey,
 });
 
-test("the installed five-chapter welcome uses its measured playback durations", () => {
-  assert.deepEqual(WELCOME_DURATIONS, [2_000, 8_200, 8_200, 13_000, 1_500]);
+test("welcome automatically introduces real product features with readable timing", () => {
   assert.equal(welcomeFirstName("  Ada Lovelace "), "Ada");
   assert.equal(welcomeFirstName(""), "there");
   const beats = firstWelcomeBeats("Ada Lovelace");
-  assert.deepEqual(beats.map(({ label }) => label), ["Welcome", "Code", "Agents", "iPhone & Remote", "Start"]);
+  assert.equal(beats.length, 5);
   assert.equal(beats[0].title, "Welcome to Vibyra, Ada.");
-  assert.match(beats[1].body, /coding agents side by side/);
-  assert.match(beats[2].body, /focused job/);
-  assert.match(beats[3].body, /iPhone/);
-  assert.equal(beats.at(-1).title, "Let’s build.");
+  assert.deepEqual(beats.map(beat => beat.label), ['Welcome', 'Code', 'Agents', 'iPhone & Remote', 'Start']);
+  assert.match(beats[3].note, /remote phone control/);
+  assert.match(beats[3].body, /approve/);
+  assert.match(beats[3].note, /Settings → Phone/);
+  assert.equal(WELCOME_DURATIONS.length, beats.length);
+  assert.equal(WELCOME_DURATIONS.at(-1), 1500);
+  for (let i = 0; i < beats.length - 1; i++) {
+    const words = [beats[i].title, beats[i].body, beats[i].note ?? ''].join(' ').trim().split(/\s+/).length;
+    assert.ok(WELCOME_DURATIONS[i] >= words * 200 + 1000, `scene ${i} permits reading plus its entrance`);
+  }
 });
 
 test("completion is persisted once per opaque account key", () => {
@@ -61,20 +70,34 @@ test("malformed storage recovers and the history remains bounded", () => {
   assert.equal(saved.at(-1), "vw_policy_current");
 });
 
-test("the installed welcome is accessible, skippable, and honors reduced motion", () => {
-  const component = readFileSync(new URL("../src/components/auth/FirstWelcome.tsx", import.meta.url), "utf8");
-  const workspace = readFileSync(new URL("../src/components/layout/WorkspaceApp.tsx", import.meta.url), "utf8");
-  const base = readFileSync(new URL("../src/styles/first-welcome.css", import.meta.url), "utf8");
-  const motion = readFileSync(new URL("../src/styles/first-welcome-motion.css", import.meta.url), "utf8");
-  assert.match(component, /role="dialog" aria-modal="true"/);
+test("cinematic mounts over the workspace with accessible escape and reduced motion", () => {
+  const component = readFileSync(
+    new URL("../src/components/auth/FirstWelcome.tsx", import.meta.url),
+    "utf8",
+  );
+  const workspace = readFileSync(
+    new URL("../src/components/layout/WorkspaceApp.tsx", import.meta.url),
+    "utf8",
+  );
+  const baseStyles = readFileSync(
+    new URL("../src/styles/first-welcome.css", import.meta.url),
+    "utf8",
+  );
+  const motion = readFileSync(
+    new URL("../src/styles/first-welcome-motion.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(component, /role="dialog"/);
   assert.match(component, /useModalFocus\(dialogRef, true, closeFromEscape\)/);
   assert.match(component, /rememberFirstWelcome\(profile\)/);
+  assert.match(component, /WelcomeScene/);
   assert.match(component, /Skip intro/);
-  assert.match(component, /aria-label="Introduction chapters"/);
-  assert.match(component, /aria-live="polite"/);
-  assert.match(component, /player\.reduced/);
+  assert.match(component, /prefers-reduced-motion: reduce/);
+  assert.match(component, /useWelcomePlayback/);
   assert.ok(workspace.indexOf("<FirstWelcome") > workspace.indexOf("<ProjectWorkspace"));
   assert.match(workspace, /data-welcome-focus/);
-  assert.match(base, /\.first-welcome__chapters/);
-  assert.match(motion, /@media \(prefers-reduced-motion:reduce\)/);
+  assert.match(baseStyles, /background: var\(--bg\)/);
+  assert.match(component, /<WelcomeArtwork/);
+  assert.match(motion, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.doesNotMatch(`${component}\n${baseStyles}\n${motion}`, /carousel|fake log|backdrop-filter|infinite|#7b2cff|#ff35c8/i);
 });

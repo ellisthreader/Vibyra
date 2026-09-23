@@ -1,4 +1,4 @@
-#![cfg(target_os = "linux")]
+#![cfg(any(target_os = "linux", test))]
 
 // A raw AppImage has no desktop integration: GNOME labels the window with its
 // WM_CLASS and has no icon for it at startup. Install a user-level desktop
@@ -69,12 +69,15 @@ fn escape_exec(path: &str) -> Option<String> {
 fn refresh(program: &str, args: &[&str]) {
     let mut command = std::process::Command::new(program);
     vibyra_core::launch_env::sanitize_command(&mut command);
-    let _ = command
+    let spawned = command
         .args(args)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn();
+    if let Ok(child) = spawned {
+        vibyra_core::process_group::reap_when_done(child);
+    }
 }
 
 #[cfg(test)]

@@ -59,6 +59,12 @@ async function finishSession() {
   window.location.reload();
 }
 
+/** The profile is re-fetched every minute and on every focus. Keeping the old
+ * object when nothing changed spares everything subscribed to it a render. */
+function unchangedOr(current: AccountSnapshot, next: AccountSnapshot): AccountSnapshot {
+  return JSON.stringify(current) === JSON.stringify(next) ? current : next;
+}
+
 async function runAuthAction(
   set: (partial: Partial<AccountStore>) => void,
   get: () => AccountStore,
@@ -86,7 +92,7 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     }
   },
 
-  applySnapshot: (snapshot) => set({ snapshot }),
+  applySnapshot: (snapshot) => set({ snapshot: unchangedOr(get().snapshot, snapshot) }),
 
   clearError: () => set({ snapshot: { ...get().snapshot, error: null } }),
 
@@ -107,7 +113,7 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
 
   refreshProfile: async () => {
     try {
-      set({ snapshot: await accountProfileRefresh() });
+      set({ snapshot: unchangedOr(get().snapshot, await accountProfileRefresh()) });
     } catch {
       // Keep the last known profile on transient failures.
     }

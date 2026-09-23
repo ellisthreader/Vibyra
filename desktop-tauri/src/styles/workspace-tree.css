@@ -1,12 +1,18 @@
 /* Workspace-first navigation: names, disclosure, count, then quiet session dots. */
 .workspace-tree__heading { display:flex; align-items:center; justify-content:space-between; min-height:48px; padding:0 10px 8px; color:var(--dim); font-size:13px; font-weight:600; letter-spacing:.02em; }
 .workspace-tree__heading .icon-btn { color:var(--muted); }
+.workspace-tree__heading-actions { display:flex; align-items:center; gap:2px; }
+.workspace-tree__heading .icon-btn { width:28px; height:28px; }
+.workspace-tree__heading .icon-btn:hover { color:var(--text); background:var(--hover-strong); }
 .workspace-tree { padding:0 2px; }
-.workspace-tree section { margin-bottom:4px; }
+.workspace-tree section { position:relative; margin-bottom:4px; }
 .workspace-tree__row { display:flex; align-items:center; gap:12px; width:100%; min-height:40px; padding:0 12px; border-radius:9px; color:var(--muted); text-align:left; font-size:15px; letter-spacing:.01em; }
 .workspace-tree__row:hover { background:var(--hover); color:var(--text); }
 .workspace-tree__row.is-active { background:var(--hover-strong); color:var(--text); font-weight:600; }
 .workspace-tree__count { display:grid; place-items:center; min-width:24px; height:22px; padding:0 5px; border-radius:20px; background:var(--hover-strong); color:var(--muted); font-size:12px; font-weight:500; }
+.workspace-tree__disclosure-space { width:18px; flex:none; }
+.workspace-tree__disclosure { position:absolute; top:8px; right:43px; display:grid; place-items:center; width:24px; height:24px; border-radius:6px; color:var(--muted); }
+.workspace-tree__disclosure:hover { background:var(--hover-strong); color:var(--text); }
 .workspace-tree__collapsed { transform:rotate(-90deg); }
 .workspace-tree__sessions { padding:2px 0 5px 23px; }
 .focus-rail .workspace-tree__sessions .pstrip__row { min-height:35px; font-size:14px; font-weight:400; gap:12px; padding-left:12px; }
@@ -25,6 +31,7 @@
 .workspace-tree__row.is-active .workspace-tree__count { background:var(--hover); }
 
 .workspace-tree__sessions .pstrip__list { grid-template-columns:minmax(0, 1fr); }
+
 .project-context { position:fixed; z-index:110; width:292px; padding:6px; border:1px solid var(--line); border-radius:11px; background:var(--surface); box-shadow:0 16px 42px #0005; color:var(--text); font:13px var(--font-ui); }
 .project-context__title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:9px 10px 10px; border-bottom:1px solid var(--line-soft); color:var(--dim); font-size:12px; }
 .project-context__choices { display:grid; gap:2px; padding-top:5px; }

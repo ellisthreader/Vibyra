@@ -1,0 +1,58 @@
+import { StyleSheet } from 'react-native';
+import { font } from '../../ui/font';
+
+export const styles = StyleSheet.create({
+  page: { flex: 1 },
+  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 24 },
+  intro: { ...font.subhead, marginBottom: 22 },
+  fields: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  field: { paddingHorizontal: 16, paddingTop: 14 },
+  fieldLabel: { ...font.caption, fontWeight: '600' },
+  rule: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
+  summary: {
+    ...font.body,
+    minHeight: 52,
+    paddingTop: 7,
+    paddingBottom: 14,
+    outlineWidth: 0,
+  } as object,
+  details: {
+    ...font.body,
+    minHeight: 150,
+    paddingTop: 9,
+    paddingBottom: 16,
+    outlineWidth: 0,
+  } as object,
+  attachment: {
+    marginTop: 14,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  attachAction: {
+    flex: 1,
+    minHeight: 64,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  image: { width: 42, height: 42, borderRadius: 9 },
+  imageIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attachText: { flex: 1, gap: 2 },
+  attachTitle: { ...font.row },
+  attachHint: { ...font.caption, fontWeight: '400' },
+  remove: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  included: { marginTop: 20, flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  includedText: { ...font.footnote, flex: 1 },
+  error: { marginBottom: 10 },
+  footer: { paddingHorizontal: 20, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth },
+  result: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, paddingBottom: 56 },
+});

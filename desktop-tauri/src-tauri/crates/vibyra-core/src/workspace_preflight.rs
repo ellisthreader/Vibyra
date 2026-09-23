@@ -1,11 +1,9 @@
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde::Serialize;
 
-use crate::parallel::map_parallel;
+use crate::workspace_fingerprint::fingerprint;
 use crate::{CoreError, CoreResult};
 
 #[derive(Debug, Clone, Serialize)]
@@ -48,7 +46,7 @@ pub(crate) fn git_result(output: Output, action: String) -> CoreResult<String> {
     )))
 }
 
-fn command_bytes(repo: &Path, args: &[&str]) -> CoreResult<Vec<u8>> {
+pub(crate) fn command_bytes(repo: &Path, args: &[&str]) -> CoreResult<Vec<u8>> {
     let output = Command::new("git")
         .arg("-C")
         .arg(repo)
@@ -58,36 +56,6 @@ fn command_bytes(repo: &Path, args: &[&str]) -> CoreResult<Vec<u8>> {
         return Ok(output.stdout);
     }
     git_result(output, args.join(" ")).map(|_| Vec::new())
-}
-
-fn fingerprint(repo: &Path, status: &[u8]) -> CoreResult<String> {
-    let mut hasher = DefaultHasher::new();
-    command_bytes(repo, &["rev-parse", "HEAD"])?.hash(&mut hasher);
-    status.hash(&mut hasher);
-    command_bytes(repo, &["diff", "--binary", "HEAD", "--", "."])?.hash(&mut hasher);
-    let untracked = command_bytes(repo, &["ls-files", "--others", "--exclude-standard", "-z"])?;
-    let paths: Vec<&[u8]> = untracked
-        .split(|byte| *byte == 0)
-        .filter(|path| !path.is_empty())
-        .collect();
-
-    // Safe mode blocks the terminal launch until this returns, and an
-    // untracked tree can be thousands of files, so read and digest them in
-    // parallel. `map_parallel` preserves order, which keeps the combined
-    // fingerprint deterministic for a given working tree.
-    let digests = map_parallel(&paths, |relative| {
-        let path = repo.join(String::from_utf8_lossy(relative).as_ref());
-        std::fs::read(path).ok().map(|content| {
-            let mut file = DefaultHasher::new();
-            content.hash(&mut file);
-            file.finish()
-        })
-    });
-    for (relative, digest) in paths.iter().zip(digests) {
-        relative.hash(&mut hasher);
-        digest.hash(&mut hasher);
-    }
-    Ok(format!("{:016x}", hasher.finish()))
 }
 
 /// Whether Safe mode has a repository to branch from. A plain folder answers
@@ -111,6 +79,11 @@ pub(crate) fn safe_workspace_state(project_root: &Path) -> CoreResult<SafeWorksp
     if !is_git_work_tree(&project) {
         return Err(CoreError::Settings(NOT_A_REPOSITORY.to_string()));
     }
+    work_tree_state(project)
+}
+
+/// The state of a folder already known to be inside a Git work tree.
+fn work_tree_state(project: PathBuf) -> CoreResult<SafeWorkspaceState> {
     let repo = PathBuf::from(git(&project, &["rev-parse", "--show-toplevel"])?).canonicalize()?;
     let relative = project
         .strip_prefix(&repo)
@@ -148,5 +121,6 @@ pub fn safe_workspace_preflight(project_root: &Path) -> CoreResult<SafeWorkspace
             fingerprint: String::new(),
         });
     }
-    Ok(safe_workspace_state(project_root)?.preflight)
+    // Already known to be a work tree: asking Git a second time was a spawn.
+    Ok(work_tree_state(project_root.canonicalize()?)?.preflight)
 }

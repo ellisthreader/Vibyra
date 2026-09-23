@@ -164,6 +164,7 @@ test('switching to Auto drops the effort the previous model was using', async ()
 
   f.store.setModel('auto');
   assert.equal(f.store.state.effort, null, 'Auto owns the level, so the phone holds none');
+  await f.store.flushPersistence();
   assert.equal(JSON.parse(f.saved()).effort, null, 'and a cold start cannot restore it');
 });
 
@@ -175,4 +176,23 @@ test('a restored effort survives a cold start on a model the catalogue has not d
   const store = new VibesStore(api, () => 'request-one', { read: async () => saved, write: async v => { saved = v; } });
   await store.initialize();
   assert.equal(store.state.effort, 'xhigh');
+});
+
+test('queued chat settings persist in update order when device storage is slow', async () => {
+  const writes: string[] = [];
+  let releaseFirst = () => {};
+  const first = new Promise<void>(resolve => { releaseFirst = resolve; });
+  const store = new VibesStore(fixture().api, () => 'request-one', {
+    read: async () => null,
+    write: async value => { writes.push(value); if (writes.length === 1) await first; },
+  });
+  store.setModel('provider/model');
+  store.setEffort('high');
+  store.setModel('auto');
+  await Promise.resolve();
+  assert.equal(writes.length, 1, 'only one write starts while device storage is busy');
+  releaseFirst();
+  await store.flushPersistence();
+  assert.equal(JSON.parse(writes.at(-1)!).model, 'auto');
+  assert.equal(JSON.parse(writes.at(-1)!).effort, null);
 });

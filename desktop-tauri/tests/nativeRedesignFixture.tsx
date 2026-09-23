@@ -10,6 +10,7 @@ import { TeammatesWorkspace } from '../src/components/teammates/TeammatesWorkspa
 import { useProductMode } from '../src/state/productModeStore';
 import { useAccountStore } from '../src/state/accountStore';
 import { useProjectStore } from '../src/state/projectStore';
+import { useReportStore } from '../src/state/reportStore';
 import { useSettingsStore } from '../src/state/settingsStore';
 import { useTerminalStore } from '../src/state/terminalStore';
 import { useConversationTerminals } from '../src/state/conversationTerminalStore';
@@ -29,7 +30,7 @@ import '../src/styles/adaptive-terminals.css';
 import '../src/styles/project-focus.css';
 import '../src/styles/teammates.css';
 const query = new URLSearchParams(location.search);
-Object.assign(window, { setPhoneFixture: (active: string[]) => usePhoneStore.setState({status: {enabled:true, discoverable:true, address:'', error:null, devices:[], pending:[], active}}), remoteSection: () => useWorkspaceStore.getState().settingsSection, agentPicker: () => useWorkspaceStore.getState().agentPickerOpen });
+Object.assign(window, { setPhoneFixture: (active: string[]) => usePhoneStore.setState({status: {enabled:true, discoverable:true, address:'', error:null, devices:[], pending:[], active}}), remoteSection: () => useWorkspaceStore.getState().settingsSection, closeSettings: () => useWorkspaceStore.getState().closeSettings(), agentPicker: () => useWorkspaceStore.getState().agentPickerOpen, projectView: () => useProjectStore.getState().view, workspaceRoot: () => useWorkspaceStore.getState().root, reportEntryState: () => ({open:useReportStore.getState().open,area:useReportStore.getState().draft?.area,view:useReportStore.getState().surroundings?.context.view,project:useReportStore.getState().surroundings?.context.project}), resetReportEntry: () => useReportStore.setState({open:false,draft:null,surroundings:null}) });
 (window as any).setPhoneFixture([]);
 if (query.has('light')) document.documentElement.dataset.theme='light';
 useAccountStore.setState({snapshot:{status:'signedIn',profile:{name:'Fixture',email:'fixture@example.test',plan:'free'},secureStorage:true,error:null,pendingProvider:null} as any});
@@ -51,6 +52,7 @@ if (query.has('tree')) {
 const agents=[{id:'agent-one',chatId:'chat-one',revision:1,name:'On-call engineer',brief:'Look after production',memory:'',avatar:'oncall',budget:10,integrations:[],archived:false,status:'completed',lastMessage:'The fix is ready for review.',updatedAt:'2026-09-21T09:41:00Z'}];
 const requests: any[] = []; let interrupted = false; Object.assign(window,{redesignRequests:requests});
 mockIPC(async(command,args:any)=>{
+ if(command==='save_settings' || command==='shared_chat_remove_project') { requests.push({path:command,body:args}); return null; }
  if(command==='voice_status') return {recorder:true,keyConfigured:true};
  if(command==='voice_start') { requests.push({path:command}); return null; }
  if(command==='voice_stop') { requests.push({path:command,body:args}); return args.discard ? null : 'Dictated draft.'; }
@@ -68,5 +70,5 @@ mockIPC(async(command,args:any)=>{
  }
  return null;
 });
-function Fixture(){const mode=useProductMode(s=>s.mode);return <div className="app" style={{height:'100vh'}}><TitleBar/><div className="shell"><div className="product-code-shell" hidden={mode!=='work'}><ProjectStrip/>{query.has('empty')?<HomeView/>:<ProjectWorkspace/>}</div><TeammatesWorkspace active={mode==='agent'}/></div></div>;}
+function Fixture(){const mode=useProductMode(s=>s.mode);const railOpen=useWorkspaceStore(s=>s.projectsSidebarOpen);const view=useProjectStore(s=>s.view);return <div className={`app ${mode==='work'&&!railOpen?'app--projects-hidden':''}`} style={{height:'100vh'}}><TitleBar/><div className="shell"><div className="product-code-shell" hidden={mode!=='work'}><ProjectStrip/>{view==='project'?<ProjectWorkspace/>:<HomeView/>}</div><TeammatesWorkspace active={mode==='agent'}/></div></div>;}
 createRoot(document.getElementById('root')!).render(<Fixture/>);

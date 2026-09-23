@@ -123,9 +123,8 @@ class VibesController extends Controller
     public function turns(Request $request, string $chat, Turns $turns)
     {
         $id = $this->account($request)->id;
-        DB::table('vibes_chats')->where('id', $chat)->where('user_id', $id)->firstOrFail();
-        return $this->json(['turns' => DB::table('vibes_turns')->where('chat_id', $chat)->orderByDesc('created_at')->orderByDesc('id')
-            ->limit(200)->get()->reverse()->values()->map(fn ($t) => $turns->payload($t))]);
+        $data = $request->validate(['before' => 'sometimes|uuid']);
+        return $this->json(app(\App\Services\Vibes\ThreadHistory::class)->page($id, $chat, $data['before'] ?? null));
     }
 
     public function status(Request $request, string $turn, Turns $turns)

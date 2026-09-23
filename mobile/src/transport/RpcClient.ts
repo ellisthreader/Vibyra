@@ -1,4 +1,5 @@
 import type { Pairing } from './pairing';
+import { decodePreviewFrame } from '../preview/frameCodec';
 
 export class RpcError extends Error {
   constructor(message: string, public uncertain = false, public code?: string) { super(message); }
@@ -92,6 +93,14 @@ export class RpcClient {
       try { this.post({ target: 'vibyra-runtime', type: 'send', connectionId: this.connectionId, payload: { id, method, params } }); }
       catch { clearTimeout(timer); this.pending.delete(id); reject(this.interrupted(method, 'Connection interrupted.')); }
     });
+  }
+  /** One bounded binary Preview frame, already base64 encoded by the native
+   * adapter. Preview credit limits how many may be queued at once. */
+  sendPreviewFrame(frame: string): void {
+    if (!this.connected || !this.connectionId) throw new RpcError('Connect to your computer first.');
+    try { decodePreviewFrame(frame); }
+    catch { throw new RpcError('Invalid Preview frame.'); }
+    this.post({ target: 'vibyra-runtime', type: 'send-preview', connectionId: this.connectionId, frame });
   }
   /** Never throws. With no runtime to tell there is no socket left to close, and
    *  a close that stopped half way left this client believing it was connected. */

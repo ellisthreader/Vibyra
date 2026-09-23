@@ -61,15 +61,25 @@ pub fn identify(
     requests: &[IdentityRequest],
 ) -> Result<Vec<SessionIdentity>, String> {
     let sessions = manager.list();
-    let registry = crate::provider_auth_registry::Registry::load();
-    let targets: Vec<_> = requests
+    let running: Vec<_> = requests
         .iter()
         .take(24)
         .filter_map(|request| {
             let session = sessions
                 .iter()
                 .find(|s| s.id == request.id && s.agent_id == "codex" && s.alive)?;
-            let pid = manager.process_id(session.id).ok()??;
+            Some((request, manager.process_id(session.id).ok()??))
+        })
+        .collect();
+    // The account registry is read from disk, so only once there is a pane
+    // to resolve against it.
+    if running.is_empty() {
+        return Ok(Vec::new());
+    }
+    let registry = crate::provider_auth_registry::Registry::load();
+    let targets: Vec<_> = running
+        .into_iter()
+        .filter_map(|(request, pid)| {
             let home = registry
                 .home("codex", request.account_id.as_deref().unwrap_or("default"))
                 .ok()?;

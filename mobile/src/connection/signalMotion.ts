@@ -9,17 +9,27 @@ import { Animated, Easing } from 'react-native';
 export function useRipples(active: boolean, count: number, period: number) {
   const values = useRef(Array.from({ length: count }, () => new Animated.Value(0))).current;
   useEffect(() => {
-    values.forEach(value => value.setValue(0));
+    values.forEach((value) => value.setValue(0));
     if (!active) return;
     const loops = values.map((value, index) => {
-      const animation = Animated.loop(Animated.timing(value, { toValue: 1, duration: period,
-        easing: Easing.linear, useNativeDriver: false, isInteraction: false }));
+      const animation = Animated.loop(
+        Animated.timing(value, {
+          toValue: 1,
+          duration: period,
+          easing: Easing.linear,
+          useNativeDriver: false,
+          isInteraction: false,
+        }),
+      );
       const timer = setTimeout(() => animation.start(), (period / count) * index);
       return { animation, timer };
     });
     return () => {
-      loops.forEach(({ animation, timer }) => { clearTimeout(timer); animation.stop(); });
-      values.forEach(value => value.setValue(0));
+      loops.forEach(({ animation, timer }) => {
+        clearTimeout(timer);
+        animation.stop();
+      });
+      values.forEach((value) => value.setValue(0));
     };
   }, [active, count, period, values]);
   return values;
@@ -32,10 +42,18 @@ export function useOneShot(instant: boolean, duration: number, delay = 0) {
   useEffect(() => {
     value.setValue(0);
     if (instant) return;
-    const animation = Animated.timing(value, { toValue: 1, duration, delay,
-      easing: Easing.linear, useNativeDriver: false, isInteraction: false });
+    const animation = Animated.timing(value, {
+      toValue: 1,
+      duration,
+      delay,
+      easing: Easing.linear,
+      useNativeDriver: false,
+      isInteraction: false,
+    });
     animation.start();
-    return () => { animation.stop(); };
+    return () => {
+      animation.stop();
+    };
   }, [delay, duration, instant, value]);
   return value;
 }

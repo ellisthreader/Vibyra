@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { NotificationBell } from '../src/components/notifications/NotificationBell';
+import type { NotificationItem } from '../src/notificationTypes';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import { createRoot } from 'react-dom/client';
@@ -15,7 +18,7 @@ import { usePhoneStore } from '../src/state/phoneStore';
 const query = new URLSearchParams(location.search);
 document.documentElement.dataset.platform = 'mac';
 document.documentElement.dataset.theme = query.has('light') ? 'light' : 'dark';
-if (query.has('performance')) document.documentElement.dataset.performance = 'on';
+if (query.has('performance')) document.documentElement.dataset.performance = 'best';
 mockWindows('main'); mockIPC(() => null);
 const events: unknown[] = [];
 Object.assign(window, { startEvents: events, startView: () => useProjectStore.getState().view });
@@ -43,5 +46,20 @@ useTerminalStore.setState({ panes: query.has('empty') ? [] : [
   { id: 1, projectId: 'studio', title: 'Give the homepage a fresh start', agentId: 'codex', status: 'suspended', lastFocusedAt: Date.now() - 60000, accent: '#5b7cfa' },
   { id: 2, projectId: 'vibyra', title: 'Polish the onboarding experience', agentId: 'claude', status: 'running', lastFocusedAt: Date.now() - 3600000, accent: '#888' },
 ] as any, activity: { 2: 'working' }, setFocus: id => { events.push(['focus', id]); } });
-createRoot(document.getElementById('root')!).render(query.has('auth') ? <AuthScreen /> :
+function NotificationFixture() {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<NotificationItem[]>(Array.from({ length:12 }, (_, id) => ({
+    id, at:Date.now() - id * 3600000, read:false, count:1, category:'performance', severity:'warning',
+    title:id === 2 ? 'A longer notification title that must wrap without overlapping the next message' : 'Your machine is under load',
+    body:id === 2 ? 'A long message with enough detail to take several lines in a narrow notification panel. Everything should remain readable.' : 'Vibyra may feel laggy until this settles.',
+    action:{ id:'hibernateIdleTerminals', label:'Hibernate idle terminals' },
+  })));
+  return <div className="app"><header className="chrome" style={{ justifyContent:'flex-end', paddingRight:16 }}>
+    <NotificationBell items={items} unread={items.filter(item => !item.read).length} open={open} onOpenChange={setOpen}
+      onMarkAllRead={() => setItems(list => list.map(item => ({ ...item, read:true })))}
+      onClearAll={() => setItems([])} onOpenSettings={() => events.push(['notification-settings'])}
+      onAction={item => events.push(['notification-action', item.id])} />
+  </header></div>;
+}
+createRoot(document.getElementById('root')!).render(query.has('notifications') ? <NotificationFixture /> : query.has('auth') ? <AuthScreen /> :
   <div className="app" style={{ height: '100vh' }}><TitleBar /><div className="shell"><div className="product-code-shell"><ProjectStrip /><HomeView /></div></div></div>);

@@ -1,4 +1,4 @@
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager};
 use vibyra_core::fsx::{self, DirEntryInfo, FilePreview, WorkspaceWatcher};
 use vibyra_core::CoreError;
 
@@ -25,23 +25,31 @@ pub async fn fs_home_dir() -> String {
 
 /// Watches `root` recursively; debounced change batches are emitted to the
 /// frontend as `fs:changed` events. Replaces any previous watcher.
+///
+/// Starting a recursive watch registers the whole tree with the OS and
+/// stopping one joins its event thread, so both run on a blocking thread.
 #[tauri::command]
-pub async fn watch_workspace(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    root: String,
-) -> Result<(), CoreError> {
-    let watcher = WorkspaceWatcher::start(&root, move |changes| {
-        let _ = app.emit("fs:changed", &changes);
-    })?;
-    *state.watcher.lock() = Some(watcher);
-    Ok(())
+pub async fn watch_workspace(app: AppHandle, root: String) -> Result<(), CoreError> {
+    run_blocking_core(move || {
+        let emitter = app.clone();
+        let watcher = WorkspaceWatcher::start(&root, move |changes| {
+            let _ = emitter.emit("fs:changed", &changes);
+        })?;
+        let previous = app.state::<AppState>().watcher.lock().replace(watcher);
+        drop(previous);
+        Ok(())
+    })
+    .await
 }
 
 #[tauri::command]
-pub async fn unwatch_workspace(state: State<'_, AppState>) -> Result<(), CoreError> {
-    *state.watcher.lock() = None;
-    Ok(())
+pub async fn unwatch_workspace(app: AppHandle) -> Result<(), CoreError> {
+    run_blocking_core(move || {
+        let previous = app.state::<AppState>().watcher.lock().take();
+        drop(previous);
+        Ok(())
+    })
+    .await
 }
 
 #[tauri::command]

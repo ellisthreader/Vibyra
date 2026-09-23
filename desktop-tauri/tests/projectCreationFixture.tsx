@@ -39,6 +39,7 @@ mockIPC(async (command, args: any) => {
   // has to stay readable and unpickable rather than quietly vanish.
   if (command === 'scaffold_preflight') return Object.fromEntries(
     (args.tools as string[]).map(tool => [tool, !['flutter', 'rails'].includes(tool)]));
+  if (command === 'scaffold_free_name') return args.base;
   if (command === 'scaffold_cancel') return null;
   if (command === 'teammate_request' && args.path === 'connectors') {
     return { enabled: true, integrations: [{ id: 'github', name: 'GitHub', installed: location.search.includes('github'),
@@ -75,6 +76,8 @@ function Fixture() {
   const view = useProjectStore(s => s.view);
   const active = useProjectStore(s => s.activeId);
   const [effort, setEffort] = useState<LaunchEffort>('high');
+  const provider = location.search.includes('claude') ? 'claude' : location.search.includes('codex') ? 'codex' : undefined;
+  const efforts: LaunchEffort[] = provider === 'claude' ? [...values.slice(0, -1), 'ultracode'] : values;
   return <div className="app" style={{ height: '100vh' }}><TitleBar /><div className="shell"><div className="product-code-shell">
     <ProjectStrip />{view === 'new-project' ? <NewProjectPage /> : <main className="terminal-stage" style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
       <div className="grid-empty launch-stage">
@@ -82,7 +85,8 @@ function Fixture() {
         {location.search.includes('models') && <LaunchModelPicker models={models} selected={models[modelIndex]} loading={false} open={modelOpen}
           onOpenChange={setModelOpen} onSelect={id => { setModelIndex(models.findIndex(m => m.model.id === id)); setModelOpen(false); }}
           onBrowseAll={() => setModelOpen(false)} onConnectAccounts={() => {}} />}
-        <LaunchEffortPicker options={values.map(value => ({ value, label: value === 'xhigh' ? 'Extra high' : value[0].toUpperCase() + value.slice(1), hint: 'More time for complex tasks, with deeper reasoning.' }))}
+        <LaunchEffortPicker provider={provider}
+          options={efforts.map(value => ({ value, label: value === 'xhigh' ? 'Extra high' : value[0].toUpperCase() + value.slice(1), hint: 'More time for complex tasks, with deeper reasoning.' }))}
           value={effort} onChange={setEffort} /></section></div></main>}
   </div></div></div>;
 }

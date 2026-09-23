@@ -193,6 +193,8 @@ impl Engine {
 mod tests;
 
 #[cfg(test)]
+mod tests_artifacts;
+#[cfg(test)]
 mod tests_recovery;
 
 #[cfg(test)]

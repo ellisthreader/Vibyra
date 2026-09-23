@@ -3,6 +3,12 @@ let revision = 0;
 const listeners = new Set<() => void>();
 export const preferenceRevision = () => revision;
 export const subscribePreferenceChanges = (listener: () => void) => {
-  listeners.add(listener); return () => { listeners.delete(listener); };
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 };
-export function preferencesChanged() { revision++; listeners.forEach(listener => listener()); }
+export function preferencesChanged() {
+  revision++;
+  listeners.forEach((listener) => listener());
+}

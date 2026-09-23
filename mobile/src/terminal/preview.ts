@@ -2,7 +2,7 @@ import { TerminalScreen, type ScreenLine } from './screen';
 
 /** How much of a terminal's tail is replayed for its preview: several screens' worth. */
 const REPLAY = 32000;
-const blank = (line: ScreenLine) => !line.some(span => span.text.trim());
+const blank = (line: ScreenLine) => !line.some((span) => span.text.trim());
 
 /**
  * The last few lines a terminal is showing, for a thumbnail of it.

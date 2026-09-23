@@ -51,7 +51,7 @@ fn spawn(mut command: Command) -> Result<(), String> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .map(|_| ())
+        .map(vibyra_core::process_group::reap_when_done)
         .map_err(|error| format!("Could not open the screenshot folder: {error}"))
 }
 

@@ -1,15 +1,20 @@
-/* Layout recovered from the installed macOS 0.7.8 frontend, index-BpOZBa5z.css. */
-.welcome-demo-terminal{background:var(--demo-terminal-bg);width:98%;height:89.5%;color:var(--demo-terminal-fg);white-space:pre;border-radius:0 0 7px 7px;padding:3% 2%;font-family:JetBrains Mono Variable,monospace;font-size:1.12cqw;line-height:1.45;position:absolute;top:10.5%;left:1%;overflow:hidden}
-.welcome-demo-terminal [data-tone=success]{color:var(--demo-green)}
-.welcome-demo-terminal [data-tone=accent]{color:var(--accent);font-weight:600}
-.welcome-demo-caret{background:var(--accent);vertical-align:middle;width:.6em;height:1.1em;display:inline-block}
-.welcome-demo-thread{background:var(--workspace);flex-direction:column;align-items:flex-start;gap:4%;padding:2%;font-size:1.04cqw;line-height:1.6;display:flex;position:absolute;inset:14.5% 0 16.5% 20.45%}
-.welcome-demo-question{background:var(--action);color:var(--on-action);border-radius:1.2cqw 1.2cqw 0;align-self:flex-end;padding:1.4% 2%}
-.welcome-demo-answer{white-space:pre-wrap;background:var(--hover-strong);border-radius:1.2cqw 1.2cqw 1.2cqw 0;min-width:6%;max-width:77%;padding:1.5% 2%}
-.welcome-demo-composer{background:var(--rail);height:3.5%;font-size:1.04cqw;position:absolute;top:85.5%;left:23.1%;right:2.3%}
-.welcome-demo-composer>span{color:var(--muted)}
-.welcome-demo-thinking{gap:.35em;padding:.4em;display:flex}
-.welcome-demo-thinking i{background:var(--muted);border-radius:50%;width:.4em;height:.4em}
-.welcome-demo-cursor{z-index:3;width:2%;height:4%;position:absolute}
-.welcome-demo-cursor svg{width:100%;height:100%}
-.welcome-demo-cursor>i{border:1px solid var(--accent);border-radius:50%;width:2cqw;height:2cqw;position:absolute;top:0;left:0}
+/* Sample actions animate inside the photographed production interface. */
+.welcome-terminal-stage { --demo-terminal-bg:#0a0c0f; --demo-terminal-fg:#e2e4e9; --demo-green:#73ce9e; }
+:root[data-theme="light"] .welcome-terminal-stage { --demo-terminal-bg:#fdfdfe; --demo-terminal-fg:#24262b; --demo-green:#227746; }
+.welcome-demo-terminal { position:absolute; left:1%; top:10.5%; width:98%; height:89.5%; padding:3% 2%; overflow:hidden; background:var(--demo-terminal-bg); color:var(--demo-terminal-fg); font-family:"JetBrains Mono Variable",monospace; font-size:1.14cqw; line-height:1.48; white-space:pre; border-radius:0 0 7px 7px; }
+.welcome-demo-terminal [data-tone="success"] { color:var(--demo-green); }
+.welcome-demo-terminal [data-tone="accent"] { color:var(--accent); font-weight:600; }
+.welcome-demo-caret { display:inline-block; width:.6em; height:1.1em; background:var(--accent); vertical-align:middle; }
+.welcome-demo-thread { position:absolute; left:20.45%; right:0; top:14.5%; bottom:16.5%; padding:2% 2%; background:var(--workspace); display:flex; align-items:flex-start; flex-direction:column; gap:4%; font-size:1.18cqw; line-height:1.65; }
+.welcome-demo-question { align-self:flex-end; background:var(--action); color:var(--on-action); padding:1.4% 2%; border-radius:1.2cqw 1.2cqw 0 1.2cqw; }
+.welcome-demo-answer { white-space:pre-wrap; max-width:82%; background:var(--hover-strong); padding:1.5% 2%; border-radius:1.2cqw 1.2cqw 1.2cqw 0; min-width:6%; }
+.welcome-demo-composer { position:absolute; left:23.1%; right:2.3%; top:85.5%; height:3.5%; font-size:1.04cqw; background:var(--rail); }
+.welcome-demo-composer > span { color:var(--muted); }
+.welcome-demo-thinking { display:flex; gap:.35em; padding:.4em; }
+.welcome-demo-thinking i { width:.4em; height:.4em; background:var(--muted); border-radius:50%; }
+.welcome-demo-cursor { position:absolute; z-index:3; width:2%; height:4%; }
+.welcome-demo-cursor svg { width:100%; height:100%; }
+.welcome-demo-cursor > i { position:absolute; top:0; left:0; width:2cqw; height:2cqw; border:1px solid var(--accent); border-radius:50%; }
+
+.welcome-demo-send { position:absolute; right:2.7%; bottom:4.1%; width:2.8%; aspect-ratio:1; display:grid; place-items:center; border-radius:50%; background:var(--action); color:var(--on-action); }
+.welcome-demo-send svg { width:60%; height:60%; }

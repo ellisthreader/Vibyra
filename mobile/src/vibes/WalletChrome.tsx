@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { links } from '../settings/links';
 import { useTheme } from '../theme';
@@ -33,29 +41,79 @@ import { Wash } from './WalletArt';
  * sit outside the padded, gapped column, so a small phone with no room to spare
  * loses nothing to them, and it still scrolls when it has less than it needs.
  */
-export function WalletPage({ title, onBack, onClose, refreshing = false, onRefresh, footer, centred, children }: {
-  title?: string; onBack?: () => void; onClose(): void; centred?: boolean;
+export function WalletPage({
+  title,
+  onBack,
+  onClose,
+  refreshing = false,
+  onRefresh,
+  footer,
+  centred,
+  children,
+}: {
+  title?: string;
+  onBack?: () => void;
+  onClose(): void;
+  centred?: boolean;
   // Optional together: a page with no account behind it has nothing to pull for,
   // and a refresh control that reloads nothing is a promise the page cannot keep.
-  refreshing?: boolean; onRefresh?: () => void; footer?: ReactNode; children: ReactNode;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  footer?: ReactNode;
+  children: ReactNode;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  return <View style={s.page}>
-    <Wash id="vibes" height={330 + insets.top} />
-    <View style={[s.bar, !onBack && s.barPlain, { paddingTop: insets.top + 4 }]}>
-      {onBack ? <IconButton icon="chevron-back" label="Back to your Vibes" onPress={onBack} /> : null}
-      {title ? <Text accessibilityRole="header" style={[s.crumb, { color: colors.text }]}>{title}</Text> : null}
-      <View style={s.spacer} />
-      <IconButton icon="close" label="Close" onPress={onClose} />
+  return (
+    <View style={s.page}>
+      <Wash id="vibes" height={330 + insets.top} />
+      {/* Laid out like the app's own bar: the name centred over the page, a way back on
+        the left when there is one, and the close on the right. */}
+      <View style={[s.bar, { paddingTop: insets.top + 6 }]}>
+        {title ? (
+          <Text
+            accessibilityRole="header"
+            numberOfLines={1}
+            pointerEvents="none"
+            style={[s.crumb, { top: insets.top + 6, color: colors.text }]}
+          >
+            {title}
+          </Text>
+        ) : null}
+        {onBack ? (
+          <IconButton icon="chevron-back" label="Back to your Vibes" onPress={onBack} />
+        ) : (
+          <View style={s.slot} />
+        )}
+        <View style={s.spacer} />
+        <IconButton icon="close" label="Close" onPress={onClose} />
+      </View>
+      <ScrollView
+        contentContainerStyle={centred ? s.fill : s.content}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl
+              refreshing={refreshing}
+              tintColor={colors.accent}
+              onRefresh={onRefresh}
+            />
+          ) : undefined
+        }
+      >
+        {centred ? (
+          <>
+            <View style={s.above} />
+            <View style={[s.content, s.snug]}>{children}</View>
+            <View style={s.below} />
+          </>
+        ) : (
+          children
+        )}
+      </ScrollView>
+      {footer ? <View style={s.footer}>{footer}</View> : null}
     </View>
-    <ScrollView contentContainerStyle={centred ? s.fill : s.content} keyboardShouldPersistTaps="handled"
-      refreshControl={onRefresh
-        ? <RefreshControl refreshing={refreshing} tintColor={colors.accent} onRefresh={onRefresh} /> : undefined}>
-      {centred ? <><View style={s.above} /><View style={[s.content, s.snug]}>{children}</View><View style={s.below} /></> : children}
-    </ScrollView>
-    {footer ? <View style={s.footer}>{footer}</View> : null}
-  </View>;
+  );
 }
 
 /**
@@ -65,30 +123,66 @@ export function WalletPage({ title, onBack, onClose, refreshing = false, onRefre
  * renewal line above them, so the button stays the only cobalt thing near the bottom.
  */
 export function WalletLinks({ onRestore, disabled }: { onRestore(): void; disabled?: boolean }) {
-  return <View style={s.links}>
-    <Link label="Restore Purchases" disabled={disabled} onPress={onRestore} />
-    <Link label="Terms" onPress={() => void Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')} />
-    <Link label="Privacy" onPress={() => void Linking.openURL(links.privacy)} />
-  </View>;
+  return (
+    <View style={s.links}>
+      <Link label="Restore Purchases" disabled={disabled} onPress={onRestore} />
+      <Link
+        label="Terms"
+        onPress={() =>
+          void Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')
+        }
+      />
+      <Link label="Privacy" onPress={() => void Linking.openURL(links.privacy)} />
+    </View>
+  );
 }
-function Link({ label, disabled, onPress }: { label: string; disabled?: boolean; onPress(): void }) {
+function Link({
+  label,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  disabled?: boolean;
+  onPress(): void;
+}) {
   const { colors } = useTheme();
-  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={s.link}>
-    <Text style={[s.linkText, { color: colors.muted }]}>{label}</Text></Pressable>;
+  return (
+    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={s.link}>
+      <Text style={[s.linkText, { color: colors.muted }]}>{label}</Text>
+    </Pressable>
+  );
 }
 const s = StyleSheet.create({
   page: { flex: 1 },
-  bar: { flexDirection: 'row', alignItems: 'center', paddingLeft: 6, paddingRight: 10 },
-  barPlain: { paddingLeft: 24 },
-  crumb: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
+  bar: { flexDirection: 'row', alignItems: 'center', minHeight: 50, paddingHorizontal: 8 },
+  crumb: {
+    position: 'absolute',
+    left: 60,
+    right: 60,
+    height: 44,
+    lineHeight: 44,
+    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: -0.35,
+  },
+  slot: { width: 44 },
   spacer: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingBottom: 32, gap: 24 },
-  fill: { flexGrow: 1 }, above: { flexGrow: 1 }, below: { flexGrow: 2 },
+  content: { paddingHorizontal: 20, paddingBottom: 32, gap: 24 },
+  fill: { flexGrow: 1 },
+  above: { flexGrow: 1 },
+  below: { flexGrow: 2 },
   // The footer's own top padding spaces a centred page from its button, so the
   // column keeps none of the 32pt a page that scrolls to its end needs.
   snug: { paddingBottom: 8, gap: 20 },
-  footer: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 4, gap: 10 },
-  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 20, marginTop: -10 },
+  footer: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4, gap: 10 },
+  links: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    columnGap: 20,
+    marginTop: -10,
+  },
   link: { minHeight: 40, justifyContent: 'center' },
   linkText: { fontSize: 12, fontWeight: '500', textDecorationLine: 'underline' },
 });

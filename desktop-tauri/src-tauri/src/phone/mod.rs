@@ -4,7 +4,9 @@ mod notifications;
 mod preferences;
 mod remote;
 use preferences::save;
+// Prepared Mac-side permission boundary. Deliberately disconnected from RPC.
 mod backend;
+mod connection_init;
 mod control;
 #[cfg(test)]
 mod control_tests;
@@ -16,18 +18,45 @@ mod manage;
 mod manage_chat_tests;
 #[cfg(test)]
 mod manage_tests;
+#[cfg(test)]
+mod preview_attached_fixture;
+#[cfg(test)]
+mod preview_attached_tests;
+#[cfg(test)]
+mod preview_auto_tests;
+#[allow(dead_code)]
+pub(crate) mod preview_grants;
+#[cfg(test)]
+mod preview_grants_account_tests;
+#[cfg(test)]
+mod preview_grants_tests;
+#[cfg(all(test, unix))]
+mod preview_live_fixture_tests;
+#[cfg(test)]
+mod preview_noise_tests;
+mod preview_service;
+#[cfg(test)]
+mod preview_service_fixture_support;
+#[cfg(test)]
+mod preview_service_fixture_tests;
+#[cfg(test)]
+mod preview_service_tests;
+#[cfg(test)]
+mod preview_upgrade_handshake;
+#[cfg(test)]
+mod preview_upgrade_tests;
 mod railway;
 mod railway_resources;
 mod railway_tools;
 pub mod requests;
-mod scaffold;
+pub(crate) mod scaffold;
 #[cfg(test)]
 mod scaffold_tests;
 pub(crate) mod shared_backend;
 mod stream;
 #[cfg(test)]
 mod tests;
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod typing_tests;
 pub mod vault;
 #[cfg(test)]
@@ -40,8 +69,9 @@ mod workspace_tests;
 use crate::account_session::AccountSessionManager;
 use address::{connection_address, default_address};
 use backend::DesktopBackend;
+#[cfg(test)]
 use parking_lot::Mutex;
-use serde_json::Value;
+use preferences::computer_name;
 use std::{
     net::SocketAddr,
     path::PathBuf,
@@ -51,8 +81,6 @@ use vibyra_core::pty::PtyManager;
 use vibyra_host::{EmbeddedHost, RelayHandle};
 pub use watch::{notify_window, watch};
 use workspace::SharedWorkspace;
-
-use preferences::computer_name;
 
 pub const NO_NETWORK: &str = crate::platform_text::for_computer(
     "Connect this Mac to Wi-Fi or a private VPN. Vibyra will find the address itself.",
@@ -87,44 +115,12 @@ pub struct PhoneConnection {
     pub vault: Arc<vault::Vault>,
     /// Terminals a phone asked the window to start or close, awaiting it.
     pub requests: Arc<requests::TerminalRequests>,
+    preview_service: Option<Arc<preview_service::PreviewService>>,
 }
 impl PhoneConnection {
-    #[cfg(all(test, unix))]
+    #[cfg(test)]
     pub fn new(path: PathBuf, manager: Arc<PtyManager>) -> Mutex<Self> {
         Self::with_chats(path, manager, None, None)
-    }
-    pub fn with_chats(
-        path: PathBuf,
-        manager: Arc<PtyManager>,
-        chats: Option<Arc<crate::shared_chats::SharedChats>>,
-        account: Option<Arc<AccountSessionManager>>,
-    ) -> Mutex<Self> {
-        let saved: Value = std::fs::read(path.join("connection.json"))
-            .ok()
-            .and_then(|b| serde_json::from_slice(&b).ok())
-            .unwrap_or(Value::Null);
-        let mut state = Self {
-            chats,
-            host: None,
-            vault: vault::Vault::new(path.join("phone")),
-            path,
-            enabled: saved["enabled"].as_bool() == Some(true),
-            address: String::new(),
-            workspace: SharedWorkspace::default(),
-            typing: Arc::new(AtomicBool::new(saved["typing"].as_bool() == Some(true))),
-            remote_enabled: saved["remote"].as_bool() == Some(true),
-            remote: None,
-            notifications: None,
-            account,
-            error: None,
-            requests: Arc::default(),
-        };
-        // A saved address from an older build is deliberately ignored: it goes
-        // stale the moment this Mac joins another network.
-        if state.enabled {
-            state.error = state.start(manager).err();
-        }
-        Mutex::new(state)
     }
     pub fn enable(&mut self, manager: Arc<PtyManager>) -> Result<(), String> {
         self.enabled = true;
@@ -169,12 +165,13 @@ impl PhoneConnection {
             return Err(NO_NETWORK.into());
         }
         let address = connection_address(&detected)?;
-        let terminal = DesktopBackend::new(
+        let terminal = DesktopBackend::new_with_preview(
             manager,
             self.workspace.clone(),
             self.typing.clone(),
             self.vault.clone(),
             self.requests.clone(),
+            self.preview_service.clone().map(|preview| preview as _),
         )?;
         let backend: Arc<dyn vibyra_host::Backend> = match &self.chats {
             Some(chats) => Arc::new(shared_backend::SharedBackend {

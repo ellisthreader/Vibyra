@@ -34,6 +34,18 @@ fn node_wrappers_are_followed_but_subagent_chats_do_not_win() {
 }
 
 #[test]
+fn a_family_is_capped_and_a_parent_cycle_is_walked_once() {
+    let mut raw = String::from("10 11\n11 10\n");
+    for pid in 100..400 {
+        raw.push_str(&format!("{pid} 10\n"));
+    }
+    let family = process_family(10, &process_parents(&raw));
+    assert_eq!(family.len(), 128);
+    assert_eq!(family[0], (10, 0));
+    assert_eq!(family.iter().filter(|(pid, _)| *pid == 10).count(), 1);
+}
+
+#[test]
 fn multiple_ids_at_the_same_depth_are_never_guessed() {
     let files = open_files(&format!("p10\nn{}\nn{}\n", path(FIRST), path(SECOND)));
     assert!(choose_identity(&[(10, 0)], &files, Path::new("/accounts/one")).is_none());

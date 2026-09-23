@@ -40,7 +40,7 @@ pub(super) async fn transcribe(
         form = form.text("language", language);
     }
 
-    let response = reqwest::Client::new()
+    let response = crate::http_client::shared()
         .post("https://api.openai.com/v1/audio/transcriptions")
         .bearer_auth(key)
         .multipart(form)

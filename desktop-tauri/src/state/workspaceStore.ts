@@ -16,37 +16,19 @@ import {
   type CompanionTab,
 } from "../lib/companionPreferences";
 import type { FilePreview } from "../types";
+import type { SettingsPanelId, SettingsSectionId } from "./workspaceSettingsTypes";
+export type { SettingsPanelId, SettingsSectionId } from "./workspaceSettingsTypes";
+
+const PROJECT_SIDEBAR_KEY = "vibyra.desktop.projectsSidebarOpen";
+function restoreProjectsSidebar(): boolean {
+  try { return localStorage.getItem(PROJECT_SIDEBAR_KEY) !== "false"; } catch { return true; }
+}
+function saveProjectsSidebar(open: boolean): void {
+  try { localStorage.setItem(PROJECT_SIDEBAR_KEY, String(open)); } catch { /* Convenience preference. */ }
+}
 
 export type { CompanionTab } from "../lib/companionPreferences";
 export type ProjectMode = "terminals" | "preview";
-export type SettingsSectionId =
-  | "general"
-  | "ai"
-  | "notifications"
-  | "iphone"
-  | "shortcuts"
-  | "account"
-  | "advanced";
-
-/** A group inside a section that a deep link can open and scroll to. */
-export type SettingsPanelId =
-  | "appearance"
-  | "performance"
-  | "privacy"
-  | "identity"
-  | "membership"
-  | "credits"
-  | "security"
-  | "devices"
-  | "danger"
-  | "terminalAccounts"
-  | "integrations"
-  | "voice"
-  | "terminal"
-  | "files"
-  | "graphics"
-  | "runtimes";
-
 
 /** Routes a failure into the notification system as a sticky app error. */
 function reportProblem(message: string | null): void {
@@ -73,6 +55,7 @@ interface WorkspaceStore {
   paletteOpen: boolean;
   /** Saved chats from earlier runs, opened from the command palette. */
   historyOpen: boolean;
+  projectsSidebarOpen: boolean;
   companionOpen: boolean;
   companionTab: CompanionTab;
   companionWidth: number;
@@ -90,6 +73,7 @@ interface WorkspaceStore {
   closeAgentPicker: () => void;
   setPaletteOpen: (open: boolean) => void;
   setHistoryOpen: (open: boolean) => void;
+  setProjectsSidebarOpen: (open: boolean) => void;
   toggleCompanion: () => void;
   setCompanionTab: (tab: CompanionTab) => void;
   setCompanionWidth: (width: number) => void;
@@ -109,6 +93,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   agentPickerOpen: false,
   paletteOpen: false,
   historyOpen: false,
+  projectsSidebarOpen: restoreProjectsSidebar(),
   companionOpen: restoreCompanionOpen(),
   companionTab: restoreCompanionTab(),
   companionWidth: restoreCompanionWidth(),
@@ -150,6 +135,11 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   setPaletteOpen: (open) => set({ paletteOpen: open }),
 
   setHistoryOpen: (historyOpen) => set({ historyOpen }),
+
+  setProjectsSidebarOpen: (open) => {
+    saveProjectsSidebar(open);
+    set({ projectsSidebarOpen: open });
+  },
 
   toggleCompanion: () => set((state) => {
     saveCompanionOpen(!state.companionOpen);

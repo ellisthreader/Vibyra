@@ -12,6 +12,7 @@ class SchedulerTopologyTest extends TestCase
         $expected = [
             'vibyra:refresh-credits' => 120,
             'vibyra:sync-openrouter-pricing' => 55,
+            'vibyra:sync-openrouter-model-releases' => 4,
             'vibyra:recover-chat-cost-reservations' => 4,
             'maxmind:update' => 120,
             'vibyra:deploy-runtime-demos' => 30,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { View } from 'react-native';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

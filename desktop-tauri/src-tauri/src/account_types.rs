@@ -106,6 +106,22 @@ pub fn profile_from_user(user: &serde_json::Value) -> Option<AccountProfile> {
     })
 }
 
+/// Native-only Preview scope from a verified account response. An older API
+/// response without a stable user ID can still sign in, but cannot share a
+/// local site until the identity is known.
+pub fn verified_preview_account_id(user: &serde_json::Value) -> Option<String> {
+    let id = user.get("id")?;
+    let id = id
+        .as_str()
+        .map(str::to_owned)
+        .or_else(|| id.as_i64().map(|number| number.to_string()))
+        .or_else(|| id.as_u64().map(|number| number.to_string()))?;
+    if id.is_empty() || id.len() > 256 || id.chars().any(char::is_control) {
+        return None;
+    }
+    Some(format!("user:{id}"))
+}
+
 fn optional_text(user: &serde_json::Value, key: &str) -> Option<String> {
     user.get(key)
         .and_then(|v| v.as_str())
@@ -138,4 +154,24 @@ fn welcome_key(user: &serde_json::Value) -> String {
             (value ^ u64::from(byte)).wrapping_mul(0x100000001b3)
         });
     format!("vw_{hash:016x}")
+}
+
+#[cfg(test)]
+mod preview_account_tests {
+    use super::verified_preview_account_id;
+    use serde_json::json;
+
+    #[test]
+    fn preview_requires_a_stable_verified_user_id() {
+        assert_eq!(
+            verified_preview_account_id(&json!({"id":"alpha","email":"a@b.test"})).as_deref(),
+            Some("user:alpha")
+        );
+        assert_eq!(
+            verified_preview_account_id(&json!({"id":42})).as_deref(),
+            Some("user:42")
+        );
+        assert!(verified_preview_account_id(&json!({"email":"a@b.test"})).is_none());
+        assert!(verified_preview_account_id(&json!({"id":"bad\nidentity"})).is_none());
+    }
 }

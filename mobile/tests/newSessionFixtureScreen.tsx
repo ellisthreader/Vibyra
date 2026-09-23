@@ -1,4 +1,3 @@
-import React from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { palettes, ThemeContext } from '../src/theme';
@@ -30,7 +29,7 @@ const api = {
     input_per_million: 1, output_per_million: 2, reasoning: [] }))),
   createChat: async (id: string, title: string) => { calls.push(`createChat:${title}`);
     chats = [{ id, title, trial_slot: null, trial_used: 0 } as VibesChat, ...chats]; return chats; },
-  attach: async (chatId: string, hostId: string, projectId: string, binding: string) => { calls.push(`attach:${projectId}:${binding}`); },
+  attach: async (_chatId: string, _hostId: string, projectId: string, binding: string) => { calls.push(`attach:${projectId}:${binding}`); },
   turns: async () => [], turn: async () => { throw new Error('none'); }, cancel: async () => {},
 } as unknown as VibesApi;
 
@@ -39,7 +38,7 @@ export function NewSessionFixtureScreen({ dark = true, oldHost = false, offline 
 }) {
   const workspace: WorkspaceModel = { ...fixtureWorkspace, host: { id: 'demo-mac', name: 'Studio Mac', platform: 'macos' },
     projects: longNames ? projects.map(p => ({ ...p, name: 'A very long project name for a small iPhone' })) : projects,
-    sessions, status: offline ? 'disconnected' : 'connected', vibesToolsAvailable: !oldHost,
+    sessions, status: offline ? 'offline' : 'connected', vibesToolsAvailable: !oldHost,
     actions: { ...fixtureWorkspace.actions,
       createSession: async (projectId, kind, title) => {
         newSessionEvents.startCount++; newSessionEvents.started = [projectId, kind, title];

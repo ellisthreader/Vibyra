@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
@@ -32,38 +32,88 @@ export function OnboardingFlow({ workspace }: { workspace: WorkspaceModel }) {
   // the only thing that says so when one was already connected before this began.
   const [sheetConnected, setSheetConnected] = useState(false);
   const finished = useRef(false);
-  const complete = (chosen: OnboardingMode | null) => {
-    if (finished.current) return;
-    finished.current = true;
-    setConnect(false); void workspace.actions.completeOnboarding?.(chosen);
-  };
-  const paired = pairedHere({ connected: workspace.status === 'connected',
-    connectedAtStart: wasConnected.current, sheetConnected });
+  const complete = useCallback(
+    (chosen: OnboardingMode | null) => {
+      if (finished.current) return;
+      finished.current = true;
+      setConnect(false);
+      void workspace.actions.completeOnboarding?.(chosen);
+    },
+    [workspace.actions],
+  );
+  const paired = pairedHere({
+    connected: workspace.status === 'connected',
+    connectedAtStart: wasConnected.current,
+    sheetConnected,
+  });
   // Pairing during the flow (from the sheet or a vibyra://pair link) is the computer path, finished.
   useEffect(() => {
     if (!paired) return;
     const timer = setTimeout(() => complete('computer'), CONNECTED_BEAT);
     return () => clearTimeout(timer);
-  }, [paired]);
-  if (workspace.onboarding.status !== 'pending') return <SafeAreaView style={[s.splash, { backgroundColor: colors.background }]}>
-    <View accessibilityLiveRegion="polite" accessibilityLabel="Starting Vibyra"><BrandMark size={56} /></View>
-  </SafeAreaView>;
-  const account = (next: AccountMode, why?: string) => { setMode(next); setReason(why); setStep('account'); };
+  }, [paired, complete]);
+  if (workspace.onboarding.status !== 'pending')
+    return (
+      <SafeAreaView style={[s.splash, { backgroundColor: colors.background }]}>
+        <View accessibilityLiveRegion="polite" accessibilityLabel="Starting Vibyra">
+          <BrandMark size={56} />
+        </View>
+      </SafeAreaView>
+    );
+  const account = (next: AccountMode, why?: string) => {
+    setMode(next);
+    setReason(why);
+    setStep('account');
+  };
   // A wide browser shows the sheet as a centred card instead, with nothing to ease back from.
-  const recede = wide ? s.page : { flex: 1, transform: [{ scale: presented.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) }] };
-  return <View style={s.stack}>
-    <Animated.View style={recede}>
-      {step === 'welcome' && <WelcomeStep onStart={() => account('signup')} onLogIn={() => account('login')} />}
-      {step === 'account' && <AccountStep workspace={workspace} mode={mode} onMode={setMode} reason={reason}
-        onDone={() => reason ? complete('phone') : setStep('path')} onSkip={() => setStep('path')} onBack={() => setStep('welcome')} />}
-      {step === 'path' && <PathStep onConnect={() => setConnect(true)} onSkip={() => complete(null)} onBack={() => setStep('welcome')}
-        onPhone={() => workspace.account ? complete('phone') : account('signup', phoneReason)} />}
-    </Animated.View>
-    {/* Closing once connected goes straight on, rather than back to this page first. */}
-    <ConnectScreen visible={connect} workspace={workspace} presented={presented}
-      onConnected={() => setSheetConnected(true)}
-      onClose={() => paired ? complete('computer') : setConnect(false)} />
-  </View>;
+  const recede = wide
+    ? s.page
+    : {
+        flex: 1,
+        transform: [
+          { scale: presented.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) },
+        ],
+      };
+  return (
+    <View style={s.stack}>
+      <Animated.View style={recede}>
+        {step === 'welcome' && (
+          <WelcomeStep onStart={() => account('signup')} onLogIn={() => account('login')} />
+        )}
+        {step === 'account' && (
+          <AccountStep
+            workspace={workspace}
+            mode={mode}
+            onMode={setMode}
+            reason={reason}
+            onDone={() => (reason ? complete('phone') : setStep('path'))}
+            onSkip={() => setStep('path')}
+            onBack={() => setStep('welcome')}
+          />
+        )}
+        {step === 'path' && (
+          <PathStep
+            onConnect={() => setConnect(true)}
+            onSkip={() => complete(null)}
+            onBack={() => setStep('welcome')}
+            onPhone={() => (workspace.account ? complete('phone') : account('signup', phoneReason))}
+          />
+        )}
+      </Animated.View>
+      {/* Closing once connected goes straight on, rather than back to this page first. */}
+      <ConnectScreen
+        visible={connect}
+        workspace={workspace}
+        presented={presented}
+        onConnected={() => setSheetConnected(true)}
+        onClose={() => (paired ? complete('computer') : setConnect(false))}
+      />
+    </View>
+  );
 }
 // Black behind the page, as behind an iOS sheet's parent, so the edges it leaves while easing back read as depth.
-const s = StyleSheet.create({ splash: { flex: 1, alignItems: 'center', justifyContent: 'center' }, stack: { flex: 1, backgroundColor: '#000' }, page: { flex: 1 } });
+const s = StyleSheet.create({
+  splash: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  stack: { flex: 1, backgroundColor: '#000' },
+  page: { flex: 1 },
+});

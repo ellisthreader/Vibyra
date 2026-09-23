@@ -9,6 +9,25 @@ use Illuminate\Support\Str;
 
 class AgentTools
 {
+    public static function readNames(): array
+    {
+        return ['list_files', 'read_file', 'search_files', 'git_status', 'git_diff'];
+    }
+
+    public static function readDefinitions(): array
+    {
+        return [...array_values(array_filter(self::definitions(), fn ($tool) => in_array($tool['function']['name'], self::readNames(), true))),
+            ...self::gitDefinitions()];
+    }
+
+    public static function computerDefinitions(bool $canWrite): array
+    {
+        $reads = self::readDefinitions();
+        if (!$canWrite) return $reads;
+        return [...$reads, ...array_values(array_filter(self::definitions(),
+            fn ($tool) => $tool['function']['name'] === 'write_file'))];
+    }
+
     public static function definitions(): array
     {
         $string = ['type' => 'string'];
@@ -23,6 +42,17 @@ class AgentTools
             ['name' => 'search_files', 'description' => 'Search the authorized project for text, case-insensitively. Returns matching path, line number and a short excerpt per hit; bounded and possibly truncated.',
                 'parameters' => ['type' => 'object', 'properties' => ['query' => $string], 'required' => ['query'], 'additionalProperties' => false]],
         ]);
+    }
+
+    private static function gitDefinitions(): array
+    {
+        $tools = [
+            ['name' => 'git_status', 'description' => 'List changed files in the authorized project Git repository. Excludes private paths and caps the list.',
+                'parameters' => ['type' => 'object', 'properties' => (object) [], 'required' => [], 'additionalProperties' => false]],
+            ['name' => 'git_diff', 'description' => 'Read a bounded text diff for one changed file in the authorized project Git repository.',
+                'parameters' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string']], 'required' => ['path'], 'additionalProperties' => false]],
+        ];
+        return array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], $tools);
     }
 
     public function awaitTools(object $turn, array $message, int $micro): void
@@ -58,9 +88,18 @@ class AgentTools
                 // An integration call is answered by this server against the person's own
                 // connected account; a project call is answered by their phone.
                 $integration = app(ConnectorTools::class)->ownerOf($name);
+                $workspace = $request['vibyraAgent']['workspaceId'] ?? null;
+                if ($workspace !== null && $integration === null) {
+                    $canWrite = DB::table('agent_workspaces')->where('id', $workspace)
+                        ->where('user_id', $turn->user_id)->where('agent_id', $request['vibyraAgent']['id'] ?? '')
+                        ->whereNull('revoked_at')->value('can_write');
+                    abort_unless(in_array($name, self::readNames(), true)
+                        || ($name === 'write_file' && $canWrite), 422, 'This computer grant is read-only.');
+                }
                 $safe = $integration !== null ? app(ConnectorTools::class)->validate($integration, $name, $args) : $this->fileArguments($name, $args);
                 DB::table('vibes_tools')->insert(['id' => (string) Str::uuid(), 'turn_id' => $turn->id,
-                    'provider_id' => $call['id'], 'operation' => $name, 'integration' => $integration, 'arguments' => json_encode($safe),
+                    'provider_id' => $call['id'], 'operation' => $name, 'integration' => $integration,
+                    'agent_workspace_id' => $integration === null ? $workspace : null, 'arguments' => json_encode($safe),
                     'created_at' => now(), 'updated_at' => now()]);
             }
             DB::table('vibes_turns')->where('id', $turn->id)->update(['status' => 'waiting',
@@ -72,7 +111,11 @@ class AgentTools
     /** The project tools' own argument check, unchanged and still the only file path gate. */
     private function fileArguments(string $name, array $args): array
     {
-        abort_unless(in_array($name, ['list_files', 'read_file', 'write_file', 'search_files'], true), 422, 'Unsupported AI tool.');
+        abort_unless(in_array($name, ['list_files', 'read_file', 'write_file', 'search_files', 'git_status', 'git_diff'], true), 422, 'Unsupported AI tool.');
+        if ($name === 'git_status') {
+            abort_unless($args === [], 422, 'Git status takes no arguments.');
+            return [];
+        }
         if ($name === 'search_files') {
             abort_unless(is_string($args['query'] ?? null) && trim($args['query']) !== '' && strlen($args['query']) <= 200,
                 422, 'Say what to search the project for, in 200 characters or fewer.');
@@ -96,7 +139,7 @@ class AgentTools
                 return null;
             }
             abort_unless($turn->status === 'waiting' && !$turn->settled_at && !$turn->cancel_requested, 409, 'This tool request is no longer active.');
-            abort_if(now()->greaterThanOrEqualTo(\Illuminate\Support\Carbon::parse($tool->created_at)->addMinutes(15)), 409, 'This tool request expired.');
+            abort_if(now()->greaterThanOrEqualTo(self::expires($tool)), 409, 'This tool request expired.');
             DB::table('vibes_tools')->where('id', $id)->update(['decision' => $decision, 'result' => $encoded, 'updated_at' => now()]);
             $all = DB::table('vibes_tools')->where('turn_id', $turn->id)->get();
             if ($all->contains(fn ($t) => $t->result === null)) return null;
@@ -109,6 +152,7 @@ class AgentTools
             }
             DB::table('vibes_turns')->where('id', $turn->id)->update(['request' => json_encode($request),
                 'status' => 'queued', 'updated_at' => now()]);
+            app(\App\Services\Progress\WorkEvents::class)->observe($turn->id);
             return $turn->id;
         });
         if ($turnId) RunVibesTurn::dispatch($turnId);
@@ -120,13 +164,22 @@ class AgentTools
         // here, so the phone is sent the one line it renders and nothing more.
         return DB::table('vibes_tools')->where('turn_id', $turnId)->orderBy('created_at')->get()->map(fn ($t) => $t->integration ? [
             'id' => $t->id, 'operation' => $t->operation, 'integration' => $t->integration, 'summary' => $t->summary,
-            'decision' => $t->decision, 'expiresAt' => \Illuminate\Support\Carbon::parse($t->created_at)->addMinutes(15)->timestamp,
+            'decision' => $t->decision, 'expiresAt' => self::expires($t)->timestamp,
             'approval' => $t->action_state ? ['state' => $t->action_state, 'fingerprint' => $t->action_hash,
                 'arguments' => json_decode($t->arguments, true), 'answer' => $t->action_answer] : null,
         ] : [
             'id' => $t->id, 'operation' => $t->operation, 'arguments' => json_decode($t->arguments, true),
             'decision' => $t->decision, 'result' => $t->result ? json_decode($t->result, true) : null,
-            'expiresAt' => \Illuminate\Support\Carbon::parse($t->created_at)->addMinutes(15)->timestamp,
+            'approval' => $t->action_state ? ['state' => $t->action_state, 'fingerprint' => $t->action_hash,
+                'arguments' => json_decode($t->arguments, true), 'answer' => $t->action_answer] : null,
+            'expiresAt' => self::expires($t)->timestamp,
         ])->all();
+    }
+
+    public static function expires(object $tool): \Illuminate\Support\Carbon
+    {
+        $seconds = $tool->agent_workspace_id && $tool->operation !== 'write_file'
+            ? \App\Services\Agents\Workspaces::WAIT_SECONDS : 900;
+        return \Illuminate\Support\Carbon::parse($tool->created_at)->addSeconds($seconds);
     }
 }

@@ -11,10 +11,16 @@ export function useReducedMotion() {
   const [reduced, setReduced] = useState(known ?? true);
   useEffect(() => {
     let active = true;
-    const set = (value: boolean) => { known = value; if (active) setReduced(value); };
+    const set = (value: boolean) => {
+      known = value;
+      if (active) setReduced(value);
+    };
     void AccessibilityInfo.isReduceMotionEnabled().then(set);
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', set);
-    return () => { active = false; subscription.remove(); };
+    return () => {
+      active = false;
+      subscription.remove();
+    };
   }, []);
   return reduced;
 }

@@ -1,14 +1,17 @@
 import type { TermEvent } from "../types";
+import { emptyBacklog, queueEvent, type Backlog } from "./terminalBacklog.ts";
 
 // Routes per-session IPC events to whichever terminal instance is currently
 // mounted. Events that arrive while no handler is attached (pane not mounted
-// yet, or being remounted) are queued and replayed on attach, so no output
-// is ever dropped on the frontend side.
+// yet, or being remounted) are queued and replayed on attach. Nothing is
+// dropped that the view would still show: `terminalBacklog.ts` only discards
+// output a resync is about to replace, and collapses a backlog too large to
+// replay into the resync Rust itself would send.
 
 type Handler = (event: TermEvent) => void;
 
 const handlers = new Map<number, Handler>();
-const queues = new Map<number, TermEvent[]>();
+const queues = new Map<number, Backlog>();
 const exits = new Map<number, number | null>();
 let onExit: (id: number, code: number | null) => void = () => {};
 
@@ -25,9 +28,7 @@ export function dispatch(id: number, event: TermEvent): void {
     handler(event);
     return;
   }
-  const queue = queues.get(id) ?? [];
-  queue.push(event);
-  queues.set(id, queue);
+  queues.set(id, queueEvent(queues.get(id) ?? emptyBacklog(), event));
 }
 
 export function attach(id: number, handler: Handler): void {
@@ -35,7 +36,7 @@ export function attach(id: number, handler: Handler): void {
   const queue = queues.get(id);
   if (queue) {
     queues.delete(id);
-    for (const event of queue) {
+    for (const event of queue.events) {
       handler(event);
     }
   }

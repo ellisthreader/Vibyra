@@ -25,6 +25,8 @@ pub struct SharedChats {
     error: Option<String>,
     local_action: Mutex<()>,
     cli: cli::CliTerminals,
+    /// Wakes `subscribe` threads when a project is added.
+    wake: stream::Wake,
 }
 
 impl SharedChats {
@@ -40,6 +42,7 @@ impl SharedChats {
             error,
             local_action: Mutex::new(()),
             cli: cli::CliTerminals::default(),
+            wake: stream::Wake::default(),
         })
     }
     fn check(&self) -> Result<(), String> {
@@ -105,6 +108,7 @@ impl SharedChats {
                     project,
                     engine: engine.clone(),
                 });
+                self.wake.slots_changed();
                 engine
             }
         };

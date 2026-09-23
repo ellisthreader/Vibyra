@@ -73,7 +73,7 @@ function exactMatch(history: NotificationItem[], input: NotificationInput, now: 
  * them collapse replaces the one that says what to do next with a count, and —
  * because a collapse counts as a repeat — suppresses its notification too.
  */
-const NEVER_BURST = new Set<NotificationCategory>(["appUpdate", "system"]);
+const NEVER_BURST = new Set<NotificationCategory>(["appUpdate", "models", "system"]);
 
 /** Level 2: the newest item shares this category and arrived a blink ago. */
 function burstMatch(history: NotificationItem[], input: NotificationInput, now: number) {

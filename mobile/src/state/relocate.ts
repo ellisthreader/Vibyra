@@ -23,12 +23,18 @@ export type Reached<T> = { connected: T } | { moved: Pairing };
  * just the next place to look — and only for a computer the account says is
  * online, so an attempt held for approval is never doubled by a cloud one.
  */
-export async function reach<T>(store: WorkspaceStore, pairing: Pairing, attempt: Promise<T>): Promise<Reached<T>> {
+export async function reach<T>(
+  store: WorkspaceStore,
+  pairing: Pairing,
+  attempt: Promise<T>,
+): Promise<Reached<T>> {
   const elsewhere = lookElsewhere(store, pairing, attempt);
   const connected = attempt.then((value): Reached<T> => ({ connected: value }));
   try {
-    return await Promise.race([connected,
-      elsewhere.then((moved): Reached<T> | Promise<Reached<T>> => moved ? { moved } : connected)]);
+    return await Promise.race([
+      connected,
+      elsewhere.then((moved): Reached<T> | Promise<Reached<T>> => (moved ? { moved } : connected)),
+    ]);
   } catch (error) {
     const moved = (await elsewhere) ?? (await viaCloud(store, pairing));
     if (moved) return { moved };
@@ -39,14 +45,22 @@ export async function reach<T>(store: WorkspaceStore, pairing: Pairing, attempt:
 /** Starts looking once the saved address has failed, or has not answered
  *  within the grace period. An attempt that succeeds first needs no search. */
 function lookElsewhere(store: WorkspaceStore, pairing: Pairing, attempt: Promise<unknown>) {
-  return new Promise<Pairing | undefined>(resolve => {
+  return new Promise<Pairing | undefined>((resolve) => {
     let begun = false;
     const look = () => {
       if (begun) return;
-      begun = true; clearTimeout(timer); void relocate(store, pairing).then(resolve);
+      begun = true;
+      clearTimeout(timer);
+      void relocate(store, pairing).then(resolve);
     };
     const timer = setTimeout(look, GRACE);
-    attempt.then(() => { if (!begun) { begun = true; clearTimeout(timer); resolve(undefined); } }, look);
+    attempt.then(() => {
+      if (!begun) {
+        begun = true;
+        clearTimeout(timer);
+        resolve(undefined);
+      }
+    }, look);
   });
 }
 
@@ -59,5 +73,7 @@ async function relocate(store: WorkspaceStore, pairing: Pairing): Promise<Pairin
   try {
     const moved = movedPairing(pairing, computer);
     return moved.url === pairing.url ? undefined : moved;
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }

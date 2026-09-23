@@ -11,21 +11,36 @@ import { PROFILE_MAX } from '../../vibes/preferencesApi';
 export function SummaryPreview({ summary, onOpen }: { summary: string; onOpen: () => void }) {
   const { colors } = useTheme();
   const empty = !summary.trim();
-  return <Pressable accessibilityRole="button" accessibilityLabel={empty ? 'Write your memory summary' : 'Edit memory summary'}
-    accessibilityHint={empty ? undefined : `${summary.length.toLocaleString('en-GB')} characters`} onPress={onOpen}
-    style={({ pressed }) => [s.body, { opacity: pressed ? 0.6 : 1 }]}>
-    <Text numberOfLines={4} style={[s.text, { color: empty ? colors.muted : colors.text }]}>
-      {empty ? 'Everything Vibyra should know about you, in your own words.' : summary.trim()}</Text>
-    <View style={s.foot}>
-      <Text style={[s.meta, { color: empty ? colors.accent : colors.muted }]}>
-        {empty ? 'Write your summary' : `${summary.length.toLocaleString('en-GB')} / ${PROFILE_MAX.summary.toLocaleString('en-GB')}`}</Text>
-      <Icon name="chevron-forward" size={15} color={colors.muted} />
-    </View>
-  </Pressable>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={empty ? 'Write your memory summary' : 'Edit memory summary'}
+      accessibilityHint={empty ? undefined : `${summary.length.toLocaleString('en-GB')} characters`}
+      onPress={onOpen}
+      style={({ pressed }) => [s.body, { opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Text numberOfLines={4} style={[s.text, { color: empty ? colors.muted : colors.text }]}>
+        {empty ? 'Everything Vibyra should know about you, in your own words.' : summary.trim()}
+      </Text>
+      <View style={s.foot}>
+        <Text style={[s.meta, { color: empty ? colors.accent : colors.muted }]}>
+          {empty
+            ? 'Write your summary'
+            : `${summary.length.toLocaleString('en-GB')} / ${PROFILE_MAX.summary.toLocaleString('en-GB')}`}
+        </Text>
+        <Icon name="chevron-forward" size={15} color={colors.muted} />
+      </View>
+    </Pressable>
+  );
 }
 const s = StyleSheet.create({
   body: { gap: 8, paddingTop: 2 },
   text: { fontSize: 15.5, lineHeight: 22 },
-  foot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 20 },
+  foot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 20,
+  },
   meta: { fontSize: 13, fontVariant: ['tabular-nums'] },
 });

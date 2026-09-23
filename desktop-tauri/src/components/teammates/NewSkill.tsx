@@ -1,3 +1,4 @@
+import { computerName } from "../../lib/platform";
 import { useEffect, useRef, useState } from 'react';
 import { message, teammateApi } from './api';
 export interface ProfileSkill { id: string; revision: number; name: string; instructions: string; teammateIds: string[] }
@@ -8,7 +9,7 @@ export function NewSkill({ storage, disabled, onSaved, onEditing }: { storage: s
   const [busy, setBusy] = useState(false), [error, setError] = useState(''); const lock = useRef(false);
   useEffect(() => { onEditing(Boolean(state.draft) || state.pending); }, [state.draft, state.pending, onEditing]);
   const persist = (next: typeof state) => { localStorage.setItem(key, JSON.stringify(next)); setState(next); };
-  const change = (patch: Partial<ProfileSkill>) => { if (!state.draft || state.pending || busy) return; try { persist({ ...state, draft: { ...state.draft, ...patch } }); } catch { setError('Could not save this skill draft on this Mac.'); } };
+  const change = (patch: Partial<ProfileSkill>) => { if (!state.draft || state.pending || busy) return; try { persist({ ...state, draft: { ...state.draft, ...patch } }); } catch { setError(`Could not save this skill draft on this ${computerName}.`); } };
   const save = async () => {
     if (lock.current || !state.draft || disabled) return; lock.current = true; setBusy(true); setError('');
     try {
@@ -25,6 +26,6 @@ export function NewSkill({ storage, disabled, onSaved, onEditing }: { storage: s
     <label>Instructions<textarea aria-label="Skill instructions" maxLength={4000} value={state.draft.instructions} disabled={disabled || busy || state.pending} placeholder="When to use this skill, the steps to follow, and the result to produce…" onChange={e => change({ instructions: e.target.value })} /></label>
     <p className="profile-help">Saved to your library and selected here. Save the teammate to apply it.</p>
     {error && <p role="alert">{error}</p>}<div className="skill-actions"><button type="button" className="primary" disabled={disabled || busy || !state.draft.name.trim() || !state.draft.instructions.trim()} onClick={() => void save()}>{busy ? 'Saving…' : state.pending ? 'Retry skill save' : 'Save skill'}</button>
-      {!state.pending && <button type="button" className="profile-secondary" disabled={busy} onClick={() => { try { localStorage.removeItem(key); setState({ draft: null, pending: false }); } catch { setError('Could not clear this skill draft on this Mac.'); } }}>Cancel skill</button>}</div>
+      {!state.pending && <button type="button" className="profile-secondary" disabled={busy} onClick={() => { try { localStorage.removeItem(key); setState({ draft: null, pending: false }); } catch { setError(`Could not clear this skill draft on this ${computerName}.`); } }}>Cancel skill</button>}</div>
   </div>;
 }

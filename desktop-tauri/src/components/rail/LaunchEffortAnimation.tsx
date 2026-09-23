@@ -20,7 +20,10 @@ export function LaunchEffortAnimation({ provider, effort }: { provider?: string;
     if (codex) previous.current = style;
     node.dataset.effect = ripple ? 'violet-ripple' : rainbow ? 'rainbow-label' : style;
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
-    let frame = 0, elapsed = 0, last = 0, painted = -Infinity, finished = false;
+    // Ripple and rainbow never finish, so they rest while the row is off screen
+    // (a closed or scrolled-away launch card) and sleep between their paints.
+    const continuous = ripple || rainbow;
+    let frame = 0, wait = 0, elapsed = 0, last = 0, painted = -Infinity, finished = false, onScreen = true;
     let width = 0, height = 0;
     let textCells: { element: HTMLElement; x: number; y: number }[] = [];
     const resize = () => {
@@ -34,6 +37,8 @@ export function LaunchEffortAnimation({ provider, effort }: { provider?: string;
         return { element, x: (box.left + box.width / 2 - bounds.left) / 8, y: (box.top + box.height / 2 - bounds.top) / 16 };
       });
       painted = -Infinity;
+      // Resizing cleared the canvas: repaint on the next frame, not the next wake.
+      if (wait) { clearTimeout(wait); wait = 0; frame = requestAnimationFrame(tick); }
     };
     const draw = () => {
       context.clearRect(0, 0, width, height);
@@ -62,7 +67,7 @@ export function LaunchEffortAnimation({ provider, effort }: { provider?: string;
       }
       node.dataset.frame = String(Math.floor(elapsed));
     };
-    const stopped = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.performance === 'best' || document.hidden;
+    const stopped = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.performance === 'best' || document.hidden || (continuous && !onScreen);
     const tick = (now: number) => {
       frame = 0;
       if (stopped()) { sync(); return; }
@@ -71,19 +76,22 @@ export function LaunchEffortAnimation({ provider, effort }: { provider?: string;
       last = now;
       const interval = ripple ? 80 : rainbow ? 100 : 33;
       if (elapsed - painted >= interval) { draw(); painted = elapsed; }
-      if (!finished) frame = requestAnimationFrame(tick);
+      if (finished) return;
+      if (continuous) wait = window.setTimeout(() => { wait = 0; frame = requestAnimationFrame(tick); }, interval - (elapsed - painted));
+      else frame = requestAnimationFrame(tick);
     };
     const sync = () => {
-      cancelAnimationFrame(frame); frame = 0; last = 0;
+      cancelAnimationFrame(frame); frame = 0; clearTimeout(wait); wait = 0; last = 0;
       row.dataset.motion = stopped() ? 'still' : 'live';
       if (!stopped() && !finished) frame = requestAnimationFrame(tick);
       else { context.clearRect(0,0,width,height); for (const { element } of textCells) element.style.color = ''; }
     };
     resize(); sync();
     const observer = new ResizeObserver(() => { resize(); }); observer.observe(row);
+    const sight = new IntersectionObserver(([entry]) => { if (onScreen !== entry.isIntersecting) { onScreen = entry.isIntersecting; sync(); } }); sight.observe(row);
     const preferences = new MutationObserver(sync); preferences.observe(document.documentElement, { attributes: true, attributeFilter: ['data-performance', 'data-theme'] });
     motion.addEventListener('change', sync); document.addEventListener('visibilitychange', sync);
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); preferences.disconnect(); motion.removeEventListener('change', sync); document.removeEventListener('visibilitychange', sync); delete row.dataset.motion; for (const { element } of textCells) element.style.color = ''; };
+    return () => { cancelAnimationFrame(frame); clearTimeout(wait); observer.disconnect(); sight.disconnect(); preferences.disconnect(); motion.removeEventListener('change', sync); document.removeEventListener('visibilitychange', sync); delete row.dataset.motion; for (const { element } of textCells) element.style.color = ''; };
   }, [provider, effort]);
   return <canvas ref={canvas} className="launch-effort-animation" aria-hidden="true" />;
 }

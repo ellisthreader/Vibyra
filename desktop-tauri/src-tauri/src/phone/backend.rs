@@ -8,6 +8,13 @@ use super::workspace::{SharedWorkspace, UNFILED};
 use serde_json::{json, Value};
 use std::sync::{atomic::AtomicBool, Arc};
 use vibyra_core::pty::PtyManager;
+use vibyra_host::PreviewHandler;
+
+pub(crate) trait PreviewControl: PreviewHandler {
+    fn list(&self, device: &str) -> Value;
+    fn start(&self, device: &str, grant_id: &str) -> Result<Value, String>;
+    fn open(&self, device: &str, grant_id: &str) -> Result<Value, String>;
+}
 
 pub struct DesktopBackend {
     pub(super) manager: Arc<PtyManager>,
@@ -21,16 +28,29 @@ pub struct DesktopBackend {
     pub(super) requests: Arc<TerminalRequests>,
     pub(super) scaffolds: SharedScaffolds,
     scaffolder: Scaffolder,
+    pub(super) preview: Option<Arc<dyn PreviewControl>>,
 }
 impl DesktopBackend {
     /// `typing` is the Mac's switch for letting phones type; it is read on
     /// every claim and keystroke, so flipping it takes effect at once.
+    #[allow(dead_code)] // Existing tests and standalone diagnostic examples use this constructor.
     pub fn new(
         manager: Arc<PtyManager>,
         workspace: SharedWorkspace,
         typing: Arc<AtomicBool>,
         vault: Arc<Vault>,
         requests: Arc<TerminalRequests>,
+    ) -> Result<Self, String> {
+        Self::new_with_preview(manager, workspace, typing, vault, requests, None)
+    }
+
+    pub fn new_with_preview(
+        manager: Arc<PtyManager>,
+        workspace: SharedWorkspace,
+        typing: Arc<AtomicBool>,
+        vault: Arc<Vault>,
+        requests: Arc<TerminalRequests>,
+        preview: Option<Arc<dyn PreviewControl>>,
     ) -> Result<Self, String> {
         let mut bytes = [0u8; 16];
         getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
@@ -51,6 +71,7 @@ impl DesktopBackend {
             requests,
             scaffolds,
             scaffolder,
+            preview,
         })
     }
     pub(super) fn id(&self, id: u64) -> String {

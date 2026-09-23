@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { registerRootComponent } from 'expo';
 import { randomUUID } from 'expo-crypto';
 import { Text, View } from 'react-native';
@@ -21,7 +21,7 @@ function LiveFixture() {
       delete: async (key: string) => { values.delete(key); } };
     return new WorkspaceStore({ rpc: new RpcClient(message => bridge.current?.post(message), randomUUID),
       uuid: randomUUID, iosConversations: true, storage: memory, flags: memory,
-      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount } });
+      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount, sendHostLink: disabledAccount } });
   });
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const started = useRef(false);
@@ -68,7 +68,7 @@ function LiveFixture() {
       }} />
       <View style={{ padding: 20 }}><Text style={{ color: palettes.dark.text, fontSize: 18 }}>Native live verification</Text>
         <Text style={{ color: palettes.dark.muted, fontSize: 12 }}>Isolated test computer · {state.status}</Text></View>
-      {session ? <ConversationSessionScreen session={session} workspace={{ ...state, actions: store.actions }} />
+      {session ? <ConversationSessionScreen session={session} workspace={{ ...state, actions: store.actions }} options={false} onCloseOptions={() => {}} />
         : <Text style={{ color: palettes.dark.text, margin: 20 }}>{state.error ?? 'Connecting the secure native runtime…'}</Text>}
     </ThemeContext.Provider>
   </SafeAreaView></SafeAreaProvider>;

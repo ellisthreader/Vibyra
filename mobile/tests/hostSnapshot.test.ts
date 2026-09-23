@@ -6,14 +6,13 @@ test('session history spans frames without hiding or duplicating existing sessio
   const h = runtimeHarness();
   // The authenticated transport shape is exercised by conversation integration;
   // this helper's boundary is the paging protocol and connection epoch.
-  const original = h.store.deps.rpc.request.bind(h.store.deps.rpc);
   h.store.deps.rpc.request = (async (method: string) => method === 'host.state'
     ? { ...hostState, sessions: [hostState.sessions[0]], nextCursor: 'one' }
-    : { sessions: hostState.sessions, nextCursor: null }) as typeof original;
+    : { sessions: hostState.sessions, nextCursor: null }) as typeof h.store.deps.rpc.request;
   const result = await hostSnapshot(h.store, h.store.epoch);
   assert.deepEqual(result.sessions.map(s => s.id), ['one', 'two']);
   assert.equal(result.nextCursor, null);
-  h.store.deps.rpc.request = (async () => ({ ...hostState, nextCursor: 'repeat' })) as typeof original;
+  h.store.deps.rpc.request = (async () => ({ ...hostState, nextCursor: 'repeat' })) as typeof h.store.deps.rpc.request;
   await assert.rejects(() => hostSnapshot(h.store, h.store.epoch), /too much session history/);
   h.store.dispose();
 });

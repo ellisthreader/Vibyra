@@ -76,6 +76,8 @@ class Turns
             }
             DB::table('vibes_chats')->where('id', $chat->id)->increment('revision');
             $this->wallet->record($userId, 'hold:'.$id, 'hold', -$q['max']);
+            app(\App\Services\Progress\WorkEvents::class)->observe($id);
+            app(\App\Services\Decisions\ShadowRouting::class)->submitted($userId, $q);
             return DB::table('vibes_turns')->where('id', $id)->first();
         }, 5);
     }
@@ -87,10 +89,10 @@ class Turns
      * lets the trial-slot restore below fire, so a failed first reply cannot quietly
      * consume one of the account's lifetime trial chats.
      */
-    public function settle(string $id, ?int $micro, ?string $response, ?string $error = null, bool $uncertain = false, bool $absorb = false): void
+    public function settle(string $id, ?int $micro, ?string $response, ?string $error = null, bool $uncertain = false, bool $absorb = false, ?string $finishReason = null): void
     {
         $original = DB::table('vibes_turns')->where('id', $id)->firstOrFail();
-        DB::transaction(function () use ($original, $micro, $response, $error, $uncertain, $absorb) {
+        DB::transaction(function () use ($original, $micro, $response, $error, $uncertain, $absorb, $finishReason) {
             $this->wallet->lock($original->user_id);
             $t = DB::table('vibes_turns')->where('id', $original->id)->firstOrFail();
             if ($t->settled_at) return;
@@ -109,9 +111,11 @@ class Turns
             }
             DB::table('vibes_turns')->where('id', $t->id)->update([
                 'status' => $t->cancel_requested ? 'cancelled' : ($error ? 'failed' : 'completed'),
+                'finish_reason' => $t->cancel_requested ? 'cancelled' : ($finishReason ?? ($error ? 'provider_error' : 'response_ready')),
                 'response' => $response, 'error' => $error, 'charged' => $charge,
                 'actual_micro_usd' => $micro ?? 0, 'settled_at' => now(), 'updated_at' => now(),
             ]);
+            app(\App\Services\Progress\WorkEvents::class)->observe($t->id);
             $day = substr($t->created_at, 0, 10);
             DB::table('vibes_spend_days')->where('day', $day)->decrement('held', $t->reserved * 10000);
             $risk = $uncertain ? max($micro ?? 0, $t->reserved * 10000) : ($micro ?? $t->reserved * 10000);
@@ -125,6 +129,8 @@ class Turns
     public function payload(object $t): array
     {
         return ['id' => $t->id, 'chatId' => $t->chat_id, 'model' => $t->model, 'status' => $t->status,
+            'finishReason' => $t->finish_reason ?? null,
+            'progress' => app(\App\Services\Progress\WorkEvents::class)->payload((int) $t->user_id, $t->id),
             'prompt' => $t->prompt, 'response' => $t->response, 'error' => $t->error,
             'tools' => app(AgentTools::class)->payload($t->id),
             'attachments' => DB::table('vibes_attachments')->where('turn_id', $t->id)->orderBy('created_at')->get()

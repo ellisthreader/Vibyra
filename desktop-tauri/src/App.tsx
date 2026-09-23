@@ -1,9 +1,15 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 
 import { AuthScreen } from "./components/auth/AuthScreen";
-import { WorkspaceApp } from "./components/layout/WorkspaceApp";
 import { onAccountChanged } from "./ipc/account";
 import { useAccountStore } from "./state/accountStore";
+
+// Loaded once the account gate passes, so the sign-in screen never parses the
+// workspace (terminals, panels, every store) it cannot show yet.
+const WorkspaceApp = lazy(() => import("./components/layout/WorkspaceApp")
+  .then((module) => ({ default: module.WorkspaceApp })));
+/** A return from the background raises both `focus` and `visibilitychange`. */
+const PROFILE_REFRESH_GAP_MS = 5_000;
 
 /** Session restoration is the first startup checkpoint: the workspace only
  * mounts once the account gate reports a verified sign-in. */
@@ -27,7 +33,12 @@ export default function App() {
   // A subscription bought on the phone is authoritative on the next account refresh.
   useEffect(() => {
     if (status !== "signedIn") return;
-    const refresh = () => { if (!document.hidden) void useAccountStore.getState().refreshProfile(); };
+    let last = 0;
+    const refresh = () => {
+      if (document.hidden || Date.now() - last < PROFILE_REFRESH_GAP_MS) return;
+      last = Date.now();
+      void useAccountStore.getState().refreshProfile();
+    };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
     const timer = window.setInterval(refresh, 60_000);
@@ -52,5 +63,9 @@ export default function App() {
   if (status !== "signedIn") {
     return <AuthScreen />;
   }
-  return <WorkspaceApp />;
+  return (
+    <Suspense fallback={<div className="boot">Starting Vibyra…</div>}>
+      <WorkspaceApp />
+    </Suspense>
+  );
 }

@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
-import { capture, fullyVisible, until } from './ui-test-helpers.mjs';
+import { capture } from './ui-test-helpers.mjs';
 import { check } from './verify-discovery-states.mjs';
 
 const root = new URL('..', import.meta.url);

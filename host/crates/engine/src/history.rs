@@ -16,7 +16,9 @@ impl State {
             .values()
             .map(|session| &session.meta)
             .collect();
-        sessions.sort_by(|a, b| {
+        // Ids are unique, so the order is total and an unstable sort gives
+        // exactly the stable one's result, without its allocation.
+        sessions.sort_unstable_by(|a, b| {
             (b.status == "running")
                 .cmp(&(a.status == "running"))
                 .then_with(|| b.created_at.cmp(&a.created_at))

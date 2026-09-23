@@ -25,7 +25,7 @@ pub async fn teammate_upload(
         .file_name(name)
         .mime_str(&mime)
         .map_err(|_| "Unsupported file type.")?;
-    let response = reqwest::Client::new()
+    let response = crate::http_client::shared()
         .post(format!("{}/api/vibes/attachments", account_api::base_url()))
         .bearer_auth(&token)
         .header("Accept", "application/json")

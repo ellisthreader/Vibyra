@@ -11,7 +11,10 @@ export function activeLabel(iso: string | null, now = Date.now()): string | null
   const ago = Math.max(0, now - time);
   if (ago < 5 * minute) return 'Active now';
   if (ago < hour) return `Active ${Math.round(ago / minute)} minutes ago`;
-  if (ago < day) { const hours = Math.round(ago / hour); return `Active ${hours} hour${hours === 1 ? '' : 's'} ago`; }
+  if (ago < day) {
+    const hours = Math.round(ago / hour);
+    return `Active ${hours} hour${hours === 1 ? '' : 's'} ago`;
+  }
   if (ago < 2 * day) return 'Active yesterday';
   if (ago < 7 * day) return `Active ${Math.floor(ago / day)} days ago`;
   const date = new Date(time);

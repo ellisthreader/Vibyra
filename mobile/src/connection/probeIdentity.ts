@@ -10,8 +10,11 @@ const TIMEOUT = 1200;
  *  A reply only counts when it is the presence document such a Host serves,
  *  carrying an identity the transport can pin. Anything else — a 404 from a
  *  private Host, some other service, a timeout — is simply not a computer. */
-export async function probeIdentity(host: string, port: number,
-  signal: AbortSignal): Promise<NearbyComputer | undefined> {
+export async function probeIdentity(
+  host: string,
+  port: number,
+  signal: AbortSignal,
+): Promise<NearbyComputer | undefined> {
   if (signal.aborted) return undefined;
   const timer = new AbortController();
   const deadline = setTimeout(() => timer.abort(), TIMEOUT);
@@ -19,21 +22,39 @@ export async function probeIdentity(host: string, port: number,
   signal.addEventListener('abort', cancel);
   try {
     const address = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
-    const response = await fetch(`http://${address}:${port}/identity`,
-      { signal: timer.signal, redirect: 'error', headers: { accept: 'application/json' } });
+    const response = await fetch(`http://${address}:${port}/identity`, {
+      signal: timer.signal,
+      redirect: 'error',
+      headers: { accept: 'application/json' },
+    });
     if (!response.ok) return undefined;
-    const value = await response.json() as { version?: number; id?: unknown; name?: unknown; platform?: unknown };
+    const value = (await response.json()) as {
+      version?: number;
+      id?: unknown;
+      name?: unknown;
+      platform?: unknown;
+    };
     if (value.version !== 1 || typeof value.id !== 'string' || !/^[a-f0-9]{64}$/.test(value.id)) {
       return undefined;
     }
     // Keyed by identity, not by address: one computer is one computer however
     // many of its addresses or ports answer. An unnamed Host is "Computer",
     // never its address — nobody recognises their Mac by an IP.
-    const named = typeof value.name === 'string' && value.name.trim() ? value.name.trim() : undefined;
+    const named =
+      typeof value.name === 'string' && value.name.trim() ? value.name.trim() : undefined;
     // The OS family only picks the logo the found computer is drawn with.
-    const platform = typeof value.platform === 'string' && /^[a-z]{1,16}$/.test(value.platform) ? value.platform : undefined;
-    const computer: NearbyComputer = { id: value.id, name: named ? named.slice(0, 128) : 'Computer',
-      hostId: value.id, host: address, port, ...(platform ? { platform } : {}) };
+    const platform =
+      typeof value.platform === 'string' && /^[a-z]{1,16}$/.test(value.platform)
+        ? value.platform
+        : undefined;
+    const computer: NearbyComputer = {
+      id: value.id,
+      name: named ? named.slice(0, 128) : 'Computer',
+      hostId: value.id,
+      host: address,
+      port,
+      ...(platform ? { platform } : {}),
+    };
     return !signal.aborted && isConnectable(computer) ? computer : undefined;
   } catch {
     return undefined;

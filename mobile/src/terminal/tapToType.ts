@@ -25,36 +25,62 @@ export class TapToType {
   private lastTap = 0;
   private draggedAt = 0;
 
-  constructor(element: HTMLElement, onTap: () => void, onDoubleTap?: (at: { x: number; y: number }) => void) {
-    element.addEventListener('touchstart', event => {
-      const touch = event.touches[0];
-      const quiet = Date.now() - this.draggedAt > SETTLE && !document.getSelection()?.toString();
-      this.start = event.touches.length === 1 && quiet ? { x: touch.clientX, y: touch.clientY, at: Date.now() } : null;
-    }, { passive: true, capture: true });
-    element.addEventListener('touchmove', event => {
-      const touch = event.touches[0];
-      const origin = this.start;
-      if (origin && event.touches.length === 1 && Math.hypot(touch.clientX - origin.x, touch.clientY - origin.y) <= SLOP) return;
+  constructor(
+    element: HTMLElement,
+    onTap: () => void,
+    onDoubleTap?: (at: { x: number; y: number }) => void,
+  ) {
+    element.addEventListener(
+      'touchstart',
+      (event) => {
+        const touch = event.touches[0];
+        const quiet = Date.now() - this.draggedAt > SETTLE && !document.getSelection()?.toString();
+        this.start =
+          event.touches.length === 1 && quiet
+            ? { x: touch.clientX, y: touch.clientY, at: Date.now() }
+            : null;
+      },
+      { passive: true, capture: true },
+    );
+    element.addEventListener(
+      'touchmove',
+      (event) => {
+        const touch = event.touches[0];
+        const origin = this.start;
+        if (
+          origin &&
+          event.touches.length === 1 &&
+          Math.hypot(touch.clientX - origin.x, touch.clientY - origin.y) <= SLOP
+        )
+          return;
+        this.start = null;
+        this.draggedAt = Date.now();
+      },
+      { passive: true, capture: true },
+    );
+    element.addEventListener('touchcancel', () => {
       this.start = null;
-      this.draggedAt = Date.now();
-    }, { passive: true, capture: true });
-    element.addEventListener('touchcancel', () => { this.start = null; });
-    element.addEventListener('touchend', event => {
-      const start = this.start;
-      this.start = null;
-      if (!start || event.touches.length > 0 || Date.now() - start.at > HOLD) return;
-      const touch = event.changedTouches[0];
-      if (touch && Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > SLOP) return;
-      // No synthetic mousedown, so only a recognised tap decides the keyboard.
-      event.preventDefault();
-      const now = Date.now();
-      if (now - this.lastTap < DOUBLE) {
-        this.lastTap = 0;
-        if (touch) onDoubleTap?.({ x: touch.clientX, y: touch.clientY });
-        return;
-      }
-      this.lastTap = now;
-      onTap();
-    }, { passive: false });
+    });
+    element.addEventListener(
+      'touchend',
+      (event) => {
+        const start = this.start;
+        this.start = null;
+        if (!start || event.touches.length > 0 || Date.now() - start.at > HOLD) return;
+        const touch = event.changedTouches[0];
+        if (touch && Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > SLOP) return;
+        // No synthetic mousedown, so only a recognised tap decides the keyboard.
+        event.preventDefault();
+        const now = Date.now();
+        if (now - this.lastTap < DOUBLE) {
+          this.lastTap = 0;
+          if (touch) onDoubleTap?.({ x: touch.clientX, y: touch.clientY });
+          return;
+        }
+        this.lastTap = now;
+        onTap();
+      },
+      { passive: false },
+    );
   }
 }

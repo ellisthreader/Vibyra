@@ -3,7 +3,8 @@
    panel. Same recipe as `.pal` in palette.css — `--elevated`, `--r-panel`,
    `--e-panel`, `fade-up 200ms var(--e-hero)`.
 
-   No `backdrop-filter`: `--chrome-bg` stays the only blur in the product. */
+   No `backdrop-filter`, like the unblurred chrome bar above it: a blur
+   re-samples everything behind it on every repaint (see chrome.css). */
 
 .ncenter {
   position: absolute;

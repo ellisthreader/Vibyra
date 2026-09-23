@@ -8,8 +8,9 @@ LOCAL_URL="http://127.0.0.1:${PORT}"
 
 cd "$ROOT_DIR"
 
-if curl -fsS "${LOCAL_URL}/health" >/dev/null 2>&1; then
-  echo "Vibyra backend is already running at ${LOCAL_URL}."
+if curl -fsS --max-time 3 "${LOCAL_URL}/up" >/dev/null 2>&1; then
+  echo "A backend is already running at ${LOCAL_URL}."
+  echo "Ensure its Vibes worker is running: npm run backend:worker"
   exit 0
 fi
 
@@ -20,4 +21,4 @@ if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN >/de
 fi
 
 cd backend
-php artisan serve --host="${HOST}" --port="${PORT}"
+exec node ../scripts/serve-backend.mjs "$HOST" "$PORT"

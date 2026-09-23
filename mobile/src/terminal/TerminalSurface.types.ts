@@ -1,4 +1,7 @@
-export interface TerminalGrid { cols: number; rows: number }
+export interface TerminalGrid {
+  cols: number;
+  rows: number;
+}
 export interface TerminalSurfaceProps {
   output: string;
   /** The grid the computer drew `output` for, when it said. History is laid
@@ -20,4 +23,6 @@ export interface TerminalSurfaceProps {
   fontSize?: number;
   onFontSize?(size: number): void;
 }
-export interface TerminalSurfaceHandle { scrollToBottom(): void }
+export interface TerminalSurfaceHandle {
+  scrollToBottom(): void;
+}

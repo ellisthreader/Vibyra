@@ -1,4 +1,3 @@
-import React from 'react';
 import { registerRootComponent } from 'expo';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text, View } from 'react-native';
@@ -13,7 +12,7 @@ function NativeFixture() {
         <Text style={{ color: palettes.dark.text, fontSize: 18, fontWeight: '600' }}>Welcome screen</Text>
         <Text style={{ color: palettes.dark.muted, fontSize: 12 }}>Native conversation fixture</Text>
       </View>
-      <ConversationSessionScreen session={fixtureSession} workspace={fixtureWorkspace} />
+      <ConversationSessionScreen session={fixtureSession} workspace={fixtureWorkspace} options={false} onCloseOptions={() => {}} />
     </ThemeContext.Provider>
   </SafeAreaView></SafeAreaProvider>;
 }

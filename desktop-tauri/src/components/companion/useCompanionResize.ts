@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent, PointerEvent } from "react";
+import type { KeyboardEvent, PointerEvent, RefObject } from "react";
 
 import {
   clampCompanionWidth,
@@ -13,10 +13,17 @@ interface DragState {
   width: number;
 }
 
-export function useCompanionResize(preferred: number, commit: (width: number) => void) {
+export function useCompanionResize(
+  preferred: number,
+  commit: (width: number) => void,
+  panel: RefObject<HTMLElement | null>,
+  size: string,
+) {
   const [width, setWidth] = useState(preferred);
   const latest = useRef(preferred);
   const drag = useRef<DragState | null>(null);
+  const wide = useRef(size === "wide");
+  wide.current = size === "wide";
 
   useEffect(() => {
     if (drag.current) return;
@@ -27,6 +34,17 @@ export function useCompanionResize(preferred: number, commit: (width: number) =>
   useEffect(() => {
     // High-rate mice deliver pointermove far above the frame rate, and every
     // width change re-lays-out the terminal grid — apply once per frame.
+    // A drag writes the same values the render would straight onto the DOM and
+    // commits to state only when it ends, so the sidebar's panels are not
+    // re-rendered every frame. React leaves them be meanwhile: the props it
+    // last rendered have not changed.
+    const paint = (next: number) => {
+      const node = panel.current;
+      if (!node) return;
+      node.style.setProperty("--companion-width", `${next}px`);
+      if (!wide.current) node.parentElement?.style.setProperty("--tools-reserve", `${next}px`);
+      node.querySelector(".companion__resize")?.setAttribute("aria-valuenow", String(next));
+    };
     let frame = 0;
     const move = (event: globalThis.PointerEvent) => {
       if (!drag.current) return;
@@ -36,7 +54,7 @@ export function useCompanionResize(preferred: number, commit: (width: number) =>
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        setWidth(latest.current);
+        paint(latest.current);
       });
     };
     const finish = () => {
@@ -56,7 +74,7 @@ export function useCompanionResize(preferred: number, commit: (width: number) =>
       window.removeEventListener("pointercancel", finish);
       document.body.classList.remove("companion-resizing");
     };
-  }, [commit]);
+  }, [commit, panel]);
 
   const start = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;

@@ -45,7 +45,11 @@ impl Drop for HiddenWindow<'_> {
     }
 }
 
-pub fn capture_screen_image(window: &Window, hide_window: bool) -> Result<RgbaImage, String> {
+pub fn capture_screen_image(
+    window: &Window,
+    hide_window: bool,
+    selection: bool,
+) -> Result<RgbaImage, String> {
     // These public CoreGraphics calls enforce the OS's consent boundary;
     // starting the app never requests this permission.
     if unsafe { !CGPreflightScreenCaptureAccess() && !CGRequestScreenCaptureAccess() } {
@@ -61,18 +65,22 @@ pub fn capture_screen_image(window: &Window, hide_window: bool) -> Result<RgbaIm
     }
     // The main display is deterministic across Dock, menu and shortcut entry.
     let mut child = Command::new("/usr/sbin/screencapture")
-        .args(["-x", "-m", "-t", "png"])
+        .args(if selection {
+            ["-x", "-i", "-t", "png"]
+        } else {
+            ["-x", "-m", "-t", "png"]
+        })
         .arg(&path)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .map_err(|error| format!("Could not start macOS screen capture: {error}"))?;
-    let deadline = Instant::now() + Duration::from_secs(10);
+    let deadline = Instant::now() + Duration::from_secs(if selection { 60 } else { 10 });
     loop {
         match child.try_wait() {
             Ok(Some(status)) if status.success() => break,
-            Ok(Some(_)) => return Err("macOS could not capture the display. Check Vibyra's Screen & System Audio Recording permission.".into()),
+            Ok(Some(_)) => return Err(if selection { "Screen selection was cancelled." } else { "macOS could not capture the display. Check Vibyra's Screen & System Audio Recording permission." }.into()),
             Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(20)),
             result => {
                 let _ = child.kill();

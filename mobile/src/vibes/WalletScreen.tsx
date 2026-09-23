@@ -24,21 +24,38 @@ import { handBack } from './VibesSettingsPage';
  * Signing in is `onSignIn`, raised by whoever owns this destination, so the Vibes
  * area stays free of the workspace model and mounts from a fixture by itself.
  */
-export function WalletScreen({ signedIn, onSignIn, onBack, onClose }: {
-  signedIn: boolean; onSignIn(): void; onBack(): void; onClose(): void;
+export function WalletScreen({
+  signedIn,
+  onSignIn,
+  onBack,
+  onClose,
+}: {
+  signedIn: boolean;
+  onSignIn(): void;
+  onBack(): void;
+  onClose(): void;
 }) {
   const { wallet, store } = useVibes();
   const buy = useWalletPurchase(signedIn);
   const still = useReducedMotion();
   const [success, setSuccess] = useState<UpgradeSuccess | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const refresh = () => void (async () => {
-    setRefreshing(true);
-    try { await store.refresh(); buy.reloadPrices(); } finally { setRefreshing(false); }
-  })();
+  const refresh = () =>
+    void (async () => {
+      setRefreshing(true);
+      try {
+        await store.refresh();
+        buy.reloadPrices();
+      } finally {
+        setRefreshing(false);
+      }
+    })();
   useEffect(() => {
     if (!buy.notice?.ok) return;
-    if (buy.notice.upgrade) { setSuccess(buy.notice.upgrade); return; }
+    if (buy.notice.upgrade) {
+      setSuccess(buy.notice.upgrade);
+      return;
+    }
     handBack(buy.notice.text);
     onBack();
     // `onBack` is a fresh closure every render; only a new notice should leave.
@@ -47,12 +64,40 @@ export function WalletScreen({ signedIn, onSignIn, onBack, onClose }: {
   // Every hook above runs whatever the account is, so signing in changes the page
   // without changing how many hooks this render made.
   if (!signedIn) return <SignedOutPage onSignIn={onSignIn} onClose={onClose} />;
-  if (success) return <UpgradeCelebration result={success} still={still} onDone={() => {
-    setSuccess(null);
-    if (!success.preview) { handBack('Your Pro features and Vibes are ready.'); onBack(); }
-  }} />;
-  return <UpgradePage buy={buy} wallet={wallet} still={still} refreshing={refreshing}
-    onPreview={__DEV__ && wallet && buy.plan ? () => setSuccess({ plan: buy.plan!.plan!,
-      added: buy.plan!.credits, balance: wallet.available + buy.plan!.credits, preview: true }) : undefined}
-    onRefresh={refresh} onBack={onBack} onClose={onClose} />;
+  if (success)
+    return (
+      <UpgradeCelebration
+        result={success}
+        still={still}
+        onDone={() => {
+          setSuccess(null);
+          if (!success.preview) {
+            handBack('Your Pro features and Vibes are ready.');
+            onBack();
+          }
+        }}
+      />
+    );
+  return (
+    <UpgradePage
+      buy={buy}
+      wallet={wallet}
+      still={still}
+      refreshing={refreshing}
+      onPreview={
+        __DEV__ && wallet && buy.plan
+          ? () =>
+              setSuccess({
+                plan: buy.plan!.plan!,
+                added: buy.plan!.credits,
+                balance: wallet.available + buy.plan!.credits,
+                preview: true,
+              })
+          : undefined
+      }
+      onRefresh={refresh}
+      onBack={onBack}
+      onClose={onClose}
+    />
+  );
 }

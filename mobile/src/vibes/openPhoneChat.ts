@@ -6,9 +6,10 @@ import type { VibesStore } from './VibesStore';
 export async function openPhoneChat(store: VibesStore, model: string, open: () => void) {
   if (store.state.pending) throw new Error('Wait for your phone AI reply to finish first.');
   if (model !== AUTO) {
-    const offered = pickerModels(store.state.models).find(item => item.id === model);
+    const offered = pickerModels(store.state.models).find((item) => item.id === model);
     if (!offered) throw new Error('This phone model is no longer available. Choose another model.');
-    if (!offered.trial && !store.state.wallet?.paidAvailable) throw new Error('This model needs a membership.');
+    if (!offered.trial && !store.state.wallet?.paidAvailable)
+      throw new Error('This model needs a membership.');
   }
   await store.select(null);
   store.setModel(model);

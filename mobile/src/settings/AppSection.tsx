@@ -13,22 +13,46 @@ import { Group, Label, Row } from './SettingsRows';
  * the Remote page; without one the row is the way to add one. Terminal text only
  * exists for a phone that has had a computer, because there is no terminal otherwise.
  */
-export function AppSection({ workspace, nav, routes }: { workspace: WorkspaceModel; nav: SettingsNav; routes: SettingsRoutes }) {
+export function AppSection({
+  workspace,
+  nav,
+  routes,
+}: {
+  workspace: WorkspaceModel;
+  nav: SettingsNav;
+  routes: SettingsRoutes;
+}) {
   const { colors } = useTheme();
   const host = computerMode(workspace) || computerRemembered(workspace) ? workspace.host : null;
   const words = describeConnection(workspace);
   const setSize = workspace.actions.setTerminalFontSize;
-  return <>
-    <Label>App</Label>
-    <Group>
-      {host ? <Row title="Computer" value={host.name} dot={colors[words.tone]}
-        label={`Computer, ${host.name}, ${words.label}`} onPress={() => nav.close(routes.remote)} />
-        : <Row title="Connect a computer" onPress={() => nav.close(routes.connect)} />}
-      {host && setSize && <Row title="Terminal text"
-        right={<TextSize size={workspace.terminalFontSize ?? DEFAULT_FONT_SIZE} onChange={setSize} />} />}
-      <Row title="Advanced" onPress={() => nav.push('advanced')} />
-    </Group>
-  </>;
+  return (
+    <>
+      <Label>App</Label>
+      <Group>
+        {host ? (
+          <Row
+            title="Computer"
+            value={host.name}
+            dot={colors[words.tone]}
+            label={`Computer, ${host.name}, ${words.label}`}
+            onPress={() => nav.close(routes.remote)}
+          />
+        ) : (
+          <Row title="Connect a computer" onPress={() => nav.close(routes.connect)} />
+        )}
+        {host && setSize && (
+          <Row
+            title="Terminal text"
+            right={
+              <TextSize size={workspace.terminalFontSize ?? DEFAULT_FONT_SIZE} onChange={setSize} />
+            }
+          />
+        )}
+        <Row title="Advanced" onPress={() => nav.push('advanced')} />
+      </Group>
+    </>
+  );
 }
 
 /**
@@ -41,23 +65,67 @@ function TextSize({ size, onChange }: { size: number; onChange: (size: number) =
   const shown = Math.round(size);
   const set = (next: number) => onChange(Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, next)));
   const native = Platform.OS !== 'web';
-  return <View accessible={native} accessibilityRole={native ? 'adjustable' : undefined} accessibilityLabel="Terminal text size"
-    accessibilityValue={{ min: MIN_FONT_SIZE, max: MAX_FONT_SIZE, now: shown, text: `${shown} point` }}
-    accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-    onAccessibilityAction={event => set(shown + (event.nativeEvent.actionName === 'increment' ? 1 : -1))}
-    style={[s.stepper, { backgroundColor: colors.elevated }]}>
-    <Step icon="remove" label="Smaller terminal text" disabled={shown <= MIN_FONT_SIZE} onPress={() => set(shown - 1)} />
-    <Text testID="terminal-text-size" style={[s.size, { color: colors.text }]}>{shown}</Text>
-    <Step icon="add" label="Larger terminal text" disabled={shown >= MAX_FONT_SIZE} onPress={() => set(shown + 1)} />
-  </View>;
+  return (
+    <View
+      accessible={native}
+      accessibilityRole={native ? 'adjustable' : undefined}
+      accessibilityLabel="Terminal text size"
+      accessibilityValue={{
+        min: MIN_FONT_SIZE,
+        max: MAX_FONT_SIZE,
+        now: shown,
+        text: `${shown} point`,
+      }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(event) =>
+        set(shown + (event.nativeEvent.actionName === 'increment' ? 1 : -1))
+      }
+      style={[s.stepper, { backgroundColor: colors.elevated }]}
+    >
+      <Step
+        icon="remove"
+        label="Smaller terminal text"
+        disabled={shown <= MIN_FONT_SIZE}
+        onPress={() => set(shown - 1)}
+      />
+      <Text testID="terminal-text-size" style={[s.size, { color: colors.text }]}>
+        {shown}
+      </Text>
+      <Step
+        icon="add"
+        label="Larger terminal text"
+        disabled={shown >= MAX_FONT_SIZE}
+        onPress={() => set(shown + 1)}
+      />
+    </View>
+  );
 }
-function Step({ icon, label, disabled, onPress }: { icon: IconName; label: string; disabled: boolean; onPress: () => void }) {
+function Step({
+  icon,
+  label,
+  disabled,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} aria-disabled={disabled}
-    accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} hitSlop={6}
-    style={({ pressed }) => [s.step, { opacity: disabled ? 0.3 : pressed ? 0.55 : 1 }]}>
-    <Icon name={icon} size={18} color={colors.text} />
-  </Pressable>;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      aria-disabled={disabled}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => [s.step, { opacity: disabled ? 0.3 : pressed ? 0.55 : 1 }]}
+    >
+      <Icon name={icon} size={18} color={colors.text} />
+    </Pressable>
+  );
 }
 const s = StyleSheet.create({
   stepper: { height: 32, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },

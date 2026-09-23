@@ -32,13 +32,13 @@ export function ConnectionModal({ children, onClose, presented }: {
   close.current = onClose;
   useEffect(() => {
     let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().catch(() => false).then(value => {
+    void AccessibilityInfo.isReduceMotionEnabled().catch(() => false).then(value => {
       if (!active) return;
       reduced.current = value;
       if (value) { shown.setValue(1); setDelay(0); return; }
       Animated.spring(shown, { toValue: 1, damping: 28, stiffness: 260, mass: 1, useNativeDriver: true,
         restDisplacementThreshold: 0.001, restSpeedThreshold: 0.001 }).start(() => { if (active) setDelay(0); });
-    });
+    }).catch(() => { if (active) setDelay(0); });
     return () => { active = false; };
   }, [shown]);
   const dismiss = () => {

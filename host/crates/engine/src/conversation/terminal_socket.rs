@@ -112,11 +112,30 @@ pub(super) fn start(
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {
                     drop(runtime);
                     drop(bridge);
-                    std::thread::sleep(Duration::from_millis(25));
+                    wait_for_connection(&listener);
                 }
                 Err(_) => break,
             }
         }
     });
     Ok(bridge)
+}
+
+/// Sleeps until the CLI connects, or a quarter second passes so a stopped
+/// runtime is still noticed. The bridge outlives a CLI that detached, and
+/// waking forty times a second to ask kept every such runtime busy.
+fn wait_for_connection(listener: &UnixListener) {
+    use std::os::fd::AsRawFd;
+    let mut wanted = libc::pollfd {
+        fd: listener.as_raw_fd(),
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    // SAFETY: one initialized pollfd, for a descriptor this thread owns.
+    let ready = unsafe { libc::poll(&mut wanted, 1, 250) };
+    // An interrupted or failed wait falls back to the short sleep it replaced
+    // rather than spinning.
+    if ready < 0 || (ready > 0 && wanted.revents & libc::POLLIN == 0) {
+        std::thread::sleep(Duration::from_millis(25));
+    }
 }

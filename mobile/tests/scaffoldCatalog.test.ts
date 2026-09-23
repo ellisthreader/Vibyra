@@ -29,7 +29,7 @@ test('a pick becomes the exact commands the computer runs, and dependencies can 
   assert.equal(next.steps[0].cwd, '/home/ellis/Projects');
   assert.equal(next.steps[1].cwd, '/home/ellis/Projects/my-site');
   assert.equal(describeSteps(next)[0], 'npx --yes create-next-app@latest my-site --ts --app --eslint --tailwind --src-dir --import-alias @/* --use-npm --skip-install');
-  assert.equal(describeSteps(next)[1], 'npm install');
+  assert.equal(describeSteps(next)[1], 'npm install --no-audit --no-fund');
   const bare = buildScaffoldRequest(templateById('next')!, '/home/ellis/Projects/my-site', { ...DEFAULT_TEMPLATE_OPTIONS, install: false, git: false });
   assert.deepEqual(bare.steps.map(step => step.label), ['Creating the Next.js app']);
   assert.equal(bare.gitInit, false);
@@ -99,7 +99,7 @@ test('the wizard walks the questions, remembers the way back, and plans the buil
   state = wizardReducer(state, { type: 'setOptions', patch: { install: false } });
   const planned = plannedProject(state);
   assert.equal(planned.destination.path, '/home/ellis/Code/site');
-  assert.deepEqual(planned.commands, ['npx --yes create-next-app@latest site --ts --app --eslint --tailwind --src-dir --import-alias @/* --use-npm --skip-install']);
+  assert.deepEqual(planned.commands, ['npx --yes create-next-app@latest site --ts --app --eslint --tailwind --src-dir --import-alias @/* --use-npm --skip-install', 'git init']);
   state = wizardReducer(state, { type: 'back' });
   assert.equal(state.step, 'where');
   state = wizardReducer(state, { type: 'back' });

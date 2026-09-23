@@ -1,7 +1,11 @@
 import type { VibesWallet } from './types';
 
 /** The figure the balance page leads with, its unit, and the two as one spoken line. */
-export interface WalletHeadline { figure: number; unit: string; label: string }
+export interface WalletHeadline {
+  figure: number;
+  unit: string;
+  label: string;
+}
 
 /**
  * What to lead with: the Vibes you can spend. That is `available`, except for a
@@ -17,9 +21,15 @@ export interface WalletHeadline { figure: number; unit: string; label: string }
  */
 export function walletHeadline(wallet: VibesWallet): WalletHeadline {
   const { trialCredits, trialChats } = wallet;
-  const untouched = wallet.available === 0 && wallet.held === 0 && wallet.paidAvailable === 0
-    && trialCredits !== null && trialCredits > 0 && trialChats !== null && trialChats > 0
-    && wallet.trialChatsRemaining >= trialChats;
+  const untouched =
+    wallet.available === 0 &&
+    wallet.held === 0 &&
+    wallet.paidAvailable === 0 &&
+    trialCredits !== null &&
+    trialCredits > 0 &&
+    trialChats !== null &&
+    trialChats > 0 &&
+    wallet.trialChatsRemaining >= trialChats;
   const figure = untouched ? trialCredits : wallet.available;
   const unit = untouched ? 'Vibes to try' : 'Vibes available';
   return { figure, unit, label: `${figure.toLocaleString()} ${unit}` };

@@ -14,14 +14,24 @@ export function chatUnlocked(wallet: VibesWallet | null | undefined): boolean {
 /** An account whose address is still unconfirmed: a notice, blocking only while the trial is closed to it. */
 export function unverifiedNotice(wallet: VibesWallet | null | undefined): string | null {
   if (!wallet || wallet.guest || wallet.verified) return null;
-  return chatUnlocked(wallet) ? 'Verify your email to use purchased Vibes. Refresh once you have.'
+  return chatUnlocked(wallet)
+    ? 'Verify your email to use purchased Vibes. Refresh once you have.'
     : 'Verify your email, then refresh to unlock your trial.';
 }
 
 export interface SendGate {
-  active: boolean; readOnly: boolean; ready: boolean; wallet: VibesWallet | null; text: string;
-  uploading: boolean; failed: boolean; blind: string | null; referenceIssue: string | null; project: string | null;
-  quoted: boolean; canAfford: boolean;
+  active: boolean;
+  readOnly: boolean;
+  ready: boolean;
+  wallet: VibesWallet | null;
+  text: string;
+  uploading: boolean;
+  failed: boolean;
+  blind: string | null;
+  referenceIssue: string | null;
+  project: string | null;
+  quoted: boolean;
+  canAfford: boolean;
 }
 
 /**
@@ -31,8 +41,10 @@ export interface SendGate {
  */
 export function sendBlockReason(gate: SendGate): string | null {
   if (readOnlyReason(gate)) return readOnlyReason(gate);
-  if (!gate.wallet || !gate.ready) return 'Still loading your account. Tap Refresh if this takes a while.';
-  if (gate.wallet.chatEnabled === false) return 'AI chats are being prepared. Your balance and history are safe.';
+  if (!gate.wallet || !gate.ready)
+    return 'Still loading your account. Tap Refresh if this takes a while.';
+  if (gate.wallet.chatEnabled === false)
+    return 'AI chats are being prepared. Your balance and history are safe.';
   if (!gate.wallet.consented) return 'Allow AI processing above to send your first message.';
   if (!chatUnlocked(gate.wallet)) return 'Verify your email, then tap Refresh account to send.';
   if (gate.blind) return gate.blind;

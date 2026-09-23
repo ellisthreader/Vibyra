@@ -4,12 +4,16 @@ import { checkForUpdate, downloadUpdate, installUpdate, type Update } from "../i
 import { saveSessionNow } from "../lib/sessionPersistence";
 import {
   advanceProgress,
+  formatBytes,
   NO_PROGRESS,
   type UpdateProgress,
   type UpdateStatus,
 } from "../lib/updatePolicy";
 import { shouldAnnounce, updateNotice, updateReadyNotice } from "../lib/updateNotices";
 import { useNotificationStore } from "./notificationStore";
+
+/** Everything the banner and chip can print or draw from a download's progress. */
+const shownProgress = (p: UpdateProgress) => `${p.percent}|${p.total > 0}|${formatBytes(p.received)}|${formatBytes(p.total)}`;
 
 interface UpdateStore {
   status: UpdateStatus;
@@ -104,10 +108,15 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
     if (!update || get().status === "downloading") return;
     set({ status: "downloading", progress: NO_PROGRESS, error: null });
     try {
+      // Chunks arrive far faster than the banner can say anything new, so the
+      // running total is kept here and the store only moves when what the
+      // banner and chip show would change.
+      let progress = NO_PROGRESS;
       await downloadUpdate(update, (event) => {
-        set((state) => ({ progress: advanceProgress(state.progress, event) }));
+        progress = advanceProgress(progress, event);
+        if (shownProgress(progress) !== shownProgress(get().progress)) set({ progress });
       });
-      set({ status: "ready" });
+      set({ status: "ready", progress });
       // The download can finish long after the click, with the user away in
       // another app. Saying so is the difference between a staged update and
       // one that sits there unnoticed until the next launch.

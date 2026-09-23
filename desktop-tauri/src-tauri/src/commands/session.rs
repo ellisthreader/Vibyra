@@ -52,8 +52,9 @@ pub async fn save_terminal_session(
                 pane.snapshot = if !persist_output {
                     None
                 } else if include_snapshots || pane.snapshot.is_none() {
+                    // Only the tail the file keeps is copied out of the ring.
                     manager
-                        .snapshot(pane.id)
+                        .snapshot_tail(pane.id, session_store::MAX_SNAPSHOT_BYTES)
                         .ok()
                         .map(session_store::trim_snapshot)
                         .or_else(|| pane.snapshot.take())

@@ -1,3 +1,4 @@
+import { providerPreference } from '../engineProviders';
 import { useEffect, useRef, useState } from 'react';
 import { randomUUID } from 'expo-crypto';
 import { deleteFlag, readFlag, writeFlag } from '../../transport/deviceFlags';
@@ -5,13 +6,13 @@ import { VibesError } from '../../vibes/api';
 import type { AgentsApi, Teammate, TeammateFields } from '../types';
 import { specialistDraft } from './specialists';
 import { emptySetup, routinePlanKey, type SetupDraft } from './types';
-import { restoreSetup } from './restoreSetup';
+import { restoreSetup, tabbedSetup } from './restoreSetup';
 
-export function useSetupChat({ api, identity, enabled, onSaved }: {
-  api: AgentsApi; identity: string; enabled: boolean; onSaved(agent: Teammate): void;
+export function useSetupChat({ api, identity, enabled, onSaved, agent }: {
+  agent?: Teammate; api: AgentsApi; identity: string; enabled: boolean; onSaved(agent: Teammate): void;
 }) {
-  const key = `agent-setup-chat.${encodeURIComponent(identity)}`;
-  const legacyKey = `agent-save.${encodeURIComponent(identity)}.new`;
+  const key = `agent-setup-chat.${encodeURIComponent(identity)}${agent ? '.' + agent.id : ''}`;
+  const legacyKey = `agent-save.${encodeURIComponent(identity)}.${agent?.id ?? 'new'}`;
   const [draft, setDraft] = useState(emptySetup); const current = useRef(draft);
   const [ready, setReady] = useState(false); const [busy, setBusy] = useState(false); const lock = useRef(false);
   const [error, setError] = useState<string | null>(null); const [reload, setReload] = useState(0);
@@ -22,12 +23,17 @@ export function useSetupChat({ api, identity, enabled, onSaved }: {
   };
   useEffect(() => {
     alive.current = true; let active = true;
-    void Promise.all([readFlag(key), readFlag(legacyKey)]).then(([raw, legacy]) => {
+    void Promise.all([readFlag(key), readFlag(legacyKey), agent ? readFlag(routinePlanKey(identity, agent.id)) : Promise.resolve(null)]).then(([raw, legacy, planRaw]) => {
       if (!active) return;
-      const restored = restoreSetup(raw, legacy);
+      const initial = agent ? { ...emptySetup(), revision: agent.revision, fields: { name: agent.name, brief: agent.brief, avatar: agent.avatar, memory: agent.memory, budget: agent.budget, integrations: agent.integrations, model: agent.model ?? 'auto', skillIds: agent.skillIds ?? [] } } : emptySetup();
+      if (agent && planRaw && !raw) { const plan = JSON.parse(planRaw); initial.routines = plan.routines ?? []; initial.requestedTools = plan.requestedTools; }
+      const restored = tabbedSetup(restoreSetup(raw ?? JSON.stringify(initial), legacy));
       current.current = restored; setDraft(restored); setReady(true); setError(null);
     }).catch(() => { if (active) setError('Your saved setup could not be restored. Retry to keep its request safe.'); });
     return () => { active = false; alive.current = false; };
+  // Roster refreshes replace `agent` objects; restoring on each refresh would
+  // overwrite unsent setup. A changed identity/id changes the storage keys.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, legacyKey, reload]);
   const update = (patch: Partial<SetupDraft>) => {
     if (!ready || lock.current || current.current.pending) return;
@@ -57,11 +63,11 @@ export function useSetupChat({ api, identity, enabled, onSaved }: {
     const value = current.current;
     if (!value.fields.name.trim() || !value.fields.brief.trim() || !Number.isInteger(value.fields.budget) || value.fields.budget < 1 || value.fields.budget > 50) return;
     lock.current = true; setBusy(true); setError(null);
-    const pending = value.pending ?? { id: randomUUID(), fields: { ...value.fields, name: value.fields.name.trim(), brief: value.fields.brief.trim() }, routines: value.routines, requestedTools: value.requestedTools };
+    const pending = value.pending ?? { id: agent?.id ?? randomUUID(), ...(agent ? { revision: value.revision ?? agent.revision } : {}), fields: { ...value.fields, model: providerPreference(value.fields.model), name: value.fields.name.trim(), brief: value.fields.brief.trim() }, routines: value.routines, requestedTools: value.requestedTools };
     const submitted = { ...value, pending }; current.current = submitted; setDraft(submitted);
     try {
       await persist(submitted);
-      const saved = await api.save(pending.fields, { id: pending.id });
+      const saved = await api.save(pending.fields, { id: pending.id, revision: pending.revision });
       await writeFlag(routinePlanKey(identity, saved.id), JSON.stringify({ status: 'draft', routines: pending.routines, requestedTools: pending.requestedTools }));
       await deleteFlag(legacyKey); await deleteFlag(key);
       if (alive.current) onSaved(saved);
@@ -73,6 +79,15 @@ export function useSetupChat({ api, identity, enabled, onSaved }: {
       if (alive.current) setError(e instanceof Error ? e.message : 'The save could not be confirmed. Retry the same request.');
     } finally { lock.current = false; if (alive.current) setBusy(false); }
   };
-  return { draft, ready, busy, error, locked: busy || !ready || Boolean(draft.pending), update, fields, job, memory, routines, create,
+  const reloadProfile = async () => {
+    if (!agent || lock.current) return; lock.current = true; setBusy(true);
+    try {
+      const latest = (await api.list()).teammates.find(value => value.id === agent.id);
+      if (!latest) throw new Error('This teammate is no longer available.');
+      await queue.current; await deleteFlag(key); await deleteFlag(legacyKey); onSaved(latest);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Could not reload the saved profile.'); }
+    finally { lock.current = false; if (alive.current) setBusy(false); }
+  };
+  return { draft, ready, busy, error, reloadProfile, locked: busy || !ready || Boolean(draft.pending), update, fields, job, memory, routines, create,
     restore: () => setReload(v => v + 1) };
 }

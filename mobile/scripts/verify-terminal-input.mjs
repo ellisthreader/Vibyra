@@ -2,7 +2,7 @@
 // the computer and came back in the terminal. The connect flow has no pairing
 // code page, so the invitation is handed to the fixture directly.
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';

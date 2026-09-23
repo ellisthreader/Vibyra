@@ -63,6 +63,8 @@ jobs:
       # "Tsconfig not found expo/tsconfig.base".
       - name: Install locked mobile dependencies
         run: npm ci --prefix ../mobile
+      - name: Install locked Preview fixture dependencies
+        run: npm ci --prefix ../host/relay
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates
@@ -134,6 +136,7 @@ jobs:
           codesign -d --entitlements - --xml "$app" > /tmp/vibyra-entitlements.plist
           /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' /tmp/vibyra-entitlements.plist | grep -qx true
           /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
+          python3 scripts/verify-agent-command-helper.py --app "$app"
           "$app/Contents/MacOS/Vibyra" &
           pid=$!
           sleep 12

@@ -12,7 +12,19 @@ import type { TerminalSurfaceProps } from './TerminalSurface.types';
  * the phone feel stuck while a command ran.
  */
 export function useTerminalBridge(props: TerminalSurfaceProps, post: (message: string) => void) {
-  const { output, disabled, fontSize, grid, mirror, onInput, onResize, onPasteMode, onFontSize, onFollow, onTap } = props;
+  const {
+    output,
+    disabled,
+    fontSize,
+    grid,
+    mirror,
+    onInput,
+    onResize,
+    onPasteMode,
+    onFontSize,
+    onFollow,
+    onTap,
+  } = props;
   const mirrored = mirror && grid ? grid : null;
   const { colors, dark } = useTheme();
   // Counts renderer starts. A reloaded WebView announces itself again and
@@ -30,25 +42,36 @@ export function useTerminalBridge(props: TerminalSurfaceProps, post: (message: s
     if (epoch === 0) return;
     const previous = sent.current?.epoch === epoch ? sent.current.output : null;
     sent.current = { epoch, output };
-    if (previous === null) { send(terminalOutput(output, true, grid)); return; }
+    if (previous === null) {
+      send(terminalOutput(output, true, grid));
+      return;
+    }
     const change = outputDelta(previous, output);
     if (!change.reset && !change.data) return;
     send(terminalOutput(change.data, change.reset, grid));
     // `grid` only matters on a reset, and a reset only follows the output changing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [epoch, output, send]);
-  const receive = useCallback((raw: string) => {
-    let data;
-    try { data = JSON.parse(raw); } catch { return; }
-    if (data?.target !== TERMINAL_TARGET) return;
-    if (data.type === 'ready') setEpoch(current => current + 1);
-    if (data.type === 'paste-mode') onPasteMode?.(data.enabled === true);
-    if (data.type === 'follow') onFollow?.(data.atBottom !== false);
-    if (data.type === 'tap') onTap?.();
-    if (data.type === 'font-size' && typeof data.size === 'number') onFontSize?.(data.size);
-    if (data.type === 'input' && !disabled && typeof data.data === 'string') onInput(data.data);
-    if (data.type === 'resize' && Number.isInteger(data.cols) && Number.isInteger(data.rows)) onResize(data.cols, data.rows);
-  }, [disabled, onInput, onResize, onPasteMode, onFontSize, onFollow, onTap]);
+  const receive = useCallback(
+    (raw: string) => {
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        return;
+      }
+      if (data?.target !== TERMINAL_TARGET) return;
+      if (data.type === 'ready') setEpoch((current) => current + 1);
+      if (data.type === 'paste-mode') onPasteMode?.(data.enabled === true);
+      if (data.type === 'follow') onFollow?.(data.atBottom !== false);
+      if (data.type === 'tap') onTap?.();
+      if (data.type === 'font-size' && typeof data.size === 'number') onFontSize?.(data.size);
+      if (data.type === 'input' && !disabled && typeof data.data === 'string') onInput(data.data);
+      if (data.type === 'resize' && Number.isInteger(data.cols) && Number.isInteger(data.rows))
+        onResize(data.cols, data.rows);
+    },
+    [disabled, onInput, onResize, onPasteMode, onFontSize, onFollow, onTap],
+  );
   const scrollToBottom = useCallback(() => send(terminalScroll()), [send]);
   return { receive, scrollToBottom, ready: epoch > 0 };
 }

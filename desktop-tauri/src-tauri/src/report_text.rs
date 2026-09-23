@@ -45,6 +45,8 @@ fn environment(report: &Report) -> String {
     out.push_str(&row("Model", &optional(context.model.as_ref())));
     out.push_str(&row("Pane", &optional(context.pane.as_ref())));
     out.push_str(&row("Reporter", &optional(context.reporter.as_ref())));
+    out.push_str(&row("IP address", &optional(context.ip.as_ref())));
+    out.push_str(&row("Hardware", &optional(context.hardware.as_ref())));
     out.push_str(&row("Contact", &optional(report.contact.as_ref())));
     out
 }

@@ -16,6 +16,9 @@ interface Connector
     /** OpenAI-style function schemas, in the shape OpenRouter accepts. */
     public function definitions(): array;
 
+    /** Every read-only operation this connector offers. No operation defaults to read. */
+    public function reads(): array;
+
     /**
      * The operations that change something in the person's account, as opposed to
      * only reading it. Declaring this rather than leaving it to the catalogue's

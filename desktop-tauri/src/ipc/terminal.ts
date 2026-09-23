@@ -116,12 +116,18 @@ export function setTerminalVisibility(id: number, visibility: Visibility): Promi
   return invoke("set_terminal_visibility", { id, visibility });
 }
 
+/** Flow control: asks Rust to hold a session's output while its view catches up. */
+export function holdTerminalOutput(id: number, hold: boolean): Promise<void> {
+  return invoke("hold_terminal_output", { id, hold });
+}
+
 export function removeTerminal(id: number): Promise<void> {
     return invoke("remove_terminal", { id });
 }
 
-export function terminalSnapshot(id: number): Promise<string> {
-  return invoke("terminal_snapshot", { id });
+/** The whole scrollback ring, or with `maxBytes` only its most recent part. */
+export function terminalSnapshot(id: number, maxBytes?: number): Promise<string> {
+  return invoke("terminal_snapshot", { id, maxBytes });
 }
 
 export function terminalSessionIdentities(panes: { id: number; accountId: string | null }[]): Promise<{ id: number; sessionId: string | null }[]> {

@@ -13,18 +13,26 @@ const OVER = new Set(['finished', 'failed', 'denied', 'unavailable']);
  *  whose key the saved connection is pinned to. The key only says where to
  *  try. The Noise handshake still has to prove it, so anything else answering
  *  to that key gets no further than a refused connection. */
-export function locateComputer(adapter: DiscoveryAdapter, publicKey: string,
-  timeout = LOOK): Promise<NearbyComputer | undefined> {
-  return new Promise(resolve => {
+export function locateComputer(
+  adapter: DiscoveryAdapter,
+  publicKey: string,
+  timeout = LOOK,
+): Promise<NearbyComputer | undefined> {
+  return new Promise((resolve) => {
     let done = false;
     let stop: (() => void) | undefined;
     const finish = (computer?: NearbyComputer) => {
       if (done) return;
-      done = true; clearTimeout(timer); stop?.(); resolve(computer);
+      done = true;
+      clearTimeout(timer);
+      stop?.();
+      resolve(computer);
     };
     const timer = setTimeout(() => finish(), timeout);
-    stop = adapter.start(update => {
-      const match = update.computers.find(computer => computer.hostId === publicKey && isConnectable(computer));
+    stop = adapter.start((update) => {
+      const match = update.computers.find(
+        (computer) => computer.hostId === publicKey && isConnectable(computer),
+      );
       if (match || OVER.has(update.status)) finish(match);
     });
     // The adapter may have answered before it handed back its stop.
@@ -37,6 +45,12 @@ export function locateComputer(adapter: DiscoveryAdapter, publicKey: string,
  *  through the checks any pairing does. A computer found by searching is on
  *  this network by construction, which is what `direct` and `lan` declare. */
 export function movedPairing(pairing: Pairing, computer: NearbyComputer): Pairing {
-  return parsePairing(JSON.stringify({ ...pairing, url: `ws://${computer.host}:${computer.port}`,
-    route: 'direct', network: 'lan' }));
+  return parsePairing(
+    JSON.stringify({
+      ...pairing,
+      url: `ws://${computer.host}:${computer.port}`,
+      route: 'direct',
+      network: 'lan',
+    }),
+  );
 }

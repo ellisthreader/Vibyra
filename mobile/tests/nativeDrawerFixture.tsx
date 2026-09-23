@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { registerRootComponent } from 'expo';
 import { Pressable, StatusBar, Text, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ function NativeDrawerFixture() {
   const colors = dark ? palettes.dark : palettes.light;
   const [visible, setVisible] = useState(true);
   const [destination, setDestination] = useState<Destination>('work');
-  const workspace = useDemoWorkspace({ themePreference: dark ? 'dark' : 'light', setTheme: () => {}, exitDemo: () => {} });
+  const workspace = useDemoWorkspace({ account: null, themePreference: dark ? 'dark' : 'light', setTheme: () => {}, exitDemo: () => {} });
   // Opening a terminal puts the rail in its project's face, as WorkspaceApp does.
   const [projectId, setProjectId] = useState<string | null>(null);
   const project = workspace.projects.find(item => item.id === projectId) ?? null;

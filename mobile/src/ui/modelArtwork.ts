@@ -47,5 +47,5 @@ const artwork: Record<string, ImageSourcePropType> = {
 /** The model's own artwork, or null when only a company mark exists. */
 export function modelArtwork(id: string): ImageSourcePropType | null {
   const key = modelArtworkKey(id);
-  return key ? artwork[key] ?? null : null;
+  return key ? (artwork[key] ?? null) : null;
 }

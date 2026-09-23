@@ -56,6 +56,7 @@ export function SettingsPhonePane() {
   const error = usePhoneStore((state) => state.error);
   const configure = usePhoneStore((state) => state.configure);
   const setTyping = usePhoneStore((state) => state.setTyping);
+  const setPreviewAuto = usePhoneStore((state) => state.setPreviewAuto);
   const setRemote = usePhoneStore((state) => state.setRemote);
   const revoke = usePhoneStore((state) => state.revoke);
   const disconnectDevice = usePhoneStore((state) => state.disconnectDevice);
@@ -124,7 +125,8 @@ export function SettingsPhonePane() {
       </SettingsBlock>
 
       {enabled && (
-        <SettingsBlock label="Phones" note={showingExamples ? "Examples until a phone connects. When one asks, you approve it here." : undefined}>
+        <SettingsBlock label="Phones" note={showingExamples ? "Examples until a phone connects. When one asks, you approve it here."
+          : status?.previewAutoAvailable ? "Website Preview can show this phone sites running from your open project folders, including signed-in pages and cookies. It works while typing from your phone is on." : undefined}>
           <div className="settings-group">
             {rows.length === 0 ? <p className="phone-connection__hint phone-connection__hint--inset">No phones yet.</p> : null}
             {rows.map((device) => {
@@ -133,6 +135,7 @@ export function SettingsPhonePane() {
               return (
                 <div key={device.id} className={cls}>
                   <div className="device-row__inner">
+                    <div className="device-row__main">
                     <PhoneDeviceIcon kind={deviceKind(device.name)} online={online} />
                     <div className="device-row__text">
                       <span className="device-row__name">
@@ -146,6 +149,13 @@ export function SettingsPhonePane() {
                     ) : (
                       <button className="btn btn--ghost" type="button" disabled={busy || leaving.has(device.id)} onClick={() => remove(device.id, showingExamples)}>Remove</button>
                     )}
+                    </div>
+                    {!showingExamples && status?.previewAutoAvailable && <div className="device-row__preview">
+                      <span>One-tap website Preview</span>
+                      <Switch checked={device.previewAuto === true} disabled={busy}
+                        label={`One-tap website Preview for ${device.name} ${device.id.slice(0, 6)}`}
+                        onChange={(next) => void setPreviewAuto(device.id, next)} />
+                    </div>}
                   </div>
                 </div>
               );

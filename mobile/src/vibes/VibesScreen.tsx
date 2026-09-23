@@ -1,13 +1,15 @@
+import { useVisibleWork } from '../notifications/useVisibleWork';
+import { LivePreviewCard } from '../preview/LivePreviewCard';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Teammate } from '../agents/types';
-import type { VibesTool, VibesTurn } from './types';
+import { activeTurn, type Effort, type VibesTool, type VibesTurn } from './types';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
 import { useKeyboardOffset } from '../ui/keyboardOffset';
 import { AccountSheet } from '../ui/AccountSheet';
 import { ComposerModelPicker } from './ComposerModelPicker';
 import { AUTO, modelLabel } from '../ui/agents';
-import { Button, Hint, Icon } from '../ui/primitives';
+import { Button, Hint } from '../ui/primitives';
 import { setDraftForScope, useDraft } from '../ui/useDraft';
 import type { WorkspaceModel } from '../ui/types';
 import { useIntegrations } from '../integrations/IntegrationsProvider';
@@ -16,24 +18,27 @@ import { useVibes } from './VibesProvider';
 import { AttachMenu } from './AttachMenu';
 import { appendWords } from './appendWords';
 import { useAttachFlow } from './useAttachFlow';
+import { WorkProgress } from './WorkProgress';
+import { useAutoPreparation } from './useAutoPreparation';
 import { useChatQuote } from './useChatQuote';
 import { ProjectSheet } from './ProjectSheet';
 import { ProjectTools } from './ProjectTools';
 import { VibesComposer } from './VibesComposer';
 import { VibesConversation } from './VibesConversation';
-import { Spark } from './Spark';
+import { SparkTile } from './Spark';
 import { useGlass } from './glass';
 import { chatUnlocked, sendBlockReason, unverifiedNotice } from './composerGate';
-import { activeTurn, type Effort } from './types';
 
 // The phone's own chat. It mentions no computer: `computer` only lets the attach
 // menu offer a connected one's folders as project tools. `onMemory` opens
 // Settings > Memory, which every reply here reads and may add to.
-export function VibesScreen({ workspace, computer = false, onWallet, onIntegrations, onMemory, teammate, renderTool, readOnly = false, active = true }: {
+export function VibesScreen({ workspace, computer = false, onWallet, onIntegrations, onMemory, teammate, renderTool, readOnly = false, active = true, previewProjectId, onPreview }: {
   teammate?: Teammate; renderTool?: (tool: VibesTool, turn: VibesTurn) => ReactNode; readOnly?: boolean; active?: boolean;
   workspace: WorkspaceModel; computer?: boolean; onWallet(): void; onIntegrations?: () => void; onMemory?: () => void;
+  previewProjectId?: string; onPreview?: () => void;
 }) {
   const { colors } = useTheme(); const glass = useGlass(); const { store, wallet, chats, turns, model, models, effort, selected, draftScope, pending, ready, error, revision, selectionVersion } = useVibes();
+  useVisibleWork(workspace.demo ? undefined : workspace.notifications, turns.at(-1)?.id ?? null, active);
   const offset = useKeyboardOffset();
   // Only a ladder the catalogue actually reported can be steered; the composer
   // shows no effort control for a model without one.
@@ -55,11 +60,11 @@ export function VibesScreen({ workspace, computer = false, onWallet, onIntegrati
   // The integrations this message points at. They change the request and the price, so
   // they are part of the quote's identity below exactly as the effort is.
   const integrations = useIntegrations();
-  const installed = useMemo(() => teammate ? integrations.installed.filter(app => teammate.integrations.includes(app.id)) : integrations.installed, [integrations.installed, teammate?.integrations]);
+  const installed = useMemo(() => teammate ? integrations.installed.filter(app => teammate.integrations.includes(app.id)) : integrations.installed, [integrations.installed, teammate]);
   const references = chatReferences(text, installed, workspace, chat, teammate?.integrations);
   const integrationKey = references.connectors.join(',');
   // Photos and files for this message: priced by the quote, so part of its identity too.
-  const attach = useAttachFlow(store.api.upload, draftPrefix + selectionVersion);
+  const attach = useAttachFlow(store.api.upload, draftPrefix + draftScope, draftPrefix);
   const attachmentKey = attach.files.ids.join(',');
   // A photo for a model that cannot see it is refused by the server; saying so here
   // saves the round trip and names the fix.
@@ -74,8 +79,9 @@ export function VibesScreen({ workspace, computer = false, onWallet, onIntegrati
   const refreshAll = () => Promise.all([store.refresh(), workspace.actions.refreshAccount?.()]).then(() => {});
   const estimate = useChatQuote({ store, chatId: selected, text, model, effort, integrations: integrationKey, attachments: attachmentKey,
     enabled: Boolean(active && !readOnly && ready && !busy && !holding && !references.issue && !references.project && wallet?.consented && unlocked), revision });
+  const preparation = useAutoPreparation(store.api, JSON.stringify([draftPrefix, selected, text, model, effort, integrationKey, attachmentKey, revision]), active && !readOnly, estimate.contextRevision, estimate.invalidate);
   const rejectedReferences = missingQuotedReferences(references.connectors, estimate.quote?.integrations);
-  const currentQuote = rejectedReferences ? null : estimate.quote; const quoteError = estimate.error;
+  const currentQuote = rejectedReferences ? null : preparation.quote ?? estimate.quote; const quoteError = estimate.error;
   const referenceError = references.issue ?? (rejectedReferences ? 'A referenced integration is no longer available. Refresh your connections before sending.' : null);
   const liveDraft = useRef({ text, selected, store }); liveDraft.current = { text, selected, store };
   // What Auto settled on for this draft. The quote has always carried it; showing
@@ -85,13 +91,15 @@ export function VibesScreen({ workspace, computer = false, onWallet, onIntegrati
   const send = async () => {
     if (!active || readOnly || !currentQuote || !canAfford) return;
     if (currentQuote.expiresAt * 1000 <= Date.now()) { estimate.invalidate(); return; }
-    if (await store.send(currentQuote.quote)) {
+    const finalQuote = await preparation.resolve(currentQuote);
+    if (!finalQuote || wallet!.available < finalQuote.maxCredits) return;
+    if (await store.send(finalQuote.quote)) {
       // Typing the next message or switching chats during the request must not erase it.
       const live = liveDraft.current;
       if (live.store === store && live.selected === selected && live.text === text) setText('');
       attach.sent();
     } else if (store.state.errorStatus === 402) onWallet();
-    estimate.invalidate();
+    preparation.cancel(); estimate.invalidate();
   };
   const consent = async () => {
     try { await store.api.consent(); await store.refresh(); } catch (e) { store.error(e); }
@@ -104,9 +112,9 @@ export function VibesScreen({ workspace, computer = false, onWallet, onIntegrati
   const projects = wallet?.consented && computer && !workspace.viewOnly;
   return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={offset}>
     {/* The chat shows the chat. The balance lives in the rail and in Settings. */}
-    {turns.length ? <VibesConversation teammate={Boolean(teammate)} renderTool={renderTool} turns={turns} previews={attach.previews} onMemory={onMemory} tools={teammate ? undefined : <ProjectTools workspace={workspace} />} /> : <ScrollView contentContainerStyle={s.empty} keyboardShouldPersistTaps="handled" onLayout={e => setCompactEmpty(e.nativeEvent.layout.height < 240)}>
-      {!compactEmpty && !teammate && <Spark size={104} />}
-      <Text accessibilityRole="header" style={[s.title, teammate && {fontSize:23,lineHeight:30,fontFamily:'DM Sans'}, compactEmpty && { fontSize: 23, lineHeight: 30, letterSpacing: -0.6 }, { color: colors.text }]}>{teammate ? `Message ${teammate.name}` : compactEmpty ? 'Let’s build something.' : 'From a spark\nto something real.'}</Text>
+    {turns.length ? <VibesConversation key={draftPrefix + draftScope} memoryKey={draftPrefix + draftScope} teammate={Boolean(teammate)} renderTool={renderTool} turns={turns} previews={attach.previews} onMemory={onMemory} tools={teammate ? undefined : <ProjectTools workspace={workspace} />} /> : <ScrollView contentContainerStyle={s.empty} keyboardShouldPersistTaps="handled" onLayout={e => setCompactEmpty(e.nativeEvent.layout.height < 240)}>
+      {!compactEmpty && !teammate && <View style={s.mark}><SparkTile /></View>}
+      <Text accessibilityRole="header" style={[s.title, teammate && s.teammateTitle, compactEmpty && { fontSize: 23, lineHeight: 30, letterSpacing: -0.6 }, { color: colors.text }]}>{teammate ? `Message ${teammate.name}` : compactEmpty ? 'Let’s build something.' : 'From a spark\nto something real.'}</Text>
       {!compactEmpty && <Text style={[s.subtitle, { color: colors.muted }]}>{teammate?.brief ?? 'Think it through. Write the code.\nFind your next good idea.'}</Text>}
       {!workspace.account && <Button title="Create a free account" onPress={() => setAccountOpen(true)} />}
     </ScrollView>}
@@ -125,19 +133,29 @@ export function VibesScreen({ workspace, computer = false, onWallet, onIntegrati
       <Pressable accessibilityRole="button" onPress={() => void store.refresh()} style={s.link}><Text style={{ color: colors.accent }}>Refresh</Text></Pressable></View>}
     {currentQuote && !canAfford && <View style={s.notice}><Button title="Get more Vibes" onPress={onWallet} /></View>}
     {readOnly && <View style={s.notice}><Hint>{teammate?.archived ? 'Archived · restore this teammate to send another task.' : 'Teammate tasks are paused. Your history is available.'}</Hint></View>}
-    <VibesComposer teammate={Boolean(teammate)} quietGeneration={Boolean(teammate)} placeholder={teammate ? `Message ${teammate.name}…` : undefined} inputLabel={teammate ? `Message ${teammate.name}` : undefined} text={text} onChange={setText} onModel={() => setModelOpen(true)} onAdd={attach.open}
-      modelPicker={modelOpen ? <ComposerModelPicker onClose={() => setModelOpen(false)} selection={model} paid={Boolean(wallet?.paidAvailable)}
-        onSelect={id => store.setModel(id)} models={models} onUpgrade={onWallet} /> : undefined}
-      attachments={attach.files.items} onRemoveAttachment={attach.files.remove}
-      notice={blind ?? (attach.files.failed ? attach.notice ?? 'Remove the attachment that did not upload.' : attach.notice)}
-      model={auto ? auto.name : modelLabel(model, models)} modelId={model !== AUTO ? model : auto ? currentQuote?.model : null}
-      chosenByAuto={Boolean(auto)} modelHint={auto?.reason}
-      effort={composerEffort} mentions={references.available} knownMentions={referenceIds}
-      trialRemaining={chat?.trial_slot && wallet?.trialChatCredits != null ? Math.max(0, wallet.trialChatCredits - chat.trial_used) : undefined} maximum={currentQuote?.maxCredits} busy={busy}
-      disabled={!active || readOnly || !ready || holding || !currentQuote || !canAfford || !wallet?.consented || !unlocked} onSend={() => void send()}
-      blocked={sendBlockReason({ active, readOnly, ready, wallet, text, uploading: attach.files.uploading, failed: attach.files.failed, blind,
-        referenceIssue: referenceError, project: references.project?.name ?? null, quoted: Boolean(currentQuote), canAfford })}
-      onStop={() => void store.stop().catch(e => store.error(e))} />
+    <WorkProgress turn={turns.at(-1)} />
+    {preparation.busy && <View style={s.notice}><Hint>Choosing model…</Hint><Button title="Keep editing" onPress={preparation.cancel} /></View>}
+    {preparation.error && <View style={s.notice}><Hint>{preparation.error}</Hint></View>}
+    {preparation.quote && <View style={s.notice}><Hint>Auto chose {preparation.quote.auto?.name ?? preparation.quote.model}{preparation.quote.effort ? ` · ${preparation.quote.effort} effort` : ''} · up to {preparation.quote.maxCredits} Vibes. Send to continue.</Hint><Button title="Keep editing" onPress={preparation.cancel} /></View>}
+    {onPreview && previewProjectId && !teammate && <LivePreviewCard workspace={workspace} projectId={previewProjectId} active={active} onPress={onPreview} />}
+    <VibesComposer teammate={Boolean(teammate)}
+      input={{ text, onChange: setText, placeholder: teammate ? `Message ${teammate.name}…` : undefined,
+        label: teammate ? `Message ${teammate.name}` : undefined, mentions: references.available, knownMentions: referenceIds }}
+      model={{ label: model === AUTO && teammate?.model && teammate.model !== AUTO
+        ? (models.find(entry => entry.id === teammate.model)?.name ?? teammate.model.split('/').pop()!)
+        : auto ? auto.name : modelLabel(model, models), id: model !== AUTO ? model : auto ? currentQuote?.model : null,
+        chosenByAuto: Boolean(auto), hint: auto?.reason, onOpen: () => setModelOpen(true), effort: composerEffort,
+        picker: modelOpen ? <ComposerModelPicker onClose={() => setModelOpen(false)} selection={model}
+          paid={Boolean(wallet?.paidAvailable)} onSelect={id => store.setModel(id)} models={models} onUpgrade={onWallet} /> : undefined }}
+      attachments={{ items: attach.files.items, onRemove: attach.files.remove, onAdd: attach.open,
+        notice: blind ?? (attach.files.failed ? attach.notice ?? 'Remove the attachment that did not upload.' : attach.notice) }}
+      submission={{ busy, quietGeneration: Boolean(teammate), voiceDisabled: !active || readOnly,
+        trialRemaining: chat?.trial_slot && wallet?.trialChatCredits != null ? Math.max(0, wallet.trialChatCredits - chat.trial_used) : undefined,
+        maximum: currentQuote?.maxCredits,
+        disabled: preparation.busy || !active || readOnly || !ready || holding || !currentQuote || !canAfford || !wallet?.consented || !unlocked,
+        blocked: sendBlockReason({ active, readOnly, ready, wallet, text, uploading: attach.files.uploading, failed: attach.files.failed, blind,
+          referenceIssue: referenceError, project: references.project?.name ?? null, quoted: Boolean(currentQuote), canAfford }),
+        onSend: () => void send(), onStop: () => void store.stop().catch(e => store.error(e)) }} />
     <ProjectSheet visible={projectOpen} onClose={() => setProjectOpen(false)} workspace={workspace} requestedProject={references.project ?? undefined} />
     <AttachMenu anchor={attach.anchor} onClose={attach.close} full={attach.files.full}
       onCamera={attach.camera} onPhotos={attach.photos} onFiles={attach.documents} apps={references.available}
@@ -148,9 +166,10 @@ export function VibesScreen({ workspace, computer = false, onWallet, onIntegrati
 }
 const s = StyleSheet.create({ body: { flex: 1 },
   link: { height: 30, borderRadius: 15, paddingHorizontal: 11, flexDirection: 'row', gap: 6, alignItems: 'center' },
-  empty: { flexGrow: 1, paddingVertical: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, gap: 14 },
-  title: { fontSize: 34, lineHeight: 40, letterSpacing: -1.3, fontWeight: '600', textAlign: 'center' },
-  subtitle: { fontSize: 16, lineHeight: 24, textAlign: 'center', marginBottom: 6 },
+  empty: { flexGrow: 1, paddingVertical: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, gap: 12 },
+  title: { fontSize: 30, lineHeight: 36, letterSpacing: -1, fontWeight: '700', textAlign: 'center' },
+  teammateTitle: { fontSize: 23, lineHeight: 30, letterSpacing: -0.6 }, mark: { marginBottom: 10 },
+  subtitle: { fontSize: 16, lineHeight: 23, letterSpacing: -0.2, textAlign: 'center', marginBottom: 10 },
   consent: { padding: 18, gap: 10, borderRadius: 24, marginHorizontal: 14, marginTop: 8 }, consentTitle: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
   consentText: { fontSize: 14, lineHeight: 21 }, notice: { paddingHorizontal: 22, paddingTop: 8, gap: 5 },
 });

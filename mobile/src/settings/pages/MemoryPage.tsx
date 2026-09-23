@@ -24,26 +24,62 @@ export function MemoryPage({ workspace, nav }: SettingsPageProps) {
   // A refusal is shown under the part that was last touched, not wherever it is written.
   const [touched, setTouched] = useState<'about' | 'list'>('about');
   if (!store || state.status !== 'ready' || !state.preferences || !state.memories) {
-    return <PageState feature="Memory" state={state} onRetry={() => void store?.load()} onSignIn={() => nav.signIn()} />;
+    return (
+      <PageState
+        feature="Memory"
+        state={state}
+        onRetry={() => void store?.load()}
+        onSignIn={() => nav.signIn()}
+      />
+    );
   }
   const on = state.preferences.memoryEnabled;
-  return <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}
-    contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]}>
-    <Group style={s.first}>
-      <SwitchRow title="Use memory" value={on} onChange={value => void store.setMemoryEnabled(value)} />
-    </Group>
-    <Footnote>{on ? 'Vibyra reads what’s switched on here in every phone chat, and saves what you ask it to remember. '
-      + 'It’s sent with each message, so it counts toward Vibes.' : 'Memory is off. Vibyra won’t read or save anything here.'}</Footnote>
-    <AboutYou store={store} state={state} memoryOn={on} onOpenSummary={() => nav.push('summary')} onTouch={() => setTouched('about')}
-      onReveal={y => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true })} />
-    {state.error && touched === 'about' && <View style={s.error}><Hint error>{state.error}</Hint></View>}
-    <SavedMemories store={store} state={state} error={touched === 'list' ? state.error : null} onTouch={() => setTouched('list')}
-      onFocusEnd={() => scroll.current?.scrollToEnd({ animated: true })} />
-    {workspace.demo && <Footnote>{sampleNote(workspace)}</Footnote>}
-  </ScrollView>;
+  return (
+    <ScrollView
+      ref={scroll}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]}
+    >
+      <Group style={s.first}>
+        <SwitchRow
+          title="Use memory"
+          value={on}
+          onChange={(value) => void store.setMemoryEnabled(value)}
+        />
+      </Group>
+      <Footnote>
+        {on
+          ? 'Vibyra reads what’s switched on here in every phone chat, and saves what you ask it to remember. ' +
+            'It’s sent with each message, so it counts toward Vibes.'
+          : 'Memory is off. Vibyra won’t read or save anything here.'}
+      </Footnote>
+      <AboutYou
+        store={store}
+        state={state}
+        memoryOn={on}
+        onOpenSummary={() => nav.push('summary')}
+        onTouch={() => setTouched('about')}
+        onReveal={(y) => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true })}
+      />
+      {state.error && touched === 'about' && (
+        <View style={s.error}>
+          <Hint error>{state.error}</Hint>
+        </View>
+      )}
+      <SavedMemories
+        store={store}
+        state={state}
+        error={touched === 'list' ? state.error : null}
+        onTouch={() => setTouched('list')}
+        onFocusEnd={() => scroll.current?.scrollToEnd({ animated: true })}
+      />
+      {workspace.demo && <Footnote>{sampleNote(workspace)}</Footnote>}
+    </ScrollView>
+  );
 }
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4 },
   first: { marginTop: 8 },
-  error: { marginTop: 10, marginHorizontal: 2 },
+  error: { marginTop: 10, marginHorizontal: 16 },
 });

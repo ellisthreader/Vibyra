@@ -69,3 +69,83 @@ fn rename_and_deleted_files_keep_reviewable_diffs() {
         .unwrap()
         .contains("-gone"));
 }
+
+#[test]
+fn status_and_diff_do_not_run_a_repository_clean_filter() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("repo");
+    std::fs::create_dir(&root).unwrap();
+    git(&root, &["init", "-q"], 1000).unwrap();
+    std::fs::write(root.join(".gitattributes"), "*.txt filter=probe\n").unwrap();
+    std::fs::write(root.join("file.txt"), "before\n").unwrap();
+    git(&root, &["add", "."], 1000).unwrap();
+    git(
+        &root,
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-qm",
+            "start",
+        ],
+        1000,
+    )
+    .unwrap();
+    let outside = temp.path().join("outside-marker");
+    let command = format!("sh -c 'touch \"{}\"; cat'", outside.display());
+    git(&root, &["config", "filter.probe.clean", &command], 1000).unwrap();
+    git(&root, &["config", "filter.probe.process", &command], 1000).unwrap();
+    std::fs::write(root.join("file.txt"), "after\n").unwrap();
+    let folder = root.to_str().unwrap();
+    assert_eq!(safe_changes(folder).unwrap().files.len(), 1);
+    assert!(safe_change_preview(folder, "file.txt")
+        .unwrap()
+        .contains("+after"));
+    assert!(
+        !outside.exists(),
+        "A Git filter escaped the read-only tool boundary"
+    );
+}
+
+#[test]
+fn ordinary_desktop_diff_retains_filter_semantics() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("repo");
+    std::fs::create_dir(&root).unwrap();
+    git(&root, &["init", "-q"], 1000).unwrap();
+    std::fs::write(root.join(".gitattributes"), "*.txt filter=probe\n").unwrap();
+    git(
+        &root,
+        &["config", "filter.probe.clean", "sed 's/working.*/stored/'"],
+        1000,
+    )
+    .unwrap();
+    std::fs::write(root.join("file.txt"), "working\n").unwrap();
+    git(&root, &["add", "."], 1000).unwrap();
+    git(
+        &root,
+        &[
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "-qm",
+            "start",
+        ],
+        1000,
+    )
+    .unwrap();
+    std::fs::write(root.join("file.txt"), "working!!!\n").unwrap();
+    let folder = root.to_str().unwrap();
+    assert_eq!(changes(folder).unwrap().files.len(), 1);
+    assert!(change_preview(folder, "file.txt")
+        .unwrap()
+        .contains("No text diff"));
+    assert_eq!(safe_changes(folder).unwrap().files.len(), 1);
+    assert!(safe_change_preview(folder, "file.txt")
+        .unwrap()
+        .contains("+working!!!"));
+}

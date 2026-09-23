@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { parseRunnable } from "../../lib/runnableCommand";
 import { CopyButton } from "../common/CopyButton";
 import { highlight } from "./highlight";
@@ -22,7 +22,8 @@ export function CodeBlock({
   // genuinely dangerous failure here, so an open fence carries no tools at all
   // — only a caret saying the rest is still coming.
   const label = language.trim();
-  const runnable = closed && onRun ? parseRunnable(label, code) : null;
+  const runnable = useMemo(() => (closed && onRun ? parseRunnable(label, code) : null), [closed, onRun, label, code]);
+  const highlighted = useMemo(() => highlight(code), [code]);
   const run = async () => {
     if (!runnable || !onRun || stranded) return;
     if ((await onRun(runnable.lines.join("\n"), runnable.lines)) !== false) return;
@@ -55,7 +56,7 @@ export function CodeBlock({
       )}
       <pre>
         <code>
-          {highlight(code)}
+          {highlighted}
           {!closed && <span className="md-code__caret" aria-hidden="true" />}
         </code>
       </pre>

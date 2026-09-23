@@ -64,6 +64,7 @@ pub fn launch(root: &str, target_id: &str) -> CoreResult<PreviewService> {
         }
     };
     Ok(PreviewService {
+        runtime_id: 0,
         target_id: target_id.into(),
         phase,
         url,

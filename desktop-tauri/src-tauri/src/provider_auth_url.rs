@@ -9,7 +9,7 @@ pub fn open(url: &str) -> Result<(), String> {
     command.stdout(Stdio::null()).stderr(Stdio::null());
     command
         .spawn()
-        .map(|_| ())
+        .map(vibyra_core::process_group::reap_when_done)
         .map_err(|error| format!("Could not open the provider sign-in page: {error}"))
 }
 

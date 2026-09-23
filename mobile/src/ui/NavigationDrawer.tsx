@@ -11,7 +11,7 @@ import { useReducedMotion } from './useReducedMotion';
 /** Native edge-to-edge presentation for the workspace tree (or Agents roster).
  * Disclosures live in FocusDrawer; closeThen preserves iOS sheet handoff.
  */
-export function NavigationDrawer({ visible, destination, workspace, project, currentProjectId, onClose, onNavigate, onNew, onSettings,
+export function NavigationDrawer({ visible, workspace, project, currentProjectId, onClose, onNavigate, onNew, onSettings, onReport,
   onNewTerminal, onNewProject, onEnterProject, chats, content }: {
   content?: (closeThen: (action: () => void) => void) => ReactNode;
   /** The phone's chats as rows: those in a project, or with none named, every one that matches a search. */
@@ -31,6 +31,7 @@ export function NavigationDrawer({ visible, destination, workspace, project, cur
   onNewTerminal?: (projectId: string) => void;
   /** Opens the Settings sheet. It is drawn in the app's own tree, so it rises as this rail closes. */
   onSettings?: () => void;
+  onReport?: () => void;
   /** Opens Vibyra tokens, from the balance pill beside the avatar. The same sheet, one page in. */
   onBalance?: () => void;
 }) {
@@ -93,6 +94,7 @@ export function NavigationDrawer({ visible, destination, workspace, project, cur
         {content ? content(closeThen) : <FocusDrawer workspace={workspace} project={project} currentProjectId={currentProjectId} bottom={Math.max(insets.bottom, 14)}
           onClose={onClose} onEnter={id => onEnterProject?.(id)} onOptions={setOptionsFor} onNavigate={navigate}
           onNew={onNew} onTerminal={id => onNewTerminal?.(id)} onProject={() => onNewProject?.()} onSettings={() => onSettings?.()}
+          onReport={onReport}
           chats={chats} closeThen={closeThen} />}
       </Animated.View>
       <ProjectActionsSheet project={optionsFor} host={host} reason={manageReason} onClose={() => setOptionsFor(null)}

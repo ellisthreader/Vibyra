@@ -1,10 +1,11 @@
-// Slug → artwork file mapping ported from the old app (15 Claude, 7 GPT,
-// 6 Gemini). Pure data — no Vite APIs — so the catalog can rank models
+// Slug → artwork file mapping (17 Claude, 10 GPT, 6 Gemini).
+// Pure data — no Vite APIs — so the catalog can rank models
 // that own artwork above the ones that only get a company mark.
 // OpenAI needs an exact match on the bare model key; Claude and Gemini
 // match by substring on the model's full identity (-fast entries first).
 
 const CLAUDE_ICONS: Array<[string, string]> = [
+  ["claude-opus-5-5", "claude-opus-5.5.png"],
   ["claude-opus-5-fast", "claude-opus-5-fast.png"],
   ["claude-opus-5", "claude-opus-5.png"],
   ["claude-opus-4-8-fast", "claude-opus-4.8-fast.png"],
@@ -17,6 +18,7 @@ const CLAUDE_ICONS: Array<[string, string]> = [
   ["claude-sonnet-5", "claude-sonnet-5.png"],
   ["claude-sonnet-4-6", "claude-sonnet-4.6.png"],
   ["claude-sonnet-4-5", "claude-sonnet-4.5.png"],
+  ["claude-fable-5-1", "claude-fable-5.1.png"],
   ["claude-fable-5", "claude-fable-5.png"],
   ["claude-haiku-4-5", "claude-haiku-4.5.png"],
   ["claude-opus-4", "claude-opus-4.png"],
@@ -32,6 +34,9 @@ const GEMINI_ICONS: Array<[string, string]> = [
 ];
 
 const OPENAI_ICONS: Array<[string, string]> = [
+  ["gpt-6-astra", "gpt-6-astra.png"],
+  ["gpt-6-sol", "gpt-6-sol.png"],
+  ["gpt-6-luna", "gpt-6-luna.png"],
   ["gpt-5-6-terra", "gpt-5.6-terra.png"],
   ["gpt-5-6-luna", "gpt-5.6-luna.png"],
   ["gpt-5-6-sol", "gpt-5.6-sol.png"],

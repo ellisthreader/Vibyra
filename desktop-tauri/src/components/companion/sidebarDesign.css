@@ -1,10 +1,14 @@
 /* Approved concept: flush surface, one header, restrained emphasis. */
 .workspace-sidebar[hidden], .workspace-sidebar [hidden] { display: none !important; }
-.workspace-sidebar .companion__head { height: 56px; min-height: 56px; padding: 0 12px 0 22px; gap: 3px; flex-shrink: 0; background: var(--surface); }
-.workspace-sidebar .companion__tabs { gap: 20px; }
-.workspace-sidebar .companion__tab { padding: 0; font-size: 12px; font-weight: 550; flex: 0 0 auto; }
-.workspace-sidebar .companion__tab::after { left: 0; right: 0; }
-.workspace-sidebar .companion__tab:hover { background: transparent; }
+.workspace-sidebar .companion__head { height:54px; min-height:54px; padding:0 10px 0 12px; gap:3px; flex-shrink:0; background:var(--surface); }
+.workspace-sidebar .companion__tabs { gap:3px; align-self:center; padding:3px; border:1px solid var(--line-soft); border-radius:9px; background:var(--workspace); flex:0 1 auto; margin-right:auto; }
+.workspace-sidebar .companion__tab { position:relative; gap:5px; min-height:28px; padding:0 9px; border-radius:6px; font-size:11px; font-weight:500; flex:0 0 auto; color:var(--muted); }
+.workspace-sidebar .companion__tab::after { display:none; }
+.workspace-sidebar .companion__tab:hover { background:var(--hover); color:var(--text); }
+.workspace-sidebar .companion__tab--active { background:var(--hover-strong); color:var(--text); }
+.workspace-sidebar .companion__activity { width:4px; height:4px; border-radius:50%; background:var(--accent); }
+.workspace-sidebar .companion__head > .icon-btn { width:27px; height:28px; border-radius:7px; }
+.companion__chat-view { display:flex; flex:1; flex-direction:column; min-height:0; }
 .workspace-sidebar .companion__body { background: var(--surface); overflow: hidden; }
 .workspace-sidebar .companion-panel--chat { padding: 0; gap: 0; }
 .workspace-sidebar .sidebar-expand { font-size: 19px; flex-shrink: 0; }
@@ -26,7 +30,7 @@
 .workspace-sidebar .preview-start-logs span { display: block; }
 .workspace-sidebar .preview-overlay__mark { display: none; }
 @media (max-width: 1100px) { .project-workspace > .workspace-sidebar:not([data-size="full"]) { box-shadow: -12px 0 38px #0002; } }
-@media (max-width: 600px) { .workspace-sidebar .companion__head { padding-left: 14px; } .workspace-sidebar .companion__tabs { gap: 15px; } }
+@media (max-width:600px) { .workspace-sidebar .companion__head { padding-left:8px; padding-right:6px; } .workspace-sidebar .companion__tab { padding:0 7px; } }
 
 .product-code-shell > .pstrip[hidden] { display: none; }
 

@@ -15,6 +15,20 @@ interface Props {
 export function ReportExtraFields({ draft, patch, recentErrors }: Props) {
   return (
     <>
+      <label className="report__field">
+        <span className="report__label">Specific error <em>optional</em></span>
+        {recentErrors.length > 0 && <select className="input report__error-choice"
+          aria-label="Choose a recent app error"
+          value={recentErrors.includes(draft.error) ? draft.error : ""}
+          onChange={(event) => patch({ error: event.target.value })}>
+          <option value="">Choose a recent error…</option>
+          {recentErrors.map((message) => <option key={message} value={message}>{message}</option>)}
+        </select>}
+        <input className="input" value={draft.error} maxLength={2000}
+          placeholder="Paste an error message"
+          onChange={(event) => patch({ error: event.target.value })} />
+      </label>
+
       <div className="report__extra-grid">
         <label className="report__field">
           <span className="report__label">Type</span>
@@ -38,20 +52,6 @@ export function ReportExtraFields({ draft, patch, recentErrors }: Props) {
           </select>
         </label>
       </div>
-
-      <label className="report__field">
-        <span className="report__label">Specific error <em>optional</em></span>
-        {recentErrors.length > 0 && <select className="input report__error-choice"
-          aria-label="Choose a recent app error"
-          value={recentErrors.includes(draft.error) ? draft.error : ""}
-          onChange={(event) => patch({ error: event.target.value })}>
-          <option value="">Choose a recent error…</option>
-          {recentErrors.map((message) => <option key={message} value={message}>{message}</option>)}
-        </select>}
-        <input className="input" value={draft.error} maxLength={2000}
-          placeholder="Paste an error message"
-          onChange={(event) => patch({ error: event.target.value })} />
-      </label>
 
       <label className="report__field">
         <span className="report__label">Steps to reproduce <em>optional</em></span>

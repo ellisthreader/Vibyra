@@ -17,6 +17,11 @@ fn a_terminal_the_desktop_has_not_filed_still_has_somewhere_to_live() {
         None,
     );
     let workspace = workspace.read();
+    assert_eq!(
+        workspace.project_root("p-1"),
+        dirs::home_dir().map(|home| home.join("Desktop/Vibyra")),
+        "Preview authorization must expand the path abbreviated for the phone UI"
+    );
     // A pane filed under a project the window no longer lists, and one it has
     // not published at all, both keep their launch name and a reachable folder.
     for id in [7, 9] {

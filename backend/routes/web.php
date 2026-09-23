@@ -3,6 +3,7 @@
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ReleaseDownloadController;
 use App\Http\Controllers\ReleaseUpdateController;
+use App\Http\Controllers\OpenRouterModelReleaseController;
 use App\Http\Controllers\VibyraAppController;
 use App\Http\Controllers\VibyraDesktopController;
 use App\Http\Controllers\WebsiteAuthController;
@@ -27,6 +28,8 @@ Route::view('/billing/cancel', 'portal');
 Route::view('/downloads', 'portal');
 Route::view('/account/downloads', 'portal');
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
+Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
+    ->middleware('throttle:30,1');
 Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])
     ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
 
@@ -145,6 +148,8 @@ Route::delete('/api/account/sessions', [VibyraAppController::class, 'revokeAccou
 Route::delete('/api/account/sessions/{sessionId}', [VibyraAppController::class, 'revokeAccountSession']);
 Route::delete('/api/account', [VibyraAppController::class, 'deleteAccount']);
 Route::get('/api/session', [VibyraAppController::class, 'session']);
+Route::get('/api/reports/ready', [VibyraAppController::class, 'reportReady'])->middleware('throttle:30,1');
+Route::post('/api/reports', [VibyraAppController::class, 'reportProblem'])->middleware('throttle:10,1');
 Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
 Route::get('/api/project-memory/{projectId}', [VibyraAppController::class, 'projectMemory']);
 Route::post('/api/project-memory/{projectId}/entries', [VibyraAppController::class, 'addProjectMemory']);
@@ -166,6 +171,8 @@ Route::post('/api/terminal/anthropic/messages', [VibyraAppController::class, 'an
 Route::post('/api/terminal/anthropic/messages/count_tokens', [VibyraAppController::class, 'anthropicTerminalCountTokens']);
 Route::post('/api/terminal/gemini/models/{model}/{action}', [VibyraAppController::class, 'geminiTerminalRequest']);
 Route::post('/api/chat/learning/feedback', [VibyraAppController::class, 'chatLearningFeedback']);
+Route::get('/api/speech/voices', [VibyraAppController::class, 'speechVoices']);
+Route::post('/api/speech', [VibyraAppController::class, 'speech'])->middleware('throttle:30,1');
 Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']);
 Route::get('/api/referrals/me', [VibyraAppController::class, 'referralSummary']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);

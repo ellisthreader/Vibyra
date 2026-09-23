@@ -13,5 +13,8 @@ export function AdaptivePane({ target, hidden, placement, children }: { target: 
     host.style.gridColumn = String(placement?.gridColumn ?? '');
     host.style.gridRow = String(placement?.gridRow ?? '');
   }, [host, placement?.gridColumn, placement?.gridRow]);
-  return createPortal(children, host);
+  // Nothing renders until there is a target: the stage's first render has
+  // none, and a terminal opened into the detached host could not be measured
+  // or fitted, so it would start at xterm's 80x24 default.
+  return target ? createPortal(children, host) : null;
 }

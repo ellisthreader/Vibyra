@@ -147,9 +147,14 @@ impl Scaffolder {
         let scaffolds = self.scaffolds.clone();
         let requests = self.requests.clone();
         let thread = id.clone();
+        // Listed before its thread exists, so a quit in between still sees it.
+        let tracked = super::in_flight::track(cancel.clone());
         std::thread::Builder::new()
             .name("vibyra-scaffold".into())
-            .spawn(move || execute(scaffolds, requests, thread, plan, cancel))
+            .spawn(move || {
+                let _tracked = tracked;
+                execute(scaffolds, requests, thread, plan, cancel)
+            })
             .map_err(|e| format!("could not start the build: {e}"))?;
         Ok(json!({"runId":id}))
     }

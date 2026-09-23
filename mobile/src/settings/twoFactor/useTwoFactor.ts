@@ -22,15 +22,37 @@ export function useTwoFactor(workspace: WorkspaceModel) {
   const reload = useCallback(async () => {
     if (!load) return;
     setStatus({ state: 'loading' });
-    try { setStatus({ state: 'ready', detail: await load() }); }
-    catch (reason) {
-      setStatus({ state: 'unknown', problem: reason instanceof Error ? reason.message : 'Your security settings could not be loaded.' });
+    try {
+      setStatus({ state: 'ready', detail: await load() });
+    } catch (reason) {
+      setStatus({
+        state: 'unknown',
+        problem:
+          reason instanceof Error ? reason.message : 'Your security settings could not be loaded.',
+      });
     }
   }, [load]);
-  useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => {
+    void reload();
+  }, [reload]);
   /** What the page already knows after an action, without a second round trip. */
-  const settle = useCallback((detail: Partial<TwoFactorState>) => setStatus(current => current.state === 'ready'
-    ? { state: 'ready', detail: { ...current.detail, ...detail } }
-    : { state: 'ready', detail: { enabled: false, available: true, confirmedAt: null, recoveryCodesLeft: 0, ...detail } }), []);
+  const settle = useCallback(
+    (detail: Partial<TwoFactorState>) =>
+      setStatus((current) =>
+        current.state === 'ready'
+          ? { state: 'ready', detail: { ...current.detail, ...detail } }
+          : {
+              state: 'ready',
+              detail: {
+                enabled: false,
+                available: true,
+                confirmedAt: null,
+                recoveryCodesLeft: 0,
+                ...detail,
+              },
+            },
+      ),
+    [],
+  );
   return { status, reload, settle };
 }

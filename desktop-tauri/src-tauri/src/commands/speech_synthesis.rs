@@ -101,7 +101,7 @@ pub(super) async fn synthesize(
     if let Some(instructions) = instructions {
         body["instructions"] = serde_json::Value::String(instructions);
     }
-    let response = reqwest::Client::new()
+    let response = crate::http_client::shared()
         .post("https://api.openai.com/v1/audio/speech")
         .bearer_auth(key.trim())
         .json(&body)

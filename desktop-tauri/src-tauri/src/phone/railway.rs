@@ -1,8 +1,8 @@
 use parking_lot::Mutex;
 use serde_json::{json, Value};
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
 /// Whether this Mac's own Railway CLI can answer for it, reported to the phone
@@ -11,43 +11,72 @@ use std::time::{Duration, Instant};
 /// asked for; it only asks the CLI who it is logged in as. Approved reads live in
 /// `railway_tools`/`railway_resources`, separate from this readiness checker.
 ///
-/// Checked on a thread of its own, once a minute, because `host.state` is on
-/// the connection's critical path and a CLI that is present but slow to answer
-/// (first launch, a cold disk) must never hold the phone's first screen.
+/// Checked on a thread of its own because `host.state` is on the connection's
+/// critical path and a CLI that is present but slow to answer (first launch, a
+/// cold disk) must never hold the phone's first screen. One checker serves the
+/// whole app and asks at most once a minute, and only while a phone asks: every
+/// restart of the phone connection used to start another checker that never
+/// stopped, each running the CLI once a minute for the life of the app.
 pub struct RailwayCli {
     status: Mutex<Option<Value>>,
+    probed: Mutex<Option<Instant>>,
 }
 
 const EVERY: Duration = Duration::from_secs(60);
 const TIMEOUT: Duration = Duration::from_secs(5);
+/// How long a login shell's answer stands when `railway` is not on PATH.
+const LOOKUP_EVERY: Duration = Duration::from_secs(600);
+
+static SHARED: OnceLock<Arc<RailwayCli>> = OnceLock::new();
 
 impl RailwayCli {
-    /// Starts the checker. The first `status()` before it has answered is
-    /// `Null`, which the phone reads as "the Mac has not said".
+    /// The app's checker, asked for a fresh answer so the phone's first
+    /// `host.state` usually has one. The first `status()` before it has
+    /// answered is `Null`, which the phone reads as "the Mac has not said".
     pub fn start() -> Arc<Self> {
-        let cli = Arc::new(Self {
-            status: Mutex::new(None),
-        });
         // A unit test's backend never shells out to ask who Railway is logged in as,
         // and says so here rather than behind a second constructor: one path through
         // this file is one path the shipped app takes.
         if cfg!(test) {
-            return cli;
+            return Arc::new(Self::idle());
         }
-        let worker = cli.clone();
-        std::thread::Builder::new()
-            .name("railway-cli".into())
-            .spawn(move || loop {
-                let next = probe();
-                *worker.status.lock() = Some(next);
-                std::thread::sleep(EVERY);
-            })
-            .ok();
+        let cli = SHARED.get_or_init(|| Arc::new(Self::idle())).clone();
+        cli.refresh();
         cli
     }
 
-    pub fn status(&self) -> Value {
+    fn idle() -> Self {
+        Self {
+            status: Mutex::new(None),
+            probed: Mutex::new(None),
+        }
+    }
+
+    /// The last answer; one a minute old is refreshed in the background.
+    pub fn status(self: &Arc<Self>) -> Value {
+        self.refresh();
         self.status.lock().clone().unwrap_or(Value::Null)
+    }
+
+    fn refresh(self: &Arc<Self>) {
+        if cfg!(test) {
+            return;
+        }
+        {
+            let mut probed = self.probed.lock();
+            if probed.is_some_and(|at| at.elapsed() < EVERY) {
+                return;
+            }
+            *probed = Some(Instant::now());
+        }
+        let cli = self.clone();
+        std::thread::Builder::new()
+            .name("railway-cli".into())
+            .spawn(move || {
+                let next = probe();
+                *cli.status.lock() = Some(next);
+            })
+            .ok();
     }
 }
 
@@ -65,17 +94,52 @@ fn probe() -> Value {
     }
 }
 
-/// Where `railway` is for the person's own shell. A Tauri app's PATH is the
-/// login-less system one, which never contains a Node version manager's bin,
-/// so the login shell is asked once and only the resolved path is run after.
+/// Where `railway` is for the person's own shell. Startup already put the
+/// login shell's PATH on this process (`launch_env::user_path::install`), so
+/// PATH is searched in-process first. The login shell itself — which sources
+/// the person's whole shell setup — is asked only when that misses, and its
+/// answer stands for ten minutes.
 pub(super) fn locate() -> Option<PathBuf> {
+    if let Some(found) = on_path("railway") {
+        return Some(found);
+    }
+    static LOOKUP: Mutex<Option<(Instant, Option<PathBuf>)>> = Mutex::new(None);
+    let mut lookup = LOOKUP.lock();
+    if let Some((at, found)) = lookup.as_ref() {
+        if at.elapsed() < LOOKUP_EVERY {
+            return found.clone();
+        }
+    }
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
-    let output = run(
+    let found = run(
         Command::new(shell).args(["-lic", "command -v railway"]),
         TIMEOUT,
-    )?;
-    let path = output.lines().last()?.trim();
-    (path.starts_with('/') && std::path::Path::new(path).is_file()).then(|| PathBuf::from(path))
+    )
+    .and_then(|output| {
+        let path = output.lines().last()?.trim().to_owned();
+        (path.starts_with('/') && Path::new(&path).is_file()).then(|| PathBuf::from(path))
+    });
+    *lookup = Some((Instant::now(), found.clone()));
+    found
+}
+
+fn on_path(program: &str) -> Option<PathBuf> {
+    let paths = std::env::var_os("PATH")?;
+    std::env::split_paths(&paths)
+        .map(|dir| dir.join(program))
+        .find(|candidate| is_executable(candidate))
+}
+
+#[cfg(unix)]
+fn is_executable(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    path.metadata()
+        .is_ok_and(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
+}
+
+#[cfg(not(unix))]
+fn is_executable(path: &Path) -> bool {
+    path.is_file()
 }
 
 fn whoami(binary: &PathBuf) -> Option<String> {
@@ -91,80 +155,10 @@ pub(crate) fn parse_whoami(output: &str) -> Option<String> {
     (!account.is_empty()).then_some(account)
 }
 
-/// stdout of a finished, successful command, or `None` on failure, a bad exit
-/// or the deadline passing (the child is killed rather than left behind).
-pub(super) fn run(command: &mut Command, timeout: Duration) -> Option<String> {
-    let mut child = command
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .ok()?;
-    let mut stdout = child.stdout.take()?;
-    let reader = std::thread::spawn(move || {
-        let mut buffer = String::new();
-        use std::io::Read;
-        let result = stdout.by_ref().take(262145).read_to_string(&mut buffer);
-        if result.is_err() || buffer.len() > 262144 {
-            return None;
-        }
-        Some(buffer)
-    });
-    let started = Instant::now();
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                let text = reader.join().unwrap_or_default();
-                return status.success().then_some(text).flatten();
-            }
-            Ok(None) if started.elapsed() < timeout => {
-                std::thread::sleep(Duration::from_millis(50))
-            }
-            _ => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return None;
-            }
-        }
-    }
-}
+#[path = "railway_process.rs"]
+mod process;
+pub(super) use process::run;
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_logged_in_reply_yields_the_account_and_nothing_else() {
-        assert_eq!(
-            parse_whoami("Logged in as ellis@example.com 👋\n").as_deref(),
-            Some("ellis@example.com")
-        );
-        assert_eq!(
-            parse_whoami("Unauthorized. Please login with `railway login`\n"),
-            None
-        );
-        assert_eq!(parse_whoami(""), None);
-        assert_eq!(
-            parse_whoami("Logged in as Ellis (one@example.com) 👋"),
-            Some("Ellis (one@example.com)".into())
-        );
-    }
-
-    #[test]
-    fn a_command_past_its_deadline_is_killed_and_reported_as_nothing() {
-        let started = Instant::now();
-        let out = run(
-            Command::new("/bin/sleep").arg("5"),
-            Duration::from_millis(200),
-        );
-        assert_eq!(out, None);
-        assert!(started.elapsed() < Duration::from_secs(3));
-    }
-
-    #[test]
-    fn a_checker_that_has_not_answered_yet_says_nothing_at_all() {
-        // Under a test this is also the checker a backend gets, so no phone
-        // connection made by a test ever runs the CLI.
-        assert_eq!(RailwayCli::start().status(), Value::Null);
-    }
-}
+#[path = "railway_tests.rs"]
+mod tests;

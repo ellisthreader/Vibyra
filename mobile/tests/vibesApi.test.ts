@@ -84,3 +84,10 @@ test('guest bootstrap mints a bearer session that every later Vibes route reuses
   await api.wallet();
   assert.equal((requests[1].headers as Record<string, string>).Authorization, 'Bearer guest-token');
 });
+
+test('successful HTTP with missing chat, turn or model data is rejected at the API boundary', async () => {
+  const api = createVibesApi('https://api.test', () => 'token', responder(200, '{}', 'application/json'));
+  for (const read of [() => api.chats(), () => api.turns('chat-one'), () => api.models()]) {
+    await assert.rejects(read(), /unexpected response/);
+  }
+});

@@ -1,16 +1,26 @@
 import type { DiscoveryUpdate, NearbyComputer } from './discoveryTypes';
 import { PROBE_PORTS, type ProbePlan } from './probeTargets';
 
-type Probe = (host: string, port: number, signal: AbortSignal) => Promise<NearbyComputer | undefined>;
+type Probe = (
+  host: string,
+  port: number,
+  signal: AbortSignal,
+) => Promise<NearbyComputer | undefined>;
 
 /** One bounded search, with repeat passes for computers that wake up or start
  *  sharing while the screen is open. Dismissal cancels in-flight work too. */
-export function startProbeSearch(resolvePlan: () => Promise<ProbePlan | undefined>, probe: Probe,
-  onUpdate: (update: DiscoveryUpdate) => void, options = { window: 30000, gap: 1400, parallel: 24 }) {
+export function startProbeSearch(
+  resolvePlan: () => Promise<ProbePlan | undefined>,
+  probe: Probe,
+  onUpdate: (update: DiscoveryUpdate) => void,
+  options = { window: 30000, gap: 1400, parallel: 24 },
+) {
   const control = new AbortController();
   const found = new Map<string, NearbyComputer>();
   let disposed = false;
-  const publish = (value: DiscoveryUpdate) => { if (!disposed) onUpdate(value); };
+  const publish = (value: DiscoveryUpdate) => {
+    if (!disposed) onUpdate(value);
+  };
   const deadline = setTimeout(() => {
     control.abort();
     publish({ status: 'finished', computers: [...found.values()] });
@@ -26,12 +36,17 @@ export function startProbeSearch(resolvePlan: () => Promise<ProbePlan | undefine
         return;
       }
       attempt += 1;
-      const queue = plan.hosts.flatMap(host => PROBE_PORTS.map(port => ({ host, port })));
+      const queue = plan.hosts.flatMap((host) => PROBE_PORTS.map((port) => ({ host, port })));
       const answered = new Set<string>();
-      let next = 0, checked = 0;
+      let next = 0,
+        checked = 0;
       const progress = () => {
-        if (!control.signal.aborted) publish({ status: 'searching', computers: [...found.values()],
-          progress: { checked, total: queue.length, attempt } });
+        if (!control.signal.aborted)
+          publish({
+            status: 'searching',
+            computers: [...found.values()],
+            progress: { checked, total: queue.length, attempt },
+          });
       };
       progress();
       const worker = async () => {
@@ -62,13 +77,21 @@ export function startProbeSearch(resolvePlan: () => Promise<ProbePlan | undefine
       publish({ status: 'failed', computers: [...found.values()] });
     }
   });
-  return () => { disposed = true; clearTimeout(deadline); control.abort(); };
+  return () => {
+    disposed = true;
+    clearTimeout(deadline);
+    control.abort();
+  };
 }
 
 function pause(ms: number, signal: AbortSignal) {
-  return new Promise<void>(resolve => {
+  return new Promise<void>((resolve) => {
     const timer = setTimeout(finish, ms);
-    function finish() { clearTimeout(timer); signal.removeEventListener('abort', finish); resolve(); }
+    function finish() {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', finish);
+      resolve();
+    }
     signal.addEventListener('abort', finish);
     if (signal.aborted) finish();
   });

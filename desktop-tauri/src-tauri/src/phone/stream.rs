@@ -2,7 +2,7 @@ use super::{frames, scaffold::SharedScaffolds, workspace::SharedWorkspace};
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{collections::BTreeMap, sync::mpsc, sync::Arc, time::Duration};
-use vibyra_core::pty::PtyManager;
+use vibyra_core::pty::{PtyManager, RemoteSince};
 
 /// Streams one phone everything this Mac's terminals do: which sessions exist,
 /// the grid each is drawn for, and their output as it arrives.
@@ -98,37 +98,46 @@ pub fn stream(
                     break;
                 }
                 for session in sessions.iter().take(128) {
-                    let Ok((output, offset, _)) = manager.remote_snapshot(session.id) else {
-                        continue;
+                    // Only output this phone has not had is sent, and only
+                    // that much is copied: an idle terminal costs one offset
+                    // comparison. A terminal seen for the first time, or one
+                    // whose ring has dropped bytes since the last poll, is
+                    // flagged instead: the phone reads what a terminal holds
+                    // from `session.snapshot`, and resending that history
+                    // here cost up to 256 KiB a terminal on every connect.
+                    let old = offsets.get(&session.id).copied();
+                    let change = match old {
+                        Some(old) => manager.remote_since(session.id, old),
+                        // Seen for the first time: an empty terminal is
+                        // simply recorded, one with history flagged.
+                        None => manager.remote_offset(session.id).map(|end| match end {
+                            0 => RemoteSince::Output(String::new(), 0),
+                            end => RemoteSince::Gap(end),
+                        }),
                     };
-                    let old = offsets.insert(session.id, offset);
-                    if old == Some(offset) || (old.is_none() && offset == 0) {
-                        continue;
-                    }
-                    let id = format!("{generation}-{}", session.id);
-                    let start = offset.saturating_sub(output.len() as u64);
-                    // Only output this phone has not had is sent. A terminal
-                    // seen for the first time, or one whose ring has dropped
-                    // bytes since the last poll, is flagged instead: the phone
-                    // reads what a terminal holds from `session.snapshot`, and
-                    // resending that history here cost up to 256 KiB a terminal
-                    // on every connect.
-                    let new = old
-                        .filter(|old| *old >= start)
-                        .and_then(|old| Some((old, output.get((old - start) as usize..)?)));
-                    let events: Vec<Value> = match new {
-                        Some((mut end, new)) => frames::pieces(new)
-                            .into_iter()
-                            .map(|piece| {
-                                end += piece.len() as u64;
-                                json!({"event":"terminal.output","data":{"sessionId":id,
-                                    "generation":generation,"output":piece,"offset":end}})
-                            })
-                            .collect(),
-                        None => vec![
-                            json!({"event":"terminal.resync","data":{"sessionId":id,"generation":generation}}),
-                        ],
+                    let id = || format!("{generation}-{}", session.id);
+                    let (events, reached): (Vec<Value>, u64) = match change {
+                        Err(_) | Ok(RemoteSince::Unchanged) => continue,
+                        Ok(RemoteSince::Output(new, reached)) => {
+                            let (id, mut end) = (id(), old.unwrap_or(0));
+                            let events = frames::pieces(&new)
+                                .into_iter()
+                                .map(|piece| {
+                                    end += piece.len() as u64;
+                                    json!({"event":"terminal.output","data":{"sessionId":id,
+                                        "generation":generation,"output":piece,"offset":end}})
+                                })
+                                .collect();
+                            (events, reached)
+                        }
+                        Ok(RemoteSince::Gap(reached)) => (
+                            vec![
+                                json!({"event":"terminal.resync","data":{"sessionId":id(),"generation":generation}}),
+                            ],
+                            reached,
+                        ),
                     };
+                    offsets.insert(session.id, reached);
                     for mut event in events {
                         seq += 1;
                         event["seq"] = json!(seq);

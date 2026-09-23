@@ -20,5 +20,6 @@ export function useAction() {
       setBusy(false);
     }
   }, []);
-  return { busy, error, run, clearError: () => setError(null) };
+  const clearError = useCallback(() => setError(null), []);
+  return { busy, error, run, clearError };
 }

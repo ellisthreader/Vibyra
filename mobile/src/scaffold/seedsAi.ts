@@ -8,7 +8,9 @@ import type { TemplateSeed } from './types';
 
 export const CLAUDE_NODE_SEEDS: TemplateSeed[] = [
   file('package.json', nodePackage('node index.js')),
-  file('index.js', `import Anthropic from "@anthropic-ai/sdk";
+  file(
+    'index.js',
+    `import Anthropic from "@anthropic-ai/sdk";
 
 // Reads ANTHROPIC_API_KEY from the environment.
 const client = new Anthropic();
@@ -22,16 +24,22 @@ const response = await client.messages.create({
 for (const block of response.content) {
   if (block.type === "text") console.log(block.text);
 }
-`),
-  file('README.md', `# {{name}}
+`,
+  ),
+  file(
+    'README.md',
+    `# {{name}}
 
     export ANTHROPIC_API_KEY=sk-ant-...
     node index.js
-`),
+`,
+  ),
 ];
 
 export const CLAUDE_PYTHON_SEEDS: TemplateSeed[] = [
-  file('main.py', `import anthropic
+  file(
+    'main.py',
+    `import anthropic
 
 # Reads ANTHROPIC_API_KEY from the environment.
 client = anthropic.Anthropic()
@@ -45,10 +53,14 @@ response = client.messages.create(
 for block in response.content:
     if block.type == "text":
         print(block.text)
-`),
-  file('README.md', `# {{name}}
+`,
+  ),
+  file(
+    'README.md',
+    `# {{name}}
 
     export ANTHROPIC_API_KEY=sk-ant-...
     .venv/bin/python main.py
-`),
+`,
+  ),
 ];

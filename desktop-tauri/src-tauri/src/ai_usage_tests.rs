@@ -163,8 +163,8 @@ fn the_budget_precheck_reports_room_without_consuming_any() {
 
 #[test]
 fn published_prices_are_applied() {
-    assert!((chat_cost_usd(1_000_000, 0) - 0.05).abs() < 1e-9);
-    assert!((chat_cost_usd(0, 1_000_000) - 0.40).abs() < 1e-9);
+    assert!((chat_cost_usd(1_000_000, 0) - 0.25).abs() < 1e-9);
+    assert!((chat_cost_usd(0, 1_000_000) - 2.00).abs() < 1e-9);
     assert!((voice_cost_usd(60.0) - 0.006).abs() < 1e-9);
 }
 

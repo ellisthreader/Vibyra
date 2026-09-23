@@ -12,7 +12,8 @@ export const PROBE_PORTS = [4318, 4319];
 export const LOOPBACK = '127.0.0.1';
 export const LOOPBACK_V6 = '[::1]';
 /** Ranges a /24 sweep is reasonable on. */
-const PRIVATE = /^(?:10(?:\.\d{1,3}){2}|192\.168\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3})\.\d{1,3}$/;
+const PRIVATE =
+  /^(?:10(?:\.\d{1,3}){2}|192\.168\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3})\.\d{1,3}$/;
 /** Ranges that are never the public internet, so they are safe to ask directly. */
 const LOCAL = /^(?:127(?:\.\d{1,3}){2}|169\.254\.\d{1,3})\.\d{1,3}$/;
 
@@ -36,16 +37,23 @@ export function probeAddress(value: string | undefined | null): string | undefin
   const bareV6 = /^[\da-f:]+$/i.test(trimmed) && trimmed.split(':').length > 2;
   const authority = trimmed.replace(/^[\w+.-]+:\/\//, '').split('/')[0];
   const numeric = authority.split(':')[0];
-  if (!bareV6 && /^[\d.]+$/.test(numeric) && (numeric.split('.').length !== 4
-    || numeric.split('.').some(part => !/^\d{1,3}$/.test(part) || Number(part) > 255))) return undefined;
-  const candidate = safeHost(trimmed.includes('://') ? trimmed
-    : `http://${bareV6 ? `[${trimmed}]` : trimmed}`);
+  if (
+    !bareV6 &&
+    /^[\d.]+$/.test(numeric) &&
+    (numeric.split('.').length !== 4 ||
+      numeric.split('.').some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255))
+  )
+    return undefined;
+  const candidate = safeHost(
+    trimmed.includes('://') ? trimmed : `http://${bareV6 ? `[${trimmed}]` : trimmed}`,
+  );
   if (!candidate) return undefined;
   if (candidate === LOOPBACK_V6 || /^\[(?:[23][\da-f]{3}:|f[cd][\da-f]{2}:)/i.test(candidate)) {
     return candidate;
   }
   const parts = candidate.split('.');
-  if (parts.length !== 4 || parts.some(part => !/^\d{1,3}$/.test(part) || Number(part) > 255)) return undefined;
+  if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part) || Number(part) > 255))
+    return undefined;
   return isProbeable(candidate) ? candidate : undefined;
 }
 
@@ -54,7 +62,9 @@ export function probeAddress(value: string | undefined | null): string | undefin
  *  the machine running it without any configuration. */
 export function probePlan(known: (string | undefined | null)[]): ProbePlan | undefined {
   const hosts: string[] = [];
-  const add = (address: string) => { if (!hosts.includes(address)) hosts.push(address); };
+  const add = (address: string) => {
+    if (!hosts.includes(address)) hosts.push(address);
+  };
   for (const value of known) {
     const address = probeAddress(value);
     if (address) add(address);
@@ -63,7 +73,7 @@ export function probePlan(known: (string | undefined | null)[]): ProbePlan | und
   add(LOOPBACK_V6);
   const sweepable = hosts.find(isPrivate);
   if (!sweepable) {
-    const direct = hosts.filter(address => address !== LOOPBACK && address !== LOOPBACK_V6);
+    const direct = hosts.filter((address) => address !== LOOPBACK && address !== LOOPBACK_V6);
     return { scope: direct.length ? direct[0] : THIS_COMPUTER, hosts };
   }
   const subnet = sweepable.split('.').slice(0, 3).join('.');
@@ -76,5 +86,7 @@ function safeHost(value: string): string | undefined {
     const url = new URL(value);
     if (url.username || url.password) return undefined;
     return url.hostname;
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }

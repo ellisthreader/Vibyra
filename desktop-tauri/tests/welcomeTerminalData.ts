@@ -1,0 +1,40 @@
+/** Sample output in actual xterm panes; never starts a CLI or touches a project. */
+export const welcomeTerminals = [
+  { agentId:'codex', title:'Build the homepage', lines:[
+    '\x1b[1;36m› Build a homepage for the studio\x1b[0m', '',
+    '  Read project instructions', '  Inspected src/app and components', '',
+    '\x1b[32m+\x1b[0m Added a responsive project grid',
+    '\x1b[32m+\x1b[0m Added a clear contact section', '',
+    '  src/app/page.tsx       +48 −12',
+    '  src/styles/home.css   +36  −8', '',
+    '\x1b[32m✓\x1b[0m TypeScript checks passed', '',
+    '  Ready for your review.', '', '\x1b[36m›\x1b[0m ' ] },
+  { agentId:'claude', title:'Refine the design', lines:[
+    '\x1b[1;33m✳ Claude Code\x1b[0m', '  /Projects/Studio', '',
+    '\x1b[1m> Refine spacing and typography\x1b[0m', '',
+    '  Reviewing the homepage layout…', '',
+    '  • Consistent spacing between sections',
+    '  • Clear heading hierarchy',
+    '  • Comfortable mobile touch targets', '',
+    '\x1b[32m✓\x1b[0m Updated 2 style files',
+    '\x1b[32m✓\x1b[0m Responsive layout verified', '',
+    '  The design is ready to preview.', '', '> ' ] },
+  { agentId:'gemini', title:'Review accessibility', lines:[
+    '\x1b[1;34m✦ Gemini\x1b[0m', '',
+    '> Review keyboard and screen-reader access', '',
+    '  Checking navigation and form controls…', '',
+    '\x1b[32m✓\x1b[0m Every input has a visible label',
+    '\x1b[32m✓\x1b[0m Navigation works with a keyboard',
+    '\x1b[32m✓\x1b[0m Focus indicators remain visible',
+    '\x1b[32m✓\x1b[0m Images have descriptive alt text', '',
+    '  Review complete. Notes saved to',
+    '  docs/accessibility.md', '', '> ' ] },
+  { agentId:'shell', title:'Development server', lines:[
+    '\x1b[36m~/Projects/Studio\x1b[0m  main', '$ npm run dev', '',
+    '\x1b[1;32m  VITE\x1b[0m  ready in 284 ms', '',
+    '  ➜ Local:   http://localhost:5173/',
+    '  ➜ Network: use --host to expose', '',
+    '  09:41:02  page updated',
+    '  09:41:04  styles updated', '',
+    '  Watching for file changes…' ] },
+];

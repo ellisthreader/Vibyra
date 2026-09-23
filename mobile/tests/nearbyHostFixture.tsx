@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -21,7 +21,7 @@ function NearbyHostFixture() {
       delete: async (key: string) => { values.delete(key); } };
     return new WorkspaceStore({ rpc: new RpcClient(message => bridge.current?.post(message), () => crypto.randomUUID()),
       uuid: () => crypto.randomUUID(), iosConversations: false, storage: memory, flags: memory,
-      account: { signup: disabled, login: disabled, session: disabled, logout: disabled } });
+      account: { signup: disabled, login: disabled, session: disabled, logout: disabled, sendHostLink: disabled } });
   });
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   useEffect(() => () => store.dispose(), [store]);

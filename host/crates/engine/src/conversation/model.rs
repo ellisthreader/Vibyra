@@ -43,24 +43,32 @@ impl Conversation {
             ..Self::default()
         }
     }
-    pub fn restore(&mut self) {
+    /// Returns whether anything changed, so a conversation already at rest is
+    /// not written again each time the engine opens.
+    pub fn restore(&mut self) -> bool {
+        let mut changed = self.process_state != "interrupted";
         self.process_state = "interrupted".into();
         if matches!(self.turn_state.as_str(), "running" | "waiting") {
             self.turn_state = "interrupted".into();
+            changed = true;
         }
         for item in &mut self.items {
-            match item["status"].as_str() {
-                Some("pending") => item["status"] = json!("expired"),
-                Some("responding") => item["status"] = json!("unknown"),
-                Some("running") => item["status"] = json!("interrupted"),
-                _ => {}
-            }
+            let status = match item["status"].as_str() {
+                Some("pending") => "expired",
+                Some("responding") => "unknown",
+                Some("running") => "interrupted",
+                _ => continue,
+            };
+            item["status"] = json!(status);
+            changed = true;
         }
         for receipt in self.receipts.values_mut() {
             if receipt["status"] == "dispatching" {
                 receipt["status"] = json!("unknown");
+                changed = true;
             }
         }
+        changed
     }
     pub fn update(&mut self, session: &str, project: &str, mut item: Option<Value>) -> Value {
         self.cursor += 1;

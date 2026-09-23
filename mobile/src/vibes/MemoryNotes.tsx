@@ -9,12 +9,25 @@ export function MemoryNotes({ turn, onOpen }: { turn: VibesTurn; onOpen?: () => 
   const { colors } = useTheme();
   const notes = memoryNotes(turn);
   if (!notes.length) return null;
-  return <View style={s.notes}>{notes.map(note => <Pressable key={note} disabled={!onOpen} onPress={onOpen}
-    accessibilityRole={onOpen ? 'button' : 'text'} accessibilityLabel={onOpen ? `${note}. Manage memory` : note}
-    style={({ pressed }) => [s.note, { opacity: pressed ? 0.6 : 1 }]}>
-    <Icon name="bookmark-outline" size={15} color={colors.muted} />
-    <Text selectable style={[s.text, { color: colors.muted }]}>{note}</Text>
-  </Pressable>)}</View>;
+  return (
+    <View style={s.notes}>
+      {notes.map((note) => (
+        <Pressable
+          key={note}
+          disabled={!onOpen}
+          onPress={onOpen}
+          accessibilityRole={onOpen ? 'button' : 'text'}
+          accessibilityLabel={onOpen ? `${note}. Manage memory` : note}
+          style={({ pressed }) => [s.note, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Icon name="bookmark-outline" size={15} color={colors.muted} />
+          <Text selectable style={[s.text, { color: colors.muted }]}>
+            {note}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
 }
 const s = StyleSheet.create({
   notes: { gap: 6 },

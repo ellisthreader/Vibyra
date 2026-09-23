@@ -4,19 +4,37 @@
 import { COMPANY_META } from "./companyMeta.ts";
 import type { CatalogModel, CompanyGroup } from "./catalogTypes";
 
+const RECENT_RELEASES: Record<string, string> = {
+  "openai/gpt-6-astra": "2026-09-03",
+  "openai/gpt-6-sol": "2026-09-22",
+  "openai/gpt-6-luna": "2026-09-22",
+  "anthropic/claude-fable-5.1": "2026-09-01",
+  "anthropic/claude-opus-5.5": "2026-09-22",
+};
+const CONTEXT_LENGTHS: Record<string, number> = {
+  "openai/gpt-6-astra": 1_050_000,
+  "openai/gpt-6-sol": 1_050_000,
+  "openai/gpt-6-luna": 1_050_000,
+  "anthropic/claude-fable-5.1": 1_000_000,
+  "anthropic/claude-opus-5.5": 1_000_000,
+};
+export const MODEL_NEW_BADGE_MS = 45 * 24 * 60 * 60 * 1000;
+
 function entry(id: string, label: string, company: string, contextLength = 200_000): CatalogModel {
+  const release = RECENT_RELEASES[id];
+  const age = release ? Date.now() - Date.parse(`${release}T00:00:00Z`) : Infinity;
   return {
     id,
     label,
     company,
-    contextLength,
+    contextLength: CONTEXT_LENGTHS[id] ?? contextLength,
     tier: "premium",
-    isNew: false,
+    isNew: age >= 0 && age < MODEL_NEW_BADGE_MS,
     score: 0,
     created: 0,
     supportsReasoning: company === "OpenAI" || company === "Anthropic",
     reasoningEfforts: [],
-    defaultReasoningEffort: null,
+    defaultReasoningEffort: id === "anthropic/claude-opus-5.5" ? "medium" : null,
     reasoningMandatory: false,
   };
 }
@@ -24,6 +42,8 @@ function entry(id: string, label: string, company: string, contextLength = 200_0
 const WALLS: Array<[string, Array<[string, string]>]> = [
   ["OpenAI", [
     ["openai/gpt-6-astra", "GPT-6 Astra"],
+    ["openai/gpt-6-sol", "GPT-6 Sol"],
+    ["openai/gpt-6-luna", "GPT-6 Luna"],
     ["openai/gpt-5.6-sol", "GPT-5.6 Sol"],
     ["openai/gpt-5.6-luna", "GPT-5.6 Luna"],
     ["openai/gpt-5.6-terra", "GPT-5.6 Terra"],
@@ -34,6 +54,7 @@ const WALLS: Array<[string, Array<[string, string]>]> = [
     ["openai/gpt-5-codex", "GPT-5 Codex"],
   ]],
   ["Anthropic", [
+    ["anthropic/claude-opus-5.5", "Claude Opus 5.5"],
     ["anthropic/claude-fable-5.1", "Claude Fable 5.1"],
     ["anthropic/claude-opus-5", "Claude Opus 5"],
     ["anthropic/claude-fable-5", "Claude Fable 5"],

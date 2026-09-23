@@ -1,4 +1,6 @@
 pub mod git_changes;
+pub(crate) mod git_command_policy;
+mod git_memo;
 mod private;
 pub mod project_folder;
 mod watch;

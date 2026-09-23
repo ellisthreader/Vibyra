@@ -9,24 +9,48 @@ import { useTheme } from '../theme';
 // Do not load its native view manager until availability has been established.
 let GlassView: typeof NativeGlassView | undefined;
 if (requireOptionalNativeModule('ExpoGlassEffect')?.isLiquidGlassAvailable) {
+  // The native module must be checked before loading its JS wrapper in older clients.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const effect: typeof import('expo-glass-effect') = require('expo-glass-effect');
   if (effect.isGlassEffectAPIAvailable()) GlassView = effect.GlassView;
 }
 
 /** One native material behind the controls; never stack glass on each row. */
-export function ComposerSurface({ children, style, matte = false, ...props }: ViewProps & { matte?: boolean }) {
-  const glass = useGlass(); const { dark } = useTheme();
+export function ComposerSurface({
+  children,
+  style,
+  matte = false,
+  ...props
+}: ViewProps & { matte?: boolean }) {
+  const glass = useGlass();
+  const { dark } = useTheme();
   const [opaque, setOpaque] = useState(true);
   useEffect(() => {
     let active = true;
-    void AccessibilityInfo.isReduceTransparencyEnabled().then(value => { if (active) setOpaque(value); });
+    void AccessibilityInfo.isReduceTransparencyEnabled().then((value) => {
+      if (active) setOpaque(value);
+    });
     const subscription = AccessibilityInfo.addEventListener('reduceTransparencyChanged', setOpaque);
-    return () => { active = false; subscription.remove(); };
+    return () => {
+      active = false;
+      subscription.remove();
+    };
   }, []);
   const native = GlassView && !opaque && !matte;
-  return <View {...props} style={[!matte && glass.sheet, style, native && { backgroundColor: 'transparent' }]}>
-    {native && GlassView && <GlassView pointerEvents="none" glassEffectStyle="regular" colorScheme={dark ? 'dark' : 'light'}
-      style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />}
-    {children}
-  </View>;
+  return (
+    <View
+      {...props}
+      style={[!matte && glass.sheet, style, native && { backgroundColor: 'transparent' }]}
+    >
+      {native && GlassView && (
+        <GlassView
+          pointerEvents="none"
+          glassEffectStyle="regular"
+          colorScheme={dark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
+        />
+      )}
+      {children}
+    </View>
+  );
 }

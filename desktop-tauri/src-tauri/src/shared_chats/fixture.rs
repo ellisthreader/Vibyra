@@ -50,6 +50,7 @@ for line in sys.stdin:
         }]),
         error: None,
         local_action: Mutex::new(()),
+        wake: Default::default(),
     });
     let session = engine
         .handle(

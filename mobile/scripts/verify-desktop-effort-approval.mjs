@@ -44,7 +44,7 @@ try {
       await page.waitForTimeout(160);
       assert.equal(await canvas.getAttribute('data-frame'), stopped);
       await page.emulateMedia({ reducedMotion: 'no-preference' });
-      await page.evaluate(() => document.documentElement.dataset.performance = 'on');
+      await page.evaluate(() => document.documentElement.dataset.performance = 'best');
       await page.waitForFunction(() => document.querySelector('.launch-effort').dataset.motion === 'still', null, {timeout: 3000});
       await page.evaluate(() => delete document.documentElement.dataset.performance);
       const rowBefore = await row.boundingBox();

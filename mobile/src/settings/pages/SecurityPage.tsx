@@ -94,7 +94,7 @@ function RemoveButton({ name, busy, onPress }: { name: string; busy: boolean; on
 }
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4 },
-  notice: { marginTop: 12, marginHorizontal: 2 },
+  notice: { marginTop: 12, marginHorizontal: 16 },
   danger: { marginTop: 32 },
   remove: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
 });

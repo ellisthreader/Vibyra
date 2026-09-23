@@ -37,7 +37,10 @@ function persistSettings(settings: Settings): Promise<void> {
   return write;
 }
 
-export async function flushSettings(): Promise<void> {
+/** `rewrite: false` is for routine checkpoints: with nothing staged and no
+ * failed write, disk already holds these settings, so only writes still in
+ * flight are awaited instead of rewriting settings.json every 30 seconds. */
+export async function flushSettings(rewrite = true): Promise<void> {
   const settings = useSettingsStore.getState().settings;
   if (!settings) throw new Error('Settings have not finished loading.');
   const flushStaged = async () => {
@@ -47,7 +50,7 @@ export async function flushSettings(): Promise<void> {
     await useSettingsStore.getState().update(batch);
   };
   if (Object.keys(staged).length) await flushStaged();
-  else await persistSettings(settings);
+  else if (rewrite || useSettingsStore.getState().saveState === 'error') await persistSettings(settings);
   for (;;) {
     if (Object.keys(staged).length) await flushStaged();
     const pending = writes;
@@ -136,14 +139,13 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
 }));
 
-// Stable-reference selector: components re-render only when the settings
-// object itself changes, and never receive a fresh [] per snapshot (which
-// would loop React's useSyncExternalStore).
+// Stable-reference selector: components re-render only when the project list
+// itself changes (not on every unrelated setting), and never receive a fresh
+// [] per snapshot (which would loop React's useSyncExternalStore).
 const NO_PROJECTS: ProjectSpec[] = [];
 
 export function useProjects(): ProjectSpec[] {
-  const settings = useSettingsStore((s) => s.settings);
-  return settings?.projects ?? NO_PROJECTS;
+  return useSettingsStore((s) => s.settings?.projects ?? NO_PROJECTS);
 }
 
 // In "auto" theme, follow the OS as it changes.
@@ -158,6 +160,5 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", ()
 /** Stable-reference selector, same reason as `useProjects` above: a missing
  * block resolves to the one frozen default object, never a fresh one. */
 export function useNotificationPrefs(): NotificationPrefs {
-  const settings = useSettingsStore((s) => s.settings);
-  return settings?.notifications ?? DEFAULT_NOTIFICATIONS;
+  return useSettingsStore((s) => s.settings?.notifications ?? DEFAULT_NOTIFICATIONS);
 }

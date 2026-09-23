@@ -2,45 +2,13 @@
   "ignoreIssues": {
     "src/assets/providerLogos.js": [
       "exports"
-    ],
-    "src/lib/chatPrompt.ts": [
-      "exports"
-    ],
-    "src/lib/modelRunners.ts": [
-      "exports"
-    ],
-    "src/lib/sessionIdentity.ts": [
-      "exports"
-    ],
-    "src/lib/talkTurn.ts": [
-      "exports"
-    ],
-    "src/lib/vibyraTools.ts": [
-      "exports"
-    ],
-    "src/state/chatLedger.ts": [
-      "exports"
-    ],
-    "src/state/chatToolTurn.ts": [
-      "exports"
-    ],
-    "src/state/providerDefaultStore.ts": [
-      "exports"
-    ],
-    "src/state/whatsNewStore.ts": [
-      "exports"
     ]
   },
   "entry": [
-    "tests/desktopParityFixture.tsx",
-    "tests/installedReferenceBootstrap.ts",
     "tests/*.test.mjs",
-    "tests/sharedChatsFixture.tsx",
-    "tests/nativeRedesignFixture.tsx",
-    "tests/workspaceToolsFixture.tsx",
-    "tests/startExperienceFixture.tsx",
-    "tests/projectCreationFixture.tsx",
-    "tests/effortApprovalFixture.tsx",
-    "tests/accountPaneFixture.tsx"
+    "tests/*Fixture.tsx",
+    "scripts/frontend-artifact.mjs",
+    "tests/assistantLiveFixture.ts",
+    "tests/installedReferenceBootstrap.ts"
   ]
 }

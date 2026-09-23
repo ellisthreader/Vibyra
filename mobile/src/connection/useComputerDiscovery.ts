@@ -11,28 +11,48 @@ import { localDiscovery } from './localDiscovery';
  *  reached from an explicit action, and nothing scans before it. `elapsed`
  *  drives the live progress read-out and is not a timeout of its own. */
 export function useComputerDiscovery({ auto = false }: { auto?: boolean } = {}) {
-  const [result, setResult] = useState<DiscoveryUpdate>({ status: 'idle', computers: [], networks: [] });
+  const [result, setResult] = useState<DiscoveryUpdate>({
+    status: 'idle',
+    computers: [],
+    networks: [],
+  });
   const [elapsed, setElapsed] = useState(0);
   const session = useMemo(() => createDiscoverySession(localDiscovery, setResult), []);
   const restart = useRef(() => {});
-  restart.current = () => { setElapsed(0); session.start(); };
+  restart.current = () => {
+    setElapsed(0);
+    session.start();
+  };
   useEffect(() => {
     if (auto) restart.current();
-    const subscription = AppState.addEventListener('change', state => {
+    const subscription = AppState.addEventListener('change', (state) => {
       // iOS becomes inactive for its own consent alert; let that alert finish.
       if (state === 'background') {
         session.stop();
-        setResult(previous => ({ ...previous, computers: [],
-          status: previous.status === 'denied' ? 'denied' : 'finished' }));
+        setResult((previous) => ({
+          ...previous,
+          computers: [],
+          status: previous.status === 'denied' ? 'denied' : 'finished',
+        }));
       }
     });
-    return () => { session.stop(); subscription.remove(); };
+    return () => {
+      session.stop();
+      subscription.remove();
+    };
   }, [auto, session]);
   useEffect(() => {
     if (result.status !== 'searching') return;
-    const timer = setInterval(() => setElapsed(value => value + 1), 1000);
+    const timer = setInterval(() => setElapsed((value) => value + 1), 1000);
     return () => clearInterval(timer);
   }, [result.status]);
-  return { ...result, networks: result.networks ?? [], progress: result.progress, elapsed,
-    available: localDiscovery.available, stop: session.stop, start: () => restart.current() };
+  return {
+    ...result,
+    networks: result.networks ?? [],
+    progress: result.progress,
+    elapsed,
+    available: localDiscovery.available,
+    stop: session.stop,
+    start: () => restart.current(),
+  };
 }

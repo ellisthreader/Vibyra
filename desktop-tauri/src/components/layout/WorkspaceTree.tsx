@@ -14,6 +14,7 @@ interface ContextTarget { projectId: string; x: number; y: number; opener: HTMLB
 export function WorkspaceTree() {
   const projects = useProjects();
   const active = useProjectStore(s => s.activeId);
+  const view = useProjectStore(s => s.view);
   const panes = useTerminalStore(s => s.panes);
   const sessions = useConversationTerminals(s => s.sessions);
   const open = useConversationTerminals(s => s.open);
@@ -34,17 +35,23 @@ export function WorkspaceTree() {
       const hasTerminals = count > 0;
       const unfolded = hasTerminals && (expanded[project.id] ?? false);
       return <section key={project.id} aria-label={project.name}>
-        <button className={`workspace-tree__row ${active === project.id ? 'is-active' : ''}`}
+        <button className={`workspace-tree__row ${view === 'project' && active === project.id ? 'is-active' : ''}`}
+          aria-current={view === 'project' && active === project.id ? 'page' : undefined}
           onPointerDown={event => { if (event.button === 2) { event.preventDefault(); showContext(project.id, event.currentTarget, event.clientX, event.clientY); } }}
           onContextMenu={event => { event.preventDefault(); showContext(project.id, event.currentTarget, event.clientX, event.clientY); }}
           onKeyDown={event => { if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) { event.preventDefault(); showContext(project.id, event.currentTarget, 0, 0); } }}
-          aria-expanded={hasTerminals ? unfolded : undefined} onClick={() => {
-            if (hasTerminals) setExpanded(value => ({ ...value, [project.id]: !unfolded }));
-            if (!unfolded && active !== project.id) void useProjectStore.getState().activate(project.id);
+          onClick={() => {
+            if (view === 'project' && active === project.id) {
+              useProjectStore.getState().goHome();
+              return;
+            }
+            if (hasTerminals) setExpanded(value => ({ ...value, [project.id]: true }));
+            void useProjectStore.getState().activate(project.id);
           }}>
           <span className="pstrip__name">{project.name}</span>
-          {hasTerminals && <><span className={unfolded ? '' : 'workspace-tree__collapsed'}><ChevronDownIcon size={12} /></span><span className="workspace-tree__count">{count}</span></>}
+          {hasTerminals && <><span className="workspace-tree__disclosure-space" /><span className="workspace-tree__count">{count}</span></>}
         </button>
+        {hasTerminals && <button className="workspace-tree__disclosure" aria-label={`${unfolded ? 'Collapse' : 'Expand'} sessions for ${project.name}`} aria-expanded={unfolded} onClick={() => setExpanded(value => ({ ...value, [project.id]: !unfolded }))}><span className={unfolded ? '' : 'workspace-tree__collapsed'}><ChevronDownIcon size={12} /></span></button>}
         {unfolded && <div className="workspace-tree__sessions">
           <SessionList query="" projectId={project.id} />
           <button className="workspace-tree__new" aria-label={`New terminal in ${project.name}`} onClick={async () => {

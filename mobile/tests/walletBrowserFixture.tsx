@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaFrameContext, SafeAreaInsetsContext, SafeAreaProvider } from 'react-native-safe-area-context';
 import { palettes, ThemeContext } from '../src/theme';
 import type { WorkspaceModel } from '../src/ui/types';
@@ -106,7 +106,7 @@ type Place = 'rail' | 'settings' | 'upgrade';
 function Harness() {
   const home: Place = query.get('entry') === '1' ? 'rail' : 'settings';
   const [view, setView] = React.useState<Place>(home);
-  const nav = { push() {}, back() {}, close: (then?: () => void) => then?.() };
+  const nav = { push() {}, back() {}, close: (then?: () => void) => then?.(), signIn: () => calls.push('sign-in') };
   if (view === 'upgrade') return <WalletScreen signedIn={signedIn} onSignIn={() => calls.push('sign-in')}
     onBack={() => setView('settings')} onClose={() => { calls.push('close'); setView(home); }} />;
   if (view === 'settings') return <View style={{ flex: 1, backgroundColor: colors.rail, paddingTop: 24 }}>

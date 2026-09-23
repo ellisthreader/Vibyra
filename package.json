@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Vibyra Desktop, Host, iPhone app and backend",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "start": "npm --prefix mobile run phone",
     "phone": "npm --prefix mobile run phone",
@@ -15,6 +17,9 @@
     "check:mobile": "npm --prefix mobile run check",
     "test:mobile": "npm --prefix mobile test",
     "mobile:lines": "npm --prefix mobile run lines",
-    "backend": "./scripts/start-backend.sh"
+    "backend": "./scripts/start-backend.sh",
+    "phone:go": "npm --prefix mobile run phone:go",
+    "ios:device": "npm --prefix mobile run ios:device",
+    "backend:worker": "cd backend && php artisan queue:work --queue=vibes,default --sleep=2 --tries=1 --timeout=1200 --max-time=0"
   }
 }

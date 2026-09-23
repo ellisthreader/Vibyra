@@ -128,6 +128,7 @@ pub fn grab_pointer_monitor() -> Result<RgbaImage, String> {
 pub fn capture_screen_image(
     window: &tauri::Window,
     hide_window: bool,
+    _selection: bool,
 ) -> Result<RgbaImage, String> {
     // XWayland's root contains only X11 clients, not the Wayland desktop.
     // The compositor's portal is the only complete capture on that session.

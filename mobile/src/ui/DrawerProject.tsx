@@ -18,33 +18,68 @@ import type { Project, Session, WorkspaceModel } from './types';
  * to the projects. Ideas wears the same face with a spark for its tile: it is
  * a project like the others, one that lives on the phone.
  */
-export function ProjectHeader({ project, host, onBack, onOptions, onClose }: {
-  project: Project; host: string; onBack: () => void; onClose: () => void;
+export function ProjectHeader({
+  project,
+  host,
+  onBack,
+  onOptions,
+  onClose,
+}: {
+  project: Project;
+  host: string;
+  onBack: () => void;
+  onClose: () => void;
   /** What can be done to this folder from the phone: its name here, and whether it is listed. */
   onOptions?: () => void;
 }) {
   const { colors } = useTheme();
   const ideas = isIdeas(project);
-  return <View style={s.header}>
-    <View style={s.row}>
-      <IconButton icon="chevron-back" label="Back to projects" onPress={onBack} />
-      <View style={s.spacer} />
-      {onOptions && <IconButton icon="ellipsis-horizontal" label={`Options for ${project.name}`} onPress={onOptions} />}
-      <IconButton icon="close" label="Close navigation menu" onPress={onClose} />
-    </View>
-    <View style={s.identity}>
-      <View style={[s.folder, { backgroundColor: colors.accentSoft }]}>
-        <Icon name={ideas ? 'sparkles' : 'folder'} size={22} color={colors.accent} />
+  return (
+    <View style={s.header}>
+      <View style={s.row}>
+        <IconButton icon="chevron-back" label="Back to projects" onPress={onBack} />
+        <View style={s.spacer} />
+        {onOptions && (
+          <IconButton
+            icon="ellipsis-horizontal"
+            label={`Options for ${project.name}`}
+            onPress={onOptions}
+          />
+        )}
+        <IconButton icon="close" label="Close navigation menu" onPress={onClose} />
       </View>
-      <View style={s.title}>
-        <Text accessibilityRole="header" numberOfLines={1} style={[s.name, { color: colors.text }]}>{project.name}</Text>
-        <View style={s.whereRow}>
-          <Icon name={ideas ? 'phone-portrait-outline' : project.branch ? 'git-branch-outline' : 'folder-open-outline'} size={12} color={colors.muted} />
-          <Text numberOfLines={1} style={[s.where, { color: colors.muted }]}>{ideas ? 'Your phone · always here' : `${project.branch ?? project.path} · ${host}`}</Text>
+      <View style={s.identity}>
+        <View style={[s.folder, { backgroundColor: colors.accentSoft }]}>
+          <Icon name={ideas ? 'chatbubbles-outline' : 'folder'} size={22} color={colors.accent} />
+        </View>
+        <View style={s.title}>
+          <Text
+            accessibilityRole="header"
+            numberOfLines={1}
+            style={[s.name, { color: colors.text }]}
+          >
+            {project.name}
+          </Text>
+          <View style={s.whereRow}>
+            <Icon
+              name={
+                ideas
+                  ? 'phone-portrait-outline'
+                  : project.branch
+                    ? 'git-branch-outline'
+                    : 'folder-open-outline'
+              }
+              size={12}
+              color={colors.muted}
+            />
+            <Text numberOfLines={1} style={[s.where, { color: colors.muted }]}>
+              {ideas ? 'Your phone · always here' : `${project.branch ?? project.path} · ${host}`}
+            </Text>
+          </View>
         </View>
       </View>
     </View>
-  </View>;
+  );
 }
 
 /**
@@ -57,27 +92,61 @@ export function ProjectHeader({ project, host, onBack, onOptions, onClose }: {
  * nothing when finished. Files and changes are read from the open terminal's
  * own options, not from here.
  */
-export function ProjectTerminals({ sessions, workspace, watching, onOpenSession }: {
-  sessions: Session[]; workspace: WorkspaceModel; watching: boolean;
+export function ProjectTerminals({
+  sessions,
+  workspace,
+  watching,
+  onOpenSession,
+}: {
+  sessions: Session[];
+  workspace: WorkspaceModel;
+  watching: boolean;
   onOpenSession: (id: string) => void;
 }) {
-  return <>
-    <RailSection>Terminals</RailSection>
-    <RailGroup>
-      {sessions.length === 0
-        ? <RailNote>{watching ? 'No terminals open in this project on your computer.' : 'No terminals open yet.'}</RailNote>
-        : sessions.map(session => <ProjectTerminalRow key={session.id} session={session} workspace={workspace}
-          onOpen={() => onOpenSession(session.id)} />)}
-      {watching && sessions.length > 0 && <RailNote>Tap a terminal to watch it.</RailNote>}
-    </RailGroup>
-  </>;
+  return (
+    <>
+      <RailSection>Terminals</RailSection>
+      <RailGroup>
+        {sessions.length === 0 ? (
+          <RailNote>
+            {watching
+              ? 'No terminals open in this project on your computer.'
+              : 'No terminals open yet.'}
+          </RailNote>
+        ) : (
+          sessions.map((session) => (
+            <ProjectTerminalRow
+              key={session.id}
+              session={session}
+              workspace={workspace}
+              onOpen={() => onOpenSession(session.id)}
+            />
+          ))
+        )}
+        {watching && sessions.length > 0 && <RailNote>Tap a terminal to watch it.</RailNote>}
+      </RailGroup>
+    </>
+  );
 }
 const s = StyleSheet.create({
   header: { paddingBottom: 6 },
   row: { minHeight: 52, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center' },
   spacer: { flex: 1 },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 2, paddingBottom: 10 },
-  folder: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  identity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 2,
+    paddingBottom: 10,
+  },
+  folder: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: { flex: 1, gap: 3 },
   name: { fontSize: 21, fontWeight: '700', letterSpacing: -0.6 },
   whereRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

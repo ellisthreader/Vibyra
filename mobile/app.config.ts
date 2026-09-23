@@ -11,7 +11,7 @@ const config: ExpoConfig = {
       NSLocalNetworkUsageDescription: 'Find your computer running Vibyra Host on the same Wi-Fi so you can connect to it.',
       NSBonjourServices: ['_vibyra-host._tcp'],
       NSAppTransportSecurity: { NSAllowsLocalNetworking: true },
-      NSSpeechRecognitionUsageDescription: 'Turn what you say into text in your message. It stays on your iPhone when your iPhone can do this itself.',
+      NSSpeechRecognitionUsageDescription: 'Turn what you say into text in your message. Voice recognition stays on this iPhone.',
       ITSAppUsesNonExemptEncryption: true,
       // iOS answers "not installed" for any scheme not named here, so Settings >
       // Two-factor can only offer "Set up in 1Password" for apps on this list. The
@@ -24,6 +24,7 @@ const config: ExpoConfig = {
   web: { bundler: 'metro', output: 'single' },
   experiments: { baseUrl: process.env.VIBYRA_WEB_BASE_PATH ?? '' },
   plugins: [
+    'expo-notifications',
     'expo-apple-authentication',
     'expo-web-browser',
     'expo-secure-store',
@@ -38,6 +39,6 @@ const config: ExpoConfig = {
       photosPermission: 'Choose photos to share in a chat or to use as your profile picture.' }],
     ['expo-dev-client', { launchMode: 'most-recent' }],
   ],
-  extra: { remoteProtocol: 1, apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'https://vibyra-production.up.railway.app' },
+  extra: { eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? process.env.EAS_BUILD_PROJECT_ID }, pushEnvironment: process.env.EXPO_PUBLIC_PUSH_ENVIRONMENT ?? 'development', remoteProtocol: 1, apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'https://vibyra-production.up.railway.app' },
 };
 export default config;

@@ -32,8 +32,18 @@ export function ReportModal() {
   const pasteImage = useReportStore((state) => state.pasteImage);
   const removeImage = useReportStore((state) => state.removeImage);
   const modalRef = useRef<HTMLDivElement>(null);
+  const initialFocusDone = useRef(false);
   const [moreOpen, setMoreOpen] = useState(false);
   useModalFocus(modalRef, open && !capturing, close);
+  const draftReady = Boolean(draft);
+  useEffect(() => {
+    if (!open || capturing || !draftReady || initialFocusDone.current) return;
+    const summary = modalRef.current?.querySelector<HTMLInputElement>(".report__primary input");
+    if (summary) {
+      summary.focus();
+      initialFocusDone.current = true;
+    }
+  }, [open, capturing, draftReady]);
 
   // Ctrl+V attaches an image from the clipboard — but only when the clipboard
   // holds one. A text paste has to reach the field the user is typing in, so
@@ -48,7 +58,7 @@ export function ReportModal() {
 
   const hasExtras = Boolean(draft && (
     draft.kind !== "bug" || draft.severity !== "normal" || draft.error || draft.steps ||
-    draft.expected || draft.images.length || draft.includeTerminal || draft.includeDiagnostics || draft.contact
+    draft.expected || draft.images.length || draft.includeTerminal || draft.contact
   ));
   useEffect(() => {
     if (hasExtras) setMoreOpen(true);
@@ -76,7 +86,7 @@ export function ReportModal() {
             <p>
               {status === "sent"
                 ? "Your report reached the Vibyra team."
-                : "Tell us what happened. Only send details you choose to share."}
+                : "Your name, email, platform, hardware, request IP and available project and graphics details go to Vibyra’s Discord report channel."}
             </p>
           </div>
           <button className="icon-btn" onClick={close} aria-label="Close report" title="Close">
@@ -106,10 +116,15 @@ export function ReportModal() {
                   <ReportFields draft={draft} patch={patch} />
                   <ReportScreenshot screenshot={draft.screenshot}
                     onCapture={() => void addScreenshot()}
+                    onSelect={() => void addScreenshot(true)}
                     onRemove={() => patch({ screenshot: null })} />
+                  <p className="report__identity">
+                    Reporting as <strong>{surroundings.context.reporter || "your signed-in account"}</strong>
+                    {" · "}{surroundings.context.platform}
+                  </p>
                   <details className="report__more" open={moreOpen}
                     onToggle={(event) => setMoreOpen(event.currentTarget.open)}>
-                    <summary>More options <span>type, location, files and diagnostics</span></summary>
+                    <summary>Add an error or more details <span>optional</span></summary>
                     <div className="report__more-body">
                       <ReportExtraFields draft={draft} patch={patch} recentErrors={recentErrors} />
                       <ReportAttachments draft={draft} patch={patch} surroundings={surroundings}

@@ -14,11 +14,23 @@ const SIDE = 512;
 export async function pickProfilePhoto(source: PhotoSource): Promise<string | null> {
   if (source === 'camera') {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) throw new Error(permission.canAskAgain
-      ? 'Allow the camera to take a profile photo.' : 'Turn on camera access for Vibyra in the Settings app to take a photo.');
+    if (!permission.granted)
+      throw new Error(
+        permission.canAskAgain
+          ? 'Allow the camera to take a profile photo.'
+          : 'Turn on camera access for Vibyra in the Settings app to take a photo.',
+      );
   }
-  const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 };
-  const result = source === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+  const options: ImagePicker.ImagePickerOptions = {
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 1,
+  };
+  const result =
+    source === 'camera'
+      ? await ImagePicker.launchCameraAsync(options)
+      : await ImagePicker.launchImageLibraryAsync(options);
   const asset = result.canceled ? null : result.assets?.[0];
   if (!asset) return null;
   const context = ImageManipulator.manipulate(asset.uri);

@@ -13,7 +13,7 @@ interface ScreenshotStore {
   shots: Screenshot[];
   draft: CapturedScreenshot | null;
   copiedPath: string | null;
-  capture: () => Promise<void>;
+  capture: (selection?: boolean) => Promise<void>;
   closeEditor: () => void;
   addShot: (shot: Screenshot) => void;
   copySaved: (shot: Screenshot) => Promise<void>;
@@ -36,17 +36,19 @@ export const useScreenshotStore = create<ScreenshotStore>((set, get) => ({
   // Nothing is drawn on screen between the shortcut and the grab: the capture
   // now includes Vibyra's own window, so any editor chrome painted first would
   // end up inside the screenshot.
-  capture: async () => {
+  capture: async (selection = false) => {
     if (capturing || get().draft) return;
     const generation = ++captureGeneration;
     capturing = true;
     try {
-      const draft = await captureScreen();
+      const draft = await captureScreen(selection);
       if (generation === captureGeneration) set({ draft });
       else void finishScreenshotEdit();
     } catch (error) {
       void finishScreenshotEdit();
-      useWorkspaceStore.getState().setError(`Screenshot failed: ${String(error)}`);
+      if (!String(error).includes("Screen selection was cancelled")) {
+        useWorkspaceStore.getState().setError(`Screenshot failed: ${String(error)}`);
+      }
     } finally {
       if (generation === captureGeneration) capturing = false;
     }

@@ -8,6 +8,8 @@ export interface WelcomeBeat {
   label: string;
   title: string;
   body: string;
+  emphasis?: string;
+  shortLabel?: string;
   note?: string;
 }
 
@@ -45,12 +47,12 @@ export function firstWelcomeBeats(name: string): WelcomeBeat[] {
   return [
     { label: "Welcome", title: `Welcome to Vibyra, ${firstName}.`,
       body: "" },
-    { label: "Code", title: "Build with your coding agents.",
-      body: "Create a project or open a folder. Run coding agents side by side in your terminal workspace." },
-    { label: "Agents", title: "A teammate for each task.",
-      body: "Choose a role, tools and instructions. Give each agent a focused job and a conversation of its own." },
-    { label: "iPhone & Remote", title: "Take your workspace with you.",
-      body: "Open Vibyra on your iPhone, find this computer and approve the connection here. Vibyra Cloud connects you across networks.",
+    { label: "Code", title: "Your ideas. Your agents.", emphasis: "Your agents.",
+      body: "Build with Codex, Claude and Gemini side by side. One project. A workspace that keeps up." },
+    { label: "Agents", title: "Good work starts with a great team.", emphasis: "a great team.",
+      body: "Give each teammate a role, tools and instructions. Turn a focused conversation into your next step." },
+    { label: "iPhone & Remote", shortLabel: "iPhone", title: "Your workspace. Wherever you are.", emphasis: "Wherever you are.",
+      body: "Find your computer on iPhone and approve the connection here. Stay connected across networks with Vibyra Cloud.",
       note: "Enable remote phone control in Settings → Phone." },
     { label: "Start", title: "Let’s build.",
       body: "" },

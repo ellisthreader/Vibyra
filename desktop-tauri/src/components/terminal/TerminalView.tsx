@@ -13,6 +13,7 @@ import {
   mountTerminal,
   setTerminalFontSize,
 } from "../../lib/terminalRegistry";
+import { observeResizeThrottled } from "../../lib/throttledFit";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 
@@ -22,7 +23,8 @@ import { useTerminalStore } from "../../state/terminalStore";
  * layout changes never lose terminal state.
  *
  * Resizes fit on the next frame (throttled) plus a trailing settle pass, so
- * grid changes and panel drags track live instead of snapping late.
+ * grid changes and panel drags track live instead of snapping late; see
+ * `observeResizeThrottled`.
  *
  * `fontSize` comes from the grid layout rather than the settings, because a
  * crowded grid buys lines back by rendering smaller. It is applied outside the
@@ -37,8 +39,6 @@ import { useTerminalStore } from "../../state/terminalStore";
  * pane whose only reply to a click is the focus ring is a pane that cannot be
  * answered.
  */
-const FIT_THROTTLE_MS = 90;
-
 export function TerminalView(
   { id, bottomAnchored, fontSize }: { id: number; bottomAnchored: boolean; fontSize: number },
 ) {
@@ -52,11 +52,7 @@ export function TerminalView(
     if (!host || !settings) return;
 
     const entry = mountTerminal(id, settings, host, bottomAnchored, fontRef.current);
-    let trailingTimer = 0;
-    let frame = 0;
-    let lastFitAt = 0;
     const fitNow = () => {
-      lastFitAt = performance.now();
       const followOutput = terminalViewportIsNearBottom(entry.term);
       fitTerminal(entry);
       applyTerminalBottomAnchor(entry.term, entry.anchor, followOutput);
@@ -78,24 +74,11 @@ export function TerminalView(
       if (live.term.buffer.active.viewportY !== before) event.preventDefault();
     };
     host.addEventListener("wheel", onWheel, { passive: false });
-
-    const observer = new ResizeObserver(() => {
-      if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
-        frame = requestAnimationFrame(() => {
-          frame = 0;
-          fitNow();
-        });
-      }
-      window.clearTimeout(trailingTimer);
-      trailingTimer = window.setTimeout(fitNow, FIT_THROTTLE_MS);
-    });
-    observer.observe(host);
+    const stopFitting = observeResizeThrottled(host, fitNow);
 
     return () => {
       host.removeEventListener("wheel", onWheel);
-      observer.disconnect();
-      window.clearTimeout(trailingTimer);
-      cancelAnimationFrame(frame);
+      stopFitting();
       entry.container.remove();
     };
   }, [bottomAnchored, id]);

@@ -1,6 +1,10 @@
 import { vibesStateKey } from './guestKeys';
 
-type Flags = { read(key: string): Promise<string | null>; write(key: string, value: string): Promise<void>; delete(key: string): Promise<void> };
+type Flags = {
+  read(key: string): Promise<string | null>;
+  write(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+};
 
 /**
  * What the guest's phone chat kept on this phone — the chat it had open, a turn
@@ -16,6 +20,7 @@ type Flags = { read(key: string): Promise<string | null>; write(key: string, val
 export async function handOverGuestState(flags: Flags, email: string, converted: boolean) {
   const guest = vibesStateKey(null);
   const saved = await flags.read(guest);
-  if (converted && saved && !(await flags.read(vibesStateKey(email)))) await flags.write(vibesStateKey(email), saved);
+  if (converted && saved && !(await flags.read(vibesStateKey(email))))
+    await flags.write(vibesStateKey(email), saved);
   await flags.delete(guest);
 }

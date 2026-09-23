@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

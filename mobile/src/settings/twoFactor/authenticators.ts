@@ -1,6 +1,10 @@
 import { Linking } from 'react-native';
 
-export interface Authenticator { id: string; name: string; scheme: string }
+export interface Authenticator {
+  id: string;
+  name: string;
+  scheme: string;
+}
 
 /**
  * The authenticator apps this phone can be asked about by name, so the button can say
@@ -24,10 +28,18 @@ const known: Authenticator[] = [
   { id: 'aegis', name: 'Aegis', scheme: 'aegis://' },
 ];
 /** Any app at all that has claimed one-time passwords, named or not. */
-const anyAuthenticator: Authenticator = { id: 'any', name: 'your authenticator app', scheme: 'otpauth://' };
+const anyAuthenticator: Authenticator = {
+  id: 'any',
+  name: 'your authenticator app',
+  scheme: 'otpauth://',
+};
 
 const opens = async (scheme: string) => {
-  try { return await Linking.canOpenURL(scheme); } catch { return false; }
+  try {
+    return await Linking.canOpenURL(scheme);
+  } catch {
+    return false;
+  }
 };
 
 /**
@@ -36,7 +48,9 @@ const opens = async (scheme: string) => {
  * covers the built-in Passwords app, so the offer to open one is made regardless.
  */
 export async function installedAuthenticators(): Promise<Authenticator[]> {
-  const found = await Promise.all(known.map(async app => (await opens(app.scheme) ? app : null)));
+  const found = await Promise.all(
+    known.map(async (app) => ((await opens(app.scheme)) ? app : null)),
+  );
   const named = found.filter((app): app is Authenticator => app !== null);
   if (named.length) return named;
 

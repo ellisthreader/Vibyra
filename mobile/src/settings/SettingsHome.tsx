@@ -24,42 +24,84 @@ export type { SettingsRoutes } from './pages';
  * account — the look, the app and help — under the case for making one, which names
  * what the other groups would add.
  */
-export function SettingsHome({ workspace, nav, routes }: { workspace: WorkspaceModel; nav: SettingsNav; routes: SettingsRoutes }) {
+export function SettingsHome({
+  workspace,
+  nav,
+  routes,
+}: {
+  workspace: WorkspaceModel;
+  nav: SettingsNav;
+  routes: SettingsRoutes;
+}) {
   const bottom = useSheetBottomInset();
   const { logIn, signUp, updateProfile } = workspace.actions;
   const guest = !workspace.account && !workspace.demo;
   // The card opens Profile only for an account whose details can be edited there.
-  const profile = settingsAccount(workspace) && updateProfile ? () => nav.push('profile') : undefined;
-  return <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]} keyboardShouldPersistTaps="handled"
-    showsVerticalScrollIndicator={false}>
-    {guest && (logIn || signUp) ? <GuestHeader onSignUp={signUp ? () => nav.signIn('signup') : undefined}
-      onSignIn={logIn ? () => nav.signIn('login') : undefined} /> : <ProfileHeader workspace={workspace} onOpenProfile={profile} />}
-    {!guest && <>
-      <VibyraSection workspace={workspace} nav={nav} routes={routes} />
-      <AccountSection workspace={workspace} nav={nav} />
-    </>}
-    <Label>Appearance</Label>
-    <ThemePicker theme={workspace.themePreference} accent={workspace.accent ?? 'cobalt'}
-      onTheme={workspace.actions.setTheme} onAccent={workspace.actions.setAccent} />
-    <AppSection workspace={workspace} nav={nav} routes={routes} />
-    <HelpSection workspace={workspace} />
-  </ScrollView>;
+  const profile =
+    settingsAccount(workspace) && updateProfile ? () => nav.push('profile') : undefined;
+  return (
+    <ScrollView
+      contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      {guest && (logIn || signUp) ? (
+        <GuestHeader
+          onSignUp={signUp ? () => nav.signIn('signup') : undefined}
+          onSignIn={logIn ? () => nav.signIn('login') : undefined}
+        />
+      ) : (
+        <ProfileHeader workspace={workspace} onOpenProfile={profile} />
+      )}
+      {!guest && (
+        <>
+          <VibyraSection workspace={workspace} nav={nav} routes={routes} />
+          <AccountSection workspace={workspace} nav={nav} />
+        </>
+      )}
+      <Label>Appearance</Label>
+      <ThemePicker
+        theme={workspace.themePreference}
+        accent={workspace.accent ?? 'cobalt'}
+        onTheme={workspace.actions.setTheme}
+        onAccent={workspace.actions.setAccent}
+      />
+      <AppSection workspace={workspace} nav={nav} routes={routes} />
+      <HelpSection workspace={workspace} />
+    </ScrollView>
+  );
 }
 
 /** What shapes Vibyra's replies and what it can reach. A component of its own so a
  *  guest, who never sees these rows, never has their preferences asked for either. */
-function VibyraSection({ workspace, nav, routes }: { workspace: WorkspaceModel; nav: SettingsNav; routes: SettingsRoutes }) {
+function VibyraSection({
+  workspace,
+  nav,
+  routes,
+}: {
+  workspace: WorkspaceModel;
+  nav: SettingsNav;
+  routes: SettingsRoutes;
+}) {
   const { installed } = useIntegrations();
   // Asked again each time the sheet opens.
   const ai = usePersonalization(workspace, true).rows;
-  return <>
-    <Label>Vibyra</Label>
-    <Group>
-      <Row title="Personality" value={ai.personality} onPress={() => nav.push('personality')} />
-      <Row title="Memory" value={ai.memory} onPress={() => nav.push('memory')} />
-      <Row title="Plugins" value={installed.length ? `${installed.length} connected` : null} onPress={() => nav.close(routes.plugins)} />
-    </Group>
-  </>;
+  return (
+    <>
+      <Label>Vibyra</Label>
+      <Group>
+        <Row title="Notifications" onPress={() => nav.push('notifications')} />
+        <Row title="Updates" onPress={() => nav.push('updates')} />
+        <Row title="Personality" value={ai.personality} onPress={() => nav.push('personality')} />
+        <Row title="Memory" value={ai.memory} onPress={() => nav.push('memory')} />
+        <Row
+          title="Plugins"
+          value={installed.length ? `${installed.length} connected` : null}
+          onPress={() => nav.close(routes.plugins)}
+        />
+      </Group>
+    </>
+  );
 }
 const s = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 6 },

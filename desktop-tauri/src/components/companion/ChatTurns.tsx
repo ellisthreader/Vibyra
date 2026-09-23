@@ -1,5 +1,5 @@
 import type { ChatTurn } from "../../state/chatTypes";
-import { SparklesIcon } from "../common/Icons";
+import { SparklesIcon, TerminalIcon, EyeIcon } from "../common/Icons";
 import { VibyraMark } from "../common/VibyraMark";
 
 import { ChatAction } from "./ChatAction";
@@ -7,11 +7,21 @@ import { ChatMessage } from "./ChatMessage";
 
 const STARTERS = [
   {
+    label: 'Check my terminals',
+    detail: 'See what is running and what needs you',
+    icon: TerminalIcon,
+    prompt: 'Check the terminals in this project and briefly tell me what is running and whether anything needs my attention.',
+  },
+  {
     label: "Explain this project",
+    detail: 'Find your bearings in the codebase',
+    icon: EyeIcon,
     prompt: "Give me a concise overview of this project, its main entry points, and how the pieces fit together.",
   },
   {
     label: "Choose the next useful task",
+    detail: 'Turn an idea into a clear next step',
+    icon: SparklesIcon,
     prompt: "Review this project and suggest the smallest useful next task, with a clear reason.",
   },
 ];
@@ -42,15 +52,15 @@ export function ChatTurns({
           <div className="chat-empty__mark">
             <VibyraMark size={40} label="Vibyra" />
           </div>
-          <h3>What are we building?</h3>
-          <p>A question, an idea, a place to start.</p>
+          <h3>What can I help with?</h3>
+          <p>Get a fresh perspective, check your agents, or take the next step.</p>
           <div className="chat-starters">
             {STARTERS.map((starter) => (
               <button key={starter.label} onClick={() => onStart(starter.prompt)}>
                 {/* The V stays off a suggestion chip: it is the app speaking as
                     itself, not a bullet. */}
-                <SparklesIcon size={13} />
-                <span>{starter.label}</span>
+                <starter.icon size={17} />
+                <span className="chat-starter-copy"><span>{starter.label}</span><small>{starter.detail}</small></span>
                 <span aria-hidden="true">→</span>
               </button>
             ))}

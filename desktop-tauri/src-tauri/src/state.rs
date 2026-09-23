@@ -16,6 +16,7 @@ use crate::commands::voice::VoiceRecording;
 use crate::provider_auth::ProviderAuthManager;
 use crate::secret_store::SecretStore;
 use crate::sink::ChannelSink;
+use crate::state_openai_key::{Loaded, SettingsFile, StoredKey};
 
 pub struct AppState {
     pub shared_chats: Arc<crate::shared_chats::SharedChats>,
@@ -24,13 +25,22 @@ pub struct AppState {
     pub manager: Arc<PtyManager>,
     pub sink: Arc<ChannelSink>,
     pub preview: Arc<PreviewManager>,
+    /// A damaged grant file stays closed until repaired; terminal access still
+    /// starts, and Preview sharing commands report the storage error.
+    pub preview_grants: Result<Arc<crate::phone::preview_grants::PreviewGrants>, String>,
     pub settings: Mutex<Settings>,
     pub settings_path: PathBuf,
-    pub openai_api_key: Mutex<Option<String>>,
+    /// Taken by every settings write, outside `settings`, so the file is
+    /// written without blocking readers and two writes never interleave.
+    pub settings_write: Mutex<()>,
+    pub agent_computer_write: Mutex<()>,
+    /// Read off the main thread; see `state_openai_key`.
+    openai_api_key: StoredKey,
+    /// A key found in the environment or a `.env` file at startup. Read once:
+    /// the working directory cannot change under a running window.
     env_openai_key: Option<String>,
     pub usage: Arc<AiUsageGuard>,
     pub provider_auth: Arc<ProviderAuthManager>,
-    pub secret_store_available: Mutex<bool>,
     pub watcher: Mutex<Option<WorkspaceWatcher>>,
     pub voice: Mutex<Option<VoiceRecording>>,
     /// The cancel flag of every scaffold the window has running, by run id.
@@ -59,10 +69,8 @@ impl AppState {
             FlushConfig::default(),
         );
         let settings_path = Settings::default_path();
-        let mut settings = Settings::load_from(&settings_path);
-        let secret_store = SecretStore;
-        let (openai_api_key, secret_store_available) =
-            load_and_migrate_key(&secret_store, &mut settings, &settings_path);
+        let settings = Settings::load_from(&settings_path);
+        let openai_api_key = StoredKey::start();
         let env_openai_key = crate::openai_key::from_environment(settings_path.parent());
         let usage_path = settings_path
             .parent()
@@ -75,14 +83,24 @@ impl AppState {
                 .join("shared-chats"),
         );
         let account = Arc::new(AccountSessionManager::default());
-        let phone = Arc::new(crate::phone::PhoneConnection::with_chats(
-            settings_path
-                .parent()
-                .unwrap_or(std::path::Path::new("."))
-                .join("phone"),
+        let phone_state_dir = settings_path
+            .parent()
+            .unwrap_or(std::path::Path::new("."))
+            .join("phone");
+        let preview_grants =
+            crate::phone::preview_grants::PreviewGrants::load(phone_state_dir.clone())
+                .map(Arc::new);
+        let preview = PreviewManager::new();
+        let phone_preview = preview_grants
+            .as_ref()
+            .ok()
+            .map(|grants| (preview.clone(), grants.clone()));
+        let phone = Arc::new(crate::phone::PhoneConnection::with_chats_preview(
+            phone_state_dir,
             manager.clone(),
             Some(shared_chats.clone()),
             Some(account.clone()),
+            phone_preview,
         ));
         crate::phone::watch(phone.clone(), manager.clone());
         Self {
@@ -91,14 +109,16 @@ impl AppState {
             phone,
             manager,
             sink,
-            preview: PreviewManager::new(),
+            preview,
+            preview_grants,
             settings: Mutex::new(settings),
             settings_path,
-            openai_api_key: Mutex::new(openai_api_key),
+            settings_write: Mutex::new(()),
+            agent_computer_write: Mutex::new(()),
+            openai_api_key,
             env_openai_key,
             usage: Arc::new(AiUsageGuard::new(usage_path)),
             provider_auth: Arc::new(ProviderAuthManager::default()),
-            secret_store_available: Mutex::new(secret_store_available),
             watcher: Mutex::new(None),
             voice: Mutex::new(None),
             scaffold_runs: Arc::new(Mutex::new(HashMap::new())),
@@ -108,24 +128,46 @@ impl AppState {
         }
     }
 
+    /// The stored key, waiting for the startup read if it is still running.
+    /// Never call while holding `settings` or `settings_write`.
+    fn stored_key(&self) -> &Loaded {
+        self.openai_api_key.get(SettingsFile {
+            settings: &self.settings,
+            path: &self.settings_path,
+            write: &self.settings_write,
+        })
+    }
+
+    pub fn secret_store_available(&self) -> bool {
+        *self.stored_key().store_available.lock()
+    }
+
+    /// True when chat is running on the environment's key because Settings has
+    /// none. "Remove key" cannot take that one away, so the pane says so.
+    pub fn openai_key_from_environment(&self) -> bool {
+        self.stored_key().key.lock().is_none() && self.env_openai_key.is_some()
+    }
+
+    /// A key saved in Settings wins; otherwise the environment supplies one, so
+    /// a desktop launched from a checkout that already has `OPENAI_API_KEY`
+    /// chats without anyone pasting the key a second time.
     pub fn openai_key(&self) -> Option<String> {
-        self.openai_api_key
+        self.stored_key()
+            .key
             .lock()
             .clone()
             .or_else(|| self.env_openai_key.clone())
-    }
-
-    pub fn openai_key_from_environment(&self) -> bool {
-        self.openai_api_key.lock().is_none() && self.env_openai_key.is_some()
     }
 
     /// Writes the key to the operating-system credential store first: if that
     /// fails the key is never taken into memory, so the UI can never claim a
     /// key is saved when nothing was persisted.
     pub fn store_openai_key(&self, key: Option<&str>) -> Result<(), String> {
+        // Loaded first, so the startup read cannot land after this write.
+        let stored = self.stored_key();
         SecretStore.write_openai_key(key)?;
-        *self.secret_store_available.lock() = true;
-        *self.openai_api_key.lock() = key
+        *stored.store_available.lock() = true;
+        *stored.key.lock() = key
             .map(str::trim)
             .filter(|key| !key.is_empty())
             .map(str::to_owned);
@@ -140,50 +182,5 @@ impl AppState {
             daily_spend_usd: settings.ai_daily_spend_cap_usd,
             monthly_spend_usd: settings.ai_monthly_spend_cap_usd,
         }
-    }
-}
-
-fn load_and_migrate_key(
-    store: &SecretStore,
-    settings: &mut Settings,
-    path: &std::path::Path,
-) -> (Option<String>, bool) {
-    match store.read_openai_key() {
-        Ok(Some(key)) => {
-            remove_legacy_key(settings, path);
-            (Some(key), true)
-        }
-        Ok(None) => migrate_legacy_key(store, settings, path),
-        Err(error) => {
-            eprintln!("Vibyra credential migration deferred: {error}");
-            (settings.legacy_openai_api_key.clone(), false)
-        }
-    }
-}
-
-fn migrate_legacy_key(
-    store: &SecretStore,
-    settings: &mut Settings,
-    path: &std::path::Path,
-) -> (Option<String>, bool) {
-    let Some(key) = settings.legacy_openai_api_key.clone() else {
-        return (None, true);
-    };
-    match store.write_openai_key(Some(&key)) {
-        Ok(()) => {
-            remove_legacy_key(settings, path);
-            (Some(key), true)
-        }
-        Err(error) => {
-            eprintln!("Vibyra credential migration deferred: {error}");
-            (Some(key), false)
-        }
-    }
-}
-
-fn remove_legacy_key(settings: &mut Settings, path: &std::path::Path) {
-    settings.legacy_openai_api_key = None;
-    if let Err(error) = settings.save_to(path) {
-        eprintln!("Vibyra could not remove a migrated plaintext credential: {error}");
     }
 }

@@ -64,7 +64,7 @@ export const CATEGORY_DESCRIPTORS: CategoryDescriptor[] = [
     id: "models",
     tone: "info",
     label: "New models",
-    hint: "A model you can pick has been released.",
+    hint: "OpenRouter has added a model. Availability in Vibyra varies.",
     osCapable: false,
   },
   {

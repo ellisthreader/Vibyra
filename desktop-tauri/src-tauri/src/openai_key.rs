@@ -47,7 +47,7 @@ pub fn hint(key: &str) -> String {
 /// Proves the key works, using the free `/v1/models` endpoint so validation
 /// itself never costs the user anything.
 pub async fn verify(key: &str) -> Result<(), String> {
-    let response = reqwest::Client::new()
+    let response = crate::http_client::shared()
         .get("https://api.openai.com/v1/models")
         .bearer_auth(key)
         .timeout(std::time::Duration::from_secs(20))

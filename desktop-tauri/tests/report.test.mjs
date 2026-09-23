@@ -10,6 +10,8 @@ import {
   gradable,
   REPORT_KINDS,
 } from "../src/lib/reportDraft.ts";
+import { reportVersion } from "../src/lib/reportVersion.ts";
+import { reportPlatform } from "../src/lib/reportPlatform.ts";
 
 function draft(overrides = {}) {
   return {
@@ -39,9 +41,8 @@ test("a paste far larger than a report is refused before it is sent", () => {
   assert.equal(draftBlocker(draft({ details: "x".repeat(7_999) })), null);
 });
 
-test("terminal output and personal diagnostics require opt-in", () => {
+test("terminal output requires opt-in", () => {
   assert.equal(emptyDraft("Terminal pane").includeTerminal, false);
-  assert.equal(emptyDraft("Terminal pane").includeDiagnostics, false);
   assert.equal(emptyDraft("Terminal pane").contact, "");
   assert.equal(emptyDraft("Terminal pane").screenshot, null);
 });
@@ -92,4 +93,15 @@ test("a report starts with no attachments and refuses to become an album", () =>
     draftBlocker(draft({ images: ["/a.png", "/b.png", "/c.png", "/d.png", "/e.png"] })),
     /at most 4 images/,
   );
+});
+
+test("a Mac report identifies the installed build without labeling Linux as a Mac build", () => {
+  assert.equal(reportVersion("0.7.9", "MacIntel", "9"), "0.7.9 (build 9)");
+  assert.equal(reportVersion("0.7.9", "Linux x86_64", "9"), "0.7.9");
+});
+
+test("reports name the operating system instead of a webview user-agent fragment", () => {
+  assert.equal(reportPlatform("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", "MacIntel"), "macOS");
+  assert.equal(reportPlatform("Mozilla/5.0 (X11; Linux x86_64)", "Linux x86_64"), "Linux");
+  assert.equal(reportPlatform("Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Win32"), "Windows");
 });

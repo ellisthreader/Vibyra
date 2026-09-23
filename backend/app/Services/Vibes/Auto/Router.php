@@ -27,9 +27,9 @@ final class Router
         private readonly OpenRouterPricingCatalog $pricing,
     ) {}
 
-    public function route(string $text, Situation $situation): Decision
+    public function route(string $text, Situation $situation, ?array $semantic = null): Decision
     {
-        $demand = $this->demand($text, $situation);
+        $demand = \App\Services\Decisions\SemanticDemand::apply($this->demand($text, $situation), $semantic);
         $ranked = $this->rank($demand, $situation);
         abort_if($ranked === [], 503, 'No suitable Auto model is available for this message right now. Please try again later.');
 

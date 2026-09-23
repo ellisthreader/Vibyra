@@ -29,6 +29,8 @@
 .launch-tile__copy { display: grid; width: 100%; min-width: 0; gap: 2px; margin-top: auto; }
 .launch-tile__copy strong { overflow: hidden; color: var(--text); font-size: 12.5px; font-weight: 600; letter-spacing: -.1px; text-overflow: ellipsis; white-space: nowrap; }
 .launch-tile__copy small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.launch-tile__badge { position: absolute; top: 12px; right: 12px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--pick-accent) 45%, transparent); border-radius: 999px; color: var(--pick-accent); font-size: 9px; font-style: normal; font-weight: 760; letter-spacing: .06em; text-transform: uppercase; }
+.launch-tile--active .launch-tile__badge { right: 34px; }
 
 .launch-tile__check {
   position: absolute;

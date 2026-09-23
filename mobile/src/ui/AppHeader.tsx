@@ -4,6 +4,7 @@ import { useTheme } from '../theme';
 import { Icon, IconButton } from './primitives';
 import { isIdeas } from './ideas';
 import { APP_HEADER_HEIGHT } from './keyboardOffset';
+import { font } from './font';
 import type { Destination, Project, Session, WorkspaceModel } from './types';
 
 /**
@@ -12,8 +13,8 @@ import type { Destination, Project, Session, WorkspaceModel } from './types';
  * chat, the computer, or, with neither yet, the app. No screen below draws a
  * title of its own, so a place is named exactly once and always in one spot.
  *
- * The right slot carries whatever that page can do and nothing else. Where a
- * page has no action the slot still holds its width, because a title that
+ * The right slot carries actions for the current page. Where a page has no
+ * action the slot still holds its width, because a title that
  * shifts sideways between pages reads as a different bar rather than the same
  * one with a different name.
  */
@@ -26,7 +27,7 @@ const titles: Record<Destination, string> = {
 };
 
 export function AppHeader({ destination, workspace, session, project, connected, compact, onMenu, onNewChat, onSwitchChat, onComputers,
-  onSessionOptions, modeSwitch, onBack }: {
+  onSessionOptions, onPreview, modeSwitch, onBack }: {
   modeSwitch?: ReactNode;
   destination: Destination; workspace: WorkspaceModel; session: Session | undefined;
   /** The project you are in, named here while no terminal of its own is open. */
@@ -35,6 +36,7 @@ export function AppHeader({ destination, workspace, session, project, connected,
   onSwitchChat: () => void; onComputers: () => void;
   /** Given while a terminal session is open: its ⋯ takes the action slot, so nothing else needs a row of its own. */
   onSessionOptions?: () => void;
+  onPreview?: () => void;
   /** Given while Settings led here: the leading button returns to Settings instead of opening the menu. */
   onBack?: () => void;
 }) {
@@ -45,7 +47,8 @@ export function AppHeader({ destination, workspace, session, project, connected,
       ? <WorkTitle workspace={workspace} session={session} project={project} connected={connected} compact={compact}
         onSwitchChat={onSwitchChat} onComputers={onComputers} />
       : <PageTitle title={titles[destination]} />}
-    <Action destination={destination} onNewChat={onNewChat} onSessionOptions={onSessionOptions} />
+    <View style={s.slot} />
+    <View style={s.trailing}><Action destination={destination} onNewChat={onNewChat} onSessionOptions={onSessionOptions} onPreview={onPreview} /></View>
   </View>;
 }
 
@@ -58,8 +61,8 @@ function PageTitle({ title }: { title: string }) {
 }
 
 /**
- * The work surface, which is always inside a project. Ideas is named with its
- * spark and no computer line — a computer is not mentioned until one is actually
+ * The work surface, which is always inside a project. Chats has no computer
+ * line — a computer is not mentioned until one is actually
  * connected, and then a folder's title carries it. The title is tappable,
  * because the thing it names is also the thing you switch: the rail opens on
  * that project's chats and terminals.
@@ -77,7 +80,7 @@ function WorkTitle({ workspace, session, project, connected, compact, onSwitchCh
   return <Pressable accessibilityRole="button" accessibilityLabel={session || ideas ? 'Switch chat' : project ? 'Switch terminal' : 'Choose computer'}
     onPress={() => inside ? onSwitchChat() : onComputers()} style={s.heading}>
     <View style={s.headingRow}>
-      {!session && project && <Icon name={ideas ? 'sparkles' : 'folder'} size={15} color={colors.accent} />}
+      {!session && project && <Icon name={ideas ? 'chatbubbles-outline' : 'folder'} size={15} color={colors.accent} />}
       <Text numberOfLines={1} style={[s.brand, { color: colors.text }, session && s.sessionTitle]}>{session?.title ?? project?.name ?? titles.work}</Text>
       <Icon name="chevron-down" size={12} color={colors.muted} />
     </View>
@@ -89,29 +92,37 @@ function WorkTitle({ workspace, session, project, connected, compact, onSwitchCh
 }
 
 /**
- * One action per page, or none. The work surface offers a new chat; the pages
- * that only show what the account already holds have nothing here to press. An
- * open terminal's one action is its options (project, files, stop): a new chat
- * is a menu away, and the terminal keeps every pixel below this bar for its output.
+ * Keep actions outside the centered title/Code–Agents layout. A new chat stays
+ * in the menu while a terminal is open.
  */
-function Action({ destination, onNewChat, onSessionOptions }: {
-  destination: Destination; onNewChat: () => void; onSessionOptions?: () => void;
+function Action({ destination, onNewChat, onSessionOptions, onPreview }: {
+  destination: Destination; onNewChat: () => void; onSessionOptions?: () => void; onPreview?: () => void;
 }) {
+  const { colors } = useTheme();
+  if (destination === 'work' && onPreview) return <View style={s.actions}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Live Preview" onPress={onPreview} style={s.preview}>
+      <Icon name="globe-outline" size={22} color={colors.accent} />
+    </Pressable>
+    {onSessionOptions && <IconButton icon="ellipsis-horizontal" label="Session options" onPress={onSessionOptions} />}
+  </View>;
   if (destination === 'work' && onSessionOptions) return <IconButton icon="ellipsis-horizontal" label="Session options" onPress={onSessionOptions} />;
   if (destination === 'work') return <IconButton icon="create-outline" label="New chat" onPress={onNewChat} />;
   return <View style={s.slot} />;
 }
 
 const s = StyleSheet.create({
-  header: { minHeight: APP_HEADER_HEIGHT, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 12, paddingVertical: 7 },
-  heading: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 5 },
+  header: { minHeight: APP_HEADER_HEIGHT, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, gap: 8, paddingVertical: 6 },
+  heading: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 3 },
   headingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '100%' },
-  brand: { fontSize: 20, fontWeight: '600', letterSpacing: -0.6, flexShrink: 1 },
-  sessionTitle: { fontSize: 15, letterSpacing: -0.2 },
-  page: { fontSize: 17, fontWeight: '600', letterSpacing: -0.3, flexShrink: 1 },
+  brand: { ...font.headline, flexShrink: 1 },
+  sessionTitle: { fontSize: 16, letterSpacing: -0.3 },
+  page: { ...font.headline, flexShrink: 1 },
   connection: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%' },
   dot: { width: 5, height: 5, borderRadius: 3 },
-  computer: { fontSize: 10, flexShrink: 1 },
+  computer: { fontSize: 11, fontWeight: '500', flexShrink: 1 },
   // Matches the icon button's width so the title stays centred on pages with no action.
   slot: { width: 44 },
+  trailing: { position: 'absolute', right: 8, top: 6, flexDirection: 'row' },
+  actions: { flexDirection: 'row', alignItems: 'center' },
+  preview: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
 });

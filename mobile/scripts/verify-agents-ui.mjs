@@ -53,19 +53,19 @@ try {
     await button('New teammate').click();
     await capture(page, `${out}/${theme}-setup-intro.png`);
     await setup('Research helper', 'Read connected sources and prepare a concise report.', true);
-    await page.getByText('Prefer concise answers with sources.', { exact: true }).waitFor();
-    await button('Task budget').click();
-    await input('Vibes per task').fill('0'); assert.equal(await button('Done').isDisabled(), true);
-    await input('Vibes per task').fill('5'); await button('Done').click();
+
+    await page.getByRole('tab', { name: 'Access', exact: true }).click();
+    await input('Vibes per task').fill('0'); assert.equal(await button('Create teammate').isDisabled(), true);
+    await input('Vibes per task').fill('5');
     await fullyVisible(button('Create teammate'), page, 'create footer');
     await capture(page, `${out}/${theme}-setup.png`);
     await button('Back to teammates').click(); await button('New teammate').click();
-    await page.getByRole('heading', { name: 'Research helper', exact: true }).waitFor();
+    await page.getByRole('tab', { name: 'Profile', exact: true }).click(); assert.equal(await input('Teammate name').inputValue(), 'Research helper');
     await button('Create teammate').click(); await input('Message Research helper').waitFor();
     await input('Message Research helper').fill('Summarize the connected sources.');
     await button('Send message').click(); await page.getByText('Fixture reply only.').waitFor();
     await capture(page, `${out}/${theme}-conversation.png`);
-    await button('Teammate details').click(); await input('Teammate job').fill('Review sources and cite each conclusion.');
+    await button('Teammate details').click(); await input('Teammate task').fill('Review sources and cite each conclusion.');
     await button('Save changes').click(); await input('Message Research helper').waitFor();
     const edits = (await page.evaluate(() => window.agentCalls)).filter(x => x.action === 'save' && x.revision !== undefined);
     assert.equal(edits.length, 1); assert.equal(edits[0].fields.id, undefined); assert.equal(edits[0].revision, 1);
@@ -91,7 +91,7 @@ try {
   await button('Create teammate').click(); await button('Retry save').waitFor();
   const original = (await page.evaluate(() => window.agentCalls)).find(x => x.action === 'save');
   await page.reload(); await button('New teammate').click(); await button('Retry save').waitFor();
-  await page.getByRole('heading', { name: 'Durable helper', exact: true }).waitFor();
+  assert.equal(await input('Teammate name').inputValue(), 'Durable helper');
   await button('Retry save').click();
   await page.waitForFunction(() => window.agentCalls.some(x => x.action === 'save'));
   const recovered = (await page.evaluate(() => window.agentCalls)).find(x => x.action === 'save');
@@ -127,17 +127,16 @@ try {
   }
   for (const [label, width, height] of [['wide', 1366, 900], ['short', 667, 375], ['small', 320, 568]]) {
     await open('theme=light', width, height); await button('New teammate').click();
-    await button('Task').waitFor(); await fullyVisible(button('Create teammate'), page, `${label} overview footer`);
+    await page.getByRole('tab', { name: 'Profile', exact: true }).waitFor(); await fullyVisible(button('Create teammate'), page, `${label} overview footer`);
     await setup('Compact helper', 'Research a topic.');
     await fullyVisible(button('Create teammate'), page, `${label} create footer`);
     const panel = await button('Create teammate').boundingBox();
     assert.ok(Math.abs(panel.x + panel.width / 2 - width / 2) < 2, 'setup is centered in the screen');
     await capture(page, `${out}/${label}-setup.png`);
-    for (const [section, done] of [['Memory', 'Done'], ['Tools', 'Done'], ['Routine plans', 'Done'], ['Task budget', 'Done'], ['Edit name & role', 'Done']]) {
-      await button(section).click(); await fullyVisible(button(done), page, `${label} ${section} footer`);
+    for (const section of ['Memory', 'Access', 'Skills', 'Profile']) {
+      await page.getByRole('tab', { name: section, exact: true }).click(); await fullyVisible(button('Create teammate'), page, `${label} ${section} footer`);
       assert.equal(await input('Message teammate setup').count(), 0, 'editors have no competing composer');
-      await capture(page, `${out}/${label}-${section.replaceAll(' ', '-')}.png`);
-      await button(done).click();
+      await capture(page, `${out}/${label}-${section}.png`);
     }
     await page.close();
   }

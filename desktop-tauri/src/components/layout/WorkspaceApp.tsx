@@ -1,9 +1,9 @@
-import { NewProjectPage } from '../home/NewProjectPage';
 import { useProductMode } from '../../state/productModeStore';
 import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
 import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
+import { NewModelsNotice } from "../home/NewModelsNotice";
 import { CloseConfirmModal } from "./CloseConfirmModal";
 import { ProjectStrip } from "./ProjectStrip";
 import { ProjectWorkspace } from "./ProjectWorkspace";
@@ -15,6 +15,9 @@ import { VoiceHud } from "./VoiceHud";
 import { PhoneApprovalModal } from "../phone/PhoneApprovalModal";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
+import { newModelsNoticeHidden } from "../../lib/newModelsNotice";
+import { isMac } from "../../lib/platform";
+import { openNewProject } from "../../state/newProject";
 import { useActivityTicker } from "../../lib/useActivityTicker";
 import { useBackgroundThrottle } from "../../lib/useBackgroundThrottle";
 import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
@@ -41,6 +44,8 @@ const FilePreviewModal = lazy(() => import("../files/FilePreviewModal")
   .then((module) => ({ default: module.FilePreviewModal })));
 const HomeView = lazy(() => import("../home/HomeView")
   .then((module) => ({ default: module.HomeView })));
+const NewProjectPage = lazy(() => import("../home/NewProjectPage")
+  .then((module) => ({ default: module.NewProjectPage })));
 const LaunchApprovalModal = lazy(() => import("../rail/LaunchApprovalModal")
   .then((module) => ({ default: module.LaunchApprovalModal })));
 const RunConfirmModal = lazy(() => import("../companion/RunConfirmModal")
@@ -59,13 +64,16 @@ const SettingsModal = lazy(() => import("../settings/SettingsModal")
 export function WorkspaceApp() {
   const productMode = useProductMode(s => s.mode);
   const profile = useAccountStore((s) => s.snapshot.profile);
-  const settings = useSettingsStore((s) => s.settings);
+  // Only whether settings exist: the whole object would re-render the entire
+  // workspace on every settings write.
+  const settingsLoaded = useSettingsStore((s) => s.settings !== null);
   const view = useProjectStore((s) => s.view);
   const activeId = useProjectStore((s) => s.activeId);
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
   const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
   const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
   const historyOpen = useWorkspaceStore((s) => s.historyOpen);
+  const projectsSidebarOpen = useWorkspaceStore((s) => s.projectsSidebarOpen);
   const filePreviewOpen = useWorkspaceStore((s) => s.preview !== null);
   const launchApprovalOpen = useLaunchApprovalStore((s) => s.pending !== null);
   const runConfirmOpen = useRunConfirmStore((s) => s.pending !== null);
@@ -73,6 +81,7 @@ export function WorkspaceApp() {
   const reportOpen = useReportStore((s) => s.open);
   const [welcomeOpen, setWelcomeOpen] = useState(() => !hasSeenFirstWelcome(profile));
   const [welcomeHandoff, setWelcomeHandoff] = useState(false);
+  const [newModelsOpen, setNewModelsOpen] = useState(() => isMac && !newModelsNoticeHidden());
 
   useGlobalShortcuts();
   useWorkspaceRuntime();
@@ -89,10 +98,6 @@ export function WorkspaceApp() {
     useProjectStore.getState().goHome();
     setWelcomeHandoff(true);
   }, []);
-  const replayWelcome = useCallback(() => {
-    setWelcomeHandoff(false);
-    setWelcomeOpen(true);
-  }, []);
   const finishWelcome = useCallback((handoff: boolean) => {
     setWelcomeOpen(false);
     if (!handoff) return;
@@ -104,20 +109,25 @@ export function WorkspaceApp() {
       window.setTimeout(() => setWelcomeHandoff(false), 700);
     });
   }, []);
+  const startWithNewModels = useCallback(() => {
+    setNewModelsOpen(false);
+    useProductMode.getState().choose("work");
+    openNewProject();
+  }, []);
 
-  if (!settings) {
+  if (!settingsLoaded) {
     return <div className="boot">Starting Vibyra…</div>;
   }
 
   const showProject = view !== "home" && activeId !== null;
 
   return (
-    <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""}`}>
-      <TitleBar onReplayWelcome={replayWelcome} />
+    <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""} ${productMode === "work" && !projectsSidebarOpen ? "app--projects-hidden" : ""}`}>
+      <TitleBar />
       <div className="shell">
         <div className="product-code-shell" hidden={productMode !== "work"}>
         <ProjectStrip />
-        {view === "new-project" && <NewProjectPage />}
+        {view === "new-project" && <Suspense fallback={null}><NewProjectPage /></Suspense>}
         <div style={{ display: view === "new-project" ? "none" : "contents" }}>
         {showProject ? (
           <>
@@ -132,7 +142,7 @@ export function WorkspaceApp() {
       </div>
       <UpdateBanner />
       <Toasts />
-      <WhatsNew />
+      <WhatsNew deferred={welcomeOpen || newModelsOpen} />
       <VoiceHud />
       <CloseConfirmModal />
       <PhoneApprovalModal />
@@ -155,6 +165,9 @@ export function WorkspaceApp() {
           onHandoffStart={beginWelcomeHandoff}
         />
       ) : null}
+      {!welcomeOpen && newModelsOpen ? <NewModelsNotice
+        onClose={() => setNewModelsOpen(false)} onStart={startWithNewModels}
+      /> : null}
     </div>
   );
 }

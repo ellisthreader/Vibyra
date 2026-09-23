@@ -24,42 +24,105 @@ import { WizardFooter } from './WizardFooter';
  * that only add files inside simply accumulate. The ticks always show what is
  * actually going to be built.
  */
-export function StackStep({ kind, tools, selected, extras, browsing, onChoose, onToggleExtra, onContinue, onBrowse }: {
-  kind: ProjectKind | null; tools: Record<string, boolean>; selected: string | null; extras: string[]; browsing: boolean;
-  onChoose: (templateId: string | null) => void; onToggleExtra: (templateId: string) => void;
-  onContinue: () => void; onBrowse: (on: boolean) => void;
+export function StackStep({
+  kind,
+  tools,
+  selected,
+  extras,
+  browsing,
+  onChoose,
+  onToggleExtra,
+  onContinue,
+  onBrowse,
+}: {
+  kind: ProjectKind | null;
+  tools: Record<string, boolean>;
+  selected: string | null;
+  extras: string[];
+  browsing: boolean;
+  onChoose: (templateId: string | null) => void;
+  onToggleExtra: (templateId: string) => void;
+  onContinue: () => void;
+  onBrowse: (on: boolean) => void;
 }) {
   const { colors } = useTheme();
-  const pick = (entry: ProjectTemplate) => canLayer(entry) ? onToggleExtra(entry.id) : onChoose(entry.id);
-  if (browsing) return <StackBrowser kind={kind} tools={tools} selected={selected} extras={extras}
-    onPick={pick} onChoose={onChoose} onBack={() => onBrowse(false)} />;
+  const pick = (entry: ProjectTemplate) =>
+    canLayer(entry) ? onToggleExtra(entry.id) : onChoose(entry.id);
+  if (browsing)
+    return (
+      <StackBrowser
+        kind={kind}
+        tools={tools}
+        selected={selected}
+        extras={extras}
+        onPick={pick}
+        onChoose={onChoose}
+        onBack={() => onBrowse(false)}
+      />
+    );
   const own = kind ? templatesForKind(kind) : [];
   const entries = kind ? [...own, ...additionsFor(kind, selected)] : [];
   const on = (entry: ProjectTemplate) => entry.id === selected || extras.includes(entry.id);
-  return <>
-    <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-      <Group inset={16}>
-        {entries.map((entry, index) => <StackRow key={entry.id} entry={entry} missing={missingTools(entry, tools)}
-          recommended={index === 0} selected={on(entry)} onPick={() => pick(entry)} />)}
-        <Pressable accessibilityRole="button" accessibilityLabel="Other stacks" onPress={() => onBrowse(true)}
-          style={({ pressed }) => [s.other, { backgroundColor: pressed ? colors.elevated : 'transparent' }]}>
-          <View style={s.text}>
-            <Text style={[s.otherTitle, { color: colors.accent }]}>Other…</Text>
-            <Text style={[s.blurb, { color: colors.muted }]}>Search every stack Vibyra can start, whatever it is filed under</Text>
-          </View>
-          <Icon name="chevron-forward" size={15} color={colors.accent} />
-        </Pressable>
-      </Group>
-    </ScrollView>
-    <WizardFooter primary={{ title: 'Continue', onPress: onContinue, disabled: !selected && extras.length === 0 }}
-      quiet={[{ title: 'Skip — just make a folder', onPress: () => onChoose(null) }]} />
-  </>;
+  return (
+    <>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Group inset={16}>
+          {entries.map((entry, index) => (
+            <StackRow
+              key={entry.id}
+              entry={entry}
+              missing={missingTools(entry, tools)}
+              recommended={index === 0}
+              selected={on(entry)}
+              onPick={() => pick(entry)}
+            />
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Other stacks"
+            onPress={() => onBrowse(true)}
+            style={({ pressed }) => [
+              s.other,
+              { backgroundColor: pressed ? colors.elevated : 'transparent' },
+            ]}
+          >
+            <View style={s.text}>
+              <Text style={[s.otherTitle, { color: colors.accent }]}>Other…</Text>
+              <Text style={[s.blurb, { color: colors.muted }]}>
+                Search every stack Vibyra can start, whatever it is filed under
+              </Text>
+            </View>
+            <Icon name="chevron-forward" size={15} color={colors.accent} />
+          </Pressable>
+        </Group>
+      </ScrollView>
+      <WizardFooter
+        primary={{
+          title: 'Continue',
+          onPress: onContinue,
+          disabled: !selected && extras.length === 0,
+        }}
+        quiet={[{ title: 'Skip — just make a folder', onPress: () => onChoose(null) }]}
+      />
+    </>
+  );
 }
 const s = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 20 },
-  other: { minHeight: 62, paddingHorizontal: 16, paddingVertical: 11, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  other: {
+    minHeight: 62,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   text: { flex: 1, minWidth: 0, gap: 3 },
-  otherTitle: { fontSize: 15.5, fontWeight: '600', letterSpacing: -0.2 },
+  otherTitle: { fontSize: 15, lineHeight: 20, fontWeight: '600', letterSpacing: -0.25 },
   blurb: { fontSize: 13, lineHeight: 18 },
 });

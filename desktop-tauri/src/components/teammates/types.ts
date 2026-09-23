@@ -1,5 +1,5 @@
-export interface Teammate { id: string; chatId: string; revision: number; model?: string; skillIds?: string[]; name: string; brief: string; memory: string; avatar: string; budget: number; integrations: string[]; archived: boolean; status: string; lastMessage: string; updatedAt: string; unread?: boolean; readCursor?: string; execution?: string | null }
-export interface Roster { version: number; enabled: boolean; teammates: Teammate[] }
+export interface Teammate { id: string; chatId: string; revision: number; model?: string; skillIds?: string[]; name: string; brief: string; memory: string; avatar: string; budget: number; integrations: string[]; archived: boolean; status: string; lastMessage: string; updatedAt: string; unread?: boolean; readCursor?: string; lastRunId?: string | null; execution?: string | null }
+export interface Roster { version: number; enabled: boolean; capabilities?: { localComputer?: boolean }; teammates: Teammate[] }
 export interface Tool { id: string; operation: string; integration?: string; summary?: string; expiresAt: number; approval?: { state: string; fingerprint: string; arguments: Record<string, unknown>; answer: string | null } }
 export interface Turn { id: string; chatId: string; model: string; status: string; prompt: string; response: string | null; error: string | null; tools?: Tool[]; attachments?: { id: string; name: string; bytes: number }[]; createdAt: string }
 export interface Quote { quote: string; model: string; maxCredits: number; estimatedCredits: number; expiresAt: number }

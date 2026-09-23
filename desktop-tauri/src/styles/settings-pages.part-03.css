@@ -78,12 +78,16 @@
 }
 
 .device-row__inner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
   min-height: 0;
   overflow: hidden;
   padding: 10px 16px;
+}
+
+.device-row__main { display: flex; align-items: center; gap: 14px; }
+.device-row__preview {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 8px 0 0 44px; padding-top: 8px; border-top: 1px solid var(--line-soft);
+  font-size: 12px; color: var(--muted);
 }
 
 .device-row--leaving {

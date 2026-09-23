@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { registerRootComponent } from 'expo';
 import { randomUUID } from 'expo-crypto';
 import { Keyboard, Text, View } from 'react-native';
@@ -25,7 +25,7 @@ function TerminalFixture() {
       delete: async (key: string) => { values.delete(key); } };
     return new WorkspaceStore({ rpc: new RpcClient(message => bridge.current?.post(message), randomUUID),
       uuid: randomUUID, iosConversations: true, storage: memory, flags: memory,
-      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount } });
+      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount, sendHostLink: disabledAccount } });
   });
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const [inset, setInset] = useState(0);

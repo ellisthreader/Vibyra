@@ -7,7 +7,8 @@
 
 use serde_json::{json, Value};
 use std::sync::mpsc;
-use vibyra_host::Backend;
+use std::sync::Arc;
+use vibyra_host::{Backend, PreviewHandler};
 
 // Relative, not `crate::phone::…`: the examples include this tree directly, so
 // there is no `phone` module at their crate root.
@@ -35,7 +36,8 @@ impl Backend for DesktopBackend {
                 }
                 Ok(json!({"protocol":1,
                     "capabilities":{"readOnly":true,"canInput":self.control.typing(),"canManage":self.can_manage(),
-                        "scaffoldV1":true,"vibesToolsV1":true},
+                        "scaffoldV1":true,"vibesToolsV1":true,
+                        "previewHttpProofV1":self.preview.is_some()},
                     "projects":projects,
                     // The Mac's own Railway CLI, for the phone's Integrations page.
                     "railway":self.railway.status(),
@@ -62,6 +64,21 @@ impl Backend for DesktopBackend {
                 Ok(json!({"ok":true}))
             }
             "approval.list" => Ok(json!([])),
+            "preview.list" if self.preview.is_some() => {
+                Ok(self.preview.as_ref().unwrap().list(device))
+            }
+            "preview.start" if self.preview.is_some() => self.preview.as_ref().unwrap().start(
+                device,
+                params["grantId"]
+                    .as_str()
+                    .ok_or("Select an approved Preview")?,
+            ),
+            "preview.open" if self.preview.is_some() => self.preview.as_ref().unwrap().open(
+                device,
+                params["grantId"]
+                    .as_str()
+                    .ok_or("Select an approved Preview")?,
+            ),
             // Renaming a project, and dropping it from the list. Neither touches
             // the folder itself, so neither is the write that readOnly refuses.
             "project.rename" | "project.forget" => self.manage_project(method, &params),
@@ -87,6 +104,14 @@ impl Backend for DesktopBackend {
     }
     fn disconnected(&self, device: &str) {
         self.control.disconnected(device);
+        if let Some(preview) = &self.preview {
+            PreviewHandler::disconnected(preview.as_ref(), device);
+        }
+    }
+    fn preview(&self, _device: &str) -> Option<Arc<dyn PreviewHandler>> {
+        self.preview
+            .as_ref()
+            .map(|preview| preview.clone() as Arc<dyn PreviewHandler>)
     }
     fn pairing_notice(&self) -> &'static str {
         if self.vault.project().is_some() {

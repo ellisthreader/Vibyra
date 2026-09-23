@@ -33,9 +33,11 @@ test("a pairing request reaches the workspace, not just Settings", async () => {
   assert.match(workspace, /<PhoneApprovalModal \/>/, "the prompt is mounted outside Settings");
   assert.match(workspace, /usePhoneWatch\(\);/, "and something is polling for requests");
   const modal = await read("src/components/phone/PhoneApprovalModal.tsx");
-  for (const answer of [/answer\(request\.id, false\)/, /answer\(request\.id, true\)/]) {
+  for (const answer of [/answer\(request\.id, false\)/, /answer\(request\.id, true, previewAuto\)/]) {
     assert.match(modal, answer, "both answers are one click away");
   }
+  assert.match(modal, /useState\(false\)/, "website access starts unchecked");
+  assert.match(modal, /signed-in pages and cookies/, "website access is disclosed before pairing");
 });
 
 test("the listener follows this Mac's network on its own", async () => {

@@ -9,7 +9,9 @@ export function ReportFields({ draft, patch }: Props) {
   return (
     <div className="report__primary">
       <label className="report__field">
-        <span className="report__label">What went wrong?</span>
+        <span className="report__label">
+          {draft.kind === "idea" ? "What's your idea?" : draft.kind === "question" ? "What do you need help with?" : "What went wrong?"}
+        </span>
         <input
           className="input"
           value={draft.summary}

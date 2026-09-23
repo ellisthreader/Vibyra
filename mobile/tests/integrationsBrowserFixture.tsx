@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,16 +8,16 @@ import { deviceIntegrations } from '../src/integrations/deviceIntegrations';
 import type { DeviceWorkspace } from '../src/integrations/deviceIntegrations';
 import type { VaultChat } from '../src/integrations/DeviceIntegrationSheet';
 import type { IntegrationCatalogue, IntegrationsApi } from '../src/integrations/types';
-
-// Disconnecting asks first (a native alert; `window.confirm` on the web). Playwright
-// dismisses dialogs it is not told about, which would answer "keep it", so the
-// fixture answers yes: the scripts prove the disconnect, not the question.
-window.confirm = () => true;
 import { palettes, ThemeContext } from '../src/theme';
 import { AppHeader } from '../src/ui/AppHeader';
 import { IntegrationsScreen } from '../src/ui/IntegrationsScreen';
 import { VibesComposer } from '../src/vibes/VibesComposer';
 import { fixtureWorkspace } from './conversationWorkspaceFixture';
+
+// Disconnecting asks first (a native alert; `window.confirm` on the web). Playwright
+// dismisses dialogs it is not told about, which would answer "keep it", so the
+// fixture answers yes: the scripts prove the disconnect, not the question.
+window.confirm = () => true;
 
 // Every call the page makes lands here, so a test can prove that browsing and
 // reading an integration's page never connects anything - only tapping Connect does.
@@ -89,8 +89,10 @@ function Composer() {
   const { installed } = useIntegrations();
   const [text, setText] = useState('');
   return <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-    <VibesComposer text={text} onChange={setText} model="Auto" onModel={() => {}} mentions={[...installed, ...deviceIntegrations(answered)]} onAdd={() => {}} attachments={[]} onRemoveAttachment={() => {}}
-      busy={false} disabled onSend={() => {}} onStop={() => {}} />
+    <VibesComposer input={{ text, onChange: setText, mentions: [...installed, ...deviceIntegrations(answered)] }}
+      model={{ label: 'Auto', onOpen: () => {} }}
+      attachments={{ items: [], onAdd: () => {}, onRemove: () => {} }}
+      submission={{ busy: false, disabled: true, onSend: () => {}, onStop: () => {} }} />
   </View>;
 }
 function Fixture() {

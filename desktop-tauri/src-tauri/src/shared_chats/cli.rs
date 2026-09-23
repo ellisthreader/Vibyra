@@ -99,11 +99,17 @@ impl SharedChats {
         if data.len() > 1024 * 1024 {
             return Err("Terminal input is too large".into());
         }
-        let sessions = self.cli.sessions.lock();
-        let id = sessions.get(session).ok_or("Terminal is not attached")?;
+        // Copied out so an attach in progress is never waited on while
+        // writing, nor the map held while input is queued.
+        let id = *self
+            .cli
+            .sessions
+            .lock()
+            .get(session)
+            .ok_or("Terminal is not attached")?;
         self.cli
             .manager
-            .write_input(*id, data.as_bytes())
+            .write_input(id, data.as_bytes())
             .map_err(|e| e.to_string())
     }
     pub fn cli_resize(&self, session: &str, rows: u16, cols: u16) -> Result<(), String> {
@@ -119,19 +125,46 @@ impl SharedChats {
     }
     pub fn cli_visibility(&self, session: &str, visible: bool) -> Result<(), String> {
         let sessions = self.cli.sessions.lock();
-        if let Some(id) = sessions.get(session) {
-            self.cli
-                .manager
-                .set_visibility(
-                    *id,
-                    if visible {
-                        Visibility::Visible
-                    } else {
-                        Visibility::Hidden
-                    },
-                )
-                .map_err(|e| e.to_string())?;
+        let Some(&id) = sessions.get(session) else {
+            return Ok(());
+        };
+        // A released session is woken only by an attach, which resyncs.
+        let released = self
+            .cli
+            .manager
+            .list()
+            .iter()
+            .any(|info| info.id == id && info.visibility == Visibility::Hibernated);
+        if released {
+            return Ok(());
         }
-        Ok(())
+        self.cli
+            .manager
+            .set_visibility(
+                id,
+                if visible {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                },
+            )
+            .map_err(|e| e.to_string())
+    }
+    /// Lets go of a view that is going away. Merely hiding it kept a disposed
+    /// terminal attached and serialized its output every 250 ms for as long
+    /// as the process ran; released, the session hibernates until
+    /// `attach_cli` wakes it with a resync for the next view. Only the view
+    /// still attached can release, so a late call from an unmounted one
+    /// cannot cut off its replacement.
+    pub fn cli_release(&self, session: &str, channel: u32) -> Result<(), String> {
+        let sessions = self.cli.sessions.lock();
+        match sessions.get(session) {
+            Some(&id) if self.cli.sink.release(id, channel) => self
+                .cli
+                .manager
+                .set_visibility(id, Visibility::Hibernated)
+                .map_err(|e| e.to_string()),
+            _ => Ok(()),
+        }
     }
 }

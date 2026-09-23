@@ -6,7 +6,12 @@ import type { NearbyComputer } from './discoveryTypes';
  *  instead of failing a connection the person already believes started. */
 export function isConnectable(computer: NearbyComputer): computer is Required<NearbyComputer> {
   if (!hasEndpoint(computer)) return false;
-  try { parsePairing(pairingPayload(computer)); return true; } catch { return false; }
+  try {
+    parsePairing(pairingPayload(computer));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Where a found computer stands, shared by its row and its place in the
@@ -20,10 +25,16 @@ export function readiness(computer: NearbyComputer): Readiness {
 }
 
 function hasEndpoint(computer: NearbyComputer) {
-  return typeof computer.hostId === 'string' && /^[a-f0-9]{64}$/.test(computer.hostId)
-    && typeof computer.host === 'string' && computer.host.length > 0
-    && typeof computer.port === 'number' && Number.isInteger(computer.port)
-    && computer.port > 0 && computer.port <= 65535;
+  return (
+    typeof computer.hostId === 'string' &&
+    /^[a-f0-9]{64}$/.test(computer.hostId) &&
+    typeof computer.host === 'string' &&
+    computer.host.length > 0 &&
+    typeof computer.port === 'number' &&
+    Number.isInteger(computer.port) &&
+    computer.port > 0 &&
+    computer.port <= 65535
+  );
 }
 
 /** Builds the pairing for a discovered computer and runs it through the same
@@ -32,7 +43,9 @@ function hasEndpoint(computer: NearbyComputer) {
  *  invitation, so the computer must approve this phone locally instead. */
 export function nearbyPairingLink(computer: NearbyComputer): string {
   if (!hasEndpoint(computer)) {
-    throw new Error('This computer has not finished announcing its address. Try again in a moment.');
+    throw new Error(
+      'This computer has not finished announcing its address. Try again in a moment.',
+    );
   }
   const link = pairingPayload(computer);
   parsePairing(link);
@@ -41,8 +54,14 @@ export function nearbyPairingLink(computer: NearbyComputer): string {
 
 function pairingPayload(computer: NearbyComputer): string {
   return JSON.stringify({
-    version: 1, hostId: computer.hostId, name: computer.name, publicKey: computer.hostId,
-    url: `ws://${computer.host}:${computer.port}`, route: 'direct', network: 'lan', nearby: true,
+    version: 1,
+    hostId: computer.hostId,
+    name: computer.name,
+    publicKey: computer.hostId,
+    url: `ws://${computer.host}:${computer.port}`,
+    route: 'direct',
+    network: 'lan',
+    nearby: true,
   });
 }
 

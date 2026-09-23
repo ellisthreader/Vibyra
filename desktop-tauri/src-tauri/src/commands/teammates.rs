@@ -14,6 +14,13 @@ fn permitted(path: &str, write: bool) -> bool {
                 }
             })
     };
+    if let Some((base, before)) = path.split_once("?before=") {
+        return !write
+            && uuid(before)
+            && base.starts_with("vibes/chats/")
+            && base.ends_with("/turns")
+            && permitted(base, false);
+    }
     match parts.as_slice() {
         ["agents", "v1", "teammates" | "skills"] => true,
         ["agents", "v1", "teammates", id] => write && uuid(id),
@@ -60,7 +67,7 @@ pub async fn teammate_request(
     } else {
         reqwest::Method::GET
     };
-    let mut request = reqwest::Client::new()
+    let mut request = crate::http_client::shared()
         .request(method, format!("{}/api/{}", account_api::base_url(), path))
         .bearer_auth(&token)
         .header("Accept", "application/json")
@@ -118,6 +125,14 @@ mod tests {
             assert!(!permitted(path, true));
             assert!(!permitted(path, false));
         }
+        let history = "vibes/chats/123e4567-e89b-12d3-a456-426614174000/turns?before=123e4567-e89b-12d3-a456-426614174001";
+        assert!(permitted(history, false));
+        assert!(!permitted(history, true));
+        assert!(!permitted(&format!("{}&token=x", history), false));
+        assert!(!permitted(
+            "agents/v1/teammates?before=123e4567-e89b-12d3-a456-426614174001",
+            false
+        ));
         assert!(!permitted("vibes/consent", false));
         assert!(!permitted("vibes/models", true));
     }

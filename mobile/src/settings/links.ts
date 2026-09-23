@@ -7,7 +7,9 @@ import { Platform } from 'react-native';
  * page and it takes no mail — so links written against it were dead; the site the
  * API runs on serves the real legal pages, and follows the domain once it moves.
  */
-const site = String(Constants.expoConfig?.extra?.apiUrl ?? 'https://vibyra-production.up.railway.app').replace(/\/+$/, '');
+const site = String(
+  Constants.expoConfig?.extra?.apiUrl ?? 'https://vibyra-production.up.railway.app',
+).replace(/\/+$/, '');
 export const links = {
   terms: `${site}/legal/terms`,
   privacy: `${site}/legal/privacy`,
@@ -30,7 +32,13 @@ export function appVersion() {
  * they write that themselves.
  */
 export function supportMail(connection: string) {
-  const body = ['', '', '—', `Vibyra ${appVersion()}`, `${Platform.OS === 'ios' ? 'iOS' : Platform.OS} ${String(Platform.Version)}`,
-    `Computer: ${connection}`].join('\n');
+  const body = [
+    '',
+    '',
+    '—',
+    `Vibyra ${appVersion()}`,
+    `${Platform.OS === 'ios' ? 'iOS' : Platform.OS} ${String(Platform.Version)}`,
+    `Computer: ${connection}`,
+  ].join('\n');
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Vibyra iPhone support')}&body=${encodeURIComponent(body)}`;
 }

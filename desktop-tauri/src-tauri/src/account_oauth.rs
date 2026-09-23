@@ -5,6 +5,7 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::account_api::{error_detail, request, request_raw, ApiError, Endpoint};
+use crate::account_auth::bind_preview_account;
 use crate::account_device;
 use crate::account_oauth_start::request_start;
 use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
@@ -21,6 +22,7 @@ const EXPIRED_MESSAGE: &str = "This sign-in attempt expired. Try again.";
 pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
     let state = app.state::<AppState>();
     let account = &state.account;
+    bind_preview_account(&state, None);
     account.begin_authorizing(Some(provider.clone()));
     let cancel = account.begin_oauth();
     let body = serde_json::json!({
@@ -149,6 +151,7 @@ async fn verify_completed(
                 if cancel.load(Ordering::SeqCst) {
                     return Err("Sign-in cancelled.".into());
                 }
+                bind_preview_account(&state, session.get("user"));
                 state
                     .account
                     .adopt_session(&SecretStore, token.to_owned(), profile);

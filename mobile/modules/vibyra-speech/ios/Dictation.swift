@@ -2,8 +2,8 @@ import AVFoundation
 import Speech
 
 /// Apple's speech recogniser listening to the microphone, reporting the whole
-/// transcript as it firms up. Recognition stays on the phone whenever the phone
-/// can do it there, so what someone says never has to leave the device.
+/// transcript as it firms up. Only on-device recognition is permitted; no
+/// microphone audio is sent to a recognition server.
 /// Everything here runs on the main queue; the module schedules it there.
 final class Dictation {
   var onUpdate: (([String: Any]) -> Void)?
@@ -12,16 +12,20 @@ final class Dictation {
   private var task: SFSpeechRecognitionTask?
   private var stopping = false
   private var heard = false
+  private var generation = 0
 
   func start(_ done: @escaping (String?) -> Void) {
     cancel()
+    let requestGeneration = generation
     SFSpeechRecognizer.requestAuthorization { status in
       DispatchQueue.main.async {
+        guard self.generation == requestGeneration else { done("Voice input was cancelled."); return }
         guard status == .authorized else {
           done("Allow Speech Recognition for Vibyra in Settings to use your voice."); return
         }
         Dictation.requestMicrophone { granted in
           DispatchQueue.main.async {
+            guard self.generation == requestGeneration else { done("Voice input was cancelled."); return }
             guard granted else { done("Allow the microphone for Vibyra in Settings to use your voice."); return }
             do { try self.begin(); done(nil) } catch {
               self.cancel(); done(error.localizedDescription)
@@ -34,7 +38,7 @@ final class Dictation {
 
   /// Stops listening. The recogniser still delivers what it heard, then `end`.
   func stop() {
-    guard request != nil else { return }
+    guard request != nil else { cancel(); return }
     stopping = true
     stopAudio()
     request?.endAudio()
@@ -42,6 +46,7 @@ final class Dictation {
 
   /// Drops everything without waiting for a result.
   func cancel() {
+    generation += 1
     task?.cancel()
     task = nil
     request = nil
@@ -58,6 +63,7 @@ final class Dictation {
 
   private func begin() throws {
     guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else { throw DictationError.unavailable }
+    guard recognizer.supportsOnDeviceRecognition else { throw DictationError.onDeviceUnavailable }
     let session = AVAudioSession.sharedInstance()
     try session.setCategory(.record, mode: .measurement, options: .duckOthers)
     try session.setActive(true, options: .notifyOthersOnDeactivation)
@@ -69,7 +75,7 @@ final class Dictation {
 
     let request = SFSpeechAudioBufferRecognitionRequest()
     request.shouldReportPartialResults = true
-    if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
+    request.requiresOnDeviceRecognition = true
     request.addsPunctuation = true
     input.removeTap(onBus: 0)
     input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in request.append(buffer) }
@@ -78,8 +84,12 @@ final class Dictation {
     self.request = request
     stopping = false
     heard = false
+    let taskGeneration = generation
     task = recognizer.recognitionTask(with: request) { [weak self] result, error in
-      DispatchQueue.main.async { self?.receive(result, error) }
+      DispatchQueue.main.async {
+        guard let self, self.generation == taskGeneration else { return }
+        self.receive(result, error)
+      }
     }
   }
 
@@ -106,10 +116,11 @@ final class Dictation {
 }
 
 enum DictationError: LocalizedError {
-  case unavailable, noMicrophone
+  case unavailable, onDeviceUnavailable, noMicrophone
   var errorDescription: String? {
     switch self {
     case .unavailable: return "Speech recognition is not available right now. Try again in a moment."
+    case .onDeviceUnavailable: return "On-device voice input is not available for this language. Type your message instead."
     case .noMicrophone: return "No microphone is available."
     }
   }

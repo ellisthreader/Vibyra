@@ -1,9 +1,11 @@
 import type { Terminal } from "@xterm/xterm";
 
+import { holdTerminalOutput } from "../ipc/terminal";
 import type { TermEvent } from "../types";
 import { stampOutput } from "./activity";
 import { terminalViewportIsNearBottom } from "./terminalBottomAnchor";
 import { attach, setExitHandler } from "./terminalBus";
+import { outputFlow } from "./terminalFlow";
 
 // Everything Rust sends about a session, turned into writes on its terminal.
 //
@@ -37,17 +39,24 @@ export function attachSessionEvents(
   term: Terminal,
   anchorNow: (followOutput?: boolean) => void,
 ): void {
+  const flow = outputFlow((hold) => void holdTerminalOutput(id, hold).catch(() => {}));
   attach(id, (event: TermEvent) => {
     if (event.type === "output") {
       stampOutput(id, event.data);
       const followOutput = terminalViewportIsNearBottom(term);
-      term.write(event.data, () => anchorNow(followOutput));
+      const parsed = flow.written(event.data.length);
+      term.write(event.data, () => { parsed(); anchorNow(followOutput); });
     } else if (event.type === "resync") {
       // Rust sends this when a hibernated session wakes or overflows: the view
       // is rebuilt from its ring rather than caught up incrementally.
+      // The reset travels in band (RIS, ESC c — the same full reset): a
+      // `term.reset()` call runs at once while output xterm has queued but
+      // not parsed still lands after it, drawing that output ahead of the
+      // snapshot that already contains it.
       stampOutput(id, event.data);
-      term.reset();
-      term.write(event.data, () => anchorNow(true));
+      term.write("\x1bc");
+      const parsed = flow.written(event.data.length);
+      term.write(event.data, () => { parsed(); anchorNow(true); });
     } else {
       const label = event.code === null ? "" : ` (code ${event.code})`;
       term.write(`\r\n\x1b[2m[process exited${label}]\x1b[0m\r\n`, () => anchorNow(true));

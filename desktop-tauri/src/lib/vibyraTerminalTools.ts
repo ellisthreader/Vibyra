@@ -1,184 +1,164 @@
 import { computerName } from "./platform.ts";
-import { terminalSnapshot, writeTerminal } from "../ipc/terminal";
+import { writeTerminal } from "../ipc/terminal";
+import { sendPrompt } from "../components/sharedChats/delivery";
 import { useAgentStore } from "../state/agentStore";
+import { useLaunchApprovalStore } from "../state/launchApprovalStore";
 import { useModelCatalogStore } from "../state/modelCatalogStore";
+import { useNotificationStore } from "../state/notificationStore";
 import { useTerminalStore } from "../state/terminalStore";
+import { launchConfigured } from "./configuredLaunch";
 import { agentForModel, matchModel } from "./modelMatch";
-import { paneLabel } from "./paneLabel";
-import { count, fail, projects, resolveProject, text, type ToolResult } from "./vibyraToolShared";
+import { modelEffortOptions } from "./modelEffort";
+import type { LaunchEffort } from "../state/launchSettingsStore";
+import { allTerminals, describeTerminal, projectName, resolveTerminal } from "./vibyraSessions";
+import { screenText } from "./vibyraTerminalText";
+import { count, fail, resolveProject, text, type ToolResult } from "./vibyraToolShared";
 
-// Everything the assistant can do to terminals: open them with a chosen model,
-// permission and opening prompt, say what they are doing, read one, talk to
-// one, close them. Split from the rest of the app's tools because this is the
-// half people actually ask about.
+// Opening terminals and seeing what they are doing. Launches go through
+// `launchConfigured`, the same function the rail's chips and the picker call,
+// so the project's account, Safe mode and Codex's conversation engine apply to
+// the assistant exactly as they do to a click.
 
-/** A plain terminal runs no model, so naming one alongside it is the model's
- * mistake rather than the person's. */
-const PLAIN = new Set(["shell", "ssh"]);
+/** Efforts a CLI takes when no model was named and it runs its own default. */
+const DEFAULT_EFFORTS: Record<string, LaunchEffort[]> = {
+  codex: ["minimal", "low", "medium", "high", "xhigh"],
+  claude: ["low", "medium", "high", "xhigh", "max"],
+};
 
-function catalogue() {
-  return useModelCatalogStore.getState().groups.flatMap((group) => group.models);
-}
+const catalogue = () => useModelCatalogStore.getState().groups.flatMap((group) => group.models);
 
 async function agents() {
-  // The assistant can be asked to launch before the workspace has ever opened
-  // the launcher, so the catalogue is read on demand rather than assumed.
   if (!useAgentStore.getState().loaded) await useAgentStore.getState().refresh();
   return useAgentStore.getState().agents;
 }
 
-function describePane(pane: { id: number; agentId: string; projectId: string; status: string; model?: string | null }): string {
-  const project = projects().find((entry) => entry.id === pane.projectId);
-  const activity = useTerminalStore.getState().activity[pane.id];
-  const state = pane.status === "running" ? (activity ?? "idle") : pane.status;
-  const model = pane.model ? ` · ${pane.model}` : "";
-  return `#${pane.id} ${paneLabel(pane as never)} · ${pane.agentId}${model} · ${project?.name ?? "unknown project"} · ${state}`;
+/** "hiugh" arrives as "high" from the model; "x-high" and "extra high" need help. */
+function normaliseEffort(value: string): string {
+  const flat = value.toLowerCase().replace(/[^a-z]/g, "");
+  return flat === "extrahigh" ? "xhigh" : flat;
 }
 
-export async function openTerminals(args: Record<string, unknown>): Promise<ToolResult> {
-  const project = resolveProject(text(args.project));
-  if (!project) return fail("There is no project open to put terminals in.");
+/** The effort to launch at, or why it cannot be. An effort on a CLI that has
+ * none is dropped rather than refused: a model filling in every field it was
+ * offered once turned "open a plain terminal" into a refusal. */
+function effortFor(said: string, agentId: string, model: ReturnType<typeof matchModel>): { effort: LaunchEffort | null } | { error: string } {
+  const wanted = normaliseEffort(said);
+  if (!wanted || !DEFAULT_EFFORTS[agentId]) return { effort: null };
+  const allowed = model
+    ? modelEffortOptions(model as never, agentId).map((option) => option.value)
+    : DEFAULT_EFFORTS[agentId];
+  if (!allowed.length) return { effort: null };
+  if (allowed.includes(wanted as LaunchEffort)) return { effort: wanted as LaunchEffort };
+  return { error: `${model?.label ?? agentId} takes ${allowed.join(", ")} effort, not "${said}". Nothing was opened.` };
+}
 
-  const askedFor = text(args.model);
+export async function openTerminals(args: Record<string, unknown>, request = ""): Promise<ToolResult> {
+  const project = resolveProject(text(args.project));
+  if (!project) return fail(text(args.project) ? `There is no project called "${text(args.project)}".` : "There is no project open to put terminals in.");
+
+  // "claude" or "codex" in the model field is the agent, not a model: matched
+  // loosely it would pick some Claude model nobody asked for.
+  // A model name put in the title ("GPT Astra") was meant as the model.
+  const titleModel = !text(args.model) && text(args.title) ? matchModel(text(args.title), catalogue()) : null;
+  // …and one the model left out entirely is read from the person's words:
+  // "open 3 terminals with gpt astra" once opened three plain Claude panes.
+  const fromWords = /\b(?:with|on|using|running)\s+(.+?)(?=\s+(?:in|on|and|with|at)\b|[.,!?]|$)/i.exec(request)?.[1] ?? "";
+  const wordsModel = !text(args.model) && !titleModel && fromWords ? matchModel(fromWords, catalogue()) : null;
+  const modelSaid = text(args.model) || (titleModel ? text(args.title) : wordsModel ? fromWords : "");
+  const askedFor = /^(claude( code)?|codex|gemini( cli)?|shell|terminal)$/i.test(modelSaid) ? "" : modelSaid;
   const model = askedFor ? matchModel(askedFor, catalogue()) : null;
   if (askedFor && !model) {
     const examples = catalogue().slice(0, 4).map((entry) => entry.label).join(", ");
     return fail(`No model here is called "${askedFor}". Available models include ${examples}.`);
   }
-
-  // Naming a model names the agent: "three terminals of GPT-6 Astra" never
-  // says `codex`, and opening a plain shell instead is the bug this fixes.
-  const asked = text(args.agent).toLowerCase();
+  // Naming a model names the agent. An agent guessed beside it — a shell, or
+  // Claude for "GPT astra" — is the model's mistake, and the model wins.
+  const asked = text(args.agent).toLowerCase() || (/^(claude|codex|gemini)/i.exec(modelSaid)?.[0].toLowerCase() ?? "");
   const inferred = model ? agentForModel(model) : null;
-  const wanted = !asked || (model && PLAIN.has(asked) && inferred) ? (inferred ?? asked) : asked;
+  const wanted = inferred ?? asked;
   if (!wanted) return fail("Say which agent to run, or which model to run it on.");
 
-  const installed = await agents();
-  const agent = installed.find((entry) => entry.id === wanted);
+  const agent = (await agents()).find((entry) => entry.id === wanted);
   if (!agent) return fail(`${wanted} is not one of Vibyra's agents.`);
   if (!agent.installed) return fail(`${agent.name} is not installed on this ${computerName}, so it cannot be launched.`);
 
+  const chosen = effortFor(text(args.effort), agent.id, model);
+  if ("error" in chosen) return fail(chosen.error);
+  const { effort } = chosen;
   const permission = text(args.permission).toLowerCase() === "full" ? "full" : "standard";
-  const effort = text(args.effort).toLowerCase();
-  const allowed = model?.reasoningEfforts ?? [];
-  if (effort && !allowed.includes(effort as never)) {
-    return fail(
-      allowed.length
-        ? `${model?.label ?? "That model"} takes ${allowed.join(", ")}, not "${effort}".`
-        : `${model?.label ?? "That model"} does not take a reasoning effort.`,
-    );
+  const errorsBefore = useNotificationStore.getState().history.length;
+  const opened = await launchConfigured(agent, project.id, {
+    model: model?.id ?? null,
+    reasoningEffort: effort ?? undefined,
+    permissionMode: permission,
+    title: (!titleModel && text(args.title)) || undefined,
+    count: count(args.count, 1),
+  });
+  if (!opened.length) {
+    if (useLaunchApprovalStore.getState().pending) {
+      return { summary: "Waiting for Safe mode approval", detail: "Nothing is open yet: Safe mode asked the person to approve a checkpoint in a dialog on screen. Tell them to approve it." };
+    }
+    const reason = useNotificationStore.getState().history.slice(errorsBefore).map((entry) => entry.body).find(Boolean);
+    return fail(`${agent.name} could not be started${reason ? `: ${reason}` : "."}`);
   }
+
   const opening = text(args.prompt);
-
-  const total = count(args.count, 1);
-  const opened: number[] = [];
-  for (let index = 0; index < total; index += 1) {
-    const id = await useTerminalStore.getState().spawnAgent(agent, project.id, {
-      model: model?.id ?? null,
-      permissionMode: permission,
-      reasoningEffort: effort || null,
-      title: text(args.title) || undefined,
-    });
-    if (id !== null) opened.push(id);
+  if (opening) {
+    await Promise.all(opened.map((session) => ("paneId" in session
+      ? writeTerminal(session.paneId, `${opening}\r`)
+      : sendPrompt(session.conversationId, opening)).catch(() => {})));
   }
-  if (!opened.length) return fail(`${agent.name} could not be started.`);
-  if (opening) await Promise.all(opened.map((id) => writeTerminal(id, `${opening}\r`).catch(() => {})));
-
-  const parts = [
-    model ? `on ${model.label}` : "",
-    permission === "full" ? "with full permissions" : "",
-    effort ? `at ${effort} effort` : "",
-  ].filter(Boolean);
+  const parts = [model ? `on ${model.label}` : "", permission === "full" ? "with full permissions" : "", effort ? `at ${effort} effort` : ""].filter(Boolean);
   const how = parts.length ? ` ${parts.join(", ")}` : "";
-  const plural = opened.length === 1 ? "terminal" : "terminals";
-  const sent = opening ? ` Sent them: "${opening}".` : "";
+  const noun = `${agent.name} terminal${opened.length === 1 ? "" : "s"}`;
+  const refs = opened.map((session) => `"${"paneId" in session ? session.paneId : session.conversationId.slice(0, 8)}"`).join(", ");
   return {
-    summary: `Opened ${opened.length} ${agent.name} ${plural}${how} in ${project.name}`,
-    detail: `Opened ${opened.length} ${agent.name} ${plural}${how} in ${project.name}. They are ${opened
-      .map((id) => `#${id}`)
-      .join(", ")}.${sent}`,
+    summary: `Opened ${opened.length} ${noun}${how} in ${project.name}`,
+    detail: `Opened ${opened.length} ${noun}${how} in ${project.name}: ${refs}.${opening ? ` Sent each one: "${opening}".` : ""}`,
   };
 }
 
-export function listTerminals(args: Record<string, unknown>): ToolResult {
+/** Every terminal, and the last few lines on each one's screen — enough to
+ * answer "what's going on" or find "the dev server" without a second call. */
+export async function listTerminals(args: Record<string, unknown>): Promise<ToolResult> {
+  const waiting = waitingLine();
   const wanted = text(args.project);
   const project = wanted ? resolveProject(wanted) : null;
   if (wanted && !project) return fail(`There is no project called "${wanted}".`);
-  const panes = useTerminalStore
-    .getState()
-    .panes.filter((pane) => !project || pane.projectId === project.id);
-  if (!panes.length) {
-    return { summary: "Checked the terminals", detail: "No terminals are open." };
-  }
+  const terminals = allTerminals().filter((terminal) => !project || terminal.projectId === project.id);
+  if (!terminals.length) return { summary: "Checked the terminals", detail: `${waiting}\nNo terminals are open${project ? ` in ${project.name}` : ""}.` };
+  const lines = await Promise.all(terminals.slice(0, 12).map(async (terminal) => {
+    const screen = await screenText(terminal, 4).catch(() => "");
+    return `${describeTerminal(terminal)}${screen ? `\n  last on screen:\n${screen.split("\n").map((line) => `    ${line.slice(0, 160)}`).join("\n")}` : ""}`;
+  }));
   return {
-    summary: `Checked ${panes.length} terminal${panes.length === 1 ? "" : "s"}`,
-    detail: panes.map(describePane).join("\n"),
+    summary: `Checked ${terminals.length} terminal${terminals.length === 1 ? "" : "s"}`,
+    detail: `${waiting}\n${lines.join("\n")}`,
   };
 }
 
-export async function readTerminal(args: Record<string, unknown>): Promise<ToolResult> {
-  const id = Number(args.terminal);
-  const pane = useTerminalStore.getState().panes.find((entry) => entry.id === id);
-  if (!pane) return fail(`There is no terminal #${args.terminal}.`);
-  const lines = count(args.lines, 40) * 5;
+/** Always the first line, across every project: "does any terminal need
+ * me?" filtered to the open project once missed the one waiting in another,
+ * and the follow-up report restates only a result's first line. */
+function waitingLine(): string {
+  const waiting = allTerminals().filter((terminal) => terminal.kind === "pane" && terminal.pane.status === "running" &&
+    useTerminalStore.getState().activity[terminal.pane.id] === "attention");
+  return waiting.length
+    ? `Waiting for the person to answer: ${waiting.map((terminal) => `"${terminal.ref}" (${terminal.agentId} in ${projectName(terminal.projectId)})`).join(", ")}.`
+    : "No terminal is waiting for the person.";
+}
+
+export async function readTerminal(args: Record<string, unknown>, request = ""): Promise<ToolResult> {
+  const terminal = resolveTerminal(args.terminal, request);
+  if (typeof terminal === "string") return fail(terminal);
+  const lines = Math.max(1, Math.min(200, Number(args.lines) || 60));
   try {
-    const snapshot = await terminalSnapshot(id);
-    const tail = snapshot.split("\n").filter((line) => line.trim()).slice(-lines).join("\n");
+    const screen = await screenText(terminal, lines);
     return {
-      summary: `Read terminal #${id}`,
-      detail: tail ? `${describePane(pane)}\n\n${tail}` : `${describePane(pane)}\n\nIt has printed nothing yet.`,
+      summary: `Read ${terminal.agentId === "shell" ? "terminal" : terminal.agentId} "${terminal.ref}" in ${projectName(terminal.projectId)}`,
+      detail: `${describeTerminal(terminal)}\nOn screen now:\n${screen || "(nothing printed yet)"}`,
     };
   } catch (error) {
-    return fail(`Terminal #${id} could not be read: ${String(error)}`);
+    return fail(`Terminal "${terminal.ref}" could not be read: ${String(error)}`);
   }
-}
-
-/** Talks to whatever is running in a pane — a prompt for an agent, a line for
- * a shell. The confirmation a typed command gets belongs to the Run button;
- * this is the assistant being asked directly, so it says what it sent. */
-export async function sendToTerminal(args: Record<string, unknown>): Promise<ToolResult> {
-  const id = Number(args.terminal);
-  const pane = useTerminalStore.getState().panes.find((entry) => entry.id === id);
-  if (!pane) return fail(`There is no terminal #${args.terminal}.`);
-  if (pane.status !== "running") return fail(`Terminal #${id} is not running.`);
-  const message = text(args.text);
-  if (!message) return fail("There was nothing to send.");
-  await writeTerminal(id, `${message}\r`);
-  return { summary: `Sent to terminal #${id}`, detail: `Sent to #${id}: "${message}".` };
-}
-
-/** One, several, or every terminal — "close the Codex ones" is a sentence
- * people say, and making them close eight panes by hand is not an answer. */
-export async function closeTerminals(args: Record<string, unknown>): Promise<ToolResult> {
-  const store = useTerminalStore.getState();
-  const id = Number(args.terminal);
-  if (Number.isFinite(id) && id > 0) {
-    const pane = store.panes.find((entry) => entry.id === id);
-    if (!pane) return fail(`There is no terminal #${args.terminal}.`);
-    await store.close(id);
-    return { summary: `Closed terminal #${id}`, detail: `Terminal #${id} is closed.` };
-  }
-
-  const wantedProject = text(args.project);
-  const project = wantedProject ? resolveProject(wantedProject) : null;
-  if (wantedProject && !project) return fail(`There is no project called "${wantedProject}".`);
-  const agent = text(args.agent).toLowerCase();
-  const targets = store.panes.filter(
-    (pane) => (!project || pane.projectId === project.id) && (!agent || pane.agentId === agent),
-  );
-  if (!targets.length) return fail("No terminals matched that, so nothing was closed.");
-  for (const pane of targets) await useTerminalStore.getState().close(pane.id);
-  const plural = targets.length === 1 ? "terminal" : "terminals";
-  return {
-    summary: `Closed ${targets.length} ${plural}`,
-    detail: `Closed ${targets.length} ${plural}: ${targets.map((pane) => `#${pane.id}`).join(", ")}.`,
-  };
-}
-
-export function focusTerminal(args: Record<string, unknown>): ToolResult {
-  const id = Number(args.terminal);
-  const pane = useTerminalStore.getState().panes.find((entry) => entry.id === id);
-  if (!pane) return fail(`There is no terminal #${args.terminal}.`);
-  useTerminalStore.getState().setFocus(id);
-  return { summary: `Focused terminal #${id}`, detail: `Terminal #${id} is the focused one.` };
 }

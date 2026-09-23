@@ -27,38 +27,72 @@ export class AutoConnect {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private attempt = 0;
   private away = false;
-  constructor(private store: WorkspaceStore, private delays: number[] = RETRY_DELAYS) {}
+  constructor(
+    private store: WorkspaceStore,
+    private delays: number[] = RETRY_DELAYS,
+  ) {}
 
   /** Connect now: the app opened, came back to the front, or found a network. */
-  resume() { this.away = false; this.attempt = 0; this.schedule(0); }
+  resume() {
+    this.away = false;
+    this.attempt = 0;
+    this.schedule(0);
+  }
   /** The app left the screen. Nothing is worth attempting until it is back. */
-  sleep() { this.away = true; this.cancel(); }
+  sleep() {
+    this.away = true;
+    this.cancel();
+  }
   /** Connected. The next drop starts the ladder from its first rung again. */
-  settled() { this.cancel(); this.attempt = 0; }
+  settled() {
+    this.cancel();
+    this.attempt = 0;
+  }
   /** The person pressed Reconnect. Whatever the ladder had got to — waiting,
    *  or given up — it starts over behind this attempt, so a computer that is
    *  back a moment after the press is still picked up. */
-  renew() { this.cancel(); this.away = false; this.attempt = 0; }
+  renew() {
+    this.cancel();
+    this.away = false;
+    this.attempt = 0;
+  }
   /** Put away by hand, forgotten, or torn down. */
-  stop() { this.cancel(); this.attempt = 0; }
+  stop() {
+    this.cancel();
+    this.attempt = 0;
+  }
   /** A connection dropped: take the next rung of the ladder, or give up on it. */
-  retry() { const delay = this.delays[this.attempt]; this.attempt += 1; this.schedule(delay ?? -1); }
+  retry() {
+    const delay = this.delays[this.attempt];
+    this.attempt += 1;
+    this.schedule(delay ?? -1);
+  }
   /** An attempt failed, with how long it took. Only a quick failure is a network
    *  saying no; a slow one is a computer waiting for its owner. */
-  failed(elapsed: number) { if (elapsed < HELD_FOR_APPROVAL) this.retry(); else this.stop(); }
+  failed(elapsed: number) {
+    if (elapsed < HELD_FOR_APPROVAL) this.retry();
+    else this.stop();
+  }
 
   private schedule(delay: number) {
     // Straight from one rung to the next: dropping `reconnecting` in between
     // showed "Couldn't reach your computer" for a moment on every rung.
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
-    if (delay < 0 || !this.wanted()) { this.waiting(false); return; }
+    if (delay < 0 || !this.wanted()) {
+      this.waiting(false);
+      return;
+    }
     this.waiting(true);
-    this.timer = setTimeout(() => { this.timer = null; void this.run(); }, delay);
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      void this.run();
+    }, delay);
   }
   private cancel() {
     if (this.timer) clearTimeout(this.timer);
-    this.timer = null; this.waiting(false);
+    this.timer = null;
+    this.waiting(false);
   }
   private waiting(value: boolean) {
     if (this.store.state.reconnecting !== value) this.store.update({ reconnecting: value });
@@ -73,11 +107,19 @@ export class AutoConnect {
     // Something else is already reaching this computer. Whatever it is reports
     // back through settled() or failed(), so the ladder waits for that rather
     // than opening a second connection alongside it.
-    if (!this.wanted() || BUSY.includes(this.store.state.status)) { this.cancel(); return; }
+    if (!this.wanted() || BUSY.includes(this.store.state.status)) {
+      this.cancel();
+      return;
+    }
     this.attempting = true;
     // open() drives the ladder from its own result, including this failure. Not
     // `actions.reconnect`: that is the button, and it would restart the ladder.
-    try { await reconnect(this.store); } catch { /* reported into state */ }
-    finally { this.attempting = false; }
+    try {
+      await reconnect(this.store);
+    } catch {
+      /* reported into state */
+    } finally {
+      this.attempting = false;
+    }
   }
 }

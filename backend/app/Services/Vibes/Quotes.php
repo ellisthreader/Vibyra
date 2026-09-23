@@ -38,11 +38,15 @@ class Quotes
      * resolved against what the account has really connected before anything is
      * priced, because their schemas travel with the prompt and are paid for.
      */
-    public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = [], array $attachments = []): array
+    public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = [], array $attachments = [], ?array $semantic = null): array
     {
         $chat = DB::table('vibes_chats')->where('id', $chatId)->where('user_id', $userId)->firstOrFail();
         $agent = \App\Services\Agents\TaskContext::forChat($chat);
-        if ($agent) $integrations = json_decode($agent->integrations, true);
+        $computer = $agent ? app(\App\Services\Agents\Workspaces::class)->forAgent($agent) : null;
+        if ($agent) {
+            $integrations = json_decode($agent->integrations, true);
+            if ($model === 'auto') $model = $agent->model ?? 'auto';
+        }
         $named = $this->integrations->resolve($userId, $integrations);
         // Photos and files uploaded for this message. They ride in it as references and
         // are priced here from the bound fixed at upload, exactly as the job budgets them.
@@ -51,10 +55,12 @@ class Quotes
         // Assemble before routing so history, profile and tools are all priced.
         // Tool turns cannot modify personal memory from untrusted source text.
         $personal = $agent ? \App\Services\Agents\TaskContext::prompt($agent) : $this->personal->for($userId, canSave: ! $chat->binding && $named === []);
-        $messages = $this->messages($chatId, $text, (bool) $chat->binding, $named, $personal, $files);
+        $messages = $this->messages($chatId, $text, (bool) $chat->binding, $named, $personal, $files,
+            $computer !== null, (bool) ($computer?->can_write ?? false));
         // Assembled before the price so the schemas are inside the bound, and before
         // the router so it weighs the turn that will actually be sent.
-        $tools = [...($chat->binding ? AgentTools::definitions() : []), ...$this->integrations->definitions($named)];
+        $tools = [...($chat->binding ? AgentTools::definitions() : ($computer ? AgentTools::computerDefinitions((bool) $computer->can_write) : [])),
+            ...$this->integrations->definitions($named)];
         $inputBound = TurnPrice::inputBound($messages, $tools) + $this->attachments->tokens($files);
         $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
         $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
@@ -64,9 +70,10 @@ class Quotes
         $situation = Situation::of($inputBound, $paid + $trialUsable, $paid === 0, $tools !== [],
             $this->historyBytes($messages), intdiv(max(0, count($messages) - 2), 2), $seeing, $paid);
         $prompt = RoutingPrompt::from($text, $messages);
-        $decision = $model !== 'auto' ? null : ($agent
-            ? $this->agentRouter->route($prompt, $situation, $agent)
-            : $this->router->route($prompt, $situation));
+        $provider = $agent ? \App\Services\Agents\EngineProviders::preference($model) : null;
+        $decision = $model !== 'auto' && $provider === null ? null : ($agent
+            ? $this->agentRouter->route($prompt, $situation, $agent, $semantic, $provider)
+            : $this->router->route($prompt, $situation, $semantic));
 
         $selected = $this->catalog->resolve($decision?->model ?? $model, $this->wallet->planFor($userId));
         // A model that cannot see answers a photo as if it were not there, and charges for it.
@@ -103,7 +110,7 @@ class Quotes
         // text extraction is free and is what the page-count bound above assumes.
         if ($files->contains('kind', 'pdf')) $request['plugins'] = [['id' => 'file-parser', 'pdf' => ['engine' => 'pdf-text']]];
         if ($tools) {
-            abort_unless($selected['tools'], 422, $chat->binding
+            abort_unless($selected['tools'], 422, $chat->binding || $computer
                 ? 'This model does not currently support project tools. Choose another model.'
                 : 'This model cannot use integrations. Choose another model, or send the message without the mention.');
             // A tool turn runs several model steps, so it reserves the room to finish
@@ -116,7 +123,7 @@ class Quotes
             $max = min($max, (int) $agent->budget);
             $request['vibyraAgent'] = \App\Services\Agents\TaskContext::metadata($agent);
         }
-        $data = ['userId' => $userId, 'chatId' => $chatId, 'text' => $text, 'model' => $selected['id'],
+        $data = ['selection' => $model, 'integrations' => $named, 'userId' => $userId, 'chatId' => $chatId, 'text' => $text, 'model' => $selected['id'],
             'trial' => $selected['trial'], 'max' => $max, 'request' => $request,
             'expires' => now()->addMinutes(2)->timestamp, 'revision' => $chat->revision,
             // Linked to the turn on submit, which is what lets the job expand them.
@@ -125,6 +132,7 @@ class Quotes
         $encoded = Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         abort_if(strlen($encoded) > self::MAX_ENCODED_LENGTH, 422, 'This context is too large. Start a shorter chat or attach fewer integrations.');
         return ['quote' => $encoded,
+            'smartAuto' => $model === 'auto' && \App\Services\Decisions\Preparations::enabled($userId, $agent !== null),
             'maxCredits' => $max, 'estimatedCredits' => $max,
             // The effort priced, which is not always the effort asked for.
             'model' => $selected['id'], 'effort' => $effort, 'expiresAt' => $data['expires'],
@@ -139,14 +147,14 @@ class Quotes
      * context budget. The two system prompts differ in length as well as in content,
      * so which one is used has to be settled before the turn is priced.
      */
-    private function messages(string $chatId, string $text, bool $bound, array $integrations = [], string $personal = '', ?Collection $files = null): array
+    private function messages(string $chatId, string $text, bool $bound, array $integrations = [], string $personal = '', ?Collection $files = null, bool $localRead = false, bool $localWrite = false): array
     {
         $history = DB::table('vibes_turns')->where('chat_id', $chatId)->whereNotNull('settled_at')
             ->whereNotNull('response')->orderByDesc('created_at')->limit(12)->get()->reverse();
         // Earlier photos are not sent again - they are priced once, with the turn that
         // carried them - but their names stay, so "the screenshot" still means something.
         $earlier = DB::table('vibes_attachments')->whereIn('turn_id', $history->pluck('id'))->get()->groupBy('turn_id');
-        $system = $this->prompt($bound, $integrations);
+        $system = app(QuotePrompts::class)->text($bound, $integrations, $localRead, $localWrite);
         // Last, after every rule. The trim below measures the conversation without it,
         // so however much the person keeps in memory, it never costs them history.
         $messages = [['role' => 'system', 'content' => $personal === '' ? $system : $system."\n\n".$personal]];
@@ -161,34 +169,11 @@ class Quotes
         return $messages;
     }
 
-    /**
-     * Naming the integrations rather than leaving the model to infer them from the tool
-     * list is what stops it answering from memory when a call fails: it is told the
-     * account is real and that an empty result is an answer, not a prompt to guess.
-     */
-    private function prompt(bool $bound, array $integrations): string
-    {
-        $base = $bound ? self::AGENT_PROMPT : self::CHAT_PROMPT; if (! $integrations) return $base;
-        $names = implode(', ', array_map(fn ($slug) => (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug), $integrations));
-        return $base.' The person has connected '.$names.' and referred to it in this message. '
-            .'Use its tools to answer from their own account rather than from memory. '
-            .'Report an error or an empty result plainly, and never state a figure, message or record a tool did not return.'
-            .$this->integrations->prompts($integrations);
-    }
-
     /** What the turn carries besides its own prompt, which is what Auto reads as breadth. */
     private function historyBytes(array $messages): int
     {
         return count($messages) > 2 ? strlen((string) json_encode(array_slice($messages, 1, -1))) : 0;
     }
-
-    private const CHAT_PROMPT = 'You are Vibyra, a helpful coding assistant. Be concise and practical. '
-        .'You have no computer tools in this conversation. Never claim to have edited files or run commands.';
-
-    private const AGENT_PROMPT = 'You are Vibyra, a careful coding agent. Use the authorized project tools to inspect and edit files. '
-        .'Only claim file effects confirmed by tool results. You cannot execute commands or tests. Never invent test results. '
-        .'Respect declined operations. Keep changes focused, read before editing, and never request secrets or dependency folders. '
-        .'You have at most four model steps and a bounded budget. Finish with a useful partial result if needed.';
 
     public function decode(string $quote, int $userId): array
     {

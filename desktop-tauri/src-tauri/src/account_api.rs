@@ -51,7 +51,7 @@ pub async fn request_raw(
         if attempt > 0 {
             tokio::time::sleep(RETRY_DELAY).await;
         }
-        let mut request = reqwest::Client::new()
+        let mut request = crate::http_client::shared()
             .request(method.clone(), &url)
             .header("Accept", "application/json")
             .timeout(REQUEST_TIMEOUT);

@@ -17,6 +17,15 @@ mod account_session;
 #[cfg(test)]
 mod account_tests;
 mod account_types;
+mod agent_computer;
+mod agent_computer_access;
+mod agent_computer_reveal;
+mod agent_computer_review;
+mod agent_computer_runner;
+mod agent_computer_runner_auth;
+mod agent_computer_store;
+mod agent_computer_tools;
+mod agent_computer_transport;
 mod ai_usage;
 mod ai_usage_guard;
 mod ai_usage_limits;
@@ -28,8 +37,9 @@ mod commands;
 mod desktop_entry;
 mod discord;
 mod discord_setup;
+mod http_client;
 mod model_watch;
-mod model_watch_discord;
+mod model_watch_store;
 #[cfg(test)]
 mod model_watch_tests;
 mod openai_key;
@@ -53,14 +63,15 @@ mod provider_auth_output;
 mod provider_auth_probe;
 mod provider_auth_process;
 mod provider_auth_registry;
+mod provider_auth_round;
 mod provider_auth_state;
 mod provider_auth_url;
 mod provider_auth_view;
 mod renderer;
 mod report;
 mod report_format;
+mod report_hardware;
 mod report_image;
-mod report_privacy;
 mod report_relay;
 #[cfg(test)]
 mod report_tests;
@@ -69,7 +80,7 @@ mod secret_store;
 mod session_identity;
 #[cfg(any(target_os = "macos", target_os = "linux", test))]
 mod session_process_files;
-#[cfg(any(target_os = "linux", all(test, unix)))]
+#[cfg(any(target_os = "linux", test))]
 mod session_process_linux;
 mod session_store;
 #[cfg(test)]
@@ -77,6 +88,7 @@ mod session_store_tests;
 pub mod shared_chats;
 mod sink;
 mod state;
+mod state_openai_key;
 
 pub fn handle_cli() -> Option<Result<&'static str, String>> {
     discord_setup::handle_cli()
@@ -118,6 +130,7 @@ pub fn run() {
             model_watch::spawn(app.handle().clone());
             shared_chats::desktop_stream::spawn(app.handle().clone());
             phone::notify_window(app.handle().clone());
+            agent_computer_runner::spawn(app.handle().clone());
             Ok(())
         })
         // Closing is vetoed once so the UI can warn about live terminals and

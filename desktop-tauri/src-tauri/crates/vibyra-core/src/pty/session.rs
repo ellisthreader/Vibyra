@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::SyncSender;
 use std::sync::Arc;
@@ -9,7 +8,7 @@ use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize}
 use crate::error::{CoreError, CoreResult};
 
 use super::buffer::SessionOutput;
-use super::writer::SessionWriter;
+use super::input::InputQueue;
 use super::{LaunchSpec, SessionId, Visibility};
 
 /// A live PTY with its process, writer and shared output state.
@@ -27,9 +26,9 @@ pub struct Session {
     /// answer "how wide is this terminal?" — and a phone that has to guess
     /// re-wraps every line and clamps a TUI's cursor moves into its last cell.
     size: Mutex<(u16, u16)>,
-    writer: SessionWriter,
+    input: InputQueue,
     master: Mutex<Box<dyn MasterPty + Send>>,
-    child: Mutex<Box<dyn Child + Send + Sync>>,
+    pub(super) child: Mutex<Box<dyn Child + Send + Sync>>,
 }
 
 pub struct SessionOptions<'a> {
@@ -92,7 +91,7 @@ impl Session {
             .map_err(|e| CoreError::Pty(e.to_string()))?;
         drop(pair.slave);
 
-        let mut reader = pair
+        let reader = pair
             .master
             .try_clone_reader()
             .map_err(|e| CoreError::Pty(e.to_string()))?;
@@ -114,51 +113,20 @@ impl Session {
             alive: AtomicBool::new(true),
             exit_code: Mutex::new(None),
             size: Mutex::new((spec.cols, spec.rows)),
-            writer: SessionWriter::spawn(options.id, writer)?,
+            input: InputQueue::spawn(options.id, writer)?,
             master: Mutex::new(pair.master),
             child: Mutex::new(child),
         });
-
-        let reader_session = Arc::clone(&session);
-        std::thread::Builder::new()
-            .name(format!("vibyra-pty-{}", options.id))
-            .spawn(move || {
-                let mut buf = [0u8; 16 * 1024];
-                loop {
-                    match reader.read(&mut buf) {
-                        Ok(0) | Err(_) => break,
-                        Ok(n) => {
-                            reader_session.output.lock().push(&buf[..n]);
-                            let _ = flush_tx.try_send(());
-                        }
-                    }
-                }
-                // EOF on the PTY usually means the child is gone, but a
-                // process can close its terminal and keep running. Poll with
-                // try_wait so the child lock is never held while blocking —
-                // holding it in wait() would deadlock kill().
-                let code = loop {
-                    match reader_session.child.lock().try_wait() {
-                        Ok(Some(status)) => break Some(status.exit_code() as i32),
-                        Ok(None) => {}
-                        Err(_) => break None,
-                    }
-                    std::thread::sleep(std::time::Duration::from_millis(50));
-                };
-                *reader_session.exit_code.lock() = code;
-                reader_session.alive.store(false, Ordering::SeqCst);
-                on_exit(reader_session.id, code);
-            })
-            .map_err(CoreError::Io)?;
-
+        super::reader::spawn(Arc::clone(&session), reader, flush_tx, on_exit)?;
         Ok(session)
     }
 
+    /// Queues input for the program without waiting for it to be read.
     pub fn write_input(&self, data: &[u8]) -> CoreResult<()> {
         if !self.alive.load(Ordering::SeqCst) {
             return Err(CoreError::SessionExited(self.id));
         }
-        self.writer.queue(self.id, data)
+        self.input.send(data)
     }
 
     pub fn resize(&self, rows: u16, cols: u16) -> CoreResult<()> {
@@ -178,10 +146,6 @@ impl Session {
     /// The grid this session is formatting for, as `(cols, rows)`.
     pub fn size(&self) -> (u16, u16) {
         *self.size.lock()
-    }
-
-    pub fn kill(&self) {
-        let _ = self.child.lock().kill();
     }
 
     pub fn is_alive(&self) -> bool {

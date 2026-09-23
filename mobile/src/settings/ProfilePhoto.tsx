@@ -104,5 +104,5 @@ const s = StyleSheet.create({
   planText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
   trail: { opacity: 0.7 },
   menu: { marginTop: 12 },
-  error: { marginTop: 10, marginHorizontal: 2 },
+  error: { marginTop: 10, marginHorizontal: 16 },
 });

@@ -1,6 +1,6 @@
 {
   "name": "vibyra-desktop-tauri",
-  "version": "0.8.2",
+  "version": "0.8.5",
   "description": "Vibyra Desktop — AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
   "private": true,
   "type": "module",
@@ -12,7 +12,6 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "review:parity": "node scripts/serve-desktop-parity.mjs",
     "typecheck": "tsc --noEmit",
     "lines": "node ../scripts/check-desktop-lines.mjs",
     "check:dead-code": "knip --include files,dependencies,exports,unlisted,unresolved",
@@ -22,12 +21,8 @@
     "app:build": "npm run app:install",
     "app:build:linux": "node scripts/build-linux.mjs --bundles appimage",
     "verify:linux:smoke": "node scripts/smoke-linux.mjs",
-    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs",
     "app:install": "node scripts/install.mjs",
     "app:install:only": "node scripts/install.mjs --no-build",
-    "discord:configure": "bash scripts/configure-discord-webhook.sh configure",
-    "discord:test": "bash scripts/configure-discord-webhook.sh test",
-    "discord:clear": "bash scripts/configure-discord-webhook.sh clear",
     "report:configure": "bash scripts/configure-discord-webhook.sh configure reports",
     "report:test": "bash scripts/configure-discord-webhook.sh test reports",
     "report:clear": "bash scripts/configure-discord-webhook.sh clear reports",
@@ -42,7 +37,9 @@
     "verify": "npm run lines && npm run check:dead-code && npm test && npm run build && npm run rust:fmt && npm run rust:clippy && npm run rust:test",
     "app:build:macos": "tauri build --bundles app",
     "release:macos:publish": "node scripts/publish-macos-update.mjs",
-    "release:art": "node scripts/new-release-art.mjs"
+    "release:art": "node scripts/new-release-art.mjs",
+    "review:parity": "node scripts/serve-desktop-parity.mjs",
+    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

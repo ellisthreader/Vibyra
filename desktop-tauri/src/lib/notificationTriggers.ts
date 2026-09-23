@@ -3,6 +3,7 @@ import type { PreviewStatus } from "../previewTypes";
 import { useNotificationStore } from "../state/notificationStore";
 import { useTerminalStore } from "../state/terminalStore";
 import type { ActivityTransition } from "./activityTransitions";
+import { modelReleaseNotice } from "./modelReleaseNotice";
 import { notePreviewTransition } from "./previewNotifications";
 import { exitNoticeSuppressed, exitNotification } from "./sessionExitNotifications";
 
@@ -54,17 +55,9 @@ export function notifyActivityTransitions(transitions: ActivityTransition[]): vo
 
 /** Replaces the old habit of routing new-model news through the error toast. */
 export function notifyModelsReleased(models: ReleasedModel[]): void {
-  if (models.length === 0) return;
-  const names = models.slice(0, 3).map((model) => model.name).join(", ");
-  useNotificationStore.getState().push({
-    category: "models",
-    severity: "info",
-    title: models.length === 1 ? "New model released" : `${models.length} new models released`,
-    body: models.length > 3 ? `${names}…` : names,
-    dedupeKey: "models",
-    osEligible: false,
-    action: { id: "openModelPicker", label: "Choose a model" },
-  });
+  for (const model of models) {
+    useNotificationStore.getState().push(modelReleaseNotice(model));
+  }
 }
 
 /** Preview phases are polled, so the edge is derived from the last status the

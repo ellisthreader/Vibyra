@@ -43,6 +43,7 @@ class VibesToolsController extends Controller
         $user = $this->authenticatedUser($request, allowGuest: true);
         $d = $request->validate(['decision' => 'required|in:allow,decline', 'result' => 'required|array']);
         abort_if(DB::table('vibes_tools')->where('id', $tool)->whereNotNull('integration')->exists(), 422, 'Connected service results are recorded by Vibyra.');
+        abort_if(DB::table('vibes_tools')->where('id', $tool)->whereNotNull('agent_workspace_id')->exists(), 422, 'Computer results come from the granted computer.');
         abort_if(strlen(json_encode($d['result'])) > 16000, 422, 'Tool output is too large.');
         $tools->respond($user->id, $tool, $d['decision'], $d['decision'] === 'decline' ? ['declined' => true] : $d['result']);
         return $this->json(['ok' => true]);

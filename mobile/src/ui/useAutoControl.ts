@@ -15,7 +15,11 @@ export function useAutoControl(session: Session, workspace: WorkspaceModel) {
   const key = `${session.id}:${session.canInput}:${session.readOnly}`;
   const seen = useRef(key);
   const claim = workspace.actions.claimControl;
-  const ready = workspace.status === 'connected' && !workspace.demo && session.status === 'running' && !workspace.syncing;
+  const ready =
+    workspace.status === 'connected' &&
+    !workspace.demo &&
+    session.status === 'running' &&
+    !workspace.syncing;
   useEffect(() => {
     if (seen.current === key) return;
     seen.current = key;

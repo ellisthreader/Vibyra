@@ -8,6 +8,7 @@ export interface PhoneDevice {
   /** An IP address on this network, or "Vibyra Cloud". */
   lastFrom?: string;
   lastRoute?: "nearby" | "cloud";
+  previewAuto?: boolean;
 }
 
 /** The outbound leg to Vibyra Cloud: `waiting` until this Mac is signed in,
@@ -34,6 +35,7 @@ export interface PhoneStatus {
   /** Allowed phones may type into terminals, not only watch them. Absent from
    * a backend that predates it, which is the same as off. */
   typing?: boolean;
+  previewAutoAvailable?: boolean;
   notifications?: boolean;
   discoverable: boolean;
   listening?: boolean;
@@ -60,6 +62,10 @@ export function phoneConfigure(enabled: boolean): Promise<PhoneStatus> {
 
 export function phoneSetTyping(enabled: boolean): Promise<PhoneStatus> {
   return invoke("phone_set_typing", { enabled });
+}
+
+export function phoneSetPreviewAuto(id: string, enabled: boolean): Promise<PhoneStatus> {
+  return invoke("phone_set_preview_auto", { id, enabled });
 }
 
 export function phoneSetNotifications(enabled: boolean): Promise<PhoneStatus> {

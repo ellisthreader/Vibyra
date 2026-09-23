@@ -7,6 +7,7 @@
 //
 // Add the newest entry at the top when cutting a release.
 
+import { RELEASE_085 } from "./changelogRelease085.ts";
 import { LINUX_RELEASE_080 } from "./changelogRelease080.ts";
 import { LINUX_RELEASE_081 } from "./changelogRelease081.ts";
 import { LINUX_RELEASE_082 } from "./changelogRelease082.ts";
@@ -32,9 +33,19 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_085,
   LINUX_RELEASE_082,
   LINUX_RELEASE_081,
   LINUX_RELEASE_080,
+  {
+    version: "0.7.9", date: "2026-09-22", image: "/releases/0.7.9.svg",
+    summary: "A complete workspace for your AI teammates.",
+    sections: [
+      { heading: "A calmer Agents workspace", body: "A compact teammate list, clearer conversations, inline approvals and a quiet composer. Small windows switch naturally between the list and conversation." },
+      { heading: "Teammates that remember their job", body: "Configure each teammate’s brief, provider, skills, memory and task budget. Drafts and attachments survive navigation and reopening the app." },
+      { heading: "Reliable sends and full history", body: "Interrupted sends keep their original identity, balance errors return your draft, and earlier conversations remain accessible. New replies no longer pull you away from the history you are reading." },
+    ],
+  },
   {
     version: "0.7.8",
     date: "2026-09-21",

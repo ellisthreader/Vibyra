@@ -12,7 +12,9 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
+use parking_lot::Mutex;
 use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::State;
@@ -55,11 +57,17 @@ pub async fn scaffold_preflight(tools: Vec<String>) -> Result<HashMap<String, bo
     run_blocking(move || Ok(installed_tools(&tools))).await
 }
 
+/// Whether a project can be built at this path, asked as the name is typed so
+/// that a folder someone else's work is in is refused on the screen that can do
+/// something about it, not on the build screen that cannot.
 #[tauri::command]
 pub async fn scaffold_destination(path: String) -> Result<DestinationState, String> {
     run_blocking(move || Ok(destination_state(std::path::Path::new(&path)))).await
 }
 
+/// A name whose folder is actually free, for the wizard to open with. The
+/// suggestion is made here rather than in the renderer because only this side
+/// can see the disk.
 #[tauri::command]
 pub async fn scaffold_free_name(parent: String, base: String) -> Result<String, String> {
     run_blocking(move || Ok(free_name(std::path::Path::new(&parent), &base))).await
@@ -89,6 +97,20 @@ pub async fn scaffold_cancel(state: State<'_, AppState>, run_id: String) -> Resu
     Ok(())
 }
 
+/// Cancels every scaffold and GitHub publish when the app quits, and gives
+/// them a moment to take their process groups down. The stopping happens on
+/// each build's own thread; without the wait, `exit` would end the process
+/// first and whatever the package manager started would outlive the app.
+pub fn cancel_all(runs: &Mutex<HashMap<String, Arc<AtomicBool>>>, grace: Duration) {
+    for cancel in runs.lock().values() {
+        cancel.store(true, Ordering::Relaxed);
+    }
+    let deadline = Instant::now() + grace;
+    while !runs.lock().is_empty() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
 fn execute(
     plan: &ScaffoldPlan,
     on_event: &Channel<ScaffoldEvent>,
@@ -96,7 +118,9 @@ fn execute(
 ) -> ScaffoldResult {
     let steps = match prepare(plan) {
         Ok(steps) => steps,
-        Err(error) => return failed(error.to_string()),
+        // A person reads this: "invalid path: …" is how the error type talks
+        // about itself, and says nothing they can act on.
+        Err(error) => return failed(sentence(error.to_string())),
     };
     let total = steps.len();
     for (index, step) in steps.iter().enumerate() {
@@ -135,6 +159,14 @@ fn execute(
         ok: true,
         message: None,
         stalled: false,
+    }
+}
+
+/// Drops a `CoreError`'s variant prefix, leaving the sentence after it.
+fn sentence(message: String) -> String {
+    match message.split_once(": ") {
+        Some((head, rest)) if head.ends_with("error") || head.ends_with("path") => rest.to_string(),
+        _ => message,
     }
 }
 

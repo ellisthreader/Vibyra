@@ -5,6 +5,8 @@ mod backend;
 mod config;
 mod connection;
 #[cfg(test)]
+mod connection_queue_tests;
+#[cfg(test)]
 mod connection_tests;
 mod console;
 mod direct;
@@ -17,6 +19,10 @@ mod peer_policy;
 mod presence;
 #[cfg(test)]
 mod presence_tests;
+mod preview_connection;
+#[cfg(test)]
+mod preview_connection_tests;
+mod preview_upgrade;
 mod relay;
 mod relay_peers;
 mod state;
@@ -67,6 +73,7 @@ async fn start(config: Config) -> Result<(), String> {
     let shared = Arc::new(state::Shared {
         engine,
         identity: Mutex::new(identity),
+        writes: Mutex::new(()),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
         active: Mutex::new(HashMap::new()),

@@ -78,7 +78,7 @@ export function InlineModelPicker({ selection, companies, automatic = true, disa
         <Icon name="search-outline" size={20} color={searching ? colors.accent : colors.muted} /></PickerControl>
       <PickerControl label="Close model picker" onPress={dismiss}><Icon name="close" size={20} /></PickerControl>
     </View>
-    {searching && <View style={[s.search, { borderColor: colors.border }]}>
+    {searching && <View style={[s.search, { borderColor: colors.border, backgroundColor: colors.elevated }]}>
       <Icon name="search-outline" size={18} color={colors.muted} />
       <TextInput ref={searchInput} autoFocus accessibilityLabel="Search AI models" value={query} onChangeText={value => { setQuery(value); setPage(0); setBlocked(null); }}
         placeholder={company ? `Search ${company.name}` : 'Search companies or models'} placeholderTextColor={colors.muted}
@@ -117,9 +117,9 @@ const s = StyleSheet.create({
   panel: { overflow: 'hidden' }, header: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 48, paddingLeft: 8, paddingBottom: 5 },
   heading: { flex: 1, minWidth: 0 }, title: { fontSize: 17, lineHeight: 23, fontWeight: '600', letterSpacing: -0.35 },
   subtitle: { fontSize: 12, lineHeight: 17 }, content: { flex: 1 }, rows: { paddingVertical: 3 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, marginVertical: 5, paddingLeft: 12, paddingRight: 4 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, marginVertical: 5, marginHorizontal: 2, paddingLeft: 12, paddingRight: 4 },
   searchInput: { flex: 1, minWidth: 0, minHeight: 44, fontSize: 16, paddingVertical: 10, borderWidth: 0, outlineWidth: 0, outlineStyle: 'solid', outlineColor: 'transparent' }, empty: { padding: 16, fontSize: 14, lineHeight: 20 },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth },
-  page: { fontSize: 12, lineHeight: 17, fontVariant: ['tabular-nums'] },
+  page: { fontSize: 12, lineHeight: 17, fontWeight: '500', fontVariant: ['tabular-nums'] },
   notice: { padding: 8, gap: 4 }, more: { fontSize: 13, fontWeight: '500' }, blocked: { padding: 10, borderRadius: 14, gap: 4 }, plans: { minHeight: 44, justifyContent: 'center' },
 });

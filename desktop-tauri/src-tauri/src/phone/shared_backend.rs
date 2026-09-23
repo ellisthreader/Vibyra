@@ -9,7 +9,7 @@ use std::{
     },
     time::Duration,
 };
-use vibyra_host::Backend;
+use vibyra_host::{Backend, PreviewHandler};
 
 pub struct SharedBackend {
     pub terminal: DesktopBackend,
@@ -42,6 +42,9 @@ impl SharedBackend {
     }
 }
 impl Backend for SharedBackend {
+    fn preview(&self, device: &str) -> Option<Arc<dyn PreviewHandler>> {
+        self.terminal.preview(device)
+    }
     fn handle(&self, device: &str, method: &str, params: Value) -> Result<Value, String> {
         let typing = self.typing.load(Ordering::SeqCst);
         if method == "session.create" {
@@ -148,6 +151,9 @@ impl Backend for SharedBackend {
         });
         rx
     }
+    /// Conversation updates come only from the shared chats. The terminal
+    /// half would start a phone's whole output stream, and drain the scaffold
+    /// events a connected phone is waiting for, with no phone there to read it.
     fn subscribe_conversations(&self) -> mpsc::Receiver<Value> {
         self.chats.subscribe()
     }

@@ -9,7 +9,7 @@ import { mkdir } from 'node:fs/promises';
 import jsQR from 'jsqr';
 import { chromium } from 'playwright-core';
 import { serveFixture } from './fixture-server.mjs';
-import { capture, until } from './ui-test-helpers.mjs';
+import { capture } from './ui-test-helpers.mjs';
 
 const out = process.env.VIBYRA_SHOTS ?? '/tmp/vibyra-two-factor-screenshots';
 await mkdir(out, { recursive: true });

@@ -5,7 +5,10 @@ import { startProbe } from './lanProbe';
 interface NativeDiscovery {
   start(): Promise<void>;
   stop(): Promise<void>;
-  addListener(event: 'onDiscovery', listener: (update: DiscoveryUpdate) => void): { remove(): void };
+  addListener(
+    event: 'onDiscovery',
+    listener: (update: DiscoveryUpdate) => void,
+  ): { remove(): void };
 }
 const native = requireOptionalNativeModule<NativeDiscovery>('VibyraDiscovery');
 /** Bonjour is the real search and covers every link at once. Without the native
@@ -16,8 +19,16 @@ export const localDiscovery: DiscoveryAdapter = {
   start(onUpdate) {
     if (!native) return startProbe(onUpdate);
     let active = true;
-    const subscription = native.addListener('onDiscovery', update => { if (active) onUpdate(update); });
-    void native.start().catch(() => { if (active) onUpdate({ status: 'failed', computers: [] }); });
-    return () => { active = false; subscription.remove(); void native.stop().catch(() => {}); };
+    const subscription = native.addListener('onDiscovery', (update) => {
+      if (active) onUpdate(update);
+    });
+    void native.start().catch(() => {
+      if (active) onUpdate({ status: 'failed', computers: [] });
+    });
+    return () => {
+      active = false;
+      subscription.remove();
+      void native.stop().catch(() => {});
+    };
   },
 };

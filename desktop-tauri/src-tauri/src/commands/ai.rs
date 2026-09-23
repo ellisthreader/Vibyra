@@ -11,8 +11,11 @@ use super::ai_stream;
 use crate::ai_usage::{chat_cost_usd, AiCall};
 use crate::state::AppState;
 
-/// The cheapest OpenAI text model: $0.05 in / $0.40 out per million tokens.
-pub const CHAT_MODEL: &str = "gpt-5-nano";
+/// $0.25 in / $2.00 out per million tokens. The chat runs Vibyra through
+/// tools, and measured on 47 real requests × 3 (`verify-assistant-live.mjs`)
+/// gpt-5-mini at minimal effort got 140/141 right where gpt-5-nano managed
+/// 31/47 at minimal and 134/141 at low — so the extra cents buy the accuracy.
+pub const CHAT_MODEL: &str = "gpt-5-mini";
 /// gpt-5 models bill their hidden reasoning inside the output budget, so the
 /// cheapest effort is also the one that leaves the whole budget for the reply.
 /// A heavier effort can spend the lot and return empty content with no error.

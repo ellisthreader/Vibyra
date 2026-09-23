@@ -1,6 +1,7 @@
+import { engineProvider, providerPreference } from '../src/agents/engineProviders';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { restoreSetup } from '../src/agents/setup/restoreSetup';
+import { restoreSetup, tabbedSetup } from '../src/agents/setup/restoreSetup';
 import { specialistDraft } from '../src/agents/setup/specialists';
 import { emptySetup } from '../src/agents/setup/types';
 
@@ -35,4 +36,24 @@ test('corrupt saved drafts and incomplete pending requests fail closed', () => {
   assert.throws(() => restoreSetup(JSON.stringify({ ...emptySetup(), pending: { id: 'existing-id' } }), null));
   assert.throws(() => restoreSetup(JSON.stringify({ ...emptySetup(), fields: { name: 'Partial' } }), null));
   assert.throws(() => restoreSetup(null, '{"fields":{}}'));
+});
+
+test('tabbed editor recovers old unsent fields once and never changes a pending payload', () => {
+  const old = { ...emptySetup(), step: 'memory' as const, text: 'Unsent preference' };
+  const migrated = tabbedSetup(restoreSetup(JSON.stringify(old), null));
+  assert.equal(migrated.fields.memory, old.text);
+  migrated.fields.memory = 'Edited directly'; migrated.step = 'memory';
+  assert.equal(tabbedSetup(restoreSetup(JSON.stringify(migrated), null)).fields.memory, 'Edited directly');
+  const brief = tabbedSetup({ ...old, step: 'job', text: 'My exact brief' });
+  assert.equal(brief.fields.brief, 'My exact brief');
+  const pending = { ...old, pending: { id: 'same', fields: old.fields, routines: [] } };
+  assert.strictEqual(tabbedSetup(pending), pending);
+});
+
+test('provider choices migrate known model defaults while retaining unknown legacy engines', () => {
+  assert.equal(engineProvider('anthropic/claude-sonnet-5'), 'anthropic');
+  assert.equal(providerPreference('anthropic/claude-sonnet-5'), 'provider:anthropic');
+  assert.equal(providerPreference('provider:openai'), 'provider:openai');
+  assert.equal(providerPreference('auto'), 'auto');
+  assert.equal(providerPreference('legacy/custom'), 'legacy/custom');
 });

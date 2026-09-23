@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import type { PaneDensity } from "../../lib/paneChrome";
 import { useAgentStore } from "../../state/agentStore";
 import { paneLabel, useTerminalStore, type PaneState } from "../../state/terminalStore";
@@ -11,7 +13,9 @@ import { TerminalView } from "./TerminalView";
 /** Header mark, sized so it never crowds out the pane name in a tight header. */
 const MARK_SIZE: Record<PaneDensity, number> = { comfortable: 20, compact: 18, dense: 15 };
 
-export function TerminalPaneCard({
+/** Memoised: the stage re-renders whenever any pane changes, and the store
+ * keeps every untouched pane's object, so only the changed card repaints. */
+export const TerminalPaneCard = memo(function TerminalPaneCard({
   pane,
   hidden,
   fontSize,
@@ -61,4 +65,4 @@ export function TerminalPaneCard({
       </div>
     </section>
   );
-}
+});

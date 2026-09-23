@@ -129,6 +129,8 @@ export function disposeTerminal(id: number): void {
   entries.delete(id);
   detach(id);
   entry.term.dispose();
+  // After dispose, so xterm's context-lost handler is already gone.
+  entry.releaseRenderer();
   entry.container.remove();
 }
 

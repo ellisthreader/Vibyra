@@ -60,11 +60,18 @@ export const useChatStore = create<ChatStore>((set, get) => {
     }));
 
   /** What the acting half needs from this store, named once. */
+  const drop = (projectId: string, turnId: string) =>
+    set((state) => ({
+      threads: { ...state.threads, [projectId]: dropTurn(state.threads[projectId] ?? [], turnId) },
+    }));
+
   const actContext = (requestId: string) => ({
+    requestId,
     newId,
     reply,
     patch,
     append,
+    drop,
     stream,
     context: (id: string) => contextFor(get().threads[id] ?? []),
     prompt: buildPrompt,
@@ -105,14 +112,12 @@ export const useChatStore = create<ChatStore>((set, get) => {
         stopped: outcome.stopped,
       });
       if (outcome.toolCalls?.length && !outcome.stopped) {
-        // A turn that only asked for an action has nothing to say yet; the
-        // actions and the sentence after them are the reply.
-        if (!outcome.text) {
-          set((state) => ({
-            threads: { ...state.threads, [projectId]: dropTurn(state.threads[projectId] ?? [], turn.id) },
-          }));
-        }
-        await actOnToolCalls(actContext(requestId), projectId, turn, outcome.toolCalls);
+        // The actions and the answer written after them are the reply. Text
+        // sent alongside the call is dropped even when there is some: it is
+        // written before anything ran ("Launching 5 Codex terminals…") and
+        // sat above the refusal that followed it.
+        drop(projectId, turn.id);
+        await actOnToolCalls(actContext(requestId), projectId, turn, outcome.toolCalls, query);
       }
     } catch (error) {
       // Whatever arrived before it broke is kept: a half reply is still worth

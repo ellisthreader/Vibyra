@@ -1,5 +1,7 @@
 import { normalizeReasoning } from '../ui/effort';
-import type { VibesApi, VibesEntitlements, VibesLimits, VibesModel, VibesWallet, VibesWindow } from './types';
+import { identified, objectValue, requiredList, requiredObject } from '../transport/responseShape';
+import { apiUrl, requestJson } from '../transport/requestJson';
+import type { VibesApi, VibesAttachment, VibesChat, VibesEntitlements, VibesLimits, VibesModel, VibesQuote, VibesTurn, VibesWallet, VibesWindow } from './types';
 
 export class VibesError extends Error { constructor(message: string, readonly status: number) { super(message); } }
 /** Smallest entitlement set. A backend that omits limits must never widen them here. */
@@ -85,21 +87,13 @@ export function normalizeModel(value: unknown): VibesModel {
 }
 export const normalizeModels = (value: unknown): VibesModel[] =>
   (Array.isArray(value) ? value : []).filter(model => model && typeof (model as VibesModel).id === 'string').map(normalizeModel);
+const chat = (value: unknown) => objectValue(value) && typeof value.id === 'string' && typeof value.title === 'string';
+const turn = (value: unknown) => objectValue(value) && typeof value.id === 'string'
+  && typeof value.chatId === 'string' && typeof value.status === 'string';
+const quote = (value: unknown) => requiredObject<VibesQuote>(value, 'AI quote', item =>
+  typeof item.quote === 'string' && typeof item.model === 'string'
+  && typeof item.maxCredits === 'number' && typeof item.expiresAt === 'number');
 
-/**
- * The body, whatever the server actually sent. A failure does not always arrive
- * as JSON - a missing route, a proxy error page and a gateway timeout are all
- * HTML - and parsing before the status was read threw, so every one of them
- * reached the store as `status: 0`, the code that means "we never heard back".
- * A rejection it should have settled looked retryable, and the 404 that releases
- * a lost send was never recognised. The shape stays the endpoint's own, checked
- * where it is read exactly as it was when this call was `r.json()`.
- */
-async function parse(r: Response): Promise<any> {
-  const text = await r.text().catch(() => '');
-  try { const value: unknown = text ? JSON.parse(text) : null; return value && typeof value === 'object' ? value : {}; }
-  catch { return {}; }
-}
 /** What to say when the server answered but its body explained nothing. */
 function unexplained(status: number): string {
   if (status === 404 || status === 405) return 'Vibyra AI is not available on this server yet.';
@@ -116,13 +110,11 @@ export function createVibesApi(baseUrl: string, token: () => string | null, fetc
     if (!identity && !anonymous) throw new VibesError('Sign in to use your Vibes.', 401);
     // An upload is a form, sets its own boundary and is given longer on mobile data.
     const form = typeof FormData !== 'undefined' && body instanceof FormData ? body : null;
-    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), form ? 60000 : 25000);
     try {
-      const r = await fetcher(`${baseUrl.replace(/\/$/, '')}/api/vibes/${path}`, { method: body === undefined ? 'GET' : 'POST',
+      const { response: r, data } = await requestJson(fetcher, apiUrl(baseUrl, `vibes/${path}`), { method: body === undefined ? 'GET' : 'POST',
         headers: { ...(identity ? { Authorization: `Bearer ${identity}` } : {}), Accept: 'application/json',
           ...(form ? {} : { 'Content-Type': 'application/json' }) },
-        body: body === undefined ? undefined : form ?? JSON.stringify(body), signal: controller.signal });
-      const data = await parse(r);
+        body: body === undefined ? undefined : form ?? JSON.stringify(body) }, form ? 60000 : 25000);
       if (!anonymous && identity !== (token() ?? guestToken)) throw new VibesError('Your account changed. Please try again.', 401);
       // A server without the Vibes routes still answers in JSON, with Laravel's own
       // sentence for developers ("The POST method is not supported for route…") in
@@ -134,7 +126,7 @@ export function createVibesApi(baseUrl: string, token: () => string | null, fetc
     } catch (error) {
       if (error instanceof VibesError) throw error;
       throw new VibesError('Connection interrupted. Your draft is safe. Refresh to check your request.', 0);
-    } finally { clearTimeout(timeout); }
+    }
   };
   return {
     guest: {
@@ -146,20 +138,26 @@ export function createVibesApi(baseUrl: string, token: () => string | null, fetc
         return { token: data.token, wallet };
       },
     },
+    prepareAuto: async (id, text) => requiredObject(await call('auto-preparations', { id, quote: text }), 'Auto preparation',
+      item => typeof item.id === 'string' && typeof item.state === 'string'),
+    autoPreparation: async id => requiredObject(await call(`auto-preparations/${encodeURIComponent(id)}`), 'Auto preparation',
+      item => typeof item.id === 'string' && typeof item.state === 'string'),
     wallet: async () => validateWallet((await call('wallet')).wallet), consent: async () => { await call('consent', { accepted: true }); },
-    models: async () => normalizeModels((await call('models', undefined, true)).models), chats: async () => (await call('chats')).chats,
-    createChat: async (id, title) => (await call('chats', { id, title })).chats,
-    quote: (chatId, text, model, effort, integrations, attachments) => call('quote', { chatId, text, model,
-      ...(effort ? { effort } : {}), ...(integrations?.length ? { integrations } : {}), ...(attachments?.length ? { attachments } : {}) }),
+    models: async () => normalizeModels(requiredList((await call('models', undefined, true)).models, 'AI models', identified)),
+    chats: async () => requiredList<VibesChat>((await call('chats')).chats, 'AI chats', chat),
+    createChat: async (id, title) => requiredList<VibesChat>((await call('chats', { id, title })).chats, 'AI chats', chat),
+    quote: async (chatId, text, model, effort, integrations, attachments) => quote(await call('quote', { chatId, text, model,
+      ...(effort ? { effort } : {}), ...(integrations?.length ? { integrations } : {}), ...(attachments?.length ? { attachments } : {}) })),
     upload: async source => {
       const form = new FormData();
       // The browser sends the File itself; React Native reads the file at `uri`.
       form.append('file', (source.file ?? { uri: source.uri, name: source.name, type: source.mimeType }) as Blob, source.name);
-      return (await call('attachments', form)).attachment;
+      return requiredObject<VibesAttachment>((await call('attachments', form)).attachment, 'AI attachment',
+        item => typeof item.id === 'string' && typeof item.kind === 'string');
     },
-    submit: async (id, quote) => (await call('turns', { id, quote })).turn,
-    turn: async id => (await call(`turns/${encodeURIComponent(id)}`)).turn,
-    turns: async id => (await call(`chats/${encodeURIComponent(id)}/turns`)).turns,
+    submit: async (id, token) => requiredObject<VibesTurn>((await call('turns', { id, quote: token })).turn, 'AI turn', turn),
+    turn: async id => requiredObject<VibesTurn>((await call(`turns/${encodeURIComponent(id)}`)).turn, 'AI turn', turn),
+    turns: async id => requiredList<VibesTurn>((await call(`chats/${encodeURIComponent(id)}/turns`)).turns, 'AI turns', turn),
     cancel: async id => { await call(`turns/${encodeURIComponent(id)}/cancel`, {}); },
     purchase: async (transactionId, productId) => validateWallet((await call('purchases', { transactionId, productId })).wallet),
     attach: async (chatId, hostId, projectId, binding) => { await call('chats/' + chatId + '/project', { hostId, projectId, binding, shareProject: true }); },

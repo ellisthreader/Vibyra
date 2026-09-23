@@ -5,7 +5,9 @@ import type { TemplateSeed } from './types';
 // Deliberately small: enough that the folder runs, not a starter kit.
 
 export const PLAIN_HTML_SEEDS: TemplateSeed[] = [
-  file('index.html', `<!doctype html>
+  file(
+    'index.html',
+    `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -21,8 +23,11 @@ export const PLAIN_HTML_SEEDS: TemplateSeed[] = [
     <script type="module" src="main.js"></script>
   </body>
 </html>
-`),
-  file('styles.css', `:root { color-scheme: light dark; }
+`,
+  ),
+  file(
+    'styles.css',
+    `:root { color-scheme: light dark; }
 
 body {
   margin: 0;
@@ -31,30 +36,42 @@ body {
   min-height: 100vh;
   font-family: system-ui, sans-serif;
 }
-`),
-  file('main.js', `console.log("{{name}} is running");
-`),
+`,
+  ),
+  file(
+    'main.js',
+    `console.log("{{name}} is running");
+`,
+  ),
 ];
 
 export const LOVE_SEEDS: TemplateSeed[] = [
-  file('main.lua', `function love.load()
+  file(
+    'main.lua',
+    `function love.load()
   message = "{{name}}"
 end
 
 function love.draw()
   love.graphics.print(message, 20, 20)
 end
-`),
-  file('conf.lua', `function love.conf(t)
+`,
+  ),
+  file(
+    'conf.lua',
+    `function love.conf(t)
   t.window.title = "{{name}}"
   t.window.width = 960
   t.window.height = 540
 end
-`),
+`,
+  ),
 ];
 
 export const GODOT_SEEDS: TemplateSeed[] = [
-  file('project.godot', `config_version=5
+  file(
+    'project.godot',
+    `config_version=5
 
 [application]
 
@@ -64,7 +81,8 @@ config/features=PackedStringArray("4.2")
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
-`),
+`,
+  ),
 ];
 
 export const nodePackage = (start: string) => `{
@@ -77,7 +95,9 @@ export const nodePackage = (start: string) => `{
 
 export const EXPRESS_SEEDS: TemplateSeed[] = [
   file('package.json', nodePackage('node index.js')),
-  file('index.js', `import express from "express";
+  file(
+    'index.js',
+    `import express from "express";
 
 const app = express();
 
@@ -86,11 +106,14 @@ app.get("/", (_request, response) => {
 });
 
 app.listen(3000, () => console.log("http://localhost:3000"));
-`),
+`,
+  ),
 ];
 
 export const FASTAPI_SEEDS: TemplateSeed[] = [
-  file('main.py', `from fastapi import FastAPI
+  file(
+    'main.py',
+    `from fastapi import FastAPI
 
 app = FastAPI(title="{{name}}")
 
@@ -98,30 +121,39 @@ app = FastAPI(title="{{name}}")
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {"app": "{{name}}"}
-`),
+`,
+  ),
 ];
 
 export const GO_SEEDS: TemplateSeed[] = [
-  file('main.go', `package main
+  file(
+    'main.go',
+    `package main
 
 import "fmt"
 
 func main() {
 \tfmt.Println("{{name}} is running")
 }
-`),
+`,
+  ),
 ];
 
 export const TS_LIBRARY_SEEDS: TemplateSeed[] = [
-  file('package.json', `{
+  file(
+    'package.json',
+    `{
   "name": "{{name}}",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "scripts": { "build": "tsc" }
 }
-`),
-  file('tsconfig.json', `{
+`,
+  ),
+  file(
+    'tsconfig.json',
+    `{
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -133,9 +165,13 @@ export const TS_LIBRARY_SEEDS: TemplateSeed[] = [
   },
   "include": ["src"]
 }
-`),
-  file('src/index.ts', `export function greet(name: string): string {
+`,
+  ),
+  file(
+    'src/index.ts',
+    `export function greet(name: string): string {
   return \`Hello, \${name}\`;
 }
-`),
+`,
+  ),
 ];

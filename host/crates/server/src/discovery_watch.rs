@@ -32,7 +32,7 @@ pub async fn maintain(name: String, id: String, address: SocketAddr, status: Arc
     .await;
 }
 
-async fn maintain_with<T, F: Future<Output = ()>>(
+async fn maintain_with<T: Send + 'static, F: Future<Output = ()>>(
     mut start: impl FnMut() -> Result<T, String>,
     stale: impl Fn(&T) -> F,
     status: Arc<Mutex<Status>>,
@@ -47,8 +47,11 @@ async fn maintain_with<T, F: Future<Output = ()>>(
                 }
                 stale(&advertisement).await;
                 // Unregisters before the next registration is made, and on
-                // shutdown this future is dropped here instead.
-                drop(advertisement);
+                // shutdown this future is dropped here instead. Unregistering
+                // waits up to a second for the daemon, which is done in the
+                // blocking pool so the listener polled beside this keeps
+                // accepting phones meanwhile.
+                let _ = tokio::task::spawn_blocking(move || drop(advertisement)).await;
                 if let Ok(mut value) = status.lock() {
                     value.advertised = false;
                 }

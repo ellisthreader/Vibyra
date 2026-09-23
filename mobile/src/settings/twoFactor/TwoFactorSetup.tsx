@@ -20,49 +20,97 @@ import { CodeInput } from '../../ui/CodeInput';
  * The code box is the point of all of it: nothing is switched on until the app and
  * the server agree on a code, which is the only proof the setup actually took.
  */
-export function TwoFactorSetup({ setup, busy, error, onConfirm }: {
-  setup: Setup; busy: boolean; error: string | null; onConfirm: (code: string) => void;
+export function TwoFactorSetup({
+  setup,
+  busy,
+  error,
+  onConfirm,
+}: {
+  setup: Setup;
+  busy: boolean;
+  error: string | null;
+  onConfirm: (code: string) => void;
 }) {
   const { colors } = useTheme();
   const [apps, setApps] = useState<Authenticator[] | null>(null);
   const [opened, setOpened] = useState<boolean | null>(null);
   const [code, setCode] = useState('');
-  useEffect(() => { void installedAuthenticators().then(setApps); }, []);
+  useEffect(() => {
+    void installedAuthenticators().then(setApps);
+  }, []);
   // A code the server refused is cleared, so the boxes are ready for the next one
   // rather than asking somebody to delete six digits before they can try again.
-  useEffect(() => { if (error) setCode(''); }, [error]);
-  const open = useCallback(async () => { setOpened(await openSetupLink(setup.uri)); }, [setup.uri]);
+  useEffect(() => {
+    if (error) setCode('');
+  }, [error]);
+  const open = useCallback(async () => {
+    setOpened(await openSetupLink(setup.uri));
+  }, [setup.uri]);
   const first = apps?.[0];
   const named = first && first.id !== 'any' ? first.name : 'Your authenticator';
-  return <View style={s.page}>
-    {apps === null ? <View style={s.checking}><ActivityIndicator color={colors.muted} accessibilityLabel="Looking for your authenticator app" /></View>
-      : first ? <View style={s.launch}>
-        <Button title={first.id === 'any' ? 'Open my authenticator app' : `Set up in ${first.name}`} icon="open-outline"
-          onPress={() => void open()} />
-        <Footnote>{opened === true ? `${named} has this account ready to add. Come back here for the code it shows.`
-          : opened === false ? 'That app didn’t open. Scan the code below instead, or type the key in by hand.'
-            : 'Opens the app with this account filled in. Nothing to type.'}</Footnote>
-      </View> : null}
-    <Label first={!first && apps !== null}>{first ? 'Or scan on another device' : 'Scan with your authenticator'}</Label>
-    <View style={s.code}>
-      <QrCode value={setup.uri} label={`Setup code for ${setup.account}`} />
-    </View>
-    <Label>Setup key</Label>
-    <Group>
-      <View style={s.key}>
-        <Text selectable accessibilityLabel={`Setup key ${grouped(setup.secret).split('').join(' ')}`}
-          style={[s.keyText, { color: colors.text }]}>{grouped(setup.secret)}</Text>
+  return (
+    <View style={s.page}>
+      {apps === null ? (
+        <View style={s.checking}>
+          <ActivityIndicator
+            color={colors.muted}
+            accessibilityLabel="Looking for your authenticator app"
+          />
+        </View>
+      ) : first ? (
+        <View style={s.launch}>
+          <Button
+            title={first.id === 'any' ? 'Open my authenticator app' : `Set up in ${first.name}`}
+            icon="open-outline"
+            onPress={() => void open()}
+          />
+          <Footnote>
+            {opened === true
+              ? `${named} has this account ready to add. Come back here for the code it shows.`
+              : opened === false
+                ? 'That app didn’t open. Scan the code below instead, or type the key in by hand.'
+                : 'Opens the app with this account filled in. Nothing to type.'}
+          </Footnote>
+        </View>
+      ) : null}
+      <Label first={!first && apps !== null}>
+        {first ? 'Or scan on another device' : 'Scan with your authenticator'}
+      </Label>
+      <View style={s.code}>
+        <QrCode value={setup.uri} label={`Setup code for ${setup.account}`} />
       </View>
-    </Group>
-    <Footnote>Type this in by hand if an app can’t scan. Treat it like a password.</Footnote>
-    <Label>Enter the code from your app</Label>
-    <CodeInput value={code} onChange={setCode} onComplete={onConfirm} busy={busy} />
-    <View style={s.status} accessibilityLiveRegion="polite">
-      {busy ? <ActivityIndicator size="small" color={colors.muted} accessibilityLabel="Checking your code" />
-        : error ? <Hint error>{error}</Hint>
-          : <Text style={[s.waiting, { color: colors.muted }]}>Two-factor turns on as soon as the code matches.</Text>}
+      <Label>Setup key</Label>
+      <Group>
+        <View style={s.key}>
+          <Text
+            selectable
+            accessibilityLabel={`Setup key ${grouped(setup.secret).split('').join(' ')}`}
+            style={[s.keyText, { color: colors.text }]}
+          >
+            {grouped(setup.secret)}
+          </Text>
+        </View>
+      </Group>
+      <Footnote>Type this in by hand if an app can’t scan. Treat it like a password.</Footnote>
+      <Label>Enter the code from your app</Label>
+      <CodeInput value={code} onChange={setCode} onComplete={onConfirm} busy={busy} />
+      <View style={s.status} accessibilityLiveRegion="polite">
+        {busy ? (
+          <ActivityIndicator
+            size="small"
+            color={colors.muted}
+            accessibilityLabel="Checking your code"
+          />
+        ) : error ? (
+          <Hint error>{error}</Hint>
+        ) : (
+          <Text style={[s.waiting, { color: colors.muted }]}>
+            Two-factor turns on as soon as the code matches.
+          </Text>
+        )}
+      </View>
     </View>
-  </View>;
+  );
 }
 /** The key in fours, which is how anybody copying it by hand keeps their place. */
 const grouped = (secret: string) => (secret.match(/.{1,4}/g) ?? [secret]).join(' ');

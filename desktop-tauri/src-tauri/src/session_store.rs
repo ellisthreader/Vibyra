@@ -13,7 +13,7 @@ pub const VERSION: u32 = 1;
 /// Ceilings on what a single save may cost. Terminal output is unbounded in
 /// principle — a noisy build loop can fill the 4 MiB scrollback ring of every
 /// pane — so the file is capped rather than left to track it.
-const MAX_SNAPSHOT_BYTES: usize = 256 * 1024;
+pub(crate) const MAX_SNAPSHOT_BYTES: usize = 256 * 1024;
 const MAX_TOTAL_BYTES: usize = 8 * 1024 * 1024;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -127,9 +127,15 @@ pub fn save(path: &Path, session: TerminalSession) -> CoreResult<()> {
         std::fs::create_dir_all(parent)?;
     }
     let session = normalize(session);
+    let digest = unchanged::digest(&session)?;
+    if unchanged::already_written(path, digest) {
+        return Ok(());
+    }
     let raw = serde_json::to_vec_pretty(&session)
         .map_err(|error| CoreError::Settings(error.to_string()))?;
-    write_private_atomic(path, &raw)
+    write_private_atomic(path, &raw)?;
+    unchanged::written(path, digest);
+    Ok(())
 }
 
 pub fn now_ms() -> u64 {
@@ -140,6 +146,7 @@ pub fn now_ms() -> u64 {
 }
 
 pub fn clear(path: &Path) -> CoreResult<()> {
+    unchanged::forget(path);
     match std::fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
@@ -149,3 +156,6 @@ pub fn clear(path: &Path) -> CoreResult<()> {
 
 #[cfg(test)]
 pub(crate) const TEST_MAX_SNAPSHOT_BYTES: usize = MAX_SNAPSHOT_BYTES;
+
+#[path = "session_store_unchanged.rs"]
+mod unchanged;

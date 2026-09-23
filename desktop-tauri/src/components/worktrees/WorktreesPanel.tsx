@@ -52,11 +52,11 @@ function ConnectedWorktrees({ active, onPreview }: Props) {
       <button className="worktree-back" onClick={() => setSelected(null)}>← All worktrees</button>
       <h2>{title}</h2><p className="worktree-branch" title={directory}>⑂ {tree.branch}</p>
       <div className="worktree-detail__actions"><span>{tree.upstream ? `Tracks ${tree.upstream}` : 'Local branch'}</span><button className="btn" disabled={!tree.available} onClick={() => onPreview({ root: directory, title: tree.branch })}>Preview ↗</button></div>
-      {tree.available ? <FilesPanel key={directory} scope={{ root: directory, title, error: '' }} /> : <p className="worktree-error">This working folder is unavailable. Restore it before opening files or Preview.</p>}
+      {tree.available ? <FilesPanel key={directory} scope={{ root: directory, title, error: '' }} active={active} /> :<p className="worktree-error">This working folder is unavailable. Restore it before opening files or Preview.</p>}
     </div>;
   }
   return <div className="worktrees-panel">
-    <GitHubConnection repository={data.inventory?.repository ?? null} onConnected={setConnected} />
+    <GitHubConnection repository={data.inventory?.repository ?? null} onConnected={setConnected} active={active} />
     {!connected ? <p className="worktree-empty">Connect GitHub to use Safe Mode worktrees.</p> : selected && tree ? detail() : <>
     <div className="worktrees-heading"><span>{data.inventory ? `${trees.length} worktree${trees.length === 1 ? '' : 's'}` : 'Worktrees'}</span><span>Safe Mode on</span></div>
     {data.error && <p className="worktree-error" role="alert">{data.error}<button onClick={data.refresh}>Retry</button></p>}

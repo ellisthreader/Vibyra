@@ -12,6 +12,6 @@ export function engineProvider(model = 'auto'): string {
 }
 export function providerPreference(model = 'auto'): string {
   const provider = engineProvider(model);
-  if (!teammateProviders.some(item => item.id === provider)) return model;
+  if (!teammateProviders.some((item) => item.id === provider)) return model;
   return provider === 'auto' ? 'auto' : `provider:${provider}`;
 }

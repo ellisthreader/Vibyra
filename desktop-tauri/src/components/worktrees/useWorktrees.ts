@@ -4,6 +4,7 @@ import { chatRequest } from '../../ipc/sharedChats';
 import { useConversationTerminals } from '../../state/conversationTerminalStore';
 import { useTerminalStore } from '../../state/terminalStore';
 import { useAccountStore } from '../../state/accountStore';
+import { usePageVisible } from '../../lib/usePageVisible';
 import type { TreeChanges, TreeSession, WorktreeInventory } from './types';
 
 /** Bounded concurrency and a delay after completion, rather than overlapping polls. */
@@ -22,8 +23,9 @@ export function useWorktrees(root: string | null, projectId: string | null, acti
   const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
   const [revision, refresh] = useState(0);
   const key = JSON.stringify([account, projectId, root]);
+  const visible = usePageVisible();
   useEffect(() => {
-    if (!root || !active) return;
+    if (!root || !active || !visible) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
@@ -52,7 +54,7 @@ export function useWorktrees(root: string | null, projectId: string | null, acti
     };
     void poll();
     return () => { alive = false; clearTimeout(timer); };
-  }, [key, active, revision, root, projectId]);
+  }, [key, active, visible, revision, root, projectId]);
   const panes = useTerminalStore(s => s.panes);
   const activity = useTerminalStore(s => s.activity);
   const data = result?.key === key ? result : null;

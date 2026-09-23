@@ -10,6 +10,7 @@
 
 import type { VibyraTool } from "./vibyraToolTypes.ts";
 import { APP_TOOLS } from "./vibyraAppTools.ts";
+import { TERMINAL_REF, VIEW_TOOLS } from "./vibyraViewTools.ts";
 
 export type { VibyraTool };
 
@@ -19,48 +20,27 @@ export const VIBYRA_TOOLS: VibyraTool[] = [
   {
     name: "open_terminals",
     description:
-      "Open one or more terminals in a project, each running an AI CLI agent or a plain shell. " +
-      "Use this whenever the person asks to open, start or spin up terminals or agents. " +
-      "If they name a model (GPT, Claude, Gemini, Astra, Sol…), pass it as `model` and leave " +
-      "`agent` out — the matching CLI is chosen for you. Only pass agent 'shell' when they " +
-      "explicitly want a plain terminal with no AI in it.",
+      "Open NEW terminals. Only when the person asks to open, launch, start or spin up terminals or " +
+      "agents — never to retry a different action. Each runs an AI CLI agent or a plain shell. " +
+      "If they name a model (GPT, Claude, Gemini, Astra, Fable…) pass it as `model`; the CLI is chosen for you.",
     changes: true,
     parameters: {
       type: "object",
       properties: {
-        agent: {
-          type: "string",
-          enum: AGENTS,
-          description: "Which CLI to run. Omit when a model is named. 'shell' is a plain terminal.",
-        },
-        model: {
-          type: "string",
-          description:
-            "The model, as the person said it — 'GPT-6 Astra', 'gptastra', 'Claude Fable'. " +
-            "Pass their words; Vibyra matches them to the real name.",
-        },
-        count: { type: "integer", minimum: 1, maximum: 8, description: "How many to open. Defaults to 1." },
+        agent: { type: "string", enum: AGENTS, description: "Which CLI: codex, claude, gemini… 'shell' is a plain terminal with no AI. Leave out when they named a model." },
+        model: { type: "string", description: "Any model they named, in their words — 'gpt astra', 'GPT-6 Astra', 'claude fable 5.1'." },
+        count: { type: "integer", minimum: 1, maximum: 8, description: "How many. Defaults to 1." },
         permission: {
-          type: "string",
-          enum: ["standard", "full"],
-          description:
-            "'full' lets the agent act without asking each time. Only when they say so — " +
-            "'full permissions', 'auto mode', 'don't ask me'.",
+          type: "string", enum: ["standard", "full"],
+          description: "'full' only when they said full permission(s), full access, auto mode or don't ask.",
         },
         effort: {
-          type: "string",
-          description:
-            "Reasoning effort for models that take one: minimal, low, medium or high. " +
-            "Pass only what they asked for.",
+          type: "string", enum: ["minimal", "low", "medium", "high", "xhigh", "max"],
+          description: "The effort level they said — 'high effort' is high. Leave out if they did not say one.",
         },
-        prompt: {
-          type: "string",
-          description:
-            "A first message typed into each terminal once it starts, for 'open three Codex " +
-            "terminals and tell them to review the auth flow'.",
-        },
+        prompt: { type: "string", description: "A first task typed into each new terminal, if they gave one." },
         title: { type: "string", description: "A name for the terminals, if they gave one." },
-        project: { type: "string", description: "Project name. Defaults to the one that is open." },
+        project: { type: "string", description: "Project name. Leave out for the open project." },
       },
       required: [],
     },
@@ -68,28 +48,47 @@ export const VIBYRA_TOOLS: VibyraTool[] = [
   {
     name: "list_terminals",
     description:
-      "What is open right now: every terminal, which agent it runs, which project it belongs to, " +
-      "whether it is working, waiting or finished, and what it is called. Use this to answer " +
-      "anything about what is going on.",
+      "Every open terminal: its id, agent, model, project, whether it is working, idle, waiting for " +
+      "input or finished, and the last lines on its screen. Use it for 'what's going on', 'which terminal " +
+      "needs me', or to find a terminal by what it is doing.",
     changes: false,
     parameters: {
       type: "object",
-      properties: {
-        project: { type: "string", description: "Only this project. Defaults to all of them." },
-      },
+      properties: { project: { type: "string", description: "Only this project. Leave out for all of them." } },
     },
   },
   {
     name: "read_terminal",
     description:
-      "The most recent output of one terminal, so you can say what it is doing or what went wrong. " +
-      "Read it before answering a question about a specific terminal.",
+      "Read what one terminal is showing now. Use it whenever they ask what a terminal is doing, its " +
+      "job or task, whether it finished, what went wrong, or what it is waiting for — then answer from " +
+      "what is on screen.",
     changes: false,
     parameters: {
       type: "object",
       properties: {
-        terminal: { type: "integer", description: "The id from list_terminals." },
-        lines: { type: "integer", minimum: 1, maximum: 200, description: "How many lines. Defaults to 40." },
+        terminal: TERMINAL_REF,
+        lines: { type: "integer", minimum: 1, maximum: 200, description: "How many lines. Defaults to 60." },
+      },
+      required: ["terminal"],
+    },
+  },
+  {
+    name: "send_to_terminal",
+    description:
+      "Type into a terminal that is already open: a message or task for the agent in it, a command for a " +
+      "shell, and/or one key — 'interrupt' to stop it, 'yes'/'no' to answer a permission prompt, 'enter'. " +
+      "\"When it's done\" or \"after that\": send it now; the agent takes it as its next message.",
+    changes: true,
+    parameters: {
+      type: "object",
+      properties: {
+        terminal: TERMINAL_REF,
+        text: { type: "string", description: "Exactly what to type. Return is pressed after it." },
+        key: {
+          type: "string", enum: ["interrupt", "yes", "no", "enter", "escape", "up", "down", "tab"],
+          description: "One key to press before any text.",
+        },
       },
       required: ["terminal"],
     },
@@ -97,44 +96,20 @@ export const VIBYRA_TOOLS: VibyraTool[] = [
   {
     name: "close_terminals",
     description:
-      "Close one terminal, or every terminal matching a project or an agent. Anything running " +
-      "inside them stops. Use list_terminals first if you are not sure which they mean.",
+      "Close terminals. Anything running in them stops. One by `terminal`, every one running an `agent`, " +
+      "or with `all` every terminal in a project.",
     changes: true,
     parameters: {
       type: "object",
       properties: {
-        terminal: { type: "integer", description: "One id from list_terminals." },
-        agent: { type: "string", enum: AGENTS, description: "Close every terminal running this CLI." },
-        project: { type: "string", description: "Close every terminal in this project." },
+        terminal: TERMINAL_REF,
+        agent: { type: "string", enum: AGENTS, description: "Close every terminal running this CLI in the project." },
+        all: { type: "boolean", description: "Close every terminal in the project." },
+        project: { type: "string", description: "Which project, with agent or all. Leave out for the open one." },
       },
     },
   },
-  {
-    name: "send_to_terminal",
-    description:
-      "Type a message into a running terminal and press return — a prompt for the agent in it, " +
-      "or a line for a shell. Use it when they want something said to a terminal that is " +
-      "already open.",
-    changes: true,
-    parameters: {
-      type: "object",
-      properties: {
-        terminal: { type: "integer", description: "The id from list_terminals." },
-        text: { type: "string", description: "Exactly what to type." },
-      },
-      required: ["terminal", "text"],
-    },
-  },
-  {
-    name: "focus_terminal",
-    description: "Bring one terminal to the front and give it the keyboard.",
-    changes: true,
-    parameters: {
-      type: "object",
-      properties: { terminal: { type: "integer", description: "The id from list_terminals." } },
-      required: ["terminal"],
-    },
-  },
+  ...VIEW_TOOLS,
   ...APP_TOOLS,
 ];
 

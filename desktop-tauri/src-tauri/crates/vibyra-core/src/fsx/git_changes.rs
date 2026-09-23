@@ -1,34 +1,66 @@
 use std::io::Read;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 
 use crate::{CoreError, CoreResult};
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChangedFile {
     pub path: String,
     pub status: String,
     pub previous_path: Option<String>,
 }
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Changes {
     pub root: String,
     pub files: Vec<ChangedFile>,
 }
 
-// No shell, pager, index writes, external diff program or textconv filters.
+/// The list the Files panel was just shown, so opening one of its files does
+/// not re-run a full `git status` it already paid for moments ago.
+static RECENT: LazyLock<super::git_memo::Recent<String, Changes>> =
+    LazyLock::new(|| super::git_memo::Recent::new(Duration::from_secs(3)));
+
+// Desktop Git views keep normal filter semantics; Agent Computer uses safe_git.
 pub(super) fn git(root: &Path, args: &[&str], limit: usize) -> CoreResult<String> {
-    let mut child = Command::new("git")
-        .arg("--no-pager")
-        .arg("--literal-pathspecs")
-        .args(["-c", "core.fsmonitor=false"])
+    git_with_policy(root, args, limit, false)
+}
+
+fn safe_git(root: &Path, args: &[&str], limit: usize) -> CoreResult<String> {
+    git_with_policy(root, args, limit, true)
+}
+
+fn git_with_policy(root: &Path, args: &[&str], limit: usize, safe: bool) -> CoreResult<String> {
+    let overrides = if safe {
+        super::git_command_policy::filter_overrides(root)?
+    } else {
+        Vec::new()
+    };
+    let mut command = Command::new("git");
+    command.arg("--no-pager").arg("--literal-pathspecs").args([
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "diff.external=",
+    ]);
+    for value in &overrides {
+        command.arg("-c").arg(value);
+    }
+    let mut child = command
         .arg("-C")
         .arg(root)
         .args(args)
+        .env_remove("GIT_CONFIG_COUNT")
+        .env_remove("GIT_CONFIG_PARAMETERS")
+        .env_remove("GIT_DIR")
+        .env_remove("GIT_WORK_TREE")
+        .env_remove("GIT_INDEX_FILE")
+        .env_remove("GIT_COMMON_DIR")
         .env("GIT_OPTIONAL_LOCKS", "0")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -98,10 +130,19 @@ fn parse_status(raw: &str) -> Vec<ChangedFile> {
 }
 
 pub fn changes(root: &str) -> CoreResult<Changes> {
+    changes_with_policy(root, false)
+}
+
+pub fn safe_changes(root: &str) -> CoreResult<Changes> {
+    changes_with_policy(root, true)
+}
+
+fn changes_with_policy(root: &str, safe: bool) -> CoreResult<Changes> {
     let project = Path::new(root).canonicalize()?;
-    let repo = git(&project, &["rev-parse", "--show-toplevel"], 32_768)?;
-    let root = repo.trim_end().to_string();
-    let raw = git(
+    let requested = root.to_string();
+    let root = super::git_memo::toplevel(&project)?;
+    let run = if safe { safe_git } else { git };
+    let raw = run(
         &project,
         &[
             "status",
@@ -113,69 +154,19 @@ pub fn changes(root: &str) -> CoreResult<Changes> {
         ],
         8 * 1024 * 1024,
     )?;
-    Ok(Changes {
+    let list = Changes {
         root,
         files: parse_status(&raw),
-    })
+    };
+    if !safe {
+        RECENT.put(requested, list.clone());
+    }
+    Ok(list)
 }
 
-pub fn change_preview(root: &str, path: &str) -> CoreResult<String> {
-    // Re-read the scoped inventory: caller cannot select another project's file.
-    let list = changes(root)?;
-    let file = list
-        .files
-        .iter()
-        .find(|file| file.path == path)
-        .ok_or_else(|| {
-            CoreError::InvalidPath("This file is no longer changed. Refresh the list.".into())
-        })?;
-    let repo = Path::new(&list.root);
-    if file.status == "??" {
-        let full = repo.join(path).canonicalize()?;
-        if !full.starts_with(Path::new(root).canonicalize()?) {
-            return Err(CoreError::InvalidPath(
-                "File points outside this project".into(),
-            ));
-        }
-        let preview = super::read_file_preview(&full.to_string_lossy(), 256 * 1024)?;
-        return Ok(format!(
-            "New file: {path}\n\n{}{}",
-            preview.content,
-            if preview.truncated {
-                "\n\n[Preview truncated]"
-            } else {
-                ""
-            }
-        ));
-    }
-    let mut args = vec![
-        "diff",
-        "--no-ext-diff",
-        "--no-textconv",
-        "--no-color",
-        "--cached",
-        "--",
-        path,
-    ];
-    if let Some(previous) = &file.previous_path {
-        args.push(previous);
-    }
-    let staged = git(repo, &args, 512 * 1024)?;
-    args.remove(4);
-    let working = git(repo, &args, 512 * 1024)?;
-    let mut result = Vec::new();
-    if !staged.is_empty() {
-        result.push(format!("Staged changes\n{staged}"));
-    }
-    if !working.is_empty() {
-        result.push(format!("Working changes\n{working}"));
-    }
-    Ok(if result.is_empty() {
-        "No text diff is available for this change.".into()
-    } else {
-        result.join("\n")
-    })
-}
+#[path = "git_change_preview.rs"]
+mod preview;
+pub use preview::{change_preview, safe_change_preview};
 
 #[cfg(test)]
 #[path = "git_changes_tests.rs"]

@@ -23,8 +23,11 @@ export function outputDelta(previous: string, next: string): { reset: boolean; d
   }
   let overlap = 0;
   for (let i = 0; i < previous.length; i++) {
-    while (overlap > 0 && (overlap === next.length || previous[i] !== next[overlap])) overlap = prefix[overlap - 1]!;
+    while (overlap > 0 && (overlap === next.length || previous[i] !== next[overlap]))
+      overlap = prefix[overlap - 1]!;
     if (previous[i] === next[overlap]) overlap++;
   }
-  return overlap >= 1024 ? { reset: false, data: next.slice(overlap) } : { reset: true, data: next };
+  return overlap >= 1024
+    ? { reset: false, data: next.slice(overlap) }
+    : { reset: true, data: next };
 }

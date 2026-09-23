@@ -4,14 +4,14 @@
 .conversation-terminal .pane__state { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
 .conversation-body { min-height:0; min-width:0; display:flex; flex:1; position:relative; }
 .conversation-reading { min-width:0; min-height:0; flex:1; display:flex; flex-direction:column; position:relative; }
-.conversation-terminal .shared-transcript { padding:32px max(22px,calc((100% - 760px)/2)); font-family:var(--font-sans,Inter,system-ui,sans-serif); scrollbar-gutter:stable; }
+.conversation-terminal .shared-transcript { padding:32px max(22px,calc((100% - 760px)/2)); font-family:var(--font-ui); scrollbar-gutter:stable; }
 .conversation-terminal .shared-message { font-size:15px; margin:0 0 28px; line-height:1.65; }
 .conversation-terminal .shared-message--user { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:13px 18px; max-width:90%; width:fit-content; margin-left:auto; }
 .conversation-terminal .shared-compose-wrap { padding:12px 22px 18px; max-width:804px; border:0; flex-shrink:0; }
 .conversation-terminal .shared-request { border-radius:14px; padding:18px; box-shadow:0 4px 18px #00000006; }
 .conversation-terminal .shared-request .shared-actions { flex-wrap:wrap; }
 .terminal-prompt { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:16px; padding:12px; background:var(--surface); box-shadow:0 4px 18px #00000008; }
-.terminal-prompt textarea { width:100%; min-width:0; min-height:68px; max-height:180px; resize:vertical; background:transparent; border:0; color:var(--text); padding:4px 4px 12px; font:14px/1.65 var(--font-sans,Inter,system-ui,sans-serif); }
+.terminal-prompt textarea { width:100%; min-width:0; min-height:68px; max-height:180px; resize:vertical; background:transparent; border:0; color:var(--text); padding:4px 4px 12px; font:14px/1.65 var(--font-ui); }
 .terminal-prompt textarea:focus { outline:none; }
 .terminal-prompt:focus-within { border-color:color-mix(in srgb,var(--accent) 55%,var(--border)); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 7%,transparent); }
 .conversation-composer-toolbar,.conversation-composer-tools { display:flex; align-items:center; gap:6px; min-width:0; }

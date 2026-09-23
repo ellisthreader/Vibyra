@@ -3,8 +3,13 @@ import type { WorkspaceStore } from '../state/WorkspaceStore';
 import { keepSession, rememberAccount } from './accountActions';
 import type { TwoFactorApi } from './twoFactorApi';
 
-export type TwoFactorActionName = 'loadTwoFactor' | 'startTwoFactor' | 'confirmTwoFactor'
-  | 'newRecoveryCodes' | 'disableTwoFactor' | 'submitTwoFactorCode';
+export type TwoFactorActionName =
+  | 'loadTwoFactor'
+  | 'startTwoFactor'
+  | 'confirmTwoFactor'
+  | 'newRecoveryCodes'
+  | 'disableTwoFactor'
+  | 'submitTwoFactorCode';
 
 /** A code as the server will read it: digits only, or a recovery code as it was given. */
 const tidy = (code: string) => {
@@ -21,7 +26,9 @@ const asked = 'Enter the six-digit code from your authenticator app.';
  * code itself is never kept: it is good for thirty seconds and holding it longer than
  * the request that spends it would only be somewhere else for it to leak from.
  */
-export function makeTwoFactorActions(store: WorkspaceStore): Pick<WorkspaceActions, TwoFactorActionName> {
+export function makeTwoFactorActions(
+  store: WorkspaceStore,
+): Pick<WorkspaceActions, TwoFactorActionName> {
   const signedIn = () => {
     if (!store.token) throw new Error('Sign in to manage your account.');
     return store.token;
@@ -39,7 +46,7 @@ export function makeTwoFactorActions(store: WorkspaceStore): Pick<WorkspaceActio
   return {
     loadTwoFactor: async () => api('twoFactorState')(signedIn()),
     startTwoFactor: async () => api('startTwoFactor')(signedIn()),
-    confirmTwoFactor: async code => {
+    confirmTwoFactor: async (code) => {
       const clean = tidy(code);
       if (clean.length !== 6) throw new Error(asked);
       const token = signedIn();
@@ -47,15 +54,16 @@ export function makeTwoFactorActions(store: WorkspaceStore): Pick<WorkspaceActio
       if (store.token === token) await rememberAccount(store, user);
       return recoveryCodes;
     },
-    newRecoveryCodes: async code => {
+    newRecoveryCodes: async (code) => {
       const clean = tidy(code);
       if (!clean) throw new Error(asked);
       return api('newRecoveryCodes')(signedIn(), clean);
     },
-    disableTwoFactor: async code => withCode(code, async (token, clean) => {
-      const user = await api('disableTwoFactor')(token, clean);
-      if (store.token === token) await rememberAccount(store, user);
-    }),
+    disableTwoFactor: async (code) =>
+      withCode(code, async (token, clean) => {
+        const user = await api('disableTwoFactor')(token, clean);
+        if (store.token === token) await rememberAccount(store, user);
+      }),
     // The password is already spent by this point, so this is the whole login: the
     // session it returns is kept exactly as one from a password alone would be.
     submitTwoFactorCode: async (challengeId, code) => {

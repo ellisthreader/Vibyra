@@ -46,7 +46,10 @@ export function stepAfterStack(): CreateStep {
  * the template's own first kind when it does not, so "Making: Game / With:
  * Next.js" can never be printed.
  */
-export function kindForTemplate(current: ProjectKind | null, templateId: string | null): ProjectKind | null {
+export function kindForTemplate(
+  current: ProjectKind | null,
+  templateId: string | null,
+): ProjectKind | null {
   const entry = templateById(templateId);
   if (!entry) return current;
   if (current && entry.kinds.includes(current)) return current;

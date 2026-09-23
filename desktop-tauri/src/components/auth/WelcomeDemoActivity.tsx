@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 
 /** Scripted sample activity only. This demo never invokes a provider or native command. */
 const terminals = [
@@ -11,37 +11,41 @@ const reveal = (text: string, time: number, start: number, speed = 70) => text.s
 export const ramp = (time: number, start: number, duration = 1) => Math.max(0, Math.min(1, (time - start) / duration));
 export const ease = (value: number) => 1 - Math.pow(1 - value, 3);
 
-export function WelcomeTerminal({ time, index }: { time:number; index:number }) {
-  const output = reveal(terminals[index].join('\n'), time, .75, 65);
+export const WelcomeTerminal = memo(function WelcomeTerminal({ time, index }: { time:number; index:number }) {
+  const full = terminals[index].join('\n');
+  const output = reveal(full, time, .75, 72);
+  const lines = output.split('\n');
   return <div className="welcome-demo-terminal">
-    {output.split('\n').map((line,row) => <div key={row} data-tone={/^[+✓]/.test(line) ? 'success' : /^[›>✳✦➜]/.test(line) ? 'accent' : undefined}>
-      {line || '\u00a0'}
+    {lines.map((line,row) => <div key={row} data-tone={/^[+✓]/.test(line) ? 'success' : /^[›>✳✦➜]/.test(line) ? 'accent' : undefined}>
+      {line || '\u00a0'}{row === lines.length - 1 && output.length < full.length && <i className="welcome-demo-caret" style={{opacity:time % .8 < .5 ? 1 : 0}} />}
     </div>)}
-    <i className="welcome-demo-caret" style={{opacity:time % .8 < .5 ? 1 : 0}} />
   </div>;
-}
+});
 
 const prompt = 'Summarise the research for our new studio website.';
 const answer = 'Here are three clear priorities for the new website:\n\n1. Lead with selected work, so visitors can see your strengths.\n\n2. Give each project a short story: the brief, the approach and the result.\n\n3. Make contacting the studio a simple next step.\n\nI can turn this into a page-by-page content brief next.';
-export function WelcomeAgentActivity({ time }: { time: number }) {
+export const WelcomeAgentActivity = memo(function WelcomeAgentActivity({ time }: { time: number }) {
   const sent = time >= 2;
   return <>
     <div className="welcome-demo-thread">
       <div className="welcome-demo-question" style={{ opacity: ramp(time, 2, .3), transform: `translateY(${(1 - ease(ramp(time, 2, .5))) * 30}px)` }}>{prompt}</div>
-      <div className="welcome-demo-answer" style={{ opacity: ramp(time, 2.7, .3) }}>
+      <div className="welcome-demo-answer" style={{ opacity: ramp(time, 2.7, .3), transform: `translateY(${(1 - ease(ramp(time, 2.7, .45))) * 10}px)` }}>
         {time < 3.3 ? <span className="welcome-demo-thinking">{[0, 1, 2].map(i => <i key={i} style={{ transform: `translateY(${Math.sin(time * 7 - i) * 3}px)` }} />)}</span> : reveal(answer, time, 3.3, 75)}
       </div>
     </div>
     <div className="welcome-demo-composer">{sent ? <span>Message Research assistant</span> : <>{reveal(prompt, time, .25, 34)}<i className="welcome-demo-caret" /></>}</div>
+    <div className="welcome-demo-send" style={{opacity: sent ? 1 - ramp(time, 2, .3) : ramp(time, .35, .3), transform: `scale(${1 - Math.sin(ramp(time, 1.8, .2) * Math.PI) * .16})`}}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 18V6m-5 5 5-5 5 5" /></svg>
+    </div>
   </>;
-}
+});
 
-export function WelcomeDemoCursor({ time }: { time:number }) {
+export const WelcomeDemoCursor = memo(function WelcomeDemoCursor({ time }: { time:number }) {
   const target = [96, 94];
   const move = ease(ramp(time, .1, 1.4));
-  const click = ramp(time, 1.5, .7);
+  const click = ramp(time, 1.8, .55);
   return <div className="welcome-demo-cursor" style={{ left: `${55 + (target[0] - 55) * move}%`, top: `${72 + (target[1] - 72) * move}%`, opacity: 1 - ramp(time, 2.2, .5) } as CSSProperties}>
-    <i style={{ opacity: 1 - click, transform: `translate(-50%,-50%) scale(${click * 3})` }} />
+    <i style={{ opacity: click > 0 ? 1 - click : 0, transform: `translate(-50%,-50%) scale(${click * 3})` }} />
     <svg viewBox="0 0 24 28" width="21" height="25"><path d="M3 2v21l6-5 4 8 4-2-4-8h8z" fill="var(--text)" stroke="var(--bg)" strokeWidth="1.5" /></svg>
   </div>;
-}
+});

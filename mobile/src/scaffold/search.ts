@@ -9,17 +9,34 @@ import type { ProjectKind, ProjectTemplate } from './types';
 
 /** Plain words for each kind, so "phone" finds every mobile stack and "api" every backend. */
 const KIND_WORDS: Record<ProjectKind, string> = {
-  website: 'site web pages', webapp: 'web app site', mobile: 'phone ios android app', desktop: 'mac windows linux native',
-  game: 'game engine 2d 3d', backend: 'api server endpoints', library: 'package cli tool script', ai: 'llm model claude anthropic', empty: 'folder',
+  website: 'site web pages',
+  webapp: 'web app site',
+  mobile: 'phone ios android app',
+  desktop: 'mac windows linux native',
+  game: 'game engine 2d 3d',
+  backend: 'api server endpoints',
+  library: 'package cli tool script',
+  ai: 'llm model claude anthropic',
+  empty: 'folder',
 };
 
 /** What a template answers to besides its name: its id, its blurb, and the
  *  kinds it is filed under, so "phone" finds Expo and "api" finds Axum. */
 function keywordsFor(entry: ProjectTemplate): string {
-  return [entry.id, entry.blurb, ...entry.kinds.flatMap(kind => [kindName(kind), KIND_WORDS[kind]])].join(' ').toLowerCase();
+  return [
+    entry.id,
+    entry.blurb,
+    ...entry.kinds.flatMap((kind) => [kindName(kind), KIND_WORDS[kind]]),
+  ]
+    .join(' ')
+    .toLowerCase();
 }
 
-const words = (text: string) => text.toLowerCase().split(/[^a-z0-9.+#]+/).filter(Boolean);
+const words = (text: string) =>
+  text
+    .toLowerCase()
+    .split(/[^a-z0-9.+#]+/)
+    .filter(Boolean);
 
 /** 0 when nothing matches; higher is closer. Every typed word must land somewhere. */
 export function templateScore(entry: ProjectTemplate, query: string): number {
@@ -31,7 +48,7 @@ export function templateScore(entry: ProjectTemplate, query: string): number {
   let score = 0;
   for (const word of typed) {
     if (name.startsWith(word)) score += 6;
-    else if (nameWords.some(part => part.startsWith(word))) score += 4;
+    else if (nameWords.some((part) => part.startsWith(word))) score += 4;
     else if (name.includes(word)) score += 3;
     else if (keywords.includes(word)) score += 1;
     else return 0;
@@ -48,5 +65,5 @@ export function searchTemplates(query: string): ProjectTemplate[] {
     if (score > 0) hits.push({ entry, score });
   }
   // Sort is stable, so templates that score the same keep catalog order.
-  return hits.sort((left, right) => right.score - left.score).map(hit => hit.entry);
+  return hits.sort((left, right) => right.score - left.score).map((hit) => hit.entry);
 }

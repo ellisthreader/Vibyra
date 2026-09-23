@@ -32,7 +32,7 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
   const submit = () => { if (!value && onEmptySubmit && !disabled) onEmptySubmit(); else void send(); };
   return <View style={[s.container, { backgroundColor: colors.background }, dense && s.denseContainer]}>
     <View style={[s.composer, { backgroundColor: colors.surface,
-      borderColor: focused ? colors.muted : colors.border }, row && s.row, dense && s.denseComposer]}>
+      borderColor: focused ? colors.accent : colors.border }, row && s.row, dense && s.denseComposer]}>
       {dense && <Text aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
         style={[s.prompt, { color: disabled ? colors.muted : colors.accent }]}>❯</Text>}
       <TextInput ref={inputRef} accessibilityLabel={shell ? 'Command for computer terminal' : 'Prompt for coding agent'}
@@ -77,7 +77,7 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
           style={({ pressed }) => [s.send, dense && s.denseSend, { backgroundColor: ready ? colors.action : colors.elevated,
             opacity: pressed ? 0.65 : 1 }]}>
           {working ? <Icon name="stop" size={dense ? 15 : 18} color={colors.text} /> : sending ? <ActivityIndicator color={colors.muted} /> :
-            <Icon name={dense ? 'return-down-back' : 'arrow-up'} size={dense ? 18 : 23} color={ready ? colors.onAction : colors.muted} />}
+            <Icon name={dense ? 'return-down-back' : 'arrow-up'} size={dense ? 18 : 20} color={ready ? colors.onAction : colors.muted} />}
         </Pressable>
       </View>
     </View>
@@ -88,17 +88,18 @@ export function Composer({ value, onChange, onSend, disabled, shell, compact = f
 }
 const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'ui-monospace, Menlo, monospace' });
 const s = StyleSheet.create({
-  container: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 5 },
-  composer: { borderRadius: 27, borderWidth: StyleSheet.hairlineWidth, padding: 8 },
-  input: { fontSize: 16, lineHeight: 24, minHeight: 60, maxHeight: 154, paddingHorizontal: 12,
+  container: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 6 },
+  composer: { width: '100%', maxWidth: 600, alignSelf: 'center', borderRadius: 26, borderWidth: StyleSheet.hairlineWidth, padding: 8,
+    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 4 } },
+  input: { fontSize: 16, lineHeight: 23, letterSpacing: -0.2, minHeight: 56, maxHeight: 154, paddingHorizontal: 12,
     paddingTop: 11, paddingBottom: 10, outlineWidth: 0, outlineStyle: 'solid' },
   shellInput: { minHeight: 30, paddingTop: 6, paddingBottom: 4 },
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   tools: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 1 },
   context: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, paddingRight: 6 },
   contextText: { fontSize: 12, fontWeight: '500', flexShrink: 1 },
-  send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  caption: { fontSize: 10, lineHeight: 16, textAlign: 'center', paddingTop: 8, paddingHorizontal: 8 },
+  send: { width: 36, height: 36, borderRadius: 18, marginRight: 2, alignItems: 'center', justifyContent: 'center' },
+  caption: { fontSize: 12, lineHeight: 16, textAlign: 'center', paddingTop: 8, paddingHorizontal: 8 },
   row: { flexDirection: 'row', alignItems: 'flex-end', padding: 5, borderRadius: 20 },
   rowInput: { flex: 1, minHeight: 40, maxHeight: 54 },
   denseContainer: { paddingHorizontal: 10, paddingTop: 4, paddingBottom: 6 },

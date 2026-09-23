@@ -6,6 +6,7 @@ import lightSearch from "../../assets/welcome/iphone-search-light.jpg";
 import darkApproval from "../../assets/welcome/iphone-approval-dark.jpg";
 import lightApproval from "../../assets/welcome/iphone-approval-light.jpg";
 import { WelcomeScreen } from "./WelcomeScreens";
+import { ramp } from "./WelcomeDemoActivity";
 
 /** Recording of production mobile components. Playback never contacts a device. */
 export function WelcomePhoneFilm({ time, playing, reduced }: { time:number; playing:boolean; reduced:boolean }) {
@@ -29,22 +30,14 @@ export function WelcomePhoneFilm({ time, playing, reduced }: { time:number; play
     else element.pause();
   };
   useEffect(sync, [time,playing,reduced,light]);
-  useEffect(() => {
-    const element = video.current;
-    return () => {
-      if (!element) return;
-      element.pause();
-      element.removeAttribute('src');
-      element.load();
-    };
-  }, [reduced]);
+  useEffect(() => { const element = video.current; return () => element?.pause(); }, [reduced]);
   useEffect(() => setFailed(false), [light]);
   const poster = light ? lightSearch : darkSearch;
   const fallback = time < 5 ? poster : light ? lightApproval : darkApproval;
   return <div className="welcome-phone-film" data-phone-phase={reduced || time >= 9 ? 'connected' : time >= 5 ? 'approval' : 'searching'}>
     <WelcomeScreen name="iphone" />
     {!reduced && failed && time < 9 && <img className="welcome-phone-fallback" src={fallback} alt="" />}
-    {!reduced && !failed && <video ref={video} poster={poster} onError={() => setFailed(true)} src={light ? lightFilm : darkFilm} muted playsInline preload="auto" style={{opacity:time >= 10 ? 0 : 1}}
+    {!reduced && !failed && <video ref={video} poster={poster} onError={() => setFailed(true)} src={light ? lightFilm : darkFilm} muted playsInline preload="auto" style={{opacity:1 - ramp(time, 9.6, .4)}}
       onLoadedMetadata={sync} aria-hidden="true" />}
   </div>;
 }

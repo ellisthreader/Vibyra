@@ -1,5 +1,5 @@
 import { terminalSessionIdentities } from "../ipc/terminal";
-import { useTerminalStore } from "../state/terminalStore";
+import { useTerminalStore, type PaneState } from "../state/terminalStore";
 import { lastOutputAt } from "./activity";
 
 let pending: Promise<void> | null = null;
@@ -15,10 +15,11 @@ export function refreshSessionIdentities(): Promise<void> {
   if (pending) return pending;
   const panes = runningCodex();
   if (!panes.length) return Promise.resolve();
+  const previous = probedAt;
   probedAt = Date.now();
   pending = terminalSessionIdentities(panes.map(({ id, accountId }) => ({ id, accountId })))
     .then((identities) => {
-      const changed = (pane: { id: number; status: string; agentSessionId?: string | null }) => {
+      const changed = (pane: PaneState) => {
         const identity = identities.find((entry) => entry.id === pane.id);
         return identity && pane.status === "running" && pane.agentSessionId !== identity.sessionId ? identity : null;
       };
@@ -32,8 +33,9 @@ export function refreshSessionIdentities(): Promise<void> {
       }));
     })
     // Inspection is advisory. If unavailable, keep the last known ID or use
-    // the CLI chooser. It must never prevent a workspace checkpoint.
-    .catch(() => {})
+    // the CLI chooser. It must never prevent a workspace checkpoint. A failed
+    // probe saw nothing, so the output before it still counts as unprobed.
+    .catch(() => { probedAt = previous; })
     .finally(() => { pending = null; });
   return pending;
 }

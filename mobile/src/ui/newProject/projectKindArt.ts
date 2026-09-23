@@ -47,11 +47,7 @@ export const KIND_ART: Record<ProjectKind, string[]> = {
     'M17 14.5H20Q21.5 14.5 21.5 16V19Q21.5 20.5 20 20.5H17Q15.5 20.5 15.5 19V16Q15.5 14.5 17 14.5Z',
     'M8.5 12H12M15.5 6.5H13.5Q12 6.5 12 8V16Q12 17.5 13.5 17.5H15.5',
   ], // one call branching to the things that answer it
-  library: [
-    'M4 7L12 3L20 7V17L12 21L4 17Z',
-    'M4 7L12 11L20 7M12 11V21',
-    'M8 5L16 9V13',
-  ], // a package — the thing you publish rather than run
+  library: ['M4 7L12 3L20 7V17L12 21L4 17Z', 'M4 7L12 11L20 7M12 11V21', 'M8 5L16 9V13'], // a package — the thing you publish rather than run
   ai: [
     'M7.5 5.5H16.5Q18.5 5.5 18.5 7.5V16.5Q18.5 18.5 16.5 18.5H7.5Q5.5 18.5 5.5 16.5V7.5Q5.5 5.5 7.5 5.5Z',
     'M9 2.5V5.5M15 2.5V5.5M9 18.5V21.5M15 18.5V21.5',

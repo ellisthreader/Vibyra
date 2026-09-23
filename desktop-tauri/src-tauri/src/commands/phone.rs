@@ -6,9 +6,11 @@ use tauri_plugin_dialog::DialogExt;
 
 use super::run_blocking;
 
+/// Polled every two seconds, so it waits for the connection lock off the main
+/// thread: a rebind holds that lock while the old listener shuts down.
 #[tauri::command]
-pub fn phone_status(state: State<'_, AppState>) -> Value {
-    state.phone.lock().status()
+pub async fn phone_status(state: State<'_, AppState>) -> Result<Value, String> {
+    Ok(state.phone.lock().status())
 }
 
 #[tauri::command]
@@ -38,6 +40,29 @@ pub fn phone_set_typing(state: State<'_, AppState>, enabled: bool) -> Result<Val
     let mut phone = state.phone.lock();
     phone.set_typing(enabled)?;
     Ok(phone.status())
+}
+
+/// One-time Mac consent for a paired phone to open project-owned running sites.
+#[tauri::command]
+pub fn phone_set_preview_auto(
+    state: State<'_, AppState>,
+    id: String,
+    enabled: bool,
+) -> Result<Value, String> {
+    let status = state.phone.lock().status();
+    if status["previewAutoAvailable"] != true
+        || !status["devices"]
+            .as_array()
+            .is_some_and(|devices| devices.iter().any(|device| device["id"] == id))
+    {
+        return Err("Pair this phone with the Mac first".into());
+    }
+    state
+        .preview_grants
+        .as_ref()
+        .map_err(Clone::clone)?
+        .set_automatic(&id, enabled)?;
+    Ok(state.phone.lock().status())
 }
 
 /// Remote access through Vibyra Cloud. Only this Mac can turn it on, it needs
@@ -81,8 +106,9 @@ pub fn phone_publish_workspace(
 /// on. The window is told of each as it arrives; this is for a window that
 /// has just mounted, or missed one.
 #[tauri::command]
-pub fn phone_terminal_requests(state: State<'_, AppState>) -> Vec<Value> {
-    state.phone.lock().requests.pending()
+pub async fn phone_terminal_requests(state: State<'_, AppState>) -> Result<Vec<Value>, String> {
+    let requests = state.phone.lock().requests.clone();
+    Ok(requests.pending())
 }
 
 /// The window's answer to one of those: `{paneId}` or `{conversationId}` for
@@ -117,7 +143,11 @@ pub fn phone_answer(state: State<'_, AppState>, id: String, approve: bool) -> Re
 
 #[tauri::command]
 pub fn phone_revoke(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.phone.lock().host()?.revoke(&id)
+    state.phone.lock().host()?.revoke(&id)?;
+    if let Ok(grants) = &state.preview_grants {
+        grants.revoke_device(&id)?;
+    }
+    Ok(())
 }
 
 /// Ends one phone's live connection without forgetting it: it stays allowed

@@ -13,13 +13,22 @@ export function useBreath(active: boolean, duration = 2800) {
   useEffect(() => {
     value.setValue(0);
     if (!active) return;
-    const half = { duration: duration / 2, easing: Easing.inOut(Easing.quad), useNativeDriver: true };
-    const animation = Animated.loop(Animated.sequence([
-      Animated.timing(value, { toValue: 1, ...half }),
-      Animated.timing(value, { toValue: 0, ...half }),
-    ]));
+    const half = {
+      duration: duration / 2,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    };
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, { toValue: 1, ...half }),
+        Animated.timing(value, { toValue: 0, ...half }),
+      ]),
+    );
     animation.start();
-    return () => { animation.stop(); value.setValue(0); };
+    return () => {
+      animation.stop();
+      value.setValue(0);
+    };
   }, [active, duration, value]);
   return value;
 }
@@ -28,11 +37,22 @@ export function useBreath(active: boolean, duration = 2800) {
 export function useAppear(instant: boolean, delay = 0) {
   const value = useRef(new Animated.Value(instant ? 1 : 0)).current;
   useEffect(() => {
-    if (instant) { value.setValue(1); return; }
-    const animation = Animated.spring(value, { toValue: 1, delay, damping: 15, stiffness: 180,
-      mass: 0.9, useNativeDriver: true });
+    if (instant) {
+      value.setValue(1);
+      return;
+    }
+    const animation = Animated.spring(value, {
+      toValue: 1,
+      delay,
+      damping: 15,
+      stiffness: 180,
+      mass: 0.9,
+      useNativeDriver: true,
+    });
     animation.start();
-    return () => { animation.stop(); };
+    return () => {
+      animation.stop();
+    };
   }, [delay, instant, value]);
   return value;
 }
@@ -47,12 +67,23 @@ export function useCountUp(value: number, instant: boolean) {
   const [shown, setShown] = useState(value);
   const driver = useRef(new Animated.Value(value)).current;
   useEffect(() => {
-    if (instant) { driver.setValue(value); setShown(value); return; }
-    const listener = driver.addListener(frame => setShown(Math.round(frame.value)));
-    const animation = Animated.timing(driver, { toValue: value, duration: 750,
-      easing: Easing.out(Easing.cubic), useNativeDriver: false });
+    if (instant) {
+      driver.setValue(value);
+      setShown(value);
+      return;
+    }
+    const listener = driver.addListener((frame) => setShown(Math.round(frame.value)));
+    const animation = Animated.timing(driver, {
+      toValue: value,
+      duration: 750,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    });
     animation.start(() => setShown(value));
-    return () => { animation.stop(); driver.removeListener(listener); };
+    return () => {
+      animation.stop();
+      driver.removeListener(listener);
+    };
   }, [driver, instant, value]);
   return shown;
 }

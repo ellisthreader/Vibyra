@@ -11,14 +11,13 @@ import {
   normalizeOpenRouterReasoning,
   type RawOpenRouterReasoning,
 } from "./openRouterReasoning.ts";
-import { STATIC_GROUPS } from "./staticModels.ts";
+import { MODEL_NEW_BADGE_MS, STATIC_GROUPS } from "./staticModels.ts";
 
 export type { CatalogModel, CompanyGroup } from "./catalogTypes";
 
 const MODELS_URL = "https://openrouter.ai/api/v1/models?supported_parameters=tools";
 const CACHE_KEY = "vibyra.modelCatalog.v5";
 const CACHE_MS = 15 * 60 * 1000;
-const NEW_BADGE_MS = 45 * 24 * 60 * 60 * 1000;
 const DEFAULT_LIMIT = 10;
 const LIMITS = new Map([
   ["OpenAI", 16], ["Anthropic", 14], ["Google", 12], ["Qwen", 14],
@@ -123,7 +122,7 @@ function normalizeModel(model: RawModel): CatalogModel | null {
     company,
     contextLength: Number(model.context_length ?? model.top_provider?.context_length ?? 0) || 0,
     tier: tierOf(prompt, completion, free),
-    isNew: created * 1000 > Date.now() - NEW_BADGE_MS,
+    isNew: created * 1000 > Date.now() - MODEL_NEW_BADGE_MS,
     created,
     supportsReasoning: params.includes("reasoning"),
     reasoningEfforts: reasoning.efforts,

@@ -17,16 +17,32 @@ export interface ScaffoldPreflight {
 
 export type ScaffoldPhase = 'running' | 'done' | 'failed' | 'stalled' | 'cancelled';
 
-export interface ScaffoldProgress { index: number; total: number; label: string }
+export interface ScaffoldProgress {
+  index: number;
+  total: number;
+  label: string;
+}
 
 export type ScaffoldEvent =
   | { type: 'step'; runId: string; index: number; total: number; label: string }
   | { type: 'output'; runId: string; lines: string[] }
-  | { type: 'done'; runId: string; ok: boolean; message: string | null; stalled: boolean; project: Project | null };
+  | {
+      type: 'done';
+      runId: string;
+      ok: boolean;
+      message: string | null;
+      stalled: boolean;
+      project: Project | null;
+    };
 
 export interface ScaffoldStatus {
-  runId: string; dir: string; phase: ScaffoldPhase; progress: ScaffoldProgress | null;
-  lines: string[]; error: string | null; project: Project | null;
+  runId: string;
+  dir: string;
+  phase: ScaffoldPhase;
+  progress: ScaffoldProgress | null;
+  lines: string[];
+  error: string | null;
+  project: Project | null;
 }
 
 export interface ScaffoldActions {

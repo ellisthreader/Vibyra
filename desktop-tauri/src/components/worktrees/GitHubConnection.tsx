@@ -4,14 +4,17 @@ import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAccountStore } from '../../state/accountStore';
 import { useWorkspaceStore } from '../../state/workspaceStore';
+import { usePageVisible } from '../../lib/usePageVisible';
 
 interface Connector { id: string; installed: boolean; account: string | null; credential: { configured?: boolean }; reads?: string; writes?: string }
 interface Catalogue { enabled: boolean; integrations: Connector[] }
-export function GitHubConnection({ repository, onConnected }: { repository: string | null; onConnected(connected: boolean): void }) {
+type Props = { repository: string | null; onConnected(connected: boolean): void; active: boolean };
+export function GitHubConnection(props: Props) {
   const identity = useAccountStore(s => s.snapshot.profile?.email);
-  return <GitHubAccount key={identity ?? 'guest'} identity={identity} repository={repository} onConnected={onConnected} />;
+  return <GitHubAccount key={identity ?? 'guest'} identity={identity} {...props} />;
 }
-function GitHubAccount({ identity, repository, onConnected }: { identity?: string; repository: string | null; onConnected(connected: boolean): void }) {
+function GitHubAccount({ identity, repository, onConnected, active }: Props & { identity?: string }) {
+  const visible = usePageVisible();
   const [connector, setConnector] = useState<Connector | null>(null);
   const [enabled, setEnabled] = useState(false), [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -43,13 +46,16 @@ function GitHubAccount({ identity, repository, onConnected }: { identity?: strin
   }), [identity, onConnected]);
   const connected = !!identity && loaded && enabled && !!connector?.installed && !error;
   useEffect(() => { onConnected(connected); }, [connected, onConnected]);
+  // Re-verified only while the Worktrees tab is on screen, and at once when it
+  // comes back (the mount fetch above is locked out of a duplicate here).
   useEffect(() => {
-    if (!identity) return;
+    if (!identity || !active || !visible) return;
     const verify = () => { void refresh(); };
+    verify();
     window.addEventListener('focus', verify);
     const timer = window.setInterval(verify, 15000);
     return () => { window.removeEventListener('focus', verify); window.clearInterval(timer); };
-  }, [identity]);
+  }, [identity, active, visible]);
   const open = () => { if (repository) void invoke('shared_chat_open_link', { url: `https://github.com/${repository}` }).catch(e => setError(String(e))); };
   return <div className="worktree-repo">
     <div className="worktree-repo__name">

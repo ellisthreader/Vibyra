@@ -52,7 +52,7 @@ test('a refused photo says why in the server’s own words', async () => {
   await assert.rejects(api.uploadAvatar('tok', 'data:image/png;base64,AA=='), /under 5 MB/);
 });
 test('devices are read from the grouped list and one is removed by its id', async () => {
-  const { api, requests } = fakeFetch((url, init) => init.method === 'DELETE'
+  const { api, requests } = fakeFetch((_url, init) => init.method === 'DELETE'
     ? { status: 200, body: { ok: true, revoked: 2, currentRevoked: false } }
     : { status: 200, body: { ok: true, devices: [
       { id: 'd1', deviceName: 'iPhone', location: 'London', updatedAt: '2026-09-11T10:00:00Z', current: true, userAgent: 'x' },

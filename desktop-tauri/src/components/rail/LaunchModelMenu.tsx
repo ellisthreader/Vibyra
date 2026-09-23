@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useModelPopover } from './useModelPopover';
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { ProviderMark } from '../common/AgentMark';
+import { ModelMark } from '../common/AgentMark';
 import { CheckIcon, SearchIcon } from '../common/Icons';
 import type { LaunchableModel } from './LaunchModelPicker';
 import '../../styles/launch-model-menu.css';
@@ -51,9 +51,11 @@ export function LaunchModelMenu({ anchor, models, selectedId, onSelect, onClose,
         <div className="launch-model-browser__company" aria-hidden="true">{company}</div>
         {filtered.filter(entry => entry.group.company === company).map(({ model, group }) => <button
           key={model.id} type="button" role="option" aria-selected={model.id === selectedId}
-          className="launch-model-browser__option" onClick={() => onSelect(model.id)}>
-          <ProviderMark provider={group.providerKey} label={company} accent={group.accent} size={22} />
-          <span>{model.label}</span>{model.id === selectedId && <CheckIcon size={14} />}
+          className="launch-model-browser__option"
+          style={{ '--pick-accent': group.accent } as React.CSSProperties}
+          onClick={() => onSelect(model.id)}>
+          <ModelMark modelId={model.id} label={model.label} providerKey={group.providerKey} accent={group.accent} size={22} />
+          <span>{model.label}</span>{model.isNew && <em className="launch-model-browser__badge">New</em>}{model.id === selectedId && <CheckIcon size={14} />}
         </button>)}
       </div>)}
       {!filtered.length && <p className="launch-model-browser__empty">No models found.</p>}

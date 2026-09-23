@@ -1,11 +1,16 @@
 use crate::{
     auth,
+    preview_connection::PreviewSession,
     state::{Origin, Shared},
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::{sync::Arc, time::Duration};
-use tokio::sync::{mpsc, Notify};
+use std::{collections::VecDeque, sync::Arc, time::Duration};
+use tokio::{
+    sync::{mpsc, Notify},
+    task::JoinHandle,
+    time::MissedTickBehavior,
+};
 use vibyra_transport::{read_handshake, responder, write_handshake, Channel, MAX_PLAINTEXT};
 
 pub type FrameSender = mpsc::Sender<Vec<u8>>;
@@ -107,7 +112,10 @@ pub async fn run_from(
     let authenticated = auth::authenticate(&shared, &device_id, &hello).await;
     let claimed = authenticated.and_then(|()| ActiveDevice::claim(&shared, &device_id));
     if claimed.is_ok() {
-        shared.seen(&device_id, &origin);
+        // Recording the visit syncs identity.json to disk, which is kept off
+        // the few async workers every other phone's connection runs on.
+        let (state, device) = (shared.clone(), device_id.clone());
+        let _ = tokio::task::spawn_blocking(move || state.seen(&device, &origin)).await;
     }
     let response = match &claimed {
         Ok(_) => json!({"ok":true,"protocol":1,"deviceId":device_id}),
@@ -124,44 +132,136 @@ pub async fn run_from(
     let takeover = guard.takeover.clone();
     let _guard = guard;
     let mut channel = Channel::from_handshake(handshake)?;
+    let mut running = None;
+    let result = serve(
+        &shared,
+        &device_id,
+        &takeover,
+        &mut input,
+        &output,
+        &mut channel,
+        &mut running,
+    )
+    .await;
+    // A request still in the blocking pool finishes before this device is
+    // reported gone, as it did when requests were awaited in the loop, so
+    // nothing it grants (a control lease) lands after that release.
+    if let Some((_, request)) = running {
+        let _ = request.await;
+    }
+    result
+}
+
+/// The request in the blocking pool, and the id its reply answers.
+type Running = Option<(String, JoinHandle<Result<Value, String>>)>;
+
+/// The connection after its handshake, until the phone leaves, is displaced or
+/// is revoked. Requests run one at a time in the order they arrived; while one
+/// is in the blocking pool, and one can take many seconds, the tick keeps
+/// draining terminal output and host events instead of letting them stall.
+async fn serve(
+    shared: &Arc<Shared>,
+    device_id: &str,
+    takeover: &Arc<Notify>,
+    input: &mut FrameReceiver,
+    output: &FrameSender,
+    channel: &mut Channel,
+    running: &mut Running,
+) -> Result<(), String> {
     let events = shared.engine.subscribe();
+    let mut preview = PreviewSession::new(shared, device_id, takeover);
     let mut tick = tokio::time::interval(Duration::from_millis(20));
+    // A tick missed while a send waited on a slow phone is dropped, not fired
+    // in a burst once it catches up.
+    tick.set_missed_tick_behavior(MissedTickBehavior::Skip);
+    let mut queue: VecDeque<Request> = VecDeque::new();
     loop {
+        if running.is_none() {
+            if let Some(request) = queue.pop_front() {
+                let id = request.id.clone();
+                let state = shared.clone();
+                let device = device_id.to_owned();
+                *running = Some((
+                    id,
+                    tokio::task::spawn_blocking(move || dispatch(&state, &device, request)),
+                ));
+            }
+        }
         tokio::select! {
             // This same phone opened a newer connection; the workspace moves
             // there rather than the phone being told it is already connected.
             _ = takeover.notified() => return Ok(()),
-            frame = input.recv() => {
-                let Some(frame) = frame else { return Ok(()) };
-                if !shared.trusted(&device_id) { return Err("Device revoked".into()); }
-                let bytes = channel.decrypt(&frame)?;
-                let request: Request = serde_json::from_slice(&bytes).map_err(|_| "Invalid request")?;
-                if request.id.is_empty() || request.id.len() > 80 || request.method.len() > 80 {
-                    return Err("Invalid request identifier or method".into());
+            result = async {
+                match running.as_mut() {
+                    Some((_, request)) => request.await,
+                    None => std::future::pending().await,
                 }
-                let id = request.id.clone();
-                let state = shared.clone();
-                let device = device_id.clone();
-                let result = tokio::task::spawn_blocking(move || dispatch(&state, &device, request)).await
-                    .map_err(|_| "Host request failed")?;
+            } => {
+                let id = running.take().map(|(id, _)| id).unwrap_or_default();
+                let result = result.map_err(|_| "Host request failed")?;
                 let reply = match result {
                     Ok(result) => json!({"id":id,"ok":true,"result":result}),
                     Err(message) => json!({"id":id,"ok":false,"error":{"code":"REQUEST_REJECTED","message":message}}),
                 };
-                send_json(&output, &mut channel, reply, Some(&id)).await?;
+                send_json(output, channel, reply, Some(&id)).await?;
             }
             _ = tick.tick() => {
-                if !shared.trusted(&device_id) { return Err("Device revoked".into()); }
+                if !shared.trusted(device_id) { return Err("Device revoked".into()); }
                 for _ in 0..32 {
                     match events.try_recv() {
-                        Ok(event) => send_json(&output, &mut channel, event, None).await?,
+                        Ok(event) if unread(&event) => {}
+                        Ok(event) => send_json(output, channel, event, None).await?,
                         Err(std::sync::mpsc::TryRecvError::Empty) => break,
                         Err(std::sync::mpsc::TryRecvError::Disconnected) => return Err("Host events require resynchronization".into()),
                     }
                 }
+                // Preview gets at most two small frames per 20 ms turn and
+                // only after terminal replies and events have had their turn.
+                for _ in 0..2 {
+                    let Some(frame) = preview.pop() else { break; };
+                    let Ok(bytes) = frame.encode() else { preview.source_ended(); break; };
+                    send_frame(output, channel.encrypt(&bytes)?).await?;
+                }
+            }
+            // A full RPC queue stops reading, preserving terminal request
+            // backpressure. Preview dispatch itself uses a separate worker.
+            frame = input.recv(), if queue.len() < QUEUED => {
+                let Some(frame) = frame else { return Ok(()) };
+                if !shared.trusted(device_id) { return Err("Device revoked".into()); }
+                let bytes = channel.decrypt(&frame)?;
+                // JSON RPC cannot start with VP, so the discriminator is
+                // collision-free and unknown Preview versions fail closed.
+                if bytes.starts_with(b"VP") {
+                    preview.receive(&bytes)?;
+                    continue;
+                }
+                let request: Request = serde_json::from_slice(&bytes).map_err(|_| "Invalid request")?;
+                if request.id.is_empty() || request.id.len() > 80 || request.method.len() > 80 {
+                    return Err("Invalid request identifier or method".into());
+                }
+                queue.push_back(request);
+            }
+            frame = preview.next_outgoing(), if preview.collectable() => {
+                if let Some(frame) = frame { preview.enqueue(frame); }
+                else { preview.source_ended(); }
             }
         }
     }
+}
+
+/// Requests waiting behind the one in flight before input stops being read.
+const QUEUED: usize = 32;
+
+/// Events a backend sends only so its producing thread notices a receiver that
+/// went away. No phone reads them, and forwarding each cost an encryption and
+/// a network frame (through the relay, a base64 envelope counted against its
+/// rate limit) five times a second for the life of the connection. Taking them
+/// from the channel still gives the producer what it needs.
+fn unread(event: &Value) -> bool {
+    matches!(
+        event["event"].as_str(),
+        Some("desktop.heartbeat" | "shared.pulse")
+    )
 }
 
 fn dispatch(shared: &Shared, device: &str, request: Request) -> Result<Value, String> {

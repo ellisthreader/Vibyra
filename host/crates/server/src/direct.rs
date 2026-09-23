@@ -49,7 +49,7 @@ pub async fn serve_with_policy(
                 accept_async_with_config(stream, Some(config)),
             )
             .await;
-            let Ok(Ok(mut socket)) = accepted else { return };
+            let Ok(Ok(socket)) = accepted else { return };
             let (input_send, input_receive) = mpsc::channel(32);
             let (output_send, mut output_receive) = mpsc::channel(32);
             let task = tokio::spawn(connection::run_from(
@@ -58,34 +58,55 @@ pub async fn serve_with_policy(
                 output_send,
                 Origin::Nearby(peer.ip().to_string()),
             ));
-            let mut heartbeat = tokio::time::interval(Duration::from_secs(20));
+            // A large Preview response can keep the WebSocket sink waiting for
+            // room. Read credits from the phone independently while it waits;
+            // otherwise the sender cannot make progress until that wait ends.
+            let (mut sink, mut source) = socket.split();
+            let (pong_send, mut pong_receive) = mpsc::channel::<Message>(4);
+            let mut writer = tokio::spawn(async move {
+                let mut heartbeat = tokio::time::interval(Duration::from_secs(20));
+                loop {
+                    let message = tokio::select! {
+                        frame = output_receive.recv() => match frame {
+                            Some(frame) => Message::Binary(frame.into()),
+                            None => break,
+                        },
+                        pong = pong_receive.recv() => match pong {
+                            Some(pong) => pong,
+                            None => break,
+                        },
+                        _ = heartbeat.tick() => Message::Ping(Vec::new().into()),
+                    };
+                    if !matches!(tokio::time::timeout(Duration::from_secs(10), sink.send(message)).await,
+                        Ok(Ok(()))) { break; }
+                }
+            });
+            let mut idle_check = tokio::time::interval(Duration::from_secs(20));
             let mut last_seen = tokio::time::Instant::now();
             loop {
                 tokio::select! {
-                    message = socket.next() => {
+                    message = source.next() => {
                         match message {
                             Some(Ok(Message::Binary(bytes))) => {
                                 last_seen = tokio::time::Instant::now();
                                 if input_send.try_send(bytes.to_vec()).is_err() { break; }
                             }
-                            Some(Ok(Message::Ping(bytes))) => { if socket.send(Message::Pong(bytes)).await.is_err() { break; } }
+                            Some(Ok(Message::Ping(bytes))) => {
+                                last_seen = tokio::time::Instant::now();
+                                if pong_send.try_send(Message::Pong(bytes)).is_err() { break; }
+                            }
                             Some(Ok(Message::Pong(_))) => { last_seen = tokio::time::Instant::now(); }
                             _ => break,
                         }
                     }
-                    frame = output_receive.recv() => {
-                        let Some(frame) = frame else { break };
-                        if !matches!(tokio::time::timeout(Duration::from_secs(10), socket.send(Message::Binary(frame.into()))).await,
-                            Ok(Ok(()))) { break; }
-                    }
-                    _ = heartbeat.tick() => {
+                    _ = idle_check.tick() => {
                         if last_seen.elapsed() > Duration::from_secs(65) { break; }
-                        if socket.send(Message::Ping(Vec::new().into())).await.is_err() { break; }
                     }
+                    _ = &mut writer => break,
                 }
             }
+            writer.abort();
             task.abort();
-            let _ = socket.close(None).await;
         });
     }
 }

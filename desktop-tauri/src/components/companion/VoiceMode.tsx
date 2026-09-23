@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef } from "react";
+
 import { shortcutCaps } from "../../lib/hotkeys";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useTalkStore, type TalkPhase } from "../../state/talkStore";
@@ -14,6 +16,14 @@ const PROMPT: Record<TalkPhase, string> = {
   error: "",
 };
 
+/** The circle, subscribed on its own: the meter level changes every 120 ms
+ * while listening, and only the orb draws it — not the caption, the buttons
+ * or the shortcut caps around it. */
+function LiveVoiceOrb({ phase }: { phase: TalkPhase }) {
+  const level = useTalkStore((state) => state.level);
+  return <VoiceOrb phase={phase} level={level} />;
+}
+
 /** Voice mode: the panel becomes one circle and one sentence.
  *
  * Deliberately unlike the chat page — no bubbles, no composer, no list — so
@@ -21,14 +31,19 @@ const PROMPT: Record<TalkPhase, string> = {
  * is one tap away and the conversation keeps running behind it.
  */
 export function VoiceMode() {
-  const { phase, title, sub, heard, level, end, setShowTranscript } = useTalkStore();
+  const phase = useTalkStore((state) => state.phase);
+  const title = useTalkStore((state) => state.title);
+  const sub = useTalkStore((state) => state.sub);
+  const heard = useTalkStore((state) => state.heard);
+  const end = useTalkStore((state) => state.end);
+  const setShowTranscript = useTalkStore((state) => state.setShowTranscript);
   const shortcut = useSettingsStore((state) => state.settings?.talkShortcut ?? "F10");
   const caption = phase === "speaking" ? sub : phase === "thinking" ? heard : "";
 
   return (
     <div className="voice-mode" data-phase={phase} role="region" aria-label="Voice conversation">
       <div className="voice-mode__stage">
-        <VoiceOrb phase={phase} level={level} />
+        <LiveVoiceOrb phase={phase} />
         <p className="voice-mode__state" role="status" aria-live="polite">{title}</p>
         {caption ? (
           <p className="voice-mode__caption" data-role={phase === "speaking" ? "reply" : "you"}>
@@ -54,12 +69,25 @@ export function VoiceMode() {
 /** The strip that replaces voice mode while the transcript is showing: enough
  * to know it is still listening, and the way back to the circle. */
 export function VoiceModeStrip() {
-  const { phase, title, level, end, setShowTranscript } = useTalkStore();
+  const phase = useTalkStore((state) => state.phase);
+  const title = useTalkStore((state) => state.title);
+  const end = useTalkStore((state) => state.end);
+  const setShowTranscript = useTalkStore((state) => state.setShowTranscript);
+  const orb = useRef<HTMLSpanElement>(null);
+  // The meter is polled every 120 ms while listening. It is one custom
+  // property, so it is written straight onto the dot instead of rendering.
+  useLayoutEffect(() => {
+    const write = (level: number) => orb.current?.style.setProperty("--level", level.toFixed(3));
+    write(useTalkStore.getState().level);
+    return useTalkStore.subscribe((state, previous) => {
+      if (state.level !== previous.level) write(state.level);
+    });
+  }, []);
 
   return (
     <div className="voice-strip" data-phase={phase}>
       <button type="button" className="voice-strip__back" onClick={() => setShowTranscript(false)} title="Back to the conversation">
-        <span className="voice-strip__orb" style={{ "--level": level.toFixed(3) } as React.CSSProperties} aria-hidden="true" />
+        <span className="voice-strip__orb" ref={orb} aria-hidden="true" />
         <span className="voice-strip__state">{title}</span>
       </button>
       <button type="button" className="voice-strip__end" onClick={end}>End</button>

@@ -12,11 +12,11 @@ import { useWhatsNewStore } from "../../state/whatsNewStore";
  * changed it. Deliberately a reading surface — no settings, no actions beyond
  * closing it — so it can be dismissed in one keystroke and never blocks work.
  */
-export function WhatsNew() {
+export function WhatsNew({ deferred = false }: { deferred?: boolean }) {
   const showing = useWhatsNewStore((s) => s.showing);
   const close = useWhatsNewStore((s) => s.close);
   const modalRef = useRef<HTMLElement>(null);
-  useModalFocus(modalRef, showing !== "", close);
+  useModalFocus(modalRef, showing !== "" && !deferred, close);
 
   useEffect(() => {
     // The running version, not the feed's: this describes the build that is
@@ -29,7 +29,7 @@ export function WhatsNew() {
   }, []);
 
   const entry = showing === "" ? undefined : entryFor(showing);
-  if (!entry) return null;
+  if (!entry || deferred) return null;
 
   return (
     <div className="modal-backdrop whatsnew-backdrop" onClick={close}>

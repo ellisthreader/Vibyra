@@ -16,6 +16,8 @@ interface LaunchOptions {
   model?: string | null;
   reasoningEffort?: LaunchEffort;
   reasoningEnabled?: boolean;
+  /** Overrides Launch setup when asked ("full permissions"); still only where supported. */
+  permissionMode?: "standard" | "full";
   title?: string;
   /**
    * Terminals to open. Defaults to one: the project's `terminalCount`
@@ -130,11 +132,8 @@ export async function launchConfigured(
       .setError("Vibyra-token terminals are not connected in this native preview yet. Choose My AI accounts.");
     return [];
   }
-  if (
-    preferences.permission === "full" &&
-    !supportsFullAccess(agent.id) &&
-    !PLAIN_TERMINALS.has(agent.id)
-  ) {
+  const permission = options.permissionMode ?? preferences.permission;
+  if (permission === "full" && !supportsFullAccess(agent.id) && !PLAIN_TERMINALS.has(agent.id)) {
     useWorkspaceStore
       .getState()
       .setError(`${agent.name} does not expose a verified Full access launch mode`);
@@ -148,7 +147,7 @@ export async function launchConfigured(
     count: Math.max(1, Math.min(12, Math.round(options.count ?? 1))),
     model: options.model ?? null,
     permissionMode:
-      preferences.permission === "full" && supportsFullAccess(agent.id)
+      permission === "full" && supportsFullAccess(agent.id)
         ? "full"
         : "standard",
     reasoningEffort: !EFFORT_AGENTS.has(agent.id) || options.reasoningEnabled === false

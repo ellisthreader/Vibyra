@@ -1,16 +1,25 @@
 mod buffer;
 mod flusher;
+mod hold;
+mod input;
 mod manager;
+mod reader;
 mod session;
-mod writer;
+mod terminate;
 
-// Every test in here drives a real PTY through `/bin/sh`, so the whole module
-// is Unix-only. Gating the tests individually left the helpers behind them
+#[cfg(test)]
+mod buffer_tests;
+
+// Every test in these drives a real PTY through `/bin/sh`, so the modules
+// are Unix-only. Gating the tests individually left the helpers behind them
 // unused on Windows, where `-D warnings` turned that into a failed release.
 #[cfg(all(test, unix))]
 mod manager_tests;
+#[cfg(all(test, unix))]
+mod stop_tests;
 
 pub use manager::{FlushConfig, OutputSink, PtyManager};
+pub use remote::RemoteSince;
 
 use serde::{Deserialize, Serialize};
 

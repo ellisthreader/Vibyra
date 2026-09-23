@@ -1,10 +1,12 @@
+import { memo } from 'react';
 import type { SharedSession } from '../../ipc/sharedChats';
 import { useSettingsStore } from '../../state/settingsStore';
 import { ConversationChatPane } from './ConversationChatPane';
 import { NativeConversationPane } from './NativeConversationPane';
 import './conversationCli.css';
 
-export function ConversationTerminalPane(props: {
+/** Memoised like `TerminalPaneCard`: sessions keep their object until they change. */
+export const ConversationTerminalPane = memo(function ConversationTerminalPane(props: {
   session: SharedSession; hidden: boolean; active: boolean; fontSize: number;
 }) {
   const view = useSettingsStore(s => s.settings?.agentView ?? 'terminal');
@@ -17,4 +19,4 @@ export function ConversationTerminalPane(props: {
     <ConversationChatPane {...props} hidden={props.hidden || nativeVisible} />
     {nativeAvailable && <NativeConversationPane {...props} hidden={props.hidden || !nativeVisible} />}
   </>;
-}
+});

@@ -80,7 +80,7 @@ export function EffortSlider({ ladder, value, onChange, automatic = false, onCho
   // A level set from elsewhere, such as switching to another model, moves the knob too.
   useEffect(() => {
     if (live.current.dragging || held === live.current.rung) return;
-    live.current.rung = held; setShown(held); settle(held);
+    live.current.rung = held; setShown(held); latest.current.settle(held);
   }, [held]);
 
   const title = automatic ? 'Auto' : effortChoice(ladder[shown] ?? ladder[0]!).label;
@@ -131,7 +131,7 @@ export function EffortSlider({ ladder, value, onChange, automatic = false, onCho
 const s = StyleSheet.create({
   panel: { flex: 1, justifyContent: 'space-between', gap: 14, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 4 },
   header: { minHeight: 40, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 44 },
-  title: { fontSize: 22, lineHeight: 28, fontWeight: '600', letterSpacing: -0.4, textAlign: 'center' },
+  title: { fontSize: 20, lineHeight: 26, fontWeight: '600', letterSpacing: -0.45, textAlign: 'center' },
   done: { position: 'absolute', right: 0, top: 2, width: 36, height: 36, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center', justifyContent: 'center' },
   track: { height: TRACK, borderRadius: TRACK / 2, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center', overflow: 'hidden' },

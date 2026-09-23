@@ -47,7 +47,7 @@ function Fixture() {
       connect: async () => {}, disconnect: noop, refresh: async () => {}, selectSession: noop, createSession: async () => {},
       sendInput: async () => {}, resize: noop, stopSession: async () => {}, listFiles: async () => ({ entries: [] }),
       readFile: async () => ({ path: '', content: '', truncated: false }), getDiff: async () => ({ diff: '', truncated: false }),
-      setTheme: noop, setAccent: noop, logIn: async () => {}, signUp: async () => {},
+      setTheme: noop, setAccent: noop, logIn: async () => null, signUp: async () => {},
     },
   }), [theme]);
   const page = query.get('page');

@@ -21,16 +21,18 @@ await new Promise(r => server.listen(0, '127.0.0.1', r));
 const url = `http://127.0.0.1:${server.address().port}`;
 const browser = process.env.VIBYRA_TEST_WEBKIT ? await webkit.launch({ headless: true }) : await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
 try {
-  for (const theme of ['dark', 'light']) for (const screen of (process.env.VIBYRA_AUTH_ONLY ? ['auth'] : ['home', 'empty', 'auth'])) {
+  for (const theme of ['dark', 'light']) for (const screen of (process.env.VIBYRA_HOME_ONLY ? ['home', 'empty'] : process.env.VIBYRA_AUTH_ONLY ? ['auth'] : ['home', 'empty', 'auth'])) {
     const page = await browser.newPage({ viewport: { width: 1328, height: 900 } });
     page.setDefaultTimeout(7000); const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(`${url}/?${theme}&${screen}`);
-    await page.locator(screen === 'auth' ? '.brand__mark' : '.start-sculpture').waitFor();
+    await page.locator(screen === 'auth' ? '.brand__mark' : '.homeview__hi').waitFor();
     await page.waitForTimeout(2600);
     await page.screenshot({ path: `${output}/${screen}-${theme}.png` });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-    if (screen !== 'auth') assert.match(await page.locator('h1').last().innerText(), /Barbara/);
-    assert.equal(await page.locator(screen === 'auth' ? '.brand__mark img' : '.start-sculpture__logo').evaluate(el => el.complete && el.naturalWidth > 0), true);
+    if (screen === 'home') assert.match(await page.locator('.home-projects h2').first().innerText(), /Projects/);
+    if (screen === 'empty') assert.equal(await page.locator('.home-begin').count(), 1);
+    if (screen === 'auth') assert.equal(await page.locator('.brand__mark img').evaluate(el => el.complete && el.naturalWidth > 0), true);
+    else assert.match(await page.locator('.homeview__hi h1').innerText(), screen === 'home' ? /^Welcome back/ : /^Welcome home/);
     if (screen === 'auth') {
       await page.setViewportSize({ width:1280, height:800 });
       const reference = await browser.newPage({ viewport:{ width:1280, height:800 } });
@@ -79,46 +81,45 @@ try {
       assert.ok(compactAd.y >= compactLogin.y + compactLogin.height, 'compact promotion follows authentication');
       await page.screenshot({ path: `${output}/auth-signup-${theme}-compact.png` });
     } else {
-      await page.getByRole('main').getByRole('button', { name: 'Open a folder', exact: true }).click();
-      assert.deepEqual(await page.evaluate(() => window.startEvents.at(-1)), ['open-folder']);
       if (screen === 'home') {
         await page.getByRole('button', { name: /Give the homepage a fresh start/ }).click();
         assert.deepEqual(await page.evaluate(() => window.startEvents.slice(-2)), [['activate', 'studio'], ['focus', 1]]);
       }
-      await page.getByRole('main').getByRole('button', { name: 'New project', exact: true }).click();
+      await page.getByRole('button', { name: 'New project', exact: true }).first().click();
       assert.equal(await page.evaluate(() => window.startView()), 'new-project');
       await page.setViewportSize({ width: 960, height: 640 });
       await page.screenshot({ path: `${output}/${screen}-${theme}-compact.png` });
       assert.equal(await page.locator('.homeview').evaluate(el => el.scrollWidth > el.clientWidth), false);
     }
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    assert.equal(await page.locator(screen === 'auth' ? '.brand__mark' : '.start-sculpture__shape').evaluate(el => getComputedStyle(el).animationName), 'none');
+    assert.equal(await page.locator(screen === 'auth' ? '.brand__mark' : '.homeview__hi h1').first().evaluate(el => getComputedStyle(el).animationName), 'none');
     assert.equal(await page.locator(screen === 'auth' ? '.auth-card' : '.homeview__hi').evaluate(el => getComputedStyle(el).opacity), '1');
     assert.deepEqual(errors, []); await page.close();
   }
   for (const name of ['Alexandra-Catherine', '']) {
     const personal = await browser.newPage({ viewport: { width: 960, height: 640 }, reducedMotion: 'reduce' });
     await personal.goto(`${url}/?empty&name=${encodeURIComponent(name)}`);
-    assert.match(await personal.locator('.homeview h1').innerText(), new RegExp(name || 'Welcome to\\s+Vibyra'));
+    assert.match(await personal.locator('.homeview h1').innerText(), name ? /^Welcome home/ : /^Welcome to/);
     assert.equal(await personal.locator('.homeview').evaluate(el => el.scrollWidth > el.clientWidth), false);
     await personal.close();
   }
   const motion = await browser.newPage({ viewport: { width: 1328, height: 900 } });
   await motion.goto(`${url}/?empty`);
-  const sculpture = motion.locator('.start-sculpture');
-  await sculpture.waitFor();
-  const early = await sculpture.screenshot();
+  const greeting = motion.locator('.homeview__hi');
+  await greeting.waitFor();
+  assert.match(await motion.locator('.homeview__hi h1').evaluate(el => getComputedStyle(el).animationName), /welcome-copy/);
   await motion.waitForTimeout(2600);
-  const settled = await sculpture.screenshot();
-  assert.notDeepEqual(early, settled, 'arrival changes rendered pixels');
+  const settled = await greeting.screenshot();
   await motion.waitForTimeout(300);
-  assert.deepEqual(settled, await sculpture.screenshot(), 'decoration settles with no idle motion');
-  await motion.getByRole('main').getByRole('button', { name: 'New project', exact: true }).focus();
+  assert.deepEqual(settled, await greeting.screenshot(), 'greeting settles with no idle motion');
+  await motion.getByRole('button', { name: 'New project', exact: true }).first().focus();
   await motion.keyboard.press('Enter');
   assert.equal(await motion.evaluate(() => window.startView()), 'new-project');
   await motion.close();
   const page = await browser.newPage(); await page.goto(`${url}/?performance&empty`); await page.waitForTimeout(100);
-  assert.equal(await page.locator('.homeview__hi').evaluate(el => getComputedStyle(el).opacity), '1');
-  assert.ok(await page.locator('.start-sculpture__shape').evaluate(el => parseFloat(getComputedStyle(el).animationDuration) < .001));
-  console.log('PASS: home, empty, auth, both themes, compact windows, exact project/chat routing, new-project wizard route, live Reduce Motion and Performance mode.');
+  assert.equal(await page.locator('.home-begin').evaluate(el => getComputedStyle(el).opacity), '1');
+  assert.ok(await page.locator('.homeview__hi h1').evaluate(el => parseFloat(getComputedStyle(el).animationDuration) < .001));
+  console.log(process.env.VIBYRA_HOME_ONLY
+    ? 'PASS: Home and empty states, both themes, compact windows, project/chat routing, new-project route and reduced motion.'
+    : 'PASS: home, empty, auth, both themes, compact windows, exact project/chat routing, new-project wizard route, live Reduce Motion and Performance mode.');
 } finally { await browser.close(); server.close(); }

@@ -2,7 +2,12 @@
  *  reaches a computer with no shared network at all; `cellular` is reported so
  *  the UI can say it is not searched, because multicast does not run there. */
 export type NetworkKind = 'wifi' | 'direct' | 'wired' | 'shared' | 'vpn' | 'other' | 'cellular';
-export interface SearchNetwork { id: string; kind: NetworkKind; label: string; searched: boolean }
+export interface SearchNetwork {
+  id: string;
+  kind: NetworkKind;
+  label: string;
+  searched: boolean;
+}
 
 /** A computer seen on one of those links. `hostId`/`host`/`port` arrive from the
  *  Bonjour record and Apple's service resolution, and only a computer that has
@@ -12,15 +17,28 @@ export interface SearchNetwork { id: string; kind: NetworkKind; label: string; s
  *  decides which computer is drawn. Names and records are untrusted: the Noise
  *  handshake and the approval on the computer still authenticate. */
 export interface NearbyComputer {
-  id: string; name: string; hostId?: string; host?: string; port?: number; via?: NetworkKind; platform?: string;
+  id: string;
+  name: string;
+  hostId?: string;
+  host?: string;
+  port?: number;
+  via?: NetworkKind;
+  platform?: string;
 }
-export type DiscoveryStatus = 'idle' | 'searching' | 'finished' | 'denied' | 'failed' | 'unavailable';
+export type DiscoveryStatus =
+  'idle' | 'searching' | 'finished' | 'denied' | 'failed' | 'unavailable';
 /** How far a fallback address sweep has got. Bonjour has nothing to count, so
  *  it reports no progress. Nothing on screen reads it: the counts and the
  *  addresses behind them are never shown. */
-export interface SearchProgress { checked: number; total: number; attempt: number }
+export interface SearchProgress {
+  checked: number;
+  total: number;
+  attempt: number;
+}
 export interface DiscoveryUpdate {
-  status: DiscoveryStatus; computers: NearbyComputer[]; networks?: SearchNetwork[];
+  status: DiscoveryStatus;
+  computers: NearbyComputer[];
+  networks?: SearchNetwork[];
   progress?: SearchProgress;
 }
 export interface DiscoveryAdapter {

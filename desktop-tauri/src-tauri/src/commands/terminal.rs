@@ -130,22 +130,45 @@ pub async fn set_terminal_visibility(
     state.manager.set_visibility(id, visibility)
 }
 
+/// Flow control from a view that has fallen behind its output (see
+/// `vibyra_core::pty::hold`). Synchronous so a hold and its release are
+/// applied in the order they were sent; the work is one brief lock.
+#[tauri::command]
+pub fn hold_terminal_output(
+    state: State<'_, AppState>,
+    id: SessionId,
+    hold: bool,
+) -> Result<(), CoreError> {
+    state.manager.hold_output(id, hold)
+}
+
+/// A pane's scrollback. `max_bytes` bounds it to the tail for callers that
+/// read only the last lines, instead of copying the whole 4 MiB ring; a
+/// relaunch replays everything, so it omits it.
 #[tauri::command]
 pub async fn terminal_snapshot(
     state: State<'_, AppState>,
     id: SessionId,
+    max_bytes: Option<usize>,
 ) -> Result<String, CoreError> {
-    state.manager.snapshot(id)
+    match max_bytes {
+        Some(max) => state.manager.snapshot_tail(id, max),
+        None => state.manager.snapshot(id),
+    }
 }
 
+/// Stopping waits up to a grace period for the process to exit, which is no
+/// work for a runtime worker to sit through.
 #[tauri::command]
 pub async fn kill_terminal(state: State<'_, AppState>, id: SessionId) -> Result<(), CoreError> {
-    state.manager.kill(id)
+    let manager = Arc::clone(&state.manager);
+    run_blocking_core(move || manager.kill(id)).await
 }
 
 #[tauri::command]
 pub async fn remove_terminal(state: State<'_, AppState>, id: SessionId) -> Result<(), CoreError> {
-    state.manager.remove(id)?;
+    let manager = Arc::clone(&state.manager);
+    run_blocking_core(move || manager.remove(id)).await?;
     state.sink.detach(id);
     Ok(())
 }

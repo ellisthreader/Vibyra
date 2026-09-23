@@ -7,10 +7,12 @@
  * started from the phone is the same project the computer would have started.
  * Adding a stack is one entry in a catalog file; nothing else is wired up for it.
  */
-export type ProjectKind = 'website' | 'webapp' | 'mobile' | 'desktop' | 'game' | 'backend' | 'library' | 'ai' | 'empty';
+export type ProjectKind =
+  'website' | 'webapp' | 'mobile' | 'desktop' | 'game' | 'backend' | 'library' | 'ai' | 'empty';
 
 /** Executables a template needs on the computer's PATH. Checked before a stack is offered. */
-export type ToolId = 'node' | 'npm' | 'npx' | 'git' | 'cargo' | 'go' | 'python3' | 'composer' | 'rails' | 'flutter';
+export type ToolId =
+  'node' | 'npm' | 'npx' | 'git' | 'cargo' | 'go' | 'python3' | 'composer' | 'rails' | 'flutter';
 
 /** `parent` runs beside the project folder, for creators that make the folder
  *  themselves. `project` runs inside it. */
@@ -30,7 +32,10 @@ export interface TemplateStep {
 
 /** A file written into the project before any step runs. Paths are relative
  *  and checked again on the computer; a template only seeds a few small files. */
-export interface TemplateSeed { path: string; body: string }
+export interface TemplateSeed {
+  path: string;
+  body: string;
+}
 
 export interface ProjectTemplate {
   id: string;
@@ -46,7 +51,11 @@ export interface ProjectTemplate {
   docs: string;
 }
 
-export interface KindSpec { id: ProjectKind; name: string; blurb: string }
+export interface KindSpec {
+  id: ProjectKind;
+  name: string;
+  blurb: string;
+}
 
 export interface TemplateOptions {
   /** Run the template's `install` steps. */
@@ -57,4 +66,8 @@ export interface TemplateOptions {
   openTerminal: boolean;
 }
 
-export const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = { install: true, git: true, openTerminal: true };
+export const DEFAULT_TEMPLATE_OPTIONS: TemplateOptions = {
+  install: true,
+  git: true,
+  openTerminal: true,
+};

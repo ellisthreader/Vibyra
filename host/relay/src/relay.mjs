@@ -65,7 +65,9 @@ export function attachRelay(server, verify, options = {}) {
     peers.add(socket);
     let role, host, clientId;
     let alive = true;
-    let allowance = 120;
+    let controlAllowance = 120;
+    let frameAllowance = 2048;
+    let frameBytes = 0;
     let windowStart = Date.now();
     const timer = setTimeout(() => refuse(socket, 'Registration required'), 10000);
     const heartbeat = setInterval(() => {
@@ -77,9 +79,14 @@ export function attachRelay(server, verify, options = {}) {
     socket.on('message', (raw, binary) => {
       try {
         if (binary) throw new Error('Envelope required');
-        if (Date.now() - windowStart >= 1000) { allowance = 120; windowStart = Date.now(); }
-        if (--allowance < 0) throw new Error('Rate limit');
+        if (Date.now() - windowStart >= 1000) {
+          controlAllowance = 120; frameAllowance = 2048; frameBytes = 0; windowStart = Date.now();
+        }
         const msg = JSON.parse(raw.toString());
+        if (msg.type === 'frame') {
+          frameBytes += raw.length;
+          if (--frameAllowance < 0 || frameBytes > 16 * 1024 * 1024) throw new Error('Rate limit');
+        } else if (--controlAllowance < 0) throw new Error('Rate limit');
         if (!role) {
           if (msg.type === 'host.register') { host = registerHost(socket, msg); role = 'host'; }
           else if (msg.type === 'client.connect') { ({ host, clientId } = connectClient(socket, msg)); role = 'client'; }

@@ -13,7 +13,7 @@ interface Props {
 function facts(surroundings: ReportSurroundings): [string, string | null][] {
   const context = surroundings.context;
   return [
-    ["Vibyra", context.appVersion],
+    ["Version / build", context.appVersion],
     ["System", context.platform],
     ["Graphics", context.renderer],
     ["Project", context.project],
@@ -29,8 +29,7 @@ function basename(path: string): string {
 }
 
 export function ReportAttachments({ draft, patch, surroundings, onAddImages, onRemoveImage }: Props) {
-  const listed = facts(surroundings).filter((entry): entry is [string, string] =>
-    Boolean(entry[1]) && (draft.includeDiagnostics || !["Account", "Project", "Graphics", "Screen"].includes(entry[0])));
+  const listed = facts(surroundings).filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   return (
     <>
@@ -60,25 +59,17 @@ export function ReportAttachments({ draft, patch, surroundings, onAddImages, onR
         </ul>}
       </div>
 
-      <div className="report__option-section">
-        <span className="report__option-title">Optional diagnostics</span>
-        {surroundings.sessionId !== null && <label className="report__toggle">
+      {surroundings.sessionId !== null && <div className="report__option-section">
+        <span className="report__option-title">Terminal output</span>
+        <label className="report__toggle">
           <input type="checkbox" checked={draft.includeTerminal}
             onChange={(event) => patch({ includeTerminal: event.target.checked })} />
           <span>
             <b>Include recent terminal output</b>
             <em>Last 120 lines from {surroundings.paneName}</em>
           </span>
-        </label>}
-        <label className="report__toggle">
-          <input type="checkbox" checked={draft.includeDiagnostics}
-            onChange={(event) => patch({ includeDiagnostics: event.target.checked })} />
-          <span>
-            <b>Include personal diagnostics</b>
-            <em>Account, IP, device and project folder shared with the team on Discord.</em>
-          </span>
         </label>
-      </div>
+      </div>}
 
       <details className="report__context">
         <summary>Review included app details</summary>

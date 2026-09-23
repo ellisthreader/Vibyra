@@ -31,7 +31,7 @@ class ProductionProcessTopologyTest extends TestCase
 
         // `RunVibesTurn` is queued on `vibes`. Without a worker on that queue a
         // deployment accepts a turn, holds the person's Vibes and never answers.
-        $this->assertStringContainsString('vibes,deployments,default', $launcher);
+        $this->assertStringContainsString('vibes,decisions,notifications,deployments,default', $launcher);
         $this->assertStringContainsString('start_worker &', $launcher);
         $this->assertStringContainsString('php artisan schedule:work &', $launcher);
     }

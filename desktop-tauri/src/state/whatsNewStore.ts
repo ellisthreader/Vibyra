@@ -45,7 +45,7 @@ function write(version: string): void {
  * any other key of ours is proof this is not a new install, and that a missing
  * "last seen version" means "older than the feature" rather than "brand new".
  */
-export function usedBefore(): boolean {
+function usedBefore(): boolean {
   try {
     const local = store();
     if (!local) return false;

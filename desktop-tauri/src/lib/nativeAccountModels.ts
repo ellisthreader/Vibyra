@@ -2,11 +2,12 @@
 // Keep exact IDs: provider-only variants must still use Aider/OpenCode.
 const MODELS: Record<string, string[]> = {
   OpenAI: [
-    "gpt-6-astra", "gpt-5-6-sol", "gpt-5-6-terra", "gpt-5-6-luna",
+    "gpt-6-astra", "gpt-6-sol", "gpt-6-luna",
+    "gpt-5-6-sol", "gpt-5-6-terra", "gpt-5-6-luna",
     "gpt-5-3-codex-spark", "gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-codex",
   ],
   Anthropic: [
-    "claude-fable-5-1", "claude-fable-5", "claude-opus-5", "claude-opus-5-fast",
+    "claude-opus-5-5", "claude-fable-5-1", "claude-fable-5", "claude-opus-5", "claude-opus-5-fast",
     "claude-sonnet-5", "claude-opus-4-8", "claude-opus-4-8-fast",
     "claude-opus-4-7", "claude-opus-4-7-fast", "claude-opus-4-6",
     "claude-opus-4-5", "claude-opus-4-1", "claude-opus-4",

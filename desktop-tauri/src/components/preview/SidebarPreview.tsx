@@ -12,7 +12,7 @@ export function SidebarPreview({ scope, onReset, active }: { scope: PreviewScope
   const error = scope ? '' : focused.error;
   return <>
     {error ? <p className="worktree-error" role="alert">{error}</p> : root && projectId
-      ? <PreviewWorkspace key={`${projectId}:${root}`} projectId={JSON.stringify([projectId, root])} root={root} onResetScope={scope ? onReset : undefined} projectRoot={projectRoot ?? root} />
+      ? <PreviewWorkspace key={`${projectId}:${root}`} projectId={JSON.stringify([projectId, root])} shareProjectId={projectId} root={root} onResetScope={scope ? onReset : undefined} projectRoot={projectRoot ?? root} active={active} />
       : <p className="worktree-empty">Finding the working folder…</p>}
   </>;
 }

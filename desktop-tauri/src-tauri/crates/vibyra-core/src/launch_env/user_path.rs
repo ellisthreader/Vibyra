@@ -103,6 +103,26 @@ pub fn install() -> String {
     merged
 }
 
+/// After a package install: puts on PATH any tool directory that has come
+/// into existence since startup, which is all an install can add. The login
+/// shell is not asked again — its PATH was installed at startup, and asking
+/// meant another interactive shell of up to five seconds.
+///
+/// PATH is only rewritten when a directory actually appeared: changing the
+/// environment while other threads spawn processes is not something to do on
+/// every call.
+pub fn add_new_tool_dirs() {
+    let current = std::env::var("PATH").unwrap_or_default();
+    let known: HashSet<String> = current.split(':').map(normalize).collect();
+    let extras = dirs::home_dir()
+        .map(|home| candidates(&home))
+        .unwrap_or_default();
+    if extras.iter().all(|dir| known.contains(&normalize(dir))) {
+        return;
+    }
+    std::env::set_var("PATH", merge(&current, "", &extras));
+}
+
 #[cfg(unix)]
 fn discover() -> Option<String> {
     super::probe::login_shell_path()

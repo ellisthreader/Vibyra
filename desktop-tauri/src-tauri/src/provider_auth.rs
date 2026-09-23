@@ -9,10 +9,11 @@ use crate::provider_auth_output::{capture, ProcessOutput};
 use crate::provider_auth_probe::{key, targets, ProbeCache};
 use crate::provider_auth_process::prepare_child;
 use crate::provider_auth_registry::{Registry, MAX_PER_PROVIDER};
+use crate::provider_auth_round::SharedRound;
 use crate::provider_auth_state::{definition, installed, ProviderView};
 use crate::provider_auth_url::open;
 
-/// Connect, install and disconnect live next door. They are a child module
+/// Connect, install, disconnect and remove live next door. A child module
 /// rather than a sibling so they can still reach this type's own fields, and
 /// splitting them keeps both files inside the 200-line limit.
 #[path = "provider_auth_actions.rs"]
@@ -22,6 +23,7 @@ mod actions;
 pub struct ProviderAuthManager {
     attempts: LoginAttemptStore,
     probes: Mutex<ProbeCache>,
+    round: SharedRound,
 }
 
 impl ProviderAuthManager {
@@ -37,15 +39,36 @@ impl ProviderAuthManager {
         if self.attempts.take_finished_install() {
             // The package landed in a directory that may not have existed —
             // and so was not on PATH — when the app started.
-            vibyra_core::launch_env::user_path::install();
+            vibyra_core::launch_env::user_path::add_new_tool_dirs();
         }
         let registry = Registry::load();
         let targets = targets(&registry);
         // An account with a sign-in running, and the one just acted on, are
         // asked again every time: those are the answers expected to change.
         let mut forced = self.attempts.active_ids();
-        forced.extend(force.map(str::to_string));
-        let snapshots = self.probes.lock().refresh(&targets, &forced);
+        let snapshots = match force {
+            // Asked after the action, never answered by a round that may
+            // have started before it.
+            Some(id) => {
+                forced.push(id.to_string());
+                self.probes.lock().refresh(&targets, &forced)
+            }
+            None => {
+                let shared = self
+                    .round
+                    .run(|| self.probes.lock().refresh(&targets, &forced));
+                // A round that began before an account was added has no answer
+                // for it; only then is a round of our own worth running.
+                let covered = targets.iter().all(|target| {
+                    shared.contains_key(&key(target.provider.id, &target.account_id))
+                });
+                if covered {
+                    shared
+                } else {
+                    self.probes.lock().refresh(&targets, &forced)
+                }
+            }
+        };
 
         let mut views: Vec<ProviderView> = Vec::new();
         for target in &targets {
@@ -97,25 +120,6 @@ impl ProviderAuthManager {
         self.connect(provider_id, &account_id)
     }
 
-    /// Signs an account out, then forgets it and deletes its folder.
-    ///
-    /// Signing out first is what keeps the provider's own record straight: a
-    /// deleted folder would leave the session live at their end with nothing
-    /// here able to end it.
-    pub fn remove_account(
-        &self,
-        provider_id: &str,
-        account_id: &str,
-    ) -> Result<Vec<ProviderView>, String> {
-        definition(provider_id).ok_or_else(unknown_provider)?;
-        let _ = self.disconnect(provider_id, account_id);
-        let mut registry = Registry::load();
-        registry.remove(provider_id, account_id)?;
-        self.attempts.cancel(&key(provider_id, account_id));
-        self.probes.lock().forget(&key(provider_id, account_id));
-        Ok(self.accounts())
-    }
-
     pub fn open_sign_in_page(&self, provider_id: &str, account_id: &str) -> Result<(), String> {
         definition(provider_id).ok_or_else(unknown_provider)?;
         let url = self
@@ -146,6 +150,11 @@ impl ProviderAuthManager {
         Ok(self.view(Some(&key(provider_id, account_id))))
     }
 
+    /// Stops every sign-in and CLI install when the app quits.
+    pub fn shutdown(&self) {
+        self.attempts.shutdown();
+    }
+
     /// Resolves one account's folder, refusing ids the registry never issued.
     fn home(&self, provider_id: &str, account_id: &str) -> Result<AccountHome, String> {
         Registry::load().home(provider_id, account_id)
@@ -169,6 +178,8 @@ impl ProviderAuthManager {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
         prepare_child(&mut command);
+        // Its own group, so a cancel reaches whatever the CLI started too.
+        vibyra_core::process_group::isolate(&mut command);
         let mut child = command
             .spawn()
             .map_err(|error| format!("{failure}: {error}"))?;

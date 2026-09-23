@@ -21,7 +21,9 @@ import { useWalletPurchase } from './useWalletPurchase';
 let seen: number | null = null;
 let handed: string | null = null;
 /** Called by the upgrade page just before a finished purchase returns here. */
-export const handBack = (notice: string) => { handed = notice; };
+export const handBack = (notice: string) => {
+  handed = notice;
+};
 
 /**
  * Vibyra tokens, the Settings page the balance lives on (briefly "Plan & Vibes"). It
@@ -36,7 +38,12 @@ export const handBack = (notice: string) => { handed = notice; };
  * on the upgrade page. The sheet draws the title and Back, so the page is only its
  * scroll.
  */
-export function VibesSettingsPage({ workspace, nav, routes, onSignIn }: SettingsPageProps & {
+export function VibesSettingsPage({
+  workspace,
+  nav,
+  routes,
+  onSignIn,
+}: SettingsPageProps & {
   // Whoever mounts the page may own signing in; by default it raises its own sheet.
   onSignIn?: () => void;
 }) {
@@ -51,45 +58,80 @@ export function VibesSettingsPage({ workspace, nav, routes, onSignIn }: Settings
   // Starts from the last balance drawn here and moves to this one, so Vibes bought
   // on the upgrade page are watched arriving rather than read about.
   const [target, setTarget] = useState(seen ?? available);
-  useEffect(() => { setTarget(available); if (wallet) seen = available; }, [available, wallet]);
+  useEffect(() => {
+    setTarget(available);
+    if (wallet) seen = available;
+  }, [available, wallet]);
   const shown = useCountUp(target, still);
-  const [arrived] = useState(() => { const text = handed; handed = null; return text; });
+  const [arrived] = useState(() => {
+    const text = handed;
+    handed = null;
+    return text;
+  });
   const notice = buy.notice ?? (arrived ? { text: arrived, ok: true } : null);
   const [signIn, setSignIn] = useState(false);
   const askSignIn = onSignIn ?? (() => setSignIn(true));
   const canUpgrade = signedIn && buy.offers.length > 0;
-  const sheet = onSignIn ? null : <AccountSheet visible={signIn} workspace={workspace} onClose={() => setSignIn(false)} />;
+  const sheet = onSignIn ? null : (
+    <AccountSheet visible={signIn} workspace={workspace} onClose={() => setSignIn(false)} />
+  );
   // Signed out with no guest wallet, there is no figure to draw and nothing to buy:
   // one thing to say and one thing to do, never a "—" balance or a red error.
-  if (!signedIn && !wallet) return <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]}>
-    <SignedOutBody onSignIn={askSignIn} />
-    {sheet}
-  </ScrollView>;
-  return <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]} keyboardShouldPersistTaps="handled"
-    showsVerticalScrollIndicator={false}>
-    <WalletBalance wallet={wallet} shown={shown} headline={headline} />
-    {wallet?.limits && <UsageLimits limits={wallet.limits} />}
-    {error && <Hint error>{error}</Hint>}
-    {!wallet && <Hint>Your balance is on its way.</Hint>}
-    {/* Pushed to the foot of the sheet, so the figures are read first and the
+  if (!signedIn && !wallet)
+    return (
+      <ScrollView contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]}>
+        <SignedOutBody onSignIn={askSignIn} />
+        {sheet}
+      </ScrollView>
+    );
+  return (
+    <ScrollView
+      contentContainerStyle={[s.content, { paddingBottom: bottom + 24 }]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <WalletBalance wallet={wallet} shown={shown} headline={headline} />
+      {wallet?.limits && <UsageLimits limits={wallet.limits} />}
+      {error && <Hint error>{error}</Hint>}
+      {!wallet && <Hint>Your balance is on its way.</Hint>}
+      {/* Pushed to the foot of the sheet, so the figures are read first and the
         actions wait where a thumb already is. Upgrading leads; the top-up follows,
         and is the filled action only once there is no plan left to sell. */}
-    <View style={s.actions}>
-      {notice ? <Text accessibilityRole="alert" style={[s.notice,
-        { color: notice.ok ? colors.text : colors.error }]}>{notice.text}</Text> : null}
-      {canUpgrade && <Button title="Upgrade your plan" onPress={() => nav.close(() => routes.wallet('vibes'))} />}
-      {buy.topups.map(topup => {
-        const price = buy.priceOf(topup.id);
-        return <Button key={topup.id} secondary={canUpgrade} icon="add"
-          title={price ? `Add ${topup.credits} Vibes · ${price}` : 'Extra Vibes unavailable'}
-          disabled={!price || !buy.canBuy || buy.busy} onPress={() => buy.buy(topup.id)} />;
-      })}
-      {/* A guest holds trial Vibes but cannot buy more, so the one thing to offer is
+      <View style={s.actions}>
+        {notice ? (
+          <Text
+            accessibilityRole="alert"
+            style={[s.notice, { color: notice.ok ? colors.text : colors.error }]}
+          >
+            {notice.text}
+          </Text>
+        ) : null}
+        {canUpgrade && (
+          <Button
+            title="Upgrade your plan"
+            onPress={() => nav.close(() => routes.wallet('vibes'))}
+          />
+        )}
+        {buy.topups.map((topup) => {
+          const price = buy.priceOf(topup.id);
+          return (
+            <Button
+              key={topup.id}
+              secondary={canUpgrade}
+              icon="add"
+              title={price ? `Add ${topup.credits} Vibes · ${price}` : 'Extra Vibes unavailable'}
+              disabled={!price || !buy.canBuy || buy.busy}
+              onPress={() => buy.buy(topup.id)}
+            />
+          );
+        })}
+        {/* A guest holds trial Vibes but cannot buy more, so the one thing to offer is
           the account that can. */}
-      {!signedIn && <Button title="Sign in to get more Vibes" onPress={askSignIn} />}
-    </View>
-    {sheet}
-  </ScrollView>;
+        {!signedIn && <Button title="Sign in to get more Vibes" onPress={askSignIn} />}
+      </View>
+      {sheet}
+    </ScrollView>
+  );
 }
 const s = StyleSheet.create({
   content: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 12, gap: 24 },

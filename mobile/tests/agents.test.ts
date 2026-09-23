@@ -29,9 +29,9 @@ test('ambiguous create retry preserves the UUID and full payload; edit carries r
     calls.push(JSON.parse(String(init?.body))); if (!failed) { failed = true; throw new Error('timeout'); }
     return new Response('{"teammate":{"id":"same-id"}}');
   }) as typeof fetch);
-  const fields = { name: 'Helper', brief: 'Review changes', avatar: 'site' as const, memory: '', budget: 5, integrations: ['github'] };
+  const fields = { name: 'Helper', brief: 'Review changes', avatar: 'site' as const, memory: '', budget: 5, integrations: ['github'], model: 'anthropic/claude-test', skillIds: ['skill-a'] };
   await assert.rejects(api.save(fields, { id: 'same-id' }), (e: VibesError) => e.status === 0);
-  await api.save(fields, { id: 'same-id' }); assert.deepEqual(calls[0], calls[1]);
+  await api.save(fields, { id: 'same-id' }); assert.deepEqual(calls[0], calls[1]); assert.equal(calls[1].model, fields.model); assert.deepEqual(calls[1].skillIds, fields.skillIds);
   await api.save(fields, { id: 'same-id', revision: 2 }); assert.equal(calls[2].revision, 2); assert.equal(calls[2].id, undefined);
 });
 
@@ -48,4 +48,20 @@ test('teammate chat scope keeps Work selection, pending send and history separat
   await assert.rejects(scoped.quote('work-chat', 'hello', 'auto'), /another teammate/);
   await assert.rejects(scoped.createChat('new', 'Hello'), /Reopen this teammate/);
   assert.equal(scoped.attach, undefined); assert.equal(scoped.toolResult, undefined);
+});
+
+test('engine catalogue reads the existing Vibes models endpoint', async () => {
+  let url = '';
+  const api = createAgentsApi('https://example.test', () => 'account', (async value => {
+    url = String(value); return new Response('{"models":[{"id":"test/model","name":"Test","available":true}]}');
+  }) as typeof fetch);
+  assert.equal((await api.models!())[0]?.id, 'test/model');
+  assert.equal(url, 'https://example.test/api/vibes/models');
+});
+
+test('missing skill and teammate lists are rejected before UI consumers receive them', async () => {
+  const api = createAgentsApi('https://example.test', () => 'account',
+    (async () => new Response('{}')) as typeof fetch);
+  await assert.rejects(api.skills!(), /unexpected response/);
+  await assert.rejects(api.chats!('teammate-one'), /unexpected response/);
 });

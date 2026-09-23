@@ -29,6 +29,7 @@ class RunVibesTurn implements ShouldQueue
             ->whereNull('settled_at')->update(['status' => 'running', 'dispatched_at' => now(), 'updated_at' => now()]);
         if (!$claimed) return;
         $t = DB::table('vibes_turns')->where('id', $this->turnId)->firstOrFail();
+        app(\App\Services\Progress\WorkEvents::class)->observe($t->id);
         // A stop is the person's doing; a disabled feature or a missing key is ours.
         // Both settled as "stopped", which is how a server with no OpenRouter key
         // came to look, in every chat, like a request the person had cancelled.
@@ -66,7 +67,8 @@ class RunVibesTurn implements ShouldQueue
             $remainingMicro = $t->reserved * 10000 - $t->actual_micro_usd;
             $outputTokens = min($request['max_tokens'] ?? 2048, (int) floor(($remainingMicro / 1.1 - $inputCost) / $completionRate));
             if ($t->step_count >= $maxSteps || $outputTokens < 128 || $t->cancel_requested) {
-                $turns->settle($t->id, $t->actual_micro_usd, 'Paused at the turn budget. Review the tool results for any completed changes. Send another message to continue.');
+                $turns->settle($t->id, $t->actual_micro_usd, 'Paused at the turn budget. Review the tool results for any completed changes. Send another message to continue.',
+                    finishReason: $t->step_count >= $maxSteps ? 'step_limit' : 'budget_limit');
                 return;
             }
             $outgoing['max_tokens'] = $outputTokens;
@@ -126,6 +128,8 @@ class RunVibesTurn implements ShouldQueue
             Log::error('vibes.turn.threw', ['turn' => $this->turnId,
                 'exception' => $e::class, 'message' => $e->getMessage()]);
             DB::table('vibes_turns')->where('id', $t->id)->whereNull('settled_at')->update(['status' => 'reconciling']);
+        } finally {
+            app(\App\Services\Progress\WorkEvents::class)->observe($this->turnId);
         }
     }
 

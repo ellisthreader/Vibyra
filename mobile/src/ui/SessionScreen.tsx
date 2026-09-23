@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { TerminalSurface } from '../terminal/TerminalSurface';
+import { LivePreviewCard } from '../preview/LivePreviewCard';
 import type { TerminalSurfaceHandle } from '../terminal/TerminalSurface.types';
 import { DemoPreviewSheet } from '../demo/DemoPreviewSheet';
 import { DemoConversation } from '../demo/DemoConversation';
@@ -25,13 +26,16 @@ interface Props {
   session: Session; workspace: WorkspaceModel;
   /** The session sheet, opened from the ⋯ in the app header; the screen owns the sheet, the header the button. */
   options?: boolean; onCloseOptions?: () => void;
+  onPreview?: () => void;
+  previewProjectId?: string;
   onPhoneChat?(model: string): Promise<void>; onUpgrade?(): void;
 }
-export function SessionScreen({ session, workspace, options = false, onCloseOptions = () => {}, onPhoneChat, onUpgrade }: Props) {
+export function SessionScreen({ session, workspace, options = false, onCloseOptions = () => {}, onPreview, previewProjectId, onPhoneChat, onUpgrade }: Props) {
   if (session.runner === 'conversation') return Platform.OS === 'ios'
-    ? <ConversationSessionScreen session={session} workspace={workspace} onPhoneChat={onPhoneChat} onUpgrade={onUpgrade} />
+    ? <ConversationSessionScreen session={session} workspace={workspace} options={options}
+        onCloseOptions={onCloseOptions} onPreview={onPreview} previewProjectId={previewProjectId} onPhoneChat={onPhoneChat} onUpgrade={onUpgrade} />
     : <PhoneConversationNotice session={session} workspace={workspace} />;
-  return <TerminalSessionScreen session={session} workspace={workspace} options={options} onCloseOptions={onCloseOptions} />;
+  return <TerminalSessionScreen session={session} workspace={workspace} options={options} onCloseOptions={onCloseOptions} onPreview={onPreview} previewProjectId={previewProjectId} />;
 }
 function PhoneConversationNotice({ session, workspace }: { session: Session; workspace: WorkspaceModel }) {
   const [review, setReview] = useState(false);
@@ -49,7 +53,10 @@ function PhoneConversationNotice({ session, workspace }: { session: Session; wor
  * draft composer. The raw surface remains available for full-screen CLI prompts;
  * both input paths use the same Mac-controlled lease. Structured sessions use
  * ConversationSessionScreen and never infer approvals or message roles from ANSI. */
-function TerminalSessionScreen({ session, workspace, options, onCloseOptions }: Required<Omit<Props, 'onPhoneChat' | 'onUpgrade'>>) {
+function TerminalSessionScreen({ session, workspace, options, onCloseOptions, onPreview, previewProjectId }: Required<Omit<Props, 'onPhoneChat' | 'onUpgrade' | 'onPreview' | 'previewProjectId'>> & Pick<Props, 'onPreview' | 'previewProjectId'>) {
+  const outputStore = workspace.terminalOutput;
+  const output = useSyncExternalStore(outputStore?.subscribe ?? noOutputSubscription,
+    outputStore?.snapshot ?? (() => workspace.output), outputStore?.snapshot ?? (() => workspace.output));
   const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const offset = useKeyboardOffset();
@@ -98,7 +105,8 @@ function TerminalSessionScreen({ session, workspace, options, onCloseOptions }: 
     <ReviewSheet visible={review !== null} onClose={() => setReview(null)} project={project} workspace={workspace} initialMode={review ?? 'changes'} />
     <Sheet title="Session details" visible={options} onClose={onCloseOptions} scroll={false}>
       <SessionDetails session={session} project={project} workspace={workspace} busy={busy}
-        onReview={() => { onCloseOptions(); setReview('changes'); }} onStop={stop} />
+        onReview={() => { onCloseOptions(); setReview('changes'); }}
+        onStop={stop} />
     </Sheet>
   </>;
   if (chat) return <KeyboardAvoidingView style={s.body} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={offset}>
@@ -114,21 +122,24 @@ function TerminalSessionScreen({ session, workspace, options, onCloseOptions }: 
       onReconnect={workspace.actions.reconnect && (() => void run(workspace.actions.reconnect!))}
       onTakeControl={workspace.actions.claimControl && (() => void run(workspace.actions.claimControl!))} />
     {(error || inputError) && <View style={s.notice}><Hint error>{error || inputError}</Hint></View>}
-    <View style={[s.terminal, { backgroundColor: colors.elevated, margin: 14, borderRadius: 13, padding: 10 }]}>
-      <View style={{ paddingBottom: 8 }}><Hint>Terminal output</Hint></View>
-      <TerminalSurface key={`${workspace.host?.id}:${session.id}`} ref={surface} output={workspace.output} grid={workspace.hostGrid} mirror={session.readOnly === true}
+    <View style={[s.terminal, { backgroundColor: colors.workspace, borderColor: colors.border }]}>
+      <TerminalSurface key={`${workspace.host?.id}:${session.id}`} ref={surface} output={output} grid={workspace.hostGrid} mirror={session.readOnly === true}
         onFollow={setAtBottom} onInput={input} onTap={tap}
         fontSize={workspace.terminalFontSize} onFontSize={workspace.actions.setTerminalFontSize}
         onResize={(cols, rows) => { void Promise.resolve(workspace.actions.resize(cols, rows)).catch(cause =>
           setInputError(cause instanceof Error ? cause.message : 'Terminal size could not be updated.')); }} disabled={!canInput} />
       {!atBottom && <LatestPill onPress={() => surface.current?.scrollToBottom()} />}
     </View>
+    {onPreview && previewProjectId && <LivePreviewCard workspace={workspace} projectId={previewProjectId} onPress={onPreview} />}
     <Composer compact={compact} value={draft} onChange={setDraft} disabled={!canInput} shell={session.kind === 'shell'} contextLabel={provider}
       onReview={() => setReview('files')} onSend={value => run(() => workspace.actions.sendInput(`${value}\r`))} />
     {sheets}
   </KeyboardAvoidingView>;
 }
+const noOutputSubscription = () => () => {};
 const s = StyleSheet.create({
-  body: { flex: 1 }, terminal: { flex: 1, minHeight: 60 },
+  body: { flex: 1 },
+  terminal: { flex: 1, minHeight: 60, marginHorizontal: 12, marginTop: 4, marginBottom: 8, borderRadius: 16, padding: 12,
+    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   notice: { paddingHorizontal: 22, paddingVertical: 8 },
 });

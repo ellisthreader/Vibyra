@@ -78,6 +78,9 @@ impl Journal {
             let (id, data) = row.map_err(|e| e.to_string())?;
             let mut conversation: Conversation =
                 serde_json::from_str(&data).map_err(|e| e.to_string())?;
+            // Items or events inside the row itself are the old layout, moved
+            // out into their own tables by the save below.
+            let legacy = !conversation.items.is_empty() || !conversation.events.is_empty();
             if conversation.items.is_empty() {
                 let mut history = self.connection.prepare("SELECT data FROM conversation_items WHERE session=?1 AND
                     (position IN (SELECT position FROM conversation_items WHERE session=?1 ORDER BY position DESC LIMIT 512)
@@ -92,8 +95,12 @@ impl Journal {
                     );
                 }
             }
-            conversation.restore();
-            self.save_conversation(&id, &conversation)?;
+            // A conversation left at rest last time is already stored as
+            // restore leaves it; rewriting every one of them, a synced commit
+            // each, held up opening every project.
+            if conversation.restore() || legacy {
+                self.save_conversation(&id, &conversation)?;
+            }
             result.insert(id, conversation);
         }
         Ok(result)

@@ -73,6 +73,8 @@ export const isProjectTool = (tool: VibesTool): tool is ProjectTool =>
   !tool.integration && (PROJECT_OPERATIONS as readonly string[]).includes(tool.operation) && Boolean(tool.arguments);
 export interface VibesTurn {
   id: string; chatId: string; model: string; status: 'queued' | 'running' | 'waiting' | 'reconciling' | 'completed' | 'failed' | 'cancelled';
+  finishReason?: string | null;
+  progress?: { phase: string; sequence: number; observedAt: string; assessment: { label: string } | null } | null;
   tools?: VibesTool[];
   attachments?: VibesAttachment[];
   /** What this reply saved to or removed from Settings > Memory; null when it changed nothing. */
@@ -87,11 +89,13 @@ export interface VibesTurnMemory { saved?: { id: string; text: string }[]; forgo
  * worded rather than inferred from an id.
  */
 export interface VibesAutoChoice { reason: string; name: string }
-export interface VibesQuote { quote: string; maxCredits: number; estimatedCredits: number; model: string; expiresAt: number;
+export interface VibesQuote { smartAuto?: boolean; quote: string; maxCredits: number; estimatedCredits: number; model: string; expiresAt: number;
   effort?: Effort | null; auto?: VibesAutoChoice | null;
   /** The integrations actually attached and priced, which is not always the ones asked for. */
   integrations?: string[] }
 export interface VibesApi {
+  prepareAuto?(id: string, quote: string): Promise<{ id: string; state: string }>;
+  autoPreparation?(id: string): Promise<{ id: string; state: string; quote?: VibesQuote }>;
   guest?: {
     restore(token: string | null): void;
     create(installId: string, deviceToken?: string): Promise<{ token: string; wallet: VibesWallet }>;

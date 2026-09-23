@@ -166,6 +166,10 @@ async fn connect(
     let mut peers = Peers::new(shared.clone(), send);
     let mut heartbeat = tokio::time::interval(Duration::from_secs(20));
     let mut last_seen = tokio::time::Instant::now();
+    // Older deployed relays count every encrypted frame against a 120/s
+    // envelope limit. Pace this shared socket so a large Preview response does
+    // not disconnect the computer and its terminal sessions.
+    let mut next_frame_send = tokio::time::Instant::now();
     loop {
         tokio::select! {
             message = socket.next() => {
@@ -188,6 +192,10 @@ async fn connect(
                 if value["type"] == "client.close" {
                     if let Some(id) = value["clientId"].as_str() { peers.remove(id); }
                     report(status, "online", None, peers.len());
+                }
+                if value["type"] == "frame" {
+                    tokio::time::sleep_until(next_frame_send).await;
+                    next_frame_send = tokio::time::Instant::now() + Duration::from_millis(12);
                 }
                 let result = tokio::time::timeout(Duration::from_secs(10), socket.send(Message::Text(value.to_string().into()))).await;
                 if !matches!(result, Ok(Ok(()))) { return Err("Relay send stalled".into()); }

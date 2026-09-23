@@ -1,10 +1,7 @@
 //! Shared Discord webhook plumbing.
 //!
-//! Two senders sit on top of this: model-release announcements
-//! (`model_watch_discord`) and user reports (`report`). Both need the same two
-//! things — proof a URL really is a Discord webhook before anything is sent to
-//! it, and a POST whose failures come back in words the person who typed the
-//! URL can act on.
+//! User reports need proof a URL is a Discord webhook before sending and
+//! actionable errors when delivery fails. Model alerts are backend-owned.
 
 use std::time::Duration;
 
@@ -81,7 +78,7 @@ pub(crate) async fn post(
     body: &Value,
     files: Vec<Attachment>,
 ) -> Result<(), String> {
-    let client = reqwest::Client::new();
+    let client = crate::http_client::shared();
     let request = if files.is_empty() {
         client.post(webhook).json(body)
     } else {

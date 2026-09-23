@@ -63,6 +63,13 @@ test("a different category in the same instant stays its own item", () => {
   assert.equal(second.history.length, 2);
 });
 
+test("different model releases keep separate notifications in the same instant", () => {
+  const first = push(EMPTY, { category: "models", dedupeKey: "model:openai/one" }, 500);
+  const second = push(first, { category: "models", dedupeKey: "model:openai/two" }, 500);
+  assert.equal(second.isRepeat, false);
+  assert.equal(second.history.length, 2);
+});
+
 test("a repeat outside the burst window keeps its own wording", () => {
   const first = push(EMPTY, { dedupeKey: "k" }, 0);
   const second = push(first, { dedupeKey: "k" }, BURST_MS + 500);

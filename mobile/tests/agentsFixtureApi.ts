@@ -1,4 +1,4 @@
-import type { AgentsApi, Teammate } from '../src/agents/types';
+import type { AgentSkill, AgentsApi, Teammate } from '../src/agents/types';
 import { VibesError } from '../src/vibes/api';
 import type { VibesApi, VibesTurn } from '../src/vibes/types';
 import { sampleVibesApi, sampleWallet } from '../src/demo/sampleVibes';
@@ -14,7 +14,12 @@ const turns: VibesTurn[] = [{ id: 'turn-site', chatId: 'chat-site', model: 'auto
   tools: [{ id: 'decision-site', operation: 'update_file', integration: 'github', decision: null, summary: 'Review this action before it runs.', expiresAt: Date.now() / 1000 + 900,
     approval: { state: 'pending', fingerprint: 'a'.repeat(64), arguments: { repository: 'bakery/website', path: 'opening-hours.json', content: '{"sunday":"09:00–16:00"}' }, answer: null } }] }];
 export const calls: unknown[] = []; let createFailed = false; let decisionFailed = false;
+let skillFailed = false;
+let skills: AgentSkill[] = [{ id: 'skill-review', revision: 1, name: 'Review checklist', instructions: 'Explain risks and cite sources.', teammateIds: [] }];
 export const agentsApi: AgentsApi = {
+  models: async () => [{ id: 'anthropic/claude-test', name: 'Claude Test', available: true }],
+  skills: async () => structuredClone(skills),
+  saveSkill: async skill => { calls.push({ action: 'skill-save', skill: structuredClone(skill) }); const saved = skills.find(s => s.id === skill.id) ?? { ...skill, revision: 1 }; skills = [saved, ...skills.filter(s => s.id !== skill.id)]; if(query.has('skill-timeout') && !skillFailed) { skillFailed = true; throw new VibesError('Skill response interrupted.', 0); } return structuredClone(saved); },
   list: async () => ({ version: 1, enabled: !query.has('paused'), teammates: structuredClone(teammates) }),
   chats: async id => [{ id: `chat-${id}`, title: teammates.find(a => a.id === id)?.name ?? '', trial_slot: null, trial_used: 0 }],
   save: async (fields, target) => {
@@ -40,7 +45,7 @@ export const chatApi: VibesApi = { ...sampleVibesApi, wallet: async () => ({ ...
   turn: async id => {
     const t = turns.find(t => t.id === id); if (!t) throw new VibesError('Not found', 404); return structuredClone(t);
   },
-  quote: async (chatId, text, model, effort, integrations, attachments) => {
+  quote: async (chatId, text, model, _effort, integrations, attachments) => {
     calls.push({ action: 'quote', chatId, text, integrations, attachments });
     return { quote: JSON.stringify({ chatId, text, model }), model, maxCredits: 3, estimatedCredits: 1, expiresAt: Date.now() / 1000 + 120 };
   },

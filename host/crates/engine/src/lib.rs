@@ -8,6 +8,7 @@ mod external_read;
 mod git;
 mod history;
 mod journal;
+pub use journal::remove_unowned_state;
 mod launch;
 mod preview;
 mod projects;

@@ -11,6 +11,9 @@ export interface ToolResult {
    * or written into a sentence, not parsed. */
   detail: string;
   failed?: boolean;
+  /** Not run at all — a repeat, or not something the person asked for. Kept
+   * out of the thread; the model is still told, so it does not try again. */
+  skipped?: boolean;
 }
 
 export const fail = (summary: string): ToolResult => ({ summary, detail: summary, failed: true });
@@ -26,11 +29,11 @@ export function projects() {
  * should find "HKE" however it was capitalised. */
 export function resolveProject(name: string) {
   const all = projects();
-  if (!name) {
+  const wanted = name.toLowerCase().replace(/^the\s+/, "").replace(/\s+project$/, "").trim();
+  if (!wanted || ["this", "current", "open", "this one"].includes(wanted)) {
     const active = useProjectStore.getState().activeId;
     return all.find((project) => project.id === active) ?? null;
   }
-  const wanted = name.toLowerCase();
   return (
     all.find((project) => project.name.toLowerCase() === wanted) ??
     all.find((project) => project.name.toLowerCase().includes(wanted)) ??

@@ -19,7 +19,8 @@ public final class VibyraSpeechModule: Module {
     }.runOnQueue(.main)
     // Stops listening; the final words still arrive, followed by an `end` update.
     AsyncFunction("stop") { self.dictation.stop() }.runOnQueue(.main)
-    OnAppEntersBackground { self.dictation.stop() }
+    AsyncFunction("cancel") { self.dictation.cancel() }.runOnQueue(.main)
+    OnAppEntersBackground { self.dictation.cancel() }
     OnDestroy {
       let dictation = self.dictation
       DispatchQueue.main.async { dictation.cancel() }

@@ -9,6 +9,9 @@ use std::{
 };
 use tokio::sync::oneshot;
 
+/// The longest stopping waits for work already handed to the blocking pool.
+const SHUTDOWN: std::time::Duration = std::time::Duration::from_millis(1000);
+
 /// A dedicated runtime makes stop/drop close all active sockets as well as the listener.
 pub struct EmbeddedHost {
     pub(crate) shared: Arc<Shared>,
@@ -48,6 +51,7 @@ impl EmbeddedHost {
         let shared = Arc::new(Shared {
             engine: backend,
             identity: Mutex::new(identity),
+            writes: Mutex::new(()),
             invitation: Mutex::new(None),
             pending: Mutex::new(BTreeMap::new()),
             active: Mutex::new(HashMap::new()),
@@ -99,6 +103,14 @@ impl EmbeddedHost {
                         _ = also => {},
                     }
                 });
+                // A plain drop waits for every request still in the blocking
+                // pool, and one phone request can take many seconds while the
+                // desktop waits on this thread to start the next host. Those
+                // requests hold only `Shared`, and their replies have nowhere
+                // left to go, so they are left to finish on their own. The
+                // sockets and tasks are gone once this returns, before `_lock`
+                // is released for the host that replaces this one.
+                runtime.shutdown_timeout(SHUTDOWN);
             })
             .map_err(|e| e.to_string())?;
         Ok(Self {

@@ -3,7 +3,7 @@ import type { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** `AppHeader`'s `minHeight`. Kept here so the offset below cannot drift. */
-export const APP_HEADER_HEIGHT = 64;
+export const APP_HEADER_HEIGHT = 56;
 
 /**
  * How far a screen under the app header sits from the top of the window.
@@ -33,7 +33,9 @@ export function useMeasuredKeyboardOffset() {
   const frame = useRef<View>(null);
   const [offset, setOffset] = useState(0);
   const onLayout = useCallback(() => {
-    frame.current?.measureInWindow((_x, y) => { if (Number.isFinite(y) && y >= 0) setOffset(Math.round(y)); });
+    frame.current?.measureInWindow((_x, y) => {
+      if (Number.isFinite(y) && y >= 0) setOffset(Math.round(y));
+    });
   }, []);
   return { frame, onLayout, offset };
 }

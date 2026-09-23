@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Button, View } from 'react-native';
+import { useState } from 'react';
+import { Button } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { fixtureWorkspace } from './conversationWorkspaceFixture';
 import { palettes, ThemeContext } from '../src/theme';
@@ -18,10 +18,11 @@ const wallet = { consented: true, verified: true, guest: true, chatEnabled: true
 let chats: VibesChat[] = []; const turns: VibesTurn[] = [];
 const api = {
   wallet: async () => wallet, chats: async () => chats, models: async () => [],
+  consent: async () => {}, cancel: async () => {}, purchase: async () => wallet,
   createChat: async (id: string, title: string) => { chats = [...chats, { id, title, trial_slot: null, trial_used: 0 }]; return chats; },
   turns: async (id: string) => turns.filter(turn => turn.chatId === id),
   turn: async (id: string) => turns.find(turn => turn.id === id)!,
-  quote: async (chatId: string, text: string, model: string, effort: unknown, integrations: string[]) => {
+  quote: async (chatId: string, text: string, model: string, _effort: unknown, integrations: string[]) => {
     const accepted = query.has('dropped') ? [] : integrations;
     const q = { chatId, text, model, integrations: accepted, project: chats.find(chat => chat.id === chatId)?.project_id };
     calls.push({ kind: 'quote', ...q });
@@ -37,7 +38,7 @@ const api = {
     calls.push({ kind: 'attach', chatId, projectId });
     chats = chats.map(chat => chat.id === chatId ? { ...chat, host_id: hostId, project_id: projectId, binding } : chat);
   },
-} as VibesApi;
+} satisfies VibesApi;
 let serial = 0;
 const store = new VibesStore(api, () => `reference-${++serial}`, { read: async () => null, write: async () => {} });
 store.update({ wallet, ready: true });
@@ -65,4 +66,3 @@ export function ChatReferencesFixture() {
     </IntegrationsProvider></VibesStoreProvider></SafeAreaProvider>
   </ThemeContext.Provider>;
 }
-

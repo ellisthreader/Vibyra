@@ -7,7 +7,7 @@
 // spelling them there breaks wherever the bundle is read as anything but UTF-8.
 const typed: Record<string, string> = { '‘': "'", '’': "'", '“': '"', '”': '"', '—': '--' };
 const smart = new RegExp(`[${Object.keys(typed).join('')}]`, 'g');
-export const plainPunctuation = (value: string) => value.replace(smart, mark => typed[mark]);
+export const plainPunctuation = (value: string) => value.replace(smart, (mark) => typed[mark]);
 
 // Follow xterm's newline normalization and the host application's DECSET 2004
 // mode; multiline input must not become several accidental submissions.

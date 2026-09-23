@@ -60,18 +60,21 @@ impl Journal {
         };
         let id = format!("{:x}", Sha256::digest(format!("{}:{field}", item["id"])));
         let mut content = item[field].as_str().unwrap_or("").to_owned();
+        // The stored artifact's length and hash, when this is a delta on it.
+        let mut stored = None;
         if let Some(delta) = item.get("_delta").and_then(Value::as_str) {
-            let previous: Option<String> = self
+            let previous: Option<(String, String)> = self
                 .connection
                 .query_row(
-                    "SELECT content FROM conversation_artifacts WHERE session=?1 AND id=?2",
+                    "SELECT content,hash FROM conversation_artifacts WHERE session=?1 AND id=?2",
                     params![session, id],
-                    |r| r.get(0),
+                    |r| Ok((r.get(0)?, r.get(1)?)),
                 )
                 .optional()
                 .map_err(|e| e.to_string())?;
-            if let Some(previous) = previous {
+            if let Some((previous, hash)) = previous {
                 content = format!("{previous}{delta}");
+                stored = Some((previous.len(), hash));
             }
         }
         item.as_object_mut().unwrap().remove("_delta");
@@ -83,20 +86,32 @@ impl Journal {
         }
         let truncated = content.len() > LIMIT || item["truncated"] == true;
         let content = bounded(&content, LIMIT);
+        // `octet_length` is the same UTF-8 byte count `length(CAST(.. AS
+        // BLOB))` gave, read from each row's header instead of pulling every
+        // artifact's content off disk for each streamed delta.
         let bytes: i64 = self.connection.query_row(
-            "SELECT COALESCE(SUM(length(CAST(content AS BLOB))),0) FROM conversation_artifacts WHERE session=?1 AND id<>?2",
+            "SELECT COALESCE(SUM(octet_length(content)),0) FROM conversation_artifacts WHERE session=?1 AND id<>?2",
             params![session,id], |r| r.get(0)).map_err(|e| e.to_string())?;
         if bytes + content.len() as i64 > 64 * 1024 * 1024 {
             return Err("Conversation reached its 64 MB retained-output limit. Export history and start a new chat.".into());
         }
-        let hash = format!("{:x}", Sha256::digest(content.as_bytes()));
-        self.connection
-            .execute(
-                "INSERT INTO conversation_artifacts(session,id,content,hash) VALUES(?1,?2,?3,?4)
+        let hash = match stored {
+            // Both are prefixes of the same text, so equal lengths mean equal
+            // content: a delta past the retained limit, or an empty one,
+            // leaves exactly what is stored, with nothing to hash or write.
+            Some((length, hash)) if length == content.len() => hash,
+            _ => {
+                let hash = format!("{:x}", Sha256::digest(content.as_bytes()));
+                self.connection
+                    .execute(
+                        "INSERT INTO conversation_artifacts(session,id,content,hash) VALUES(?1,?2,?3,?4)
             ON CONFLICT(session,id) DO UPDATE SET content=excluded.content,hash=excluded.hash",
-                params![session, id, content, hash],
-            )
-            .map_err(|e| e.to_string())?;
+                        params![session, id, content, hash],
+                    )
+                    .map_err(|e| e.to_string())?;
+                hash
+            }
+        };
         item["artifact"] = json!({"id":id,"hash":hash,"bytes":content.len(),"truncated":truncated});
         item[field] = json!(bounded(&content, 6000));
         item["truncated"] = json!(truncated);

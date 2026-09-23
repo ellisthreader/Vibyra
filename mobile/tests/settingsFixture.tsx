@@ -8,8 +8,11 @@ import { fallbackIntegrations } from '../src/integrations/catalogue';
 import { IntegrationsProvider } from '../src/integrations/IntegrationsProvider';
 import type { IntegrationsApi } from '../src/integrations/types';
 import { SettingsSheet } from '../src/settings/SettingsSheet';
+import { NavigationDrawer } from '../src/ui/NavigationDrawer';
+import type { SettingsPageId } from '../src/settings/pages';
 import { isAccentId, paletteFor, ThemeContext, type AccentId } from '../src/theme';
 import type { ThemePreference, WorkspaceModel } from '../src/ui/types';
+import type { ReportInput } from '../src/report/api';
 
 // The Settings sheet over a stand-in app, with a made-up account in one of three
 // states: `?state=signedin` (an account and a connected computer), `signedout` (no
@@ -17,6 +20,7 @@ import type { ThemePreference, WorkspaceModel } from '../src/ui/types';
 // set the starting look; everything a row does is recorded on `window.settingsCalls`.
 const calls: string[] = [];
 (window as unknown as { settingsCalls: string[] }).settingsCalls = calls;
+(window as unknown as { reportSubmissions: ReportInput[] }).reportSubmissions = [];
 window.open = ((url?: string | URL) => { calls.push(`open ${String(url)}`); return null; }) as typeof window.open;
 const query = new URLSearchParams(location.search);
 const state = query.get('state') ?? 'signedin';
@@ -31,7 +35,9 @@ function Fixture() {
   const [theme, setTheme] = useState<ThemePreference>(query.get('theme') === 'light' ? 'light' : 'dark');
   const [accent, setAccent] = useState<AccentId>(isAccentId(query.get('accent')) ? query.get('accent') as AccentId : 'cobalt');
   const [size, setSize] = useState(13);
-  const [visible, setVisible] = useState(query.get('open') !== '0');
+  const [visible, setVisible] = useState(query.get('open') !== '0' && query.get('drawer') !== '1');
+  const [drawer, setDrawer] = useState(query.get('drawer') === '1');
+  const [initialPage, setInitialPage] = useState<SettingsPageId | null>(null);
   const dark = theme !== 'light';
   const colors = paletteFor(dark, accent);
   const workspace = useMemo<WorkspaceModel>(() => {
@@ -43,6 +49,10 @@ function Fixture() {
       selectedSessionId: null, output: '', themePreference: theme, accent, terminalFontSize: size,
       onboarding: { status: 'complete', mode: null },
       account: signedIn ? { email: 'ellis@example.com', name: 'Ellis', plan: 'pro' } : null,
+      reports: { send: async input => {
+        (window as unknown as { reportSubmissions: ReportInput[] }).reportSubmissions.push(input);
+        return 'VR-PHONE1';
+      } },
       actions: {
         connect: async () => {}, disconnect: () => {}, refresh: async () => {}, selectSession: () => {}, createSession: async () => {},
         sendInput: async () => {}, resize: () => {}, stopSession: async () => {}, listFiles: async () => ({ entries: [] }),
@@ -50,7 +60,7 @@ function Fixture() {
         setTheme: value => { calls.push(`theme ${value}`); setTheme(value); },
         setAccent: value => { calls.push(`accent ${value}`); setAccent(value); },
         setTerminalFontSize: value => { calls.push(`size ${value}`); setSize(value); },
-        logIn: async () => {}, signUp: async () => {},
+        logIn: async () => null, signUp: async () => {},
         logOut: signedIn ? async () => { calls.push('logOut'); } : undefined,
         resetOnboarding: sample ? undefined : async () => { calls.push('resetOnboarding'); },
         enterDemo: sample ? undefined : record('enterDemo'), exitDemo: sample ? record('exitDemo') : undefined,
@@ -71,7 +81,10 @@ function Fixture() {
               <Text testID="fixture-action-text" style={{ color: colors.onAction, fontWeight: '600' }}>Open settings</Text>
             </Pressable>
           </View>
-          <SettingsSheet visible={visible} workspace={workspace} onClose={close}
+          <NavigationDrawer visible={drawer} destination="work" workspace={workspace} onClose={() => setDrawer(false)}
+            onNavigate={() => setDrawer(false)} onNew={() => setDrawer(false)} onSettings={() => setVisible(true)}
+            onReport={() => { setInitialPage('report'); setVisible(true); }} />
+          <SettingsSheet visible={visible} workspace={workspace} onClose={close} initialPage={initialPage}
             routes={{ plugins: record('plugins'), wallet: record('wallet'), remote: record('remote'), connect: record('connect') }} />
         </View>
       </IntegrationsProvider>

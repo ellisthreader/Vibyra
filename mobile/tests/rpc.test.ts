@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RpcClient, RpcError } from '../src/transport/RpcClient';
+import { encodePreviewFrame } from '../src/preview/frameCodec';
 import { CreateRequests } from '../src/state/createRequest';
 const pairing = { version: 1 as const, hostId: 'h1', name: 'Computer', publicKey: 'ab'.repeat(32), url: 'ws://localhost:4318' };
 test('a silent network address times out without consuming the owner approval wait', async () => {
@@ -96,4 +97,25 @@ test('closing with no runtime to tell still closes', async () => {
   assert.doesNotThrow(() => client.close());
   await assert.rejects(pending, /Connection interrupted/);
   await assert.rejects(client.request('host.state'), /Connect to your computer first/);
+});
+
+test('bounded Preview frames share the connection without settling terminal RPC', async () => {
+  const { client, sent, connectionId } = await harness();
+  const seen: string[] = [];
+  client.listen(notice => { if (notice.type === 'preview-frame') seen.push(notice.frame); });
+  const terminal = client.request('session.snapshot');
+  const requestId = sent.at(-1).payload.id;
+  client.sendPreviewFrame(encodePreviewFrame({ kind: 'open', key: { id: '1', generation: '1' } }));
+  assert.throws(() => client.sendPreviewFrame('x'.repeat(24001)), /Invalid Preview frame/);
+  assert.throws(() => client.sendPreviewFrame('VlAB'), /Invalid Preview frame/);
+  assert.equal(sent.at(-1).type, 'send-preview');
+  assert.equal(sent.at(-1).connectionId, connectionId);
+  client.receive({ type: 'preview-frame', connectionId: 'stale', frame: 'old' });
+  client.receive({ type: 'preview-frame', connectionId, frame: 'current' });
+  client.receive({ type: 'preview-error', connectionId, message: 'Preview is waiting' });
+  assert.deepEqual(seen, ['current']);
+  client.receive({ type: 'message', connectionId, payload: { id: requestId, ok: true, result: 'terminal' } });
+  assert.equal(await terminal, 'terminal');
+  client.close();
+  assert.throws(() => client.sendPreviewFrame('VlAB'), /Connect to your computer/);
 });

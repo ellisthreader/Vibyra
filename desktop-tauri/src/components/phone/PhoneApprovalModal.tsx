@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { usePhoneStore } from "../../state/phoneStore";
 import { EyeIcon, TerminalIcon } from "../common/Icons";
 
@@ -11,6 +12,8 @@ export function PhoneApprovalModal() {
   const busy = usePhoneStore((state) => state.busy);
   const answer = usePhoneStore((state) => state.answer);
   const request = status?.pending[0];
+  const [previewAuto, setPreviewAuto] = useState(false);
+  useEffect(() => setPreviewAuto(false), [request?.id]);
   if (!request) return null;
   // The promise made here has to match what the phone will be able to do the
   // moment it is allowed, so it follows the typing switch.
@@ -47,13 +50,20 @@ export function PhoneApprovalModal() {
             <p className="phone-approval__key">Device key {request.id.slice(0, 16)}…</p>
           </div>
         </div>
+        {status?.previewAutoAvailable && typing && <label className="phone-approval__preview">
+          <input type="checkbox" checked={previewAuto} disabled={busy}
+            onChange={(event) => setPreviewAuto(event.target.checked)} />
+          <span><strong>Allow one-tap website Preview</strong>
+            <small>This phone can open websites running from your project folders, including signed-in pages and cookies. You can turn this off in Phone settings.</small>
+          </span>
+        </label>}
         <footer className="phone-approval__actions">
           <button className="btn" type="button" disabled={busy}
             onClick={() => void answer(request.id, false)}>
             Deny
           </button>
           <button className="btn btn--primary" type="button" disabled={busy}
-            onClick={() => void answer(request.id, true)}>
+            onClick={() => void answer(request.id, true, previewAuto)}>
             {typing ? "Allow" : "Allow viewing"}
           </button>
         </footer>

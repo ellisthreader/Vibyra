@@ -1,3 +1,4 @@
+import { memo } from "react";
 import codeDark from "../../assets/welcome/code-dark.jpg";
 import codeLight from "../../assets/welcome/code-light.jpg";
 import agentsDark from "../../assets/welcome/agents-dark.jpg";
@@ -11,9 +12,9 @@ const screens = { code:[codeDark,codeLight], agents:[agentsDark,agentsLight], ph
 export function preloadWelcomeImages() {
   for (const url of Object.values(screens).flat()) { const image = new Image(); image.src = url; }
 }
-export function WelcomeScreen({ name }: { name: keyof typeof screens }) {
+export const WelcomeScreen = memo(function WelcomeScreen({ name }: { name: keyof typeof screens }) {
   return <div className="welcome-screen" data-screen={name}>
     <img className="welcome-screen__dark" src={screens[name][0]} alt="" draggable={false} />
     <img className="welcome-screen__light" src={screens[name][1]} alt="" draggable={false} />
   </div>;
-}
+});

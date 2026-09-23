@@ -125,18 +125,14 @@ fn audio_player(file: &std::path::Path) -> Result<Child, String> {
         .map_err(|error| format!("Could not start spoken reply: {error}"))
 }
 
-/// Owner-only and never an existing file, but not fsynced: the audio is read
-/// back within milliseconds and deleted once played, so waiting for the disk
-/// only delayed the reply.
+/// Owner-only and never an existing file, but not fsynced: the audio is played
+/// within milliseconds and then deleted, so waiting on the disk only delayed it.
 fn write_private(file: &std::path::Path, audio: &[u8]) -> std::io::Result<()> {
     use std::io::Write;
     let mut options = std::fs::OpenOptions::new();
     options.write(true).create_new(true);
     #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
+    std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
     options.open(file)?.write_all(audio)
 }
 

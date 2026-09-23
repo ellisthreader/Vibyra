@@ -27,6 +27,14 @@ impl Engine {
             identifier(account)?;
             let chat = text(p, "chatId")?;
             identifier(chat)?;
+            let current: Option<String> = db.query_row(
+                "SELECT token FROM vibes_bindings WHERE device=?1 AND account=?2 AND chat=?3 AND project=?4 AND expires>?5 ORDER BY expires DESC LIMIT 1",
+                params![device, account, chat, project.id, chrono::Utc::now().timestamp()],
+                |row| row.get(0),
+            ).optional().map_err(|e| e.to_string())?;
+            if let Some(binding) = current {
+                return Ok(json!({"binding":binding,"projectId":project.id,"chatId":chat}));
+            }
             let token = uuid::Uuid::new_v4().to_string();
             db.execute(
                 "INSERT INTO vibes_bindings VALUES (?1,?2,?3,?4,?5,?6)",

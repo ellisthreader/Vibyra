@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ function TerminalHostFixture() {
       delete: async (key: string) => { values.delete(key); } };
     return new WorkspaceStore({ rpc: new RpcClient(message => bridge.current?.post(message), uuid),
       uuid, iosConversations: new URLSearchParams(location.search).has('conversation'), storage: memory, flags: memory,
-      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount } });
+      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount, sendHostLink: disabledAccount } });
   });
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const started = useRef(false);
@@ -63,7 +63,7 @@ function TerminalHostFixture() {
   return <SafeAreaProvider><View style={{ flex: 1, backgroundColor: colors.background }}>
     <ThemeContext.Provider value={{ colors, dark }}>
       <RuntimeBridge ref={bridge} onMessage={notice => store.deps.rpc.receive(notice)} />
-      {session ? session.runner === 'conversation' ? <ConversationSessionScreen session={session} workspace={{ ...state, actions: store.actions }} /> : <SessionScreen session={session} workspace={{ ...state, actions: store.actions }} />
+      {session ? session.runner === 'conversation' ? <ConversationSessionScreen session={session} workspace={{ ...state, actions: store.actions }} options={false} onCloseOptions={() => {}} /> : <SessionScreen session={session} workspace={{ ...state, actions: store.actions }} />
         : <Text style={{ color: colors.text, margin: 20 }}>{state.error ?? 'Connecting…'}</Text>}
     </ThemeContext.Provider>
   </View></SafeAreaProvider>;

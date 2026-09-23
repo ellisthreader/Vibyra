@@ -6,14 +6,21 @@ const MAX_SLUG = 48;
 
 /** A folder name from whatever was typed. Empty when nothing survives. */
 export function slugify(name: string): string {
-  return name.normalize('NFKD').toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, MAX_SLUG).replace(/-$/, '');
+  return name
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, MAX_SLUG)
+    .replace(/-$/, '');
 }
 
 /** The same name as an identifier; React Native rejects anything else. */
 export function pascalCase(name: string): string {
   const words = slugify(name).split('-').filter(Boolean);
-  const joined = words.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+  const joined = words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join('');
   return /^[0-9]/.test(joined) ? `App${joined}` : joined;
 }
 
@@ -47,19 +54,33 @@ export function parentOf(path: string): string {
 /** A name that is not already a project in this folder. */
 export function suggestedName(projectPaths: string[], parent: string, base = 'untitled'): string {
   const inside = parent.replace(/[\\/]+$/, '');
-  const taken = new Set(projectPaths.filter(path => parentOf(path) === inside)
-    .map(path => path.replace(/[\\/]+$/, '').split(/[\\/]/).pop()));
+  const taken = new Set(
+    projectPaths
+      .filter((path) => parentOf(path) === inside)
+      .map((path) =>
+        path
+          .replace(/[\\/]+$/, '')
+          .split(/[\\/]/)
+          .pop(),
+      ),
+  );
   if (!taken.has(base)) return base;
-  for (let index = 2; index < 500; index += 1) if (!taken.has(`${base}-${index}`)) return `${base}-${index}`;
+  for (let index = 2; index < 500; index += 1)
+    if (!taken.has(`${base}-${index}`)) return `${base}-${index}`;
   return `${base}-${Date.now().toString(36)}`;
 }
 
-export interface Destination { slug: string; path: string; error: string | null }
+export interface Destination {
+  slug: string;
+  path: string;
+  error: string | null;
+}
 
 export function resolveDestination(parent: string, name: string, homeDir: string): Destination {
   const root = expandHome(parent, homeDir);
   const slug = slugify(name);
-  if (!ABSOLUTE.test(root)) return { slug, path: '', error: 'Choose a folder to put the project in.' };
+  if (!ABSOLUTE.test(root))
+    return { slug, path: '', error: 'Choose a folder to put the project in.' };
   if (!name.trim()) return { slug, path: '', error: 'Give the project a name.' };
   if (!slug) return { slug, path: '', error: 'Use letters or numbers in the name.' };
   return { slug, path: joinPath(root, slug), error: null };

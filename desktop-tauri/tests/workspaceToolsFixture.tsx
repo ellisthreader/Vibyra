@@ -17,40 +17,22 @@ import { useProjectStore } from '../src/state/projectStore';
 import { useChatStore } from '../src/state/chatStore';
 import { useNotificationStore } from '../src/state/notificationStore';
 import { useConversationTerminals } from '../src/state/conversationTerminalStore';
-import '../src/styles/tokens.css';
-import '../src/styles/base.css';
-import '../src/styles/base.part-02.css';
-import '../src/styles/controls.css';
-import '../src/styles/chrome.css';
-import '../src/styles/chrome.part-02.css';
-import '../src/styles/chrome-account.css';
-import '../src/styles/strip.css';
-import '../src/styles/project-focus.css';
-import '../src/styles/project-tools.css';
-import '../src/styles/companion.css';
-import '../src/styles/companion.part-02.css';
-import '../src/styles/companion.part-03.css';
-import '../src/styles/companion-shell.css';
-import '../src/styles/companion-chat.css';
-import '../src/styles/companion-chat-composer.css';
-import '../src/styles/companion-files.css';
-import '../src/styles/rail.css';
-import '../src/styles/rail.part-02.css';
-import '../src/styles/rail.part-03.css';
-import '../src/styles/notifications-bell.css';
-import '../src/styles/notifications-center.css';
-import '../src/styles/notifications-center.part-02.css';
-import '../src/styles/workspace.part-03.css';
-import '../src/styles/preview.css';
-import '../src/styles/preview-device.css';
-import '../src/styles/preview-overlay.css';
-import '../src/components/companion/sidebarDesign.css';
-import '../src/styles/project-tools.css';
+import './workspaceToolsStyles';
 
 const query = new URLSearchParams(location.search);
 document.documentElement.dataset.theme = query.get('theme') ?? 'dark';
 mockWindows('main');
 let speech: string | null = null;
+// The spoken conversation polls the live level to decide when a turn is over.
+// Here one turn is a short burst of speech and then quiet, so a conversation
+// runs at test speed without a microphone.
+let listeningSince = 0;
+let speechSince = 0;
+// Opt-in: a spoken reply that finishes by itself, the way `say` exiting ends
+// real playback. Off by default so the explicit read/stop checks still own the
+// case where a reply is left playing.
+const SPOKE_REPLY_MS = 2500;
+const SPOKE_MS = 600;
 let githubConnected = query.has('connector-sync') && !query.has('disconnected');
 let delayCatalogue = false;
 window.addEventListener('fixture-slow-catalogue',()=>{delayCatalogue=true;});
@@ -60,7 +42,31 @@ const catalogue = () => ({enabled:true,integrations:[{id:'github',account:'ellis
 window.addEventListener('fixture-safe', ((e: CustomEvent<boolean>) => useLaunchSettingsStore.getState().update('studio',{safeMode:e.detail})) as EventListener);
 Object.assign(window,{fixtureWorkspace:useWorkspaceStore});
 const files = [{path:'src/App.tsx',status:' M',previousPath:null},{path:'src/new panel.tsx',status:'??',previousPath:null},{path:'src/old.tsx',status:' D',previousPath:null}];
+// One reply carrying every shape the renderer has to handle, so a screenshot
+// of it is a screenshot of the markdown surface. Stop and the error case cut
+// into the same text, which is what makes a short reply obviously short.
+const CHAT_REPLY = `Here is what the workspace looks like right now, read in the order I would read it myself.
+Nothing below has been changed for you; this is only a summary of what is already sitting on disk.
+
+| File | Change |
+| --- | --- |
+| src/App.tsx | Modified |
+| src/old.tsx | Deleted |
+
+- Review each file before you continue.
+- Keep the untracked panel out of the commit.
+
+\`\`\`bash
+npm test
+\`\`\`
+
+The changes are ready for review. The workspace keeps your current work intact.`;
+const SPOKEN_REPLY = 'The changes are ready for review. The workspace keeps your current work intact.';
+let chatStopped = false;
 const calls: { command: string; args: unknown }[] = [];
+// Every create_terminal request, so a test can read what was actually launched.
+const spawned: any[] = [];
+Object.assign(window, { fixtureSpawned: () => spawned });
 Object.assign(window, { fixtureCalls: calls });
 Object.assign(window, { fixtureSpeech: () => speech });
 window.addEventListener('fixture-notifications', ((event: CustomEvent<number>) => {
@@ -72,6 +78,7 @@ window.addEventListener('fixture-worktree', () => useConversationTerminals.setSt
 window.addEventListener('fixture-file-change', () => { files.push({path:`src/live${files.length}.ts`,status:' M',previousPath:null}); useWorkspaceStore.setState(s=>({fsVersion:s.fsVersion+1})); });
 mockIPC(async (command, raw) => {
  const args = raw as Record<string, any>; calls.push({command,args});
+ if (command === 'shared_chat_list') return useConversationTerminals.getState().sessions;
  if (command === 'shared_chat_request' && args.method === 'conversation.status') return {workingDirectory:args.params.sessionId === 'checkout'?'/Projects/Studio-checkout':'/Projects/Studio-worktree',turnState:args.params.sessionId === 'checkout'?'running':'completed',processState:'running'};
  if (command === 'workspace_worktrees') return {repository:'ellis/studio',worktrees:[{root:'/Projects/Studio',directory:'/Projects/Studio',branch:'main',isMain:true,available:true,upstream:'origin/main'},...['checkout','navigation','collection'].map((name,i)=>({root:`/Projects/Studio-${name}`,directory:`/Projects/Studio-${name}`,branch:`vibyra/${name}`,isMain:false,available:true,upstream:i===1?'origin/vibyra/navigation':null}))]};
  if (command === 'teammate_request') {
@@ -91,29 +98,103 @@ mockIPC(async (command, raw) => {
  if (command === 'fs_list_dir') return args.path.endsWith('/src')
   ? [{name:files.length > 4 ? 'live-created.ts' : 'App.tsx',path:`${args.path}/${files.length > 4 ? 'live-created.ts' : 'App.tsx'}`,isDir:false,size:24,modifiedMs:null}]
   : [{name:'README.md',path:`${args.path}/README.md`,isDir:false,size:24,modifiedMs:null},{name:'src',path:`${args.path}/src`,isDir:true,size:0,modifiedMs:null}];
+ if (command === 'list_agents') return [
+  {id:'codex',name:'Codex',program:'codex',args:[],env:[],accent:'#a5b4fc',description:'OpenAI Codex CLI',custom:false,installed:true},
+  {id:'claude',name:'Claude Code',program:'claude',args:[],env:[],accent:'#d97757',description:'Anthropic Claude Code CLI',custom:false,installed:true},
+  {id:'aider',name:'Aider',program:'aider',args:[],env:[],accent:'#4ade80',description:'Aider',custom:false,installed:false},
+ ];
+ // Codex launches as a conversation, like the rail's; recorded with the PTY launches.
+ if (command === 'shared_chat_create') {
+  spawned.push({agentId:args.options?.provider ?? 'codex',model:args.options?.model ?? null,permissionMode:args.options?.permissionMode,reasoningEffort:args.options?.reasoningEffort,cwd:'/Projects/Studio',projectId:args.projectId});
+  return {id:`chat-${spawned.length}`,projectId:args.projectId,title:args.title,status:'running',accountId:'default',kind:args.options?.provider ?? 'codex'};
+ }
+ if (command === 'shared_chat_request' && args.method === 'turn.submit') return {status:'accepted'};
+ if (command === 'create_terminal') {
+  spawned.push(args.request);
+  return {id:100 + spawned.length,title:`${args.request.agentId} ${spawned.length}`,agentId:args.request.agentId,cwd:args.request.cwd};
+ }
+ if (command === 'terminal_snapshot') return 'npm run build\n> studio@1.0.0 build\nBuilt in 1.2s';
  if (command === 'voice_status') return {recorder:true,keyConfigured:true};
- if (command === 'voice_start') return null;
- if (command === 'voice_stop') return args.discard ? null : 'Please review these changes.';
+ if (command === 'voice_start') { listeningSince = Date.now(); return null; }
+ if (command === 'voice_level') {
+  const elapsed = Date.now() - listeningSince;
+  const speaking = !query.has('silent') && elapsed < SPOKE_MS;
+  return { recording: listeningSince > 0, metered: true, rms: speaking ? 0.3 : 0.001, seconds: elapsed / 1000 };
+ }
+ if (command === 'voice_stop') { listeningSince = 0; return args.discard ? null : 'Please review these changes.'; }
  if (command === 'speech_start') {
   if (query.has('slow-speech')) await new Promise(resolve=>setTimeout(resolve,200));
-  speech=args.id; return null;
+  speech=args.id; speechSince=Date.now(); return null;
  }
  if (command === 'speech_stop') { if (speech === args.id) speech=null; return null; }
- if (command === 'speech_active') return speech===args.id;
+ if (command === 'speech_voices') return [{id:'alloy',locale:'multilingual'},{id:'nova',locale:'multilingual'}];
+ if (command === 'speech_active') {
+  if (query.has('speech-ends') && speech === args.id && Date.now() - speechSince > SPOKE_REPLY_MS) speech = null;
+  return speech===args.id;
+ }
  if (command === 'load_memory') return '';
+ if (command === 'project_brief') return {text:'Project: Studio at /Projects/Studio\nBranch: main, up to date with origin/main.\nScripts: dev, build, test.',shape:'repository',codebase:true,chars:112,truncated:[]};
  if (command === 'search_memory_sources') return [];
- if (command === 'ai_chat') return 'The changes are ready for review. The workspace keeps your current work intact.';
+ if (command === 'ai_chat_stop') { chatStopped = true; return null; }
+ if (command === 'ai_chat') {
+  // Tauri rejects a command with a plain string, and the chat shows exactly that.
+  if (query.has('no-key')) throw 'Add your OpenAI API key in Settings › Vibyra AI, or set OPENAI_API_KEY, to use chat.';
+  // ?act=<tool>:<json> makes the first reply ask Vibyra to do something, the
+  // way a real model would. The second pass has no tools and just talks.
+  const act = query.get('act');
+  // Only the person's question is scripted into a call; the follow-up passes
+  // (which carry tools too, now) just talk, as a model with nothing left to do.
+  const last = String(args.messages?.at(-1)?.content ?? '');
+  if (act && args.tools && !/^Vibyra ran those actions/.test(last)) {
+   const [name, ...rest] = act.split(':');
+   return {text:'',stopped:false,toolCalls:[{id:'call_1',name,arguments:rest.join(':') || '{}'}]};
+  }
+  chatStopped = false;
+  // A reply asked for out loud comes back written to be heard, so the voice
+  // turns are never handed a table to read.
+  const spoken = /spoken aloud/.test(String(args.messages?.[0]?.content ?? ''));
+  const reply = spoken ? SPOKEN_REPLY : CHAT_REPLY;
+  const words = reply.match(/\S+\s*/g) ?? [];
+  // The real stream pauses before its first token, and the waiting state would
+  // otherwise only ever flash.
+  if (query.has('slow-chat')) await new Promise(resolve=>setTimeout(resolve,900));
+  let sent = '';
+  for (let at = 0; at < words.length; at++) {
+   if (chatStopped) return {text:sent.trim(),stopped:true,toolCalls:[]};
+   await new Promise(resolve=>setTimeout(resolve,query.has('slow-chat')?60:8));
+   if (query.has('chat-error') && sent.length > reply.length/3) throw 'The assistant stopped responding. Check your connection and try again.';
+   sent += words[at];
+   // The last word never crosses the channel: the returned text is the
+   // authority, and a renderer that only concatenated deltas would end short.
+   if (at < words.length - 1) args.onEvent.onmessage({text:words[at]});
+  }
+  return {text:reply,stopped:false,toolCalls:[]};
+ }
  return null;
 });
-useSettingsStore.setState({settings:{projects:[{id:'studio',name:'Studio',root:'/Projects/Studio'}],fontSize:13,fontFamily:'monospace',theme:query.get('theme')??'dark',openaiKeyConfigured:!query.has('no-key'),voiceShortcut:'F8',screenshotShortcut:'F9'} as any});
+useSettingsStore.setState({settings:{projects:[{id:'studio',name:'Studio',root:'/Projects/Studio'}],fontSize:13,fontFamily:'monospace',theme:query.get('theme')??'dark',openaiKeyConfigured:!query.has('no-key'),voiceShortcut:'F8',screenshotShortcut:'F9',talkShortcut:'F10',speechVoice:'nova'} as any});
 useProjectStore.setState({activeId:'studio',view:'project'});
 useAccountStore.setState({snapshot:{status:'signedIn',profile:{email:'test@example.test'}} as any});
 useWorkspaceStore.setState({root:'/Projects/Studio',companionOpen:true,companionTab:'chat',companionSize:'compact'});
-useChatStore.setState({threads:{studio:[{role:'user',content:'What changed in the workspace?'},{role:'assistant',content:'The chat layout is clearer, and file changes update as you work. You can review each file before continuing.'}]}});
+useChatStore.setState({threads:{studio:[{id:'seed-u',role:'user',content:'What changed in the workspace?',status:'complete',createdAt:0},{id:'seed-a',role:'assistant',content:'The chat layout is clearer, and file changes update as you work. You can review each file before continuing.',status:'complete',createdAt:0,replyTo:'seed-u'}]}});
 function ConnectorSyncFixture() {
  const {disconnect,connect}=useConnectors();
  useEffect(()=>{const action=()=>{void connect('github');};window.addEventListener('fixture-settings-connect',action);return()=>window.removeEventListener('fixture-settings-connect',action);},[connect]);
  useEffect(()=>{const action=()=>{void disconnect('github');};window.addEventListener('fixture-settings-disconnect',action);return()=>window.removeEventListener('fixture-settings-disconnect',action);},[disconnect]);
  return null;
 }
-createRoot(document.getElementById('root')!).render(<div style={{height:'100vh',display:'flex',flexDirection:'column'}}>{query.has('connector-sync') && <ConnectorSyncFixture/>}<TitleBar/><div className="product-code-shell" style={{flex:1,minHeight:0}}>{query.has("navigation") && <ProjectStrip/>}<main className="project-workspace" style={{position:'relative',flex:1}}><div style={{padding:40,color:'var(--dim)'}}>Studio workspace</div><Companion/></main></div><VoiceHud/>{query.has("error-test") && <Toasts/>}</div>);
+async function mountFixture() {
+ const workspace = query.has('real-workspace') ? await import('./aiSidebarFixture') : null;
+ workspace?.prepareAiSidebarFixture();
+ const code = <div className="product-code-shell" style={{flex:1,minHeight:0}}>
+  {query.has("navigation") && <ProjectStrip/>}
+  {workspace ? <div style={{display:'contents'}}><workspace.AiSidebarWorkspace/></div>
+    : <main className="project-workspace" style={{position:'relative',flex:1}}><div style={{padding:40,color:'var(--dim)'}}>Studio workspace</div><Companion/></main>}
+ </div>;
+ createRoot(document.getElementById('root')!).render(<div className={workspace ? 'app' : undefined} style={{height:'100vh',display:'flex',flexDirection:'column'}}>
+  {query.has('connector-sync') && <ConnectorSyncFixture/>}<TitleBar/>
+  {workspace ? <div className="shell">{code}</div> : code}
+  <VoiceHud/>{query.has("error-test") && <Toasts/>}
+ </div>);
+}
+void mountFixture();

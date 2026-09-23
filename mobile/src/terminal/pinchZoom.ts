@@ -15,7 +15,10 @@ export const MIN_STEP = 0.25;
 export const sizeForGesture = (base: number, scale: number, clamp: (size: number) => number) =>
   clamp(base * (1 + (scale - 1) * 0.6));
 
-export interface Point { x: number; y: number }
+export interface Point {
+  x: number;
+  y: number;
+}
 /** What a pinch acts on: a size to read and change, and a double tap's reset. */
 export interface ZoomTarget {
   current(): number;
@@ -29,19 +32,29 @@ export interface ZoomTarget {
 export class PinchZoom {
   private base = 0;
 
-  constructor(private readonly element: HTMLElement, private readonly target: () => ZoomTarget) {
-    element.addEventListener('gesturestart', event => {
+  constructor(
+    private readonly element: HTMLElement,
+    private readonly target: () => ZoomTarget,
+  ) {
+    element.addEventListener('gesturestart', (event) => {
       event.preventDefault();
       this.base = this.target().current();
     });
-    element.addEventListener('gesturechange', event => {
+    element.addEventListener('gesturechange', (event) => {
       event.preventDefault();
-      const { scale, clientX, clientY } = event as unknown as { scale: number; clientX?: number; clientY?: number };
+      const { scale, clientX, clientY } = event as unknown as {
+        scale: number;
+        clientX?: number;
+        clientY?: number;
+      };
       const target = this.target();
-      const next = sizeForGesture(this.base || target.current(), scale, size => target.clamp(size));
-      if (Math.abs(next - target.current()) >= MIN_STEP) target.apply(next, this.point(clientX, clientY));
+      const next = sizeForGesture(this.base || target.current(), scale, (size) =>
+        target.clamp(size),
+      );
+      if (Math.abs(next - target.current()) >= MIN_STEP)
+        target.apply(next, this.point(clientX, clientY));
     });
-    element.addEventListener('gestureend', event => event.preventDefault());
+    element.addEventListener('gestureend', (event) => event.preventDefault());
   }
 
   /** Where the gesture is, or the middle of the terminal when Safari does not say. */

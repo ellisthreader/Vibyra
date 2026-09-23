@@ -14,22 +14,40 @@ export function useVaultChat(workspace: WorkspaceModel, onOpen: () => void) {
   const { store, wallet, pending } = useVibes();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const block = projectChatBlock(workspace, wallet) ?? (pending ? 'Wait for the reply in progress.' : null);
+  const block =
+    projectChatBlock(workspace, wallet) ?? (pending ? 'Wait for the reply in progress.' : null);
   const start = async (project: Project) => {
     const host = workspace.host;
-    if (busy || block || !host || !wallet || !workspace.actions.vibesProjectRequest || !store.api.attach) return;
-    setBusy(true); setError(null);
+    if (
+      busy ||
+      block ||
+      !host ||
+      !wallet ||
+      !workspace.actions.vibesProjectRequest ||
+      !store.api.attach
+    )
+      return;
+    setBusy(true);
+    setError(null);
     try {
       await store.select(null);
       const chatId = await store.chat(project.name);
-      const result = await workspace.actions.vibesProjectRequest('vibes.bind',
-        { hostId: host.id, projectId: project.id, chatId, accountToken: wallet.accountToken });
-      if (typeof result.binding !== 'string') throw new Error('The computer did not authorize this integration.');
+      const result = await workspace.actions.vibesProjectRequest('vibes.bind', {
+        hostId: host.id,
+        projectId: project.id,
+        chatId,
+        accountToken: wallet.accountToken,
+      });
+      if (typeof result.binding !== 'string')
+        throw new Error('The computer did not authorize this integration.');
       await store.api.attach(chatId, host.id, project.id, result.binding);
       await store.refresh();
       onOpen();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'The chat could not be started.'); }
-    finally { setBusy(false); }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The chat could not be started.');
+    } finally {
+      setBusy(false);
+    }
   };
   return { block, busy, error, start };
 }

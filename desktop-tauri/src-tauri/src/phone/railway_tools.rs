@@ -42,6 +42,12 @@ impl RailwayTools {
         let engine = Arc::new(
             Engine::new_read_only(directory.join("journal"), "Railway".into(), root).ok()?,
         );
+        super::vault::abandoned_journals::sweep(
+            self.directory.join("railway"),
+            directory.clone(),
+            |name| super::vault::abandoned_journals::is_named(name, "", 32),
+            |dir| dir.join("journal"),
+        );
         let state = engine.handle("desktop", "host.state", json!({})).ok()?;
         let mut project = state["projects"][0].clone();
         project["kind"] = json!("railway");
@@ -59,13 +65,16 @@ impl RailwayTools {
         method: &str,
         params: &Value,
     ) -> Option<Result<Value, String>> {
-        let slot = self.slot.lock();
-        let slot = slot.as_ref()?;
-        if params["projectId"] != slot.project["id"] {
-            return None;
-        }
-        let engine = slot.engine.clone();
-        let account = slot.account.clone();
+        // Copied out so the slot is free again before any CLI runs: every phone
+        // request passes through here first, and a Railway read takes seconds.
+        let (engine, account) = {
+            let slot = self.slot.lock();
+            let slot = slot.as_ref()?;
+            if params["projectId"] != slot.project["id"] {
+                return None;
+            }
+            (slot.engine.clone(), slot.account.clone())
+        };
         // The engine checks binding, decision, expiry and replay before the CLI callback.
         Some(engine.external_read(device, method, params, |operation, p| {
             let binary = railway::locate().ok_or(crate::platform_text::for_computer("Railway CLI is unavailable on the Mac", "Railway CLI is unavailable on the computer"))?;

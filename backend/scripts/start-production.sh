@@ -40,7 +40,10 @@ fi
 # whole backend for as long as it runs, and everything queued behind it, a
 # sign-up included, waits until Railway's proxy gives up with a 502.
 start_web() {
-  php artisan serve --host=0.0.0.0 --port="$port" --no-reload
+  cd public
+  exec php -d upload_max_filesize=8M -d post_max_size=32M \
+    -S "0.0.0.0:$port" \
+    ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
 }
 
 # Sponsored phone chat runs as a queued job (`RunVibesTurn` on the `vibes`
@@ -48,7 +51,7 @@ start_web() {
 # never answers. `vibes` leads the list because a person is watching that one.
 start_worker() {
   php artisan queue:work \
-    --queue="${VIBYRA_QUEUE_NAMES:-vibes,deployments,default}" \
+    --queue="${VIBYRA_QUEUE_NAMES:-vibes,decisions,notifications,deployments,default}" \
     --sleep="${VIBYRA_QUEUE_SLEEP:-2}" \
     --tries="${VIBYRA_QUEUE_TRIES:-1}" \
     --timeout="${VIBYRA_QUEUE_TIMEOUT:-1200}" \
@@ -70,9 +73,9 @@ cleanup() {
 }
 
 case "$role" in
-  web) exec php artisan serve --host=0.0.0.0 --port="$port" --no-reload ;;
+  web) start_web ;;
   worker) exec php artisan queue:work \
-      --queue="${VIBYRA_QUEUE_NAMES:-vibes,deployments,default}" \
+      --queue="${VIBYRA_QUEUE_NAMES:-vibes,decisions,notifications,deployments,default}" \
       --sleep="${VIBYRA_QUEUE_SLEEP:-2}" \
       --tries="${VIBYRA_QUEUE_TRIES:-1}" \
       --timeout="${VIBYRA_QUEUE_TIMEOUT:-1200}" \

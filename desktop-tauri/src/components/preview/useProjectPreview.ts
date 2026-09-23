@@ -35,7 +35,7 @@ function errorStatus(targetId: string, error: unknown): PreviewStatus {
   };
 }
 
-export function useProjectPreview(projectId: string, root: string, projectRoot = root) {
+export function useProjectPreview(projectId: string, root: string, projectRoot = root, active = true) {
   const [inspection, setInspection] = useState<PreviewInspection | null>(null);
   const [targetId, setTargetId] = useState("");
   const [statuses, setStatuses] = useState<Record<string, PreviewStatus>>({});
@@ -47,7 +47,8 @@ export function useProjectPreview(projectId: string, root: string, projectRoot =
 
   const rememberStatus = useCallback((next: PreviewStatus) => {
     notifyPreviewStatus(next);
-    setStatuses((current) => ({ ...current, [next.targetId]: next }));
+    // Polled every couple of seconds; an identical status keeps the old map so the preview does not re-render.
+    setStatuses((current) => JSON.stringify(current[next.targetId]) === JSON.stringify(next) ? current : { ...current, [next.targetId]: next });
   }, []);
 
   const hydrateStatuses = useCallback((targets: PreviewTarget[]) => {
@@ -137,7 +138,7 @@ export function useProjectPreview(projectId: string, root: string, projectRoot =
     };
   }, [inspect]);
 
-  usePreviewStatusPolling(root, statuses, targetRequests, rememberStatus);
+  usePreviewStatusPolling(root, statuses, targetRequests, rememberStatus, active);
 
   const start = useCallback(async () => {
     if (!targetId) return;

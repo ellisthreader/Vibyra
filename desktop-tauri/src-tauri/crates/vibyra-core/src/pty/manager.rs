@@ -42,12 +42,12 @@ impl Default for FlushConfig {
 }
 
 pub struct PtyManager {
-    sessions: Arc<RwLock<HashMap<SessionId, Arc<Session>>>>,
+    pub(super) sessions: Arc<RwLock<HashMap<SessionId, Arc<Session>>>>,
     pub(super) sink: Arc<dyn OutputSink>,
     config: FlushConfig,
     next_id: AtomicU64,
-    shutdown: Arc<AtomicBool>,
-    flush_tx: SyncSender<()>,
+    pub(super) shutdown: Arc<AtomicBool>,
+    pub(super) flush_tx: SyncSender<()>,
 }
 
 impl PtyManager {
@@ -140,6 +140,13 @@ impl PtyManager {
         Ok(self.session_ref(id)?.output.lock().snapshot())
     }
 
+    /// At most the last `max` bytes of scrollback. Callers that keep only the
+    /// tail — a saved session keeps 256 KiB — used to copy the whole 4 MiB
+    /// ring under the session lock just to throw most of it away.
+    pub fn snapshot_tail(&self, id: SessionId, max: usize) -> CoreResult<String> {
+        Ok(self.session_ref(id)?.output.lock().snapshot_tail(max))
+    }
+
     pub fn process_id(&self, id: SessionId) -> CoreResult<Option<u32>> {
         Ok(self.session_ref(id)?.process_id())
     }
@@ -163,14 +170,6 @@ impl PtyManager {
             self.sessions.read().values().map(|s| describe(s)).collect();
         infos.sort_by_key(|info| info.id);
         infos
-    }
-
-    pub fn shutdown(&self) {
-        self.shutdown.store(true, Ordering::SeqCst);
-        let _ = self.flush_tx.try_send(());
-        for session in self.sessions.read().values() {
-            session.kill();
-        }
     }
 }
 

@@ -43,6 +43,7 @@ class StripeConnector implements Connector
         return ['stripe_create_customer'];
     }
 
+    public function reads(): array { return [...ReadTools::NAMES, 'stripe_balance', 'stripe_recent_payments', 'stripe_find_customer']; }
     public function validate(string $operation, array $arguments): array
     {
         if (in_array($operation, ReadTools::NAMES, true)) return ReadTools::validate($operation, $arguments);
@@ -163,19 +164,16 @@ class StripeConnector implements Connector
     {
         return Prompt::text();
     }
-
     private function amounts(array $entries): array
     {
         return array_map(fn ($entry) => ['amount' => (int) ($entry['amount'] ?? 0),
             'formatted' => Money::format((int) ($entry['amount'] ?? 0), $entry['currency'] ?? ''),
             'currency' => $entry['currency'] ?? null], array_slice($entries, 0, 20));
     }
-
     private function request(string $credential)
     {
         return Http::withToken($credential)->acceptJson()->timeout((int) config('chat_connectors.timeout_seconds', 12));
     }
-
     /** The decoded body, or null when Stripe refused or could not be reached. */
     private function get(string $credential, string $path, array $query = []): ?array
     {

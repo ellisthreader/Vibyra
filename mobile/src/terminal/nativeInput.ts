@@ -5,7 +5,9 @@ export const INPUT_ANCHOR = '\u200b';
 
 /** Translate native editing into terminal keys; the computer owns the echo. */
 export function nativeInputDelta(previous: string, next: string): string {
-  const before = Array.from(plainPunctuation(previous.startsWith(INPUT_ANCHOR) ? previous.slice(1) : previous));
+  const before = Array.from(
+    plainPunctuation(previous.startsWith(INPUT_ANCHOR) ? previous.slice(1) : previous),
+  );
   const after = Array.from(plainPunctuation(next.startsWith(INPUT_ANCHOR) ? next.slice(1) : next));
   if (!next && previous === INPUT_ANCHOR) return '\x7f';
   let same = 0;

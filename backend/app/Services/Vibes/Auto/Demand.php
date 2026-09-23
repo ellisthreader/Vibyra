@@ -26,6 +26,12 @@ final class Demand
         public readonly array $specialty,
     ) {}
 
+    public function withSemantic(float $capability, float $deliberation, string $specialty): self
+    {
+        return new self(max($this->capability, $capability), max($this->deliberation, $deliberation),
+            $this->breadth, [...$this->specialty, $specialty => max($this->affinity($specialty), 0.8)]);
+    }
+
     public static function from(Signals $s): self
     {
         // How much there is to do, as opposed to how hard any of it is. The weights

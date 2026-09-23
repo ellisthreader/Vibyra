@@ -1,4 +1,5 @@
 import { getVersion } from "@tauri-apps/api/app";
+import macosConfig from "../../src-tauri/tauri.macos.conf.json";
 
 import { rendererPolicy } from "../ipc/render";
 import { useAccountStore } from "../state/accountStore";
@@ -8,6 +9,8 @@ import { useSettingsStore } from "../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { areaFor } from "./reportDraft";
+import { reportPlatform } from "./reportPlatform";
+import { reportVersion } from "./reportVersion";
 import { isSuspendedId } from "./sessionRestore";
 
 // Everything Vibyra can answer on the user's behalf, so a report arrives
@@ -41,12 +44,6 @@ export interface ReportSurroundings {
   paneName: string | null;
 }
 
-function platformLabel(): string {
-  const agent = navigator.userAgent;
-  const system = /\(([^)]+)\)/.exec(agent)?.[1] ?? navigator.platform ?? "unknown";
-  return system.split(";")[0]?.trim() || "unknown";
-}
-
 /** Renderer mode is the first question a "looks wrong" report raises, and the
  * user has no way to answer it. */
 async function rendererLabel(): Promise<string | null> {
@@ -71,10 +68,12 @@ export async function gatherSurroundings(): Promise<ReportSurroundings> {
   const active = productMode === "work" ? projects.find((entry) => entry.id === project.activeId) ?? null : null;
   // A suspended pane has no live session, so there is no output to offer.
   const sessionId = focused && !isSuspendedId(focused.id) ? focused.id : null;
-  const [appVersion, renderer] = await Promise.all([
+  const [version, renderer] = await Promise.all([
     getVersion().catch(() => "unknown"),
     rendererLabel(),
   ]);
+  const platform = reportPlatform(navigator.userAgent, navigator.platform);
+  const appVersion = reportVersion(version, platform, macosConfig.bundle.macOS.bundleVersion);
 
   return {
     sessionId,
@@ -89,7 +88,7 @@ export async function gatherSurroundings(): Promise<ReportSurroundings> {
     }),
     context: {
       appVersion,
-      platform: platformLabel(),
+      platform,
       renderer,
       view: productMode === "agent" ? "teammates" : project.view === "project" ? (workspace.companionOpen && workspace.companionTab === "preview" ? "preview" : workspace.projectMode) : "home",
       project: active?.name ?? null,

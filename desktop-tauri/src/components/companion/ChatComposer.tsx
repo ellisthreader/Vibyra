@@ -1,18 +1,10 @@
-import { useEffect, useRef } from "react";
-
 import { SendIcon } from "../common/Icons";
-
 import { ChatVoiceStart } from "./ChatVoiceStart";
+import { useComposerSize } from './useComposerSize';
 
-/** The composer. Send becomes Stop while a reply is in flight — the store
- * refuses a second question anyway, so a disabled Send would just be a button
- * that does nothing where the useful one belongs.
- *
- * Two voice controls, because they do different things: dictation writes into
- * the draft you then edit, and the conversation answers out loud. They read as
- * one icon twice, so `chatDesign.css` tints the conversation one — the plain
- * microphone puts words in the box, the cobalt one starts a conversation. */
+/** One voice entry point; Send becomes Stop while a reply is in flight. */
 export function ChatComposer({
+  active,
   draft,
   setDraft,
   serviceConfigured,
@@ -21,6 +13,7 @@ export function ChatComposer({
   onSubmit,
   onStop,
 }: {
+  active: boolean;
   draft: string;
   setDraft: (text: string) => void;
   serviceConfigured: boolean;
@@ -31,18 +24,11 @@ export function ChatComposer({
   onSubmit: () => void;
   onStop: () => void;
 }) {
-  const field = useRef<HTMLTextAreaElement>(null);
-  // A sent or cleared draft gives the box its one row back, whichever of the
-  // composer, a starter or the store emptied it.
-  useEffect(() => {
-    if (!draft && field.current) field.current.style.height = "";
-  }, [draft]);
+  const field = useComposerSize(draft, active);
 
   const hint = elsewhere
     ? `A reply is still streaming in ${elsewhere}`
-    : serviceConfigured
-      ? "Shift + Enter for a new line"
-      : "Needs an OpenAI key";
+    : sending ? 'Vibyra is working…' : 'Enter to send · Shift + Enter for a new line';
 
   return (
     <div className="chat-input">
@@ -55,26 +41,21 @@ export function ChatComposer({
         aria-label="Message Vibyra"
         spellCheck={false}
         onChange={(event) => setDraft(event.target.value)}
-        onInput={(event) => {
-          const box = event.currentTarget;
-          box.style.height = "auto";
-          box.style.height = `${Math.min(box.scrollHeight, 120)}px`;
-        }}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
             event.preventDefault();
-            onSubmit();
+            if (!sending && !elsewhere) onSubmit();
           }
         }}
       />
       <div className="chat-composer-tools">
-        <span title="Enter to send · Shift + Enter for a new line">{hint}</span>
         <ChatVoiceStart disabled={!serviceConfigured} />
+        <span className="chat-composer-hint" title={hint}>{elsewhere ? `Replying in ${elsewhere}` : sending ? 'Working…' : '↵ Send'}</span>
         {sending || elsewhere ? (
           <button
             className="chat-input__send chat-input__send--stop"
             aria-label="Stop the reply"
-            title="Stop"
+            title={elsewhere ? `Stop the reply in ${elsewhere}` : 'Stop the reply'}
             onClick={onStop}
           >
             <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">

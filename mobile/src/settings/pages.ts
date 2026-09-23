@@ -1,3 +1,5 @@
+import { NotificationsPage } from './pages/NotificationsPage';
+import { UpdatesPage } from './pages/UpdatesPage';
 import type { ComponentType } from 'react';
 import type { AccountMode } from '../onboarding/AccountForm';
 import type { WorkspaceModel } from '../ui/types';
@@ -11,9 +13,23 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SecurityPage } from './pages/SecurityPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { TwoFactorPage } from './pages/TwoFactorPage';
+import { ReportPage } from './pages/ReportPage';
 
 /** Every page the sheet can open over its home list. */
-export type SettingsPageId = 'advanced' | 'profile' | 'security' | 'twoFactor' | 'delete' | 'personality' | 'memory' | 'summary' | 'vibes' | 'subscription';
+export type SettingsPageId =
+  | 'notifications'
+  | 'updates'
+  | 'advanced'
+  | 'profile'
+  | 'security'
+  | 'twoFactor'
+  | 'delete'
+  | 'personality'
+  | 'memory'
+  | 'summary'
+  | 'vibes'
+  | 'subscription'
+  | 'report';
 
 export interface SettingsNav {
   /** Opens a page over the current one. A page that is not registered is never opened. */
@@ -27,11 +43,22 @@ export interface SettingsNav {
 }
 /** Where a row leads out of the sheet. Call them through `nav.close(routes.x)`, so the
  *  sheet closes as the place behind it changes. */
-export interface SettingsRoutes { plugins(): void;
+export interface SettingsRoutes {
+  plugins(): void;
   /** `from` is the page to return to when the upgrade screen closes. */
-  wallet(from?: SettingsPageId): void; remote(): void; connect(): void }
-export interface SettingsPageProps { workspace: WorkspaceModel; nav: SettingsNav; routes: SettingsRoutes }
-export interface SettingsPage { title: string; Page: ComponentType<SettingsPageProps> }
+  wallet(from?: SettingsPageId): void;
+  remote(): void;
+  connect(): void;
+}
+export interface SettingsPageProps {
+  workspace: WorkspaceModel;
+  nav: SettingsNav;
+  routes: SettingsRoutes;
+}
+export interface SettingsPage {
+  title: string;
+  Page: ComponentType<SettingsPageProps>;
+}
 
 /**
  * Where a page joins the sheet: one entry here, and one row on the home list that
@@ -41,6 +68,9 @@ export interface SettingsPage { title: string; Page: ComponentType<SettingsPageP
  * `profile: { title: 'Profile', Page: ProfilePage }`.
  */
 export const settingsPages: Partial<Record<SettingsPageId, SettingsPage>> = {
+  notifications: { title: 'Notifications', Page: NotificationsPage },
+  updates: { title: 'Updates', Page: UpdatesPage },
+  report: { title: 'Report a problem', Page: ReportPage },
   advanced: { title: 'Advanced', Page: AdvancedPage },
   vibes: { title: 'Vibyra tokens', Page: VibesSettingsPage },
   personality: { title: 'Personality', Page: PersonalityPage },

@@ -58,6 +58,7 @@ fn grab_pointer_monitor(path: &Path) -> Result<RgbaImage, String> {
 pub fn capture_screen_image(
     window: &tauri::Window,
     hide_window: bool,
+    _selection: bool,
 ) -> Result<RgbaImage, String> {
     if hide_window {
         window.hide().map_err(|error| error.to_string())?;

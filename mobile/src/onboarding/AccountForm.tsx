@@ -3,14 +3,14 @@ import { Keyboard, Linking, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useTheme } from '../theme';
 import { Button, Hint, Icon } from '../ui/primitives';
 import { useAction } from '../ui/useAction';
-import type { WorkspaceModel } from '../ui/types';
+import type { TwoFactorPrompt, WorkspaceModel } from '../ui/types';
 import type { AccountProvider } from '../account/accountApi';
-import type { TwoFactorPrompt } from '../ui/types';
 import { AccountCodeStep } from './AccountCodeStep';
 import { links } from '../settings/links';
 import { ProviderButtons } from './ProviderButtons';
 import { AccountEmailFields } from './AccountEmailFields';
 import { AccountSignedIn } from './AccountSignedIn';
+import { font } from '../ui/font';
 
 export type AccountMode = 'signup' | 'login';
 export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary, continueLabel = 'Continue', onFocusPassword }: {
@@ -69,17 +69,17 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
     if (completed && !controller.signal.aborted) { setPassword(''); onDone(); }
   };
   if (challenge && !workspace.account) return <View style={s.form}>
-    {reason && <Hint>{reason}</Hint>}
+    {reason && <Text style={[s.reason, { color: colors.muted }]}>{reason}</Text>}
     <AccountCodeStep email={email.trim().toLowerCase()} busy={busy} error={error}
       onSubmit={code => void answer(code)} onBack={leaveCode} />
   </View>;
   if (workspace.account) return <View style={s.form}>
-    {reason && <Hint>{reason}</Hint>}
+    {reason && <Text style={[s.reason, { color: colors.muted }]}>{reason}</Text>}
     <AccountSignedIn account={workspace.account} />
     <Button title={continueLabel} onPress={onDone} />
   </View>;
   return <View style={s.form}>
-    {reason && <Hint>{reason}</Hint>}
+    {reason && <Text style={[s.reason, { color: colors.muted }]}>{reason}</Text>}
     <ProviderButtons busy={busy} active={provider} onPress={selected => void social(selected)} />
     {provider && <View style={s.pending}>
       <Hint>Finish signing in with {provider === 'apple' ? 'Apple' : 'Google'}.</Hint>
@@ -94,7 +94,7 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
     </View>
     <AccountEmailFields key={mode} mode={mode} email={email} password={password} onEmail={setEmail} onPassword={setPassword}
       busy={busy} onSubmit={() => void submit()} onPasswordFocus={onFocusPassword} />
-    {error && <View accessibilityRole="alert" style={[s.error, { backgroundColor: colors.errorSoft }]}>
+    {error && <View accessibilityRole="alert" style={[s.error, { backgroundColor: colors.errorSoft, borderColor: colors.error + '40' }]}>
       <Icon name="alert-circle-outline" size={19} color={colors.error} /><View style={s.errorText}><Hint error>{error}</Hint></View>
     </View>}
     <Button title={mode === 'signup' ? 'Create account' : 'Log in'} busy={busy && !provider} disabled={busy || !email.trim() || !password}
@@ -115,14 +115,15 @@ export function AccountForm({ workspace, mode, onMode, onDone, reason, secondary
   </View>;
 }
 const s = StyleSheet.create({
-  form: { gap: 16 }, separator: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 2 },
-  rule: { height: StyleSheet.hairlineWidth, flex: 1 }, separatorText: { fontSize: 12 },
+  form: { gap: 16 }, reason: { ...font.subhead, fontSize: 15, lineHeight: 21, textAlign: 'center', marginTop: -8, marginBottom: 2 },
+  separator: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 2 },
+  rule: { height: StyleSheet.hairlineWidth, flex: 1 }, separatorText: { ...font.caption },
   pending: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' },
   cancel: { minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' },
-  error: { flexDirection: 'row', gap: 8, padding: 12, borderRadius: 12, alignItems: 'flex-start' }, errorText: { flex: 1 },
+  error: { flexDirection: 'row', gap: 9, paddingVertical: 11, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: 'flex-start' }, errorText: { flex: 1 },
   switch: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: 5, minHeight: 44, marginTop: -6 },
-  switchText: { fontSize: 14 }, switchLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 3 },
-  switchLinkText: { fontSize: 14, fontWeight: '600' },
-  legal: { fontSize: 12, lineHeight: 18, textAlign: 'center', maxWidth: 300, alignSelf: 'center', marginTop: -6 },
+  switchText: { fontSize: 14, letterSpacing: -0.1 }, switchLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 3 },
+  switchLinkText: { fontSize: 14, fontWeight: '600', letterSpacing: -0.1 },
+  legal: { ...font.caption, fontWeight: '400', lineHeight: 17, textAlign: 'center', maxWidth: 300, alignSelf: 'center', marginTop: -8 },
   legalLink: { textDecorationLine: 'underline' },
 });

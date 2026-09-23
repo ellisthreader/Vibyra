@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use vibyra_host::{EmbeddedHost, RelayHandle};
 
 use super::workspace::{DesktopPane, DesktopProject};
+use std::path::PathBuf;
 
 impl PhoneConnection {
     pub fn status(&self) -> Value {
@@ -29,6 +30,16 @@ impl PhoneConnection {
         status["address"] = json!(self.address);
         status["error"] = json!(self.error);
         status["vault"] = json!({"path": self.vault.path()});
+        status["previewAutoAvailable"] = json!(self.preview_service.is_some());
+        if let (Some(preview), Some(devices)) =
+            (&self.preview_service, status["devices"].as_array_mut())
+        {
+            for device in devices {
+                if let Some(id) = device["id"].as_str() {
+                    device["previewAuto"] = json!(preview.automatic_allowed(id));
+                }
+            }
+        }
         status
     }
     /// The window says what it is showing; the phone is then served the same
@@ -44,6 +55,9 @@ impl PhoneConnection {
     }
     pub fn address(&self) -> &str {
         &self.address
+    }
+    pub fn project_root(&self, id: &str) -> Option<PathBuf> {
+        self.workspace.read().project_root(id)
     }
     pub fn host(&self) -> Result<&EmbeddedHost, String> {
         self.host.as_ref().ok_or_else(|| {

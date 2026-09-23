@@ -1,37 +1,16 @@
-//! Authenticated report delivery through the already deployed account service.
-
 use std::time::Duration;
 
 use reqwest::multipart::{Form, Part};
-use serde_json::{json, Value};
+use serde_json::Value;
 
-use crate::account_api::{self, Endpoint};
 use crate::discord::Attachment;
 use crate::report::Report;
 
-pub async fn ready(token: &str) -> Result<bool, String> {
-    ready_at(&account_api::base_url(), token).await
-}
-
-async fn ready_at(base: &str, token: &str) -> Result<bool, String> {
-    let path = Endpoint::ReportReady.path().expect("fixed report path");
-    let response = reqwest::Client::new()
-        .get(format!("{base}{path}"))
-        .bearer_auth(token)
-        .header("Accept", "application/json")
-        .timeout(Duration::from_secs(12))
-        .send()
-        .await
-        .map_err(|_| "Could not check reporting right now.".to_string())?;
-    if !response.status().is_success() {
-        return Err("Could not check reporting right now.".into());
-    }
-    response
-        .json::<Value>()
-        .await
-        .ok()
-        .and_then(|body| body.get("ready").and_then(Value::as_bool))
-        .ok_or_else(|| "Could not check reporting right now.".into())
+fn file_part(file: Attachment) -> Result<Part, String> {
+    Part::bytes(file.bytes)
+        .file_name(file.file_name)
+        .mime_str(file.mime)
+        .map_err(|_| "Vibyra could not prepare an attachment".into())
 }
 
 pub async fn deliver(
@@ -39,97 +18,62 @@ pub async fn deliver(
     report: &Report,
     screenshot: Option<Vec<u8>>,
     images: Vec<Attachment>,
-    tail: Option<String>,
+    terminal_tail: Option<String>,
 ) -> Result<String, String> {
-    deliver_at(
-        &account_api::base_url(),
-        token,
-        report,
-        screenshot,
-        images,
-        tail,
-    )
-    .await
-}
-
-async fn deliver_at(
-    base: &str,
-    token: &str,
-    report: &Report,
-    screenshot: Option<Vec<u8>>,
-    images: Vec<Attachment>,
-    tail: Option<String>,
-) -> Result<String, String> {
-    // Local paths, the screenshot data URL and session id never enter JSON.
-    let mut form = Form::new().text("report", metadata(report).to_string());
-    if let Some(tail) = tail {
-        form = form.text("terminalTail", tail);
-    }
+    let mut metadata = report.clone();
+    metadata.screenshot = None;
+    metadata.image_paths.clear();
+    metadata.session_id = None;
+    let json =
+        serde_json::to_string(&metadata).map_err(|_| "Vibyra could not prepare this report")?;
+    let mut form = Form::new()
+        .text("report", json)
+        .text("terminalTail", terminal_tail.unwrap_or_default());
     if let Some(bytes) = screenshot {
         form = form.part(
             "screenshot",
-            Part::bytes(bytes)
-                .file_name("screenshot.png")
-                .mime_str("image/png")
-                .map_err(|_| "Invalid screenshot type")?,
+            file_part(Attachment {
+                file_name: "screenshot.png".into(),
+                mime: "image/png",
+                bytes,
+            })?,
         );
     }
     for image in images {
-        form = form.part(
-            "images[]",
-            Part::bytes(image.bytes)
-                .file_name(image.file_name)
-                .mime_str(image.mime)
-                .map_err(|_| "Invalid image type")?,
-        );
+        form = form.part("images[]", file_part(image)?);
     }
-    let response = reqwest::Client::new()
-        .post(format!("{base}/api/reports"))
+    let url = format!("{}/api/reports", crate::account_api::base_url());
+    let response = crate::http_client::shared()
+        .post(url)
         .bearer_auth(token)
         .header("Accept", "application/json")
-        .timeout(Duration::from_secs(45))
         .multipart(form)
+        .timeout(Duration::from_secs(35))
         .send()
         .await
         .map_err(|error| {
             if error.is_timeout() {
-                "The report timed out. Check before retrying to avoid a duplicate.".to_string()
+                "The report timed out. Check Discord before retrying to avoid a duplicate."
+                    .to_string()
             } else {
                 "The report could not reach Vibyra. Check your connection before retrying."
                     .to_string()
             }
         })?;
-    let status = response.status().as_u16();
-    let value = response.json::<Value>().await.unwrap_or_default();
-    if status == 200 {
-        return value
-            .get("id")
+    let status = response.status();
+    let body: Value = response.json().await.unwrap_or(Value::Null);
+    if !status.is_success() {
+        return Err(body
+            .get("error")
             .and_then(Value::as_str)
-            .map(str::to_owned)
-            .ok_or_else(|| {
-                "The report was sent but its reference was lost. Do not resend before checking."
-                    .to_string()
-            });
+            .unwrap_or("Vibyra could not deliver this report. Try again shortly.")
+            .to_owned());
     }
-    Err(account_api::error_detail(&value, status))
+    body.get("id")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| {
+            "The report was sent but its reference was lost. Do not resend before checking Discord."
+                .into()
+        })
 }
-
-pub(crate) fn metadata(report: &Report) -> Value {
-    json!({
-        "kind": report.kind,
-        "severity": report.severity,
-        "summary": report.summary,
-        "details": report.details,
-        "error": report.error,
-        "steps": report.steps,
-        "expected": report.expected,
-        "area": report.area,
-        "contact": report.contact,
-        "context": report.context,
-        "includeDiagnostics": report.include_diagnostics,
-    })
-}
-
-#[cfg(test)]
-#[path = "report_relay_tests.rs"]
-mod tests;

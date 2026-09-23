@@ -1,0 +1,62 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  icon: {
+    width: 44,
+    minHeight: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  button: {
+    minHeight: 52,
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: -0.25,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  hint: { fontSize: 14, lineHeight: 20, letterSpacing: -0.1 },
+  section: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: -0.05,
+    marginTop: 26,
+    marginBottom: 8,
+  },
+  empty: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24, gap: 10 },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 21,
+    lineHeight: 27,
+    fontWeight: '600',
+    textAlign: 'center',
+    letterSpacing: -0.4,
+  },
+  emptyDetail: {
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: -0.2,
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+  emptyAction: { alignSelf: 'stretch', marginTop: 14 },
+});

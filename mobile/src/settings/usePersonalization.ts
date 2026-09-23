@@ -14,8 +14,17 @@ function storeFor(api: PreferencesApi, identity: string) {
   return store;
 }
 const idle = () => () => {};
-const nothing: PersonalizationState = { status: 'signedOut', preferences: null, memories: null, limit: 50,
-  problem: null, error: null, busy: null, savedAt: null, savedField: null };
+const nothing: PersonalizationState = {
+  status: 'signedOut',
+  preferences: null,
+  memories: null,
+  limit: 50,
+  problem: null,
+  error: null,
+  busy: null,
+  savedAt: null,
+  savedField: null,
+};
 const none = () => nothing;
 
 /**
@@ -27,8 +36,16 @@ const none = () => nothing;
  */
 export function usePersonalization(workspace: WorkspaceModel, load = false) {
   const api = workspace.preferences;
-  const store = api ? storeFor(api, workspace.demo ? 'sample' : workspace.account?.email ?? 'guest') : null;
-  const state = useSyncExternalStore(store ? store.subscribe : idle, store ? store.snapshot : none, store ? store.snapshot : none);
-  useEffect(() => { if (store && (load || store.state.status === 'idle')) void store.load(); }, [store, load]);
+  const store = api
+    ? storeFor(api, workspace.demo ? 'sample' : (workspace.account?.email ?? 'guest'))
+    : null;
+  const state = useSyncExternalStore(
+    store ? store.subscribe : idle,
+    store ? store.snapshot : none,
+    store ? store.snapshot : none,
+  );
+  useEffect(() => {
+    if (store && (load || store.state.status === 'idle')) void store.load();
+  }, [store, load]);
   return { store, state, rows: personalizationRows(state) };
 }

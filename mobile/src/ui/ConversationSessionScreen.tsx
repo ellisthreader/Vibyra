@@ -1,4 +1,5 @@
 import { conversationViewMemory } from '../conversation/viewMemory';
+import { LivePreviewCard } from '../preview/LivePreviewCard';
 import { ConversationAttachButton } from '../conversation/ConversationAttachButton';
 import type { ConversationAttachment } from '../conversation/attachmentUpload';
 import { ConversationInspectorSheet } from '../conversation/ConversationInspectorSheet';
@@ -27,13 +28,14 @@ import { useAction } from './useAction';
 import { useDraft } from './useDraft';
 import type { Session, WorkspaceModel } from './types';
 
-export function ConversationSessionScreen({ session, workspace, onPhoneChat, onUpgrade }: {
-  session: Session; workspace: WorkspaceModel; onPhoneChat?(model: string): Promise<void>; onUpgrade?(): void;
+export function ConversationSessionScreen({ session, workspace, options, onCloseOptions, onPreview, previewProjectId, onPhoneChat, onUpgrade }: {
+  session: Session; workspace: WorkspaceModel; options: boolean; onCloseOptions(): void;
+  onPreview?: () => void; previewProjectId?: string;
+  onPhoneChat?(model: string): Promise<void>; onUpgrade?(): void;
 }) {
   const { colors } = useTheme();
   const offset = useKeyboardOffset();
   const [review, setReview] = useState<'files' | 'changes' | null>(null);
-  const [details, setDetails] = useState(false);
   const [inspector, setInspector] = useState<{ mode: InspectorMode; item?: AgentItem } | null>(null);
   const memory = conversationViewMemory(`${workspace.host?.id}:${session.id}`);
   const [attachments, updateAttachments] = useState<ConversationAttachment[]>(memory.attachments);
@@ -43,7 +45,7 @@ export function ConversationSessionScreen({ session, workspace, onPhoneChat, onU
   const [modelPicker, setModelPicker] = useState(false);
   const modelSettings = useConversationModels(workspace);
   const [draftEffort, setDraftEffort] = useState(asEffort(workspace.conversation?.settings?.effort));
-  useEffect(() => { setDraftEffort(asEffort(workspace.conversation?.settings?.effort)); }, [workspace.conversation?.settings?.revision]);
+  useEffect(() => { setDraftEffort(asEffort(workspace.conversation?.settings?.effort)); }, [workspace.conversation?.settings?.revision, workspace.conversation?.settings?.effort]);
   const openInspector = (mode: InspectorMode, item?: AgentItem) => { Keyboard.dismiss(); setInspector({ mode, item }); };
   const [draft, setDraft, draftError] = useDraft(`${workspace.host?.id}:${session.projectId}:${session.id}`, true);
   const { busy, error, run } = useAction();
@@ -61,7 +63,7 @@ export function ConversationSessionScreen({ session, workspace, onPhoneChat, onU
     ? 'waiting' : working ? 'working' : 'idle';
   const stopSession = () => confirmAction('Stop this session?', 'The agent on your computer will stop. Saved files remain.',
     'Stop session', () => { void run(() => workspace.actions.stopSession(session.id)).then(stopped => {
-      if (stopped) setDetails(false);
+      if (stopped) onCloseOptions();
     }); });
   const send = async (text: string, asText = false) => {
     if (!asText && text.trimStart().startsWith('/')) {
@@ -106,28 +108,35 @@ export function ConversationSessionScreen({ session, workspace, onPhoneChat, onU
         onDecision={(id, decision) => workspace.actions.resolveDecision!(id, decision)}
         onAnswer={(id, answers) => workspace.actions.answerQuestion!(id, answers)} onInspect={item => openInspector(item.category === 'fileChange' ? 'diff' : 'context', item)} onReview={connected && changedFiles(conversation.items, conversation.turnId).length ? () => openInspector('diff') : undefined} />}
     {commandError && <View style={s.notice}><Hint>{commandError}</Hint><Pressable accessibilityRole="button" style={s.inlineAction} disabled={!ready || working} onPress={() => void run(async () => { await send(draft, true); setDraft(''); })}><Text style={{ color: colors.accent }}>Send as text</Text></Pressable></View>}
-    <VibesComposer text={draft} onChange={value => { setDraft(value); setCommandError(''); }}
-      modelPicker={modelPicker ? <ConversationPicker onPhoneChat={onPhoneChat} onUpgrade={onUpgrade} computer={{ models: modelSettings.models, selected: conversation?.settings?.model,
-        provider, unavailable: modelSettings.unavailable, error: modelSettings.error, saving: modelSettings.saving, onRetry: modelSettings.retry, onClose: () => setModelPicker(false),
-        onSelect: model => modelSettings.apply(model.model, model.defaultReasoningEffort) }} /> : undefined}
-      model={modelSettings.model?.displayName ?? conversation?.settings?.model ?? agent.name} modelId={`${agent.vendor}/${conversation?.settings?.model ?? provider}`}
-      onModel={() => setModelPicker(true)} onAdd={() => {}} attachments={attachments.map(item => ({ key: item.id, id: item.id, name: item.name, uri: '', kind: 'text', status: 'ready' }))}
-      onRemoveAttachment={id => setAttachments(attachments.filter(item => item.id !== id))}
-      addControl={<ConversationAttachButton compact workspace={workspace} attachments={attachments} onChange={setAttachments} disabled={!ready || busy} />}
-      effort={{ ladder: modelSettings.ladder, value: draftEffort, automatic: false, open: commandPanel === 'effort', onClose: () => setCommandPanel(null),
-        onChange: setDraftEffort, onCommit: () => { if (modelSettings.model && draftEffort && draftEffort !== conversation?.settings?.effort) void modelSettings.apply(modelSettings.model.model, draftEffort); }, onChooseModel: () => setModelPicker(true) }}
-      notice={modelSettings.error || (modelSettings.saving ? 'Applying settings…' : undefined)} inputLabel="Message computer agent" maxLength={32000}
-      placeholder={working ? 'Message…' : 'Ask anything, or / for commands…'} quietGeneration
-      busy={working} disabled={busy || modelSettings.saving || !draft.trim() || (draft.trimStart().startsWith('/') ? !connected : !ready)}
-      onStop={() => { if (ready && !busy) void run(() => workspace.actions.interruptTurn!()); }}
-      onSend={() => { void run(async () => { if (await send(draft)) setDraft(''); }); }}
+    {onPreview && previewProjectId && <LivePreviewCard workspace={workspace} projectId={previewProjectId} onPress={onPreview} />}
+    <VibesComposer
+      input={{ text: draft, onChange: value => { setDraft(value); setCommandError(''); },
+        label: 'Message computer agent', maxLength: 32000,
+        placeholder: working ? 'Message…' : 'Ask anything, or / for commands…' }}
+      model={{ label: modelSettings.model?.displayName ?? conversation?.settings?.model ?? agent.name,
+        id: `${agent.vendor}/${conversation?.settings?.model ?? provider}`, onOpen: () => setModelPicker(true),
+        picker: modelPicker ? <ConversationPicker onPhoneChat={onPhoneChat} onUpgrade={onUpgrade} computer={{ models: modelSettings.models, selected: conversation?.settings?.model,
+          provider, unavailable: modelSettings.unavailable, error: modelSettings.error, saving: modelSettings.saving, onRetry: modelSettings.retry, onClose: () => setModelPicker(false),
+          onSelect: model => modelSettings.apply(model.model, model.defaultReasoningEffort) }} /> : undefined,
+        effort: { ladder: modelSettings.ladder, value: draftEffort, automatic: false, open: commandPanel === 'effort', onClose: () => setCommandPanel(null),
+          onChange: setDraftEffort, onCommit: () => { if (modelSettings.model && draftEffort && draftEffort !== conversation?.settings?.effort) void modelSettings.apply(modelSettings.model.model, draftEffort); },
+          onChooseModel: () => setModelPicker(true) } }}
+      attachments={{ items: attachments.map(item => ({ key: item.id, id: item.id, name: item.name, uri: '', kind: 'text', status: 'ready' })),
+        onRemove: id => setAttachments(attachments.filter(item => item.id !== id)), onAdd: () => {},
+        control: <ConversationAttachButton compact workspace={workspace} attachments={attachments} onChange={setAttachments} disabled={!ready || busy} />,
+        notice: modelSettings.error || (modelSettings.saving ? 'Applying settings…' : undefined) }}
+      submission={{ busy: working, quietGeneration: true,
+        disabled: busy || modelSettings.saving || !draft.trim() || (draft.trimStart().startsWith('/') ? !connected : !ready),
+        onStop: () => { if (ready && !busy) void run(() => workspace.actions.interruptTurn!()); },
+        onSend: () => { void run(async () => { if (await send(draft)) setDraft(''); }); } }}
       accessory={draft.trimStart().startsWith('/') ? <InlineCommands draft={draft} workspace={workspace} onChoose={command => {
         void run(async () => { if (await send(command)) setDraft(''); });
       }} /> : commandPanel && commandPanel !== 'effort' ? <ConversationInspectorSheet inline mode={commandPanel} workspace={workspace} onClose={() => setCommandPanel(null)} onMode={setCommandPanel} /> : undefined} />
     <ReviewSheet visible={review !== null} onClose={() => setReview(null)} project={project} workspace={workspace} initialMode={review ?? 'changes'} />
-    <Sheet title="Conversation details" visible={details} onClose={() => setDetails(false)} scroll={false}>
+    <Sheet title="Conversation details" visible={options} onClose={onCloseOptions} scroll={false}>
       <SessionDetails session={session} project={project} workspace={workspace} busy={busy}
-        onReview={() => { setDetails(false); setReview('changes'); }} onStop={stopSession} />
+        onReview={() => { onCloseOptions(); setReview('changes'); }}
+        onStop={stopSession} />
     </Sheet>
   </KeyboardAvoidingView><ConversationInspectorSheet mode={inspector?.mode ?? null} selected={inspector?.item} workspace={workspace} onClose={() => setInspector(null)} onMode={openInspector} /></View>;
 }

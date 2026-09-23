@@ -19,31 +19,61 @@ import type { Integration } from './types';
  * the right is the chevron that says the row opens — with the pills gone, nothing
  * else marked these as tappable.
  */
-export function IntegrationRow({ integration, onPress }: { integration: Integration; onPress(): void }) {
+export function IntegrationRow({
+  integration,
+  onPress,
+}: {
+  integration: Integration;
+  onPress(): void;
+}) {
   const { colors } = useTheme();
   const unavailable = !integration.installed && integration.credential.configured === false;
-  const detail = integration.installed ? connectedDetail(integration)
-    : unavailable ? 'Not available yet' : integration.tagline;
-  return <Pressable accessibilityRole="button"
-    accessibilityLabel={`${integration.name}, ${integration.installed ? 'connected' : unavailable ? 'not available yet' : 'not connected'}`}
-    onPress={onPress} style={({ pressed }) => [s.row, { opacity: pressed ? 0.55 : 1 }]}>
-    <Mark brand={integrationBrand(integration.id)} size={46} />
-    <View style={s.text}>
-      <Text numberOfLines={1} style={[s.name, { color: colors.text }]}>{integration.name}</Text>
-      <View style={s.detail}>
-        {integration.installed && <Icon name="checkmark-circle" size={14} color={colors.success} />}
-        {/* Two lines is what a 320pt phone needs to finish a tagline; a status line
+  const detail = integration.installed
+    ? connectedDetail(integration)
+    : unavailable
+      ? 'Not available yet'
+      : integration.tagline;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${integration.name}, ${integration.installed ? 'connected' : unavailable ? 'not available yet' : 'not connected'}`}
+      onPress={onPress}
+      style={({ pressed }) => [s.row, { opacity: pressed ? 0.55 : 1 }]}
+    >
+      <Mark brand={integrationBrand(integration.id)} size={40} />
+      <View style={s.text}>
+        <Text numberOfLines={1} style={[s.name, { color: colors.text }]}>
+          {integration.name}
+        </Text>
+        <View style={s.detail}>
+          {integration.installed && (
+            <Icon name="checkmark-circle" size={14} color={colors.success} />
+          )}
+          {/* Two lines is what a 320pt phone needs to finish a tagline; a status line
             is short enough that it never reaches the second. */}
-        <Text numberOfLines={2} style={[s.detailText, { color: integration.installed ? colors.success : colors.muted }]}>{detail}</Text>
+          <Text
+            numberOfLines={2}
+            style={[s.detailText, { color: integration.installed ? colors.success : colors.muted }]}
+          >
+            {detail}
+          </Text>
+        </View>
       </View>
-    </View>
-    <Icon name="chevron-forward" size={16} color={colors.muted} />
-  </Pressable>;
+      <Icon name="chevron-forward" size={15} color={colors.muted} />
+    </Pressable>
+  );
 }
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 14, paddingVertical: 13, minHeight: 72 },
-  text: { flex: 1, gap: 4 },
-  name: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 66,
+  },
+  text: { flex: 1, gap: 2 },
+  name: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
   detail: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   detailText: { flex: 1, fontSize: 13, lineHeight: 18 },
 });

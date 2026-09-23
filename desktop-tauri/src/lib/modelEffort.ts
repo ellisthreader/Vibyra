@@ -51,8 +51,8 @@ function withClaudeUltraCode(available: EffortOption[]): EffortOption[] {
 export function modelEffortOptions(model: CatalogModel, runnerId: string): EffortOption[] {
   const key = modelKey(model);
   if (runnerId === "codex" && model.company === "OpenAI") {
-    if (["gpt-6-astra", "gpt-5-6", "gpt-5-6-sol", "gpt-5-6-terra"].includes(key)) return CODEX_ULTRA;
-    if (key === "gpt-5-6-luna") return FULL;
+    if (["gpt-6-astra", "gpt-6-sol", "gpt-5-6", "gpt-5-6-sol", "gpt-5-6-terra"].includes(key)) return CODEX_ULTRA;
+    if (["gpt-6-luna", "gpt-5-6-luna"].includes(key)) return FULL;
     if (["gpt-5-3-codex-spark", "gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-codex"].includes(key)) return XHIGH;
     return [];
   }

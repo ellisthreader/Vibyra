@@ -11,6 +11,8 @@ import { themeFor } from '../../lib/xtermTheme';
 import { useSettingsStore } from '../../state/settingsStore';
 import type { TermEvent } from '../../types';
 
+const FIT_THROTTLE_MS = 90;
+
 export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
   sessionId: string; visible: boolean; fontSize: number; onFocus: () => void;
 }) {
@@ -30,13 +32,14 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
     let disposed = false;
     let attached = false;
     let frame = 0;
+    let trailing = 0;
+    let lastFitAt = 0;
     const term = new Terminal({ fontSize: current.current.fontSize, fontFamily: terminalFont(settings.fontFamily),
       theme: themeFor(settings.theme), scrollback: settings.scrollbackLines, allowProposedApi: true, cursorBlink: false });
     const fit = new FitAddon(); term.loadAddon(fit); term.loadAddon(new WebLinksAddon());
-    term.open(element); attachRenderer(term);
-    attachTerminalClipboard(term, () => void invoke('shared_cli_write', { sessionId, data: '\u001b[Z' }).catch(fail));
+    term.open(element); const releaseRenderer = attachRenderer(term); attachTerminalClipboard(term);
     instance.current = { term, fit };
-    const fitNow = () => { if (element.clientWidth > 80 && element.clientHeight > 60) fit.fit(); };
+    const fitNow = () => { lastFitAt = performance.now(); if (element.clientWidth > 80 && element.clientHeight > 60) fit.fit(); };
     fitNow();
     const fail = (error: unknown) => { if (!disposed) setError(String(error)); };
     term.onData(data => { void invoke('shared_cli_write', { sessionId, data }).catch(fail); });
@@ -49,33 +52,53 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
       else { term.options.disableStdin = true; setError('The terminal disconnected. Reconnect to this conversation, or switch to Chat.'); }
     };
     setError('');
+    // Released rather than merely hidden: a hidden view that is gone kept its
+    // channel attached, and Rust serialized Codex's output for it every 250 ms.
+    // Rust lets go only while this channel is still the one attached, so a late
+    // release cannot cut off the view that replaced this one.
+    const letGo = () => { void invoke('shared_cli_visibility', { sessionId, visible: false, release: channel.id }).catch(() => {}); };
     void invoke('shared_cli_attach', { sessionId, rows: term.rows, cols: term.cols, onEvent: channel }).then(() => {
       attached = true;
-      if (disposed) { void invoke('shared_cli_visibility', { sessionId, visible: false }).catch(() => {}); return; }
+      if (disposed) { letGo(); return; }
       void invoke('shared_cli_visibility', { sessionId, visible: visibility.current }).catch(fail);
       fitNow();
     }).catch(fail);
-    const observer = new ResizeObserver(() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(fitNow); });
+    // As in TerminalView: a leading fit at most every FIT_THROTTLE_MS plus a
+    // trailing settle pass. Fitting every frame of a drag resized the PTY on
+    // every column change, and Codex redrew each time.
+    const observer = new ResizeObserver(() => {
+      if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
+        frame = requestAnimationFrame(() => { frame = 0; fitNow(); });
+      }
+      window.clearTimeout(trailing);
+      trailing = window.setTimeout(fitNow, FIT_THROTTLE_MS);
+    });
     observer.observe(element);
     const systemTheme = window.matchMedia('(prefers-color-scheme: light)');
     const themeChanged = () => { if (current.current.settings?.theme === 'auto') term.options.theme = themeFor('auto'); };
     systemTheme.addEventListener('change', themeChanged);
     return () => {
       systemTheme.removeEventListener('change', themeChanged);
-      disposed = true; observer.disconnect(); cancelAnimationFrame(frame); instance.current = null; term.dispose();
-      void invoke('shared_cli_visibility', { sessionId, visible: false }).catch(() => {});
+      disposed = true; observer.disconnect(); cancelAnimationFrame(frame); window.clearTimeout(trailing);
+      instance.current = null; term.dispose(); releaseRenderer();
+      letGo();
     };
   }, [sessionId, started, attempt]);
+  useEffect(() => { void invoke('shared_cli_visibility', { sessionId, visible }).catch(() => {}); }, [sessionId, visible]);
+  // Only the settings this view draws with: depending on the whole object
+  // refit it and re-sent its visibility on every unrelated settings write.
+  const fontFamily = settings?.fontFamily;
+  const theme = settings?.theme;
+  const scrollbackLines = settings?.scrollbackLines;
   useEffect(() => {
-    void invoke('shared_cli_visibility', { sessionId, visible }).catch(() => {});
     const entry = instance.current;
-    if (!entry || !settings) return;
-    entry.term.options.fontFamily = terminalFont(settings.fontFamily);
+    if (!entry || fontFamily === undefined || theme === undefined || scrollbackLines === undefined) return;
+    entry.term.options.fontFamily = terminalFont(fontFamily);
     entry.term.options.fontSize = fontSize;
-    entry.term.options.theme = themeFor(settings.theme);
-    entry.term.options.scrollback = settings.scrollbackLines;
+    entry.term.options.theme = themeFor(theme);
+    entry.term.options.scrollback = scrollbackLines;
     if (visible && host.current && host.current.clientWidth > 80 && host.current.clientHeight > 60) entry.fit.fit();
-  }, [visible, fontSize, settings, sessionId]);
+  }, [visible, fontSize, fontFamily, theme, scrollbackLines]);
   return <div className="conversation-cli-body">
     {error && <div className="conversation-cli-error" role="alert"><span>{error}</span>
       <button className="btn" onClick={() => setAttempt(n => n + 1)}>Reconnect terminal</button>

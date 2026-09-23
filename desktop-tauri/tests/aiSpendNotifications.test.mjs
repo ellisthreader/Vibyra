@@ -34,6 +34,8 @@ test("the warning explains what happens next, the alarm is sticky", () => {
   assert.equal(spendNotification("near").severity, "warning");
   assert.equal(spendNotification("near").osEligible, false);
   assert.equal(spendNotification("reached").timeoutMs, 0);
-  assert.equal(spendNotification("reached").dedupeKey, "aiSpend:reached");
-  assert.match(spendNotification("reached").body, /paused until the cap resets/);
+  // The caps are not the user's to raise, so the alarm offers no action and
+  // must not tell them to go and change one. It stays sticky instead.
+  assert.equal(spendNotification("reached").action, undefined);
+  assert.equal(/raise/i.test(spendNotification("reached").body), false);
 });

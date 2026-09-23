@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { CHANGELOG, entryFor, formatDate, shouldOpen } from "../src/lib/changelog.ts";
@@ -42,9 +42,25 @@ test("update notices stay sticky and OS-eligible", () => {
 test("what's new opens only on a real upgrade", () => {
   assert.equal(shouldOpen("0.7.6", "0.7.5"), true);
   assert.equal(shouldOpen("0.7.6", "0.7.6"), false, "same build, already read");
-  assert.equal(shouldOpen("0.7.6", null), false, "a first install has no news");
-  assert.equal(shouldOpen("0.7.6", ""), false);
+  assert.equal(shouldOpen("0.7.6", "0.7.6", true), false, "still read, used or not");
   assert.equal(shouldOpen("9.9.9", "0.7.5"), false, "no entry written, nothing to show");
+});
+
+test("upgrading from a build older than the window still shows it", () => {
+  // 0.7.6 shipped before What's New existed, so it never recorded a version.
+  // Reading that absence as "new install" is what silently skipped the window
+  // for every existing user on the release that introduced it. An absent record
+  // plus evidence of prior use is an upgrade, not a first run.
+  assert.equal(shouldOpen("0.7.8", null, true), true, "upgraded from before the feature");
+  assert.equal(shouldOpen("0.7.8", "", true), true, "empty record reads the same way");
+  assert.equal(shouldOpen("0.7.8", null, false), false, "genuinely fresh install stays quiet");
+});
+
+test("prior use is judged on storage this app wrote, not the seen key itself", () => {
+  const store = source("../src/state/whatsNewStore.ts");
+  const fn = store.slice(store.indexOf("function usedBefore"));
+  assert.match(fn, /key !== SEEN_KEY/, "its own record must not count as prior use");
+  assert.match(fn, /startsWith\("vibyra\./, "only this app's keys count");
 });
 
 test("the shipped version has an entry to show", () => {
@@ -60,15 +76,13 @@ test("the shipped version has its own hero art", () => {
   // picture nobody notices.
   const { version } = JSON.parse(source("../src-tauri/tauri.conf.json"));
   const entry = entryFor(version);
-  assert.match(entry.image, new RegExp(`^/releases/${version.replaceAll(".", "\\.")}\\.(?:svg|png)$`));
-  const path = `../public${entry.image}`;
-  assert.ok(statSync(new URL(path, import.meta.url)).size > 0, "the release art is empty");
-  if (entry.image.endsWith(".svg")) {
-    assert.deepEqual(problemsWith(source(path)), [], "the art fails its own checks");
-  } else {
-    assert.deepEqual([...readFileSync(new URL(path, import.meta.url)).subarray(0, 8)],
-      [137, 80, 78, 71, 13, 10, 26, 10], "the release art is not a PNG");
-  }
+  assert.equal(
+    entry.image,
+    `/releases/${version}.svg`,
+    `run: npm run release:art -- --subject "…"`,
+  );
+  const svg = source(`../public${entry.image}`);
+  assert.deepEqual(problemsWith(svg), [], "the art fails its own checks");
 });
 
 test("art checks reject what a thumbnail would not show", () => {
@@ -117,4 +131,24 @@ test("the seen version is recorded even when nothing is shown", () => {
     arrived.indexOf("write(version)") < arrived.indexOf("shouldOpen"),
     "the version is written before the decision to open",
   );
+});
+
+test("the Obsidian release log records the shipping version", () => {
+  // The app's changelog ships inside the build and disappears with it. The
+  // vault is the record that outlives the release, so the two are kept in step
+  // here rather than by anyone remembering.
+  const { version } = JSON.parse(source("../src-tauri/tauri.conf.json"));
+  const log = source("../../Vibyra/_ai/Desktop/Release Changelog.md");
+  assert.match(
+    log,
+    new RegExp(`^## ${version.replace(/\./g, "\\.")}\\b`, "m"),
+    `add a "## ${version}" section to Vibyra/_ai/Desktop/Release Changelog.md`,
+  );
+  for (const entry of CHANGELOG) {
+    assert.match(
+      log,
+      new RegExp(`^## ${entry.version.replace(/\./g, "\\.")}\\b`, "m"),
+      `${entry.version} is in the app's changelog but missing from the vault log`,
+    );
+  }
 });

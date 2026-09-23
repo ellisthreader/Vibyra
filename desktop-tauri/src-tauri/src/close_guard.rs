@@ -22,6 +22,10 @@ use crate::state::AppState;
 /// or threw before its listener ran.
 const ACK_GRACE: Duration = Duration::from_secs(4);
 
+/// How long quitting waits for scaffold builds to stop their package managers:
+/// one stall poll plus the group's own grace, with room to spare.
+const SCAFFOLD_QUIT_GRACE: Duration = Duration::from_secs(1);
+
 /// True when the UI should be asked first. False means close now: either the
 /// user already confirmed, or nothing is mounted that could answer.
 pub fn should_veto(state: &AppState) -> bool {
@@ -86,9 +90,23 @@ pub fn run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
             }
         }
         tauri::RunEvent::Exit => {
-            crate::commands::speech::shutdown();
-            app.state::<AppState>().shared_chats.shutdown();
-            app.state::<AppState>().manager.shutdown();
+            let state = app.state::<AppState>();
+            let state = state.inner();
+            // Tauri ends the process with `exit`, so no `Drop` runs: dev
+            // servers, sign-ins, installs and scaffolds lead process groups
+            // that would outlive the app. Each signals all of its children and
+            // waits once, side by side with the rest of shutdown.
+            std::thread::scope(|scope| {
+                scope.spawn(|| state.preview.stop_all());
+                scope.spawn(|| crate::phone::scaffold::in_flight::cancel_all(SCAFFOLD_QUIT_GRACE));
+                scope.spawn(|| state.provider_auth.shutdown());
+                scope.spawn(|| {
+                    crate::commands::scaffold::cancel_all(&state.scaffold_runs, SCAFFOLD_QUIT_GRACE)
+                });
+                crate::commands::speech::shutdown();
+                state.shared_chats.shutdown();
+                state.manager.shutdown();
+            });
         }
         _ => {}
     }

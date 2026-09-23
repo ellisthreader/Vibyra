@@ -106,8 +106,22 @@ test("login output is read to the end, and a half-written link is not a link", (
   );
 });
 
-test("an uninstalled optional runtime names the command it is missing", () => {
-  const runtimes = source("../src/components/settings/MoreAgentsRow.tsx");
+test("an uninstalled agent names the command that would install it", () => {
+  // Moved out of TerminalIntegrations, which the More dialog replaced. The
+  // command now comes from Rust (agents/install.rs), so the row cannot invent
+  // one — but it still has to show it rather than say only "missing".
+  const row = source("../src/components/settings/MoreAgentsRow.tsx");
 
-  assert.match(runtimes, /Needs the \$\{agent\.program\} command/);
+  assert.match(row, /agent\.install\?\.command/);
+  assert.match(row, /Needs the \$\{agent\.program\} command/);
+});
+
+test("an agent Vibyra cannot install is never given an Install button", () => {
+  // The npm table in agents/install.rs decides this; the row reads the
+  // "manual" manager and offers a copyable command instead. An Install
+  // button for a Python package would fail on every machine.
+  const row = source("../src/components/settings/MoreAgentsRow.tsx");
+
+  assert.match(row, /manager === "manual"/);
+  assert.match(row, /CopyButton/);
 });

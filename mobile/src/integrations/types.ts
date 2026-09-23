@@ -1,4 +1,3 @@
-
 /**
  * Browser authorization. Older servers may still advertise the retired token UI.
  * `device` is the third kind: nothing to sign in to, because the integration is
@@ -8,29 +7,47 @@
 export interface IntegrationCredential {
   kind?: 'token' | 'oauth' | 'device';
   configured?: boolean;
-  label: string; placeholder: string; help: string; url: string;
+  label: string;
+  placeholder: string;
+  help: string;
+  url: string;
 }
 export interface Integration {
   id: string;
   /** What to type in a message to point a reply at this integration, `@github`. */
   mention: string;
-  name: string; tagline: string; blurb: string; category: string;
+  name: string;
+  tagline: string;
+  blurb: string;
+  category: string;
   abilities: string[];
   /** Plainly what the integration can see, and what it may change. `writes` null means nothing. */
-  reads: string | null; writes: string | null;
+  reads: string | null;
+  writes: string | null;
   credential: IntegrationCredential;
   installed: boolean;
-  account: string | null; connectedAt: string | null;
+  account: string | null;
+  connectedAt: string | null;
 }
 /** `enabled` is the server's own switch. The list is readable either way. */
-export interface IntegrationCatalogue { enabled: boolean; integrations: Integration[] }
+export interface IntegrationCatalogue {
+  enabled: boolean;
+  integrations: Integration[];
+}
 /** A sign-in begun on the server: the provider's page to open, and the flow to read back. */
-export interface IntegrationFlow { flowId: string; url: string }
+export interface IntegrationFlow {
+  flowId: string;
+  url: string;
+}
 export interface IntegrationFlowState {
-  status: 'pending' | 'connected' | 'failed' | 'expired'; error?: string; catalogue: IntegrationCatalogue;
+  status: 'pending' | 'connected' | 'failed' | 'expired';
+  error?: string;
+  catalogue: IntegrationCatalogue;
 }
 /** Provider approval changes integrations, never the Vibyra login. */
-export interface IntegrationAuthorization { catalogue: IntegrationCatalogue }
+export interface IntegrationAuthorization {
+  catalogue: IntegrationCatalogue;
+}
 export interface IntegrationsApi {
   catalogue(): Promise<IntegrationCatalogue>;
   connect(id: string, credential: string): Promise<IntegrationCatalogue>;

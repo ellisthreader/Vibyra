@@ -14,6 +14,7 @@ import { FoundComputer } from './FoundComputer';
 import { isConnectable } from './nearbyPairing';
 import { SearchSignal, type SignalMode } from './SearchSignal';
 import { useComputerDiscovery } from './useComputerDiscovery';
+import { font, GUTTER } from '../ui/font';
 
 // Every search is seen to happen: its answer, found or not, waits this long, so
 // a computer that replies at once still reads as "looked, then found".
@@ -90,8 +91,8 @@ export function DiscoveryStep({ onSelect, onBack }: {
           <SearchSignal mode={mode} computers={computers} size={compact ? 172 : 224} />
         </View>
         {!unavailable && <Networks networks={networks} />}
-        {computers.length > 0 && <View style={[s.results, { borderTopColor: colors.border }]}>
-          {computers.map(computer => <ComputerRow key={computer.id} computer={computer}
+        {computers.length > 0 && <View style={[s.results, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {computers.map((computer, index) => <ComputerRow key={computer.id} computer={computer} first={index === 0}
             onPress={() => choose(computer)} />)}
         </View>}
       </>}
@@ -170,13 +171,13 @@ const s = StyleSheet.create({
   body: { flex: 1 },
   // Top-aligned, never centred: centring a scroll container that overflows
   // pushes the title out of reach once several computers are listed.
-  content: { flexGrow: 1, paddingHorizontal: 26, paddingTop: 8, paddingBottom: 12, gap: 20 },
-  heading: { gap: 10 },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '600', letterSpacing: -0.8 },
-  detail: { fontSize: 15, lineHeight: 22, maxWidth: 340 },
+  content: { flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 12, gap: 20 },
+  heading: { gap: 8 },
+  title: { ...font.title, fontSize: 28, lineHeight: 34, letterSpacing: -0.8 },
+  detail: { ...font.subhead, fontSize: 15, lineHeight: 21, maxWidth: 340 },
   stage: { alignItems: 'center', paddingVertical: 4 },
-  networks: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  network: { fontSize: 13 },
-  results: { borderTopWidth: StyleSheet.hairlineWidth },
-  actions: { paddingHorizontal: 26, paddingTop: 10, paddingBottom: 8, gap: 6 },
+  networks: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14 },
+  network: { ...font.footnote, fontWeight: '500' },
+  results: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  actions: { paddingHorizontal: GUTTER, paddingTop: 10, paddingBottom: 8, gap: 6 },
 });

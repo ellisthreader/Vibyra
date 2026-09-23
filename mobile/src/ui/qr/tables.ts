@@ -21,15 +21,65 @@ export const versions: VersionSpec[] = [
   { ec: 24, groups: [[2, 43]], align: [6, 30] },
   { ec: 16, groups: [[4, 27]], align: [6, 34] },
   { ec: 18, groups: [[4, 31]], align: [6, 22, 38] },
-  { ec: 22, groups: [[2, 38], [2, 39]], align: [6, 24, 42] },
-  { ec: 22, groups: [[3, 36], [2, 37]], align: [6, 26, 46] },
-  { ec: 26, groups: [[4, 43], [1, 44]], align: [6, 28, 50] },
-  { ec: 30, groups: [[1, 50], [4, 51]], align: [6, 30, 54] },
-  { ec: 22, groups: [[6, 36], [2, 37]], align: [6, 32, 58] },
-  { ec: 22, groups: [[8, 37], [1, 38]], align: [6, 34, 62] },
-  { ec: 24, groups: [[4, 40], [5, 41]], align: [6, 26, 46, 66] },
+  {
+    ec: 22,
+    groups: [
+      [2, 38],
+      [2, 39],
+    ],
+    align: [6, 24, 42],
+  },
+  {
+    ec: 22,
+    groups: [
+      [3, 36],
+      [2, 37],
+    ],
+    align: [6, 26, 46],
+  },
+  {
+    ec: 26,
+    groups: [
+      [4, 43],
+      [1, 44],
+    ],
+    align: [6, 28, 50],
+  },
+  {
+    ec: 30,
+    groups: [
+      [1, 50],
+      [4, 51],
+    ],
+    align: [6, 30, 54],
+  },
+  {
+    ec: 22,
+    groups: [
+      [6, 36],
+      [2, 37],
+    ],
+    align: [6, 32, 58],
+  },
+  {
+    ec: 22,
+    groups: [
+      [8, 37],
+      [1, 38],
+    ],
+    align: [6, 34, 62],
+  },
+  {
+    ec: 24,
+    groups: [
+      [4, 40],
+      [5, 41],
+    ],
+    align: [6, 26, 46, 66],
+  },
 ];
 /** Data codewords the whole symbol holds — what decides which version a string needs. */
-export const capacity = (spec: VersionSpec) => spec.groups.reduce((total, [blocks, size]) => total + blocks * size, 0);
+export const capacity = (spec: VersionSpec) =>
+  spec.groups.reduce((total, [blocks, size]) => total + blocks * size, 0);
 /** Modules across one side of the symbol, quiet zone excluded. */
 export const sideFor = (version: number) => version * 4 + 17;

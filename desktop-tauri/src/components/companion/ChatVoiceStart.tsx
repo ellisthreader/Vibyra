@@ -10,7 +10,7 @@ export function ChatVoiceStart({ disabled }: { disabled: boolean }) {
   return (
     <button
       type="button"
-      className={`chat-voice-button ${live ? "is-talking" : ""}`}
+      className={`chat-voice-button chat-voice-start ${live ? "is-talking" : ""}`}
       aria-label={live ? "End the voice conversation" : "Start a voice conversation"}
       title={live ? "End the voice conversation" : "Talk to Vibyra"}
       aria-pressed={live}
@@ -18,10 +18,9 @@ export function ChatVoiceStart({ disabled }: { disabled: boolean }) {
       onClick={toggle}
     >
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-        <path d="M12 3.5a2.6 2.6 0 0 1 2.6 2.6v4.8a2.6 2.6 0 0 1-5.2 0V6.1A2.6 2.6 0 0 1 12 3.5Z" />
-        <path d="M5.6 10.9a6.4 6.4 0 0 0 12.8 0M12 17.3v3.2" />
-        <path d="M20.9 5.6a5.2 5.2 0 0 1 0 5.8" />
+        <path d="M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4" strokeLinecap="round" />
       </svg>
+      <span>{live ? 'End voice' : 'Voice'}</span>
     </button>
   );
 }

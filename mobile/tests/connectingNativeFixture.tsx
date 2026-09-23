@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { registerRootComponent } from 'expo';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

@@ -23,6 +23,11 @@
 :root[data-theme="light"] { --bg:#fff; --rail:#fafafb; --workspace:#fff; --surface:#fff; --elevated:#f0f2f5; --border:#e5e7eb; --line:#e5e7eb; --text:#242932; --muted:#737b89; --hover-strong:#f0f2f5; }
 .chrome { background:var(--workspace); }
 .chrome__brand { background:var(--rail); }
+.app--projects-hidden .chrome__brand { width:126px; background:var(--workspace); border-right:0; }
+.app--projects-hidden .chrome__logo,.app--projects-hidden .chrome__copy { display:none; }
+.app--projects-hidden .product-mode-switch { left:50%; }
+.chrome__sidebar-toggle { flex-shrink:0; color:var(--muted); }
+.chrome__sidebar-toggle:hover { color:var(--text); background:var(--hover-strong); }
 
 .chrome__drag { position:static; }
 .product-mode-switch { left:calc(50% + var(--rail-w) / 2); }

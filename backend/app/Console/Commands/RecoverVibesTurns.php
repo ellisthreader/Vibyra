@@ -27,7 +27,21 @@ class RecoverVibesTurns extends Command
                 return;
             }
             if ($t->status === 'waiting') {
-                if (now()->diffInSeconds($t->updated_at, true) > 900) $turns->settle($t->id, $t->actual_micro_usd, null, 'Project access timed out. Confirmed AI usage was charged; unused Vibes were returned.');
+                $oldestDeadline = DB::table('vibes_tools')->where('turn_id', $t->id)->whereNull('result')
+                    ->get()->map(fn ($tool) => \App\Services\Vibes\AgentTools::expires($tool)->timestamp)->min();
+                $oldestDeadline ??= \Illuminate\Support\Carbon::parse($t->updated_at)->addMinutes(15)->timestamp;
+                if (now()->timestamp >= $oldestDeadline) {
+                    $inFlight = DB::table('vibes_tools')->where('turn_id', $t->id)->whereNull('result')
+                        ->whereNotNull('agent_workspace_id')->where('operation', 'write_file')
+                        ->where('action_state', 'dispatching')->exists();
+                    if ($inFlight) DB::table('vibes_tools')->where('turn_id', $t->id)->whereNull('result')
+                        ->whereNotNull('agent_workspace_id')->where('operation', 'write_file')
+                        ->where('action_state', 'dispatching')->update(['action_state' => 'unknown',
+                            'summary' => 'Mac edit outcome unconfirmed.', 'updated_at' => now()]);
+                    $turns->settle($t->id, $t->actual_micro_usd, null, $inFlight
+                        ? 'The Mac could not confirm an approved edit. Check the file before trying again.'
+                        : 'A tool request expired. Confirmed AI usage was charged; unused Vibes were returned.');
+                }
                 return;
             }
             // Allow the live worker to persist its response/tool batch before recovery takes ownership.

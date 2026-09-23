@@ -1,28 +1,5 @@
 use super::{fixture::fixture, *};
 
-fn reopen_after_shutdown(dir: &std::path::Path) -> Engine {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
-    loop {
-        match Engine::for_desktop_project(
-            dir.join("journal"),
-            "project".into(),
-            "Project".into(),
-            dir.into(),
-            dir.join("provider"),
-            vec![],
-        ) {
-            Ok(engine) => return engine,
-            Err(error)
-                if error == "another Vibyra Host already owns this state directory"
-                    && std::time::Instant::now() < deadline =>
-            {
-                std::thread::sleep(std::time::Duration::from_millis(25));
-            }
-            Err(error) => panic!("could not reopen the stopped conversation engine: {error}"),
-        }
-    }
-}
-
 #[test]
 fn stopped_codex_resumes_exact_identity_without_resubmitting_work() {
     let (dir, chats, session) = fixture();
@@ -77,8 +54,17 @@ fn cold_resume_twice_and_failed_resume_preserve_history() {
     chats.local("turn.submit", json!({"sessionId":id,"submissionId":"33333333-3333-4333-a333-333333333333","text":"retained fixture message"})).unwrap();
     chats.shutdown();
     drop(chats);
+    std::thread::sleep(std::time::Duration::from_millis(100));
     for _ in 0..2 {
-        let engine = reopen_after_shutdown(dir.path());
+        let engine = Engine::for_desktop_project(
+            dir.path().join("journal"),
+            "project".into(),
+            "Project".into(),
+            dir.path().into(),
+            dir.path().join("provider"),
+            vec![],
+        )
+        .unwrap();
         let before = engine
             .handle("desktop", "conversation.snapshot", json!({"sessionId":id}))
             .unwrap();
@@ -97,6 +83,7 @@ fn cold_resume_twice_and_failed_resume_preserve_history() {
         assert_eq!(after["items"], before["items"]);
         engine.shutdown_conversations();
         drop(engine);
+        std::thread::sleep(std::time::Duration::from_millis(100));
     }
     assert_eq!(
         std::fs::read_to_string(dir.path().join("effects"))

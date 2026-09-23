@@ -2,7 +2,7 @@ import type { CompanyGroup } from "./catalogTypes";
 import { COMPANY_PRIORITY } from "./companyMeta.ts";
 import { nativeAccountModelSupported } from "./nativeAccountModels.ts";
 import { displayOrder } from "./openRouterCatalogRanking.ts";
-import { STATIC_GROUPS } from "./staticModels.ts";
+import { MODEL_NEW_BADGE_MS, STATIC_GROUPS } from "./staticModels.ts";
 
 /** OpenRouter availability cannot remove models from personal-account CLIs. */
 export function mergeNativeCatalog(groups: CompanyGroup[]): CompanyGroup[] {
@@ -14,7 +14,14 @@ export function mergeNativeCatalog(groups: CompanyGroup[]): CompanyGroup[] {
     const current = merged.get(fallback.company) ?? { ...fallback, models: [] };
     const models = new Map(nativeModels.map((model) => [model.id, model]));
     // Keep live metadata when available, and add only missing native entries.
-    for (const model of current.models) models.set(model.id, model);
+    for (const model of current.models) {
+      const native = models.get(model.id);
+      models.set(model.id, native ? {
+        ...model,
+        isNew: native.isNew || (model.created > 0 && model.created * 1000 > Date.now() - MODEL_NEW_BADGE_MS),
+        defaultReasoningEffort: model.defaultReasoningEffort ?? native.defaultReasoningEffort,
+      } : model);
+    }
     merged.set(fallback.company, {
       ...current, models: displayOrder(fallback.company, [...models.values()]),
     });

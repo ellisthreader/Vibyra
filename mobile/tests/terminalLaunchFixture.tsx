@@ -17,7 +17,7 @@ export function TerminalLaunchFixture({ access = 'manage' }: { access?: 'manage'
   const [closed, setClosed] = useState<string[]>([]);
   const project = fixtureWorkspace.projects[0];
   const workspace: WorkspaceModel = { ...fixtureWorkspace, sessions, selectedSessionId: selected?.id ?? null,
-    status: access === 'offline' ? 'disconnected' : 'connected', viewOnly: access !== 'manage', canManage: access !== 'watch',
+    status: access === 'offline' ? 'offline' : 'connected', viewOnly: access !== 'manage', canManage: access !== 'watch',
     actions: { ...fixtureWorkspace.actions,
       selectSession: id => setSelected(sessions.find(item => item.id === id)),
       stopSession: async id => { setClosed(old => [...old, id]); setSessions(old => old.map(item => item.id === id ? { ...item, status: 'exited' } : item)); },

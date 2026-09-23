@@ -8,11 +8,14 @@ import { IntegrationsProvider } from './src/integrations/IntegrationsProvider';
 import { useWorkspace } from './src/state/useWorkspace';
 import { RuntimeBridge } from './src/transport/RuntimeBridge';
 import { WorkspaceApp } from './src/ui/WorkspaceApp';
+import { AppErrorBoundary } from './src/ui/AppErrorBoundary';
 import { purchaseBridge } from './src/vibes/purchaseBridge';
 import { VibesProvider } from './src/vibes/VibesProvider';
 import type { Account } from './src/ui/types';
 
-export default function App() {
+export default function App() { return <AppErrorBoundary><AppContent /></AppErrorBoundary>; }
+
+function AppContent() {
   const runtime = useWorkspace();
   // The sample workspace opens signed out from Settings, or signed in to the demo account from the test button.
   const [demo, setDemo] = useState<{ account: Account | null } | null>(() => Platform.OS === 'web' &&

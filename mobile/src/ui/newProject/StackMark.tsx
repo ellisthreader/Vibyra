@@ -32,21 +32,43 @@ function contrast(a: string, b: string): number {
  * owners draw them on dark anyway. The same rule catches JavaScript's yellow on
  * the light theme.
  */
-export function StackMark({ templateId, kind, size = 26 }: { templateId: string; kind: ProjectKind; size?: number }) {
+export function StackMark({
+  templateId,
+  kind,
+  size = 26,
+}: {
+  templateId: string;
+  kind: ProjectKind;
+  size?: number;
+}) {
   const { colors } = useTheme();
   const brand = STACK_BRANDS[templateId];
-  if (!brand) return <View style={[s.slot, { width: size, height: size }]}>
-    <ProjectKindIcon kind={kind} size={size * 0.92} color={colors.muted} /></View>;
-  if (!brand.path && !brand.paths) return <View style={[s.slot, { width: size, height: size }]}>
-    <Text style={[s.initial, { fontSize: size * 0.7, color: colors.text }]}>{brand.name.charAt(0)}</Text></View>;
+  if (!brand)
+    return (
+      <View style={[s.slot, { width: size, height: size }]}>
+        <ProjectKindIcon kind={kind} size={size * 0.92} color={colors.muted} />
+      </View>
+    );
+  if (!brand.path && !brand.paths)
+    return (
+      <View style={[s.slot, { width: size, height: size }]}>
+        <Text style={[s.initial, { fontSize: size * 0.7, color: colors.text }]}>
+          {brand.name.charAt(0)}
+        </Text>
+      </View>
+    );
   const ink = brand.color && contrast(brand.color, colors.surface) >= 2 ? brand.color : colors.text;
-  return <View style={[s.slot, { width: size, height: size }]}>
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      {brand.paths
-        ? brand.paths.map(part => <Path key={part.fill} d={part.d} fill={part.fill} />)
-        : <Path d={brand.path!} fill={ink} />}
-    </Svg>
-  </View>;
+  return (
+    <View style={[s.slot, { width: size, height: size }]}>
+      <Svg width={size} height={size} viewBox="0 0 24 24">
+        {brand.paths ? (
+          brand.paths.map((part) => <Path key={part.fill} d={part.d} fill={part.fill} />)
+        ) : (
+          <Path d={brand.path!} fill={ink} />
+        )}
+      </Svg>
+    </View>
+  );
 }
 const s = StyleSheet.create({
   slot: { alignItems: 'center', justifyContent: 'center' },

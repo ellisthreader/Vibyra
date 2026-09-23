@@ -43,6 +43,11 @@ class GithubConnector implements Connector
         return ['github_create_issue'];
     }
 
+    public function reads(): array
+    {
+        return [...ReadTools::NAMES, 'github_list_repositories', 'github_search_issues', 'github_recent_commits'];
+    }
+
     public function validate(string $operation, array $arguments): array
     {
         if (in_array($operation, ReadTools::NAMES, true)) return ReadTools::validate($operation, $arguments);

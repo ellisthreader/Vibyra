@@ -43,9 +43,3 @@ export const useProviderDefaultStore = create<ProviderDefaultStore>((set) => ({
     useLaunchSettingsStore.getState().clearAccountChoice(runtimeId);
   },
 }));
-
-/** The account a launch should use when the project has not chosen one. */
-export function defaultAccountFor(runtimeId: string | null): string | null {
-  if (!runtimeId) return null;
-  return useProviderDefaultStore.getState().byRuntime[runtimeId] ?? null;
-}

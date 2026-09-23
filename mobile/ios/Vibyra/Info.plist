@@ -44,6 +44,18 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>otpauth</string>
+		<string>onepassword</string>
+		<string>bitwarden</string>
+		<string>authy</string>
+		<string>msauth</string>
+		<string>twofas</string>
+		<string>enteauth</string>
+		<string>raivo-otp</string>
+		<string>aegis</string>
+	</array>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -69,7 +81,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose photos to share in a chat or to use as your profile picture.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Turn what you say into text in your message. It stays on your iPhone when your iPhone can do this itself.</string>
+	<string>Turn what you say into text in your message. Voice recognition stays on this iPhone.</string>
 	<key>RCTMetroPort</key>
 	<string>$(RCT_METRO_PORT)</string>
 	<key>RCTNewArchEnabled</key>

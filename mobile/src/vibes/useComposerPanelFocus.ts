@@ -6,9 +6,20 @@ export function useComposerPanelFocus(input: RefObject<TextInput | null>, open: 
   const restore = useRef(false);
   useEffect(() => {
     if (open || !restore.current) return;
-    const timer = setTimeout(() => { restore.current = false; input.current?.focus(); }, 240);
+    const timer = setTimeout(() => {
+      restore.current = false;
+      input.current?.focus();
+    }, 240);
     return () => clearTimeout(timer);
   }, [open, input]);
-  const capture = () => { restore.current = Boolean(input.current?.isFocused()); };
-  return { capture, prepare: () => { restore.current ||= Boolean(input.current?.isFocused()); Keyboard.dismiss(); } };
+  const capture = () => {
+    restore.current = Boolean(input.current?.isFocused());
+  };
+  return {
+    capture,
+    prepare: () => {
+      restore.current ||= Boolean(input.current?.isFocused());
+      Keyboard.dismiss();
+    },
+  };
 }

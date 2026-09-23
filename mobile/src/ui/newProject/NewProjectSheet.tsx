@@ -25,8 +25,15 @@ import { WhereStep } from './WhereStep';
  * Kept rendered and toggled with `visible`, like Settings, so a build that
  * outlives the sheet keeps reporting into it.
  */
-export function NewProjectSheet({ visible, workspace, onClose, onDone }: {
-  visible: boolean; workspace: WorkspaceModel; onClose: () => void;
+export function NewProjectSheet({
+  visible,
+  workspace,
+  onClose,
+  onDone,
+}: {
+  visible: boolean;
+  workspace: WorkspaceModel;
+  onClose: () => void;
   /** The project is shared and can be entered; `openTerminal` is the option the person left on. */
   onDone: (project: Project, openTerminal: boolean) => void;
 }) {
@@ -35,47 +42,123 @@ export function NewProjectSheet({ visible, workspace, onClose, onDone }: {
   const [state, dispatch] = useReducer(wizardReducer, undefined, () => initialWizard(newRunId()));
   const create = useProjectCreate(workspace, state, dispatch, visible, onDone);
   // Opening starts over, unless a build is still running: then it is shown as it stands.
-  useEffect(() => { if (visible && state.phase !== 'running') dispatch({ type: 'reset', runId: newRunId() }); },
+  useEffect(
+    () => {
+      if (visible && state.phase !== 'running') dispatch({ type: 'reset', runId: newRunId() });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visible]);
+    [visible],
+  );
   const running = state.phase === 'running';
   const reached = RAIL.indexOf(state.step);
-  const host = workspace.demo ? 'The sample computer' : workspace.host?.name ?? 'Your computer';
+  const host = workspace.demo ? 'the sample computer' : (workspace.host?.name ?? 'your computer');
   // Built once per render and shared: the setup step shows the commands it will
   // run, and the build lists the very same steps as it works through them.
   const planned = plannedProject(state);
-  return <OverlaySheet visible={visible} title={STEP_TITLES[state.step]} label="New project" testID="new-project-sheet" onClose={onClose}
-    onBack={state.history.length > 0 && !running ? () => dispatch({ type: 'back' }) : undefined}>
-    {reached >= 0 && <View style={s.rail} accessibilityLabel={`Step ${reached + 1} of ${RAIL.length}`} accessibilityRole="progressbar">
-      {RAIL.map((step, index) => <View key={step} style={[s.segment, { backgroundColor: index <= reached ? colors.accent : colors.border }]} />)}
-    </View>}
-    <Step key={state.step} instant={reduced}>
-      {state.step === 'kind' && <KindStep current={state.kind} onChoose={kind => dispatch({ type: 'chooseKind', kind })} />}
-      {state.step === 'stack' && <StackStep kind={state.kind} tools={state.tools} selected={state.templateId}
-        extras={state.extraIds} browsing={state.browsing}
-        onChoose={templateId => dispatch({ type: 'chooseTemplate', templateId })}
-        onToggleExtra={templateId => dispatch({ type: 'toggleExtra', templateId })}
-        onContinue={() => dispatch({ type: 'continue' })} onBrowse={on => dispatch({ type: 'browseAll', on })} />}
-      {state.step === 'where' && <WhereStep name={state.name} parent={state.parent} home={state.home}
-        stacks={[planned.entry, ...planned.extras].filter(entry => entry.id !== 'empty')}
-        onName={name => dispatch({ type: 'setName', name })} onParent={parent => dispatch({ type: 'setParent', parent })}
-        onContinue={() => dispatch({ type: 'go', step: 'options' })} />}
-      {state.step === 'options' && <OptionsStep templateId={state.templateId} options={state.options} planned={planned} host={host}
-        onChange={patch => dispatch({ type: 'setOptions', patch })} onStart={() => void create.start()} />}
-      {state.step === 'running' && <RunStep phase={state.phase} progress={state.progress} log={state.log} error={state.error}
-        steps={planned.request.steps.map(step => step.label)}
-        onCancel={create.cancel} onRetry={() => void create.start()} onOpenFolder={() => void create.adoptAsIs(false)}
-        onOpenTerminal={() => void create.adoptAsIs(true)} onClose={onClose} />}
-    </Step>
-  </OverlaySheet>;
+  return (
+    <OverlaySheet
+      visible={visible}
+      title={STEP_TITLES[state.step]}
+      label="New project"
+      testID="new-project-sheet"
+      onClose={onClose}
+      onBack={state.history.length > 0 && !running ? () => dispatch({ type: 'back' }) : undefined}
+    >
+      {reached >= 0 && (
+        <View
+          style={s.rail}
+          accessibilityLabel={`Step ${reached + 1} of ${RAIL.length}`}
+          accessibilityRole="progressbar"
+        >
+          {RAIL.map((step, index) => (
+            <View
+              key={step}
+              style={[
+                s.segment,
+                { backgroundColor: index <= reached ? colors.accent : colors.border },
+              ]}
+            />
+          ))}
+        </View>
+      )}
+      <Step key={state.step} instant={reduced}>
+        {state.step === 'kind' && (
+          <KindStep
+            current={state.kind}
+            onChoose={(kind) => dispatch({ type: 'chooseKind', kind })}
+          />
+        )}
+        {state.step === 'stack' && (
+          <StackStep
+            kind={state.kind}
+            tools={state.tools}
+            selected={state.templateId}
+            extras={state.extraIds}
+            browsing={state.browsing}
+            onChoose={(templateId) => dispatch({ type: 'chooseTemplate', templateId })}
+            onToggleExtra={(templateId) => dispatch({ type: 'toggleExtra', templateId })}
+            onContinue={() => dispatch({ type: 'continue' })}
+            onBrowse={(on) => dispatch({ type: 'browseAll', on })}
+          />
+        )}
+        {state.step === 'where' && (
+          <WhereStep
+            name={state.name}
+            parent={state.parent}
+            home={state.home}
+            stacks={[planned.entry, ...planned.extras].filter((entry) => entry.id !== 'empty')}
+            onName={(name) => dispatch({ type: 'setName', name })}
+            onParent={(parent) => dispatch({ type: 'setParent', parent })}
+            onContinue={() => dispatch({ type: 'go', step: 'options' })}
+          />
+        )}
+        {state.step === 'options' && (
+          <OptionsStep
+            templateId={state.templateId}
+            options={state.options}
+            planned={planned}
+            host={host}
+            onChange={(patch) => dispatch({ type: 'setOptions', patch })}
+            onStart={() => void create.start()}
+          />
+        )}
+        {state.step === 'running' && (
+          <RunStep
+            phase={state.phase}
+            progress={state.progress}
+            log={state.log}
+            error={state.error}
+            steps={planned.request.steps.map((step) => step.label)}
+            onCancel={create.cancel}
+            onRetry={() => void create.start()}
+            onOpenFolder={() => void create.adoptAsIs(false)}
+            onOpenTerminal={() => void create.adoptAsIs(true)}
+            onClose={onClose}
+          />
+        )}
+      </Step>
+    </OverlaySheet>
+  );
 }
 
 /** Each screen rises in rather than swapping in place. `instant` lands it at rest for Reduce Motion. */
 function Step({ instant, children }: { instant: boolean; children: React.ReactNode }) {
   const appear = useAppear(instant);
-  return <Animated.View style={[s.step, { opacity: appear, transform: [{ translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>
-    {children}
-  </Animated.View>;
+  return (
+    <Animated.View
+      style={[
+        s.step,
+        {
+          opacity: appear,
+          transform: [
+            { translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 const s = StyleSheet.create({
   rail: { flexDirection: 'row', gap: 4, paddingHorizontal: 20, paddingTop: 2, paddingBottom: 4 },

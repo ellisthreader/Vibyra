@@ -30,7 +30,14 @@ pub fn device_label() -> String {
     }
 }
 
+/// Asked once per run: it spawns `hostname`, and sign-in, device and phone
+/// paths — some of them on the async runtime — all ask for it.
 pub fn hostname() -> Option<String> {
+    static HOSTNAME: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    HOSTNAME.get_or_init(read_hostname).clone()
+}
+
+fn read_hostname() -> Option<String> {
     let output = std::process::Command::new("hostname").output().ok()?;
     let name = String::from_utf8_lossy(&output.stdout).trim().to_owned();
     let safe = name.len() <= 64

@@ -1,4 +1,5 @@
 use crate::account_api::{request, Endpoint};
+use crate::account_auth::bind_preview_account;
 use crate::account_device;
 use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
 use crate::secret_store::SecretStore;
@@ -38,6 +39,7 @@ async fn submit_credentials(
     body: serde_json::Value,
 ) -> AccountSnapshot {
     let account = &state.account;
+    bind_preview_account(state, None);
     account.begin_authorizing(None);
     match request(endpoint, None, Some(body)).await {
         Ok(response) => {
@@ -46,6 +48,7 @@ async fn submit_credentials(
                 profile_from_user(response.get("user").unwrap_or(&serde_json::Value::Null));
             match (token, profile) {
                 (Some(token), Some(profile)) => {
+                    bind_preview_account(state, response.get("user"));
                     account.adopt_session(&SecretStore, token.to_owned(), profile);
                 }
                 // A password alone is not the whole login for an account with a
@@ -83,6 +86,7 @@ fn two_factor_challenge(response: &serde_json::Value) -> Option<String> {
 /// backend's own message.
 pub async fn submit_two_factor(state: &AppState, code: String) -> AccountSnapshot {
     let account = &state.account;
+    bind_preview_account(state, None);
     let Some(challenge) = account.two_factor_challenge() else {
         account.set_status(
             AccountStatus::SignedOut,
@@ -103,6 +107,7 @@ pub async fn submit_two_factor(state: &AppState, code: String) -> AccountSnapsho
                 profile_from_user(response.get("user").unwrap_or(&serde_json::Value::Null));
             match (token, profile) {
                 (Some(token), Some(profile)) => {
+                    bind_preview_account(state, response.get("user"));
                     account.adopt_session(&SecretStore, token.to_owned(), profile);
                 }
                 _ => account.set_status(

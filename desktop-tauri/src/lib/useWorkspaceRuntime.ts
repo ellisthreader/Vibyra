@@ -1,7 +1,7 @@
 import { useConversationTerminals } from '../state/conversationTerminalStore';
 import { useEffect } from "react";
 
-import { onModelsReleased } from "../ipc/models";
+import { onModelsAvailable, takeModelReleases } from "../ipc/models";
 import { useAgentStore } from "../state/agentStore";
 import { useModelCatalogStore } from "../state/modelCatalogStore";
 import { useProjectStore } from "../state/projectStore";
@@ -68,14 +68,17 @@ function useAppStartup(): void {
   }, []);
 }
 
-/** Rust watches OpenRouter in the background; when a model drops, refresh the
- * picker catalog past its cache and tell the user. */
+/** The native watcher saves releases even before this workspace mounts. */
 function useModelReleaseWatch(): void {
   useEffect(() => {
-    const unlisten = onModelsReleased((models) => {
+    const drain = async () => {
+      const models = await takeModelReleases();
+      if (models.length === 0) return;
       void useModelCatalogStore.getState().refresh(true);
       notifyModelsReleased(models);
-    });
+    };
+    const unlisten = onModelsAvailable(() => void drain());
+    void unlisten.then(() => drain());
     return () => {
       void unlisten.then((fn) => fn());
     };

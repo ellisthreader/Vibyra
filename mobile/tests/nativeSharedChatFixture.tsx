@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { registerRootComponent } from 'expo';
 import { randomUUID } from 'expo-crypto';
 import { Text, View, useColorScheme } from 'react-native';
@@ -23,7 +23,7 @@ function LiveFixture() {
       delete: async (key: string) => { values.delete(key); } };
     return new WorkspaceStore({ rpc: new RpcClient(message => bridge.current?.post(message), randomUUID),
       uuid: randomUUID, iosConversations: true, storage: memory, flags: memory,
-      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount } });
+      account: { signup: disabledAccount, login: disabledAccount, session: disabledAccount, logout: disabledAccount, sendHostLink: disabledAccount } });
   });
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   const started = useRef(false);
@@ -72,7 +72,7 @@ function LiveFixture() {
       }} />
       <View style={{ height: 64, paddingHorizontal: 20, justifyContent: 'center' }}><Text style={{ color: palette.text, fontSize: 18 }}>Shared Desktop chat</Text>
         <Text style={{ color: palette.muted, fontSize: 12 }}>Shared Chat Probe Mac · {state.status}</Text></View>
-      <View style={{ flex: 1 }}>{session ? <ConversationSessionScreen session={session} workspace={{ ...state, actions: store.actions }} />
+      <View style={{ flex: 1 }}>{session ? <ConversationSessionScreen session={session} workspace={{ ...state, actions: store.actions }} options={false} onCloseOptions={() => {}} />
         : <Text style={{ color: palette.text, margin: 20 }}>{state.error ?? 'Connecting the secure native runtime…'}</Text>}</View>
     </ThemeContext.Provider>
   </SafeAreaView></SafeAreaProvider>;

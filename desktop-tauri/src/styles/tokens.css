@@ -65,7 +65,7 @@
     radial-gradient(circle at 50% -12%, rgba(81, 99, 150, 0.2), transparent 34%),
     radial-gradient(circle at 8% 9%, rgba(49, 91, 216, 0.14), transparent 24%);
 
-  /* chrome (the only blur in the product) */
+  /* chrome — near-opaque and deliberately unblurred (see chrome.css) */
   --chrome-bg: rgba(10, 10, 15, 0.92);
 
   /* shape — the system is 7/8px; panes 12; menus 10 */
@@ -97,11 +97,6 @@
   --term-text: #f0f2f6;
   --term-muted: #a6adba;
   --term-dim: #939baa;
-}
-
-/* Preserve the installed Mac type stack; Linux uses the bundled Inter face. */
-:root[data-platform="mac"] {
-  --font-ui: -apple-system, BlinkMacSystemFont, "Inter Variable", sans-serif;
 }
 
 :root[data-theme="light"] {

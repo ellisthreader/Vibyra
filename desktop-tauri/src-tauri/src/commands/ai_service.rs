@@ -13,6 +13,8 @@ use crate::state::AppState;
 #[serde(rename_all = "camelCase")]
 pub struct AiServiceView {
     key_configured: bool,
+    /// Whether that key came from `OPENAI_API_KEY` rather than the credential
+    /// store — the pane cannot offer to remove a key it did not save.
     key_from_environment: bool,
     /// Masked fragment ("sk-…wxyz"), never the key itself.
     key_hint: Option<String>,
@@ -86,7 +88,7 @@ fn view(state: &AppState) -> AiServiceView {
         key_configured: state.openai_key().is_some(),
         key_from_environment: state.openai_key_from_environment(),
         key_hint: state.openai_key().as_deref().map(openai_key::hint),
-        secure_storage_available: *state.secret_store_available.lock(),
+        secure_storage_available: state.secret_store_available(),
         recorder_available: super::voice::recorder_available(),
         key_page_url: openai_key::KEY_PAGE_URL,
         limits: state.ai_limits(),

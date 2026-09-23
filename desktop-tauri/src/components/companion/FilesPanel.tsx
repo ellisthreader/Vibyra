@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFilesRoot } from './useFilesRoot';
 import { invoke } from '@tauri-apps/api/core';
+import { usePageVisible } from '../../lib/usePageVisible';
 import { useWorkspaceStore } from '../../state/workspaceStore';
 import { FileTree } from '../rail/FileTree';
 import { ChevronIcon, FileIcon } from '../common/Icons';
@@ -11,30 +12,45 @@ interface Changes { root: string; files: ChangedFile[] }
 const label = (status: string) => status === '??' ? 'New' : status.includes('U') || ['AA', 'DD'].includes(status) ? 'Conflict'
   : status.includes('R') ? 'Renamed' : status.includes('D') ? 'Deleted' : status.includes('A') ? 'Added' : 'Modified';
 
-export function FilesPanel({ scope }: { scope?: { root: string | null; error: string; title: string } } = {}) {
+/** `active` is false while the panel is mounted but out of sight (sidebar
+ * closed, another tab): git is not polled for a list nobody is reading. */
+export function FilesPanel({ scope, active = true }: { scope?: { root: string | null; error: string; title: string }; active?: boolean } = {}) {
   const focused = useFilesRoot(!scope);
   const { root, error: rootError, title } = scope ?? focused;
   const version = useWorkspaceStore(s => s.fsVersion);
+  const live = usePageVisible() && active;
   const [mode, setMode] = useState<'changes' | 'all'>('changes');
   const [changes, setChanges] = useState<Changes | null>(null);
   const [error, setError] = useState('');
   const [path, setPath] = useState<string | null>(null);
   const [preview, setPreview] = useState('');
   const [revision, setRevision] = useState(0);
-  useEffect(() => { setChanges(null); setPath(null); setError(''); }, [root]);
+  const latest = useRef('');
+  // An open diff can change while its status line stays the same.
+  const diffOpen = useRef(false);
+  diffOpen.current = mode === 'changes' && path !== null;
+  useEffect(() => { setChanges(null); setPath(null); setError(''); latest.current = ''; }, [root]);
   useEffect(() => {
-    if (!root) return;
-    let alive = true, timer: ReturnType<typeof setTimeout>;
+    if (!root || !live) return;
+    let alive = true, timer: ReturnType<typeof setTimeout>, first = true;
     const refresh = async () => {
       try {
         const next = await invoke<Changes>('fs_changes', { root });
-        if (alive) { setChanges(next); setError(''); setRevision(n => n + 1); }
+        if (alive) {
+          const serialized = JSON.stringify(next), changed = serialized !== latest.current;
+          if (changed) { latest.current = serialized; setChanges(next); }
+          setError('');
+          // The tree and diff reload on a real change, on a watcher bump or a
+          // return to view (the effect's first run), and while a diff is open.
+          if (changed || first || diffOpen.current) setRevision(n => n + 1);
+          first = false;
+        }
       } catch (error) { if (alive) setError(String(error)); }
       if (alive) timer = setTimeout(refresh, 3000);
     };
     void refresh();
     return () => { alive = false; clearTimeout(timer); };
-  }, [root, version]);
+  }, [root, version, live]);
   useEffect(() => {
     if (!root || !path || mode !== 'changes') { setPreview(''); return; }
     let alive = true;

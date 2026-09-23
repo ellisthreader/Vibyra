@@ -89,34 +89,32 @@ Vibyra from a terminal, and both used to break it. Both are handled in
 
 ### Discord model-release alerts
 
-Vibyra checks OpenRouter's tool-capable model catalog every five minutes. New
-base models refresh the picker, create an in-app notification, and can post to
-Discord. The webhook is stored in the operating-system credential store, never
-in `settings.json`, source, shell history, or the desktop launcher.
+The backend checks OpenRouter's complete model roster every five minutes and
+records new base-model IDs once in the shared database. Its public, bounded
+release feed lets the Mac and Linux desktop apps check for news with one small
+background request every five minutes. Each installation persists its cursor
+and pending alerts in `model-releases.json`, so a signed-out or unmounted window
+can catch up without repeating an alert. The first roster and a fresh client
+installation seed silently. The picker refreshes when an alert arrives, but
+availability there still follows its separate tool-capable catalog rules.
 
-After building and installing the current AppImage, connect the webhook once:
-
-```bash
-npm run discord:configure  # hidden prompt, then sends a test message
-npm run discord:test       # re-test the stored webhook
-npm run discord:clear      # disconnect it
-```
-
-`VIBYRA_DISCORD_WEBHOOK_URL` remains a runtime-only override for development or
-managed deployments. Failed or rejected Discord messages stay queued in
-`model-watch.json` and retry on later watcher ticks; the webhook value is never
-written there.
+Only the backend holds `VIBYRA_DISCORD_MODEL_WEBHOOK_URL`. Configure it in the
+server's secret manager, not in the desktop app. Discord has no idempotency key:
+the backend claims a model before sending, preventing duplicate posts across
+workers and installations, but an ambiguous failed send can lose an alert.
 
 ### In-app reporting
 
-Anyone using Vibyra can send a report from the title bar (the lifebuoy), the
-command palette, or wherever they are — the dialog fills in *where* they were
-before they type a word: version, platform, renderer, project, agent, model and
-the pane in front of them. They can attach a screenshot, annotated through the
-same editor F9 uses, up to four images picked from disk or pasted with Ctrl+V,
-and the last 120 lines of the focused pane's output with the escape codes
-stripped. Attached files are vetted by their magic number rather than their
-extension, so a report cannot upload something that merely claims to be a PNG.
+Signed-in users can send a report from the title bar (the lifebuoy) or command
+palette. The dialog offers an app-area picker, a specific-error field populated
+from recent app errors, and the F9 screenshot editor. On Mac, they can choose a
+window or screen area before annotating; up to four additional images can be
+picked or pasted. Reports name the operating system and signed-in account and
+automatically include device diagnostics: request IP, computer model/CPU/memory,
+project folder and graphics details when available. The form discloses this
+before sending. Terminal output has a separate, off-by-default checkbox. The report relay
+derives identity and IP server-side; neither a Discord webhook nor an account
+token is exposed to the renderer.
 
 Reports arrive in Discord as an embed built for triage — who reported it on the
 author line, kind and severity in the title, colour by severity, "where" before
@@ -125,8 +123,19 @@ report, the environment and the terminal tail attached as `context.txt`. Each
 one carries a short reference (`VR-8F3K2Q`) the reporter is shown, so a
 follow-up can be tied back to the message.
 
-The report channel is separate from the model-alert one: different webhooks,
-stored under different keyring entries, revoked independently.
+Production reports go through authenticated `POST /api/reports` on the Vibyra
+backend, which owns the report webhook as `VIBYRA_REPORT_WEBHOOK_URL`. Configure
+that secret in the backend's deployment secret manager, not in a build or source
+file. `GET /api/reports/ready` lets the dialog disclose when delivery is not
+configured. The backend limits each account to five attempts per hour, validates
+file types/sizes and disallows Discord mentions. Do not replay an uncertain
+submission: a timed-out request may already be in Discord.
+The production launcher adds `config/php/report-uploads.ini` so PHP accepts the
+bounded 8 MB images and 32 MB multipart body; a bare local `php artisan serve`
+needs equivalent PHP INI limits to exercise large attachments.
+
+For local report testing only, a separate keyring webhook is still available
+when there is no signed-in account session:
 
 ```bash
 npm run report:configure  # hidden prompt, then sends a sample report
@@ -134,10 +143,10 @@ npm run report:test       # re-test the stored webhook
 npm run report:clear      # disconnect it
 ```
 
-`VIBYRA_REPORT_WEBHOOK_URL` overrides the stored value for development, the
-same way `VIBYRA_DISCORD_WEBHOOK_URL` does for model alerts. Nothing about a
-report is collected quietly: every attached value is listed in the dialog
-before it is sent, and the terminal output has its own switch.
+The desktop `VIBYRA_REPORT_WEBHOOK_URL` override is development-only. Do not put
+the production webhook into a distributable build. Screenshots and files are
+added only on user action; terminal output requires a separate explicit choice.
+Account and device details accompany a submitted report as disclosed in the form.
 
 ### Closing the window
 

@@ -13,6 +13,7 @@ import { CreateRequests } from './createRequest';
 import { AutoConnect } from './autoConnect';
 import { connect, initialize, forget, putAway, reconnect } from './connection';
 import { makeActions } from './workspaceActions'; import { remoteActions } from './remoteActions';
+import { previewActions } from './previewActions';
 import { OutputLedger } from './output';
 import { claimControl, hostResized, resnapshotSession, selectSession } from './session';
 import { initialState, type HostState, type RuntimeDependencies, type RuntimeState, type SavedConnection } from './types';
@@ -35,6 +36,15 @@ export class WorkspaceStore {
   readonly auto: AutoConnect;
   readonly actions: WorkspaceActions;
   private subscribers = new Set<() => void>();
+  private viewSubscribers = new Set<() => void>();
+  private outputSubscribers = new Set<() => void>();
+  private viewState: RuntimeState = this.state;
+  private outputState = this.state.output;
+  readonly terminalOutput = {
+    subscribe: (callback: () => void) => { this.outputSubscribers.add(callback);
+      return () => { this.outputSubscribers.delete(callback); }; },
+    snapshot: () => this.outputState,
+  };
   private unsubscribe: () => void;
   private refreshPending: Promise<void> | null = null;
   private createPersistence = Promise.resolve();
@@ -45,15 +55,25 @@ export class WorkspaceStore {
     this.creates = new CreateRequests(deps.uuid);
     this.auto = new AutoConnect(this, deps.retryDelays);
     this.unsubscribe = deps.rpc.listen(this.receive);
-    this.actions = { ...makeActions(this), ...vibesActions(this), ...conversationActions(this), ...makeAccountActions(this), ...remoteActions(this), connect: link => connect(this, link), reconnect: () => this.reconnectByHand(),
+    this.actions = { ...makeActions(this), ...previewActions(this), ...vibesActions(this), ...conversationActions(this), ...makeAccountActions(this), ...remoteActions(this), connect: link => connect(this, link), reconnect: () => this.reconnectByHand(),
       disconnect: () => putAway(this), refresh: () => this.refresh(true), selectSession: id => { void selectSession(this, id); },
       claimControl: () => claimControl(this), setTheme: this.setTheme, setAccent: accent => setAccent(this, accent), forgetDevice: () => forget(this),
       setTerminalFontSize: this.setTerminalFontSize };
   }
   subscribe = (callback: () => void) => { this.subscribers.add(callback); return () => { this.subscribers.delete(callback); }; };
+  subscribeView = (callback: () => void) => { this.viewSubscribers.add(callback); return () => { this.viewSubscribers.delete(callback); }; };
   snapshot = () => this.state;
+  viewSnapshot = () => this.viewState;
   update(patch: Partial<RuntimeState>) {
     this.state = { ...this.state, ...patch }; for (const callback of this.subscribers) callback();
+    if (patch.output !== undefined && patch.output !== this.outputState) {
+      this.outputState = patch.output;
+      this.outputSubscribers.forEach(callback => callback());
+    }
+    if (Object.keys(patch).some(key => key !== 'output')) {
+      this.viewState = this.state;
+      this.viewSubscribers.forEach(callback => callback());
+    }
   }
   current(epoch: number) { return this.epoch === epoch; }
   /** The saved computer as the app shows it: only one that has answered
@@ -134,7 +154,7 @@ export class WorkspaceStore {
     this.auto.renew();
     try { await reconnect(this); } catch (error) { if (!this.state.reconnecting) throw error; }
   };
-  dispose() { this.auto.stop(); this.unsubscribe(); this.disconnect(); this.subscribers.clear(); }
+  dispose() { this.auto.stop(); this.unsubscribe(); this.disconnect(); this.subscribers.clear(); this.viewSubscribers.clear(); this.outputSubscribers.clear(); }
   private receive = (notice: Notice) => {
     if (notice.type === 'error' || notice.type === 'closed') {
       // open() owns failures until host.state completes, including a cloud

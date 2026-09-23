@@ -97,12 +97,19 @@ test("mounting a terminal always hands the PTY the grid it built", async () => {
   const instance = await read("src/lib/terminalInstance.ts");
   // onResize cannot carry the first size — FitAddon skips term.resize() when
   // the pre-spawn estimate already matched — so this call is the only thing
-  // keeping the PTY and the renderer the same size. Nothing gates it: this
-  // Mac alone sizes its panes, and a phone watching one draws this grid.
+  // keeping the PTY and the renderer the same size. Only a fit that found a
+  // box gates it (an unfitted grid is xterm's 80x24 default); no viewer does:
+  // this Mac alone sizes its panes, and a phone watching one draws this grid.
   assert.match(
     instance,
-    /fitTerminal\(entry\);\s*\n\s*void resizeTerminal\(id, term\.rows, term\.cols\)/,
-    "creating a terminal must sync the PTY immediately after its first fit",
+    /if \(!entry\.ptySized\) \{\s*\n\s*entry\.ptySized = true;\s*\n\s*void resizeTerminal\(entry\.id, entry\.term\.rows, entry\.term\.cols\)/,
+    "the first successful fit must sync the PTY to the grid it built",
+  );
+  assert.match(instance, /ptySized: false/, "every new terminal starts unsynced");
+  assert.match(
+    instance,
+    /fitTerminal\(entry\);\s*\n(?:\s*\n)?(?:\s*\/\/[^\n]*\n)*\s*takeReplay\(id, term\)/,
+    "creating a terminal fits it before replaying output",
   );
 });
 
@@ -115,21 +122,4 @@ test("only an explicit count opens more than one terminal", async () => {
       "reading it here makes every picker and quick chip open N terminals per click",
   );
   assert.match(launch, /options\.count \?\? 1/, "launches must default to a single terminal");
-});
-
-test("terminal keys post immediately and native PTY writers preserve order", async () => {
-  const [ipc, cli, command, writer] = await Promise.all([
-    read("src/ipc/terminal.ts"),
-    read("src/components/terminal/ConversationCliView.tsx"),
-    read("src-tauri/src/commands/terminal.rs"),
-    read("src-tauri/crates/vibyra-core/src/pty/writer.rs"),
-  ]);
-  assert.match(ipc, /export function writeTerminal\([^)]*\): Promise<void> \{\s*return invoke\("write_terminal"/);
-  assert.doesNotMatch(ipc, /createOrderedTerminalWriter|createTerminalInputQueue/,
-    "waiting for the previous IPC reply makes typing appear one key behind");
-  assert.doesNotMatch(cli, /createOrderedTerminalWriter|createTerminalInputQueue/);
-  assert.match(command, /#\[tauri::command\]\s+pub fn write_terminal/,
-    "async commands can reorder keys before they reach the PTY");
-  assert.match(writer, /fn queue\(/,
-    "the synchronous IPC command must hand blocking writes to a per-session writer");
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Pressable, Text, View } from 'react-native';
 import { WorkspaceStore } from '../src/state/WorkspaceStore';
@@ -19,7 +19,7 @@ function ReconnectFixture() {
   const [store] = useState(() => new WorkspaceStore({
     rpc: new RpcClient(message => bridge.current?.post(message), () => crypto.randomUUID()),
     uuid: () => crypto.randomUUID(), storage, flags: storage,
-    account: { signup: disabled, login: disabled, session: disabled, logout: disabled },
+    account: { signup: disabled, login: disabled, session: disabled, logout: disabled, sendHostLink: disabled },
   }));
   const state = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
   useEffect(() => {

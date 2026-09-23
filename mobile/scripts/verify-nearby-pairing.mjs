@@ -58,7 +58,6 @@ try {
     isMobile: true, hasTouch: true });
   const errors = [];
   page.on('pageerror', error => { errors.push(error.message); console.error(error.message); });
-  const button = name => page.getByRole('button', { name, exact: true });
   await page.goto(`${servedFixture.url}/?computer=${encodeURIComponent(JSON.stringify(computer))}`);
   await page.getByRole('heading', { name: 'Approve this iPhone' }).waitFor();
   const pending = await until(() => log.match(/Nearby pairing request from .*approve or deny device ([a-f0-9]{64})/i)?.[1]

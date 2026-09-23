@@ -23,3 +23,23 @@ export function stopPreview(root: string, targetId: string): Promise<PreviewStat
 export function stopProjectPreviews(root: string): Promise<void> {
   return ownership.stop(root, folder => invoke("preview_stop_project", { root: folder }));
 }
+
+export interface PreviewShareScope {
+  deviceId: string;
+  projectId: string;
+  root: string;
+  targetId: string;
+  startPath?: string;
+}
+
+export function previewShareAvailable(): Promise<boolean> {
+  return invoke("preview_share_available");
+}
+
+export function previewShareStatus(scope: PreviewShareScope): Promise<boolean> {
+  return invoke("preview_share_status", { ...scope });
+}
+
+export function previewShareSet(scope: PreviewShareScope, enabled: boolean): Promise<void> {
+  return invoke("preview_share_set", { ...scope, enabled });
+}

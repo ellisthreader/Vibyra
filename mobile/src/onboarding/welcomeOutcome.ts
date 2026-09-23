@@ -14,8 +14,14 @@
  * flow is open when there was none at the start is the other: that is a
  * `vibyra://pair` link being followed.
  */
-export function pairedHere({ connected, connectedAtStart, sheetConnected }: {
-  connected: boolean; connectedAtStart: boolean; sheetConnected: boolean;
+export function pairedHere({
+  connected,
+  connectedAtStart,
+  sheetConnected,
+}: {
+  connected: boolean;
+  connectedAtStart: boolean;
+  sheetConnected: boolean;
 }): boolean {
   return connected && (sheetConnected || !connectedAtStart);
 }

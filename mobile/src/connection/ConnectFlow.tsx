@@ -17,8 +17,13 @@ import type { WorkspaceModel } from '../ui/types';
  * `PairingForm.tsx` and `ScannerSheet.tsx` are therefore unreferenced — restore a
  * route to them if relay or non-advertising computers need pairing by code again.
  */
-export function ConnectFlow({ workspace, onClose, onConnected }: {
-  workspace: WorkspaceModel; onClose: () => void;
+export function ConnectFlow({
+  workspace,
+  onClose,
+  onConnected,
+}: {
+  workspace: WorkspaceModel;
+  onClose: () => void;
   /** Told before the flow closes itself, and only when it did connect a computer. */
   onConnected?: () => void;
 }) {
@@ -32,19 +37,51 @@ export function ConnectFlow({ workspace, onClose, onConnected }: {
   const pick = (found: NearbyComputer, hostId?: string, machine?: MachineFrame) => {
     const start = (container?: { x: number; y: number }) => {
       setOrigin(machine && container ? { machine, container } : undefined);
-      setComputer(found); setCloud(hostId); setPage('connect');
+      setComputer(found);
+      setCloud(hostId);
+      setPage('connect');
     };
     if (machine && frame.current) frame.current.measureInWindow((x, y) => start({ x, y }));
     else start();
   };
-  return <View ref={frame} collapsable={false} style={{ flex: 1 }}>
-    {page === 'setup' && <ConnectSetup workspace={workspace} onInstalled={() => setPage('search')}
-      onCloud={found => pick({ id: found.id, name: found.name, platform: found.platform ?? undefined }, found.id)} />}
-    {page === 'search' && <DiscoveryStep onSelect={(found, machine) => pick(found, undefined, machine)} onBack={() => setPage('setup')} />}
-    {page === 'connect' && computer && <ComputerHandoff key={computer.id} computer={computer} origin={origin}>
-      <ConnectingStep workspace={workspace} computer={computer}
-        cloud={cloud && workspace.actions.connectComputer ? () => workspace.actions.connectComputer!(cloud) : undefined}
-        onDone={() => { onConnected?.(); onClose(); }} onSearch={() => setPage(cloud ? 'setup' : 'search')} />
-    </ComputerHandoff>}
-  </View>;
+  return (
+    <View ref={frame} collapsable={false} style={{ flex: 1 }}>
+      {page === 'setup' && (
+        <ConnectSetup
+          workspace={workspace}
+          onInstalled={() => setPage('search')}
+          onCloud={(found) =>
+            pick(
+              { id: found.id, name: found.name, platform: found.platform ?? undefined },
+              found.id,
+            )
+          }
+        />
+      )}
+      {page === 'search' && (
+        <DiscoveryStep
+          onSelect={(found, machine) => pick(found, undefined, machine)}
+          onBack={() => setPage('setup')}
+        />
+      )}
+      {page === 'connect' && computer && (
+        <ComputerHandoff key={computer.id} computer={computer} origin={origin}>
+          <ConnectingStep
+            workspace={workspace}
+            computer={computer}
+            cloud={
+              cloud && workspace.actions.connectComputer
+                ? () => workspace.actions.connectComputer!(cloud)
+                : undefined
+            }
+            onDone={() => {
+              onConnected?.();
+              onClose();
+            }}
+            onSearch={() => setPage(cloud ? 'setup' : 'search')}
+          />
+        </ComputerHandoff>
+      )}
+    </View>
+  );
 }

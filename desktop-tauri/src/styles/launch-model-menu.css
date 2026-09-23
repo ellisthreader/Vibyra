@@ -10,6 +10,7 @@
 .launch-model-browser__company { padding: 12px 10px 5px; color: var(--muted); font-size: 11px; font-weight: 560; }
 .launch-model-browser__option { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 7px 10px; border-radius: 6px; text-align: left; color: var(--text); }
 .launch-model-browser__option > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 12.5px; }
+.launch-model-browser__badge { flex: none; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--pick-accent) 45%, transparent); border-radius: 999px; color: var(--pick-accent); font-size: 9px; font-style: normal; font-weight: 760; letter-spacing: .06em; text-transform: uppercase; }
 .launch-model-browser__option .agent-mark, .launch-model-browser__option > svg { flex: none; }
 .launch-model-browser__option:hover { background: var(--hover); }
 .launch-model-browser__option[aria-selected="true"] { background: var(--accent-soft); }

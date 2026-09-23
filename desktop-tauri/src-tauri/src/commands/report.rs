@@ -9,25 +9,37 @@ use image::DynamicImage;
 use tauri::State;
 
 use super::run_blocking;
-use super::screenshot_png::{decode_png, png_bytes};
+use super::screenshot_png::{check_png_header, decode_png_bytes, png_bytes, png_data};
 use crate::discord::MAX_ATTACHMENT_BYTES;
 use crate::report::{configured_webhook, deliver, validate, Report};
 use crate::report_image::load_all;
-use crate::report_privacy::redact_unapproved_diagnostics;
-use crate::report_relay;
 use crate::report_text::terminal_tail;
 use crate::state::AppState;
 
 /// Leaves room for `context.txt` and the multipart framing inside Discord's
 /// per-message ceiling.
 const MAX_SCREENSHOT_BYTES: usize = MAX_ATTACHMENT_BYTES - 512 * 1024;
+/// How much raw scrollback the report's tail is cut from. The tail keeps the
+/// last 120 lines and 40 KB of text, so this leaves room for escape codes;
+/// copying the whole 4 MiB ring bought nothing but the copy.
+const TAIL_SOURCE_BYTES: usize = 256 * 1024;
 
 /// Whether reporting is available at all, so the UI can say so up front rather
 /// than after the user has written a paragraph.
 #[tauri::command]
 pub async fn report_channel_ready(state: State<'_, AppState>) -> Result<bool, String> {
     if let Some(token) = state.account.token() {
-        return crate::report_relay::ready(&token).await;
+        let value = crate::account_api::request(
+            crate::account_api::Endpoint::ReportReady,
+            Some(&token),
+            None,
+        )
+        .await;
+        return value
+            .map_err(|error| error.message().to_owned())?
+            .get("ready")
+            .and_then(serde_json::Value::as_bool)
+            .ok_or_else(|| "Could not check reporting right now.".to_string());
     }
     run_blocking(|| Ok(configured_webhook()?.is_some())).await
 }
@@ -38,14 +50,24 @@ pub async fn submit_report(
     mut report: Report,
 ) -> Result<String, String> {
     validate(&report)?;
-    redact_unapproved_diagnostics(&mut report);
     // Read before any await: the pane can exit while the user is still typing,
     // and a report is worth more than the output it could not collect.
     let tail = report
         .session_id
-        .and_then(|id| state.manager.snapshot(id).ok())
+        .and_then(|id| state.manager.snapshot_tail(id, TAIL_SOURCE_BYTES).ok())
         .map(|snapshot| terminal_tail(&snapshot))
         .filter(|tail| !tail.is_empty());
+    if report.include_diagnostics {
+        report.context.hardware =
+            Some(run_blocking(|| Ok(crate::report_hardware::description())).await?);
+    } else {
+        report.context.project = None;
+        report.context.project_root = None;
+        report.context.hardware = None;
+        report.context.ip = None;
+        report.context.renderer = None;
+        report.context.screen = None;
+    }
     let shot = report.screenshot.clone();
     let screenshot = match shot {
         Some(data_url) => Some(run_blocking(move || prepare_screenshot(&data_url)).await?),
@@ -56,22 +78,25 @@ pub async fn submit_report(
     let paths = report.image_paths.clone();
     let images = run_blocking(move || load_all(&paths)).await?;
     if let Some(token) = state.account.token() {
-        return report_relay::deliver(&token, &report, screenshot, images, tail).await;
+        return crate::report_relay::deliver(&token, &report, screenshot, images, tail).await;
     }
-    let webhook = configured_webhook()?
-        .ok_or_else(|| "Reporting is unavailable right now. Please try again later.".to_string())?;
+    let webhook = run_blocking(configured_webhook)
+        .await?
+        .ok_or_else(|| "Sign in to Vibyra to send a report.".to_string())?;
     deliver(&webhook, &report, screenshot, images, tail).await
 }
 
-/// Decodes the editor's PNG and brings it under Discord's ceiling if it is
-/// over. A report screenshot only has to be legible, so halving the longest
-/// edge is a better trade than refusing to send the report at all.
+/// Brings the editor's PNG under Discord's ceiling if it is over. A report
+/// screenshot only has to be legible, so halving the longest edge is a better
+/// trade than refusing to send the report at all. One already small enough is
+/// sent as it is, and so is only checked, never decoded.
 fn prepare_screenshot(data_url: &str) -> Result<Vec<u8>, String> {
-    let (bytes, image) = decode_png(data_url)?;
+    let bytes = png_data(data_url)?;
+    check_png_header(&bytes)?;
     if bytes.len() <= MAX_SCREENSHOT_BYTES {
         return Ok(bytes);
     }
-    shrink_to_fit(image)
+    shrink_to_fit(decode_png_bytes(&bytes)?)
 }
 
 fn shrink_to_fit(image: DynamicImage) -> Result<Vec<u8>, String> {

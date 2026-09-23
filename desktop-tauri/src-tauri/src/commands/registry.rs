@@ -10,14 +10,20 @@ use tauri::Wry;
 
 use super::{
     account, account_billing, account_security, agent_conversations, agent_install, agents, ai,
-    ai_memory, ai_service, clipboard, fs, github_publish, memory, memory_browser, perf, phone,
-    preview, project_brief, provider_accounts, render, report, scaffold, screenshot,
-    screenshot_reveal, session, settings, shared_chats, shared_cli, shortcuts, speech,
-    speech_synthesis, teammate_upload, teammates, terminal, voice,
+    ai_memory, ai_service, clipboard, fs, github_publish, memory, memory_browser, model_watch,
+    perf, phone, preview, preview_share, project_brief, provider_accounts, render, report,
+    scaffold, screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli,
+    shortcuts, speech, speech_synthesis, teammate_upload, teammates, terminal, voice,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
+        crate::agent_computer::agent_computer_choose,
+        crate::agent_computer::agent_computer_grants,
+        crate::agent_computer_reveal::agent_computer_reveal_worktree,
+        crate::agent_computer_review::agent_computer_worktree_status,
+        crate::agent_computer_review::agent_computer_worktree_diff,
+        crate::agent_computer_access::agent_computer_revoke,
         teammates::teammate_request,
         teammate_upload::teammate_upload,
         shared_cli::shared_cli_attach,
@@ -32,6 +38,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         phone::phone_status,
         phone::phone_configure,
         phone::phone_set_typing,
+        phone::phone_set_preview_auto,
         phone::phone_set_remote,
         phone::phone_set_notifications,
         phone::phone_remote_disconnect_all,
@@ -84,6 +91,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         terminal::write_terminal,
         terminal::resize_terminal,
         terminal::set_terminal_visibility,
+        terminal::hold_terminal_output,
         terminal::terminal_snapshot,
         terminal::kill_terminal,
         terminal::remove_terminal,
@@ -126,6 +134,9 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         preview::preview_stop,
         preview::preview_stop_project,
         preview::preview_open_url,
+        preview_share::preview_share_status,
+        preview_share::preview_share_available,
+        preview_share::preview_share_set,
         session::save_terminal_session,
         session::load_terminal_session,
         session::clear_terminal_session,
@@ -171,5 +182,6 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         perf::perf_sample,
         report::submit_report,
         report::report_channel_ready,
+        model_watch::take_model_releases,
     ]
 }

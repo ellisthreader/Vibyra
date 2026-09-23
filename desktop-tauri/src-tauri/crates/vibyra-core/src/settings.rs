@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -135,13 +135,6 @@ impl Default for Settings {
 }
 
 impl Settings {
-    pub fn default_path() -> PathBuf {
-        dirs::config_dir()
-            .unwrap_or_else(std::env::temp_dir)
-            .join("vibyra-desktop")
-            .join("settings.json")
-    }
-
     /// Loads settings, falling back to defaults on missing or corrupt file
     /// so a bad settings.json can never brick the app.
     pub fn load_from(path: &Path) -> Self {
@@ -182,6 +175,9 @@ impl Settings {
         write_private_atomic(path, &raw)
     }
 }
+
+#[path = "settings_location.rs"]
+mod location;
 
 #[cfg(test)]
 #[path = "settings_tests.rs"]

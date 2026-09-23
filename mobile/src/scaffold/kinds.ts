@@ -15,5 +15,5 @@ export const PROJECT_KINDS: KindSpec[] = [
 ];
 
 export function kindName(id: ProjectKind): string {
-  return PROJECT_KINDS.find(kind => kind.id === id)?.name ?? 'Project';
+  return PROJECT_KINDS.find((kind) => kind.id === id)?.name ?? 'Project';
 }

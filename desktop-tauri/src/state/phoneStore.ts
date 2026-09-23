@@ -9,6 +9,7 @@ import {
   phoneSetRemote,
   phoneSetNotifications,
   phoneSetTyping,
+  phoneSetPreviewAuto,
   phoneStatus,
   phoneVaultChoose,
   phoneVaultClear,
@@ -24,10 +25,11 @@ interface PhoneStore {
   refresh: () => Promise<void>;
   configure: (enabled: boolean) => Promise<void>;
   setTyping: (enabled: boolean) => Promise<void>;
+  setPreviewAuto: (id: string, enabled: boolean) => Promise<void>;
   setNotifications: (enabled: boolean) => Promise<void>;
   setRemote: (enabled: boolean) => Promise<void>;
   disconnectRemote: () => Promise<void>;
-  answer: (id: string, approve: boolean) => Promise<void>;
+  answer: (id: string, approve: boolean, previewAuto?: boolean) => Promise<void>;
   revoke: (id: string) => Promise<void>;
   /** Drops the live connection; the phone stays allowed. */
   disconnectDevice: (id: string) => Promise<void>;
@@ -65,17 +67,24 @@ export const usePhoneStore = create<PhoneStore>((set, get) => ({
   refresh: async () => {
     if (get().busy) return;
     try {
-      set({ status: await phoneStatus() });
+      // Polled every two seconds: an unchanged status keeps its reference, so
+      // nothing that reads it re-renders between real changes.
+      const status = await phoneStatus();
+      if (JSON.stringify(status) !== JSON.stringify(get().status)) set({ status });
     } catch (cause) {
-      set({ error: String(cause) });
+      if (get().error !== String(cause)) set({ error: String(cause) });
     }
   },
   configure: (enabled) => run(set, get, () => phoneConfigure(enabled)),
   setTyping: (enabled) => run(set, get, () => phoneSetTyping(enabled)),
+  setPreviewAuto: (id, enabled) => run(set, get, () => phoneSetPreviewAuto(id, enabled)),
   setNotifications: (enabled) => run(set, get, () => phoneSetNotifications(enabled)),
   setRemote: (enabled) => run(set, get, () => phoneSetRemote(enabled)),
   disconnectRemote: () => run(set, get, () => phoneRemoteDisconnectAll()),
-  answer: (id, approve) => run(set, get, () => phoneAnswer(id, approve)),
+  answer: (id, approve, previewAuto = false) => run(set, get, async () => {
+    await phoneAnswer(id, approve);
+    if (approve && previewAuto) await phoneSetPreviewAuto(id, true);
+  }),
   revoke: (id) => run(set, get, () => phoneRevoke(id)),
   disconnectDevice: (id) => run(set, get, () => phoneDisconnectDevice(id)),
   chooseVault: () => run(set, get, () => phoneVaultChoose()),

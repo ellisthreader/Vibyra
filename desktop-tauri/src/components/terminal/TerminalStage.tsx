@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LaunchSettingsPanel } from '../rail/LaunchSettings';
 import { useTerminalGrid } from '../../lib/useTerminalGrid';
+import { usePageVisible } from '../../lib/usePageVisible';
 import { adaptiveTerminals } from '../../lib/adaptiveTerminals';
 import { useProjectStore } from '../../state/projectStore';
 import { useSettingsStore } from '../../state/settingsStore';
@@ -27,12 +28,14 @@ export function TerminalStage({ active = true }: { active?: boolean }) {
   const [columns, setColumns] = useState<HTMLDivElement | null>(null);
   const gridStyle = useTerminalGrid(columns, items.length);
   const [max, setMax] = useState<HTMLDivElement | null>(null);
+  // Like the rest of the list's readers: only while these terminals are on screen.
+  const visible = usePageVisible();
   useEffect(() => {
-    if (!active) return;
+    if (!active || !visible) return;
     let alive = true; let timer: ReturnType<typeof setTimeout>;
     const poll = async () => { await useConversationTerminals.getState().refresh(); if (alive) timer = setTimeout(poll, 3000); };
     void poll(); return () => { alive = false; clearTimeout(timer); };
-  }, [active]);
+  }, [active, visible]);
   const select = (key: string) => {
     if (key.startsWith('pty:')) { useConversationTerminals.setState({ focused: null, zoomed: null }); const id = Number(key.slice(4)); useTerminalStore.getState().setFocus(id); if (layout.max && useTerminalStore.getState().zoomedId !== id) useTerminalStore.getState().toggleZoom(id); }
     else { const id = key.slice(5); useConversationTerminals.getState().reveal(id); if (layout.max) useConversationTerminals.getState().toggleZoom(id); }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Pressable, Text, View } from 'react-native';
@@ -22,7 +22,7 @@ const api = { ...sampleVibesApi, wallet: async () => ({ ...sampleWallet, paidAva
   createChat: async () => { phoneCalls.push('create'); return []; }, submit: async () => { throw new Error('Picking a model must not submit'); } };
 let settle: (ok: boolean) => void = () => {};
 Object.assign(window, { pickerCalls: calls, pickerReads: reads, phoneCalls, settlePicker: (ok: boolean) => settle(ok) });
-conversationViewMemory('fixture-host:fixture-conversation').attachments = [{ id: 'kept-image', name: 'Draft image', mime: 'image/png', bytes: 10 }];
+conversationViewMemory('fixture-host:fixture-conversation').attachments = [{ id: 'kept-image', name: 'Draft image', mime: 'image/png', hash: 'fixture-hash', complete: true }];
 function Fixture() {
   const { store, model: phoneModel } = useVibes(); const [phone, setPhone] = useState(false);
   const [settings, setSettings] = useState({ provider: query.get('provider') ?? 'codex', model: models[0]!.model, effort: 'high', revision: 7, approvalPolicy: 'on-request', appliesTo: 'nextTurn' });
@@ -45,7 +45,7 @@ function Fixture() {
   return <SafeAreaProvider><ThemeContext.Provider value={{ colors: dark ? palettes.dark : palettes.light, dark }}>
     <View style={{ flex: 1, backgroundColor: (dark ? palettes.dark : palettes.light).background }}>
       {phone ? <View><Text>{`Phone chat opened: ${phoneModel}`}</Text><Pressable accessibilityRole="button" onPress={() => setPhone(false)}><Text>Return to saved conversation</Text></Pressable></View>
-        : <ConversationSessionScreen session={fixtureSession} workspace={workspace}
+        : <ConversationSessionScreen session={fixtureSession} workspace={workspace} options={false} onCloseOptions={() => {}}
           onPhoneChat={query.has('phone') ? model => openPhoneChat(store, model, () => setPhone(true)) : undefined} />}
     </View>
   </ThemeContext.Provider></SafeAreaProvider>;

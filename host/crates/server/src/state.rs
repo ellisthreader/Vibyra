@@ -24,6 +24,11 @@ pub enum Origin {
 pub struct Shared {
     pub engine: Arc<dyn crate::backend::Backend>,
     pub identity: Mutex<Identity>,
+    /// Held across every write of the identity file, taken before `identity`.
+    /// `seen` writes after letting go of `identity`, which every connection
+    /// checks each tick, and this keeps its older copy from landing on top of
+    /// a trust or revocation saved meanwhile.
+    pub writes: Mutex<()>,
     pub invitation: Mutex<Option<Invitation>>,
     pub pending: Mutex<BTreeMap<String, (String, oneshot::Sender<bool>)>>,
     /// One slot per connected device, holding the handle its connection is
@@ -70,6 +75,7 @@ impl Shared {
     }
 
     pub fn trust(&self, id: &str, name: &str) -> Result<(), String> {
+        let _writes = self.writes.lock().map_err(|_| "Identity unavailable")?;
         let mut identity = self.identity.lock().map_err(|_| "Identity unavailable")?;
         let device = Device {
             id: id.into(),
@@ -90,23 +96,33 @@ impl Shared {
     /// Records that a trusted phone just authenticated, and from where. Best
     /// effort: a failed save must not refuse a connection that is otherwise
     /// good, so the error is dropped and the in-memory record still updates.
+    /// The synced write happens after `identity` is released, so it never
+    /// holds up another phone's trust check.
     pub fn seen(&self, id: &str, origin: &Origin) {
-        let Ok(mut identity) = self.identity.lock() else {
+        let Ok(_writes) = self.writes.lock() else {
             return;
         };
-        let Some(device) = identity.devices.get_mut(id) else {
-            return;
+        let contents = {
+            let Ok(mut identity) = self.identity.lock() else {
+                return;
+            };
+            let Some(device) = identity.devices.get_mut(id) else {
+                return;
+            };
+            device.last_seen = Some(chrono::Utc::now().to_rfc3339());
+            let (from, route) = match origin {
+                Origin::Nearby(address) => (address.clone(), "nearby"),
+                Origin::Cloud => ("Vibyra Cloud".to_string(), "cloud"),
+                #[cfg(test)]
+                Origin::Unknown => return,
+            };
+            device.last_from = Some(from);
+            device.last_route = Some(route.to_string());
+            identity.contents()
         };
-        device.last_seen = Some(chrono::Utc::now().to_rfc3339());
-        let (from, route) = match origin {
-            Origin::Nearby(address) => (address.clone(), "nearby"),
-            Origin::Cloud => ("Vibyra Cloud".to_string(), "cloud"),
-            #[cfg(test)]
-            Origin::Unknown => return,
-        };
-        device.last_from = Some(from);
-        device.last_route = Some(route.to_string());
-        let _ = identity.save();
+        if let Ok(contents) = contents {
+            let _ = contents.write();
+        }
     }
 
     /// Drops a phone's live connection but keeps it allowed: its slot is told
@@ -120,6 +136,7 @@ impl Shared {
     }
 
     pub fn revoke(&self, id: &str) -> Result<(), String> {
+        let _writes = self.writes.lock().map_err(|_| "Identity unavailable")?;
         let mut identity = self.identity.lock().map_err(|_| "Identity unavailable")?;
         let device = identity.devices.remove(id).ok_or("Unknown device")?;
         if let Err(error) = identity.save() {

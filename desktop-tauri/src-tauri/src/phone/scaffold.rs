@@ -29,6 +29,8 @@ use std::{
 // The paths are spelled out because `examples/phone_typing_probe.rs` and
 // `shared_chat_probe.rs` pull this file in with `#[path]`, and a module reached
 // that way resolves its children against the including file's directory.
+#[path = "scaffold/in_flight.rs"]
+pub(crate) mod in_flight;
 #[path = "scaffold/plan.rs"]
 mod plan;
 #[path = "scaffold/report.rs"]

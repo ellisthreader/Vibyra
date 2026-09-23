@@ -6,23 +6,36 @@ import type { ProjectBrief } from "../types";
 // has to fit in what is left. `chatBudget.test.mjs` checks both against the
 // Rust ceilings, because every char here comes out of the conversation.
 
-/** Ceiling for the assembled prompt. The Rust clamp allows 8,000 per message,
- * and the brief takes 3,200 of that, so this is the rest of the room. It grew
- * when the assistant gained tools: it now has to be told what it can do. */
-export const MAX_SYSTEM_CHARS = 4_800;
+/** Ceiling for the assembled prompt, brief and live workspace state included;
+ * the Rust clamp allows 8,000 per message. It grew when the assistant gained
+ * tools: it has to be told what it can do and what is on screen. */
+export const MAX_SYSTEM_CHARS = 7_200;
 /** Ceiling for the project brief inside it — `brief::budget::TOTAL_CHARS`. */
 export const MAX_BRIEF_CHARS = 3_200;
 
 const PERSONA =
-  `You are Vibyra's workspace assistant. You run Vibyra itself on this person's own ${computerName}: you ` +
-  "open terminals, say what they are doing, read one, close one, move between projects and " +
-  "open panels — with the tools you have been given. Use a tool rather than describing how to " +
-  "do the thing yourself, and never say you cannot open a terminal or see what is running.\n" +
-  "You do not read or edit the codebase. The AI agents inside the terminals do that work, and " +
-  "two things editing one folder loses work. If they want a file changed, open a terminal with " +
-  "an agent in it and say so.\n" +
-  "The brief below is all you know about the project without a tool. If it does not say, use a " +
-  "tool or say plainly that you cannot see it.";
+  `You are Vibyra's workspace assistant, inside the Vibyra app on this person's ${computerName}. You ` +
+  "operate Vibyra with your tools: open, read, type into, focus, full screen, rename, restart and close " +
+  "terminals; open, add, rename and remove projects; open panels and settings. When they ask for any of " +
+  "that, call the tool — never explain how they could do it, never write a tool call as text or code, " +
+  "and never say something happened unless a tool result says DONE.\n" +
+  "- \"This terminal\", \"it\" and \"the claude one\" mean a terminal in the list under \"Vibyra right " +
+  "now\", or the one just discussed. Pass its id — or, if they named it by agent (\"the claude one\"), pass " +
+  "that word and Vibyra picks the open project's.\n" +
+  "- Asked what a terminal is doing, its job or task, or whether it is done: read_terminal, then say " +
+  "what it is actually working on and how far it has got, from its screen. \"Needs me\" or \"waiting\": " +
+  "the Waiting line below, in every project.\n" +
+  "- \"Tell\" or \"ask\" a terminal to do something: send_to_terminal with their words, now. \"Show me\", " +
+  "\"go to\" or \"switch to\" a terminal: focus_terminal.\n" +
+  "- Full screen, maximise or bigger: fullscreen_terminal. If they say it didn't work, call it again. " +
+  "Never open a terminal unless they ask to open, launch or start one.\n" +
+  "- Pass effort or permission only when they said one. \"This project\" is the open project. \"Close\" or " +
+  "\"leave\" a project: open_panel home — never remove_project unless they say remove or delete. A new " +
+  "project: open_panel new_project.\n" +
+  "- \"This chat\", \"this panel\" or \"the sidebar\" is the side panel you are in: side_panel resizes it.\n" +
+  "- You do not read or edit code. The agents in the terminals do: send the task to one, or open one " +
+  "with the task as its prompt.\n" +
+  "The brief below is all you know about the project's code.";
 
 /** Short, plain and finished. Both styles get it: the written one is read in a
  * 380px sidebar and the spoken one is heard, and neither has room for a model
@@ -80,12 +93,15 @@ export function systemPrompt(
   brief: ProjectBrief | null,
   project: { name: string; root: string } | null,
   spoken: boolean,
+  /** What is on screen now — `vibyraWorkspaceState`, at most 1,600 chars. */
+  workspace = "",
 ): string {
   const head = project ? `${PERSONA}\n\nProject: ${project.name} at ${project.root}` : PERSONA;
   const style = `${BREVITY}${spoken ? SPOKEN_STYLE : WRITTEN_STYLE}`;
+  const live = workspace ? `\n\n${workspace}` : "";
   // The brief is what gives way when a long project path eats the budget:
   // trimming the rules would leave the model following half of them.
-  const room = MAX_SYSTEM_CHARS - head.length - style.length - 2;
+  const room = MAX_SYSTEM_CHARS - head.length - style.length - live.length - 2;
   const body = brief ? `\n${clampBrief(brief.text, room)}` : BLIND;
-  return `${head}\n${body}\n${style}`;
+  return `${head}\n${body}${live}\n${style}`;
 }

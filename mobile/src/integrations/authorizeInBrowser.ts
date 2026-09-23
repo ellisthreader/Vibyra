@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import * as Browser from 'expo-web-browser';
 import type { IntegrationAuthorization, IntegrationsApi } from './types';
 
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Backing out of the card, which is a choice rather than a failure to report. */
 export const CANCELLED = 'integrations/cancelled';
@@ -19,8 +19,13 @@ export const CANCELLED = 'integrations/cancelled';
  * sheet closed before approving is a cancel, said as one.
  *
  */
-export async function authorizeInBrowser(api: IntegrationsApi, id: string, signal?: AbortSignal): Promise<IntegrationAuthorization> {
-  if (!api.start || !api.flow) throw new Error('This version of Vibyra cannot sign in to integrations yet.');
+export async function authorizeInBrowser(
+  api: IntegrationsApi,
+  id: string,
+  signal?: AbortSignal,
+): Promise<IntegrationAuthorization> {
+  if (!api.start || !api.flow)
+    throw new Error('This version of Vibyra cannot sign in to integrations yet.');
   if (signal?.aborted) throw new Error(CANCELLED);
   // `vibyra://…` in the store app, `exp://…/--/…` inside Expo Go; the server accepts only these.
   const returnUrl = Linking.createURL('integrations/connected');
@@ -29,7 +34,9 @@ export async function authorizeInBrowser(api: IntegrationsApi, id: string, signa
   // provider sheet opens over whatever the person moved on to, seconds after
   // they backed out; and a sheet already open is left for them to dismiss.
   let opened = false;
-  const close = () => { if (opened) Browser.dismissAuthSession(); };
+  const close = () => {
+    if (opened) Browser.dismissAuthSession();
+  };
   signal?.addEventListener('abort', close);
   try {
     const flow = await api.start(id, returnUrl);
@@ -40,11 +47,14 @@ export async function authorizeInBrowser(api: IntegrationsApi, id: string, signa
       if (signal?.aborted) throw new Error(CANCELLED);
       const state = await api.flow(flow.flowId);
       if (state.status === 'connected') return { catalogue: state.catalogue };
-      if (state.status !== 'pending') throw new Error(state.error ?? 'The sign-in did not finish. Please try again.');
+      if (state.status !== 'pending')
+        throw new Error(state.error ?? 'The sign-in did not finish. Please try again.');
       // Still pending with the sheet closed by hand means nobody approved anything.
       if (result.type !== 'success') throw new Error('You cancelled the sign-in.');
       await wait(600);
     }
     throw new Error('The sign-in did not finish. Please try again.');
-  } finally { signal?.removeEventListener('abort', close); }
+  } finally {
+    signal?.removeEventListener('abort', close);
+  }
 }

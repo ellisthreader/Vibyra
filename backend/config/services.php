@@ -43,6 +43,10 @@ return [
         'image_model' => env('OPENROUTER_IMAGE_MODEL', 'openai/gpt-5.4-image-2'),
     ],
 
+    'desktop_reports' => [
+        'webhook_url' => env('VIBYRA_REPORT_WEBHOOK_URL'),
+    ],
+
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
         'moderation_url' => env('OPENAI_MODERATION_URL', 'https://api.openai.com/v1/moderations'),

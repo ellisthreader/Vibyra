@@ -1,31 +1,18 @@
 import type { Terminal } from "@xterm/xterm";
 import { WebglAddon } from "@xterm/addon-webgl";
 
-import { rendererPolicy } from "../ipc/render";
 import { useNotificationStore } from "../state/notificationStore";
-import { webglIsTrustworthy } from "./rendererPolicy";
+import { webglIsTrusted } from "./webglTrust";
 
-// Under WebKit's shared-memory compositing path (DMA-BUF renderer disabled),
-// WebGL canvases silently fail to composite: xterm's WebGL addon loads, the
-// buffer fills, and the terminal stays black — the blank-pane-on-spawn bug.
-// Renderer strings can't detect this (WebKitGTK's ANGLE reports bogus names
-// like "Apple GPU"), so Rust tells us which compositing mode the webview got
-// and we only trust WebGL on the accelerated path.
+// Attaches the renderer `webglTrust.ts` decided on. That file resolves the
+// policy at startup; this one is the only importer of the WebGL addon, so
+// nothing reaches it before a terminal exists.
 
-let webglTrusted = false;
-let policyReady: Promise<void> | null = null;
+/** Hands back the GPU context a terminal's renderer held; call it after
+ * `term.dispose()`. A no-op for the DOM renderer. */
+export type ReleaseRenderer = () => void;
 
-/** Resolve the renderer policy once, before the first terminal mounts. */
-export function initRendererPolicy(): Promise<void> {
-  policyReady ??= rendererPolicy()
-    .then((policy) => {
-      webglTrusted = webglIsTrustworthy(policy);
-    })
-    .catch(() => {
-      webglTrusted = webglIsTrustworthy(null);
-    });
-  return policyReady;
-}
+const nothingToRelease: ReleaseRenderer = () => {};
 
 let contextLossReported = false;
 
@@ -45,10 +32,29 @@ function reportContextLoss(): void {
   });
 }
 
+/**
+ * Disposing the addon only removes its canvas: the context stays live until
+ * garbage collection, and WebKit caps live contexts (~16) by force-losing the
+ * oldest — a pane still on screen, which then drops to the DOM renderer for
+ * the rest of the run. Hibernate/wake churn outruns the collector easily.
+ *
+ * So the context is released deliberately. It is the addon's own, read off
+ * its renderer (private fields, checked against addon-webgl 0.19), never a
+ * fresh `getContext` call; and it is only lost after `term.dispose()` has
+ * removed xterm's context-lost listener, so no toast blames the GPU.
+ */
+function releaseFor(webgl: WebglAddon): ReleaseRenderer {
+  const gl = (webgl as unknown as { _renderer?: { _gl?: WebGL2RenderingContext } })._renderer?._gl;
+  if (!gl) return nothingToRelease;
+  return () => {
+    if (!gl.isContextLost()) gl.getExtension("WEBGL_lose_context")?.loseContext();
+  };
+}
+
 /** WebGL on the accelerated path (context loss disposes it → DOM fallback);
  * the always-correct DOM renderer everywhere else. */
-export function attachRenderer(term: Terminal): void {
-  if (!webglTrusted) return;
+export function attachRenderer(term: Terminal): ReleaseRenderer {
+  if (!webglIsTrusted()) return nothingToRelease;
   try {
     const webgl = new WebglAddon();
     term.loadAddon(webgl);
@@ -56,7 +62,9 @@ export function attachRenderer(term: Terminal): void {
       webgl.dispose();
       reportContextLoss();
     });
+    return releaseFor(webgl);
   } catch {
     // WebGL unavailable — xterm falls back to the DOM renderer.
+    return nothingToRelease;
   }
 }

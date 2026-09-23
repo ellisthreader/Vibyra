@@ -72,9 +72,7 @@ pub async fn install_agent_cli(agent: String) -> Result<(), String> {
         return Ok(());
     }
 
-    let mut command = Command::new(LAUNCHER);
-    vibyra_core::launch_env::sanitize_command(&mut command);
-    let child = command
+    let child = Command::new(LAUNCHER)
         .args(arguments(package))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -150,7 +148,7 @@ pub fn clear_agent_install(agent: String) {
 #[tauri::command]
 pub async fn refresh_agents(state: State<'_, AppState>) -> Result<Vec<ResolvedAgent>, String> {
     let custom = state.settings.lock().custom_agents.clone();
-    super::run_blocking(move || Ok(resolve_agents(&custom))).await
+    Ok(resolve_agents(&custom))
 }
 
 #[cfg(test)]

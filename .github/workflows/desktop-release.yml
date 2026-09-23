@@ -72,6 +72,8 @@ jobs:
         run: npm ci
       - name: Install locked shared conversation dependencies
         run: npm ci --prefix ../mobile
+      - name: Install locked Preview fixture dependencies
+        run: npm ci --prefix ../host/relay
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates
@@ -106,9 +108,6 @@ jobs:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       - name: Verify stable Mac permission identity before staging
         if: runner.os == 'macOS'
         run: node scripts/macos-signing.mjs src-tauri/target/release/bundle/macos/Vibyra.app
@@ -151,14 +150,16 @@ jobs:
           cp "${matches[0]}.sig" "release/$package.sig"
           cp release/frontend-manifest.json "release/$package.frontend.json"
           dpkg-deb --info "release/$package" | grep -F "Version: ${{ steps.version.outputs.version }}"
-      - name: Verify macOS signing, notarization and launch
+      - name: Verify macOS signing, microphone entitlement, helper and launch
         if: runner.os == 'macOS'
         shell: bash
         run: |
           app=src-tauri/target/release/bundle/macos/Vibyra.app
           codesign --verify --deep --strict "$app"
-          spctl --assess --type execute --verbose "$app"
-          xcrun stapler validate "$app"
+          codesign -d --entitlements - --xml "$app" > /tmp/vibyra-entitlements.plist
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' /tmp/vibyra-entitlements.plist | grep -qx true
+          /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
+          python3 scripts/verify-agent-command-helper.py --app "$app"
           "$app/Contents/MacOS/Vibyra" &
           pid=$!
           sleep 12

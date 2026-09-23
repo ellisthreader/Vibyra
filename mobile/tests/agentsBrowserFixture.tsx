@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,7 +16,7 @@ const integrationApi = { catalogue: async () => ({ enabled: true, integrations: 
 function Fixture() {
   const [signedIn, setSignedIn] = useState(!query.has('signed-out')); const [connected, setConnected] = useState(false);
   Object.assign(window, { switchAgentAccount: () => setSignedIn(false), reconnectAgentHost: () => setConnected(v => !v) });
-  const workspace: WorkspaceModel = { ...fixtureWorkspace, demo: query.has('demo'), status: connected ? 'connected' : 'disconnected', account: signedIn ? demoAccount : null,
+  const workspace: WorkspaceModel = { ...fixtureWorkspace, demo: query.has('demo'), status: connected ? 'connected' : 'offline', account: signedIn ? demoAccount : null,
     host: connected ? fixtureWorkspace.host : null, selectedSessionId: null, sessions: [], themePreference: query.get('theme') === 'light' ? 'light' : 'dark' };
   return <SafeAreaProvider><View style={{ flex: 1 }}>
     <Text style={{ textAlign: 'center', fontSize: 11, backgroundColor: '#ddd' }}>Teammate UI fixture · no live tasks</Text>

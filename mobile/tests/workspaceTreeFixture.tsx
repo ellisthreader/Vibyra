@@ -8,7 +8,7 @@ import { NavigationDrawer } from '../src/ui/NavigationDrawer';
 function Fixture() {
   useFonts({ 'DM Sans': require('../assets/fonts/DMSans.ttf') });
   const dark = new URLSearchParams(location.search).get('theme') !== 'light';
-  const workspace = useDemoWorkspace({ themePreference: dark ? 'dark' : 'light', setTheme: () => {}, exitDemo: () => {} });
+  const workspace = useDemoWorkspace({ account: null, themePreference: dark ? 'dark' : 'light', setTheme: () => {}, exitDemo: () => {} });
   const [projectId, setProjectId] = useState<string | null>(null);
   return <SafeAreaProvider><ThemeContext.Provider value={{ dark, colors: dark ? palettes.dark : palettes.light }}>
     <NavigationDrawer visible destination="work" workspace={workspace} currentProjectId={projectId}

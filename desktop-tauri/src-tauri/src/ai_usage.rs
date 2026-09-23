@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 // `ai_usage_guard`; this half is pure data so it can be unit-tested without a
 // clock or a filesystem.
 
-/// gpt-5-nano list price, USD per million tokens.
-pub const CHAT_INPUT_USD_PER_MTOK: f64 = 0.05;
-pub const CHAT_OUTPUT_USD_PER_MTOK: f64 = 0.40;
+/// gpt-5-mini list price, USD per million tokens — `commands::ai::CHAT_MODEL`.
+pub const CHAT_INPUT_USD_PER_MTOK: f64 = 0.25;
+pub const CHAT_OUTPUT_USD_PER_MTOK: f64 = 2.00;
 /// whisper-1 list price, USD per minute of audio.
 pub const VOICE_USD_PER_MINUTE: f64 = 0.006;
 /// gpt-4o-mini-tts list price, USD per thousand characters read aloud. Priced

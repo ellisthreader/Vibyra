@@ -23,6 +23,7 @@ import "./styles/first-welcome-demo.css";
 import "./styles/first-welcome-motion.css";
 import "./styles/strip.css";
 import "./styles/home.css";
+import "./styles/new-models-notice.css";
 import "./styles/home.part-02.css";
 import "./styles/home.part-03.css";
 import "./styles/rail.css";
@@ -50,7 +51,6 @@ import "./styles/notifications-center.css";
 import "./styles/notifications-center.part-02.css";
 import "./styles/project-modes.css";
 import "./styles/preview.css";
-import "./styles/preview-picker.css";
 import "./styles/preview-device.css";
 import "./styles/preview-overlay.css";
 import "./styles/companion.css";
@@ -121,13 +121,16 @@ import "./styles/performance.css";
 
 import App from "./App";
 import { installAppDropGuard } from "./lib/terminalDrop";
-import { initRendererPolicy } from "./lib/xtermRenderer";
+import { terminalFontReady } from "./lib/terminalFont";
+import { initRendererPolicy } from "./lib/webglTrust";
 import { desktopPlatform } from "./lib/platform";
 
 document.documentElement.dataset.platform = desktopPlatform;
 
-// Resolves long before the first terminal can mount (post sign-in).
+// Both resolve long before the first terminal can mount (post sign-in), and
+// neither module imports xterm, so the sign-in screen does not load it.
 void initRendererPolicy();
+void terminalFontReady();
 installAppDropGuard();
 
 createRoot(document.getElementById("root")!).render(<App />);

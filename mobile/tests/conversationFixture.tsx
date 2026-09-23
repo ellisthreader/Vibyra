@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { ConversationView } from '../src/conversation/ConversationView';
 import { ConversationItem, ConversationStatus } from '../src/conversation/types';
@@ -20,7 +20,7 @@ const base: ConversationItem[] = [
   { id: 'read', turnId: 'turn', kind: 'activity', title: 'Reading files',
     detail: 'cat src/Welcome.tsx', status: 'completed' },
 ];
-const permission: ConversationItem = { id: 'permission', turnId: 'turn', kind: 'permission',
+const permission: Extract<ConversationItem, { kind: 'permission' }> = { id: 'permission', turnId: 'turn', kind: 'permission',
   title: 'Run the welcome screen checks', reason: 'Verify the updated layout before finishing.',
   scope: 'This command only · /projects/pocket', detail: 'npm run test -- welcome', status: 'pending' };
 const question: ConversationItem = { id: 'question', turnId: 'turn', kind: 'question',
@@ -40,7 +40,8 @@ export function ConversationFixture() {
       text: scenario === 'error' ? 'The check could not finish. Your changes are still available.' : 'The welcome screen is simpler and the layout checks passed.',
       checks: scenario === 'completed' ? ['npm run test -- welcome · exit 0'] : [],
     }];
-    return [...base, { ...permission, status: scenario === 'denied' ? 'declined' : 'pending' }];
+    const last: ConversationItem = scenario === 'denied' ? { ...permission, status: 'declined' } : permission;
+    return [...base, last];
   });
   const status: ConversationStatus = scenario === 'working' ? 'working' : scenario === 'error' ? 'error'
     : ['permission', 'question', 'offline', 'observer'].includes(scenario) ? 'waiting' : 'idle';

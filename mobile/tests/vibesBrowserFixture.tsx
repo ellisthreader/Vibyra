@@ -21,10 +21,10 @@ const efforts: string[] = [];
 const uploads: VibesAttachment[] = []; const quoted: string[][] = [];
 Object.assign(window, { vibesCalls: calls, vibesEfforts: efforts, vibesQuoted: quoted });
 const planEntitlements = {
-  free: { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false },
-  starter: { maxProjects: 3, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false },
-  builder: { maxProjects: 10, concurrentReplies: 2, fullCatalogue: false, remoteAccess: false },
-  pro: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true },
+  free: { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false, sessionCredits: 60, weekCredits: 150 },
+  starter: { maxProjects: 3, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false, sessionCredits: 70, weekCredits: 175 },
+  builder: { maxProjects: 10, concurrentReplies: 2, fullCatalogue: false, remoteAccess: false, sessionCredits: 200, weekCredits: 500 },
+  pro: { maxProjects: null, concurrentReplies: 3, fullCatalogue: true, remoteAccess: true, sessionCredits: 400, weekCredits: 1000 },
 };
 let wallet: VibesWallet = { version: 1, guest, available: 3, held: 0, total: 3, paidAvailable: query.has('paid') ? 3 : 0,
   plan: 'free', paidUntil: null, trialChatsRemaining: 2, trialCredits: 3, trialChats: 2, trialChatCredits: 3,
@@ -35,7 +35,7 @@ let wallet: VibesWallet = { version: 1, guest, available: 3, held: 0, total: 3, 
     { id: 'pro', plan: 'pro', credits: 2000, pence: 9900, kind: 'subscription' },
     { id: 'topup', plan: null, credits: 500, pence: 2000, kind: 'topup' },
   ], entitlements: planEntitlements.free, planEntitlements,
-  remoteAccessLive: query.get('remote') === 'live', usedProjects: 0 };
+  remoteAccessLive: query.get('remote') === 'live', usedProjects: 0, limits: null };
 let chats: VibesChat[] = []; const turns: VibesTurn[] = [];
 // Dates are relative so a "New" badge assertion cannot quietly stop holding a few
 // weeks from now, which a hardcoded release date would.
@@ -131,7 +131,7 @@ const workspace = { ...fixtureWorkspace, status: query.get('state') === 'offline
 function Harness() {
   const [page, setPage] = React.useState(query.get('page') === 'wallet');
   return <>
-    {page ? <WalletScreen signedIn onSignIn={() => calls.push('sign-in')} onClose={() => setPage(false)} />
+    {page ? <WalletScreen signedIn onSignIn={() => calls.push('sign-in')} onBack={() => setPage(false)} onClose={() => setPage(false)} />
       : <VibesScreen workspace={workspace} computer onWallet={() => setPage(true)} />}
     {/* Stands in for the app's own way back: the rail and the header's new chat. */}
     {page && <Pressable accessibilityRole="button" accessibilityLabel="Back to chat" onPress={() => setPage(false)}

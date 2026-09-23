@@ -15,13 +15,16 @@ const known = new Map<string, { at: number; found: Promise<Whereabouts | null> }
  *  the public address it saw. For a computer on this very device — the iOS
  *  Simulator on the Mac it runs on — that public address is the only real one
  *  the phone can name, since the connection itself is loopback. */
-export interface Whereabouts { place: string | null; ip: string | null }
+export interface Whereabouts {
+  place: string | null;
+  ip: string | null;
+}
 
 /** "City, Country" from a lookup reply, the country alone when that is all it
  *  knows, and null when it knows neither. */
 export function placeOf(reply: unknown): string | null {
   const { city, country } = (reply ?? {}) as { city?: unknown; country?: unknown };
-  const clean = (part: unknown) => typeof part === 'string' ? part.trim() : '';
+  const clean = (part: unknown) => (typeof part === 'string' ? part.trim() : '');
   if (!clean(country)) return null;
   return [clean(city), clean(country)].filter(Boolean).join(', ');
 }
@@ -30,19 +33,26 @@ export function placeOf(reply: unknown): string | null {
 export function ipOf(reply: unknown): string | null {
   const { ip } = (reply ?? {}) as { ip?: unknown };
   if (typeof ip !== 'string' || ip.length > 45) return null;
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip) || /^[\da-f:]+$/i.test(ip) && ip.includes(':') ? ip : null;
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip) || (/^[\da-f:]+$/i.test(ip) && ip.includes(':'))
+    ? ip
+    : null;
 }
 
 /** Roughly where the computer at `address` is — city-level at best, since an
  *  IP only says where its network meets the internet. Null when nothing could say. */
-export async function lookUp(address: string, request: typeof fetch = fetch): Promise<Whereabouts | null> {
+export async function lookUp(
+  address: string,
+  request: typeof fetch = fetch,
+): Promise<Whereabouts | null> {
   const target = locationLookup(address);
   if (!target) return null;
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), TIMEOUT);
   try {
-    const response = await request(target === 'self' ? `${SERVICE}.json` : `${SERVICE}/${target}.json`,
-      { signal: controller.signal, headers: { accept: 'application/json' } });
+    const response = await request(
+      target === 'self' ? `${SERVICE}.json` : `${SERVICE}/${target}.json`,
+      { signal: controller.signal, headers: { accept: 'application/json' } },
+    );
     if (!response.ok) return null;
     const reply: unknown = await response.json();
     const found = { place: placeOf(reply), ip: ipOf(reply) };
@@ -59,7 +69,9 @@ function lookUpOnce(address: string) {
   if (kept && Date.now() - kept.at < FRESH) return kept.found;
   const found = lookUp(address);
   known.set(address, { at: Date.now(), found });
-  void found.then(answer => { if (!answer) known.delete(address); });
+  void found.then((answer) => {
+    if (!answer) known.delete(address);
+  });
   return found;
 }
 
@@ -68,8 +80,12 @@ export function useWhereabouts(address: string): Whereabouts | null | undefined 
   const [found, setFound] = useState<{ address: string; answer: Whereabouts | null }>();
   useEffect(() => {
     let current = true;
-    void lookUpOnce(address).then(answer => { if (current) setFound({ address, answer }); });
-    return () => { current = false; };
+    void lookUpOnce(address).then((answer) => {
+      if (current) setFound({ address, answer });
+    });
+    return () => {
+      current = false;
+    };
   }, [address]);
   return found?.address === address ? found.answer : undefined;
 }

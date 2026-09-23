@@ -19,9 +19,14 @@ fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: V
     }) {
         return;
     }
-    let complete_detail = state
-        .journal
-        .conversation_detail(id, &value["params"]["itemId"]);
+    // Only a provider request (one with an `id`) reads this, and every
+    // streamed delta passes through here holding the engine lock, so the two
+    // queries it costs are skipped for everything else.
+    let complete_detail = value.get("id").and_then(|_| {
+        state
+            .journal
+            .conversation_detail(id, &value["params"]["itemId"])
+    });
     let Some(c) = state.conversations.get_mut(id) else {
         return;
     };

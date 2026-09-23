@@ -1,4 +1,8 @@
-export interface Authenticator { id: string; name: string; scheme: string }
+export interface Authenticator {
+  id: string;
+  name: string;
+  scheme: string;
+}
 
 /**
  * A browser has no app list to ask, and handing it an `otpauth://` link does nothing

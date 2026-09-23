@@ -1,11 +1,14 @@
 use crate::account_api::{request, ApiError, Endpoint};
-use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
+use crate::account_types::{
+    profile_from_user, verified_preview_account_id, AccountSnapshot, AccountStatus,
+};
 use crate::secret_store::SecretStore;
 use crate::state::AppState;
 /// Restores and verifies a saved session. A stored credential is discarded
 /// only on an authoritative 401/403; network trouble preserves it and
 /// reports a retryable connection error instead.
 pub async fn restore(state: &AppState) -> AccountSnapshot {
+    bind_preview_account(state, None);
     let account = &state.account;
     let store = SecretStore;
     let token = match store.read_account_session() {
@@ -24,6 +27,7 @@ pub async fn restore(state: &AppState) -> AccountSnapshot {
     match request(Endpoint::Session, Some(&token), None).await {
         Ok(body) => match profile_from_user(body.get("user").unwrap_or(&serde_json::Value::Null)) {
             Some(profile) => {
+                bind_preview_account(state, body.get("user"));
                 account.adopt_session(&store, token, profile);
                 rotate_session(state).await;
             }
@@ -32,7 +36,7 @@ pub async fn restore(state: &AppState) -> AccountSnapshot {
                 Some("The account service returned an unexpected response.".into()),
             ),
         },
-        Err(ApiError::Unauthorized(_)) => account.clear_session(&store),
+        Err(ApiError::Unauthorized(_)) => teardown(state),
         Err(error) => {
             account.set_status(AccountStatus::ConnectionError, Some(error.message().into()));
         }
@@ -56,7 +60,7 @@ async fn rotate_session(state: &AppState) {
             }
         }
         Err(ApiError::Rejected(_)) | Err(ApiError::Network(_)) => {}
-        Err(ApiError::Unauthorized(_)) => account.clear_session(&SecretStore),
+        Err(ApiError::Unauthorized(_)) => teardown(state),
     }
 }
 /// Logs out: revokes the backend session when reachable, then tears this
@@ -75,11 +79,30 @@ pub async fn logout(state: &AppState) -> AccountSnapshot {
 /// Ends the session on this machine: closes running terminals so the next
 /// account never inherits them, and clears the credential entry. Every path
 /// that ends a session — logging out, losing this device, deleting the
-/// account — goes through here rather than repeating it.
+/// account, the backend rejecting the credential — goes through here rather
+/// than repeating it. A path that only cleared the credential left every
+/// terminal running for the page that reloads next to never see again.
 pub fn teardown(state: &AppState) {
-    for session in state.manager.list() {
-        let _ = state.manager.kill(session.id);
-        let _ = state.manager.remove(session.id);
+    clear_preview_grants(state);
+    for id in state.manager.close_all() {
+        state.sink.detach(id);
     }
     state.account.clear_session(&SecretStore);
+}
+
+pub fn bind_preview_account(state: &AppState, user: Option<&serde_json::Value>) {
+    let scope = user.and_then(verified_preview_account_id);
+    if let Ok(grants) = &state.preview_grants {
+        if let Err(error) = grants.set_account(scope.as_deref()) {
+            eprintln!("Vibyra Preview account binding failed: {error}");
+        }
+    }
+}
+
+fn clear_preview_grants(state: &AppState) {
+    if let Ok(grants) = &state.preview_grants {
+        if let Err(error) = grants.revoke_all() {
+            eprintln!("Vibyra Preview grants could not be persisted as revoked: {error}");
+        }
+    }
 }

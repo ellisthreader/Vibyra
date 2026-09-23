@@ -108,4 +108,7 @@ test("the navigation column splits its rows by that rule", () => {
   assert.match(source("../src/components/layout/ProjectPickerMenu.tsx"), /Saved history/, "saved chats remain reachable from the project menu");
   assert.match(source("../src/components/layout/ProjectSwitcher.tsx"), /setHistoryOpen\(true\)/);
   assert.doesNotMatch(list, /<ConversationTerminalRows sessions={live}/, "the list draws matches, so search reaches every row");
+  // A project whose terminals are all conversations still has a Terminals
+  // section: asking the pane store alone emptied it for Codex.
+  assert.match(source("../src/components/layout/WorkspaceTree.tsx"), /\+ splitConversationRows\(sessions\.filter/, "the project count includes live conversations");
 });

@@ -9,6 +9,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
+import { verifyAccountRecovery } from './verify-desktop-account-recovery.mjs';
 
 const output = resolve('../output/desktop-account');
 await mkdir(output, { recursive: true });
@@ -86,7 +87,9 @@ try {
 
     const store = await open(`${t}plan=appstore`);
     await store.page.getByText(/Paid through/).waitFor();
-    await store.page.getByText('App Store · Monthly').waitFor();
+    // One mark and one word: no sentence about who owns the subscription.
+    await store.page.getByText('App Store', { exact: true }).waitFor();
+    assert.equal(await store.page.locator('.membership__billed svg').count(), 1, 'the Apple mark carries it');
     assert.equal(await store.page.getByRole('button', { name: 'Manage billing' }).count(), 0,
       'Vibyra never offers to manage what Apple sold');
     await store.page.getByRole('button', { name: 'Open subscriptions' }).click();
@@ -154,7 +157,7 @@ try {
     // ── devices ──────────────────────────────────────────────────────────
     const devices = await open(`${t}running`);
     await devices.page.getByText('iPhone 17 Pro').waitFor();
-    await devices.page.getByText('This Mac', { exact: true }).waitFor();
+    await devices.page.getByText('This device', { exact: true }).waitFor();
     await devices.page.getByRole('group', { name: 'iPhone 17 Pro' }).getByRole('button', { name: 'Sign out' }).click();
     assert.equal((await devices.page.evaluate(() => window.accountEvents.map(e => e[0]))).includes('account_device_revoke'), true);
     await devices.page.getByRole('button', { name: 'Sign out everywhere' }).click();
@@ -174,34 +177,7 @@ try {
     await danger.page.getByRole('button', { name: 'Delete account' }).click();
     assert.deepEqual(await last(danger.page), ['end-session']);
 
-    // ── the rows that only appear when they have to ──────────────────────
-    const warnings = await open(`${t}nokeyring&unverified&photo`);
-    await warnings.page.getByText('Session is not remembered').waitFor();
-    await warnings.page.getByText('Email not verified').waitFor();
-    assert.equal(await warnings.page.locator('.account-card__photo').evaluate(el => el.complete && el.naturalWidth > 0), true);
-    await warnings.page.getByText('Member since March 2026').waitFor();
-    await shot(warnings.page, `warnings-${theme}`);
-
-    // ── a read that failed says so, rather than going quiet ──────────────
-    const offline = await open(`${t}fail=credits,devices,two_factor_status`);
-    await offline.page.getByText('Credits unavailable').waitFor();
-    await offline.page.getByText('Devices unavailable').waitFor();
-    await offline.page.getByRole('group', { name: 'Two-factor authentication' })
-      .getByRole('button', { name: 'Try again' }).waitFor();
-    await offline.page.getByRole('group', { name: 'Credits unavailable' }).getByRole('button', { name: 'Try again' }).click();
-    assert.equal((await last(offline.page))[0], 'account_credits');
-
-    // ── the code half of a sign-in ───────────────────────────────────────
-    const code = await open(`${t}auth2fa`);
-    await code.page.getByText(/Enter the code from your authenticator app/).waitFor();
-    await code.page.getByLabel('Two-factor code').fill('000000');
-    await code.page.getByRole('button', { name: 'Continue' }).click();
-    await code.page.getByText(/didn’t match/).waitFor();
-    await shot(code.page, `sign-in-code-${theme}`);
-    await code.page.getByLabel('Two-factor code').fill('123456');
-    await code.page.getByRole('button', { name: 'Continue' }).click();
-    await code.page.getByRole('dialog', { name: 'Settings' }).waitFor().catch(() => {});
-
+    const { warnings, offline, code } = await verifyAccountRecovery({ open, t, shot, theme, last });
     for (const { page, errors } of [free, stripe, annual, cancelling, store, quiet, setup, on, google, devices, danger, warnings, offline, code]) {
       assert.deepEqual(errors, []);
       await page.close();

@@ -25,7 +25,7 @@ interface ReportStore {
   begin: (prefill?: Partial<ReportDraft>) => Promise<void>;
   close: () => void;
   patch: (patch: Partial<ReportDraft>) => void;
-  addScreenshot: () => Promise<void>;
+  addScreenshot: (selection?: boolean) => Promise<void>;
   addImages: () => Promise<void>;
   pasteImage: () => Promise<boolean>;
   removeImage: (path: string) => void;
@@ -89,11 +89,11 @@ export const useReportStore = create<ReportStore>((set, get) => ({
     if (draft) set({ draft: { ...draft, ...patch }, error: null });
   },
 
-  addScreenshot: async () => {
+  addScreenshot: async (selection = false) => {
     if (get().capturing) return;
     set({ capturing: true });
     await nextPaint();
-    await useScreenshotStore.getState().capture();
+    await useScreenshotStore.getState().capture(selection);
     // The capture can fail (no compositor, permission refused); the editor
     // never opens, so hand the dialog back rather than stranding the user.
     if (!useScreenshotStore.getState().draft) set({ capturing: false });
@@ -165,7 +165,7 @@ export const useReportStore = create<ReportStore>((set, get) => ({
         screenshot: draft.screenshot,
         imagePaths: draft.images,
         sessionId: draft.includeTerminal ? surroundings.sessionId : null,
-        includeDiagnostics: draft.includeDiagnostics,
+        includeDiagnostics: true,
       });
       set({ status: "sent", sentId, draft: null });
     } catch (error) {

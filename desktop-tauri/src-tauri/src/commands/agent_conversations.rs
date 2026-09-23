@@ -63,7 +63,7 @@ impl ConversationStore {
         }
         self.projects.as_deref().is_some_and(|projects| {
             if agent == "codex" {
-                holds_codex(projects, session, 0)
+                holds_rollout(projects, &format!("-{session}.jsonl"), 0)
             } else {
                 holds(projects, session)
             }
@@ -103,25 +103,28 @@ pub async fn agent_conversation_resumable(
 }
 
 /// Codex rollouts live under sessions/year/month/day. Ignore symlinked trees.
-fn holds_codex(root: &Path, session: &str, depth: usize) -> bool {
+///
+/// Newest folder first — the zero-padded names sort by date — because the
+/// conversation being resumed is nearly always a recent one, and walking a
+/// year of day folders oldest-first found it last.
+fn holds_rollout(root: &Path, suffix: &str, depth: usize) -> bool {
     let Ok(entries) = std::fs::read_dir(root) else {
         return false;
     };
+    let mut folders = Vec::new();
     for entry in entries.flatten() {
         let Ok(kind) = entry.file_type() else {
             continue;
         };
-        if kind.is_file()
-            && entry
-                .file_name()
-                .to_string_lossy()
-                .ends_with(&format!("-{session}.jsonl"))
-        {
+        if kind.is_file() && entry.file_name().to_string_lossy().ends_with(suffix) {
             return true;
         }
-        if kind.is_dir() && depth < 3 && holds_codex(&entry.path(), session, depth + 1) {
-            return true;
+        if kind.is_dir() && depth < 3 {
+            folders.push(entry.file_name());
         }
     }
-    false
+    folders.sort_unstable_by(|a, b| b.cmp(a));
+    folders
+        .iter()
+        .any(|name| holds_rollout(&root.join(name), suffix, depth + 1))
 }

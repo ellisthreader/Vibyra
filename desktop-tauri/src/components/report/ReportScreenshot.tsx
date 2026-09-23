@@ -4,10 +4,11 @@ import { CameraIcon, TrashIcon } from "./ReportIcons";
 interface Props {
   screenshot: ReportDraft["screenshot"];
   onCapture: () => void;
+  onSelect: () => void;
   onRemove: () => void;
 }
 
-export function ReportScreenshot({ screenshot, onCapture, onRemove }: Props) {
+export function ReportScreenshot({ screenshot, onCapture, onSelect, onRemove }: Props) {
   return (
     <section className="report__capture" aria-label="Screenshot">
       <div className="report__capture-label">Screenshot <span>optional</span></div>
@@ -29,6 +30,9 @@ export function ReportScreenshot({ screenshot, onCapture, onRemove }: Props) {
           <button type="button" className="report__capture-btn" onClick={onCapture}>
             <CameraIcon size={16} /> Capture screenshot
           </button>
+          {navigator.platform.includes("Mac") && <button type="button" className="report__mini" onClick={onSelect}>
+            Choose window or area
+          </button>}
         </div>
       )}
     </section>

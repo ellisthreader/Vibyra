@@ -8,6 +8,8 @@ use super::types::{PreviewPhase, PreviewStatus};
 const START_TIMEOUT: Duration = Duration::from_secs(75);
 
 pub(crate) struct PreviewService {
+    /// Assigned by PreviewManager when this launch becomes its managed runtime.
+    pub runtime_id: u64,
     pub target_id: String,
     pub phase: PreviewPhase,
     pub url: String,
@@ -116,6 +118,7 @@ mod tests {
             port: 1,
         };
         let mut service = PreviewService {
+            runtime_id: 0,
             target_id: "test".into(),
             phase: PreviewPhase::Starting,
             url: "http://127.0.0.1:1/".into(),

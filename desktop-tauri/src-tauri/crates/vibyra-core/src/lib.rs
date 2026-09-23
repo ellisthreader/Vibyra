@@ -17,12 +17,15 @@ pub mod notifications;
 pub mod parallel;
 pub mod performance;
 pub mod preview;
+pub mod process_group;
 pub mod pty;
 pub mod ring;
 pub mod scaffold;
 pub mod settings;
 pub mod utf8;
 pub mod workspace;
+pub mod workspace_agent;
+mod workspace_fingerprint;
 pub mod workspace_init;
 pub mod workspace_preflight;
 
