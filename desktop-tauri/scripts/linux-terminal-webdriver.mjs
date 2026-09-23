@@ -88,6 +88,25 @@ export class NativeDriver {
     });
   }
 
+  async keyboard(text) {
+    const actions = [];
+    const modifiers = [];
+    for (const value of [...text]) {
+      if (value === "\uE000") {
+        while (modifiers.length) actions.push({ type: "keyUp", value: modifiers.pop() });
+      } else if (["\uE008", "\uE009", "\uE00A"].includes(value)) {
+        actions.push({ type: "keyDown", value });
+        modifiers.push(value);
+      } else {
+        actions.push({ type: "keyDown", value }, { type: "keyUp", value });
+      }
+    }
+    while (modifiers.length) actions.push({ type: "keyUp", value: modifiers.pop() });
+    await this.request("POST", `/session/${this.session}/actions`, {
+      actions: [{ type: "key", id: "terminal-keyboard", actions }],
+    });
+  }
+
   async dismissWorkspaceOverlays() {
     let clearSince = 0;
     await this.until(async () => {
