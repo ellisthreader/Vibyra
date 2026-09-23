@@ -89,7 +89,7 @@ pub struct PhoneConnection {
     pub requests: Arc<requests::TerminalRequests>,
 }
 impl PhoneConnection {
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub fn new(path: PathBuf, manager: Arc<PtyManager>) -> Mutex<Self> {
         Self::with_chats(path, manager, None, None)
     }
