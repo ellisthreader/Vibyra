@@ -56,17 +56,21 @@ async function capture(name) {
 }
 
 try {
+  console.log("Waiting for the Linux WebKit driver.");
   await until(() => request("GET", "/status"), "WebKit driver startup");
+  console.log("Opening the built AppImage.");
   const result = await request("POST", "/session", { capabilities: { alwaysMatch: {
     browserName: "wry", "tauri:options": { application },
   } } });
   session = result.sessionId;
   assert.ok(session, "WebKit did not create an application session.");
+  console.log("Checking the native sign-in window.");
   await request("POST", `/session/${session}/window/rect`, { width: 1440, height: 900, x: 0, y: 0 });
   await until(() => execute(`return document.querySelector('.auth-card h1')?.textContent === 'Welcome to Vibyra'
     && [...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'Continue with email' && !button.disabled)`), "Native sign-in view");
   await until(() => execute(`return document.fonts.status === 'loaded'
     && [...document.images].every(image => image.complete && image.naturalWidth > 0)`), "Embedded fonts and images");
+  console.log("Checking native IPC, embedded assets, and email navigation.");
   const nativeVersion = await request("POST", `/session/${session}/execute/async`, {
     script: `const done = arguments[arguments.length - 1];
       window.__TAURI_INTERNALS__.invoke('plugin:app|version')
