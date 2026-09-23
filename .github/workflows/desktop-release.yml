@@ -173,6 +173,11 @@ jobs:
         run: >-
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
           node scripts/smoke-linux.mjs "release/${{ steps.version.outputs.output }}"
+      - name: Verify signed Linux terminal typing through a real PTY
+        if: runner.os == 'Linux'
+        run: >-
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
+          node scripts/smoke-linux-terminal.mjs "release/${{ steps.version.outputs.output }}" release/linux-smoke/terminal
       - name: Preserve native Linux screenshots and logs
         if: ${{ always() && runner.os == 'Linux' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
