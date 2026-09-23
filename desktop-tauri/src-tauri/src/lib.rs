@@ -10,6 +10,7 @@ mod account_endpoint_tests;
 mod account_endpoints;
 mod account_login;
 mod account_oauth;
+mod account_oauth_start;
 mod account_profile;
 mod account_security;
 mod account_session;

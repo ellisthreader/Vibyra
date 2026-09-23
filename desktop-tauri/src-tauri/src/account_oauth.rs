@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::account_api::{error_detail, request, request_raw, ApiError, Endpoint};
 use crate::account_device;
+use crate::account_oauth_start::request_start;
 use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
 use crate::secret_store::SecretStore;
 use crate::state::AppState;
@@ -54,21 +55,6 @@ pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
         poll_until_done(poller, provider, flow_id, expires_in, cancel).await;
     });
     account.snapshot()
-}
-
-async fn request_start(
-    provider: &str,
-    body: serde_json::Value,
-) -> Result<serde_json::Value, ApiError> {
-    for attempt in 0..3 {
-        match request(Endpoint::OauthStart(provider), None, Some(body.clone())).await {
-            Err(ApiError::Network(_)) if attempt < 2 => {
-                tokio::time::sleep(Duration::from_secs(2)).await
-            }
-            outcome => return outcome,
-        }
-    }
-    unreachable!("the final OAuth start attempt returns its outcome")
 }
 
 fn parse_start(body: serde_json::Value) -> Option<(String, String, u64)> {
