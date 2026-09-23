@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAccountStore } from '../../state/accountStore';
 import { useWorkspaceStore } from '../../state/workspaceStore';
 import { GearIcon, PlusIcon, SearchIcon } from '../common/Icons';
+import { ReportProblemButton } from '../report/ReportProblemButton';
 import { avatarUrl, message, teammateApi } from './api';
 import { Setup } from './Setup';
 import { Thread } from './Thread';
@@ -31,7 +32,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
         <img src={avatarUrl(agent.avatar)} alt="" /><span className="teammate-row-copy"><span><strong>{agent.name}</strong><small>{new Date(agent.updatedAt).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</small></span><span><small>{agent.lastMessage || agent.brief}</small>{(agent.status === 'needs_approval' || agent.unread) && <i className="pstrip__dot pstrip__dot--attention" aria-label={agent.status === 'needs_approval' ? 'Needs your approval' : 'Unread messages'} />}</span></span>
       </button>)}{!rows.length && <p className="pstrip__empty">{roster ? query ? 'No matching teammates.' : 'Your teammates will appear here.' : 'Loading teammates…'}</p>}
       {(archived || roster?.teammates.some(a => a.archived)) && <button className="pstrip__row" onClick={() => setArchived(!archived)}>{archived ? 'Active teammates' : 'Archived teammates'}</button>}</div>
-      <footer className="pstrip__footer"><button className="pstrip__row" onClick={() => setSkills(true)}>Skills</button><button className="pstrip__row" onClick={() => useWorkspaceStore.getState().openSettings()}><GearIcon size={16} />Settings</button></footer>
+      <footer className="pstrip__footer"><button className="pstrip__row" onClick={() => setSkills(true)}>Skills</button><ReportProblemButton /><button className="pstrip__row" onClick={() => useWorkspaceStore.getState().openSettings()}><GearIcon size={16} />Settings</button></footer>
     </aside>
     <main className="teammates-main">
       {error && <div className="teammate-notice" role="alert">{error}<button onClick={() => void refresh().catch(e => setError(message(e)))}>Refresh teammates</button></div>}

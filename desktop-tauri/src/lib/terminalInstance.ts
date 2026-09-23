@@ -66,7 +66,10 @@ export function createTerminalEntry(
   term.loadAddon(new WebLinksAddon());
   term.open(container);
   attachRenderer(term);
-  attachTerminalClipboard(term);
+  attachTerminalClipboard(term, () => {
+    clearAttention(id);
+    void writeTerminal(id, "\u001b[Z").catch(() => {});
+  });
 
   const entry: TerminalEntry = {
     id,

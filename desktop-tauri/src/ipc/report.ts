@@ -19,6 +19,8 @@ export interface ReportSubmission {
   imagePaths: string[];
   /** Rust reads this pane's output itself, so it is not sent from here. */
   sessionId: number | null;
+  error: string | null;
+  includeDiagnostics: boolean;
 }
 
 /** Resolves to the report id the user is shown, e.g. `VR-8F3K2Q`. */

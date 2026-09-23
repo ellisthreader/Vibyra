@@ -39,8 +39,10 @@ test("a paste far larger than a report is refused before it is sent", () => {
   assert.equal(draftBlocker(draft({ details: "x".repeat(7_999) })), null);
 });
 
-test("terminal output is offered by default, since that is where the evidence is", () => {
-  assert.equal(emptyDraft("Terminal pane").includeTerminal, true);
+test("terminal output and personal diagnostics require opt-in", () => {
+  assert.equal(emptyDraft("Terminal pane").includeTerminal, false);
+  assert.equal(emptyDraft("Terminal pane").includeDiagnostics, false);
+  assert.equal(emptyDraft("Terminal pane").contact, "");
   assert.equal(emptyDraft("Terminal pane").screenshot, null);
 });
 
@@ -67,6 +69,7 @@ test("the question asked matches the kind of report being written", () => {
 test("where the user is standing is read most-specific first", () => {
   const base = {
     settingsOpen: false,
+    productMode: "work",
     companionOpen: false,
     projectMode: "terminals",
     view: "project",
@@ -74,6 +77,7 @@ test("where the user is standing is read most-specific first", () => {
   };
   // A modal is what the user is looking at, even with a project behind it.
   assert.equal(areaFor({ ...base, settingsOpen: true }), "Settings");
+  assert.equal(areaFor({ ...base, productMode: "agent" }), "Teammates");
   assert.equal(areaFor({ ...base, view: "home" }), "Home screen");
   assert.equal(areaFor({ ...base, projectMode: "preview" }), "Preview");
   assert.equal(areaFor(base), "Terminal pane");

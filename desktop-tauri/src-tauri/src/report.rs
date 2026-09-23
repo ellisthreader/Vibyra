@@ -1,13 +1,9 @@
 //! A user-submitted report, on its way to the maintainer's Discord channel.
 //!
-//! The shape is deliberately wider than "what went wrong": a report that
-//! cannot say *where* it happened costs a round trip to find out, and the user
-//! who hit the bug is rarely still there to answer. So the frontend gathers
-//! the surrounding state — version, platform, project, agent, model, the pane
-//! that was in front — and shows the user exactly what it collected before
-//! they send it.
+//! The frontend gathers version, platform, project and pane context and shows
+//! it to the user before sending.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::discord::{self, Attachment};
 use crate::report_format::embed;
@@ -22,7 +18,7 @@ const MAX_BODY: usize = 8_000;
 /// Where the user was standing when they hit Report. Every field is optional
 /// because a report from the Home screen has no project, and one sent before
 /// any terminal is open has no agent.
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ReportContext {
     pub app_version: String,
@@ -35,6 +31,8 @@ pub struct ReportContext {
     pub model: Option<String>,
     pub pane: Option<String>,
     pub reporter: Option<String>,
+    pub hardware: Option<String>,
+    pub ip: Option<String>,
     pub locale: Option<String>,
     pub screen: Option<String>,
 }
@@ -46,6 +44,7 @@ pub struct Report {
     pub severity: String,
     pub summary: String,
     pub details: String,
+    pub error: Option<String>,
     pub steps: Option<String>,
     pub expected: Option<String>,
     pub area: Option<String>,
@@ -60,6 +59,7 @@ pub struct Report {
     /// Rust rather than sent from the UI, so the webview never has to hold a
     /// terminal's scrollback just to describe it.
     pub session_id: Option<u64>,
+    pub include_diagnostics: bool,
 }
 
 /// Refuses a report that says nothing, and one so large it was not typed.
@@ -75,6 +75,9 @@ pub fn validate(report: &Report) -> Result<(), String> {
     }
     if report.summary.chars().count() > MAX_SUMMARY {
         return Err("The summary is too long — keep it to one line".into());
+    }
+    if report.error.as_deref().unwrap_or("").chars().count() > 2_000 {
+        return Err("The specific error is too long".into());
     }
     if report.details.chars().count() > MAX_BODY
         || report
@@ -177,6 +180,7 @@ pub fn sample_report() -> Report {
 triage view; the full text, environment and any terminal output are in the attached \
 context.txt."
             .into(),
+        error: None,
         steps: Some("1. Open Vibyra\n2. Press the Report button\n3. Describe the problem".into()),
         expected: Some("Reports arrive in this channel within a second or two.".into()),
         area: Some("Reporting".into()),
@@ -190,5 +194,6 @@ context.txt."
         screenshot: None,
         image_paths: Vec::new(),
         session_id: None,
+        include_diagnostics: false,
     }
 }

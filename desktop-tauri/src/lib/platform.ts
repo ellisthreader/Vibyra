@@ -34,3 +34,9 @@ export function terminalPasteKey(event: Pick<KeyboardEvent, "type" | "code" | "c
   if (event.type !== "keydown" || event.code !== "KeyV" || event.altKey) return false;
   return mac && event.metaKey && !event.ctrlKey || event.ctrlKey && event.shiftKey && !event.metaKey;
 }
+
+/** WebKitGTK can report Shift+Tab as ISO_Left_Tab with keyCode 0. */
+export function terminalBacktabKey(event: Pick<KeyboardEvent, "type" | "code" | "key" | "shiftKey" | "ctrlKey" | "metaKey" | "altKey">, linux = isLinux): boolean {
+  return linux && event.type === "keydown" && !event.ctrlKey && !event.metaKey && !event.altKey
+    && ((event.shiftKey && (event.code === "Tab" || event.key === "Tab")) || event.key === "ISO_Left_Tab" || event.key === "BackTab");
+}

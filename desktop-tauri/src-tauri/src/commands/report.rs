@@ -13,6 +13,8 @@ use super::screenshot_png::{decode_png, png_bytes};
 use crate::discord::MAX_ATTACHMENT_BYTES;
 use crate::report::{configured_webhook, deliver, validate, Report};
 use crate::report_image::load_all;
+use crate::report_privacy::redact_unapproved_diagnostics;
+use crate::report_relay;
 use crate::report_text::terminal_tail;
 use crate::state::AppState;
 
@@ -23,17 +25,20 @@ const MAX_SCREENSHOT_BYTES: usize = MAX_ATTACHMENT_BYTES - 512 * 1024;
 /// Whether reporting is available at all, so the UI can say so up front rather
 /// than after the user has written a paragraph.
 #[tauri::command]
-pub async fn report_channel_ready() -> Result<bool, String> {
+pub async fn report_channel_ready(state: State<'_, AppState>) -> Result<bool, String> {
+    if remote_ready(&state).await {
+        return Ok(true);
+    }
     run_blocking(|| Ok(configured_webhook()?.is_some())).await
 }
 
 #[tauri::command]
-pub async fn submit_report(state: State<'_, AppState>, report: Report) -> Result<String, String> {
+pub async fn submit_report(
+    state: State<'_, AppState>,
+    mut report: Report,
+) -> Result<String, String> {
     validate(&report)?;
-    let webhook = configured_webhook()?.ok_or_else(|| {
-        "Reporting is not connected yet — ask the maintainer to run `npm run report:configure`"
-            .to_string()
-    })?;
+    redact_unapproved_diagnostics(&mut report);
     // Read before any await: the pane can exit while the user is still typing,
     // and a report is worth more than the output it could not collect.
     let tail = report
@@ -50,7 +55,23 @@ pub async fn submit_report(state: State<'_, AppState>, report: Report) -> Result
     // of them being on a slow disk must not stall a runtime worker.
     let paths = report.image_paths.clone();
     let images = run_blocking(move || load_all(&paths)).await?;
+    if remote_ready(&state).await {
+        let token = state
+            .account
+            .token()
+            .ok_or("Sign in again to send this report")?;
+        return report_relay::deliver(&token, &report, screenshot, images, tail).await;
+    }
+    let webhook = configured_webhook()?
+        .ok_or_else(|| "Reporting is unavailable right now. Please try again later.".to_string())?;
     deliver(&webhook, &report, screenshot, images, tail).await
+}
+
+async fn remote_ready(state: &AppState) -> bool {
+    let Some(token) = state.account.token() else {
+        return false;
+    };
+    report_relay::ready(&token).await
 }
 
 /// Decodes the editor's PNG and brings it under Discord's ceiling if it is

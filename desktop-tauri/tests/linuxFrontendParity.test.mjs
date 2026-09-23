@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile, readdir } from "node:fs/promises";
 
-import { desktopPlatformFor } from "../src/lib/platform.ts";
+import { desktopPlatformFor, terminalBacktabKey } from "../src/lib/platform.ts";
 
 const source = (path) => readFile(new URL(`../src/${path}`, import.meta.url), "utf8");
 
@@ -82,4 +82,14 @@ test("the detected computer determines native copy and keyboard actions together
     if (original) Object.defineProperty(globalThis, "navigator", original);
     else delete globalThis.navigator;
   }
+});
+
+test("Linux backtab reaches CLI mode switches even with WebKit's ISO_Left_Tab key", () => {
+  const key = { type: "keydown", code: "Tab", key: "Tab", shiftKey: true, ctrlKey: false, metaKey: false, altKey: false };
+  assert.equal(terminalBacktabKey(key, true), true);
+  assert.equal(terminalBacktabKey({ ...key, code: "", key: "ISO_Left_Tab", shiftKey: false }, true), true);
+  assert.equal(terminalBacktabKey({ ...key, key: "BackTab", shiftKey: false }, true), true);
+  assert.equal(terminalBacktabKey({ ...key, shiftKey: false }, true), false);
+  assert.equal(terminalBacktabKey({ ...key, ctrlKey: true }, true), false);
+  assert.equal(terminalBacktabKey(key, false), false);
 });

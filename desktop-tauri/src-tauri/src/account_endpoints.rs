@@ -9,6 +9,7 @@ pub enum Endpoint<'a> {
     /// The second half of a password login: a challenge id and a code.
     LoginTwoFactor,
     Session,
+    ReportReady,
     Rotate,
     Logout,
     Profile,
@@ -48,6 +49,7 @@ impl Endpoint<'_> {
             Endpoint::Login => Ok("/api/auth/login".into()),
             Endpoint::LoginTwoFactor => Ok("/api/auth/login/2fa".into()),
             Endpoint::Session => Ok("/api/session".into()),
+            Endpoint::ReportReady => Ok("/api/reports/ready".into()),
             Endpoint::Rotate => Ok("/api/auth/session/rotate".into()),
             Endpoint::Logout => Ok("/api/auth/logout".into()),
             Endpoint::Profile => Ok("/api/account/profile".into()),
@@ -98,6 +100,7 @@ impl Endpoint<'_> {
     pub(crate) fn method(&self) -> reqwest::Method {
         match self {
             Endpoint::Session
+            | Endpoint::ReportReady
             | Endpoint::OauthStatus(..)
             | Endpoint::TwoFactorStatus
             | Endpoint::AccountSessions

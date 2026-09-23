@@ -1,54 +1,66 @@
-/* Reporting, continued: attachments, the context list, footer and sent state. */
-
-/* --- attachments --- */
-
-.report__attach {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-
-.report__attach-btn {
+.report__capture {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  gap: 1px 10px;
-  padding: 12px 13px;
-  text-align: left;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color 120ms, background 120ms;
+  gap: 8px;
 }
 
-.report__attach-btn:hover {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.report__attach-btn svg {
-  grid-row: span 2;
-  align-self: center;
-  color: var(--accent);
-}
-
-.report__attach-btn b {
+.report__capture-label {
   font-size: 12.5px;
+  font-weight: 620;
+  color: var(--text);
 }
 
-.report__attach-btn span {
+.report__capture-label span {
+  margin-left: 5px;
   font-size: 11px;
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.report__capture-actions,
+.report__images {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report__capture-btn,
+.report__mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 540;
+  cursor: pointer;
+}
+
+.report__capture-btn:hover,
+.report__mini:hover {
+  background: var(--hover);
+  border-color: var(--accent-border);
+}
+
+.report__mini {
+  background: transparent;
   color: var(--muted);
+}
+
+.report__mini--danger:hover {
+  color: var(--danger);
+  border-color: rgba(240, 100, 114, 0.4);
 }
 
 .report__shot {
   margin: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 9px;
   overflow: hidden;
   background: var(--workspace);
 }
@@ -56,9 +68,8 @@
 .report__shot img {
   display: block;
   width: 100%;
-  max-height: 210px;
-  object-fit: cover;
-  object-position: top center;
+  max-height: 160px;
+  object-fit: contain;
 }
 
 .report__shot figcaption {
@@ -76,36 +87,23 @@
   color: var(--muted);
 }
 
-.report__mini {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 11.5px;
-  cursor: pointer;
+.report__option-section {
+  display: grid;
+  gap: 9px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
 }
 
-.report__mini:hover {
+.report__option-title {
+  font-size: 12px;
+  font-weight: 620;
   color: var(--text);
-  background: var(--hover);
-}
-
-.report__mini--danger:hover {
-  color: var(--danger);
-  border-color: rgba(240, 100, 114, 0.4);
 }
 
 .report__toggle {
   display: flex;
   align-items: flex-start;
   gap: 9px;
-  padding: 10px 11px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
   cursor: pointer;
 }
 
@@ -114,39 +112,32 @@
   accent-color: var(--accent);
 }
 
-.report__toggle svg {
-  margin-top: 1px;
-  color: var(--dim);
-  flex: none;
-}
-
 .report__toggle b {
   display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 560;
+  color: var(--text);
 }
 
 .report__toggle em {
+  display: block;
+  margin-top: 2px;
   font-style: normal;
   font-size: 11px;
+  line-height: 1.4;
   color: var(--muted);
 }
 
 .report__context {
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  padding: 0 11px;
-}
-
-.report__context[open] {
-  padding-bottom: 6px;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 7px;
 }
 
 .report__facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px 16px;
-  margin: 0 0 6px;
+  margin: 5px 0 0;
 }
 
 .report__facts div {
@@ -154,8 +145,6 @@
   gap: 8px;
   min-width: 0;
   font-size: 11.5px;
-  border-top: 1px solid var(--line-soft);
-  padding-top: 5px;
 }
 
 .report__facts dt {

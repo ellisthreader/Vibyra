@@ -1,12 +1,13 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useModalFocus } from "../../lib/useModalFocus";
 import { draftBlocker } from "../../lib/reportDraft";
 import { useReportStore } from "../../state/reportStore";
 import { CheckIcon, CloseIcon } from "../common/Icons";
 import { ReportAttachments } from "./ReportAttachments";
+import { ReportExtraFields } from "./ReportExtraFields";
 import { ReportFields } from "./ReportFields";
-import { LifebuoyIcon } from "./ReportIcons";
+import { ReportScreenshot } from "./ReportScreenshot";
 
 /** The report dialog.
  *
@@ -18,6 +19,7 @@ export function ReportModal() {
   const capturing = useReportStore((state) => state.capturing);
   const draft = useReportStore((state) => state.draft);
   const surroundings = useReportStore((state) => state.surroundings);
+  const recentErrors = useReportStore((state) => state.recentErrors);
   const status = useReportStore((state) => state.status);
   const error = useReportStore((state) => state.error);
   const sentId = useReportStore((state) => state.sentId);
@@ -30,6 +32,7 @@ export function ReportModal() {
   const pasteImage = useReportStore((state) => state.pasteImage);
   const removeImage = useReportStore((state) => state.removeImage);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
   useModalFocus(modalRef, open && !capturing, close);
 
   // Ctrl+V attaches an image from the clipboard — but only when the clipboard
@@ -42,6 +45,14 @@ export function ReportModal() {
     },
     [pasteImage],
   );
+
+  const hasExtras = Boolean(draft && (
+    draft.kind !== "bug" || draft.severity !== "normal" || draft.error || draft.steps ||
+    draft.expected || draft.images.length || draft.includeTerminal || draft.includeDiagnostics || draft.contact
+  ));
+  useEffect(() => {
+    if (hasExtras) setMoreOpen(true);
+  }, [hasExtras]);
 
   if (!open || capturing) return null;
 
@@ -60,18 +71,15 @@ export function ReportModal() {
         onPaste={onPaste}
       >
         <header className="report__header">
-          <span className="report__mark" aria-hidden="true">
-            <LifebuoyIcon size={18} />
-          </span>
           <div className="report__heading">
             <h2>{status === "sent" ? "Thanks — that helps" : "Report a problem"}</h2>
             <p>
               {status === "sent"
-                ? "It went straight through to the Vibyra team."
-                : "Goes straight to the Vibyra team, with everything needed to reproduce it."}
+                ? "Your report reached the Vibyra team."
+                : "Tell us what happened. Only send details you choose to share."}
             </p>
           </div>
-          <button className="icon-btn" onClick={close} title="Close">
+          <button className="icon-btn" onClick={close} aria-label="Close report" title="Close">
             <CloseIcon size={15} />
           </button>
         </header>
@@ -96,14 +104,18 @@ export function ReportModal() {
               {draft && surroundings ? (
                 <>
                   <ReportFields draft={draft} patch={patch} />
-                  <ReportAttachments
-                    draft={draft}
-                    patch={patch}
-                    surroundings={surroundings}
-                    onScreenshot={() => void addScreenshot()}
-                    onAddImages={() => void addImages()}
-                    onRemoveImage={removeImage}
-                  />
+                  <ReportScreenshot screenshot={draft.screenshot}
+                    onCapture={() => void addScreenshot()}
+                    onRemove={() => patch({ screenshot: null })} />
+                  <details className="report__more" open={moreOpen}
+                    onToggle={(event) => setMoreOpen(event.currentTarget.open)}>
+                    <summary>More options <span>type, location, files and diagnostics</span></summary>
+                    <div className="report__more-body">
+                      <ReportExtraFields draft={draft} patch={patch} recentErrors={recentErrors} />
+                      <ReportAttachments draft={draft} patch={patch} surroundings={surroundings}
+                        onAddImages={() => void addImages()} onRemoveImage={removeImage} />
+                    </div>
+                  </details>
                 </>
               ) : (
                 <p className="report__loading">Collecting a few details about where you are…</p>

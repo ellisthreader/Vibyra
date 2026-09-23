@@ -3,7 +3,7 @@ import type { Terminal } from "@xterm/xterm";
 import { readClipboardPaste } from "../ipc/tools";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { shellQuotePath } from "./terminalDrop";
-import { terminalPasteKey } from "./platform";
+import { terminalBacktabKey, terminalPasteKey } from "./platform";
 
 /**
  * Mac uses Command+V; Control+Shift+V also pastes on every platform.
@@ -22,8 +22,13 @@ async function pasteIntoTerminal(term: Terminal): Promise<void> {
   }
 }
 
-export function attachTerminalClipboard(term: Terminal): void {
+export function attachTerminalClipboard(term: Terminal, sendBacktab?: () => void): void {
   term.attachCustomKeyEventHandler((event) => {
+    if (sendBacktab && terminalBacktabKey(event)) {
+      event.preventDefault();
+      sendBacktab();
+      return false;
+    }
     if (terminalPasteKey(event)) {
       event.preventDefault();
       void pasteIntoTerminal(term);

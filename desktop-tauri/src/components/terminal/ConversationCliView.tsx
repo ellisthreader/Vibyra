@@ -33,7 +33,8 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
     const term = new Terminal({ fontSize: current.current.fontSize, fontFamily: terminalFont(settings.fontFamily),
       theme: themeFor(settings.theme), scrollback: settings.scrollbackLines, allowProposedApi: true, cursorBlink: false });
     const fit = new FitAddon(); term.loadAddon(fit); term.loadAddon(new WebLinksAddon());
-    term.open(element); attachRenderer(term); attachTerminalClipboard(term);
+    term.open(element); attachRenderer(term);
+    attachTerminalClipboard(term, () => void invoke('shared_cli_write', { sessionId, data: '\u001b[Z' }).catch(fail));
     instance.current = { term, fit };
     const fitNow = () => { if (element.clientWidth > 80 && element.clientHeight > 60) fit.fit(); };
     fitNow();

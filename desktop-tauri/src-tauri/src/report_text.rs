@@ -57,6 +57,10 @@ pub(crate) fn context_text(report: &Report, id: &str, terminal_tail: Option<&str
     out.push_str(&row("Summary", report.summary.trim()));
     out.push_str(&section("What happened", &report.details));
     out.push_str(&section(
+        "Specific error",
+        report.error.as_deref().unwrap_or_default(),
+    ));
+    out.push_str(&section(
         "Steps to reproduce",
         report.steps.as_deref().unwrap_or_default(),
     ));

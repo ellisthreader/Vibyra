@@ -36,6 +36,7 @@ export const REPORT_AREAS = [
   "File tree",
   "Preview",
   "Home screen",
+  "Teammates",
   "Settings",
   "Screenshots",
   "Notifications",
@@ -50,12 +51,14 @@ export const REPORT_AREAS = [
  */
 export function areaFor(state: {
   settingsOpen: boolean;
+  productMode: "work" | "agent";
   companionOpen: boolean;
   projectMode: string;
   view: string;
   hasPane: boolean;
 }): string {
   if (state.settingsOpen) return "Settings";
+  if (state.productMode === "agent") return "Teammates";
   if (state.view !== "project") return "Home screen";
   if (state.projectMode === "preview") return "Preview";
   if (state.hasPane) return "Terminal pane";
@@ -69,6 +72,7 @@ export interface ReportDraft {
   area: string;
   summary: string;
   details: string;
+  error: string;
   steps: string;
   expected: string;
   contact: string;
@@ -78,6 +82,7 @@ export interface ReportDraft {
   images: string[];
   /** Whether the focused pane's output rides along. */
   includeTerminal: boolean;
+  includeDiagnostics: boolean;
 }
 
 const MAX_SUMMARY = 300;
@@ -86,22 +91,21 @@ const MAX_BODY = 8_000;
  * at this point rather than letting the send fail. */
 export const MAX_IMAGES = 4;
 
-export function emptyDraft(area: string, contact = ""): ReportDraft {
+export function emptyDraft(area: string): ReportDraft {
   return {
     kind: "bug",
     severity: "normal",
     area,
     summary: "",
     details: "",
+    error: "",
     steps: "",
     expected: "",
-    contact,
+    contact: "",
     screenshot: null,
     images: [],
-    // On by default when there is a pane to read: the terminal is where the
-    // evidence usually is, and a user who does not want to send it can see the
-    // toggle right next to the thing it describes.
-    includeTerminal: true,
+    includeTerminal: false,
+    includeDiagnostics: false,
   };
 }
 
@@ -113,6 +117,7 @@ export function draftBlocker(draft: ReportDraft): string | null {
   if (!draft.summary.trim()) return "Add a one-line summary";
   if (!draft.details.trim()) return "Describe what happened";
   if (draft.summary.length > MAX_SUMMARY) return "The summary is too long for one line";
+  if (draft.error.length > 2_000) return "The specific error is too long";
   if (draft.images.length > MAX_IMAGES) return `Attach at most ${MAX_IMAGES} images`;
   if (
     draft.details.length > MAX_BODY ||

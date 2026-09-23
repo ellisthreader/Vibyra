@@ -8,6 +8,7 @@ fn report() -> Report {
         severity: "high".into(),
         summary: "Terminal goes blank on resize".into(),
         details: "Dragging the divider quickly leaves the pane empty.".into(),
+        error: None,
         steps: Some("1. Open two panes\n2. Drag the divider".into()),
         expected: Some("The panes reflow.".into()),
         area: Some("Terminal pane".into()),
@@ -24,6 +25,7 @@ fn report() -> Report {
         screenshot: None,
         image_paths: Vec::new(),
         session_id: None,
+        include_diagnostics: false,
     }
 }
 

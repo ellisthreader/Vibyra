@@ -59,6 +59,8 @@ mod renderer;
 mod report;
 mod report_format;
 mod report_image;
+mod report_privacy;
+mod report_relay;
 #[cfg(test)]
 mod report_tests;
 mod report_text;

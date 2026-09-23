@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 11px 16px;
+  padding: 12px 22px;
   border-top: 1px solid var(--line);
   background: var(--surface);
 }
@@ -82,12 +82,13 @@
 /* Narrow windows: the six kind tiles stop fitting three across well before
    the dialog itself runs out of room. */
 @media (max-width: 620px) {
-  .report__kinds {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .report__facts {
     grid-template-columns: 1fr;
+  }
+
+  .report__footer {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 

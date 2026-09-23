@@ -4,6 +4,8 @@ import { PlusIcon } from "../common/Icons";
 import { vibyraLogoUrl as logoUrl } from "../../assets/vibyraLogo";
 import { useProjectStore } from "../../state/projectStore";
 import { NotificationBellHost } from "../notifications/NotificationBellHost";
+import { LifebuoyIcon } from "../report/ReportIcons";
+import { useReportStore } from "../../state/reportStore";
 import { useProductMode } from "../../state/productModeStore";
 import { UpdateChip } from "./UpdateChip";
 import { ResizeHandles, WindowControls } from "./WindowChrome";
@@ -32,7 +34,9 @@ export function TitleBar({ onReplayWelcome }: { onReplayWelcome: () => void }) {
       <div className="chrome__right">
         {mode === 'work' && <button type="button" className="icon-btn" aria-label="New project" title="New project" onClick={openNewProject}><PlusIcon size={17} /></button>}
         <UpdateChip />
-        {inProject && mode === 'work' && <WorkspaceActions />}<NotificationBellHost /><WindowControls />
+        {inProject && mode === 'work' && <WorkspaceActions />}
+        <button type="button" className="icon-btn chrome__report" aria-label="Report a bug" title="Report a bug" onClick={() => void useReportStore.getState().begin()}><LifebuoyIcon size={16} /></button>
+        <NotificationBellHost /><WindowControls />
       </div>
     </header>
     <ResizeHandles />

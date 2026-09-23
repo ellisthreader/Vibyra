@@ -6,6 +6,7 @@ import { gatherSurroundings, type ReportSurroundings } from "../lib/reportContex
 import { canSubmit, emptyDraft, MAX_IMAGES, type ReportDraft } from "../lib/reportDraft";
 import { readClipboardPaste } from "../ipc/tools";
 import { useScreenshotStore } from "./screenshotStore";
+import { useNotificationStore } from "./notificationStore";
 
 type ReportStatus = "idle" | "sending" | "sent";
 
@@ -18,6 +19,7 @@ interface ReportStore {
   sentId: string | null;
   /** Null until asked; false means nobody is listening on the other end. */
   channelReady: boolean | null;
+  recentErrors: string[];
   /** True while the screenshot editor stands in for the dialog. */
   capturing: boolean;
   begin: (prefill?: Partial<ReportDraft>) => Promise<void>;
@@ -54,24 +56,27 @@ export const useReportStore = create<ReportStore>((set, get) => ({
   error: null,
   sentId: null,
   channelReady: null,
+  recentErrors: [],
   capturing: false,
 
   begin: async (prefill) => {
     // Opened first, filled a moment later: gathering the surroundings costs an
     // IPC round trip, and a dialog that appears only after it feels broken.
-    set({ open: true, status: "idle", error: null, sentId: null });
+    set({ open: true, status: "idle", error: null, sentId: null, channelReady: null });
     const surroundings = await gatherSurroundings();
-    const reporter = surroundings.context.reporter ?? "";
+    const recentErrors = useNotificationStore.getState().history
+      .filter((item) => item.severity === "danger" && item.body)
+      .slice(-10).reverse().map((item) => item.body!.slice(0, 2_000));
     // The user can close the dialog while this is in flight; filling it in
     // afterwards would leave a draft behind that the next report inherits.
     if (!get().open) return;
     set((state) => ({
       surroundings,
-      draft: state.draft ?? { ...emptyDraft(surroundings.area, reporter), ...prefill },
+      recentErrors,
+      draft: state.draft ?? { ...emptyDraft(surroundings.area), ...prefill },
     }));
-    if (get().channelReady === null) {
-      set({ channelReady: await reportChannelReady().catch(() => false) });
-    }
+    const channelReady = await reportChannelReady().catch(() => false);
+    if (get().open) set({ channelReady });
   },
 
   // Deliberately keeps the draft. Clicking the backdrop or pressing Escape
@@ -151,6 +156,7 @@ export const useReportStore = create<ReportStore>((set, get) => ({
         severity: draft.severity,
         summary: draft.summary.trim(),
         details: draft.details.trim(),
+        error: trimmed(draft.error),
         steps: trimmed(draft.steps),
         expected: trimmed(draft.expected),
         area: trimmed(draft.area),
@@ -159,6 +165,7 @@ export const useReportStore = create<ReportStore>((set, get) => ({
         screenshot: draft.screenshot,
         imagePaths: draft.images,
         sessionId: draft.includeTerminal ? surroundings.sessionId : null,
+        includeDiagnostics: draft.includeDiagnostics,
       });
       set({ status: "sent", sentId, draft: null });
     } catch (error) {
