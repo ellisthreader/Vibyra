@@ -7,4 +7,4 @@
 :root[data-theme="light"] .launch-effort[data-provider="codex"][data-effort="ultra"] output { color: #7c3ad9; }
 
 @media (prefers-reduced-motion: reduce) { .launch-effort-animation { visibility: hidden; } }
-html[data-performance="on"] .launch-effort-animation { visibility: hidden; }
+html[data-performance="best"] .launch-effort-animation { visibility: hidden; }

@@ -37,6 +37,28 @@ function write(version: string): void {
   }
 }
 
+/**
+ * Has this copy of Vibyra been used before?
+ *
+ * A first launch has stored nothing. Anyone upgrading has a drawer full of it —
+ * a remembered panel, launch settings, the welcome they have already seen — so
+ * any other key of ours is proof this is not a new install, and that a missing
+ * "last seen version" means "older than the feature" rather than "brand new".
+ */
+export function usedBefore(): boolean {
+  try {
+    const local = store();
+    if (!local) return false;
+    for (let index = 0; index < local.length; index += 1) {
+      const key = local.key(index);
+      if (key !== null && key !== SEEN_KEY && key.startsWith("vibyra.")) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 interface WhatsNewStore {
   /** The version the window is showing, or "" when it is closed. */
   showing: string;
@@ -53,10 +75,12 @@ export const useWhatsNewStore = create<WhatsNewStore>((set) => ({
   arrived: (version) => {
     if (version === "") return;
     const seen = read();
+    // Asked before the write, or every launch would look like a fresh install.
+    const used = usedBefore();
     // Recorded whether or not it opens, so a build with no written entry still
     // counts as seen and does not re-arm the next launch.
     write(version);
-    if (shouldOpen(version, seen)) set({ showing: version });
+    if (shouldOpen(version, seen, used)) set({ showing: version });
   },
 
   open: (version) => set({ showing: version }),

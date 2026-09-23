@@ -15,7 +15,7 @@ const hooks = registerHooks({
   const sources = {
    'fixture:../ipc/settings': 'export const getSettings=()=>settingsFixture.read(); export const saveSettings=s=>settingsFixture.save(s);',
    'fixture:../lib/notificationPrefs': 'export const DEFAULT_NOTIFICATIONS={}; export const normalizeNotifications=v=>v??{};',
-   'fixture:../lib/performanceMode': 'export const applyPerformanceMode=()=>{};',
+   'fixture:../lib/performanceMode': 'export const applyPerformanceMode=()=>{}; export const normalizePerformanceMode=(value)=>value===true?"best":value===false?"balanced":value;',
    'fixture:../lib/terminalRegistry': 'export const applySettingsToAll=()=>{};',
    'fixture:../lib/xtermTheme': 'export const resolveTheme=t=>t;',
   };

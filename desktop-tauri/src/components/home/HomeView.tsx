@@ -8,7 +8,6 @@ import { AgentMark } from "../common/AgentMark";
 import { ChevronIcon, FolderIcon, PlusIcon } from "../common/Icons";
 import { HomeLaunchBar } from "./HomeLaunchBar";
 import { HomeProjectCard } from "./HomeProjectCard";
-import { StartSculpture } from "../common/StartSculpture";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -32,11 +31,10 @@ export function HomeView() {
     <main className="homeview">
       <div className="homeview__inner">
         <header className="homeview__hero">
-          <StartSculpture />
           <div className="homeview__hi">
           <span className="homeview__eyebrow">{greeting()}</span>
           <h1>{name ? projects.length ? "Welcome back," : "Welcome home," : "Welcome to"}<br /><span>{name || "Vibyra"}.</span></h1>
-          <p>{working ? `${working} ${working === 1 ? "agent is" : "agents are"} working. Make yourself at home.` : "A little imagination. A space of your own. Let’s make something."}</p>
+          {working > 0 && <p>{working} {working === 1 ? "agent is" : "agents are"} working.</p>}
           <div className="homeview__actions">
             <button className="btn btn--primary" data-welcome-focus onClick={openNewProject}><PlusIcon size={16} />New project<ChevronIcon size={14} /></button>
             <button className="btn homeview__open" onClick={() => void pickAndCreate()}><FolderIcon size={16} />Open a folder</button>

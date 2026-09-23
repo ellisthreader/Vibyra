@@ -62,7 +62,7 @@ export function LaunchEffortAnimation({ provider, effort }: { provider?: string;
       }
       node.dataset.frame = String(Math.floor(elapsed));
     };
-    const stopped = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.performance === 'on' || document.hidden;
+    const stopped = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.performance === 'best' || document.hidden;
     const tick = (now: number) => {
       frame = 0;
       if (stopped()) { sync(); return; }

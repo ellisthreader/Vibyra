@@ -5,7 +5,7 @@ import { useTerminalStore } from "../state/terminalStore";
 import { activityFor, type ActivityState } from "./activity";
 import { detectTransitions, type SessionPhase } from "./activityTransitions";
 import { notifyActivityTransitions } from "./notificationTriggers";
-import { activityTickMs } from "./performanceMode";
+import { activityTickMs, normalizePerformanceMode } from "./performanceMode";
 import { windowIsFocused } from "./windowFocus";
 
 /**
@@ -19,7 +19,7 @@ import { windowIsFocused } from "./windowFocus";
 export function useActivityTicker(): void {
   const idleEnabled = useNotificationPrefs().agentIdleEnabled;
   const tickMs = activityTickMs(
-    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+    useSettingsStore((state) => normalizePerformanceMode(state.settings?.performanceMode)),
   );
   useEffect(() => {
     // Phase state lives in the closure, not React: the ticker runs whether or

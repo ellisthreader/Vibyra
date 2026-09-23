@@ -25,3 +25,18 @@ export interface VoiceStatus {
   recorder: boolean;
   keyConfigured: boolean;
 }
+
+/** A live reading from the open microphone. `metered` is false where the
+ * recorder cannot report one, and a spoken turn must be ended by hand. */
+/** One installed Mac voice that can read replies. */
+export interface SpeechVoice {
+  id: string;
+  locale: string;
+}
+
+export interface VoiceLevel {
+  recording: boolean;
+  metered: boolean;
+  rms: number;
+  seconds: number;
+}

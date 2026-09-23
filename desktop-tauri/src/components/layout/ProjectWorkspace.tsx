@@ -49,7 +49,7 @@ export function ProjectWorkspace({ active = true }: { active?: boolean }) {
 
   return (
     <main className="workspace project-workspace" data-tools={toolsVisible ? companionSize : "closed"}
-      style={{ "--tools-reserve": companionSize === "wide" ? "56%" : `${companionWidth}px` } as CSSProperties}>
+      style={{ "--tools-reserve": companionSize === "wide" ? "55%" : `${companionWidth}px` } as CSSProperties}>
       <div className="project-mode-stack">
         <section
           id="project-terminal-panel"

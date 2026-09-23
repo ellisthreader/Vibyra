@@ -9,7 +9,7 @@ import {
   saveCompanionWidth,
 } from "../src/lib/companionPreferences.ts";
 import { visibleFileEntries } from "../src/lib/fileTreePolicy.ts";
-import { formatMemoryContext, mergeImportedMemory } from "../src/lib/memoryImport.ts";
+import { mergeImportedMemory } from "../src/lib/memoryImport.ts";
 import { parseMemoryDocument } from "../src/lib/memoryDocument.ts";
 import { buildMemoryTree, resolveMemoryLink, searchMemoryPaths } from "../src/lib/memoryTree.ts";
 
@@ -83,15 +83,6 @@ test("imports selected notes into editable project memory without source paths",
   assert.match(merged, /## Imported · decisions\.md/);
   assert.doesNotMatch(merged, /empty\.md/);
   assert.doesNotMatch(merged, /\/home\//);
-});
-
-test("labels editable and read-only memory context separately", () => {
-  const context = formatMemoryContext("# Local rule", [
-    { path: "Architecture/Terminal.md", content: "PTY sessions persist." },
-  ]);
-  assert.match(context, /editable MEMORY\.md/);
-  assert.match(context, /read-only notes selected locally/);
-  assert.match(context, /Architecture\/Terminal\.md/);
 });
 
 test("builds a stable Obsidian-style note tree without loading note bodies", () => {

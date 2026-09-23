@@ -1,11 +1,11 @@
 /* Shared control primitives introduced by the notification system: the
    screen-reader utility, the severity mark shared by toasts / centre rows /
-   settings rows, and the switch, volume and cue-select inputs the settings
-   pane builds on.
+   settings rows, the switch, and the Vibyra mark.
 
-   Import order matters: this sheet must follow `base.part-03.css` so
-   `select.input--sound` wins its specificity tie against base.css's
-   `select.input`, and it must precede every consumer sheet. */
+   Import order matters: this sheet must follow `base.part-03.css` and precede
+   every consumer sheet. The stepped volume bars and the native cue `<select>`
+   that used to live here were replaced by `settings-notif-volume.css` and
+   `settings-notif-cue.css`; both are page-scoped, so nothing shared remains. */
 
 .sr-only {
   position: absolute;
@@ -109,56 +109,23 @@
   opacity: 0.5;
 }
 
-/* ---------- volume steps ---------- */
+/* ---------- the Vibyra mark ---------- */
 
-.vol-steps {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 3px;
+/* The V artwork is ~4:3. Sizing the image to 72% of a round chip and letting
+   `contain` fit it there keeps the mark square and the V unsquashed at every
+   size — the same treatment `.agent-mark` gives a provider logo. */
+.vibyra-mark {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
-.vol-step {
-  width: 9px;
-  border-radius: 2px;
-  background: var(--hover-strong);
-  transition: background var(--t-base) var(--e-standard);
-}
-
-.vol-step:nth-child(1) {
-  height: 8px;
-}
-
-.vol-step:nth-child(2) {
-  height: 11px;
-}
-
-.vol-step:nth-child(3) {
-  height: 14px;
-}
-
-.vol-step:nth-child(4) {
-  height: 17px;
-}
-
-.vol-step:nth-child(5) {
-  height: 20px;
-}
-
-.vol-step:hover {
-  background: color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-.vol-step[aria-pressed="true"] {
-  background: var(--accent);
-}
-
-/* ---------- cue select ---------- */
-
-select.input--sound {
-  width: auto;
-  min-height: 28px;
-  padding: 3px 26px 3px 9px;
-  font-size: 11.5px;
-  font-weight: 600;
-  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+.vibyra-mark img {
+  display: block;
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
 }

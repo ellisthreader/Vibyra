@@ -1,13 +1,11 @@
-import { previewCue } from "../../lib/notificationSounds";
-import { CUE_LABELS, CUE_ORDER } from "../../lib/soundCues";
-import type {
-  NotificationCategoryPrefs,
-  NotificationChannel,
-  SoundCueId,
-} from "../../notificationTypes";
-import { PlayIcon } from "../common/StatusIcons";
+import { useId, useRef } from "react";
+
+import type { NotificationCategoryPrefs, NotificationChannel } from "../../notificationTypes";
+import { categoryMark } from "../notifications/notificationMarks";
+import { MonitorIcon } from "../common/StatusIcons";
 import type { CategoryDescriptor } from "./notificationCategories";
-import { SettingRow, Switch } from "./SettingsShared";
+import { SoundCuePicker } from "./SoundCuePicker";
+import { Switch } from "./SettingsShared";
 
 interface Props {
   descriptor: CategoryDescriptor;
@@ -18,15 +16,16 @@ interface Props {
   onChange: (next: NotificationCategoryPrefs) => void;
 }
 
-function nextChannel(on: boolean, osCapable: boolean): NotificationChannel {
-  if (!on) return "off";
-  return osCapable ? "system" : "app";
-}
+
 
 /**
- * One event: where it shows, what it sounds like, whether it is on. The
- * channel is a labelled choice rather than an icon, and the sound controls
- * only appear when sounds are on at all.
+ * One event: what it is, whether it may also leave the window, what it sounds
+ * like, whether it happens at all. The controls sit in fixed grid columns so
+ * the switches line up down the page even on the rows that cannot reach the
+ * desktop — the reserved slot is the alignment, not decoration.
+ *
+ * The mark is the same glyph and severity the event actually arrives with, so
+ * this list doubles as a legend for the bell.
  */
 export function NotificationCategoryRow({
   descriptor,
@@ -36,59 +35,75 @@ export function NotificationCategoryRow({
   disabled,
   onChange,
 }: Props) {
+  const id = useId();
   const on = prefs.channel !== "off";
   const locked = descriptor.locked === true;
+  const { Icon } = categoryMark(descriptor.id);
+  const toDesktop = prefs.channel === "system";
+
+  // Turning an event off and on again must not quietly re-open it to the
+  // desktop. The old row always came back as "system"; now that where an event
+  // shows is a one-click toggle, silently undoing that choice is worse.
+  const lastOn = useRef<NotificationChannel>(descriptor.osCapable ? "system" : "app");
+  if (on) lastOn.current = prefs.channel;
 
   return (
-    <SettingRow
-      label={descriptor.label}
-      hint={locked ? `${descriptor.hint} Turn off Show notifications to silence these.` : descriptor.hint}
+    <div
+      role="group"
+      aria-labelledby={`${id}-label`}
+      /* The locked row's only explanation of why its switch is dead lives in
+         the hint, so the hint has to be part of the group's description. */
+      aria-describedby={descriptor.hint ? `${id}-hint` : undefined}
+      className="notif-event"
     >
-      <div className="notif-cat">
-        {descriptor.osCapable && on && (
-          <select
-            className="input input--sm"
-            value={prefs.channel === "system" ? "system" : "app"}
+      <span className={`nmark nmark--${descriptor.tone} notif-event__mark`} aria-hidden="true">
+        <Icon size={13} />
+      </span>
+      <span className="notif-event__text">
+        <span id={`${id}-label`} className="notif-event__label">{descriptor.label}</span>
+        {descriptor.hint ? (
+          <span id={`${id}-hint`} className="notif-event__hint">
+            {locked ? `${descriptor.hint} Turn off Show notifications to silence these.` : descriptor.hint}
+          </span>
+        ) : null}
+      </span>
+
+      {descriptor.osCapable ? (
+        <button
+          type="button"
+          className="notif-event__os"
+          aria-pressed={toDesktop}
+          aria-label={`Also show ${descriptor.label} on the desktop`}
+          title="Also show on the desktop"
+          disabled={disabled || !on}
+          onClick={() => onChange({ ...prefs, channel: toDesktop ? "app" : "system" })}
+        >
+          <MonitorIcon size={13} />
+        </button>
+      ) : (
+        <span className="notif-event__os-slot" aria-hidden="true" />
+      )}
+
+      {soundEnabled ? (
+        on ? (
+          <SoundCuePicker
+            value={prefs.cue}
+            volume={volume}
+            label={descriptor.label}
             disabled={disabled}
-            aria-label={`Where ${descriptor.label} shows`}
-            onChange={(event) => onChange({ ...prefs, channel: event.target.value as NotificationChannel })}
-          >
-            <option value="app">In Vibyra</option>
-            <option value="system">Also on desktop</option>
-          </select>
-        )}
-        {soundEnabled && on && (
-          <>
-            <select
-              className="input input--sm input--sound"
-              value={prefs.cue}
-              disabled={disabled}
-              aria-label={`${descriptor.label} sound`}
-              onChange={(event) => onChange({ ...prefs, cue: event.target.value as SoundCueId })}
-            >
-              {CUE_ORDER.map((cue) => (
-                <option key={cue} value={cue}>{CUE_LABELS[cue]}</option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="icon-btn"
-              title="Play this sound"
-              aria-label={`Play the ${descriptor.label} sound`}
-              disabled={disabled || prefs.cue === "none"}
-              onClick={() => previewCue(prefs.cue, volume)}
-            >
-              <PlayIcon size={13} />
-            </button>
-          </>
-        )}
-        <Switch
-          checked={on}
-          disabled={disabled || locked}
-          label={descriptor.label}
-          onChange={(next) => onChange({ ...prefs, channel: nextChannel(next, descriptor.osCapable) })}
-        />
-      </div>
-    </SettingRow>
+            onChange={(cue) => onChange({ ...prefs, cue })}
+          />
+        ) : (
+          <span className="notif-event__cue-slot" aria-hidden="true" />
+        )
+      ) : null}
+
+      <Switch
+        checked={on}
+        disabled={disabled || locked}
+        label={descriptor.label}
+        onChange={(next) => onChange({ ...prefs, channel: next ? lastOn.current : "off" })}
+      />
+    </div>
   );
 }

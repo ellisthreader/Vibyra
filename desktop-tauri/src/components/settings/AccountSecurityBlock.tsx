@@ -108,7 +108,7 @@ export function AccountSecurityBlock({ profile }: { profile: AccountProfile }) {
                 {state.enabled ? (
                   <>
                     <button className="btn" onClick={() => { setMode("recovery"); setCodes(null); }}>New codes</button>
-                    <button className="btn profile-logout" onClick={() => setMode("disable")}>Turn off</button>
+                    <button className="btn btn--danger" onClick={() => setMode("disable")}>Turn off</button>
                   </>
                 ) : (
                   <button className="btn btn--primary" onClick={() => setMode("setup")}>Set up</button>

@@ -152,9 +152,18 @@ export function entryFor(version: string): ChangelogEntry | undefined {
  * they have never seen is noise. An unknown `seen` value is therefore treated
  * as "show nothing, remember this version".
  */
-export function shouldOpen(current: string, seen: string | null): boolean {
-  if (seen === null || seen === "") return false;
+export function shouldOpen(
+  current: string,
+  seen: string | null,
+  usedBefore = false,
+): boolean {
   if (current === seen) return false;
+  // No record has two meanings, and reading it as "new install" silently
+  // skipped the window for everyone upgrading from a build that predated it —
+  // which, on the release that introduces it, is every existing user. So an
+  // absent record only means "new install" when nothing else has been stored
+  // either. `usedBefore` is what tells the two apart.
+  if ((seen === null || seen === "") && !usedBefore) return false;
   return entryFor(current) !== undefined;
 }
 

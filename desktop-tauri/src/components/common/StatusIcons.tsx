@@ -62,8 +62,6 @@ export const AppIcon = icon(
   </>,
 );
 
-export const PlayIcon = icon(<path d="M8 5.5v13l11-6.5-11-6.5z" />);
-
 /** An update waiting to be fetched: an arrow landing in a tray. Distinct from
  * `RestartIcon`, which is what the same chip becomes once it is staged. */
 export const DownloadIcon = icon(
@@ -71,5 +69,14 @@ export const DownloadIcon = icon(
     <path d="M12 3v11" />
     <path d="m7 10 5 5 5-5" />
     <path d="M4 20h16" />
+  </>,
+);
+
+/** A desktop display. Marks the events allowed to leave the Vibyra window and
+ * land as a system banner; the same glyph is the per-event toggle in Settings. */
+export const MonitorIcon = icon(
+  <>
+    <rect x="2.5" y="4" width="19" height="13" rx="2" />
+    <path d="M9 20.5h6M12 17v3.5" />
   </>,
 );

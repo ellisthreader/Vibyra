@@ -1,8 +1,12 @@
 // Mirrors the serde shapes exported by the Rust core (camelCase renames).
 
+import type { PerformanceMode } from "./lib/performanceMode";
 import type { NotificationPrefs } from "./notificationTypes";
 
-export type { CapturedScreenshot, ClipboardPaste, Screenshot, VoiceStatus } from "./toolTypes";
+import type { AgentSpec } from "./agentTypes";
+
+export type { AgentInstallHint, AgentSpec, ResolvedAgent } from "./agentTypes";
+export type { CapturedScreenshot, ClipboardPaste, Screenshot, SpeechVoice, VoiceLevel, VoiceStatus } from "./toolTypes";
 export type {
   AccountDevice,
   AccountProfile,
@@ -25,21 +29,6 @@ export interface SessionInfo {
   visibility: Visibility;
   alive: boolean;
   exitCode: number | null;
-}
-
-export interface AgentSpec {
-  id: string;
-  name: string;
-  program: string;
-  args: string[];
-  env: [string, string][];
-  accent: string;
-  description: string;
-  custom: boolean;
-}
-
-export interface ResolvedAgent extends AgentSpec {
-  installed: boolean;
 }
 
 export interface DirEntryInfo {
@@ -70,6 +59,18 @@ export interface ProjectSpec {
   lastOpenedMs: number;
 }
 
+/** What the assistant is told about a project. `shape` is how much of a
+ * project the folder actually is: `plain` means no build, test or run command
+ * should be invented for it. Built natively — see `ipc/projectBrief.ts`. */
+export interface ProjectBrief {
+  text: string;
+  shape: "repository" | "folder" | "plain" | "missing";
+  codebase: boolean;
+  chars: number;
+  /** Sections the budget cut short, named so the brief never lies by omission. */
+  truncated: string[];
+}
+
 export type RendererMode = "auto" | "accelerated" | "compatibility";
 
 export interface RendererPolicy {
@@ -94,8 +95,25 @@ export interface Settings {
   screenshotHideWindow: boolean;
   openaiKeyConfigured: boolean;
   secureStorageAvailable: boolean;
+  /** Whether the assistant is told what is in the project it is asked about.
+   * On by default; off leaves it the project's name and folder and nothing
+   * else. See `lib/chatPrompt.ts`. */
+  sendProjectContext: boolean;
   voiceShortcut: string;
   screenshotShortcut: string;
+  /** Opens a spoken conversation with the workspace assistant. */
+  talkShortcut: string;
+  /** Which of Vibyra's own voices reads replies; empty is the default one. */
+  speechVoice: string;
+  /** Multiplier on that voice's natural pace. 1 is unchanged. */
+  speechRate: number;
+  /** A sentence steering delivery, e.g. "warm and unhurried". Empty leaves
+   * the voice as it comes. */
+  speechStyle: string;
+  /** ISO-639-1 code dictation should expect; empty lets it detect. */
+  voiceLanguage: string;
+  /** How long a pause ends your turn in a spoken conversation, in ms. */
+  talkPauseMs: number;
   /** WebKit compositing policy (Linux only); applies on next launch. */
   rendererMode: RendererMode;
   enabledAgentIds: string[];
@@ -103,8 +121,10 @@ export interface Settings {
   aiHourlyCallCap: number;
   aiDailySpendCapUsd: number;
   aiMonthlySpendCapUsd: number;
-  /** Strips the app to what the work needs. See lib/performanceMode.ts. */
-  performanceMode: boolean;
+  /** How much work the app does to look good: a ladder, not a switch —
+   * "full", "balanced" or "best". See lib/performanceMode.ts, and note this
+   * is a different axis from `rendererMode`. */
+  performanceMode: PerformanceMode;
   persistTerminalScrollback: boolean;
   /** Toasts, sounds and system notifications. See notificationTypes.ts. */
   notifications: NotificationPrefs;
@@ -151,6 +171,8 @@ export interface AiPricing {
 
 export interface AiServiceStatus {
   keyConfigured: boolean;
+  /** The key came from OPENAI_API_KEY, not from the credential store. */
+  keyFromEnvironment: boolean;
   /** Masked fragment such as "sk-…wxyz" — never the whole key. */
   keyHint: string | null;
   secureStorageAvailable: boolean;

@@ -1,0 +1,115 @@
+/* Voice mode: the sidebar panel becomes one circle and one sentence.
+   Nothing here looks like the chat page — no bubbles, no list, no composer —
+   so the mode you are in is never a question. */
+
+.voice-mode {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 18px 22px 20px;
+  background:
+    radial-gradient(120% 70% at 50% 8%, var(--voice-wash), transparent 70%),
+    var(--workspace);
+  animation: voice-mode-in 260ms var(--e-hero);
+}
+
+@keyframes voice-mode-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.voice-mode__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  text-align: center;
+}
+
+.voice-mode__state {
+  margin-top: 26px;
+  font-size: 19px;
+  font-weight: 560;
+  letter-spacing: -0.4px;
+  color: var(--text);
+}
+
+.voice-mode__hint {
+  max-width: 260px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+/* The caption is the conversation: large enough to read from across a desk,
+   clamped so a long reply never pushes the circle off the panel. */
+.voice-mode__caption {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  max-width: 300px;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.voice-mode__who {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.voice-mode__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.voice-mode__end {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 560;
+}
+
+.voice-mode__end:hover {
+  border-color: var(--border);
+  background: var(--elevated);
+}
+
+.voice-mode__end .kbd {
+  min-width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+
+.voice-mode__link {
+  padding: 4px 8px;
+  border-radius: 7px;
+  color: var(--dim);
+  font-size: 11.5px;
+}
+
+.voice-mode__link:hover {
+  color: var(--text);
+  background: var(--hover);
+}

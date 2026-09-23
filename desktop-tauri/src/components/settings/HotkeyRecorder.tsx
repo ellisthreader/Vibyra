@@ -1,24 +1,27 @@
 import { useEffect, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 
-import { shortcutFromEvent, shortcutLabel } from "../../lib/hotkeys";
+import { shortcutCaps, shortcutFromEvent, shortcutLabel } from "../../lib/hotkeys";
 import { setShortcutCaptureActive } from "../../lib/useGlobalShortcuts";
+import { PencilIcon } from "../common/Icons";
+import { KeyCaps } from "../common/KeyCaps";
 
 interface Props {
   defaultValue: string;
   label: string;
-  otherValue: string;
+  /** Every shortcut already spoken for, so two tools cannot claim one key. */
+  otherValues: string[];
   value: string;
   onChange: (value: string) => void;
 }
 
 /**
- * Shows the current key and a Change affordance; only while recording does it
+ * Shows the current key and a pencil to change it; only while recording does it
  * ask for a press. Escape cancels, Backspace/Delete restores the default, and
  * global shortcuts are suspended for the length of the recording so the key
  * being chosen does not fire the tool it belongs to.
  */
-export function HotkeyRecorder({ defaultValue, label, otherValue, value, onChange }: Props) {
+export function HotkeyRecorder({ defaultValue, label, otherValues, value, onChange }: Props) {
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState("");
 
@@ -47,7 +50,7 @@ export function HotkeyRecorder({ defaultValue, label, otherValue, value, onChang
     if (["Control", "Shift", "Alt", "Meta"].includes(event.key)) return;
     const shortcut = shortcutFromEvent(event.nativeEvent);
     if (!shortcut) return setError("Use F1–F24 or a modifier with a letter, number, or navigation key.");
-    if (shortcut === otherValue) return setError("That shortcut is already assigned to the other tool.");
+    if (otherValues.includes(shortcut)) return setError("That shortcut is already assigned to another tool.");
     setError("");
     onChange(shortcut);
     finish();
@@ -64,10 +67,10 @@ export function HotkeyRecorder({ defaultValue, label, otherValue, value, onChang
         onKeyDown={onKeyDown}
         onBlur={finish}
       >
-        {recording ? "Press a shortcut…" : (
+        {recording ? <span className="hotkey-recorder__prompt">Press a shortcut…</span> : (
           <>
-            <kbd className="kbd hotkey-recorder__key">{shortcutLabel(value)}</kbd>
-            <span className="hotkey-recorder__change">Change</span>
+            <KeyCaps caps={shortcutCaps(value)} className="hotkey-recorder__keys" />
+            <span className="hotkey-recorder__edit"><PencilIcon size={13} /></span>
           </>
         )}
       </button>

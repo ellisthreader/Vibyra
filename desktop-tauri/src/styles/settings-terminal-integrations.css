@@ -85,3 +85,83 @@
     display: none;
   }
 }
+
+/* ---------- Accounts > More ---------- */
+
+/* A dialog over Settings listing every other agent Vibyra can launch. Narrow
+   on purpose: it is one column of rows, and at the full 680px the control
+   drifts a long way from the name it belongs to. */
+.more-agents {
+  width: min(460px, 92vw);
+}
+
+.more-agents__body {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  gap: 0;
+}
+
+.more-agents__foot {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* One row: mark, name over a single line, one control. No card, no border —
+   the rows are the list, so anything drawn around each one is noise. */
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 8px;
+  border-radius: var(--r-control);
+}
+
+.agent-row:hover {
+  background: var(--hover);
+}
+
+.agent-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.agent-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.agent-row__line {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A command is not prose: it has to be readable character by character, and
+   it is the thing the Copy button beside it puts on the clipboard. */
+.agent-row__line--code {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--dim, var(--muted));
+}
+
+.agent-row--error .agent-row__line {
+  color: var(--danger);
+  white-space: normal;
+}
+
+/* `currentColor` is what the inline brand paths fill with. */
+.agent-mark--brand {
+  color: var(--mark-accent, var(--accent));
+}

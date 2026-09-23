@@ -1,137 +1,126 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SpeakReply, useDraftDictation } from "./ChatVoice";
+import { requestRun } from "../../lib/runCommand";
 import { useAccountStore } from "../../state/accountStore";
-import { useChatStore, type ChatTurn } from "../../state/chatStore";
+import { useChatStore } from "../../state/chatStore";
+import type { ChatTurn } from "../../state/chatTypes";
 import { useProjectStore } from "../../state/projectStore";
 import { useSettingsStore } from "../../state/settingsStore";
-import { SendIcon, SparklesIcon } from "../common/Icons";
+import { useTalkStore } from "../../state/talkStore";
 
+import { ChatComposer } from "./ChatComposer";
 import { ChatPanelHeader } from "./ChatPanelHeader";
+import { ChatTurns } from "./ChatTurns";
+import { VoiceMode, VoiceModeStrip } from "./VoiceMode";
 import "./chatDesign.css";
 
 const NO_TURNS: ChatTurn[] = [];
-const STARTERS = [
-  {
-    label: "Explain this project",
-    prompt: "Give me a concise overview of this project, its main entry points, and how the pieces fit together.",
-  },
-  {
-    label: "Choose the next useful task",
-    prompt: "Review this project and suggest the smallest useful next task, with a clear reason.",
-  },
-];
+/** Close enough to the end that the text arriving is the text being read. */
+const PINNED_PX = 48;
 
 export function ChatPanel({ active = true }: { active?: boolean }) {
   const projectId = useProjectStore((s) => s.activeId);
-  const threads = useChatStore((s) => s.threads);
-  const turns = (projectId ? threads[projectId] : undefined) ?? NO_TURNS;
-  const sending = useChatStore((s) => s.sending);
+  // One project's thread, never the whole record: a delta lands about sixty
+  // times a second, and every other project would repaint with it.
+  const turns = useChatStore((s) => (projectId ? s.threads[projectId] : undefined) ?? NO_TURNS);
+  const inFlight = useChatStore((s) => s.active);
   const error = useChatStore((s) => s.error);
   const send = useChatStore((s) => s.send);
+  const retry = useChatStore((s) => s.retry);
+  const stop = useChatStore((s) => s.stop);
   const clear = useChatStore((s) => s.clear);
+  const projects = useSettingsStore((s) => s.settings?.projects);
   const serviceConfigured = useSettingsStore((s) => Boolean(s.settings?.openaiKeyConfigured));
-  const email = useAccountStore(s => s.snapshot.profile?.email ?? "guest");
+  const email = useAccountStore((s) => s.snapshot.profile?.email ?? "guest");
   const draftKey = `companion.draft.${encodeURIComponent(email)}.${projectId}`;
   const [draft, updateDraft] = useState(() => { try { return localStorage.getItem(draftKey) ?? ""; } catch { return ""; } });
   const [draftError, setDraftError] = useState("");
-  const setDraft = (text: string) => { updateDraft(text); try { localStorage.setItem(draftKey, text); } catch { setDraftError("This draft could not be saved. Keep Chat open until you send it."); } };
-  const voice = useDraftDictation(draftKey, active && serviceConfigured, text => setDraft([draft, text].filter(Boolean).join(" ")));
+  const setDraft = useCallback((text: string) => { updateDraft(text); try { localStorage.setItem(draftKey, text); } catch { setDraftError("This draft could not be saved. Keep Chat open until you send it."); } }, [draftKey]);
+  const speakingTurn = useTalkStore((s) => s.speakingTurn);
+  const talkPhase = useTalkStore((s) => s.phase);
+  const showTranscript = useTalkStore((s) => s.showTranscript);
+  const talking = talkPhase !== "idle";
   const scrollRef = useRef<HTMLDivElement>(null);
-  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const pinned = useRef(true);
 
+  const submit = useCallback((value: string) => {
+    const text = value.trim();
+    if (!text || !projectId || useChatStore.getState().active) return;
+    setDraft("");
+    // Your own question always brings you back to the end of the thread.
+    pinned.current = true;
+    void send(projectId, text);
+  }, [projectId, send, setDraft]);
+  const onRetry = useCallback((turnId: string) => { if (projectId) void retry(projectId, turnId); }, [projectId, retry]);
+  // Stable, or `MarkdownBlocks`' memo is defeated on every delta.
+  const onRun = useCallback((_command: string, lines: string[]) => requestRun(lines, projectId ?? ""), [projectId]);
+
+  // Following the reply means staying at the end; reading back means being left
+  // there. Which one it is was decided by the last scroll, not by this frame.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [turns, sending]);
+    if (el && pinned.current) el.scrollTop = el.scrollHeight;
+  }, [turns, talkPhase]);
+
+  // `role="log"` below is a polite live region, and rich markdown arriving
+  // token by token through one is unusable. The in-flight turn carries
+  // `aria-busy`, and the finished reply is announced once, here.
+  const streaming = turns.some((turn) => turn.status === "streaming");
+  const wasStreaming = useRef(false);
+  const [finished, setFinished] = useState("");
+  useEffect(() => {
+    if (streaming) { wasStreaming.current = true; setFinished(""); }
+    else if (wasStreaming.current) { wasStreaming.current = false; setFinished("Reply complete"); }
+  }, [streaming]);
 
   if (!projectId) return null;
 
-  const submit = (value = draft) => {
-    const text = value.trim();
-    if (!text || sending) return;
-    setDraft("");
-    if (composerRef.current) composerRef.current.style.height = "";
-    void send(projectId, text);
-  };
+  // Voice mode takes the whole panel: a conversation you are having out loud is
+  // not a variation on a page of bubbles, and pretending otherwise is how
+  // people lose track of which mode they are in.
+  if (talking && !showTranscript) return <div className="companion-panel companion-panel--voice"><VoiceMode /></div>;
+
+  // A failure that wrote nothing already says so in its own row; the panel's
+  // copy of the same sentence would only announce it twice.
+  const silent = turns.some((turn) => turn.status === "failed" && !turn.content);
+  const elsewhere = inFlight && inFlight.projectId !== projectId
+    ? projects?.find((project) => project.id === inFlight.projectId)?.name ?? "another project"
+    : null;
 
   return (
     <div className="companion-panel companion-panel--chat">
       <ChatPanelHeader hasTurns={turns.length > 0} onClear={() => clear(projectId)} />
-      <div className="chat-scroll" ref={scrollRef} role="log" aria-label="Conversation">
-        {turns.length === 0 && (
-          <div className="chat-empty">
-            <div className="chat-empty__mark"><SparklesIcon size={24}/></div>
-            <h3>What are we building?</h3>
-            <p>A question, an idea, a place to start.</p>
-            <div className="chat-starters">
-              {STARTERS.map((starter) => (
-                <button
-                  key={starter.label}
-                  onClick={() => submit(starter.prompt)}
-                >
-                  <SparklesIcon size={13} />
-                  <span>{starter.label}</span>
-                  <span aria-hidden="true">→</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {turns.map((turn, index) => (
-          <div key={index} className={`chat-turn chat-turn--${turn.role}`}>
-            {turn.role === "assistant" && <span className="chat-turn__token" aria-hidden="true"><SparklesIcon size={14}/></span>}
-            <div className="chat-turn__bubble">{turn.content}{turn.role === "assistant" && <div><SpeakReply text={turn.content} active={active} /></div>}</div>
-          </div>
-        ))}
-        {sending && (
-          <div className="chat-turn chat-turn--assistant">
-            <span className="chat-turn__token" aria-hidden="true"><SparklesIcon size={14}/></span>
-            <div className="chat-turn__bubble chat-turn__bubble--thinking">
-              <i />
-              <i />
-              <i />
-            </div>
-          </div>
-        )}
-        {(error || draftError) && <p className="chat-error" role="alert">{error || draftError}</p>}
-      </div>
-      <div className="chat-input">
-        <textarea
-          ref={composerRef}
-          className="chat-input__area"
-          value={draft}
-          rows={1}
-          placeholder="Message Vibyra…"
-          aria-label="Message Vibyra"
-          spellCheck={false}
-          onFocus={voice.focus}
-          onChange={(e) => setDraft(e.target.value)}
-          onInput={(event) => {
-            const field = event.currentTarget;
-            field.style.height = "auto";
-            field.style.height = `${Math.min(field.scrollHeight, 120)}px`;
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              submit();
-            }
-          }}
+      <div
+        className="chat-scroll"
+        ref={scrollRef}
+        role="log"
+        aria-label="Conversation"
+        onScroll={(event) => {
+          const el = event.currentTarget;
+          pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight <= PINNED_PX;
+        }}
+      >
+        <ChatTurns
+          turns={turns}
+          active={active}
+          speakingTurn={speakingTurn}
+          notice={draftError || (silent ? "" : error ?? "")}
+          onStart={submit}
+          onRetry={onRetry}
+          onRun={onRun}
         />
-        <div className="chat-composer-tools"><span title="Enter to send · Shift + Enter for a new line">{serviceConfigured ? "Shift + Enter for a new line" : "Test chat · sample replies"}</span>
-        {voice.button}
-        <button
-          className="chat-input__send"
-          aria-label="Send message"
-          title="Send"
-          onClick={() => submit()}
-          disabled={!draft.trim() || sending}
-        >
-          <SendIcon size={14} />
-        </button>
-        </div>
       </div>
+      <p className="sr-only" role="status">{finished}</p>
+      {talking ? <VoiceModeStrip /> : null}
+      <ChatComposer
+        draft={draft}
+        setDraft={setDraft}
+        serviceConfigured={serviceConfigured}
+        sending={Boolean(inFlight) && !elsewhere}
+        elsewhere={elsewhere}
+        onSubmit={() => submit(draft)}
+        onStop={stop}
+      />
     </div>
   );
 }

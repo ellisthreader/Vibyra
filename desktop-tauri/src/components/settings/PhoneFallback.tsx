@@ -2,6 +2,7 @@ import { computerName } from "../../lib/platform";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
+import { CopyButton } from "../common/CopyButton";
 import { phoneInvite } from "../../ipc/phone";
 import { Disclosure } from "./SettingsControls";
 
@@ -16,7 +17,6 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
   const [expires, setExpires] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   useEffect(() => {
     const tick = () => setSeconds(Math.max(0, Math.ceil((expires - Date.now()) / 1000)));
     tick();
@@ -28,7 +28,6 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
     try {
       setInvite(await phoneInvite());
       setExpires(Date.now() + LIFETIME_MS);
-      setCopied(false);
     } catch (cause) {
       setError(String(cause));
     }
@@ -49,9 +48,7 @@ export function PhoneFallback({ ready }: { ready: boolean }) {
         {liveCode && (
           <div className="phone-connection__invite">
             <QRCodeSVG value={invite} size={180} marginSize={4} title="Scan with the Vibyra phone app" />
-            <button className="btn" type="button" onClick={() => { void navigator.clipboard.writeText(invite); setCopied(true); }}>
-              {copied ? "Copied" : "Copy link"}
-            </button>
+            <CopyButton className="btn" value={invite} label="Copy link" />
           </div>
         )}
       </div>

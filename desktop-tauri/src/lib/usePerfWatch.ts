@@ -7,7 +7,7 @@ import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { initialGuardState, nextGuardState } from "./perfGuard";
 import { judge, type PerfWindow } from "./perfPolicy";
-import { perfWatchEnabled } from "./performanceMode";
+import { perfWatchEnabled, normalizePerformanceMode } from "./performanceMode";
 import { startDriftSampler } from "./perfSampler";
 import { windowIsFocused } from "./windowFocus";
 
@@ -39,7 +39,7 @@ function workingPaneCount(): number {
  */
 export function usePerfWatch(): void {
   const enabled = perfWatchEnabled(
-    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+    useSettingsStore((state) => normalizePerformanceMode(state.settings?.performanceMode)),
   );
   useEffect(() => {
     if (!enabled) return;

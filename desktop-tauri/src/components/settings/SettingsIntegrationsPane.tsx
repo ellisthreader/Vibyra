@@ -1,12 +1,14 @@
 import { computerName } from "../../lib/platform";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useProviderAccountStore } from "../../state/providerAccountStore";
 import { providerAccountRuntimeUpdate, providerWorking } from "../../lib/providerAccountPolicy";
+import { useOptionalRuntimes } from "../../lib/useOptionalRuntimes";
 import type { Settings } from "../../types";
+import { MoreAgentsModal } from "./MoreAgentsModal";
 import { ProviderIntegrationCard } from "./ProviderIntegrationCard";
-import { SettingsBlock } from "./SettingsShared";
-import { TerminalIntegrations, useOptionalRuntimes } from "./TerminalIntegrations";
+import { StatusChip } from "./SettingsControls";
+import { SettingRow, SettingsBlock } from "./SettingsShared";
 import { IntegrationsBlock } from "./IntegrationsBlock";
 
 interface Props {
@@ -15,11 +17,16 @@ interface Props {
 }
 
 /**
- * AI accounts: the company accounts terminal agents sign in with, then the
- * integrations (GitHub, Obsidian) chats and agents can reach. Accounts
- * authorize through each provider's own CLI; GitHub through the backend's
- * OAuth broker; the vault is a folder on this Mac. The OpenAI key for chat and
- * voice lives under Advanced.
+ * Accounts: the company accounts terminal agents sign in with — Codex, Claude
+ * and Gemini — then every other agent Vibyra can launch behind More, then the
+ * integrations (GitHub, Obsidian) chats and agents can reach.
+ *
+ * Accounts authorize through each provider's own CLI; GitHub through the
+ * backend's OAuth broker; the vault is a folder on this Mac. The OpenAI key
+ * for chat and voice lives under Advanced.
+ *
+ * More is a permanent row, not a group that appears only once a CLI happens to
+ * be installed: a section you cannot see is a section nobody finds.
  */
 export function SettingsIntegrationsPane({ settings, update }: Props) {
   const providers = useProviderAccountStore((state) => state.providers);
@@ -35,7 +42,8 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
   const cancel = useProviderAccountStore((state) => state.cancel);
   const disconnect = useProviderAccountStore((state) => state.disconnect);
   const openSignInPage = useProviderAccountStore((state) => state.openSignInPage);
-  const otherRuntimes = useOptionalRuntimes("installed");
+  const otherRuntimes = useOptionalRuntimes("all");
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     void refreshAccounts();
@@ -78,6 +86,12 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
     if (enabledAgentIds) void update({ enabledAgentIds });
   }, [providers, error, loaded, settings.enabledAgentIds, update]);
 
+  // Only agents that are both installed and switched on are actually in the
+  // launcher, so that is what the count has to mean.
+  const enabledOther = otherRuntimes.filter(
+    (agent) => agent.installed && settings.enabledAgentIds.includes(agent.id),
+  ).length;
+
   return (
     <section className="settings-integrations">
       <SettingsBlock
@@ -106,15 +120,28 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
         {error ? <p className="integration-error" role="alert">{error}</p> : null}
       </SettingsBlock>
 
-      {otherRuntimes.length > 0 && (
-        <SettingsBlock label="Other" note={`Command-line tools already on this ${computerName}. Switch one on to launch it from Vibyra.`}>
-          <div className="settings-group">
-            <TerminalIntegrations settings={settings} update={update} mode="installed" />
-          </div>
-        </SettingsBlock>
-      )}
+      <SettingsBlock label="More">
+        <div className="settings-group">
+          <SettingRow
+            label="Other agents"
+            hint={
+              otherRuntimes.length > 0
+                ? `${otherRuntimes.map((agent) => agent.name).join(", ")}.`
+                : `Checking this ${computerName}…`
+            }
+          >
+            {enabledOther > 0 ? <StatusChip tone="on">{enabledOther} on</StatusChip> : null}
+            <button className="btn btn--compact" onClick={() => setMoreOpen(true)}>
+              Browse
+            </button>
+          </SettingRow>
+        </div>
+      </SettingsBlock>
 
       <IntegrationsBlock />
+      {moreOpen ? (
+        <MoreAgentsModal settings={settings} update={update} onClose={() => setMoreOpen(false)} />
+      ) : null}
     </section>
   );
 }

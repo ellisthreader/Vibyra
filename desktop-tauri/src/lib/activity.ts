@@ -58,6 +58,15 @@ export function dropStats(id: number): void {
   stats.delete(id);
 }
 
+/** When this pane (or, with no id, any pane) last printed; 0 if never. Lets
+ * periodic work skip itself when no terminal has changed since it last ran. */
+export function lastOutputAt(id?: number): number {
+  if (id !== undefined) return stats.get(id)?.lastOutputAt ?? 0;
+  let latest = 0;
+  for (const s of stats.values()) latest = Math.max(latest, s.lastOutputAt);
+  return latest;
+}
+
 const WORKING_WINDOW_MS = 5_000;
 const PROMPT_QUIET_MS = 2_500;
 

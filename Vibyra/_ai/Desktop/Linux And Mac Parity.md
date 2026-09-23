@@ -1,0 +1,7 @@
+# Linux and Mac desktop parity
+
+The installed macOS Vibyra 0.7.8 build 8 is the visual reference for the shared Tauri frontend. Its executable SHA-256 is `711e17a5612987fdac9dc3ec1fc8d0ab523e404094731246452346dbb0a90f9d`. The same-version `release/macos-0.7.8` branch does not contain the same frontend. Compare a release by binary hash and its embedded asset manifest, not by version or the current checkout.
+
+The Mac and Linux release workflows consume one frontend asset archive, produced by `.github/workflows/desktop-frontend.yml` and verified by `desktop-tauri/scripts/frontend-artifact.mjs`. Platform-specific code belongs in `src/lib/platform.ts`, `src/components/layout/WindowControls.tsx`, native `src-tauri/` modules, and packaging. Keep shared product components and CSS identical where possible. The installed Mac comparison can be mounted by `desktop-tauri/scripts/serve-desktop-parity.mjs` using `VIBYRA_MAC_REFERENCE_DIST`; its IPC data is disposable. Use `docs/desktop-linux-parity.md` for the evidence and acceptance checks.
+
+Linux's `/proc` rollout identity, ALSA capture, `espeak-ng` speech, Wayland screenshot portal, AppImage environment cleanup, and desktop entry are native accommodations. On Wayland the focused window handles F8/F9/F10 if X11 global registration cannot operate; truly compositor-global keys require the portal. Validate the actual Linux AppImage through the Ubuntu WebKitWebDriver smoke job before calling runtime parity complete.

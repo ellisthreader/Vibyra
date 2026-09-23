@@ -8,11 +8,34 @@
 .workspace-sidebar .chat-turn__token { display: grid; place-items: center; width: 22px; height: 26px; flex-shrink: 0; color: var(--dim); }
 .workspace-sidebar .companion-panel--chat .chat-turn__bubble { font-size: 13px; line-height: 1.8; letter-spacing: -.1px; overflow-wrap: anywhere; }
 .workspace-sidebar .companion-panel--chat .chat-turn--user .chat-turn__bubble { padding: 11px 15px; border: 1px solid var(--line-soft); border-radius: 16px 16px 4px 16px; background: var(--hover); font-size: 13px; }
-.workspace-sidebar .chat-turn--assistant .reply-audio { display: flex; margin-top: 7px; }
+/* A reply is block markup, so it lays out as blocks; `markdown.css` puts
+   `pre-wrap` back on the `p` and `pre` where the model's own breaks matter. */
+.workspace-sidebar .companion-panel--chat .chat-turn--assistant .chat-turn__bubble { white-space: normal; font-weight: 450; }
+/* A steady bar on the next line, exactly where the next word will land. Never
+   a blink: a loop would need a `performance.css` exemption and a
+   `performanceMode.test.mjs` edit, for worse feedback than a still mark. */
+.chat-caret { display: block; width: 2px; height: 1.05em; margin-top: 2px; border-radius: 1px; background: var(--accent); }
+/* Hover-revealed, never a permanent button bar — but the height is reserved
+   for good, so the row cannot grow mid-stream and fight the auto-scroll.
+   `opacity` rather than `display:none`, so Tab still reaches the buttons. */
+.workspace-sidebar .chat-actions { display: flex; align-items: center; gap: 6px; min-height: 22px; margin-top: 7px; opacity: 0; transition: opacity var(--t-base) var(--e-standard); }
+.workspace-sidebar .chat-turn--assistant:hover .chat-actions, .workspace-sidebar .chat-actions:focus-within { opacity: 1; }
+/* `CopyButton` ships no styling of its own, so the compact look lives here. */
+.workspace-sidebar .chat-actions .copy-btn--compact, .workspace-sidebar .chat-action { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: transparent; color: var(--muted); font-size: 10.5px; font-weight: 500; }
+.workspace-sidebar .chat-actions .copy-btn--compact:hover, .workspace-sidebar .chat-action:hover { color: var(--text); border-color: var(--border); background: var(--hover); }
+.workspace-sidebar .chat-actions .copy-btn--compact:focus-visible, .workspace-sidebar .chat-action:focus-visible, .workspace-sidebar .chat-actions .chat-voice-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* A reply that produced nothing is a notice with a way back, not a bubble. */
+.workspace-sidebar .chat-turn--failed { flex-direction: column; align-items: flex-start; gap: 7px; }
+.workspace-sidebar .chat-turn--assistant .reply-audio { display: flex; }
+/* Sized to the row it joins, so the reserved height still holds when Speak
+   appears on completion — a taller button would reflow at exactly the wrong
+   moment, and a 30px icon beside 19px chips reads as a mistake anyway. */
+.workspace-sidebar .chat-actions .chat-voice-button { width: 22px; height: 22px; border-radius: var(--r-sm); }
 .workspace-sidebar .chat-turn--assistant .chat-voice-button { opacity: .65; }
 .workspace-sidebar .chat-turn--assistant .chat-voice-button:hover, .workspace-sidebar .chat-turn--assistant .chat-voice-button:focus-visible { opacity: 1; }
 .workspace-sidebar .companion-panel--chat .chat-empty { width: 100%; max-width: 300px; margin: auto; padding: 20px 0 40px; gap: 10px; align-items: flex-start; }
-.chat-empty__mark { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 10px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border); border-radius: 14px; }
+/* The V is its own chip; a second one around it would be a badge on a badge. */
+.chat-empty__mark { display: flex; margin-bottom: 10px; }
 .workspace-sidebar .chat-empty h3 { font-size: 23px; font-weight: 550; line-height: 1.25; letter-spacing: -.7px; }
 .workspace-sidebar .companion-panel--chat .chat-empty p { font-size: 12px; font-weight: 400; color: var(--dim); }
 .workspace-sidebar .chat-starters { width: 100%; gap: 7px; margin-top: 20px; border: 0; }
@@ -24,6 +47,13 @@
 .chat-composer-tools { display: flex; align-items: center; gap: 7px; }
 .chat-composer-tools > span { margin-right: auto; color: var(--dim); font-size: 9px; line-height: 1.4; max-width: 170px; }
 .workspace-sidebar .chat-composer-tools .chat-input__send { width: 30px; height: 30px; border-radius: 9px; }
+/* Two microphones side by side are one icon twice. Only the conversation
+   starter carries `aria-pressed`, so cobalt marks the one that answers back
+   and the plain one stays what it is: words into the box. */
+.workspace-sidebar .chat-composer-tools .chat-voice-button[aria-pressed] { color: var(--accent); background: var(--accent-soft); }
+/* Stop is the same slot, not the same invitation: it must not read as "go". */
+.workspace-sidebar .chat-composer-tools .chat-input__send--stop { color: var(--text); background: var(--elevated); border: 1px solid var(--line); }
+.workspace-sidebar .chat-composer-tools .chat-input__send--stop:hover:not(:disabled) { background: var(--hover-strong); transform: none; }
 .workspace-sidebar[data-size="full"] .companion-panel--chat > * { width: min(100%, 760px); margin-left: auto; margin-right: auto; }
 .workspace-sidebar[data-size="full"] .companion-panel--chat .chat-input { width: min(calc(100% - 40px), 716px); }
-@media (max-height: 650px) { .workspace-sidebar .companion-panel--chat .chat-empty { padding: 6px 0 16px; } .chat-empty__mark { width: 34px; height: 34px; margin-bottom: 0; } }
+@media (max-height: 650px) { .workspace-sidebar .companion-panel--chat .chat-empty { padding: 6px 0 16px; } .chat-empty__mark { margin-bottom: 0; } }

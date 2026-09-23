@@ -6,7 +6,9 @@ export async function parityIpc(command: string, args: any) {
   if (command === 'plugin:window|is_maximized') return false;
   if (command === 'plugin:event|listen') return 1;
   if (command === 'plugin:notification|is_permission_granted') return false;
-  if (command === 'shared_chat_list' || command === 'list_agents' || command === 'provider_accounts_list' || command === 'fs_list_dir') return [];
+  if (['shared_chat_list', 'list_agents', 'provider_accounts_list', 'provider_accounts',
+    'phone_terminal_requests', 'fs_list_dir'].includes(command)) return [];
+  if (command === 'fs_home_dir') return '/fixture';
   if (command === 'phone_status') return {enabled:false,typing:false,discoverable:false,address:'',active:[],devices:[],pending:[],error:null};
   if (command === 'renderer_policy') return {mode:'auto',softwareCompositing:false,nvidiaSession:false,configurable:/Linux/.test(navigator.platform),environmentOverride:false};
   if (command === 'voice_status') return {recorder:true,keyConfigured:false};

@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { appModifier } from "./platform";
 import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
 import { useEffect } from "react";
@@ -5,6 +6,7 @@ import { useEffect } from "react";
 import { useProjectStore } from "../state/projectStore";
 import { useScreenshotStore } from "../state/screenshotStore";
 import { useSettingsStore } from "../state/settingsStore";
+import { useTalkStore } from "../state/talkStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useVoiceStore } from "../state/voiceStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
@@ -19,10 +21,17 @@ export function setShortcutCaptureActive(active: boolean): void {
   shortcutCaptureActive = active;
 }
 
+/** One microphone, so starting either voice tool ends the other. Done here
+ * rather than inside the stores, which would import each other in a circle. */
 function runAction(action: HotkeyAction): void {
   if (shortcutCaptureActive) return;
-  if (action === "voice") useVoiceStore.getState().toggle();
-  else void useScreenshotStore.getState().capture();
+  if (action === "voice") {
+    useTalkStore.getState().end();
+    useVoiceStore.getState().toggle();
+  } else if (action === "talk") {
+    useVoiceStore.getState().cancel();
+    useTalkStore.getState().toggle();
+  } else void useScreenshotStore.getState().capture();
 }
 
 function configureNativeShortcuts(bindings: Map<HotkeyAction, string>): void {
@@ -31,10 +40,13 @@ function configureNativeShortcuts(bindings: Map<HotkeyAction, string>): void {
     for (const shortcut of staleShortcuts) await unregister(shortcut).catch(() => {});
     registered = new Map();
     nativeActions.clear();
+    // XWayland can report registration success without global key delivery.
+    // Keep the document fallback until the native session supports this plugin.
+    if (!bindings.size || !await invoke<boolean>("native_shortcuts_available").catch(() => false)) return;
     const claimed = new Set<string>();
     for (const [action, shortcut] of bindings) {
       if (claimed.has(shortcut)) {
-        useWorkspaceStore.getState().setError("Voice and screenshot need different shortcuts.");
+        useWorkspaceStore.getState().setError("Voice typing, screenshot and talking each need their own shortcut.");
         continue;
       }
       claimed.add(shortcut);
@@ -57,17 +69,19 @@ function configureNativeShortcuts(bindings: Map<HotkeyAction, string>): void {
 export function useGlobalShortcuts(): void {
   const voiceShortcut = useSettingsStore((state) => state.settings?.voiceShortcut);
   const screenshotShortcut = useSettingsStore((state) => state.settings?.screenshotShortcut);
+  const talkShortcut = useSettingsStore((state) => state.settings?.talkShortcut);
 
   useEffect(() => {
-    if (!voiceShortcut || !screenshotShortcut) return;
+    if (!voiceShortcut || !screenshotShortcut || !talkShortcut) return;
     configureNativeShortcuts(
       new Map([
         ["voice", voiceShortcut],
         ["screenshot", screenshotShortcut],
+        ["talk", talkShortcut],
       ]),
     );
     return () => configureNativeShortcuts(new Map());
-  }, [voiceShortcut, screenshotShortcut]);
+  }, [voiceShortcut, screenshotShortcut, talkShortcut]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -83,6 +97,12 @@ export function useGlobalShortcuts(): void {
         event.preventDefault();
         event.stopPropagation();
         runAction("screenshot");
+        return;
+      }
+      if (shortcut && shortcut === talkShortcut && !nativeActions.has("talk")) {
+        event.preventDefault();
+        event.stopPropagation();
+        runAction("talk");
         return;
       }
       if (appModifier(event) && !event.shiftKey && event.code === "KeyK") {
@@ -118,5 +138,5 @@ export function useGlobalShortcuts(): void {
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [voiceShortcut, screenshotShortcut]);
+  }, [voiceShortcut, screenshotShortcut, talkShortcut]);
 }

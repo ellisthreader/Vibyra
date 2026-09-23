@@ -5,6 +5,10 @@ use std::sync::mpsc::Receiver;
 pub trait Backend: Send + Sync + 'static {
     fn handle(&self, device: &str, method: &str, params: Value) -> Result<Value, String>;
     fn subscribe(&self) -> Receiver<Value>;
+    #[allow(dead_code)]
+    fn subscribe_conversations(&self) -> Receiver<Value> {
+        self.subscribe()
+    }
     fn disconnected(&self, device: &str);
     fn pairing_notice(&self) -> &'static str;
 }

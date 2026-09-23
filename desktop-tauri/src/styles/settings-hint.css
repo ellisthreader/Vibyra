@@ -1,0 +1,98 @@
+/* The "?" beside a setting's label, and the panel it opens on hover or focus.
+   The panel is portalled to the body — `.settings-group` clips its children —
+   so it is `position: fixed` and placed by `SettingHint.tsx` by measurement. */
+
+.setting-hint__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: help;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+
+.setting-hint__dot:hover,
+.setting-hint__dot:focus-visible,
+.setting-hint__dot--on {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Above the settings modal, which sits at 80. */
+.setting-hint {
+  position: fixed;
+  z-index: 200;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu);
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.setting-hint__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 9px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.setting-hint__list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setting-hint__list li {
+  display: flex;
+  gap: 8px;
+}
+
+.setting-hint__list li::before {
+  content: "✓";
+  flex: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.setting-hint__list strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.setting-hint__note {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.setting-hint__note:first-child {
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+/* A setting label that carries adornments — the Recommended chip and the "?" —
+   has to keep them on the baseline of the word rather than above the hint. */
+.setting-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

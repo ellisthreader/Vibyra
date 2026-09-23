@@ -1,5 +1,6 @@
 mod access;
 pub mod address;
+mod notifications;
 mod preferences;
 mod remote;
 use preferences::save;
@@ -80,10 +81,9 @@ pub struct PhoneConnection {
     /// signed in to a Vibyra account, and only that account's phones get in.
     remote_enabled: bool,
     remote: Option<RelayHandle>,
+    notifications: Option<vibyra_host::notifications::NotificationHandle>,
     account: Option<Arc<AccountSessionManager>>,
     pub error: Option<String>,
-    /// The one folder, if any, this Mac reads out to its phone. Independent of
-    /// `chats`: a vault has no account and no conversation, only a folder.
     pub vault: Arc<vault::Vault>,
     /// Terminals a phone asked the window to start or close, awaiting it.
     pub requests: Arc<requests::TerminalRequests>,
@@ -114,6 +114,7 @@ impl PhoneConnection {
             typing: Arc::new(AtomicBool::new(saved["typing"].as_bool() == Some(true))),
             remote_enabled: saved["remote"].as_bool() == Some(true),
             remote: None,
+            notifications: None,
             account,
             error: None,
             requests: Arc::default(),
@@ -138,6 +139,7 @@ impl PhoneConnection {
     pub fn disable(&mut self) -> Result<(), String> {
         // Stop network access even if writing the preference fails.
         self.enabled = false;
+        self.notifications = None;
         self.remote = None;
         self.host = None;
         self.address = String::new();
@@ -155,6 +157,7 @@ impl PhoneConnection {
         if self.host.is_some() && (current.is_empty() || current == self.address) {
             return;
         }
+        self.notifications = None;
         self.remote = None;
         self.host = None;
         self.address = String::new();

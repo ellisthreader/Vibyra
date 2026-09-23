@@ -5,7 +5,7 @@
   display: inline-flex;
   border: 1px solid var(--line);
   border-radius: var(--r-control);
-  background: var(--bg);
+  background: var(--hover);
   overflow: hidden;
 }
 
@@ -42,7 +42,7 @@
   align-items: center;
   border: 1px solid var(--line);
   border-radius: var(--r-control);
-  background: var(--bg);
+  background: var(--hover);
   overflow: hidden;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .stepper > button:hover:not(:disabled) {
-  background: var(--hover);
+  background: var(--hover-strong);
   color: var(--text);
 }
 

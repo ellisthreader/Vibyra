@@ -2,7 +2,7 @@ use std::fs;
 #[cfg(unix)]
 use std::sync::atomic::AtomicBool;
 
-use super::plan::{prepare, ScaffoldPlan, ScaffoldSeed, ScaffoldStep};
+use super::plan::{free_name, prepare, ScaffoldPlan, ScaffoldSeed, ScaffoldStep};
 #[cfg(unix)]
 use super::run::{run_step, StepOutcome};
 
@@ -31,6 +31,24 @@ fn refuses_a_folder_that_already_has_files() {
     fs::write(target.join("README.md"), "hi").unwrap();
     let error = prepare(&plan(target.to_str().unwrap())).unwrap_err();
     assert!(error.to_string().contains("already has files"));
+}
+
+#[test]
+fn a_folder_holding_only_our_own_leftovers_can_still_be_built_in() {
+    let root = temp_dir("leftovers");
+    let target = root.join("untitled");
+    // What a previous attempt leaves behind: `git init` ran, the build did not
+    // finish, and the name must not be spent for good.
+    fs::create_dir_all(target.join(".git")).unwrap();
+    fs::write(target.join(".DS_Store"), "finder").unwrap();
+
+    prepare(&plan(target.to_str().unwrap())).unwrap();
+
+    // And the wizard offers a name that is genuinely free, counting that folder
+    // as available rather than stepping over it.
+    assert_eq!(free_name(&root, "untitled"), "untitled");
+    fs::write(target.join("index.html"), "<!doctype html>").unwrap();
+    assert_eq!(free_name(&root, "untitled"), "untitled-2");
 }
 
 #[test]

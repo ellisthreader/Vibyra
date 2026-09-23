@@ -4,7 +4,7 @@ import { setTerminalVisibility } from "../ipc/terminal";
 import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { panesToRestore, panesToThrottle } from "./backgroundThrottlePolicy";
-import { backgroundThrottleEnabled } from "./performanceMode";
+import { backgroundThrottleEnabled, normalizePerformanceMode } from "./performanceMode";
 
 // While the window is minimised or its Space is elsewhere, a streaming agent
 // still costs a full 16ms flush cadence: an IPC round trip, an ANSI parse and
@@ -25,7 +25,7 @@ import { backgroundThrottleEnabled } from "./performanceMode";
  */
 export function useBackgroundThrottle(): void {
   const enabled = backgroundThrottleEnabled(
-    useSettingsStore((state) => state.settings?.performanceMode ?? false),
+    useSettingsStore((state) => normalizePerformanceMode(state.settings?.performanceMode)),
   );
 
   useEffect(() => {

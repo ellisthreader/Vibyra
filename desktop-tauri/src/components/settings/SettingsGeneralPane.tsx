@@ -1,6 +1,8 @@
 import { computerName } from "../../lib/platform";
 import type { Settings } from "../../types";
+import { ClearWorkspaceRow } from "./ClearWorkspaceRow";
 import { PerformanceRow } from "./PerformanceCard";
+import { ProjectContextRow } from "./ProjectContextRow";
 import { Segmented, Stepper } from "./SettingsControls";
 import { SettingRow, SettingsBlock, Switch, type SettingsPaneProps } from "./SettingsShared";
 
@@ -56,11 +58,12 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
         <PerformanceRow settings={settings} update={update} />
       </SettingsBlock>
 
-      <SettingsBlock label="Privacy">
+      <SettingsBlock label="Privacy" panel="privacy">
         <div className="settings-group">
+          <ProjectContextRow settings={settings} update={update} />
           <SettingRow
             label="Restore terminal output"
-            hint={`Reopen recent terminal output on this device. Turn it off on a shared ${computerName}; restored terminals then reopen blank.`}
+            hint={`Saves each terminal's visible output to this ${computerName} so panes reopen as you left them. When off, only the layout is kept and restored terminals reopen blank.`}
           >
             <Switch
               checked={settings.persistTerminalScrollback}
@@ -68,6 +71,7 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
               onChange={(persistTerminalScrollback) => void update({ persistTerminalScrollback })}
             />
           </SettingRow>
+          <ClearWorkspaceRow />
         </div>
       </SettingsBlock>
     </>

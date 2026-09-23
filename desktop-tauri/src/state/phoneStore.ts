@@ -7,6 +7,7 @@ import {
   phoneDisconnectDevice,
   phoneRevoke,
   phoneSetRemote,
+  phoneSetNotifications,
   phoneSetTyping,
   phoneStatus,
   phoneVaultChoose,
@@ -23,6 +24,7 @@ interface PhoneStore {
   refresh: () => Promise<void>;
   configure: (enabled: boolean) => Promise<void>;
   setTyping: (enabled: boolean) => Promise<void>;
+  setNotifications: (enabled: boolean) => Promise<void>;
   setRemote: (enabled: boolean) => Promise<void>;
   disconnectRemote: () => Promise<void>;
   answer: (id: string, approve: boolean) => Promise<void>;
@@ -70,6 +72,7 @@ export const usePhoneStore = create<PhoneStore>((set, get) => ({
   },
   configure: (enabled) => run(set, get, () => phoneConfigure(enabled)),
   setTyping: (enabled) => run(set, get, () => phoneSetTyping(enabled)),
+  setNotifications: (enabled) => run(set, get, () => phoneSetNotifications(enabled)),
   setRemote: (enabled) => run(set, get, () => phoneSetRemote(enabled)),
   disconnectRemote: () => run(set, get, () => phoneRemoteDisconnectAll()),
   answer: (id, approve) => run(set, get, () => phoneAnswer(id, approve)),

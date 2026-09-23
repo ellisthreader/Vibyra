@@ -21,6 +21,15 @@ export function keyLabel(keys: string, mac = isMac): string {
     : keys.replaceAll("Mod", "Ctrl").replaceAll("+", " ");
 }
 
+const MAC_CAPS: Record<string, string> = { Mod: "⌘", Shift: "⇧", Alt: "⌥", Ctrl: "⌃" };
+const PC_CAPS: Record<string, string> = { Mod: "Ctrl" };
+
+/** The same combination split the way it is pressed, one entry per key, so it
+ * can be drawn as separate caps instead of a run of glyphs. */
+export function keyCaps(keys: string, mac = isMac): string[] {
+  return keys.split("+").map((part) => (mac ? MAC_CAPS : PC_CAPS)[part] ?? part);
+}
+
 export function terminalPasteKey(event: Pick<KeyboardEvent, "type" | "code" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">, mac = isMac): boolean {
   if (event.type !== "keydown" || event.code !== "KeyV" || event.altKey) return false;
   return mac && event.metaKey && !event.ctrlKey || event.ctrlKey && event.shiftKey && !event.metaKey;

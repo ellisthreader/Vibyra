@@ -1,4 +1,4 @@
-//! ALSA capture stays in memory, like the Mac CoreAudio recorder.
+//! ALSA capture stays in memory and exposes the same live meter as CoreAudio.
 use std::io::Read;
 use std::process::{Child, Command, Stdio};
 use std::sync::{mpsc, Arc};
@@ -69,6 +69,10 @@ impl VoiceRecording {
             .recv_timeout(Duration::from_secs(5))
             .map_err(|_| INPUT_ERROR.to_string())??;
         Ok(recording)
+    }
+
+    pub(super) fn level(&self, window: Duration) -> (f32, f64) {
+        super::meter::level(&self.samples.lock(), SAMPLE_RATE, window)
     }
 
     pub(super) fn finish(mut self) -> Result<CapturedAudio, String> {

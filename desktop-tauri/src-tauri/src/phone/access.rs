@@ -15,6 +15,7 @@ impl PhoneConnection {
             .map(EmbeddedHost::status)
             .unwrap_or_else(|| json!({"devices":[],"pending":[],"active":[]}));
         status["enabled"] = json!(self.enabled);
+        status["notifications"] = json!(self.notifications.is_some());
         status["typing"] = json!(self.typing());
         status["remote"] = json!({
             "enabled": self.remote_enabled,

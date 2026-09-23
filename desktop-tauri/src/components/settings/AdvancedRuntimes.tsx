@@ -5,7 +5,6 @@ import { RestartIcon } from "../common/Icons";
 import { CustomAgentsEditor } from "./CustomAgentsEditor";
 import { StatusChip } from "./SettingsControls";
 import { SettingRow, type SettingsPaneProps } from "./SettingsShared";
-import { TerminalIntegrations } from "./TerminalIntegrations";
 
 /** The OpenRouter public catalog: automatic, so it is a diagnostic row here
  * rather than a card on the accounts page. It is not a billing account. */
@@ -39,7 +38,6 @@ export function AdvancedRuntimes({ settings, update }: SettingsPaneProps) {
   return (
     <>
       <div className="settings-group">
-        <TerminalIntegrations settings={settings} update={update} mode="missing" />
         <CatalogRow />
         <SettingRow label="Custom agents" hint="Point at any AI command-line tool on this machine; it appears in the launcher.">
           {settings.customAgents.length ? <StatusChip tone="accent">{settings.customAgents.length} added</StatusChip> : null}

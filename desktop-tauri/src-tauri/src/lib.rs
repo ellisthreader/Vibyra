@@ -19,6 +19,7 @@ mod account_types;
 mod ai_usage;
 mod ai_usage_guard;
 mod ai_usage_limits;
+mod ai_usage_permit;
 #[cfg(test)]
 mod ai_usage_tests;
 mod close_guard;

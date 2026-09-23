@@ -2,13 +2,12 @@ import { create } from "zustand";
 import { useShallow } from "zustand/shallow";
 
 import { defaultParent, suggestedName } from "../lib/projectDestination";
+import { askOnOpen } from "../lib/projectCreateOpen";
 import { plannedProject, type PlannedProject } from "../lib/projectCreatePlan";
 import { kindForTemplate, stepAfterKind, stepAfterStack } from "../lib/projectCreateFlow";
 import type { CreateStep } from "../lib/projectCreateFlow";
-import { allRequiredTools } from "../lib/projectTemplates";
 import { DEFAULT_TEMPLATE_OPTIONS } from "../lib/projectTemplateTypes";
 import type { ProjectKind, TemplateOptions } from "../lib/projectTemplateTypes";
-import { scaffoldPreflight } from "../ipc/scaffold";
 import { useProjectStore } from "./projectStore";
 import { useSettingsStore } from "./settingsStore";
 
@@ -103,6 +102,7 @@ export const useProjectCreateStore = create<ProjectCreateStore>((set, get) => ({
     if (get().phase === "running") return;
     const roots = projectRoots();
     const parent = defaultParent(roots, useProjectStore.getState().homeDir);
+    const suggestion = suggestedName(roots, parent);
     set({
       step: "start",
       history: [],
@@ -113,16 +113,20 @@ export const useProjectCreateStore = create<ProjectCreateStore>((set, get) => ({
       browsing: false,
       github: false,
       parent,
-      name: suggestedName(roots, parent),
+      name: suggestion,
       phase: "idle",
       runId: newRunId(),
       progress: null,
       log: [],
       error: null,
     });
-    void scaffoldPreflight(allRequiredTools())
-      .then((tools) => set({ tools }))
-      .catch(() => {});
+    askOnOpen(parent, suggestion, {
+      tools: (tools) => set({ tools }),
+      // Only if nothing has been typed in the meantime.
+      name: (free) => {
+        if (get().name === suggestion && get().phase === "idle") set({ name: free });
+      },
+    });
   },
 
   go: (step) => set((state) => ({ step, history: [...state.history, state.step] })),

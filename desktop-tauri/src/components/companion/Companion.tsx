@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 import { COMPANION_MAX_WIDTH, COMPANION_MIN_WIDTH, type CompanionTab } from '../../lib/companionPreferences';
 import { useAccountStore } from '../../state/accountStore';
 import { useProjectStore } from '../../state/projectStore';
+import { useTalkStore } from '../../state/talkStore';
 import { useWorkspaceStore } from '../../state/workspaceStore';
 import { CloseIcon } from '../common/Icons';
 import { FilesPanel } from './FilesPanel';
@@ -29,6 +30,9 @@ function CompanionContent({ active }: { active: boolean }) {
   const [previewVisited, setPreviewVisited] = useState(tab === 'preview' && open);
   const [scope, setScope] = useState<PreviewScope | null>(null);
   const resize = useCompanionResize(preferredWidth, setWidth);
+  // A running conversation is marked on the tab, so leaving Chat for Worktrees
+  // or Preview never loses the fact that Vibyra is still listening.
+  const talking = useTalkStore(state => state.phase !== 'idle');
   useEffect(() => { if (tab === 'preview' && open) setPreviewVisited(true); }, [tab, open]);
   const close = () => { toggle(); requestAnimationFrame(() => document.getElementById('workspace-sidebar-toggle')?.focus()); };
   const moveTabFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -51,7 +55,7 @@ function CompanionContent({ active }: { active: boolean }) {
         {entries.map((entry, index) => <button key={entry.id} ref={node => { tabs.current[entry.id] = node; }}
           id={`companion-tab-${entry.id}`} role="tab" aria-selected={tab === entry.id || (tab === 'files' && entry.id === 'chat')}
           aria-controls={`companion-panel-${entry.id}`} tabIndex={tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 0 : -1}
-          className={`companion__tab ${tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 'companion__tab--active' : ''}`}
+          className={`companion__tab ${tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 'companion__tab--active' : ''} ${talking && entry.id === 'chat' ? 'companion__tab--talking' : ''}`}
           onClick={() => setTab(entry.id)} onKeyDown={event => moveTabFocus(event, index)}>{entry.label}</button>)}
       </nav>
       <DockSizeControl />

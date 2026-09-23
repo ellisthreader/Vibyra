@@ -1,21 +1,25 @@
-/* Settings pages, continued: recorder, custom agent form, notification event
-   controls, phone device list. */
+/* Settings pages, continued: recorder, custom agent form, phone device list.
+   Notification event rows moved to `settings-notifications.css`. */
 
 /* recorder: current key + Change, only asks while recording */
 
 .hotkey-recorder {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 9px;
 }
 
-.hotkey-recorder__key {
-  font-size: 11px;
+/* A quiet pencil rather than the word "Change": the keys stay the subject and
+   sit centred in the control column. */
+.hotkey-recorder__edit {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+  transition: color var(--t-ui) var(--e-standard);
 }
 
-.hotkey-recorder__change {
-  font-size: 11.5px;
-  font-weight: 600;
+.hotkey-recorder:hover .hotkey-recorder__edit {
   color: var(--accent);
 }
 
@@ -39,18 +43,6 @@
 
 .settings-group > .integration-list--terminal {
   padding: 0;
-}
-
-/* notification event controls */
-
-.notif-cat {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.notif-cat .input--sm {
-  min-width: 0;
 }
 
 .settings-modal--tiles .settings-lead {
@@ -158,16 +150,5 @@
   grid-column: 2 / -1;
 }
 
-.integration-quiet,
-.integration-add {
-  border-color: transparent;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.integration-quiet:hover,
-.integration-add:hover {
-  color: var(--text);
-  background: var(--hover);
-}
+/* `.integration-quiet` / `.integration-add` used to redefine a ghost button
+   here. They are `.btn--ghost` now, which says the same thing everywhere. */

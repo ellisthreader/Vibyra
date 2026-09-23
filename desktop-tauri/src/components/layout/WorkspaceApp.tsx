@@ -19,6 +19,7 @@ import { useActivityTicker } from "../../lib/useActivityTicker";
 import { useBackgroundThrottle } from "../../lib/useBackgroundThrottle";
 import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
 import { useSessionLifecycle } from "../../lib/useSessionLifecycle";
+import { useSpendWatch } from "../../lib/useSpendWatch";
 import { useUpdateWatch } from "../../lib/useUpdateWatch";
 import { useNotificationRuntime } from "../../lib/useNotificationRuntime";
 import { usePhoneWatch } from "../../lib/usePhoneWatch";
@@ -27,6 +28,7 @@ import { useAccountStore } from "../../state/accountStore";
 import { useLaunchApprovalStore } from "../../state/launchApprovalStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useReportStore } from "../../state/reportStore";
+import { useRunConfirmStore } from "../../state/runConfirmStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
@@ -41,6 +43,8 @@ const HomeView = lazy(() => import("../home/HomeView")
   .then((module) => ({ default: module.HomeView })));
 const LaunchApprovalModal = lazy(() => import("../rail/LaunchApprovalModal")
   .then((module) => ({ default: module.LaunchApprovalModal })));
+const RunConfirmModal = lazy(() => import("../companion/RunConfirmModal")
+  .then((module) => ({ default: module.RunConfirmModal })));
 const ReportModal = lazy(() => import("../report/ReportModal")
   .then((module) => ({ default: module.ReportModal })));
 const SavedHistory = lazy(() => import("./SavedHistory")
@@ -64,6 +68,7 @@ export function WorkspaceApp() {
   const historyOpen = useWorkspaceStore((s) => s.historyOpen);
   const filePreviewOpen = useWorkspaceStore((s) => s.preview !== null);
   const launchApprovalOpen = useLaunchApprovalStore((s) => s.pending !== null);
+  const runConfirmOpen = useRunConfirmStore((s) => s.pending !== null);
   const screenshotEditorOpen = useScreenshotStore((s) => s.draft !== null);
   const reportOpen = useReportStore((s) => s.open);
   const [welcomeOpen, setWelcomeOpen] = useState(() => !hasSeenFirstWelcome(profile));
@@ -77,8 +82,17 @@ export function WorkspaceApp() {
   useBackgroundThrottle();
   useUpdateWatch();
   usePhoneWatch();
+  useSpendWatch();
 
-  const beginWelcomeHandoff = useCallback(() => setWelcomeHandoff(true), []);
+  const beginWelcomeHandoff = useCallback(() => {
+    useProductMode.getState().choose("work");
+    useProjectStore.getState().goHome();
+    setWelcomeHandoff(true);
+  }, []);
+  const replayWelcome = useCallback(() => {
+    setWelcomeHandoff(false);
+    setWelcomeOpen(true);
+  }, []);
   const finishWelcome = useCallback((handoff: boolean) => {
     setWelcomeOpen(false);
     if (!handoff) return;
@@ -99,7 +113,7 @@ export function WorkspaceApp() {
 
   return (
     <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""}`}>
-      <TitleBar />
+      <TitleBar onReplayWelcome={replayWelcome} />
       <div className="shell">
         <div className="product-code-shell" hidden={productMode !== "work"}>
         <ProjectStrip />
@@ -129,6 +143,7 @@ export function WorkspaceApp() {
         {historyOpen ? <SavedHistory /> : null}
         {agentPickerOpen ? <AgentPickerModal /> : null}
         {launchApprovalOpen ? <LaunchApprovalModal /> : null}
+        {runConfirmOpen ? <RunConfirmModal /> : null}
         {settingsOpen ? <SettingsModal /> : null}
         {reportOpen ? <ReportModal /> : null}
         {filePreviewOpen ? <FilePreviewModal /> : null}

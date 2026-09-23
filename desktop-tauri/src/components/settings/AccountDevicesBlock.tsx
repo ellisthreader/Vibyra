@@ -6,7 +6,6 @@ import { logoutConfirmCopy } from "../../lib/accountPolicy";
 import { useAccountStore } from "../../state/accountStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import type { AccountDevice } from "../../types";
-import { StatusChip } from "./SettingsControls";
 import { SettingRow, SettingsBlock } from "./SettingsShared";
 
 /** Somewhere between "just now" and a date, which is all anyone wants to
@@ -75,7 +74,7 @@ export function AccountDevicesBlock() {
             label={device.name}
             hint={[device.location, lastActive(device.lastActive)].filter(Boolean).join(" · ")}
           >
-            {device.current && <StatusChip tone="on">This {computerName}</StatusChip>}
+            {device.current && <span className="device-row__current">This device</span>}
             <button
               className="btn"
               disabled={busy !== null}
@@ -93,7 +92,7 @@ export function AccountDevicesBlock() {
           >
             <button className="btn" disabled={busy !== null} onClick={() => setConfirming(false)}>Cancel</button>
             <button
-              className="btn profile-logout"
+              className="btn btn--danger"
               disabled={busy !== null}
               onClick={() => void run("all", accountDevicesRevokeAll)}
             >

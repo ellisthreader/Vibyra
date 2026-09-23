@@ -1,7 +1,7 @@
 import { platformName } from "../../lib/platform";
 import { useState } from "react";
 
-import logoUrl from "../../assets/vibyra-cobalt.png";
+import { vibyraLogoUrl as logoUrl } from "../../assets/vibyraLogo";
 import { accountOpenLegal } from "../../ipc/account";
 import { useAccountStore } from "../../state/accountStore";
 import { AuthMobileCampaign } from "./AuthMobileCampaign";

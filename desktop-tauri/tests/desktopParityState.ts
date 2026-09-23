@@ -13,6 +13,11 @@ import { parityIpc } from './desktopParityIpc';
 
 const query = new URLSearchParams(location.search);
 export const parityScreen = query.get('screen') ?? 'workspace';
+export function paritySnapshots() {
+  return [useAccountStore, useSettingsStore, useProjectStore, useTerminalStore,
+    useConversationTerminals, useWorkspaceStore, useProductMode, usePhoneStore, useChatStore]
+    .map(store => Object.fromEntries(Object.entries(store.getState()).filter(([, value]) => typeof value !== 'function')));
+}
 export function seedParityFixture() {
   const theme = query.get('theme') === 'light' ? 'light' : 'dark';
   document.documentElement.dataset.platform = /Mac/.test(navigator.platform) ? 'mac' : 'linux';

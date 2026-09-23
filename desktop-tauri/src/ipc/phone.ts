@@ -34,6 +34,7 @@ export interface PhoneStatus {
   /** Allowed phones may type into terminals, not only watch them. Absent from
    * a backend that predates it, which is the same as off. */
   typing?: boolean;
+  notifications?: boolean;
   discoverable: boolean;
   listening?: boolean;
   discoveryError?: string | null;
@@ -59,6 +60,10 @@ export function phoneConfigure(enabled: boolean): Promise<PhoneStatus> {
 
 export function phoneSetTyping(enabled: boolean): Promise<PhoneStatus> {
   return invoke("phone_set_typing", { enabled });
+}
+
+export function phoneSetNotifications(enabled: boolean): Promise<PhoneStatus> {
+  return invoke("phone_set_notifications", { enabled });
 }
 
 export function phoneSetRemote(enabled: boolean): Promise<PhoneStatus> {

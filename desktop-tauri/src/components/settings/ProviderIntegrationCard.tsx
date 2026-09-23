@@ -71,7 +71,7 @@ export function ProviderIntegrationCard({
         </div>
         {provider.installed ? (
           connected.length > 0 && provider.canAddAccount ? (
-            <button type="button" className="btn btn--ghost integration-add" disabled={adding} onClick={onAddAccount}>
+            <button type="button" className="btn btn--ghost" disabled={adding} onClick={onAddAccount}>
               {adding ? "Starting…" : "Add account"}
             </button>
           ) : null

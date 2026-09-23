@@ -1,0 +1,26 @@
+/* Layout recovered from the installed macOS 0.7.8 frontend, index-BpOZBa5z.css. */
+.welcome-product{pointer-events:none;grid-area:2/1;place-items:center;width:100%;min-height:0;display:grid;position:relative;container-type:size}
+.welcome-film{aspect-ratio:1200/740;width:min(94cqw,162cqh - 65px);position:relative;transform:translateY(-10px)}
+.welcome-film__desktop{border:1px solid var(--border);background:var(--surface);box-shadow:0 25px 65px -25px var(--scrim);border-radius:12px;position:absolute;inset:0;overflow:hidden;container-type:inline-size}
+.welcome-film__view{opacity:0;visibility:hidden;transition:opacity .55s,visibility 0s .55s;position:absolute;inset:0}
+.welcome-film__view[data-active=true]{opacity:1;visibility:visible;transition-delay:0s}
+.welcome-screen{background:var(--surface);position:absolute;inset:0;overflow:hidden}
+.welcome-screen img{object-fit:cover;object-position:top;width:100%;height:100%;display:block}
+.welcome-film__settings .welcome-screen img{object-fit:fill}
+.welcome-screen .welcome-screen__light,:root[data-theme=light] .welcome-screen .welcome-screen__dark{display:none}
+:root[data-theme=light] .welcome-screen .welcome-screen__light{display:block}
+.welcome-film__phone{--phone-bezel:5px;box-sizing:content-box;width:calc(30% - var(--phone-bezel) * 2);aspect-ratio:1/2;border:var(--phone-bezel) solid var(--border);background:var(--bg);height:auto;box-shadow:0 24px 60px -20px var(--scrim);z-index:2;border-radius:28px;position:absolute;top:0;right:0;overflow:hidden}
+.welcome-phone-film{position:absolute;inset:0}
+.welcome-phone-film video,.welcome-phone-fallback{object-fit:contain;width:100%;height:100%;position:absolute;inset:0}
+.welcome-film__phone .welcome-screen img{object-fit:contain}
+.welcome-terminal-stage{background:var(--workspace);position:absolute;inset:7.3% 0 0 20.5%}
+.welcome-opening-pane{border-radius:8px;width:48.68%;height:48%;position:absolute;top:1.19%;left:.88%;overflow:hidden}
+.welcome-opening-pane:nth-child(2n){left:50.44%}
+.welcome-opening-pane:nth-child(n+3){top:50.59%}
+.welcome-pane-chrome{width:258.4%;height:224.7%;position:absolute;top:-18.88%;left:-54.78%}
+.welcome-opening-pane:nth-child(2n) .welcome-pane-chrome{left:-156.59%}
+.welcome-opening-pane:nth-child(n+3) .welcome-pane-chrome{top:-121.8%}
+@media (max-width:700px){.welcome-film{width:94cqw}.welcome-film__desktop{border-radius:6px}.welcome-film__phone{--phone-bezel:2px;border-radius:12px}}
+.welcome-product[data-demo-step="3"] .welcome-film__desktop{height:112.8%;top:-6.4%;bottom:auto}
+.welcome-terminal-stage{--demo-terminal-bg:#0a0c0f;--demo-terminal-fg:#e2e4e9;--demo-green:#73ce9e}
+:root[data-theme=light] .welcome-terminal-stage{--demo-terminal-bg:#fdfdfe;--demo-terminal-fg:#24262b;--demo-green:#227746}

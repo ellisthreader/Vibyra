@@ -48,19 +48,45 @@
 
 /* shortcuts */
 
+/* Two columns so the whole reference fits the pane at once; one below the
+   width where a long label and its caps would collide. */
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .shortcut-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 16px;
+  min-height: 42px;
+  padding: 9px 16px;
   font-size: 12.5px;
   font-weight: 560;
   color: var(--text);
 }
 
-.shortcut-row + .shortcut-row {
+.shortcut-grid > .shortcut-row:nth-child(n + 3) {
   border-top: 1px solid var(--line-soft);
+}
+
+.shortcut-grid > .shortcut-row:nth-child(odd) {
+  border-right: 1px solid var(--line-soft);
+}
+
+@media (max-width: 1000px) {
+  .shortcut-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shortcut-grid > .shortcut-row:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .shortcut-grid > .shortcut-row:nth-child(2) {
+    border-top: 1px solid var(--line-soft);
+  }
 }
 
 /* --- appearance theme cards --- */

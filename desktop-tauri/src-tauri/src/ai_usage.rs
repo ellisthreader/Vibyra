@@ -4,11 +4,14 @@ use serde::{Deserialize, Serialize};
 // `ai_usage_guard`; this half is pure data so it can be unit-tested without a
 // clock or a filesystem.
 
-/// gpt-4o-mini list price, USD per million tokens.
-pub const CHAT_INPUT_USD_PER_MTOK: f64 = 0.15;
-pub const CHAT_OUTPUT_USD_PER_MTOK: f64 = 0.60;
+/// gpt-5-nano list price, USD per million tokens.
+pub const CHAT_INPUT_USD_PER_MTOK: f64 = 0.05;
+pub const CHAT_OUTPUT_USD_PER_MTOK: f64 = 0.40;
 /// whisper-1 list price, USD per minute of audio.
 pub const VOICE_USD_PER_MINUTE: f64 = 0.006;
+/// gpt-4o-mini-tts list price, USD per thousand characters read aloud. Priced
+/// per character because that is the unit the upstream bills.
+pub const SPEECH_USD_PER_1K_CHARS: f64 = 0.015;
 
 pub fn chat_cost_usd(input_tokens: u64, output_tokens: u64) -> f64 {
     (input_tokens as f64 * CHAT_INPUT_USD_PER_MTOK
@@ -20,10 +23,15 @@ pub fn voice_cost_usd(seconds: f64) -> f64 {
     (seconds / 60.0) * VOICE_USD_PER_MINUTE
 }
 
+pub fn speech_cost_usd(characters: u64) -> f64 {
+    (characters as f64 / 1000.0) * SPEECH_USD_PER_1K_CHARS
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AiCall {
     Chat,
     Voice,
+    Speech,
 }
 
 /// The user's own spend ceiling, from settings. Zero means "no cap of this
@@ -88,7 +96,10 @@ impl UsageLedger {
     pub fn count_call(&mut self, kind: AiCall) {
         match kind {
             AiCall::Chat => self.chat_calls += 1,
-            AiCall::Voice => self.voice_calls += 1,
+            // A read-aloud is a voice call as far as the caps are concerned:
+            // it is the same conversation, and splitting the counter would let
+            // one conversation spend two allowances.
+            AiCall::Voice | AiCall::Speech => self.voice_calls += 1,
         }
         self.month_calls += 1;
     }
@@ -102,6 +113,10 @@ impl UsageLedger {
     pub fn add_voice_cost(&mut self, seconds: f64) {
         self.voice_seconds += seconds;
         self.add_spend(voice_cost_usd(seconds));
+    }
+
+    pub fn add_speech_cost(&mut self, characters: u64) {
+        self.add_spend(speech_cost_usd(characters));
     }
 
     fn add_spend(&mut self, usd: f64) {

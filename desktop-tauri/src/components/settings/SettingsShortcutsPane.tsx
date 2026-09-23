@@ -1,37 +1,54 @@
 import { useState } from "react";
 
-import { keyLabel, isMac } from "../../lib/platform";
-import { DEFAULT_SCREENSHOT_SHORTCUT, DEFAULT_VOICE_SHORTCUT } from "../../lib/hotkeys";
+import { keyCaps, isMac } from "../../lib/platform";
+import { DEFAULT_SCREENSHOT_SHORTCUT, DEFAULT_TALK_SHORTCUT, DEFAULT_VOICE_SHORTCUT } from "../../lib/hotkeys";
+import { KeyCaps } from "../common/KeyCaps";
 import { HotkeyRecorder } from "./HotkeyRecorder";
 import { Disclosure } from "./SettingsControls";
 import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
 
 const APP_SHORTCUTS = [
-  { label: "Open Settings", keys: keyLabel("Mod+,") },
-  { label: "Find a setting", keys: keyLabel("Mod+F") },
-  { label: "Open the command palette", keys: keyLabel("Mod+K") },
-  { label: "Back to the home view", keys: keyLabel("Mod+Shift+H") },
-  { label: "Focus terminal 1–9", keys: keyLabel("Mod+1–9") },
-  { label: "Switch project 1–9", keys: keyLabel("Mod+Shift+1–9") },
-  { label: "Paste text or an image into a terminal", keys: isMac ? "⌘V" : "Ctrl Shift V" },
+  { label: "Open Settings", keys: "Mod+," },
+  { label: "Find a setting", keys: "Mod+F" },
+  { label: "Open the command palette", keys: "Mod+K" },
+  { label: "Back to the home view", keys: "Mod+Shift+H" },
+  { label: "Focus terminal 1–9", keys: "Mod+1–9" },
+  { label: "Switch project 1–9", keys: "Mod+Shift+1–9" },
+  { label: "Paste text or an image into a terminal", keys: isMac ? "Mod+V" : "Ctrl+Shift+V" },
   { label: "Send composer line", keys: "Enter" },
-  { label: "New line in composer", keys: keyLabel("Shift+Enter") },
+  { label: "New line in composer", keys: "Shift+Enter" },
 ];
 
-/** The two shortcuts you can change, then everything else as reference. */
+/** The three shortcuts you can change, then everything else as reference.
+ *
+ * Which voice answers, and how, is not a shortcut: it lives in
+ * Settings > Advanced > Voice and speech with the rest of the voice controls. */
 export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
   const [showAll, setShowAll] = useState(false);
+  const { voiceShortcut, screenshotShortcut, talkShortcut } = settings;
   return (
     <>
-      <SettingsBlock label="System-wide" note="These work in any app while Vibyra is running.">
+      <SettingsBlock label="System-wide">
         <div className="settings-group">
           <SettingRow label="Voice typing" hint="Press once to record, again to type it into the focused terminal.">
             <HotkeyRecorder
               label="voice typing"
-              value={settings.voiceShortcut}
-              otherValue={settings.screenshotShortcut}
+              value={voiceShortcut}
+              otherValues={[screenshotShortcut, talkShortcut]}
               defaultValue={DEFAULT_VOICE_SHORTCUT}
-              onChange={(voiceShortcut) => void update({ voiceShortcut })}
+              onChange={(next) => void update({ voiceShortcut: next })}
+            />
+          </SettingRow>
+          <SettingRow
+            label="Talk to Vibyra"
+            hint="Opens the sidebar chat and talks: it listens, answers out loud, then listens again. Press again to end it."
+          >
+            <HotkeyRecorder
+              label="talking to Vibyra"
+              value={talkShortcut}
+              otherValues={[voiceShortcut, screenshotShortcut]}
+              defaultValue={DEFAULT_TALK_SHORTCUT}
+              onChange={(next) => void update({ talkShortcut: next })}
             />
           </SettingRow>
           <SettingRow
@@ -40,21 +57,21 @@ export function SettingsShortcutsPane({ settings, update }: SettingsPaneProps) {
           >
             <HotkeyRecorder
               label="screenshot"
-              value={settings.screenshotShortcut}
-              otherValue={settings.voiceShortcut}
+              value={screenshotShortcut}
+              otherValues={[voiceShortcut, talkShortcut]}
               defaultValue={DEFAULT_SCREENSHOT_SHORTCUT}
-              onChange={(screenshotShortcut) => void update({ screenshotShortcut })}
+              onChange={(next) => void update({ screenshotShortcut: next })}
             />
           </SettingRow>
         </div>
       </SettingsBlock>
 
       <Disclosure title="All keyboard shortcuts" summary={`${APP_SHORTCUTS.length} inside Vibyra`} open={showAll} onToggle={setShowAll}>
-        <div className="settings-group">
+        <div className="settings-group shortcut-grid">
           {APP_SHORTCUTS.map((shortcut) => (
             <div key={shortcut.label} className="shortcut-row">
               <span>{shortcut.label}</span>
-              <kbd className="kbd">{shortcut.keys}</kbd>
+              <KeyCaps caps={keyCaps(shortcut.keys)} />
             </div>
           ))}
         </div>

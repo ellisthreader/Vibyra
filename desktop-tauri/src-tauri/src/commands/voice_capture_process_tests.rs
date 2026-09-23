@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn pipe_capture_is_bounded_to_two_minutes() {
+fn pipe_capture_is_bounded_and_reports_a_live_level() {
     let samples = Arc::new(Mutex::new(Vec::new()));
     let (ready, started) = mpsc::sync_channel(1);
     let input: Vec<u8> = (0..MAX_BYTES * 2)
@@ -11,6 +11,9 @@ fn pipe_capture_is_bounded_to_two_minutes() {
     started.recv().unwrap().unwrap();
     let raw = samples.lock();
     assert_eq!(raw.len(), MAX_BYTES);
+    let (rms, seconds) = super::super::meter::level(&raw, SAMPLE_RATE, Duration::from_millis(350));
+    assert!((0.49..0.51).contains(&rms));
+    assert_eq!(seconds, 120.0);
 }
 
 #[test]
@@ -29,6 +32,8 @@ fn finish_and_discard_stop_the_recorder_without_leaving_audio_on_disk() {
         VoiceRecording::from_command(command).unwrap()
     }
     let recording = recorder();
+    let (rms, seconds) = recording.level(Duration::from_secs(1));
+    assert!(rms > 0.49 && seconds > 0.0);
     let audio = recording.finish().unwrap();
     assert_eq!(audio.raw, [0, 64, 0, 64]);
     assert_eq!(audio.sample_rate, SAMPLE_RATE);

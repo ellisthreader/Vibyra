@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import { getSettings, saveSettings } from "../ipc/settings";
 import { DEFAULT_NOTIFICATIONS, normalizeNotifications } from "../lib/notificationPrefs";
-import { applyPerformanceMode } from "../lib/performanceMode";
+import { applyPerformanceMode, normalizePerformanceMode } from "../lib/performanceMode";
 import { applySettingsToAll } from "../lib/terminalRegistry";
 import { resolveTheme } from "../lib/xtermTheme";
 import type { NotificationPrefs } from "../notificationTypes";
@@ -75,6 +75,9 @@ function normalizeSettings(settings: Settings): Settings {
     enabledAgentIds: Array.isArray(settings.enabledAgentIds) ? settings.enabledAgentIds : [],
     // A hand-edited or older settings.json must not be able to break the pane.
     notifications: normalizeNotifications(settings.notifications),
+    // Also repairs the boolean this setting used to be, so an older
+    // settings.json resolves to a level rather than to `undefined`.
+    performanceMode: normalizePerformanceMode(settings.performanceMode),
   };
 }
 

@@ -4,6 +4,8 @@
 .chrome__copy h1 { font-size:11px; font-weight:550; color:var(--muted); text-transform:lowercase; }
 .chrome__drag { position:relative; min-width:0; }
 .product-mode-switch { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; gap:4px; }
+.product-mode-tabs { display:flex; gap:4px; }
+.product-mode-switch button { white-space:nowrap; }
 .product-mode-switch button { border:0; background:none; color:var(--muted); border-radius:7px; padding:10px 16px; font-size:13px; }
 .product-mode-switch button[aria-selected=true] { color:var(--text); background:var(--hover-strong); }
 .focus-rail { padding-top:0; background:var(--rail); }

@@ -27,7 +27,6 @@ export type NotificationActionId =
   | "focusSession"
   | "hibernateIdleTerminals"
   | "openGraphicsSettings"
-  | "openAiSettings"
   | "openShortcutSettings"
   | "openModelPicker"
   | "openPreview"

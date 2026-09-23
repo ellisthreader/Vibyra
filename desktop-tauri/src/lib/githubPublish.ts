@@ -19,8 +19,20 @@ export interface GithubRepository {
   defaultBranch: string;
 }
 
-export function createGithubRepository(name: string, isPrivate: boolean): Promise<GithubRepository> {
-  return teammateApi<GithubRepository>("connectors/github/repositories", { name, private: isPrivate });
+export async function createGithubRepository(name: string, isPrivate: boolean): Promise<GithubRepository> {
+  try {
+    return await teammateApi<GithubRepository>("connectors/github/repositories", { name, private: isPrivate });
+  } catch (error) {
+    // A Vibyra Cloud older than this route answers with a routing error about
+    // unsupported methods. That is true and useless: say what it means for the
+    // person, and what they can do instead.
+    if (/\b(404|405)\b/.test(String(error))) {
+      throw new Error(
+        "Vibyra Cloud cannot create repositories yet. Make the repository on GitHub and push from a terminal, or try again once the server has been updated.",
+      );
+    }
+    throw error;
+  }
 }
 
 export function githubPublish(

@@ -50,29 +50,77 @@ pub fn prepare(plan: &ScaffoldPlan) -> CoreResult<Vec<ScaffoldStep>> {
     Ok(plan.steps.iter().map(|step| resolve(step, &dir)).collect())
 }
 
+/// Entries that do not make a folder somebody's work. macOS and Windows drop
+/// their own into any folder that is merely opened, and a bare `.git` is a
+/// repository waiting for a project — very often the one Vibyra itself made on
+/// a previous attempt at this very build. Refusing those is how a name becomes
+/// unusable forever.
+const LEFTOVERS: [&str; 5] = [
+    ".git",
+    ".DS_Store",
+    ".localized",
+    "Thumbs.db",
+    "desktop.ini",
+];
+
+/// Whether a project can be built at this path.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum DestinationState {
+    /// Nothing there, or nothing that a scaffold would overwrite.
+    Free,
+    /// Somebody's files are in it.
+    Used,
+    /// A file sits where the folder would go.
+    NotAFolder,
+}
+
+pub fn destination_state(dir: &Path) -> DestinationState {
+    match fs::read_dir(dir) {
+        Ok(entries) => {
+            let used = entries
+                .flatten()
+                .any(|entry| !LEFTOVERS.contains(&entry.file_name().to_string_lossy().as_ref()));
+            if used {
+                DestinationState::Used
+            } else {
+                DestinationState::Free
+            }
+        }
+        // Not a directory yet is the normal case; a file in the way is not.
+        Err(_) if dir.exists() => DestinationState::NotAFolder,
+        Err(_) => DestinationState::Free,
+    }
+}
+
+/// The first of `base`, `base-2`, `base-3`… whose folder is free, so the wizard
+/// never opens with a name that its own build would refuse.
+pub fn free_name(parent: &Path, base: &str) -> String {
+    if destination_state(&parent.join(base)) == DestinationState::Free {
+        return base.to_string();
+    }
+    (2..500)
+        .map(|index| format!("{base}-{index}"))
+        .find(|name| destination_state(&parent.join(name)) == DestinationState::Free)
+        .unwrap_or_else(|| format!("{base}-{}", std::process::id()))
+}
+
 fn check_destination(dir: &Path) -> CoreResult<()> {
     if !dir.is_absolute() {
         return Err(CoreError::InvalidPath(
             "the project folder needs a full path".into(),
         ));
     }
-    match fs::read_dir(dir) {
-        Ok(mut entries) => {
-            if entries.next().is_some() {
-                Err(CoreError::InvalidPath(format!(
-                    "{} already has files in it",
-                    dir.display()
-                )))
-            } else {
-                Ok(())
-            }
-        }
-        // Not a directory yet is the normal case; a file in the way is not.
-        Err(_) if dir.exists() => Err(CoreError::InvalidPath(format!(
+    match destination_state(dir) {
+        DestinationState::Free => Ok(()),
+        DestinationState::Used => Err(CoreError::InvalidPath(format!(
+            "{} already has files in it",
+            dir.display()
+        ))),
+        DestinationState::NotAFolder => Err(CoreError::InvalidPath(format!(
             "{} is a file, not a folder",
             dir.display()
         ))),
-        Err(_) => Ok(()),
     }
 }
 

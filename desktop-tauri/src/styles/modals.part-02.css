@@ -34,6 +34,14 @@
   padding: 24px 28px 28px;
 }
 
+/* A page taller than the pane must scroll, not be squeezed. Without this the
+   flex children shrink to fit and a group with `overflow: hidden` — every
+   settings card and Disclosure — silently clips its last rows, with nothing
+   to scroll to. */
+.settings-pane__body > * {
+  flex-shrink: 0;
+}
+
 .settings-lead {
   font-size: 12px;
   font-weight: 540;

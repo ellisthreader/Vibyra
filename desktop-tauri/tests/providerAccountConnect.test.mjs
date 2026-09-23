@@ -107,7 +107,7 @@ test("login output is read to the end, and a half-written link is not a link", (
 });
 
 test("an uninstalled optional runtime names the command it is missing", () => {
-  const runtimes = source("../src/components/settings/TerminalIntegrations.tsx");
+  const runtimes = source("../src/components/settings/MoreAgentsRow.tsx");
 
-  assert.match(runtimes, /Needs the .\$\{agent\.program\}. command on your PATH/);
+  assert.match(runtimes, /Needs the \$\{agent\.program\} command/);
 });
