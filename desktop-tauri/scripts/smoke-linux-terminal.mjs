@@ -145,7 +145,7 @@ try {
     burstToOutputMs.push(await enterAndCheck(id, `echo ${marker}`, marker, `burst ${index + 1}`));
   }
   await driver.keyboard(`echo vibyrawrong${"\uE003".repeat(5)}right\uE007`);
-  await driver.until(async () => /(?:\r|\n)vibyaright(?:\r|\n)/.test(await snapshot(id)),
+  await driver.until(async () => /(?:\r|\n)vibyraright(?:\r|\n)/.test(await snapshot(id)),
     "backspace-corrected command output");
 
   // Codex Plan mode uses Shift+Tab. Check its underlying xterm translation
