@@ -12,10 +12,13 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ## 0.8.6 — 24 September 2026 (Linux)
 
-Linux parity and terminal-focus correction, built from the shared Mac/Linux
-desktop source. The new-models launch notice, Vibyra AI Chat and Agents
-workspace are included; new terminals now take keyboard focus immediately.
-Publishing and native acceptance are tracked in
+Published tag `v0.8.6` at `11490e34e90228c1e6310d54ccad0078fe555c3a`:
+https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.6. Signed Linux
+AppImage and Debian feeds serve 0.8.6. Native WebKitGTK verified the shared
+GPT-6 / Claude Opus 5.5 notice, fresh-terminal focus, ordered PTY typing,
+Backspace and Shift+Tab. The Linux update also carries the complete 0.8.5
+shared desktop workspace, Vibyra AI Chat and Agents. Full artifact hashes,
+feed probes, and the separate Windows test limitation are in
 `docs/desktop-linux-0.8.6-terminal-incident.md`. Art:
 `public/releases/0.8.6.svg`.
 

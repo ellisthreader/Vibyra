@@ -22,14 +22,27 @@ The 0.8.2 Linux candidate fixes two failures observed in 0.8.1: `commands/report
 The OAuth start retry is in `account_oauth_start.rs` to keep each native source file under 200 lines.
 The shared frontend artifact in the release workflows is named by `github.run_id` and uploaded with overwrite enabled. A Linux packaging job rerun must download the same frontend built on attempt 1; including `run_attempt` in the artifact name made job-only reruns fail before packaging.
 
-The 0.8.5 typing incident was a focus handoff regression, separate from the
-older ordered-PTY write bug: `terminalSpawnActions.placePane` inserted a visible
-running pane but never called `requestTerminalFocus`, while the native smoke
-manually focused xterm before typing and therefore missed the UI path. The
-0.8.6 correction requests focus at insertion and the Linux smoke must assert
+Linux 0.8.5's typing incident was a focus handoff regression, separate from
+the older ordered-PTY write bug: `terminalSpawnActions.placePane` inserted a
+visible running pane but never called `requestTerminalFocus`, while the native
+smoke manually focused xterm before typing and therefore missed the UI path.
+The 0.8.6 correction requests focus at insertion. Native smoke must assert
 `document.activeElement` is the new pane's xterm textarea without calling
-`.focus()`. The shared new-model launch notice was also gated by `isMac`; its
-campaign gate is now shared, and native Linux smoke checks the actual notice.
-See `docs/desktop-linux-0.8.6-terminal-incident.md` for signed-package and
-production-feed acceptance; do not treat this candidate note as publication
-evidence.
+`.focus()`. The major-model notice is now shared between Mac and Linux; Windows
+remains excluded. The signed Linux smoke checks the actual notice.
+
+Linux 0.8.6 shipped from tag `v0.8.6` at
+`11490e34e90228c1e6310d54ccad0078fe555c3a` in workflow `35988720626` (Linux,
+Mac x64 and Mac arm64 jobs passed). AppImage SHA-256
+`8092afe7af028fe3d31bdee8e187949f088a0a7452eeed2929739e9d8447bc3e`,
+109,369,848 bytes; Debian SHA-256
+`66d9095017b4b8589b1cb2e63b5f79e68e2d7e4049cb52dbb02e496e8d4a89cb`,
+21,093,408 bytes. Both embed frontend SHA-256
+`0922fa5e03045f7c74d49dbfa3e664c182f39a81b5ebdcfef679512eb75fc0b6` and
+passed Tauri signature, sidecar, remote-volume and live-feed checks. Linux
+WebKitGTK smoke confirmed the launch notice, natural xterm focus, 24 character
+echoes, 12 burst commands, Backspace and Shift+Tab. Production feeds offer
+0.8.6 from Linux 0.8.5 and 0.8.2 clients; 0.8.6 returns `204`. Windows CI
+failed only its separate cross-platform Rust tests (Unix paths, `/bin/sh`, and
+newline assumptions); no Windows package was published. Full publication
+details are in `docs/desktop-linux-0.8.6-terminal-incident.md`.

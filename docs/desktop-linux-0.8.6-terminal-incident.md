@@ -27,19 +27,29 @@ shared notice is now available on Linux after First Welcome. Companion Chat,
 Agents conversations, project tools and the shared workspace were already in
 the Linux bundle; the review found no OS gate on those surfaces.
 
-## Release acceptance
+## Release acceptance and publication
 
-- Run the actual signed Linux AppImage through WebKitGTK. Confirm the GPT-6 /
-  Claude Opus 5.5 notice is visible, the fresh terminal takes focus without a
-  synthetic DOM focus call, each character reaches a real PTY in order, 12
-  burst commands pass, Backspace corrects a command, and Shift+Tab reaches the
-  PTY as Escape `[ Z`.
-- Keep the Linux AppImage and Debian packages on the identical verified
-  frontend archive. Verify each Tauri minisign signature, SHA-256 and remote
-  byte count. Probe both old-client feeds for 0.8.6 and both current-version
-  feeds for 204 after Railway finishes redeployment.
-- No backend redeploy is required: 0.8.5 backend API changes are already live.
-  This is a Linux client-only correction; Mac users already had the notice and
-  terminal focus behavior.
+- Signed release workflow `35988720626` passed Linux and both Mac package jobs;
+  the AppImage smoke screenshot confirms the same new-model design. The native
+  test verified Linux notice visibility, natural terminal focus,
+  24 per-character PTY echoes, 12 burst commands, Backspace and Shift+Tab
+  (`ESC[Z`). The workflow's Windows job failed its separate Rust suite on
+  Unix-path, `/bin/sh` and newline assumptions; no Windows update was released.
+- Both Linux packages use frontend SHA-256
+  `0922fa5e03045f7c74d49dbfa3e664c182f39a81b5ebdcfef679512eb75fc0b6`.
+  The 109,369,848-byte AppImage SHA-256 is
+  `8092afe7af028fe3d31bdee8e187949f088a0a7452eeed2929739e9d8447bc3e`; the
+  21,093,408-byte Debian package SHA-256 is
+  `66d9095017b4b8589b1cb2e63b5f79e68e2d7e4049cb52dbb02e496e8d4a89cb`.
+  Both Tauri signatures, sidecar checksums, shared manifests, and remote
+  volume byte counts were verified.
+- Railway production feeds offer 0.8.6 from clients on 0.8.5 and 0.8.2 for
+  both AppImage and Debian; clients already on 0.8.6 receive `204`. The direct
+  Linux download routes serve the expected filenames and sizes. The existing
+  backend image was redeployed with Linux release metadata; no backend source
+  change was needed.
+- Published tag `v0.8.6` at `11490e34e90228c1e6310d54ccad0078fe555c3a` with
+  all eight Linux assets:
+  https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.6.
 
 Publication results are appended after the final signed packages pass.
