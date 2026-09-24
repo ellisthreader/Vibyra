@@ -23,10 +23,11 @@ import { fileURLToPath } from "node:url";
 import process from "node:process";
 
 import { verifyUpdateSignature } from "./minisign-verify.mjs";
+import { probeMacFeeds } from "./macos-feed-probe.mjs";
+import { uploadChunks } from "./railway-chunk-upload.mjs";
 import {
   ARTIFACT_SUFFIX,
   MAC_TARGETS,
-  feedPath,
   remotePath,
   variablesFor,
 } from "./macos-update-plan.mjs";
@@ -44,10 +45,6 @@ const APPLY = process.argv.includes("--apply");
 
 function config() {
   return JSON.parse(readFileSync(join(DESKTOP, "src-tauri/tauri.conf.json"), "utf8"));
-}
-
-function baseUrl() {
-  return new URL(config().plugins.updater.endpoints[0]).origin;
 }
 
 /** Finds `Vibyra-Desktop-<version>-macos-<arch>.app.tar.gz` and its `.sig`,
@@ -118,9 +115,7 @@ function capture(args, input) {
 function upload({ entry }) {
   const remote = `${VOLUME}/${entry.path}`;
   console.log(`  uploading ${entry.filename} → ${remote}`);
-  railway(["ssh", ...SERVICE, "--", "sh", "-c", `mkdir -p ${dirname(remote)} && cat > ${remote}`], {
-    input: readFileSync(entry.archive),
-  });
+  uploadChunks(readFileSync(entry.archive), remote, SERVICE, railway);
 
   const observed = capture(["ssh", ...SERVICE, "--", "sh", "-c",
     `sha256sum ${remote} | cut -d' ' -f1; wc -c < ${remote}`]);
@@ -139,18 +134,6 @@ function setVariables(plans) {
     Object.entries(variables).flatMap(([key, value]) => ["--set", `${key}=${value}`]));
   railway(["variables", ...SERVICE, ...args, "--skip-deploys"]);
   railway(["redeploy", ...SERVICE, "--yes"]);
-}
-
-/** The only proof that matters: ask the feed what a Mac one version behind is
- * told, from outside, exactly as the app asks it. */
-async function probe(plans, previousVersion) {
-  for (const { target, entry } of plans) {
-    const response = await fetch(`${baseUrl()}${feedPath(target, previousVersion)}`);
-    const body = response.status === 200 ? await response.json() : null;
-    const ok = body?.version === entry.version && body?.signature === entry.signature;
-    console.log(`  ${target.platform}: ${response.status} ${body?.version ?? ""} ${ok ? "✓" : "✗"}`);
-    if (!ok) throw new Error(`${target.platform} is not serving ${entry.version}.`);
-  }
 }
 
 async function main() {
@@ -190,7 +173,7 @@ async function main() {
   for (const plan of plans) upload(plan);
   setVariables(plans);
   console.log("Checking both feeds…");
-  await probe(plans, previous);
+  await probeMacFeeds(plans, previous, new URL(config().plugins.updater.endpoints[0]).origin);
   console.log(`\nVibyra ${version} is live. Open Macs will offer it within five minutes.`);
 }
 

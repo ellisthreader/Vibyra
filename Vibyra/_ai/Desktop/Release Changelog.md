@@ -17,7 +17,14 @@ original native request receipt without dispatching the old settings again,
 reveals an already created conversation, and starts the newly requested
 terminal with a fresh request ID. If the native store cannot be checked, it
 preserves the receipt and shows the underlying error. Art:
-`public/releases/0.8.7.svg`. Publication status: pending.
+`public/releases/0.8.7.svg`. Published tag `v0.8.7` at `4c2c64e5`:
+https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.7. Release run
+`36010131960` passed the shared frontend, Linux native AppImage/Deb smoke,
+and both Developer ID signed Mac jobs. Windows retained eight unrelated
+Unix-assumption fixture failures and was not published. Both Mac feeds offer
+0.8.7 to 0.8.5 clients; AppImage and Deb feeds offer 0.8.7 to 0.8.6 clients.
+All four current-version routes return 204, and download headers match the
+signed artifacts' SHA-256 and sizes. The Mac beta remains unnotarized.
 
 ## 0.8.6 — 24 September 2026 (Linux)
 
