@@ -27,11 +27,11 @@ impl Grant {
             .map_err(|_| "The granted folder is unavailable")?
             != self.path
         {
-            return Err("The granted folder changed. Choose it again on this Mac.".into());
+            return Err("The granted folder changed. Choose it again on this computer.".into());
         }
         if self.can_write && self.source_path.is_none() {
             return Err(
-                "Choose this edit folder again to use the current Mac safety rules.".into(),
+                "Choose this edit folder again to use the current computer safety rules.".into(),
             );
         }
         if let Some(source) = &self.source_path {
@@ -40,7 +40,9 @@ impl Grant {
                 .map_err(|_| "The original folder is unavailable")?
                 != *source
             {
-                return Err("The original folder changed. Choose it again on this Mac.".into());
+                return Err(
+                    "The original folder changed. Choose it again on this computer.".into(),
+                );
             }
         }
         Ok(())
@@ -78,7 +80,7 @@ pub fn active_worktree(file: &Path, scope: &str, id: &str) -> Result<Grant, Stri
     let grant = load(file)?
         .into_iter()
         .find(|grant| grant.id == id && grant.account_scope == scope && !grant.revoked)
-        .ok_or("This worktree is no longer granted on this Mac.")?;
+        .ok_or("This worktree is no longer granted on this computer.")?;
     if !grant
         .source_path
         .as_ref()

@@ -77,8 +77,12 @@ pub async fn serve_with_policy(
                         },
                         _ = heartbeat.tick() => Message::Ping(Vec::new().into()),
                     };
-                    if !matches!(tokio::time::timeout(Duration::from_secs(10), sink.send(message)).await,
-                        Ok(Ok(()))) { break; }
+                    if !matches!(
+                        tokio::time::timeout(Duration::from_secs(10), sink.send(message)).await,
+                        Ok(Ok(()))
+                    ) {
+                        break;
+                    }
                 }
             });
             let mut idle_check = tokio::time::interval(Duration::from_secs(20));

@@ -16,7 +16,7 @@ class AgentWorkspaceFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_granted_mac_read_resumes_the_agent_and_other_clients_cannot_answer_it(): void
+    public function test_a_granted_linux_read_resumes_the_agent_and_other_clients_cannot_answer_it(): void
     {
         config(['agents.enabled' => true, 'agents.local_runner_enabled' => true, 'vibes.enabled' => true,
             'services.openrouter.key' => 'test-only', 'app.key' => 'base64:'.base64_encode(str_repeat('x', 32))]);
@@ -33,7 +33,8 @@ class AgentWorkspaceFlowTest extends TestCase
             'brief' => 'Read the project.', 'avatar' => 'assistant', 'budget' => 20, 'integrations' => []]);
         $hostId = str_repeat('a', 64);
         $workspace = $this->postJson('/api/agents/v1/workspaces', ['agentId' => $agent['id'],
-            'hostId' => $hostId, 'label' => 'Sample project'])->assertOk()->json('workspace');
+            'hostId' => $hostId, 'label' => 'Sample project', 'platform' => 'linux'])->assertOk()->json('workspace');
+        $this->assertDatabaseHas('remote_hosts', ['host_id' => $hostId, 'platform' => 'linux']);
         $path = '/api/agents/v1/workspaces/'.$workspace['id'];
         $header = ['X-Vibyra-Runner-Key' => $workspace['runnerKey']];
         $quote = app(Quotes::class)->create($user->id, $agent['chatId'], 'Read README.md.', 'auto');

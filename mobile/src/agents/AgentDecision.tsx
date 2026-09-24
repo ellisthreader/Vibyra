@@ -142,7 +142,7 @@ export function AgentDecision({
         <>
           <Hint>
             {approval.state === 'unknown' && !tool.integration
-              ? 'Outcome unconfirmed. Check the file on your Mac before trying again.'
+              ? 'Outcome unconfirmed. Check the file on your computer before trying again.'
               : approval.state === 'queued' && !approval.answer
                 ? 'Waiting to run'
                 : (states[approval.state] ?? 'Checking action status…')}

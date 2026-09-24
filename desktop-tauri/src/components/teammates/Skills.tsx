@@ -1,6 +1,7 @@
 import { useDialogFocus } from './useDialogFocus';
 import { useEffect, useRef, useState } from 'react';
 import { message, teammateApi } from './api';
+import { computerName } from '../../lib/platform';
 import type { Teammate } from './types';
 interface Skill { id: string; revision: number; name: string; instructions: string; teammateIds: string[] }
 export function Skills({ teammates, identity, onClose }: { teammates: Teammate[]; identity: string; onClose(): void }) {
@@ -11,7 +12,7 @@ export function Skills({ teammates, identity, onClose }: { teammates: Teammate[]
   const lock = useRef(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   useEffect(() => { let alive = true; void teammateApi<{ skills: Skill[] }>('agents/v1/skills').then(d => { if (alive) setItems(d.skills); }).catch(e => { if (alive) setError(message(e)); }); return () => { alive = false; }; }, []);
-  const change = (next: Skill | null) => { try { if (next) localStorage.setItem(`${key}.draft`, JSON.stringify(next)); else localStorage.removeItem(`${key}.draft`); setDraft(next); } catch { setError('Your skill draft could not be saved on this Mac.'); } };
+  const change = (next: Skill | null) => { try { if (next) localStorage.setItem(`${key}.draft`, JSON.stringify(next)); else localStorage.removeItem(`${key}.draft`); setDraft(next); } catch { setError(`Your skill draft could not be saved on this ${computerName}.`); } };
   const save = async () => { if (lock.current || !(pending ?? draft)) return; lock.current = true; setBusy(true); try {
     const body = pending ?? draft!; localStorage.setItem(key, JSON.stringify(body)); setPending(body);
     const { skill } = await teammateApi<{ skill: Skill }>('agents/v1/skills', body);

@@ -23,10 +23,11 @@ final class AgentWorkspacesController extends Controller
         $user = $this->authenticatedUser($request);
         abort_unless(config('agents.enabled') && config('agents.local_runner_enabled'), 503, 'Agent computer is not enabled.');
         $data = $request->validate(['agentId' => 'required|uuid', 'hostId' => ['required', 'regex:/^[a-f0-9]{64}$/'],
-            'label' => 'required|string|max:80', 'canWrite' => 'sometimes|boolean']);
+            'label' => 'required|string|max:80', 'canWrite' => 'sometimes|boolean',
+            'platform' => 'sometimes|in:macos,linux,windows']);
         abort_if(trim($data['label']) === '', 422, 'Name this workspace.');
         return $this->json(['workspace' => $workspaces->register($user->id, $data['agentId'], $data['hostId'], $data['label'],
-            (bool) ($data['canWrite'] ?? false))]);
+            (bool) ($data['canWrite'] ?? false), $data['platform'] ?? 'macos')]);
     }
 
     public function revoke(Request $request, string $id, Workspaces $workspaces)

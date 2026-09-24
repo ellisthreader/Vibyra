@@ -19,9 +19,9 @@ final class TaskContext
     {
         $workspace = app(Workspaces::class)->forAgent($a);
         $computer = $workspace
-            ? 'Your granted Mac workspace is available for bounded file reads and, when its folder is the Git root, status and diffs. '.($workspace->can_write
-                ? 'You may request a bounded file edit; every edit needs exact user approval before this Mac acts. '
-                : 'You cannot edit files through this grant. ').'The Mac may be offline. You cannot run commands, use a browser or delegate tasks through this grant. '
+            ? 'Your granted computer workspace is available for bounded file reads and, when its folder is the Git root, status and diffs. '.($workspace->can_write
+                ? 'You may request a bounded file edit; every edit needs exact user approval before the computer acts. '
+                : 'You cannot edit files through this grant. ').'The computer may be offline. You cannot run commands, use a browser or delegate tasks through this grant. '
             : 'You have no browser, terminal, local project tools, scheduler or other teammates to delegate to. ';
         return "\n\nYou are the persistent teammate named {$a->name}. Your standing job is:\n{$a->brief}\n"
             ."Notes explicitly saved by the person for this teammate:\n{$a->memory}\n"

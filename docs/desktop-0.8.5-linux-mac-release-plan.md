@@ -148,3 +148,33 @@ unverified Railway artifact is a publication stop.
   required reconciliation list above.
 - The production Linux feed currently advertises 0.8.2 to a 0.8.1 client.
   0.8.5 has not been built or published.
+
+## Integration review — 24 September 2026
+
+- The public candidate branch `codex/release-0.8.5-public` starts at `v0.8.2`
+  and carries the current desktop, Host, shared phone and backend source. The
+  private working-tree snapshot and personal vault files are absent from that
+  branch. The release changelog note is present because the desktop release
+  gate reads it.
+- The frontend remains one shared React/CSS build for Mac and Linux. The Linux
+  Tauri window override, GTK controls, platform fonts, ordered terminal input,
+  Shift+Tab and OAuth/report recovery were retained. Agent Computer now sends
+  the host OS to the backend instead of registering Linux as macOS; user-facing
+  grant and approval text names the actual computer. The backend migration is
+  additive and its new local-runner capability remains off until native
+  acceptance.
+- Production backend source hashes match the candidate throughout app,
+  config, routes, migrations, resources and scripts except 16 changed files
+  and six new files for Agent Computer, connector approval rules, prompts and
+  report handling. Ten additional production files are generated marketing
+  assets. The candidate backend passed 808 PHPUnit tests with a 1 GiB memory
+  limit in an isolated home-directory copy. Host workspace tests and desktop
+  frontend, build, Rust lint and Rust tests passed locally. Mobile check passed
+  once; a later run under heavy machine load had two timing failures in nearby
+  connection tests, which require an idle focused rerun.
+- Initial GitHub runs `35923531300` and `35923557825` stopped in frontend
+  tests because the public branch excluded the Obsidian release changelog that
+  `whatsNew.test.mjs` requires. This is corrected in the next candidate commit;
+  those runs produced no release packages. The signed AppImage, Debian package,
+  both Mac archives, native screenshots, signatures and live updater feeds
+  remain publication gates.

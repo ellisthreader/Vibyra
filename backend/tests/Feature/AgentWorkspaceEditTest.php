@@ -158,7 +158,7 @@ class AgentWorkspaceEditTest extends TestCase
         $this->assertDatabaseHas('vibes_tools', ['id' => $toolId, 'action_state' => 'unknown']);
         $turn = DB::table('vibes_turns')->where('id', $turnId)->firstOrFail();
         $this->assertSame('failed', $turn->status);
-        $this->assertStringContainsString('Check the file on your Mac', $turn->error);
+        $this->assertStringContainsString('Check the file on your computer', $turn->error);
     }
 
     public function test_lost_mac_receipt_expires_as_uncertain_after_claim(): void

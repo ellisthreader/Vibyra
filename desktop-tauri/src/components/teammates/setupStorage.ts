@@ -1,5 +1,6 @@
 import type { ProfileFields } from './ProfileEditor';
 import type { Teammate } from './types';
+import { computerName } from '../../lib/platform.ts';
 interface SavedSetup { fields: ProfileFields; revision?: number; pending: Record<string, unknown> | null; error: string }
 function validFields(value: unknown): value is ProfileFields {
   if (!value || typeof value !== 'object') return false;
@@ -18,5 +19,5 @@ export function restoreSetup(raw: string | null, agent?: Teammate): SavedSetup {
     if (data.revision !== undefined && (!Number.isInteger(data.revision) || data.revision < 1)) throw new Error();
     if (data.pending != null && (!validFields(data.pending) || (agent ? data.pending.revision !== (data.revision ?? agent.revision) : !/^[a-f0-9-]{36}$/i.test(data.pending.id)))) throw new Error();
     return { fields: data.fields, revision: data.revision ?? agent?.revision, pending: data.pending ?? null, error: '' };
-  } catch { return { ...base, error: 'The saved setup could not be restored. It has been kept on this Mac; reopen the app before saving again.' }; }
+  } catch { return { ...base, error: `The saved setup could not be restored. It has been kept on this ${computerName}; reopen the app before saving again.` }; }
 }

@@ -25,7 +25,7 @@ pub async fn agent_computer_reveal_worktree(
             .map_err(|_| "The Agent worktree is unavailable")?
             != grant.path
         {
-            return Err("The Agent worktree changed on this Mac.".into());
+            return Err("The Agent worktree changed on this computer.".into());
         }
         reveal(&grant.path)
     })

@@ -92,7 +92,8 @@ pub async fn agent_computer_choose(
             account_api::base_url()
         ))
         .bearer_auth(&token)
-        .json(&json!({"agentId":agent_id,"hostId":host_id,"label":label,"canWrite":allow_edits}))
+        .json(&json!({"agentId":agent_id,"hostId":host_id,"label":label,
+            "canWrite":allow_edits,"platform":std::env::consts::OS}))
         .timeout(Duration::from_secs(30))
         .send()
         .await

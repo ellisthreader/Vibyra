@@ -37,9 +37,9 @@ class RecoverVibesTurns extends Command
                     if ($inFlight) DB::table('vibes_tools')->where('turn_id', $t->id)->whereNull('result')
                         ->whereNotNull('agent_workspace_id')->where('operation', 'write_file')
                         ->where('action_state', 'dispatching')->update(['action_state' => 'unknown',
-                            'summary' => 'Mac edit outcome unconfirmed.', 'updated_at' => now()]);
+                            'summary' => 'Computer edit outcome unconfirmed.', 'updated_at' => now()]);
                     $turns->settle($t->id, $t->actual_micro_usd, null, $inFlight
-                        ? 'The Mac could not confirm an approved edit. Check the file before trying again.'
+                        ? 'The computer could not confirm an approved edit. Check the file before trying again.'
                         : 'A tool request expired. Confirmed AI usage was charged; unused Vibes were returned.');
                 }
                 return;

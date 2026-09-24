@@ -2,7 +2,7 @@ import type { ChangelogEntry } from "./changelog";
 
 export const RELEASE_085: ChangelogEntry = {
     version: "0.8.5",
-    date: "2026-09-23",
+    date: "2026-09-24",
     summary: "Your workspace, teammates and previews together on Mac and Linux.",
     image: "/releases/0.8.5.svg",
     sections: [

@@ -7,7 +7,7 @@ pub(super) fn perform(
     tool: &Value,
 ) -> Result<Value, String> {
     if !grant.can_write {
-        return Err("This Mac folder was granted for reading only.".into());
+        return Err("This computer folder was granted for reading only.".into());
     }
     grant.validate_path()?;
     if tool["operation"] != "write_file"
@@ -18,7 +18,7 @@ pub(super) fn perform(
                 hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit())
             })
     {
-        return Err("This exact Mac edit was not approved.".into());
+        return Err("This exact computer edit was not approved.".into());
     }
     let id = tool["id"].as_str().ok_or("Missing edit identity")?;
     let turn = tool["turnId"].as_str().ok_or("Missing task identity")?;
@@ -50,7 +50,7 @@ pub(super) fn perform(
     )?;
     let binding = bound["binding"]
         .as_str()
-        .ok_or("The Mac did not create an edit receipt")?;
+        .ok_or("The computer did not create an edit receipt")?;
     let result = engine.handle(
         "agent-computer",
         "vibes.tool",
@@ -60,7 +60,7 @@ pub(super) fn perform(
         "path":path,"content":content,"expectedSha256":expected}),
     )?;
     if result.to_string().len() > 15000 {
-        return Err("The Mac edit receipt is too large.".into());
+        return Err("The computer edit receipt is too large.".into());
     }
     Ok(result)
 }

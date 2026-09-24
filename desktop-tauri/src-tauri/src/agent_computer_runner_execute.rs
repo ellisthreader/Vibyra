@@ -34,7 +34,7 @@ pub(super) fn execute_tool(
             .as_deref()
             == Some(key);
     if !authorized {
-        return json!({"error":"This Mac project grant was removed or changed."});
+        return json!({"error":"This computer project grant was removed or changed."});
     }
     if operation == "write_file" {
         agent_computer_tools::edit(grant, engine, request)

@@ -16,7 +16,9 @@ pub(super) fn read(grant: &Grant, operation: &str, args: &Value) -> Result<Value
         .canonicalize()
         .map_err(|_| "The Git repository is unavailable")?;
     if repository != grant.path {
-        return Err("Choose the Git repository root on this Mac to inspect its changes.".into());
+        return Err(
+            "Choose the Git repository root on this computer to inspect its changes.".into(),
+        );
     }
     let visible: Vec<_> = changes
         .files

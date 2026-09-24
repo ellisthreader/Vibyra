@@ -6,7 +6,7 @@ use App\Services\Vibes\AgentTools;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-/** Cloud half of a Mac workspace grant. The canonical path and final permission live on the Mac. */
+/** Cloud half of a desktop grant. The canonical path and final permission stay on that computer. */
 final class Workspaces
 {
     public const WAIT_SECONDS = 604800;
@@ -17,16 +17,17 @@ final class Workspaces
             ->where('agent_id', $agent->id)->whereNull('revoked_at')->first();
     }
 
-    public function register(int $user, string $agentId, string $hostId, string $label, bool $canWrite = false): array
+    public function register(int $user, string $agentId, string $hostId, string $label,
+        bool $canWrite = false, string $platform = 'macos'): array
     {
-        return DB::transaction(function () use ($user, $agentId, $hostId, $label, $canWrite) {
+        return DB::transaction(function () use ($user, $agentId, $hostId, $label, $canWrite, $platform) {
             $agent = DB::table('agent_teammates')->where('user_id', $user)->where('id', $agentId)->lockForUpdate()->firstOrFail();
             abort_if($agent->archived_at, 409, 'Restore this teammate first.');
             $host = DB::table('remote_hosts')->where('host_id', $hostId)->first();
             abort_if($host && ($host->user_id !== $user || $host->revoked_at), 409,
                 'This computer identity is unavailable.');
             if (!$host) DB::table('remote_hosts')->insert(['user_id' => $user, 'host_id' => $hostId,
-                'name' => 'Vibyra Agent Computer', 'platform' => 'macos', 'registered_at' => now(),
+                'name' => 'Vibyra Agent Computer', 'platform' => $platform, 'registered_at' => now(),
                 'created_at' => now(), 'updated_at' => now()]);
             abort_if(DB::table('vibes_turns')->where('chat_id', $agent->chat_id)->whereNull('settled_at')->exists(),
                 409, 'Stop the current task before changing its computer.');
@@ -64,9 +65,9 @@ final class Workspaces
                 ->where('operation', 'write_file')->where('action_state', 'dispatching')->exists();
             if ($inFlight) DB::table('vibes_tools')->where('turn_id', $turnId)->where('agent_workspace_id', $id)
                 ->where('operation', 'write_file')->where('action_state', 'dispatching')->update([
-                    'action_state' => 'unknown', 'summary' => 'Mac edit outcome unconfirmed.', 'updated_at' => now()]);
+                    'action_state' => 'unknown', 'summary' => 'Computer edit outcome unconfirmed.', 'updated_at' => now()]);
             if ($turn) app(\App\Services\Vibes\Turns::class)->settle($turnId, $turn->actual_micro_usd, null,
-                $inFlight ? 'Agent Computer access was removed while an approved edit was in progress. Check the file on your Mac.'
+                $inFlight ? 'Agent Computer access was removed while an approved edit was in progress. Check the file on your computer.'
                     : 'Agent Computer access was removed. Confirmed AI usage was charged; unused Vibes were returned.');
         }
     }
@@ -126,26 +127,26 @@ final class Workspaces
                 return;
             }
             app(ToolActions::class)->authorizedLocal($tool, $turn);
-            abort_unless($tool->action_state === 'dispatching', 409, 'The Mac has not claimed this edit.');
+            abort_unless($tool->action_state === 'dispatching', 409, 'The computer has not claimed this edit.');
             abort_unless(($result['written'] ?? false) === true || is_string($result['error'] ?? null),
-                422, 'The Mac did not return an edit receipt.');
+                422, 'The computer did not return an edit receipt.');
             if (($result['written'] ?? false) === true) {
                 $args = json_decode($tool->arguments, true);
                 abort_unless(($result['path'] ?? null) === ($args['path'] ?? null)
                     && ($result['sha256'] ?? null) === hash('sha256', $args['content'] ?? ''),
-                    422, 'The Mac edit receipt does not match the approved file.');
+                    422, 'The computer edit receipt does not match the approved file.');
             }
             if (isset($result['error'])) {
                 DB::table('vibes_tools')->where('id', $id)->update(['result' => json_encode($result),
                     'decision' => 'allow', 'action_state' => 'unknown', 'summary' => 'Edit outcome unconfirmed.', 'updated_at' => now()]);
                 app(\App\Services\Vibes\Turns::class)->settle($turn->id, $turn->actual_micro_usd,
-                    null, 'The Mac could not confirm this edit. Check the file before trying again.');
+                    null, 'The computer could not confirm this edit. Check the file before trying again.');
                 return;
             }
         }
         app(AgentTools::class)->respond($grant->user_id, $id, 'allow', $result);
         if ($write) DB::table('vibes_tools')->where('id', $id)->update(['action_state' => 'completed',
-            'summary' => 'Mac file edit completed.', 'updated_at' => now()]);
+            'summary' => 'Computer file edit completed.', 'updated_at' => now()]);
     }
 
     public function claim(object $grant, string $id, string $fingerprint): void
@@ -164,7 +165,7 @@ final class Workspaces
             abort_unless($tool->result === null, 409, 'This edit already has a receipt.');
             if ($tool->action_state === 'queued') DB::table('vibes_tools')->where('id', $id)->update([
                 'action_state' => 'dispatching', 'action_dispatched_at' => now(),
-                'summary' => 'Approved Mac edit in progress.', 'updated_at' => now(),
+                'summary' => 'Approved computer edit in progress.', 'updated_at' => now(),
             ]);
         });
     }
