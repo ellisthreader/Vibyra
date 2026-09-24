@@ -141,8 +141,8 @@ pub fn prepare(source: &Path, storage: &Path, id: &str) -> CoreResult<PathBuf> {
         ));
     }
     private_root(storage)?;
-    let storage = storage.canonicalize()?;
-    if source.starts_with(&storage) {
+    let canonical_storage = storage.canonicalize()?;
+    if source.starts_with(&canonical_storage) {
         return Err(CoreError::InvalidPath(
             "The granted repository is inside Agent worktree storage".into(),
         ));
