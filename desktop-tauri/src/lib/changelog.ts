@@ -5,8 +5,7 @@
 // the What's New window is then always accurate, works offline, and cannot
 // drift from a server-side string someone edited afterwards.
 //
-// Add the newest entry at the top when cutting a release.
-
+import { RELEASE_087 } from "./changelogRelease087.ts";
 import { RELEASE_086 } from "./changelogRelease086.ts";
 import { RELEASE_085 } from "./changelogRelease085.ts";
 import { LINUX_RELEASE_080 } from "./changelogRelease080.ts";
@@ -34,6 +33,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_087,
   RELEASE_086,
   RELEASE_085,
   LINUX_RELEASE_082,

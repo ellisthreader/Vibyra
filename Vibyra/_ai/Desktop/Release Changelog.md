@@ -10,6 +10,15 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
+## 0.8.7 — 24 September 2026 (Linux and Mac)
+
+Terminal launches recover after an interrupted reply: the app checks the
+original native request receipt without dispatching the old settings again,
+reveals an already created conversation, and starts the newly requested
+terminal with a fresh request ID. If the native store cannot be checked, it
+preserves the receipt and shows the underlying error. Art:
+`public/releases/0.8.7.svg`. Publication status: pending.
+
 ## 0.8.6 — 24 September 2026 (Linux)
 
 Published tag `v0.8.6` at `11490e34e90228c1e6310d54ccad0078fe555c3a`:

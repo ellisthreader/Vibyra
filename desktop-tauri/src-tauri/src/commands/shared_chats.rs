@@ -20,6 +20,21 @@ pub async fn shared_chat_list(state: State<'_, AppState>) -> Result<Value, Strin
 }
 
 #[tauri::command]
+pub async fn shared_chat_lookup_create(
+    state: State<'_, AppState>,
+    project_id: String,
+    account_id: String,
+    provider: String,
+    request_id: String,
+) -> Result<Value, String> {
+    let chats = state.shared_chats.clone();
+    super::run_blocking(move || {
+        chats.lookup_create(&project_id, &account_id, &provider, &request_id)
+    })
+    .await
+}
+
+#[tauri::command]
 pub async fn shared_chat_create(
     state: State<'_, AppState>,
     project_id: String,

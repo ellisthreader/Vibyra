@@ -31,6 +31,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         shared_cli::shared_cli_resize,
         shared_cli::shared_cli_visibility,
         shared_chats::shared_chat_list,
+        shared_chats::shared_chat_lookup_create,
         shared_chats::shared_chat_open_link,
         shared_chats::shared_chat_remove_project,
         shared_chats::shared_chat_create,

@@ -107,6 +107,7 @@ impl Engine {
                 self.conversation_handle(device, method, &params)
             }
             "session.list" => self.shared.lock().history(&params, 48 * 1024),
+            "session.lookup_request" => self.lookup_request(device, &params),
             "session.snapshot" => self.snapshot(&params),
             "session.claim" => self.claim(device, &params),
             "session.input" => self.input(device, &params),

@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 export type { AgentItem, ConversationSnapshot } from '../../../mobile/src/state/conversationTypes';
 export interface SharedSession { id: string; projectId: string; title: string; status: string; kind?: string; accountId: string }
 export const listSharedChats = () => invoke<SharedSession[]>('shared_chat_list');
+export const lookupSharedChatCreate = (projectId: string, accountId: string, provider: string, requestId: string) =>
+  invoke<SharedSession | null>('shared_chat_lookup_create', { projectId, accountId, provider, requestId });
 export interface ConversationLaunchOptions {
   provider?: string;
   model: string | null; reasoningEffort: string | null; permissionMode: 'standard' | 'full';

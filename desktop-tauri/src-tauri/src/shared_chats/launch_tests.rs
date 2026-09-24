@@ -47,6 +47,35 @@ fn terminal_launch_preserves_settings_and_retries_without_another_worktree() {
         )
     };
     let first = create(options.clone()).unwrap();
+    assert_eq!(
+        chats
+            .lookup_create(
+                "project",
+                "default",
+                "codex",
+                "55555555-5555-4555-a555-555555555555"
+            )
+            .unwrap()["id"],
+        first["id"]
+    );
+    assert!(chats
+        .lookup_create(
+            "project",
+            "default",
+            "codex",
+            "77777777-7777-4777-a777-777777777777"
+        )
+        .unwrap()
+        .is_null());
+    assert!(chats
+        .lookup_create(
+            "project",
+            "other",
+            "codex",
+            "55555555-5555-4555-a555-555555555555"
+        )
+        .unwrap()
+        .is_null());
     assert_eq!(create(options.clone()).unwrap()["id"], first["id"]);
     let lines = std::fs::read_to_string(dir.path().join("launches")).unwrap();
     let starts: Vec<Value> = lines

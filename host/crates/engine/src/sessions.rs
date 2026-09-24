@@ -29,6 +29,23 @@ fn repeated(
 }
 
 impl Engine {
+    pub(crate) fn lookup_request(&self, device: &str, params: &Value) -> Result<Value, String> {
+        let request = text(params, "requestId")?;
+        identifier(request)?;
+        let project = text(params, "projectId")?;
+        let state = self.shared.lock();
+        Ok(state
+            .sessions
+            .values()
+            .find(|session| {
+                session.owner == device
+                    && session.request == request
+                    && session.meta.project_id == project
+                    && session.meta.runner.as_deref() == Some("conversation")
+            })
+            .map_or(Value::Null, |session| json!(session.meta)))
+    }
+
     pub(crate) fn create(&self, device: &str, params: &Value) -> Result<Value, String> {
         let project_id = text(params, "projectId")?;
         let request = text(params, "requestId")?;

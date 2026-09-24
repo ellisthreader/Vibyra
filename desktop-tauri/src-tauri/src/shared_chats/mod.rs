@@ -186,6 +186,8 @@ impl SharedChats {
     }
 }
 
+mod lookup;
+
 #[cfg(all(test, unix))]
 mod cli_tests;
 #[cfg(all(test, unix))]
