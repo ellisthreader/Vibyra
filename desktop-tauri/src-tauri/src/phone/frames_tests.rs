@@ -14,7 +14,6 @@ use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
 #[cfg(unix)]
 use vibyra_host::Backend;
 use vibyra_host::MAX_PLAINTEXT;
-
 #[cfg(unix)]
 struct Sink;
 #[cfg(unix)]
@@ -23,20 +22,15 @@ impl OutputSink for Sink {
     fn on_resync(&self, _: u64, _: String) {}
     fn on_exit(&self, _: u64, _: Option<i32>) {}
 }
-
 fn encoded(text: &str) -> usize {
     serde_json::to_string(text).unwrap().len() - 2
 }
-
-/// What an agent's truecolor repaint looks like, with every character the
-/// encoder has to escape: ESC, other controls, quotes, backslashes, and
-/// multi-byte text that must never be split.
+/// Agent truecolor repaint with escaped controls, quotes, slashes and Unicode.
 fn repaint(lines: usize) -> String {
     (0..lines)
         .map(|n| format!("\x1b[38;2;91;124;250m{n:05} \"✔ │ é\" \\ \x07\t🦀\x1b[0m\r\n"))
         .collect()
 }
-
 #[test]
 fn pieces_fit_one_message_each_and_join_back_exactly() {
     for text in [
