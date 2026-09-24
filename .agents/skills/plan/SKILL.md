@@ -101,6 +101,12 @@ For frontend work, review the plan against the relevant frontend/design skill be
   by name only, and the backend's DMG versus app-updater metadata contract.
   A pushed source branch or local ad-hoc bundle is not a published update.
   Preserve the existing Tauri signing key trusted by installed clients.
+- For Linux desktop releases, native WebKitGTK smoke must launch a terminal and
+  prove its xterm textarea receives focus without the test calling `.focus()`;
+  then verify per-character PTY echo, burst commands, Backspace and Shift+Tab.
+  Test shared launch notices in the Linux UI too. Keep signed AppImage and Deb
+  on the same frontend artifact, and verify both signatures, hashes, old-client
+  feed offers and current-version `204` responses before publication.
 - For metadata-only Railway releases, inspect the deployed backend contract,
   set variables with `--skip-deploys`, then redeploy the existing snapshot.
   Avoid `--from-source` or uploading an older checkout. Verify original snapshot provenance, both live archive signatures, and the

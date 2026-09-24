@@ -10,13 +10,21 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
-## 0.8.5 — 24 September 2026 (candidate)
+## 0.8.6 — 24 September 2026 (Linux)
 
-Integration candidate for the shared Mac and Linux desktop product. Source and
-release checks are tracked in `docs/desktop-0.8.5-linux-mac-release-plan.md`;
-this section does not record publication. Draft What's New: shared workspace
-navigation and project creation, compact Agents conversations, desktop Preview target selection,
-terminal responsiveness, and sign-in/report recovery. Art:
+Linux parity and terminal-focus correction, built from the shared Mac/Linux
+desktop source. The new-models launch notice, Vibyra AI Chat and Agents
+workspace are included; new terminals now take keyboard focus immediately.
+Publishing and native acceptance are tracked in
+`docs/desktop-linux-0.8.6-terminal-incident.md`. Art:
+`public/releases/0.8.6.svg`.
+
+## 0.8.5 — 24 September 2026 (Linux and Mac)
+
+Published Linux AppImage and Debian, Apple Silicon and Intel Mac packages from
+tag `v0.8.5`. The shared workspace, Agents conversations, project Preview,
+terminal responsiveness, sign-in and report recovery shipped. Full publication
+evidence is in `docs/desktop-0.8.5-linux-mac-release-plan.md`. Art:
 `public/releases/0.8.5.svg`.
 
 ## 0.8.2 — 23 September 2026 (Linux)

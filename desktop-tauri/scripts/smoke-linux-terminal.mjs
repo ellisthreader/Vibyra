@@ -7,8 +7,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { NativeDriver } from "./linux-terminal-webdriver.mjs";
-import { receiveReport, verifyProjectActions, verifyReport } from "./linux-terminal-ux.mjs";
-
+import { receiveReport, verifyProjectActions } from "./linux-terminal-ux.mjs";
+import { verifyLinuxOnboardingAndReport } from "./linux-model-notice-smoke.mjs";
 if (process.platform !== "linux") throw new Error("Native terminal verification requires Linux");
 const application = resolve(process.argv[2] || "");
 if (!application.endsWith(".AppImage") || !existsSync(application)) {
@@ -116,9 +116,7 @@ try {
   // interactable. Submit the real form event once WebDriver has filled it.
   await driver.execute(`document.querySelector('.auth-email').requestSubmit()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
-  await driver.dismissWorkspaceOverlays();
-  await verifyReport(driver, reports);
-  await driver.dismissWorkspaceOverlays();
+  await verifyLinuxOnboardingAndReport(driver, output, reports);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="New terminal in input-repro"]'))`), "test project");
   await driver.until(() => driver.execute(`const card = document.querySelector('button[aria-label="Open input-repro"]');
     if (!card) return false; const rect = card.getBoundingClientRect();
@@ -134,7 +132,8 @@ try {
     return id || false;
   }, "real PTY pane");
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.pane .xterm-helper-textarea'))`), "xterm input");
-  await driver.execute(`document.querySelector('.pane .xterm-helper-textarea').focus()`);
+  await driver.until(() => driver.execute(`const input = document.querySelector('.pane .xterm-helper-textarea');
+    return Boolean(input && document.activeElement === input);`), "new terminal received keyboard focus");
   await driver.until(async () => (await snapshot(id)).length > 0, "shell prompt");
 
   // Every character must be echoed by the PTY before the next arrives. This
@@ -174,6 +173,7 @@ try {
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
+    terminalAutofocus: true, linuxNewModelsNotice: true,
     burstCommands: 12, burstToOutputMs, backspace: true, shiftTabEscape: true,
     accountService: "loopback fixture", reportBugVisible: true, reportDeliveredAfterReadinessFailure: true,
     projectRightClick: true, projectRename: true, projectCloseConfirmation: true,

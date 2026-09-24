@@ -7,6 +7,7 @@
 //
 // Add the newest entry at the top when cutting a release.
 
+import { RELEASE_086 } from "./changelogRelease086.ts";
 import { RELEASE_085 } from "./changelogRelease085.ts";
 import { LINUX_RELEASE_080 } from "./changelogRelease080.ts";
 import { LINUX_RELEASE_081 } from "./changelogRelease081.ts";
@@ -33,6 +34,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_086,
   RELEASE_085,
   LINUX_RELEASE_082,
   LINUX_RELEASE_081,

@@ -16,7 +16,6 @@ import { PhoneApprovalModal } from "../phone/PhoneApprovalModal";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
 import { newModelsNoticeHidden } from "../../lib/newModelsNotice";
-import { isMac } from "../../lib/platform";
 import { openNewProject } from "../../state/newProject";
 import { useActivityTicker } from "../../lib/useActivityTicker";
 import { useBackgroundThrottle } from "../../lib/useBackgroundThrottle";
@@ -81,7 +80,7 @@ export function WorkspaceApp() {
   const reportOpen = useReportStore((s) => s.open);
   const [welcomeOpen, setWelcomeOpen] = useState(() => !hasSeenFirstWelcome(profile));
   const [welcomeHandoff, setWelcomeHandoff] = useState(false);
-  const [newModelsOpen, setNewModelsOpen] = useState(() => isMac && !newModelsNoticeHidden());
+  const [newModelsOpen, setNewModelsOpen] = useState(() => !newModelsNoticeHidden());
 
   useGlobalShortcuts();
   useWorkspaceRuntime();

@@ -7,6 +7,7 @@ import { insertPane } from "../lib/paneInsert";
 import { queueReplay } from "../lib/terminalReplay";
 import { sessionExitCode } from "../lib/terminalBus";
 import { terminalFontReady } from "../lib/terminalFont";
+import { requestTerminalFocus } from "../lib/terminalRegistry";
 import { useProjectStore } from "./projectStore";
 import { useSettingsStore } from "./settingsStore";
 import { useWorkspaceStore } from "./workspaceStore";
@@ -41,6 +42,7 @@ function placePane(set: SetState, get: GetState, pane: PaneState, replaces?: num
   const hidden = pane.status === "running" && !startsOnStage(get, pane.projectId, replaces);
   set((state) => insertPane(state, hidden ? { ...pane, visibility: "hidden" } : pane, replaces));
   if (hidden) void setTerminalVisibility(pane.id, "hidden").catch(() => {});
+  else if (pane.status === "running") requestTerminalFocus(pane.id);
 }
 export function terminalSpawnActions(set: SetState, get: GetState): Pick<TerminalStore, "spawnAgent" | "spawnSsh"> {
   return {

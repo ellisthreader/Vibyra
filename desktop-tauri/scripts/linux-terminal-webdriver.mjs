@@ -124,6 +124,7 @@ export class NativeDriver {
         if (welcome && !welcome.classList.contains('first-welcome--leaving')) {
           welcome.querySelector('.first-welcome__skip')?.click();
         }
+        document.querySelector('.new-models__later')?.click();
         document.querySelector('.whatsnew__close')?.click();
         return Boolean(document.querySelector('.first-welcome, .modal-backdrop, [role="dialog"]'));`);
       if (blocked) { clearSince = 0; return false; }

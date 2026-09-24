@@ -29,7 +29,8 @@ website, Expo browser client, and native phone app.
 ## Focused Notes
 
 - Installed Mac 0.7.8 reference and Linux shared frontend/package validation:
-  `Desktop/Linux And Mac Parity.md`
+  `Desktop/Linux And Mac Parity.md`, including the Linux terminal-focus
+  acceptance rule and 0.8.6 incident record.
 
 - Mac frontend direction, native window lifecycle and reliable saved chats:
   `Desktop/Mac Experience And Sessions.md`
