@@ -67,7 +67,7 @@ test("Linux menu launches the installed path with the same application icon", (t
   const dataHome = join(root, "data");
   const launcher = installLinuxLauncher({ root, destination, dataHome });
   const desktop = readFileSync(launcher, "utf8");
-  assert.ok(desktop.includes(`Exec="${destination}"\n`));
+  assert.ok(desktop.includes(`Exec=${desktopExec(destination)}\n`));
   assert.ok(desktop.includes("Icon=vibyra\n"));
   assert.equal(readFileSync(join(dataHome, "icons/hicolor/256x256/apps/vibyra.png"), "utf8"), "cobalt-icon");
   assert.throws(() => desktopExec("/tmp/a\nExec=other"), /invalid control/);
