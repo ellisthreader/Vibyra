@@ -111,6 +111,10 @@ For frontend work, review the plan against the relevant frontend/design skill be
   set variables with `--skip-deploys`, then redeploy the existing snapshot.
   Avoid `--from-source` or uploading an older checkout. Verify original snapshot provenance, both live archive signatures, and the
   existing installer catalogue; a rebuild can change the image digest.
+- Before uploading desktop releases to Railway, check free space on the release
+  volume for every platform artifact. If it is full, keep the current feeds in
+  place until persistent storage is available; a partial upload must never be
+  advertised as an update.
 - Distinguish Tauri updater authentication from Apple notarization. If the user
   chooses an ad-hoc Mac beta update, retain mandatory Tauri signature checking
   and verify the Mac code signature; do not block solely on Apple Developer

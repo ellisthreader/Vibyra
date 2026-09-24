@@ -18,7 +18,19 @@ broken pipe during `Resuming session…` when the accepted socket is not yet
 ready for the upgrade. The isolated real-CLI acceptance reproduced the 0.8.7
 failure with Codex 0.156.1 and passes after the fix, including terminal input,
 phone input, reattachment and cold resume. Art: `public/releases/0.8.8.svg`.
-Publication evidence to be added after the Mac and Linux feeds are live.
+Published GitHub tag `v0.8.8` at `38428b52` with all 16 signed Mac/Linux
+assets: https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.8. Workflow
+`36019587299` passed Linux AppImage/Deb native smoke and both signed Mac jobs;
+Windows retains eight unrelated Unix-assumption fixture failures. All four
+artifacts embed frontend SHA-256
+`be1494e46ea173162ecfb4de2087215bc3b1ecab7d49e520e432b6bc1a4db01d`.
+The Railway release volume filled during the Debian upload. The 0.8.8
+AppImage is stored with a verified remote hash, but the Debian file is partial
+and neither Mac archive is stored there. Automatic deletion of obsolete
+0.8.5 files was denied with “agents cannot delete files”; current 0.8.7 feeds
+remain unchanged. Finish the volume cleanup through a human operation, then
+complete the four feed updates and verify old-client offers and current-version
+204 responses before calling the in-app rollout live.
 
 ## 0.8.7 — 24 September 2026 (Linux and Mac)
 
