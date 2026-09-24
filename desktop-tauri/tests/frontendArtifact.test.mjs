@@ -53,3 +53,12 @@ test("Linux cannot silently switch frontend entry or native app version", (t) =>
   put("package.json", { version: "0.7.7" });
   assert.throws(() => frontendManifest(root), /Frontend and native versions differ/);
 });
+
+test("Mac packages may build the native helper without changing frontend bytes", (t) => {
+  const { root, put } = fixture(t);
+  const helper = "python3 scripts/build-agent-command-helper.py";
+  put("src-tauri/tauri.macos.conf.json", { build: { beforeBundleCommand: helper } });
+  assert.doesNotThrow(() => frontendManifest(root));
+  put("src-tauri/tauri.macos.conf.json", { build: { beforeBundleCommand: helper, frontendDist: "../other" } });
+  assert.throws(() => frontendManifest(root), /macos must use the shared frontend/);
+});

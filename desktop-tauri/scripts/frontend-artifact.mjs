@@ -29,7 +29,15 @@ export function frontendManifest(root, revision = process.env.GITHUB_SHA || "loc
     if (!existsSync(path)) continue;
     const override = readJson(path);
     assert.ok(!override.version || override.version === config.version, `${platform} overrides the app version.`);
-    assert.ok(!override.build, `${platform} must use the shared frontend build configuration.`);
+    const buildKeys = Object.keys(override.build ?? {});
+    const expectedKeys = platform === "macos" ? ["beforeBundleCommand"] : [];
+    assert.deepEqual(buildKeys, expectedKeys,
+      `${platform} must use the shared frontend build configuration.`);
+    if (platform === "macos") {
+      assert.equal(override.build.beforeBundleCommand,
+        "python3 scripts/build-agent-command-helper.py",
+        "macos must build the reviewed Agent command helper.");
+    }
   }
   const dist = join(root, "dist");
   const files = filesIn(dist).map((path) => ({ path, sha256: sha256(readFileSync(join(dist, path))) }));
