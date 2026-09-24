@@ -70,6 +70,7 @@ use crate::account_session::AccountSessionManager;
 use address::{connection_address, default_address};
 use backend::DesktopBackend;
 #[cfg(test)]
+#[cfg(all(test, unix))]
 use parking_lot::Mutex;
 use preferences::computer_name;
 use std::{
