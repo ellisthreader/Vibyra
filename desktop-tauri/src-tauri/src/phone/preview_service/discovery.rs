@@ -2,8 +2,12 @@
 //! Inspect listener PIDs and their cwd, never process arguments or terminal text.
 use std::path::PathBuf;
 
+#[cfg(any(test, target_os = "macos"))]
 #[path = "discovery_probe.rs"]
 mod probe;
+#[cfg(all(test, not(target_os = "macos")))]
+use probe::listener_port;
+#[cfg(target_os = "macos")]
 use probe::{listener_port, probe};
 
 #[derive(Clone, Debug, PartialEq, Eq)]

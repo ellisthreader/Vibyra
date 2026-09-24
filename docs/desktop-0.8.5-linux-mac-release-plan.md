@@ -178,3 +178,9 @@ unverified Railway artifact is a publication stop.
   those runs produced no release packages. The signed AppImage, Debian package,
   both Mac archives, native screenshots, signatures and live updater feeds
   remain publication gates.
+- The following runs `35969717693` and `35969728664` reached later gates.
+  Linux Rust lint caught a macOS-only Preview probe import and an unused
+  hardware import; the signed run caught a frontend verifier that rejected the
+  reviewed Mac XPC helper build command. Both are corrected in the candidate.
+  These runs also produced no release packages, so native acceptance still
+  depends on a new exact-commit run.
