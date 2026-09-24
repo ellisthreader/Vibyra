@@ -17,8 +17,8 @@ export async function verifyReport(driver, reports) {
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[aria-label="Report a problem"]'))`),
     "visible Report a problem action");
   await driver.click('button[aria-label="Report a problem"]');
-  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.report-modal[role="dialog"]'))`),
-    "Report a problem dialog");
+  await driver.until(() => driver.execute(`return Boolean(document.querySelector('.report-modal[role="dialog"] .report__primary input'))`),
+    "Report a problem fields");
   await driver.keys('.report__primary input', 'Linux smoke report');
   await driver.keys('.report__primary textarea', 'The report path should reach the server');
   await driver.click('.report__footer .btn--primary');

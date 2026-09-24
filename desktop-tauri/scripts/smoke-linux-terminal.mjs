@@ -64,6 +64,7 @@ const apiPort = api.address().port;
 const env = {
   ...process.env, APPIMAGE_EXTRACT_AND_RUN: "1", GDK_BACKEND: "x11",
   VIBYRA_DESKTOP_API_URL: `http://127.0.0.1:${apiPort}`,
+  VIBYRA_DESKTOP_STATE_DIR: config,
   XDG_CONFIG_HOME: join(profile, "config"), XDG_DATA_HOME: join(profile, "data"),
   XDG_CACHE_HOME: join(profile, "cache"),
 };
