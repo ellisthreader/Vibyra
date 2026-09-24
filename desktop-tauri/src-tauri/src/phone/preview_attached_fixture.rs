@@ -24,7 +24,10 @@ impl Site {
         let worker = std::thread::spawn(move || {
             while !done.load(Ordering::SeqCst) {
                 match listener.accept() {
-                    Ok((mut socket, _)) => serve(&mut socket, port, label),
+                    Ok((mut socket, _)) => {
+                        socket.set_nonblocking(false).unwrap();
+                        serve(&mut socket, port, label);
+                    }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                         std::thread::sleep(Duration::from_millis(5));
                     }
