@@ -69,11 +69,17 @@ fn parse(raw: &str, relative: &Path) -> Vec<Worktree> {
                 .find_map(|s| s.strip_prefix("branch refs/heads/"))
                 .unwrap_or("Detached HEAD");
             let directory = Path::new(root).join(relative);
+            let available = directory.is_dir();
+            let directory = if available {
+                directory.canonicalize().unwrap_or(directory)
+            } else {
+                directory
+            };
             Some(Worktree {
                 root: root.into(),
                 directory: directory.to_string_lossy().into_owned(),
                 branch: branch.into(),
-                available: directory.is_dir(),
+                available,
                 is_main: false,
                 upstream: None,
             })

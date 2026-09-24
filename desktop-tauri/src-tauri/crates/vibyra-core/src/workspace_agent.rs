@@ -88,7 +88,7 @@ pub fn classify_edit_source(source: &Path) -> CoreResult<bool> {
 pub fn preflight(source: &Path) -> CoreResult<PathBuf> {
     let source = source.canonicalize()?;
     let root = text(&source, &["rev-parse", "--show-toplevel"])?;
-    if source.as_path() != Path::new(&root) {
+    if source != Path::new(&root).canonicalize()? {
         return Err(CoreError::InvalidPath(
             "Choose the Git repository root for edits".into(),
         ));
