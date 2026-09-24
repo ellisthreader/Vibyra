@@ -9,7 +9,7 @@ use std::{
 use vibyra_core::pty::PtyManager;
 
 impl PhoneConnection {
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub fn with_chats(
         path: PathBuf,
         manager: Arc<PtyManager>,
