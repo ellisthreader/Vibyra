@@ -23,8 +23,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 0.8.5 is a Linux and Mac rollout. Windows keeps its existing release.
         include:
+          - os: windows-latest
+            label: Windows
+            command: npm run app:build:windows
+            source: src-tauri/target/release/bundle/nsis/*-setup.exe
+            suffix: x64-setup.exe
           - os: ubuntu-22.04
             label: Linux
             command: npm run app:build:linux
