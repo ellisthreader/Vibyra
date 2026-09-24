@@ -21,6 +21,7 @@ fn creates_private_clean_worktree_without_running_hooks_or_filters() {
     let source = temp.path().join("source");
     std::fs::create_dir(&source).unwrap();
     command(&source, &["init", "-q"]);
+    command(&source, &["config", "core.autocrlf", "false"]);
     std::fs::write(source.join(".gitattributes"), "*.txt filter=probe\n").unwrap();
     std::fs::write(source.join("file.txt"), "before\n").unwrap();
     command(&source, &["add", "."]);
