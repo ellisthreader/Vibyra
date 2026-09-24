@@ -80,7 +80,7 @@ mod secret_store;
 mod session_identity;
 #[cfg(any(target_os = "macos", target_os = "linux", test))]
 mod session_process_files;
-#[cfg(any(target_os = "linux", test))]
+#[cfg(any(target_os = "linux", all(test, unix)))]
 mod session_process_linux;
 mod session_store;
 #[cfg(test)]

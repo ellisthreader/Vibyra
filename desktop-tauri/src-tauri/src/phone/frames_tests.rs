@@ -1,18 +1,23 @@
-use super::{
-    backend::DesktopBackend,
-    frames::{pieces, tail, TEXT_BUDGET},
-    vault::Vault,
-    workspace::SharedWorkspace,
-};
-use serde_json::{json, Value};
+use super::frames::{pieces, tail, TEXT_BUDGET};
+#[cfg(unix)]
+use super::{backend::DesktopBackend, vault::Vault, workspace::SharedWorkspace};
+use serde_json::json;
+#[cfg(unix)]
+use serde_json::Value;
+#[cfg(unix)]
 use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
+#[cfg(unix)]
 use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
-use vibyra_host::{Backend, MAX_PLAINTEXT};
+#[cfg(unix)]
+use vibyra_host::Backend;
+use vibyra_host::MAX_PLAINTEXT;
 
+#[cfg(unix)]
 struct Sink;
+#[cfg(unix)]
 impl OutputSink for Sink {
     fn on_output(&self, _: u64, _: String) {}
     fn on_resync(&self, _: u64, _: String) {}
