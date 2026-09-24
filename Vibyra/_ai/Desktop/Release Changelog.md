@@ -10,6 +10,16 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
+## 0.8.8 — 24 September 2026 (Linux and Mac)
+
+Codex Terminal's private Unix socket completes its WebSocket handshake in
+blocking mode before switching to nonblocking live traffic. This fixes the
+broken pipe during `Resuming session…` when the accepted socket is not yet
+ready for the upgrade. The isolated real-CLI acceptance reproduced the 0.8.7
+failure with Codex 0.156.1 and passes after the fix, including terminal input,
+phone input, reattachment and cold resume. Art: `public/releases/0.8.8.svg`.
+Publication evidence to be added after the Mac and Linux feeds are live.
+
 ## 0.8.7 — 24 September 2026 (Linux and Mac)
 
 Terminal launches recover after an interrupted reply: the app checks the

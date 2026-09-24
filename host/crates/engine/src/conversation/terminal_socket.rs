@@ -5,11 +5,40 @@ use super::{
 use serde_json::{json, Value};
 use std::{
     io::ErrorKind,
-    os::unix::{fs::PermissionsExt, net::UnixListener},
+    os::unix::{
+        fs::PermissionsExt,
+        net::{UnixListener, UnixStream},
+    },
     sync::{mpsc, Arc},
     time::Duration,
 };
-use tungstenite::{protocol::WebSocketConfig, Message};
+use tungstenite::{
+    protocol::{WebSocket, WebSocketConfig},
+    Message,
+};
+
+fn upgrade(stream: UnixStream) -> Result<WebSocket<UnixStream>, String> {
+    // Accepted sockets can inherit the listener's nonblocking mode. The HTTP
+    // upgrade must finish before the live socket switches to nonblocking IO.
+    stream.set_nonblocking(false).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(2)))
+        .map_err(|e| e.to_string())?;
+    let config = WebSocketConfig::default()
+        .max_write_buffer_size(32 * 1024 * 1024)
+        .max_message_size(Some(1024 * 1024))
+        .max_frame_size(Some(1024 * 1024));
+    let mut socket =
+        tungstenite::accept_with_config(stream, Some(config)).map_err(|e| e.to_string())?;
+    socket
+        .get_mut()
+        .set_nonblocking(true)
+        .map_err(|e| e.to_string())?;
+    Ok(socket)
+}
 
 pub(super) fn start(
     runtime: &Arc<Runtime>,
@@ -37,77 +66,76 @@ pub(super) fn start(
             }
             match listener.accept() {
                 Ok((stream, _)) => {
-                    let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
-                    let _ = stream.set_write_timeout(Some(Duration::from_secs(2)));
-                    let config = WebSocketConfig::default()
-                        .max_write_buffer_size(32 * 1024 * 1024)
-                        .max_message_size(Some(1024 * 1024))
-                        .max_frame_size(Some(1024 * 1024));
-                    if let Ok(mut socket) = tungstenite::accept_with_config(stream, Some(config)) {
-                        let _ = socket.get_mut().set_nonblocking(true);
-                        let (tx, rx) = mpsc::sync_channel(256);
-                        *bridge.peer.lock() = Some(tx);
-                        drop(runtime);
-                        loop {
-                            let Some(runtime) = weak.upgrade() else {
-                                break;
-                            };
-                            if runtime.exited() || bridge.peer.lock().is_none() {
-                                eprintln!("Codex CLI attachment ended: runtime stopped or output queue overflowed");
-                                break;
-                            }
-                            let mut failed = false;
-                            for value in rx.try_iter() {
-                                if let Err(error) =
-                                    socket.send(Message::Text(value.to_string().into()))
-                                {
-                                    // tungstenite retained this frame; retry flush, not send.
-                                    if matches!(&error, tungstenite::Error::Io(e) if e.kind() == ErrorKind::WouldBlock)
-                                    {
-                                        break;
-                                    }
-                                    eprintln!("Codex CLI socket send failed: {error}");
-                                    failed = true;
-                                    break;
-                                }
-                            }
-                            if failed {
-                                break;
-                            }
-                            if let Err(error) = socket.flush() {
-                                if !matches!(&error, tungstenite::Error::Io(e) if e.kind() == ErrorKind::WouldBlock)
-                                {
-                                    break;
-                                }
-                            }
-                            match socket.read() {
-                                Ok(Message::Text(text)) => {
-                                    let Ok(value) = serde_json::from_str::<Value>(&text) else {
-                                        eprintln!("Codex CLI sent invalid JSON");
-                                        break;
-                                    };
-                                    let id = value.get("id").cloned();
-                                    let result = bridge
-                                        .client(value)
-                                        .and_then(|v| v.map_or(Ok(()), |v| runtime.write(v)));
-                                    if let (Err(error), Some(id)) = (result, id) {
-                                        bridge.send(json!({"id":id,"error":{"code":-32000,"message":error}}));
-                                    }
-                                }
-                                Ok(Message::Close(_)) => break,
-                                Err(tungstenite::Error::Io(e))
-                                    if e.kind() == ErrorKind::WouldBlock => {}
-                                Err(error) => {
-                                    eprintln!("Codex CLI socket read failed: {error}");
-                                    break;
-                                }
-                                _ => {}
-                            }
-                            drop(runtime);
-                            std::thread::sleep(Duration::from_millis(8));
+                    let mut socket = match upgrade(stream) {
+                        Ok(socket) => socket,
+                        Err(error) => {
+                            eprintln!("Codex CLI socket handshake failed: {error}");
+                            continue;
                         }
-                        bridge.detached();
+                    };
+                    let (tx, rx) = mpsc::sync_channel(256);
+                    *bridge.peer.lock() = Some(tx);
+                    drop(runtime);
+                    loop {
+                        let Some(runtime) = weak.upgrade() else {
+                            break;
+                        };
+                        if runtime.exited() || bridge.peer.lock().is_none() {
+                            eprintln!("Codex CLI attachment ended: runtime stopped or output queue overflowed");
+                            break;
+                        }
+                        let mut failed = false;
+                        for value in rx.try_iter() {
+                            if let Err(error) = socket.send(Message::Text(value.to_string().into()))
+                            {
+                                // tungstenite retained this frame; retry flush, not send.
+                                if matches!(&error, tungstenite::Error::Io(e) if e.kind() == ErrorKind::WouldBlock)
+                                {
+                                    break;
+                                }
+                                eprintln!("Codex CLI socket send failed: {error}");
+                                failed = true;
+                                break;
+                            }
+                        }
+                        if failed {
+                            break;
+                        }
+                        if let Err(error) = socket.flush() {
+                            if !matches!(&error, tungstenite::Error::Io(e) if e.kind() == ErrorKind::WouldBlock)
+                            {
+                                break;
+                            }
+                        }
+                        match socket.read() {
+                            Ok(Message::Text(text)) => {
+                                let Ok(value) = serde_json::from_str::<Value>(&text) else {
+                                    eprintln!("Codex CLI sent invalid JSON");
+                                    break;
+                                };
+                                let id = value.get("id").cloned();
+                                let result = bridge
+                                    .client(value)
+                                    .and_then(|v| v.map_or(Ok(()), |v| runtime.write(v)));
+                                if let (Err(error), Some(id)) = (result, id) {
+                                    bridge.send(
+                                        json!({"id":id,"error":{"code":-32000,"message":error}}),
+                                    );
+                                }
+                            }
+                            Ok(Message::Close(_)) => break,
+                            Err(tungstenite::Error::Io(e)) if e.kind() == ErrorKind::WouldBlock => {
+                            }
+                            Err(error) => {
+                                eprintln!("Codex CLI socket read failed: {error}");
+                                break;
+                            }
+                            _ => {}
+                        }
+                        drop(runtime);
+                        std::thread::sleep(Duration::from_millis(8));
                     }
+                    bridge.detached();
                 }
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {
                     drop(runtime);
@@ -139,3 +167,7 @@ fn wait_for_connection(listener: &UnixListener) {
         std::thread::sleep(Duration::from_millis(25));
     }
 }
+
+#[cfg(test)]
+#[path = "terminal_socket_tests.rs"]
+mod tests;

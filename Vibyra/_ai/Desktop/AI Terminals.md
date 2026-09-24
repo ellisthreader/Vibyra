@@ -120,6 +120,21 @@ and exposes errors without destroying the saved pane. Exit tracking belongs to
 the terminal event bus even when xterm is detached. The `plan` skill records the
 Mac UI/recovery validation and release-branch comparison workflow.
 
+## Shared Codex Terminal socket (September 2026)
+
+Shared Codex conversations attach the stock CLI with `codex resume --remote
+unix:///tmp/vibyra-cli-…/rpc.sock <thread-id>`. The engine's
+`conversation/terminal_socket.rs` keeps the listener nonblocking but must make
+each accepted socket blocking while tungstenite completes the WebSocket HTTP
+upgrade; only the connected WebSocket switches to nonblocking live IO. Without
+that transition, Codex 0.156.1 can exit during `Resuming session…` with an
+`IO error: Broken pipe`, leaving the pane disconnected. The focused fragmented
+handshake test is in `terminal_socket_tests.rs`. Run the ignored Desktop test
+`native_codex_cli_shares_the_phone_conversation -- --ignored --nocapture`
+against an installed authenticated CLI to verify terminal input, phone input,
+reattachment and cold resume. It uses an isolated temporary project, never a
+live user journal.
+
 ## Pane grid density (September 2026)
 
 `gridLayout.ts` no longer returns a column count from a fixed ladder. It

@@ -1,10 +1,5 @@
-// What shipped, in the app that shipped it.
-//
-// The feed's `notes` field is one line sized for a banner. A release deserves
-// more than that, so the full entry travels inside the build it describes:
-// the What's New window is then always accurate, works offline, and cannot
-// drift from a server-side string someone edited afterwards.
-//
+// The full changelog ships with the app so What's New stays accurate offline.
+import { RELEASE_088 } from "./changelogRelease088.ts";
 import { RELEASE_087 } from "./changelogRelease087.ts";
 import { RELEASE_086 } from "./changelogRelease086.ts";
 import { RELEASE_085 } from "./changelogRelease085.ts";
@@ -33,6 +28,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_088,
   RELEASE_087,
   RELEASE_086,
   RELEASE_085,
