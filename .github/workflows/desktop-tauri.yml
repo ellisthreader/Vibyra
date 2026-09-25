@@ -32,6 +32,14 @@ on:
         description: Validate and package only the Linux candidate
         type: boolean
         default: false
+      artifact_run_id:
+        description: Reuse a Linux candidate artifact for terminal paint diagnostics
+        type: string
+        default: ""
+      artifact_name:
+        description: Artifact name from that run
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -42,6 +50,7 @@ concurrency:
 
 jobs:
   agent-command-sandbox:
+    if: ${{ !inputs.artifact_run_id }}
     name: Mac Agent command sandbox proof
     runs-on: macos-14
     timeout-minutes: 10
@@ -54,6 +63,7 @@ jobs:
         run: python3 desktop-tauri/scripts/verify-agent-command-helper.py
 
   verify:
+    if: ${{ !inputs.artifact_run_id }}
     name: Frontend, native, and policy gates
     runs-on: ubuntu-22.04
     timeout-minutes: 90
@@ -95,6 +105,7 @@ jobs:
         run: npm --prefix desktop-tauri run rust:clippy
       - name: Run all Rust tests
         run: npm --prefix desktop-tauri run rust:test
+
       - name: Install pinned RustSec scanner
         run: cargo install cargo-audit --locked --version 0.22.2
       - name: Audit Rust dependencies
@@ -138,7 +149,7 @@ jobs:
           retention-days: 14
 
   windows:
-    if: ${{ !inputs.linux_only }}
+    if: ${{ !inputs.linux_only && !inputs.artifact_run_id }}
     name: Windows native gates
     runs-on: windows-latest
     timeout-minutes: 45
@@ -171,3 +182,42 @@ jobs:
         run: npm --prefix desktop-tauri run rust:clippy
       - name: Run all Rust tests
         run: npm --prefix desktop-tauri run rust:test
+
+  terminal-paint:
+    if: ${{ inputs.artifact_run_id }}
+    name: Linux terminal paint on an existing AppImage
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+      - name: Install Linux runtime and WebDriver dependencies
+        run: bash desktop-tauri/scripts/setup-linux.sh --ci
+      - name: Install pinned native Linux WebDriver
+        run: cargo install tauri-driver --locked --version 2.0.6
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: candidate
+      - name: Capture real terminal typing and paint
+        working-directory: desktop-tauri
+        run: |
+          images=(../candidate/src-tauri/target/release/bundle/appimage/*.AppImage)
+          test "${#images[@]}" = 1
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs "${images[0]}" release/linux-terminal-smoke
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: linux-terminal-paint-${{ github.sha }}
+          path: desktop-tauri/release/linux-terminal-smoke/
+          if-no-files-found: warn
+          retention-days: 14
