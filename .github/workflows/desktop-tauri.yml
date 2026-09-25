@@ -55,6 +55,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: tauri-desktop-${{ github.workflow }}-${{ github.ref }}
@@ -67,6 +68,8 @@ jobs:
     with:
       version: ${{ inputs.installed_version }}
       live_update: ${{ inputs.live_update }}
+      artifact_run_id: ${{ inputs.artifact_run_id }}
+      artifact_name: ${{ inputs.artifact_name }}
   agent-command-sandbox:
     if: ${{ !inputs.artifact_run_id && !inputs.installed_version }}
     name: Mac Agent command sandbox proof
@@ -202,7 +205,7 @@ jobs:
         run: npm --prefix desktop-tauri run rust:test
 
   terminal-paint:
-    if: ${{ inputs.artifact_run_id }}
+    if: ${{ inputs.artifact_run_id && !inputs.installed_version }}
     name: Linux terminal paint (${{ matrix.performance }}, ${{ matrix.renderer }})
     strategy:
       fail-fast: false

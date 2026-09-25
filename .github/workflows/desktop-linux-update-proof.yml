@@ -2,6 +2,12 @@ name: Linux installed release and live updater proof
 on:
   workflow_call:
     inputs:
+      artifact_run_id:
+        type: string
+        default: ""
+      artifact_name:
+        type: string
+        default: ""
       version:
         required: true
         type: string
@@ -10,6 +16,12 @@ on:
         default: false
   workflow_dispatch:
     inputs:
+      artifact_run_id:
+        type: string
+        default: ""
+      artifact_name:
+        type: string
+        default: ""
       version:
         description: Exact published version to verify
         default: '0.8.10'
@@ -20,6 +32,7 @@ on:
         default: false
 permissions:
   contents: read
+  actions: read
 jobs:
   verify:
     name: ${{ matrix.os }} ${{ matrix.bundle }}
@@ -44,6 +57,13 @@ jobs:
           node-version: 22.23.2
       - run: bash desktop-tauri/scripts/setup-linux.sh --ci
       - run: cargo install tauri-driver --locked --version 2.0.6
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: inputs.artifact_run_id
+        with:
+          name: ${{ inputs.artifact_name }}
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: candidate
       - name: Download and install the exact signed release package
         shell: bash
         run: |
@@ -57,7 +77,9 @@ jobs:
             if [[ "$LIVE_UPDATE" == true ]]; then version=0.8.9; fi
           fi
           package="Vibyra-Desktop-$version-$suffix"
-          gh release download "v$version" --pattern "$package" --dir candidate
+          if [[ ! -f "candidate/$package" ]]; then
+            gh release download "v$version" --pattern "$package" --dir candidate
+          fi
           if [[ "$BUNDLE" == deb ]]; then
             sudo apt-get install -y "$PWD/candidate/$package"
             echo "APPLICATION=/usr/bin/Vibyra" >> "$GITHUB_ENV"
