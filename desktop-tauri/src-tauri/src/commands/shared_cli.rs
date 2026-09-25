@@ -13,10 +13,12 @@ pub async fn shared_cli_attach(
     let chats = state.shared_chats.clone();
     super::run_blocking(move || chats.attach_cli(&session_id, rows, cols, on_event)).await
 }
-/// Async so the write never runs on the main thread: a synchronous command
-/// there froze the whole window while it waited on the terminal.
+/// Keep key writes in Tauri's ordered IPC dispatch, as `write_terminal` does.
+/// `cli_write` only queues bytes to the PTY writer thread; it never waits for
+/// the child to read them. An async command could schedule separate keys out
+/// of order, even though the webview posted them in order.
 #[tauri::command]
-pub async fn shared_cli_write(
+pub fn shared_cli_write(
     state: State<'_, AppState>,
     session_id: String,
     data: String,

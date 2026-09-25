@@ -92,7 +92,6 @@ async function enterAndCheck(id, command, marker, name) {
   }, `${name}: exact command result`);
   return Math.round(performance.now() - started);
 }
-
 try {
   console.log("Opening the real AppImage against a local account fixture");
   await driver.start(application);
@@ -135,7 +134,6 @@ try {
   await driver.until(() => driver.execute(`const input = document.querySelector('.pane .xterm-helper-textarea');
     return Boolean(input && document.activeElement === input);`), "new terminal received keyboard focus");
   await driver.until(async () => (await snapshot(id)).length > 0, "shell prompt");
-
   // Every character must be echoed by the PTY before the next arrives. This
   // detects the reported one-character lag, not merely eventual completion.
   const stepMarker = "vibyrastep123456789";
@@ -145,11 +143,14 @@ try {
     const expected = stepCommand.slice(0, index + 1);
     await driver.until(async () => (await snapshot(id)).includes(expected),
       `character ${index + 1} echoed by PTY`, 3_000);
+    if (index === stepCommand.length - 2)
+      writeFileSync(join(output, "terminal-echo-penultimate.png"), await driver.screenshot());
   }
+  // The PTY snapshot may be current while WebKit paints one character behind.
+  writeFileSync(join(output, "terminal-echo-final.png"), await driver.screenshot());
   await driver.keyboard("\uE007");
   await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
     "single-character command output");
-
   const burstToOutputMs = [];
   for (let index = 0; index < 12; index += 1) {
     const marker = `vibyraburst${String(index).padStart(2, "0")}abcdefghijklmnopqrstuvwxyz`;
@@ -158,7 +159,6 @@ try {
   await driver.keyboard(`echo vibyrawrong${"\uE003".repeat(5)}right\uE007`);
   await driver.until(async () => /(?:\r|\n)vibyraright(?:\r|\n)/.test(await snapshot(id)),
     "backspace-corrected command output");
-
   // Codex Plan mode uses Shift+Tab. Check its underlying xterm translation
   // against a real PTY, with cat -v making the Escape [ Z bytes observable.
   await driver.keyboard("cat -v\uE007");

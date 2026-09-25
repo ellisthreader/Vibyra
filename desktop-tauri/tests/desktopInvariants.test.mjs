@@ -123,3 +123,15 @@ test("only an explicit count opens more than one terminal", async () => {
   );
   assert.match(launch, /options\.count \?\? 1/, "launches must default to a single terminal");
 });
+
+test("both terminal input commands preserve posted key order without waiting on a PTY", async () => {
+  const ordinary = await read("src-tauri/src/commands/terminal.rs");
+  const shared = await read("src-tauri/src/commands/shared_cli.rs");
+  const input = await read("src-tauri/crates/vibyra-core/src/pty/input.rs");
+  for (const [name, source] of [["write_terminal", ordinary], ["shared_cli_write", shared]]) {
+    assert.match(source, new RegExp(`pub fn ${name}\\(`), `${name} must run in ordered IPC dispatch`);
+    assert.doesNotMatch(source, new RegExp(`pub async fn ${name}\\(`));
+  }
+  assert.match(input, /self\.queue\.send\(data\.to_vec\(\)\)/,
+    "native commands must only queue the write, never block on the PTY");
+});
