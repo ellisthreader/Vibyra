@@ -28,10 +28,15 @@ and visibly contain the final `9`; the PTY snapshot contains the same input.
 Windows retains the unrelated Unix-assumption fixture failures and was not
 published. All four artifacts embed frontend SHA-256
 `17511da82a0cd9091599d589406de0df7076fda11507400ee24e9c8325c7afbd`.
-The in-app updater remains on 0.8.7 because the Railway release volume is
-full and automatic deletion of obsolete backed-up files was denied. Users
-can install 0.8.9 from GitHub; complete the volume cleanup through a human
-operation before rolling out its updater feeds.
+The Debian/Ubuntu in-app updater serves 0.8.9 from Railway deployment
+`877674a7-2037-49d3-8adb-4eaf02b186aa`. An old-client probe returned
+0.8.9, the 0.8.9 probe returned 204, and the actual download matched the
+signed CI artifact's 21,104,558 bytes and SHA-256
+`9edfb78d4ba1d51050ad990a8bcf0066e814883655af5ac78cb3a5e95b169f9b`.
+The AppImage and Mac in-app feeds remain on 0.8.7: the Railway release volume
+needs more space for those packages. A human removed backed-up 0.8.5 files;
+the obsolete 0.8.8 AppImage still needs removal through Railway's human-only
+file browser before staging the 0.8.9 AppImage. GitHub has all four packages.
 
 ## 0.8.8 — 24 September 2026 (Linux and Mac)
 
