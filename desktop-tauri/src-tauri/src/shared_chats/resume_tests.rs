@@ -54,17 +54,8 @@ fn cold_resume_twice_and_failed_resume_preserve_history() {
     chats.local("turn.submit", json!({"sessionId":id,"submissionId":"33333333-3333-4333-a333-333333333333","text":"retained fixture message"})).unwrap();
     chats.shutdown();
     drop(chats);
-    std::thread::sleep(std::time::Duration::from_millis(100));
     for _ in 0..2 {
-        let engine = Engine::for_desktop_project(
-            dir.path().join("journal"),
-            "project".into(),
-            "Project".into(),
-            dir.path().into(),
-            dir.path().join("provider"),
-            vec![],
-        )
-        .unwrap();
+        let engine = reopen_after_shutdown(dir.path());
         let before = engine
             .handle("desktop", "conversation.snapshot", json!({"sessionId":id}))
             .unwrap();
@@ -83,7 +74,6 @@ fn cold_resume_twice_and_failed_resume_preserve_history() {
         assert_eq!(after["items"], before["items"]);
         engine.shutdown_conversations();
         drop(engine);
-        std::thread::sleep(std::time::Duration::from_millis(100));
     }
     assert_eq!(
         std::fs::read_to_string(dir.path().join("effects"))
@@ -92,4 +82,28 @@ fn cold_resume_twice_and_failed_resume_preserve_history() {
             .count(),
         1
     );
+}
+
+// Background readers can retain the journal briefly after shutdown. Wait for
+// the actual lock release instead of assuming a CI machine finishes in 100 ms.
+fn reopen_after_shutdown(path: &std::path::Path) -> Engine {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        match Engine::for_desktop_project(
+            path.join("journal"),
+            "project".into(),
+            "Project".into(),
+            path.into(),
+            path.join("provider"),
+            vec![],
+        ) {
+            Ok(engine) => return engine,
+            Err(error)
+                if error.contains("already owns") && std::time::Instant::now() < deadline =>
+            {
+                std::thread::sleep(std::time::Duration::from_millis(25));
+            }
+            Err(error) => panic!("reopening stopped engine: {error}"),
+        }
+    }
 }
