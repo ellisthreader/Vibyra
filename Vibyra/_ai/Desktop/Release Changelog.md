@@ -10,7 +10,7 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
-## 0.8.9 — 25 September 2026 (Linux and Mac candidate)
+## 0.8.9 — 25 September 2026 (Linux and Mac)
 
 Linux terminal typing could paint one character behind even while the PTY had
 received every key. Native WebKitGTK captures on the same AppImage show the
@@ -19,8 +19,19 @@ DOM terminal in compatibility mode shows it at 50 ms. The release makes Linux
 terminals use xterm's DOM renderer under either WebKit graphics mode; Mac and
 Windows retain WebGL. Shared Codex terminal writes also use ordered Tauri
 dispatch. The native Linux smoke now compares early and settled screen frames
-in addition to PTY output. Art: `public/releases/0.8.9.svg`. Publication and
-updater status must be recorded after the signed package run.
+in addition to PTY output. Art: `public/releases/0.8.9.svg`.
+Published GitHub tag `v0.8.9` at `7b017a9b` with all 16 signed Mac/Linux
+assets: https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.9. Release
+run `36120514767` passed Linux AppImage/Deb native smoke and both signed Mac
+jobs. Its Linux 50 ms, 150 ms, and 550 ms terminal screenshots are byte-identical
+and visibly contain the final `9`; the PTY snapshot contains the same input.
+Windows retains the unrelated Unix-assumption fixture failures and was not
+published. All four artifacts embed frontend SHA-256
+`17511da82a0cd9091599d589406de0df7076fda11507400ee24e9c8325c7afbd`.
+The in-app updater remains on 0.8.7 because the Railway release volume is
+full and automatic deletion of obsolete backed-up files was denied. Users
+can install 0.8.9 from GitHub; complete the volume cleanup through a human
+operation before rolling out its updater feeds.
 
 ## 0.8.8 — 24 September 2026 (Linux and Mac)
 
