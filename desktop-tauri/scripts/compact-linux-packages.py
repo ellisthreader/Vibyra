@@ -53,15 +53,25 @@ for extension in ("AppImage", "deb"):
                     shutil.copyfileobj(payload, output)
             target.chmod(0o755)
             assert int(run(str(target), "--appimage-offset")) == offset
-            # Exercise the retained runtime's own decompressor, not just unsquashfs.
-            subprocess.run([str(target), "--appimage-extract"], cwd=work, check=True,
-                           stdout=subprocess.DEVNULL)
-            (work / "squashfs-root").rename(after)
+            run("unsquashfs", "-o", str(offset), "-d", str(after), str(target))
+            # Also compare both through the retained runtime's own decompressor.
+            # Its extracted modes can differ from unsquashfs's modes.
+            runtime_payloads = []
+            for index, package in enumerate((original, target)):
+                extraction = work / f"runtime-{index}"
+                extraction.mkdir()
+                subprocess.run([str(package), "--appimage-extract"], cwd=extraction,
+                               check=True, stdout=subprocess.DEVNULL)
+                runtime_payloads.append(inventory(extraction / "squashfs-root"))
+            assert runtime_payloads[0] == runtime_payloads[1], "Runtime extraction changed"
         else:
             run("dpkg-deb", "--raw-extract", str(original), str(before))
             run("dpkg-deb", "--root-owner-group", "-Zxz", "-z9", "--build", str(before), str(target))
             run("dpkg-deb", "--raw-extract", str(target), str(after))
-        assert inventory(before) == inventory(after), f"Payload changed in {original.name}"
+        old, new = inventory(before), inventory(after)
+        differences = {name: [old.get(name), new.get(name)] for name in old.keys() | new.keys()
+                       if old.get(name) != new.get(name)}
+        assert not differences, f"Payload changed in {original.name}: {differences}"
     checksum = digest(target)
     Path(str(target) + ".sha256").write_text(f"{checksum}  {target.name}\n")
     shutil.copyfile(str(original) + ".frontend.json", str(target) + ".frontend.json")
