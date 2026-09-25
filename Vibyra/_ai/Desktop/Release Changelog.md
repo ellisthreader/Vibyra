@@ -10,7 +10,7 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
-## 0.8.10 — 25 September 2026 (Linux; candidate)
+## 0.8.10 — 25 September 2026 (Linux)
 
 Automatic Linux graphics now disables WebKit's DMA-BUF compositor as well as
 using the DOM terminal renderer. The 0.8.9 DOM change alone left presentation
@@ -24,7 +24,30 @@ Measure from native key receipt; an early capture before input delivery is
 inconclusive. Reset PNG page offsets and assert crop dimensions before comparing.
 The release gate now captures native OS keys and external X11 screenshots,
 with no WebDriver calls between keys, and tests the installed Debian executable
-as well as the AppImage. Signed 0.8.10 packaging/publication is pending.
+as well as the AppImage. Signed release build `36133533651` passed. The
+losslessly compressed packages preserve payload contents, permissions and
+symlinks (`36136743186`); both were re-signed and independently verified.
+Native acceptance `36136945415` passed AppImage and installed Debian on Ubuntu
+22.04 and 24.04 in Balanced mode: all 264 glyph-pixel comparisons matched,
+with zero inconclusive early captures. Source tag `v0.8.10` is `231f1575`;
+the shared frontend SHA-256 is
+`3cf35b7166c0c86637aa2ee1e5c446665df4a60ef8d3719dc3613ef764841a2b`.
+
+Both Linux feeds are live through Railway deployment
+`bd83180e-971a-4d0b-a0be-215990ae94d5`: clients on 0.8.6/0.8.7/0.8.9 receive
+0.8.10, and 0.8.10 receives 204. AppImage is 102,390,264 bytes, SHA-256
+`1f34003aeacd9f32a4cfa4a956a9d39308a3f7064daa03c8dc08f0957258165e`;
+Debian is 17,959,424 bytes, SHA-256
+`d40c64a8cc4b4def3ac14967117236d00eaecc0ab0fed199700d6b15571a2864`.
+The release volume could fit only the AppImage; Debian ships inside the backend
+image under `release-image/`, fetched and hash-checked at build time. Preserve
+its `NIXPACKS_BUILD_CMD` override until relocating the artifact. See
+[[Website Accounts And Downloads]] for this storage contract.
+Live updater acceptance `36138680391` passed all four Ubuntu/bundle scenarios:
+actual AppImage 0.8.7 and Debian 0.8.9 installations downloaded and verified
+the production update, installed it, reopened as native version 0.8.10 with
+compatibility compositing, and passed the post-update Balanced typing checks.
+Both public download bodies were independently hash- and signature-verified.
 
 ## 0.8.9 — 25 September 2026 (Linux and Mac)
 

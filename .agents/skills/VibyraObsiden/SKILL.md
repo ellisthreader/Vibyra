@@ -59,6 +59,10 @@ For ImageMagick captures, clear the PNG virtual page offset before cropping
 settled reference; OCR is supporting evidence. Record native keydown timestamps
 so OS injection delay is distinguishable from delayed paint. A frame captured
 too soon after key receipt is inconclusive, and later idle frames must pass.
+For a live updater release, upgrade older AppImage and Debian installations
+through the production updater, reopen them, assert the native version and
+compositor policy, then repeat typing checks. Feed metadata and download hashes
+alone do not prove installation or activation.
 
 ## What Must Be Recorded
 

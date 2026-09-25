@@ -136,3 +136,27 @@ break a production `composer install --no-dev` build. If the Railway SSH relay
 drops during a large upload, use the direct Railway SSH endpoint with
 keepalives, still staging to a hidden name and verifying the remote checksum
 before the atomic rename.
+
+## Linux 0.8.10 release storage
+
+The 5 GB release volume is full. Do not treat `statvfs.f_bfree` as usable
+capacity: Railway's uploader cannot use the reserved blocks even when the
+application container reports UID 0. Use `df` available space for uploads.
+The complete 0.8.10 AppImage is on the volume at
+`releases/linux/0.8.10-231f157550fb/Vibyra-Desktop-0.8.10-x86_64.AppImage`.
+
+The signed Debian package is baked into the backend image at
+`storage/app/private/release-image/linux/0.8.10/Vibyra-Desktop-0.8.10-amd64.deb`.
+Railway's `NIXPACKS_BUILD_CMD` retains the original three build commands, then
+downloads that public `v0.8.10` GitHub asset and fails the build unless SHA-256
+is `d40c64a8cc4b4def3ac14967117236d00eaecc0ab0fed199700d6b15571a2864`.
+Keep this build override while the Debian feed points to `release-image/`;
+removing it requires moving the artifact to durable storage and updating its
+path first. This survives restarts and redeploys; it is not an SSH-only upload.
+Existing backend size/checksum checks and client signatures still apply.
+
+Use ordinary snapshot redeploys, not a source rebuild from an older checkout.
+The deployment-image change preserved the source fingerprint across
+`app`, `config`, `routes`, `database/migrations`, `scripts`, and `resources`.
+Obsolete 0.8.8 files and the partial hidden 0.8.10 Debian upload still need
+human cleanup through Railway's volume browser; the CLI forbids agent deletion.
