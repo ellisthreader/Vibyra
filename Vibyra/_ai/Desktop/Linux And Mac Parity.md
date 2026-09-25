@@ -46,3 +46,16 @@ echoes, 12 burst commands, Backspace and Shift+Tab. Production feeds offer
 failed only its separate cross-platform Rust tests (Unix paths, `/bin/sh`, and
 newline assumptions); no Windows package was published. Full publication
 details are in `docs/desktop-linux-0.8.6-terminal-incident.md`.
+
+Linux 0.8.9 typing diagnosis found a second one-character-behind path in the
+visible xterm renderer. The PTY snapshot was current, but an accelerated
+WebKitGTK/WebGL screenshot at 50 ms missed the final character; the same
+AppImage under compatibility compositing, which makes xterm use DOM, showed
+it. Both runs had a visible native pane and `document.hidden === false`, and
+the unpolled test typed at a 50 ms cadence before taking the screen capture.
+Keep WebKit graphics mode independent from xterm: `webglIsTrustworthy` chooses
+DOM for Linux under both WebKit modes, while Mac and Windows retain WebGL.
+The Linux smoke compares a 50 ms screen frame with a settled frame and checks
+the real PTY too. PTY snapshots alone cannot prove that typed text appeared
+on screen. CI evidence: accelerated run `36116593293`, PTY state run
+`36119183718`, compatibility run `36119510841`.

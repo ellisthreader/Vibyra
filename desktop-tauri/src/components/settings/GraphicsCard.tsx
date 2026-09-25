@@ -15,7 +15,7 @@ const MODES: { id: RendererMode; label: string }[] = [
 const MODE_HINTS: Record<RendererMode, string> = {
   auto: "Picks the safe path for your GPU.",
   accelerated: "Best performance; can freeze on some NVIDIA setups.",
-  compatibility: "Always correct; uses more CPU while output streams.",
+  compatibility: "Uses shared-memory graphics for wider GPU compatibility.",
 };
 
 function activeLabel(policy: RendererPolicy): string {
@@ -23,10 +23,10 @@ function activeLabel(policy: RendererPolicy): string {
 }
 
 /**
- * Graphics mode for the terminal renderer, as one Advanced group. WebKit reads
+ * Graphics mode for the Linux webview, as one Advanced group. WebKit reads
  * the compositing choice when the webview is created, so a change lands on
  * the next launch; the row shows the path actually running now so a user
- * seeing blank panes or high CPU can tell which one they are on. Renders
+ * seeing graphics trouble or high CPU can tell which one they are on. Renders
  * nothing where the platform offers no choice (macOS, Windows).
  */
 export function GraphicsCard({

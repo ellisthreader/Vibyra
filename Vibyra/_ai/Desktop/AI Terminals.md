@@ -135,6 +135,13 @@ against an installed authenticated CLI to verify terminal input, phone input,
 reattachment and cold resume. It uses an isolated temporary project, never a
 live user journal.
 
+Shared Codex `shared_cli_write` must be a synchronous Tauri command, like
+ordinary `write_terminal`, so rapid keys reach its nonblocking PTY input queue
+in posted order. `ConversationCliView` disables input until `shared_cli_attach`
+finishes because the attach can briefly hold the sessions lock while it
+starts Codex. The Linux all-terminal typing delay diagnosed in 0.8.9 was a
+separate xterm WebGL paint issue; see [[Linux And Mac Parity]].
+
 ## Pane grid density (September 2026)
 
 `gridLayout.ts` no longer returns a column count from a fixed ladder. It

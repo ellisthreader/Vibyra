@@ -51,8 +51,8 @@ function releaseFor(webgl: WebglAddon): ReleaseRenderer {
   };
 }
 
-/** WebGL on the accelerated path (context loss disposes it → DOM fallback);
- * the always-correct DOM renderer everywhere else. */
+/** WebGL on macOS and Windows (context loss disposes it → DOM fallback);
+ * the prompt-painting DOM renderer on Linux. */
 export function attachRenderer(term: Terminal): ReleaseRenderer {
   if (!webglIsTrusted()) return nothingToRelease;
   try {

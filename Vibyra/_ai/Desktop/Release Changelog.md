@@ -10,6 +10,18 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
+## 0.8.9 — 25 September 2026 (Linux and Mac candidate)
+
+Linux terminal typing could paint one character behind even while the PTY had
+received every key. Native WebKitGTK captures on the same AppImage show the
+accelerated xterm WebGL path missing the final character at 50 ms, while the
+DOM terminal in compatibility mode shows it at 50 ms. The release makes Linux
+terminals use xterm's DOM renderer under either WebKit graphics mode; Mac and
+Windows retain WebGL. Shared Codex terminal writes also use ordered Tauri
+dispatch. The native Linux smoke now compares early and settled screen frames
+in addition to PTY output. Art: `public/releases/0.8.9.svg`. Publication and
+updater status must be recorded after the signed package run.
+
 ## 0.8.8 — 24 September 2026 (Linux and Mac)
 
 Codex Terminal's private Unix socket completes its WebSocket handshake in

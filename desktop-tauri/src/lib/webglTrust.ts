@@ -1,16 +1,12 @@
 import { rendererPolicy } from "../ipc/render";
 import { webglIsTrustworthy } from "./rendererPolicy";
 
-// Under WebKit's shared-memory compositing path (DMA-BUF renderer disabled),
-// WebGL canvases silently fail to composite: xterm's WebGL addon loads, the
-// buffer fills, and the terminal stays black — the blank-pane-on-spawn bug.
-// Renderer strings can't detect this (WebKitGTK's ANGLE reports bogus names
-// like "Apple GPU"), so Rust tells us which compositing mode the webview got
-// and we only trust WebGL on the accelerated path.
+// Linux xterm uses the DOM renderer: WebGL can show a previous character on
+// WebKit's accelerated path, and shared-memory compositing can leave its canvas
+// black. Rust reports the platform and compositing mode before terminals mount.
 //
 // Split from `xtermRenderer.ts` so startup can resolve the policy without
-// importing the WebGL addon: that file is the only one that attaches it, and
-// the sign-in screen has no terminal to attach it to.
+// importing the WebGL addon: that file is the only one that attaches it.
 
 let webglTrusted = false;
 let policyReady: Promise<void> | null = null;

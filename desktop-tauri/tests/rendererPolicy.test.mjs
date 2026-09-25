@@ -18,9 +18,10 @@ function policy(overrides = {}) {
   };
 }
 
-test("WebGL is trusted only on the accelerated path", () => {
-  assert.equal(webglIsTrustworthy({ softwareCompositing: false }), true);
-  assert.equal(webglIsTrustworthy({ softwareCompositing: true }), false);
+test("Linux terminals use DOM even on the accelerated WebKit path", () => {
+  assert.equal(webglIsTrustworthy({ configurable: true, softwareCompositing: false }), false);
+  assert.equal(webglIsTrustworthy({ configurable: true, softwareCompositing: true }), false);
+  assert.equal(webglIsTrustworthy({ configurable: false, softwareCompositing: false }), true);
 });
 
 test("a failed compositing probe falls back to the DOM renderer", () => {

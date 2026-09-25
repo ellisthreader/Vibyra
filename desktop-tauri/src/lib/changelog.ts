@@ -1,4 +1,5 @@
 // The full changelog ships with the app so What's New stays accurate offline.
+import { RELEASE_089 } from "./changelogRelease089.ts";
 import { RELEASE_088 } from "./changelogRelease088.ts";
 import { RELEASE_087 } from "./changelogRelease087.ts";
 import { RELEASE_086 } from "./changelogRelease086.ts";
@@ -28,6 +29,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_089,
   RELEASE_088,
   RELEASE_087,
   RELEASE_086,

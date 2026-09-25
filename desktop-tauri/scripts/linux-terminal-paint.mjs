@@ -10,11 +10,14 @@ export async function probePaint(driver, output, snapshot) {
     await driver.keyboard(key);
     await delay(50);
   }
-  writeFileSync(join(output, "terminal-paint-50ms.png"), await driver.screenshot());
+  const firstFrame = await driver.screenshot();
+  writeFileSync(join(output, "terminal-paint-50ms.png"), firstFrame);
   writeFileSync(join(output, "terminal-paint-pty-after-first-frame.json"), JSON.stringify({ snapshot: await snapshot() }, null, 2));
   await delay(100);
   writeFileSync(join(output, "terminal-paint-150ms.png"), await driver.screenshot());
   await delay(400);
-  writeFileSync(join(output, "terminal-paint-550ms.png"), await driver.screenshot());
+  const settledFrame = await driver.screenshot();
+  writeFileSync(join(output, "terminal-paint-550ms.png"), settledFrame);
+  if (!firstFrame.equals(settledFrame)) throw new Error("Visible Linux terminal paint lagged behind PTY input");
   return marker;
 }
