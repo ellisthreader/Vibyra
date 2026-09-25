@@ -148,6 +148,7 @@ try {
   writeFileSync(join(output, "terminal-echo-final.png"), await driver.screenshot());
   await delay(100); writeFileSync(join(output, "terminal-echo-after-100ms.png"), await driver.screenshot());
   await delay(400); writeFileSync(join(output, "terminal-echo-after-500ms.png"), await driver.screenshot());
+  writeFileSync(join(output, "terminal-echo-state.json"), JSON.stringify({ documentHidden: await driver.execute("return document.hidden"), terminals: await driver.invoke("list_terminals"), renderer: await driver.invoke("renderer_policy") }, null, 2));
   await driver.keyboard("\uE007");
   await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
     "single-character command output");
@@ -196,5 +197,4 @@ try {
   try { rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); }
   catch (error) { console.warn(`Disposable terminal profile cleanup deferred: ${error}`); }
 }
-// WebKit children inherit driver pipes, so explicit exit matches smoke-linux.
 process.exit(failure ? 1 : 0);
