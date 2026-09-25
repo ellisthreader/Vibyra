@@ -8,6 +8,7 @@ import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { NativeDriver } from "./linux-terminal-webdriver.mjs";
+import { probePaint } from "./linux-terminal-paint.mjs";
 import { receiveReport, verifyProjectActions } from "./linux-terminal-ux.mjs";
 import { verifyLinuxOnboardingAndReport } from "./linux-model-notice-smoke.mjs";
 if (process.platform !== "linux") throw new Error("Native terminal verification requires Linux");
@@ -84,8 +85,6 @@ async function snapshot(id) {
 }
 async function enterAndCheck(id, command, marker, name) {
   const started = performance.now();
-  // One WebDriver request emits the whole key burst, including Enter, without
-  // a round trip that could accidentally give unordered IPC writes time to settle.
   await driver.keyboard(`${command}\uE007`);
   await driver.until(async () => {
     const raw = await snapshot(id);
@@ -112,8 +111,7 @@ try {
       && Number(getComputedStyle(form).opacity) > 0.99);`), "interactive email form");
   await driver.keys('input[aria-label="Email address"]', user.email);
   await driver.keys('input[aria-label="Password"]', "local-only-password");
-  // Auth reveal animation can still clip the button after inputs become
-  // interactable. Submit the real form event once WebDriver has filled it.
+  // Submit the form after WebDriver fills it; the reveal can still clip the button.
   await driver.execute(`document.querySelector('.auth-email').requestSubmit()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('.homeview, .project-workspace'))`), "authenticated workspace");
   await verifyLinuxOnboardingAndReport(driver, output, reports);
@@ -170,6 +168,8 @@ try {
   await driver.keyboard("\uE008\uE004\uE000\uE007");
   await driver.until(async () => (await snapshot(id)).slice(beforeShiftTab).includes("^[[Z"),
     "Shift+Tab arrived at the Linux PTY as Escape [ Z");
+  const paintMarker = await probePaint(driver, output);
+  await driver.until(async () => (await snapshot(id)).includes(paintMarker), "unpolled PTY typing");
   await verifyProjectActions(driver);
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
   writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
