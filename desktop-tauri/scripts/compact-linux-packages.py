@@ -11,7 +11,8 @@ import tempfile
 
 
 def run(*args):
-    return subprocess.check_output(args, text=True).strip()
+    # unsquashfs otherwise masks archived modes with the runner's umask.
+    return subprocess.check_output(args, text=True, umask=0).strip()
 
 
 def digest(path):
@@ -68,7 +69,7 @@ for extension in ("AppImage", "deb"):
                 extraction = work / f"runtime-{index}"
                 extraction.mkdir()
                 subprocess.run([str(package), "--appimage-extract"], cwd=extraction,
-                               check=True, stdout=subprocess.DEVNULL)
+                               check=True, stdout=subprocess.DEVNULL, umask=0)
                 runtime_payloads.append(inventory(extraction / "squashfs-root"))
             compare(*runtime_payloads, "Runtime extraction changed")
         else:
