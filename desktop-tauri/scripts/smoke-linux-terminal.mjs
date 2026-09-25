@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { NativeDriver } from "./linux-terminal-webdriver.mjs";
 import { receiveReport, verifyProjectActions } from "./linux-terminal-ux.mjs";
@@ -134,8 +135,6 @@ try {
   await driver.until(() => driver.execute(`const input = document.querySelector('.pane .xterm-helper-textarea');
     return Boolean(input && document.activeElement === input);`), "new terminal received keyboard focus");
   await driver.until(async () => (await snapshot(id)).length > 0, "shell prompt");
-  // Every character must be echoed by the PTY before the next arrives. This
-  // detects the reported one-character lag, not merely eventual completion.
   const stepMarker = "vibyrastep123456789";
   const stepCommand = `echo ${stepMarker}`;
   for (let index = 0; index < stepCommand.length; index += 1) {
@@ -146,8 +145,9 @@ try {
     if (index === stepCommand.length - 2)
       writeFileSync(join(output, "terminal-echo-penultimate.png"), await driver.screenshot());
   }
-  // The PTY snapshot may be current while WebKit paints one character behind.
   writeFileSync(join(output, "terminal-echo-final.png"), await driver.screenshot());
+  await delay(100); writeFileSync(join(output, "terminal-echo-after-100ms.png"), await driver.screenshot());
+  await delay(400); writeFileSync(join(output, "terminal-echo-after-500ms.png"), await driver.screenshot());
   await driver.keyboard("\uE007");
   await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
     "single-character command output");
