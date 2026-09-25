@@ -73,20 +73,27 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
   const rowCrop = `${Math.floor(width)}x${rowHeight}+0+${rowY}`;
   await delay(300);
   const reference = await capture("reference");
+  writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, reference }, null, 2));
   const referenceOcr = reference.replace(/\.png$/, "-ocr.png");
-  await run("convert", [reference, "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", referenceOcr]);
+  await run("convert", [reference, "+repage", "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", referenceOcr]);
   const referenceText = (await run("tesseract", [referenceOcr, "stdout", "--psm", "6"])).stdout;
   if (!referenceText.replace(/\s/g, "").toUpperCase().includes(marker)) throw new Error("Reference screen does not show the complete marker");
   const failures = [];
   for (const frame of frames) {
     const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
-    await run("convert", [frame.path, "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", ocrPath]);
+    await run("convert", [frame.path, "+repage", "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", ocrPath]);
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
     const region = `${Math.round(frame.expected.length * cellWidth)}x${rowHeight}+${markerX}+${rowY}`;
     const sample = frame.path.replace(/\.png$/, "-cells.png");
     const expected = frame.path.replace(/\.png$/, "-expected.png");
-    await run("convert", [frame.path, "-crop", region, "+repage", sample]);
-    await run("convert", [reference, "-crop", region, "+repage", expected]);
+    await run("convert", [frame.path, "+repage", "-crop", region, "+repage", sample]);
+    await run("convert", [reference, "+repage", "-crop", region, "+repage", expected]);
+    for (const cropped of [sample, expected]) {
+      const dimensions = (await run("identify", ["-format", "%w %h", cropped])).stdout;
+      if (dimensions !== `${Math.round(frame.expected.length * cellWidth)} ${rowHeight}`) {
+        throw new Error(`Invalid glyph crop ${dimensions}: ${cropped}`);
+      }
+    }
     try {
       await run("compare", ["-metric", "AE", sample, expected, "null:"]);
       frame.differentPixels = 0;
