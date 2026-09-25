@@ -18,7 +18,10 @@ latency: native X11 screenshots from the signed package show the prior typed
 prefix at 80 ms while DOM mutations already contain the key within 2–48 ms.
 The same package with only the compositor changed shows every tested prefix
 at 80 ms in Balanced, Full and Best, in Bash and `cat -v` (run `36130658203`).
-OCR must ignore letter case; inspect failures against pixels before attribution.
+Independent glyph-pixel comparisons found 55 delayed accelerated frames and
+zero mismatches across 198 compatibility frames in that controlled comparison.
+Measure from native key receipt; an early capture before input delivery is
+inconclusive. Reset PNG page offsets and assert crop dimensions before comparing.
 The release gate now captures native OS keys and external X11 screenshots,
 with no WebDriver calls between keys, and tests the installed Debian executable
 as well as the AppImage. Signed 0.8.10 packaging/publication is pending.

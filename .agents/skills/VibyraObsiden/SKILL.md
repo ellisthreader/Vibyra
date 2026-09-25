@@ -54,6 +54,11 @@ or IPC between keys can wake rendering. Assert the current typed prefix before
 the next key, retain idle frames and DOM mutation timestamps, and inspect OCR
 failures visually. Compare compositor changes with the terminal renderer held
 constant. Test both AppImage and installed Debian packages before publishing.
+For ImageMagick captures, clear the PNG virtual page offset before cropping
+(`+repage`) and assert actual crop dimensions. Compare glyph pixels with a
+settled reference; OCR is supporting evidence. Record native keydown timestamps
+so OS injection delay is distinguishable from delayed paint. A frame captured
+too soon after key receipt is inconclusive, and later idle frames must pass.
 
 ## What Must Be Recorded
 
