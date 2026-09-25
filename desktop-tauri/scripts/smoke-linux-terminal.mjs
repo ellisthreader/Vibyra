@@ -168,7 +168,7 @@ try {
   await driver.keyboard("\uE008\uE004\uE000\uE007");
   await driver.until(async () => (await snapshot(id)).slice(beforeShiftTab).includes("^[[Z"),
     "Shift+Tab arrived at the Linux PTY as Escape [ Z");
-  const paintMarker = await probePaint(driver, output);
+  const paintMarker = await probePaint(driver, output, () => snapshot(id));
   await driver.until(async () => (await snapshot(id)).includes(paintMarker), "unpolled PTY typing");
   await verifyProjectActions(driver);
   writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
