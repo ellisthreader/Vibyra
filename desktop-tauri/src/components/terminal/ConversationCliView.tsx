@@ -36,6 +36,7 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
     let lastFitAt = 0;
     const term = new Terminal({ fontSize: current.current.fontSize, fontFamily: terminalFont(settings.fontFamily),
       theme: themeFor(settings.theme), scrollback: settings.scrollbackLines, allowProposedApi: true, cursorBlink: false });
+    term.options.disableStdin = true;
     const fit = new FitAddon(); term.loadAddon(fit); term.loadAddon(new WebLinksAddon());
     term.open(element); const releaseRenderer = attachRenderer(term); attachTerminalClipboard(term);
     instance.current = { term, fit };
@@ -60,6 +61,7 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
     void invoke('shared_cli_attach', { sessionId, rows: term.rows, cols: term.cols, onEvent: channel }).then(() => {
       attached = true;
       if (disposed) { letGo(); return; }
+      term.options.disableStdin = false;
       void invoke('shared_cli_visibility', { sessionId, visible: visibility.current }).catch(fail);
       fitNow();
     }).catch(fail);
