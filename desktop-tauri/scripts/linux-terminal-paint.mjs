@@ -14,7 +14,9 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
   mkdirSync(folder, { recursive: true });
   if (phase === "shell") await driver.keyboard("PS1='> '; clear\n");
   await delay(2_000); // Let the window resize and picker transition finish.
-  const context = await driver.execute(`const rect = document.querySelector('.pane .xterm-screen').getBoundingClientRect();
+  const context = await driver.execute(`const row = document.querySelector('.pane .xterm-cursor')?.closest('.xterm-rows > div');
+    if (!row) throw new Error('No visible DOM terminal cursor row');
+    const rect = row.getBoundingClientRect();
     window.__typingKeys = []; window.__typingPaint = [];
     const stamp = () => performance.timeOrigin + performance.now();
     document.addEventListener('keydown', event => window.__typingKeys.push({ key: event.key, at: stamp() }), true);
@@ -61,7 +63,7 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
     await run("convert", [frame.path, "-negate", "-resize", "300%", ocrPath]);
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
-    if (frame.expected.length >= 5 && !frame.text.replace(/\s/g, "").toUpperCase().includes(frame.expected)) failures.push(frame);
+    if (!frame.text.replace(/\s/g, "").toUpperCase().includes(frame.expected)) failures.push(frame);
   }
   writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures }, null, 2));
   await run("xdotool", ["key", "ctrl+u"]);
