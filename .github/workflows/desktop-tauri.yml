@@ -28,6 +28,14 @@ on:
       - ".github/workflows/desktop-tauri.yml"
   workflow_dispatch:
     inputs:
+      installed_version:
+        description: Verify a published Linux release instead of building
+        type: string
+        default: ""
+      live_update:
+        description: Exercise the production updater from older Linux packages
+        type: boolean
+        default: false
       linux_only:
         description: Validate and package only the Linux candidate
         type: boolean
@@ -53,8 +61,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  installed-release:
+    if: ${{ inputs.installed_version }}
+    uses: ./.github/workflows/desktop-linux-update-proof.yml
+    with:
+      version: ${{ inputs.installed_version }}
+      live_update: ${{ inputs.live_update }}
   agent-command-sandbox:
-    if: ${{ !inputs.artifact_run_id }}
+    if: ${{ !inputs.artifact_run_id && !inputs.installed_version }}
     name: Mac Agent command sandbox proof
     runs-on: macos-14
     timeout-minutes: 10
@@ -67,7 +81,7 @@ jobs:
         run: python3 desktop-tauri/scripts/verify-agent-command-helper.py
 
   verify:
-    if: ${{ !inputs.artifact_run_id }}
+    if: ${{ !inputs.artifact_run_id && !inputs.installed_version }}
     name: Frontend, native, and policy gates
     runs-on: ubuntu-22.04
     timeout-minutes: 90
@@ -153,7 +167,7 @@ jobs:
           retention-days: 14
 
   windows:
-    if: ${{ !inputs.linux_only && !inputs.artifact_run_id }}
+    if: ${{ !inputs.linux_only && !inputs.artifact_run_id && !inputs.installed_version }}
     name: Windows native gates
     runs-on: windows-latest
     timeout-minutes: 45

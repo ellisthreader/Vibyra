@@ -19,7 +19,9 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     const rect = row.getBoundingClientRect();
     window.__typingKeys = []; window.__typingPaint = [];
     const stamp = () => performance.timeOrigin + performance.now();
-    document.addEventListener('keydown', event => window.__typingKeys.push({ key: event.key, at: stamp() }), true);
+    if (window.__typingKeyListener) document.removeEventListener('keydown', window.__typingKeyListener, true);
+    window.__typingKeyListener = event => window.__typingKeys.push({ key: event.key, at: stamp() });
+    document.addEventListener('keydown', window.__typingKeyListener, true);
     window.__typingObserver?.disconnect();
     window.__typingObserver = new MutationObserver(() => window.__typingPaint.push({ at: stamp(),
       text: document.querySelector('.pane .xterm-rows')?.textContent }));
@@ -58,12 +60,36 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
   context.pty = await snapshot();
   context.after = await driver.execute(`return { mutations: window.__typingPaint, keys: window.__typingKeys, hidden: document.hidden,
     rows: [...document.querySelectorAll('.pane .xterm-rows > div')].map(row => row.textContent) };`);
+  // Compare the typed cells with a fully rendered reference. OCR alone can
+  // confuse a lone Q with O or the block cursor with a letter.
+  const rowText = context.after.rows.find(text => text.includes(marker));
+  if (!rowText) throw new Error(`${phase}: DOM never received the complete marker`);
+  const cellWidth = context.rect.width / context.terminals.find(terminal => terminal.visibility === "visible").cols;
+  const markerX = Math.round(rowText.indexOf(marker) * cellWidth);
+  await delay(300);
+  const reference = await capture("reference");
+  const referenceOcr = reference.replace(/\.png$/, "-ocr.png");
+  await run("convert", [reference, "-negate", "-resize", "300%", referenceOcr]);
+  const referenceText = (await run("tesseract", [referenceOcr, "stdout", "--psm", "6"])).stdout;
+  if (!referenceText.replace(/\s/g, "").toUpperCase().includes(marker)) throw new Error("Reference screen does not show the complete marker");
   const failures = [];
   for (const frame of frames) {
     const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
     await run("convert", [frame.path, "-negate", "-resize", "300%", ocrPath]);
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
-    if (!frame.text.replace(/\s/g, "").toUpperCase().includes(frame.expected)) failures.push(frame);
+    const region = `${Math.round(frame.expected.length * cellWidth)}x${Math.floor(height)}+${markerX}+0`;
+    const sample = frame.path.replace(/\.png$/, "-cells.png");
+    const expected = frame.path.replace(/\.png$/, "-expected.png");
+    await run("convert", [frame.path, "-crop", region, "+repage", sample]);
+    await run("convert", [reference, "-crop", region, "+repage", expected]);
+    try {
+      await run("compare", ["-metric", "AE", sample, expected, "null:"]);
+      frame.differentPixels = 0;
+    } catch (error) {
+      if (error.code !== 1) throw error;
+      frame.differentPixels = Number(error.stderr.trim());
+      failures.push(frame);
+    }
   }
   writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures }, null, 2));
   await run("xdotool", ["key", "ctrl+u"]);

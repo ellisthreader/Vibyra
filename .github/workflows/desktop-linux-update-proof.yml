@@ -1,5 +1,13 @@
 name: Linux installed release and live updater proof
 on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      live_update:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       version:

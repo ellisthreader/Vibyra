@@ -96,6 +96,7 @@ jobs:
         if: runner.os == 'macOS'
         run: node scripts/macos-signing.mjs src-tauri/target/release/bundle/macos/Vibyra.app
       - name: Stage versioned artifact, checksum and update signature
+        id: package_stage
         shell: bash
         run: |
           mkdir -p release
@@ -227,6 +228,7 @@ jobs:
           fi
 
       - name: Upload package and checksum
+        if: ${{ always() && steps.package_stage.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: vibyra-rust-beta-${{ matrix.label }}-${{ github.sha }}
