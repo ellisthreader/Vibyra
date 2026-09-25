@@ -28,6 +28,10 @@ on:
       - ".github/workflows/desktop-tauri.yml"
   workflow_dispatch:
     inputs:
+      compact_packages:
+        description: Losslessly compress an existing Linux release artifact
+        type: boolean
+        default: false
       installed_version:
         description: Verify a published Linux release instead of building
         type: string
@@ -62,6 +66,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  compact-packages:
+    if: ${{ inputs.compact_packages && inputs.artifact_run_id }}
+    uses: ./.github/workflows/desktop-linux-compact.yml
+    secrets: inherit
+    with:
+      artifact_run_id: ${{ inputs.artifact_run_id }}
+      artifact_name: ${{ inputs.artifact_name }}
   installed-release:
     if: ${{ inputs.installed_version }}
     uses: ./.github/workflows/desktop-linux-update-proof.yml
@@ -205,7 +216,7 @@ jobs:
         run: npm --prefix desktop-tauri run rust:test
 
   terminal-paint:
-    if: ${{ inputs.artifact_run_id && !inputs.installed_version }}
+    if: ${{ inputs.artifact_run_id && !inputs.installed_version && !inputs.compact_packages }}
     name: Linux terminal paint (${{ matrix.performance }}, ${{ matrix.renderer }})
     strategy:
       fail-fast: false

@@ -1,0 +1,46 @@
+name: Lossless Linux release package compression
+on:
+  workflow_call:
+    inputs:
+      artifact_run_id:
+        required: true
+        type: string
+      artifact_name:
+        required: true
+        type: string
+jobs:
+  compact:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.23.2
+      - run: sudo apt-get update && sudo apt-get install -y squashfs-tools
+      - run: npm ci --prefix desktop-tauri
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ inputs.artifact_name }}
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: candidate
+      - name: Compress without changing payload files or the AppImage runtime
+        run: python3 desktop-tauri/scripts/compact-linux-packages.py candidate compact
+      - name: Sign the verified packages
+        working-directory: desktop-tauri
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          for package in ../compact/*.AppImage ../compact/*.deb; do
+            npm exec -- tauri signer sign "$package"
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: vibyra-linux-compact-${{ github.sha }}
+          path: compact/
+          if-no-files-found: error
+          retention-days: 14
