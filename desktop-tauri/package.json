@@ -39,7 +39,8 @@
     "release:macos:publish": "node scripts/publish-macos-update.mjs",
     "release:art": "node scripts/new-release-art.mjs",
     "review:parity": "node scripts/serve-desktop-parity.mjs",
-    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs"
+    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs",
+    "verify:linux:update": "node scripts/smoke-linux-update.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
