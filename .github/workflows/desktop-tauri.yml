@@ -40,6 +40,10 @@ on:
         description: Artifact name from that run
         type: string
         default: ""
+      compatibility_renderer:
+        description: Use WebKit's compatibility renderer for a reused AppImage
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -213,6 +217,7 @@ jobs:
         run: |
           images=(../candidate/src-tauri/target/release/bundle/appimage/*.AppImage)
           test "${#images[@]}" = 1
+          if [[ "${{ inputs.compatibility_renderer }}" == "true" ]]; then export VIBYRA_WEBKIT_DMABUF=0; fi
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs "${images[0]}" release/linux-terminal-smoke
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
