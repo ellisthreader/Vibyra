@@ -1,23 +1,56 @@
-import { writeFileSync } from "node:fs";
+import { execFile } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { promisify } from "node:util";
 
-// Type at a human cadence without polling the PTY or webview between keys.
-// This separates an actual display delay from test-induced IPC contention.
-export async function probePaint(driver, output, snapshot) {
-  const marker = "vibyrapaint123456789";
-  for (const key of marker) {
-    await driver.keyboard(key);
-    await delay(50);
+const run = promisify(execFile);
+
+// Capture the X server, not WebDriver: requesting a webview screenshot can
+// itself wake a stalled renderer. No webview IPC runs between the test keys.
+export async function probePaint(driver, output, snapshot, phase = "cat") {
+  const folder = join(output, `native-paint-${phase}`);
+  mkdirSync(folder, { recursive: true });
+  const context = await driver.execute(`const rect = document.querySelector('.pane .xterm-screen').getBoundingClientRect();
+    window.__typingKeys = [];
+    document.addEventListener('keydown', event => window.__typingKeys.push({ key: event.key, at: performance.now() }));
+    return { hidden: document.hidden, mode: document.documentElement.dataset.performance || 'full',
+      canvasCount: document.querySelectorAll('.pane .xterm-screen canvas').length,
+      rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } };`);
+  context.renderer = await driver.invoke("renderer_policy");
+  context.terminals = await driver.invoke("list_terminals");
+  const { x, y, width, height } = context.rect;
+  const crop = `${Math.floor(width)}x${Math.floor(height)}+${Math.floor(x)}+${Math.floor(y)}`;
+  const capture = async name => {
+    const path = join(folder, `${name}.png`);
+    await run("import", ["-window", "root", "-crop", crop, path]);
+    return path;
+  };
+  const marker = phase === "shell" ? "shellpaint123456789" : "catpaint123456789";
+  const frames = [];
+  await run("xdotool", ["key", "ctrl+u"]);
+  await delay(300);
+  for (let index = 0; index < marker.length; index++) {
+    await run("xdotool", ["type", "--clearmodifiers", "--delay", "0", marker[index]]);
+    await delay(80);
+    frames.push({ expected: marker.slice(0, index + 1), path: await capture(`key-${index + 1}`) });
+    await delay(220);
   }
-  const firstFrame = await driver.screenshot();
-  writeFileSync(join(output, "terminal-paint-50ms.png"), firstFrame);
-  writeFileSync(join(output, "terminal-paint-pty-after-first-frame.json"), JSON.stringify({ snapshot: await snapshot() }, null, 2));
-  await delay(100);
-  writeFileSync(join(output, "terminal-paint-150ms.png"), await driver.screenshot());
-  await delay(400);
-  const settledFrame = await driver.screenshot();
-  writeFileSync(join(output, "terminal-paint-550ms.png"), settledFrame);
-  if (!firstFrame.equals(settledFrame)) throw new Error("Visible Linux terminal paint lagged behind PTY input");
+  await delay(1_000);
+  frames.push({ expected: marker, path: await capture("settled") });
+  context.pty = await snapshot();
+  context.after = await driver.execute(`return { keys: window.__typingKeys, hidden: document.hidden,
+    rows: [...document.querySelectorAll('.pane .xterm-rows > div')].map(row => row.textContent) };`);
+  const failures = [];
+  for (const frame of frames) {
+    const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
+    await run("convert", [frame.path, "-negate", "-resize", "300%", ocrPath]);
+    frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
+    if (frame.expected.length >= 5 && !frame.text.replace(/\s/g, "").includes(frame.expected)) failures.push(frame);
+  }
+  writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures }, null, 2));
+  await run("xdotool", ["key", "ctrl+u"]);
+  await delay(300);
+  if (failures.length) throw new Error(`${phase}: ${failures.length} native screenshots lack the current typed prefix; see ${folder}`);
   return marker;
 }

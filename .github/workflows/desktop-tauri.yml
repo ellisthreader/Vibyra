@@ -189,7 +189,11 @@ jobs:
 
   terminal-paint:
     if: ${{ inputs.artifact_run_id }}
-    name: Linux terminal paint on an existing AppImage
+    name: Linux terminal paint (${{ matrix.performance }})
+    strategy:
+      fail-fast: false
+      matrix:
+        performance: [balanced, full, best]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     permissions:
@@ -213,16 +217,18 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: candidate
       - name: Capture real terminal typing and paint
+        env:
+          VIBYRA_SMOKE_PERFORMANCE: ${{ matrix.performance }}
         working-directory: desktop-tauri
         run: |
-          images=(../candidate/src-tauri/target/release/bundle/appimage/*.AppImage)
+          mapfile -t images < <(find ../candidate -name "*.AppImage" -type f)
           test "${#images[@]}" = 1
           if [[ "${{ inputs.compatibility_renderer }}" == "true" ]]; then export VIBYRA_WEBKIT_DMABUF=0; fi
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs "${images[0]}" release/linux-terminal-smoke
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: linux-terminal-paint-${{ github.sha }}
+          name: linux-terminal-paint-${{ matrix.performance }}-${{ github.sha }}
           path: desktop-tauri/release/linux-terminal-smoke/
           if-no-files-found: warn
           retention-days: 14

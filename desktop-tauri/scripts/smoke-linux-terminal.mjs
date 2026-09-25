@@ -25,7 +25,7 @@ mkdirSync(project, { recursive: true });
 const config = join(profile, "config", "vibyra-desktop");
 mkdirSync(config, { recursive: true });
 writeFileSync(join(config, "settings.json"), JSON.stringify({
-  defaultShell: "/bin/sh",
+  defaultShell: "/bin/bash", performanceMode: process.env.VIBYRA_SMOKE_PERFORMANCE || "balanced",
   projects: [{ id: "input-repro", name: "input-repro", root: project,
     color: "#5b7cfa", lastOpenedMs: Date.now() }],
   activeProjectId: "input-repro",
@@ -120,8 +120,7 @@ try {
     if (!card) return false; const rect = card.getBoundingClientRect();
     return card.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2));`),
   "project card unobscured");
-  // The card's plus is hidden until hover at desktop widths. Invoke its real
-  // React handler; terminal keys still go through native WebDriver and PTY.
+  // Open the hidden picker control; typing goes through native keyboard events.
   await driver.execute(`document.querySelector('button[aria-label="New terminal in input-repro"]').click()`);
   await driver.until(() => driver.execute(`return Boolean(document.querySelector('button[title="Launch Terminal"]'))`), "system shell in terminal picker");
   await driver.click('button[title="Launch Terminal"]');
@@ -133,6 +132,7 @@ try {
   await driver.until(() => driver.execute(`const input = document.querySelector('.pane .xterm-helper-textarea');
     return Boolean(input && document.activeElement === input);`), "new terminal received keyboard focus");
   await driver.until(async () => (await snapshot(id)).length > 0, "shell prompt");
+  await probePaint(driver, output, () => snapshot(id), "shell");
   const stepMarker = "vibyrastep123456789";
   const stepCommand = `echo ${stepMarker}`;
   for (let index = 0; index < stepCommand.length; index += 1) {

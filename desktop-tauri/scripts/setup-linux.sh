@@ -15,7 +15,7 @@ packages=(
   alsa-utils pulseaudio-utils espeak-ng xdg-utils xdg-desktop-portal
 )
 case "${1:-}" in
-  --ci) packages+=(xvfb xauth dbus-x11 webkit2gtk-driver) ;;
+  --ci) packages+=(xvfb xauth dbus-x11 webkit2gtk-driver xdotool imagemagick tesseract-ocr) ;;
   "") ;;
   *) echo "Usage: $0 [--ci]" >&2; exit 1 ;;
 esac
