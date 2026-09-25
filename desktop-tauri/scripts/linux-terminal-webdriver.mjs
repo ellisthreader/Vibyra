@@ -1,3 +1,5 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 
 const ELEMENT = "element-6066-11e4-a52e-4f735466cecf";
@@ -134,7 +136,10 @@ export class NativeDriver {
   }
 
   screenshot() {
-    return this.request("GET", `/session/${this.session}/screenshot`)
-      .then(value => Buffer.from(value, "base64"));
+    // WebKit's screenshot command can stall in software compositing. Capture
+    // what the X server presents without scheduling work inside the webview.
+    return promisify(execFile)("import", ["-window", "root", "png:-"], {
+      encoding: "buffer", maxBuffer: 16 * 1024 * 1024, timeout: 10_000,
+    }).then(result => result.stdout);
   }
 }

@@ -16,7 +16,8 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
   await delay(2_000); // Let the window resize and picker transition finish.
   const context = await driver.execute(`const row = document.querySelector('.pane .xterm-cursor')?.closest('.xterm-rows > div');
     if (!row) throw new Error('No visible DOM terminal cursor row');
-    const rect = row.getBoundingClientRect();
+    const rect = document.querySelector('.pane .xterm-screen').getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
     window.__typingKeys = []; window.__typingPaint = [];
     const stamp = () => performance.timeOrigin + performance.now();
     if (window.__typingKeyListener) document.removeEventListener('keydown', window.__typingKeyListener, true);
@@ -28,6 +29,7 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     window.__typingObserver.observe(document.querySelector('.pane .xterm-rows'), { subtree: true, childList: true, characterData: true });
     return { hidden: document.hidden, mode: document.documentElement.dataset.performance || 'full',
       canvasCount: document.querySelectorAll('.pane .xterm-screen canvas').length,
+      rowRect: { x: rowRect.x, y: rowRect.y, width: rowRect.width, height: rowRect.height },
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } };`);
   context.renderer = await driver.invoke("renderer_policy");
   context.version = await driver.invoke("plugin:app|version");
@@ -64,20 +66,23 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
   // confuse a lone Q with O or the block cursor with a letter.
   const rowText = context.after.rows.find(text => text.includes(marker));
   if (!rowText) throw new Error(`${phase}: DOM never received the complete marker`);
-  const cellWidth = context.rect.width / context.terminals.find(terminal => terminal.visibility === "visible").cols;
-  const markerX = Math.round(rowText.indexOf(marker) * cellWidth);
+  const cellWidth = context.rowRect.width / context.terminals.find(terminal => terminal.visibility === "visible").cols;
+  const markerX = Math.round(context.rowRect.x - x + rowText.indexOf(marker) * cellWidth);
+  const rowY = Math.round(context.rowRect.y - y);
+  const rowHeight = Math.floor(context.rowRect.height);
+  const rowCrop = `${Math.floor(width)}x${rowHeight}+0+${rowY}`;
   await delay(300);
   const reference = await capture("reference");
   const referenceOcr = reference.replace(/\.png$/, "-ocr.png");
-  await run("convert", [reference, "-negate", "-resize", "300%", referenceOcr]);
+  await run("convert", [reference, "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", referenceOcr]);
   const referenceText = (await run("tesseract", [referenceOcr, "stdout", "--psm", "6"])).stdout;
   if (!referenceText.replace(/\s/g, "").toUpperCase().includes(marker)) throw new Error("Reference screen does not show the complete marker");
   const failures = [];
   for (const frame of frames) {
     const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
-    await run("convert", [frame.path, "-negate", "-resize", "300%", ocrPath]);
+    await run("convert", [frame.path, "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", ocrPath]);
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
-    const region = `${Math.round(frame.expected.length * cellWidth)}x${Math.floor(height)}+${markerX}+0`;
+    const region = `${Math.round(frame.expected.length * cellWidth)}x${rowHeight}+${markerX}+${rowY}`;
     const sample = frame.path.replace(/\.png$/, "-cells.png");
     const expected = frame.path.replace(/\.png$/, "-expected.png");
     await run("convert", [frame.path, "-crop", region, "+repage", sample]);
