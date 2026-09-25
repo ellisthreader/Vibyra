@@ -189,11 +189,12 @@ jobs:
 
   terminal-paint:
     if: ${{ inputs.artifact_run_id }}
-    name: Linux terminal paint (${{ matrix.performance }})
+    name: Linux terminal paint (${{ matrix.performance }}, ${{ matrix.renderer }})
     strategy:
       fail-fast: false
       matrix:
         performance: [balanced, full, best]
+        renderer: [auto, compatibility]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     permissions:
@@ -223,12 +224,12 @@ jobs:
         run: |
           mapfile -t images < <(find ../candidate -name "*.AppImage" -type f)
           test "${#images[@]}" = 1
-          if [[ "${{ inputs.compatibility_renderer }}" == "true" ]]; then export VIBYRA_WEBKIT_DMABUF=0; fi
+          if [[ "${{ inputs.compatibility_renderer }}" == "true" || "${{ matrix.renderer }}" == "compatibility" ]]; then export VIBYRA_WEBKIT_DMABUF=0; fi
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs "${images[0]}" release/linux-terminal-smoke
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: linux-terminal-paint-${{ matrix.performance }}-${{ github.sha }}
+          name: linux-terminal-paint-${{ matrix.performance }}-${{ matrix.renderer }}-${{ github.sha }}
           path: desktop-tauri/release/linux-terminal-smoke/
           if-no-files-found: warn
           retention-days: 14
