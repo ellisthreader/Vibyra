@@ -27,6 +27,12 @@ def inventory(root):
     return result
 
 
+def compare(old, new, label):
+    differences = {name: [old.get(name), new.get(name)] for name in old.keys() | new.keys()
+                   if old.get(name) != new.get(name)}
+    assert not differences, f"{label}: {differences}"
+
+
 source, destination = map(Path, sys.argv[1:])
 destination.mkdir(parents=True, exist_ok=True)
 report = []
@@ -54,6 +60,7 @@ for extension in ("AppImage", "deb"):
             target.chmod(0o755)
             assert int(run(str(target), "--appimage-offset")) == offset
             run("unsquashfs", "-o", str(offset), "-d", str(after), str(target))
+            compare(inventory(before), inventory(after), "SquashFS payload changed")
             # Also compare both through the retained runtime's own decompressor.
             # Its extracted modes can differ from unsquashfs's modes.
             runtime_payloads = []
@@ -63,15 +70,12 @@ for extension in ("AppImage", "deb"):
                 subprocess.run([str(package), "--appimage-extract"], cwd=extraction,
                                check=True, stdout=subprocess.DEVNULL)
                 runtime_payloads.append(inventory(extraction / "squashfs-root"))
-            assert runtime_payloads[0] == runtime_payloads[1], "Runtime extraction changed"
+            compare(*runtime_payloads, "Runtime extraction changed")
         else:
             run("dpkg-deb", "--raw-extract", str(original), str(before))
             run("dpkg-deb", "--root-owner-group", "-Zxz", "-z9", "--build", str(before), str(target))
             run("dpkg-deb", "--raw-extract", str(target), str(after))
-        old, new = inventory(before), inventory(after)
-        differences = {name: [old.get(name), new.get(name)] for name in old.keys() | new.keys()
-                       if old.get(name) != new.get(name)}
-        assert not differences, f"Payload changed in {original.name}: {differences}"
+        compare(inventory(before), inventory(after), f"Payload changed in {original.name}")
     checksum = digest(target)
     Path(str(target) + ".sha256").write_text(f"{checksum}  {target.name}\n")
     shutil.copyfile(str(original) + ".frontend.json", str(target) + ".frontend.json")
