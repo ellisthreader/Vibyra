@@ -58,7 +58,7 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     frames.push({ expected: marker.slice(0, index + 1), sentAt, capturedAt: Date.now(), path: await capture(`idle-${index + 1}`) });
   }
   await delay(1_000);
-  frames.push({ expected: marker, path: await capture("settled") });
+  frames.push({ expected: marker, capturedAt: Date.now(), path: await capture("settled") });
   context.pty = await snapshot();
   context.after = await driver.execute(`return { mutations: window.__typingPaint, keys: window.__typingKeys, hidden: document.hidden,
     rows: [...document.querySelectorAll('.pane .xterm-rows > div')].map(row => row.textContent) };`);
@@ -79,7 +79,12 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
   const referenceText = (await run("tesseract", [referenceOcr, "stdout", "--psm", "6"])).stdout;
   if (!referenceText.replace(/\s/g, "").toUpperCase().includes(marker)) throw new Error("Reference screen does not show the complete marker");
   const failures = [];
+  const earlyCaptures = [];
   for (const frame of frames) {
+    const key = context.after.keys.find(event => event.key === frame.expected.at(-1));
+    if (!key) throw new Error(`No native keydown recorded for ${frame.expected}`);
+    frame.keyReceivedAt = key.at;
+    frame.capturedAfterKeyMs = frame.capturedAt - key.at;
     const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
     await run("convert", [frame.path, "+repage", "-crop", rowCrop, "+repage", "-negate", "-resize", "300%", ocrPath]);
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
@@ -100,12 +105,16 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     } catch (error) {
       if (error.code !== 1) throw error;
       frame.differentPixels = Number(error.stderr.trim());
-      failures.push(frame);
+      // OS injection can queue before WebKit receives it. A capture within
+      // three 60 Hz frames of keydown cannot judge an 80 ms paint deadline.
+      if (frame.capturedAfterKeyMs < 50) earlyCaptures.push(frame);
+      else failures.push(frame);
     }
   }
-  writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures }, null, 2));
+  writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures, earlyCaptures }, null, 2));
   await run("xdotool", ["key", "ctrl+u"]);
   await delay(300);
+  if (earlyCaptures.length > 2) throw new Error(`${phase}: native input delivery was too late to measure paint reliably`);
   if (failures.length) failedProbes.push(`${phase}: ${failures.length} stale or unreadable frames`);
   if (phase === "cat" && failedProbes.length) throw new Error(`${failedProbes.join("; ")}; see ${output}`);
   return marker;
