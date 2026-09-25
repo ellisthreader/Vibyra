@@ -3,6 +3,10 @@ name: Rust desktop beta packages
 on:
   workflow_dispatch:
     inputs:
+      linux_only:
+        description: Build only the signed Linux AppImage and Debian packages
+        type: boolean
+        default: false
       macos_only:
         description: Build the Mac in-app update only
         type: boolean
@@ -23,27 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: windows-latest
-            label: Windows
-            command: npm run app:build:windows
-            source: src-tauri/target/release/bundle/nsis/*-setup.exe
-            suffix: x64-setup.exe
-          - os: ubuntu-22.04
-            label: Linux
-            command: npm run app:build:linux
-            source: src-tauri/target/release/bundle/appimage/*.AppImage
-            suffix: x86_64.AppImage
-          - os: macos-26
-            label: macOS-arm64
-            command: npm run app:build:macos
-            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
-            suffix: macos-arm64.app.tar.gz
-          - os: macos-26-intel
-            label: macOS-x64
-            command: npm run app:build:macos
-            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
-            suffix: macos-x64.app.tar.gz
+        include: ${{ fromJSON(inputs.linux_only && '[{"os":"ubuntu-22.04","label":"Linux","command":"npm run app:build:linux","source":"src-tauri/target/release/bundle/appimage/*.AppImage","suffix":"x86_64.AppImage"}]' || '[{"os":"windows-latest","label":"Windows","command":"npm run app:build:windows","source":"src-tauri/target/release/bundle/nsis/*-setup.exe","suffix":"x64-setup.exe"},{"os":"ubuntu-22.04","label":"Linux","command":"npm run app:build:linux","source":"src-tauri/target/release/bundle/appimage/*.AppImage","suffix":"x86_64.AppImage"},{"os":"macos-26","label":"macOS-arm64","command":"npm run app:build:macos","source":"src-tauri/target/release/bundle/macos/*.app.tar.gz","suffix":"macos-arm64.app.tar.gz"},{"os":"macos-26-intel","label":"macOS-x64","command":"npm run app:build:macos","source":"src-tauri/target/release/bundle/macos/*.app.tar.gz","suffix":"macos-x64.app.tar.gz"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -175,10 +159,19 @@ jobs:
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
           node scripts/smoke-linux.mjs "release/${{ steps.version.outputs.output }}"
       - name: Verify signed Linux terminal typing through a real PTY
+        env:
+          VIBYRA_SMOKE_EXPECT_VERSION: ${{ steps.version.outputs.version }}
         if: runner.os == 'Linux'
         run: >-
           dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
           node scripts/smoke-linux-terminal.mjs "release/${{ steps.version.outputs.output }}" release/linux-smoke/terminal
+      - name: Install and verify Debian terminal typing through a real PTY
+        env:
+          VIBYRA_SMOKE_EXPECT_VERSION: ${{ steps.version.outputs.version }}
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y "$PWD/release/Vibyra-Desktop-${{ steps.version.outputs.version }}-amd64.deb"
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" node scripts/smoke-linux-terminal.mjs /usr/bin/Vibyra release/linux-smoke/debian-terminal
       - name: Preserve native Linux screenshots and logs
         if: ${{ always() && runner.os == 'Linux' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

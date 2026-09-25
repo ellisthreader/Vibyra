@@ -1,7 +1,7 @@
 ---
 title: Performance Mode
 date: 2026-09-09
-updated: 2026-09-09
+updated: 2026-09-25
 status: implemented
 tags:
   - vibyra/desktop
@@ -22,7 +22,7 @@ related:
 `Settings > Performance` is the home of every "make it faster" control. Two
 cards, two different axes — do not merge them:
 
-- **Performance mode** (`performanceMode`, default off). Cross-platform,
+- **Performance mode** (`performanceMode`, default `balanced`). Cross-platform,
   applies instantly, never needs a restart. Changes how much work the app
   does, never which pixels are correct.
 - **Graphics mode** (`rendererMode`). Linux-only WebKit compositing path, read
@@ -39,15 +39,32 @@ The card moved out of `Settings > General` when the section was added; the
 `src/lib/performanceMode.ts` owns every behaviour the mode gates. Consumers
 call a named function (`perfWatchEnabled`, `activityTickMs`,
 `startupPrefetchEnabled`, `backgroundThrottleEnabled`) rather than testing the
-boolean, so the Settings copy and the runtime cannot drift. Adding a new effect means adding a function
+level, so the Settings copy and the runtime cannot drift. Adding a new effect means adding a function
 there and a line to `EFFECTS` in `PerformanceCard.tsx`.
 
-`applyPerformanceMode` stamps `data-performance="on"` on `<html>` from
+`applyPerformanceMode` stamps `data-performance="balanced"` or `"best"` (Full removes the attribute) on `<html>` from
 `settingsStore`'s `applyDocument`, on load and on every write. The paint half
 lives in `src/styles/performance.css`, imported **last** in `main.tsx` so it
 wins specificity ties.
 
-## What it actually turns off
+## Current levels and Linux typing
+
+Full disables the savings. Balanced defers startup prefetch and slows only
+hidden-window terminal output; visible input/output retains the normal cadence.
+Best additionally applies the appearance savings and slower activity ticker
+listed below and stops the performance watchdog. Legacy `true` maps to Best;
+legacy `false` and missing settings map to Balanced.
+
+Linux graphics are a separate setting. From 0.8.10, Automatic uses compatibility
+compositing on every GPU, with xterm DOM rendering. The signed 0.8.9 package
+still showed a previous key at 80 ms under DMA-BUF while the DOM had updated
+within 2–48 ms; changing only the compositor removed this delay in native
+Ubuntu Bash and cat tests across all three performance levels. Explicit
+Accelerated mode and environment overrides remain opt-ins and can reintroduce
+it. See [[Release Changelog]] and the VibyraObsiden skill's native screen
+validation rule; PTY snapshots alone cannot prove visible typing latency.
+
+## What Best turns off
 
 1. **Decorative motion.** Animations and transitions go to ~0 duration and one
    iteration. Deliberately not `animation: none`: that parks an element at its
@@ -112,7 +129,7 @@ Verified with headless Chrome computed styles: `0.78s`/infinite ->
   Slowing it makes `agentSessionId` staler, and resume reads that value
   directly — not a trade worth taking for the saving. See
   [[Mac Experience And Sessions]].
-- **Network polls** — the 20-minute updater check and the 5-minute OpenRouter
+- **Network polls** — the 5-minute updater check and the 5-minute OpenRouter
   `model_watch`. Each is one small request off the UI thread; disabling them
   removes a feature and saves nothing measurable.
 

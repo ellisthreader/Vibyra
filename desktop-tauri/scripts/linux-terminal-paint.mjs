@@ -26,6 +26,11 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
       canvasCount: document.querySelectorAll('.pane .xterm-screen canvas').length,
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } };`);
   context.renderer = await driver.invoke("renderer_policy");
+  context.version = await driver.invoke("plugin:app|version");
+  const expectedVersion = process.env.VIBYRA_SMOKE_EXPECT_VERSION;
+  if (expectedVersion && (context.version !== expectedVersion || !context.renderer.softwareCompositing)) {
+    throw new Error(`Expected ${expectedVersion} with compatibility compositing: ${JSON.stringify(context)}`);
+  }
   context.terminals = await driver.invoke("list_terminals");
   const { x, y, width, height } = context.rect;
   const crop = `${Math.floor(width)}x${Math.floor(height)}+${Math.floor(x)}+${Math.floor(y)}`;
@@ -56,7 +61,7 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     const ocrPath = frame.path.replace(/\.png$/, "-ocr.png");
     await run("convert", [frame.path, "-negate", "-resize", "300%", ocrPath]);
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
-    if (frame.expected.length >= 5 && !frame.text.replace(/\s/g, "").includes(frame.expected)) failures.push(frame);
+    if (frame.expected.length >= 5 && !frame.text.replace(/\s/g, "").toUpperCase().includes(frame.expected)) failures.push(frame);
   }
   writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures }, null, 2));
   await run("xdotool", ["key", "ctrl+u"]);

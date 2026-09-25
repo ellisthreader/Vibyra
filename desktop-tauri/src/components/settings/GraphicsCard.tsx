@@ -13,8 +13,8 @@ const MODES: { id: RendererMode; label: string }[] = [
 ];
 
 const MODE_HINTS: Record<RendererMode, string> = {
-  auto: "Picks the safe path for your GPU.",
-  accelerated: "Best performance; can freeze on some NVIDIA setups.",
+  auto: "Uses compatibility graphics to keep terminal text current.",
+  accelerated: "May improve graphics speed, but can delay terminal text on Linux.",
   compatibility: "Uses shared-memory graphics for wider GPU compatibility.",
 };
 
@@ -60,13 +60,7 @@ export function GraphicsCard({
       <div className="settings-group">
         <SettingRow
           label="Renderer"
-          hint={
-            settings.rendererMode === "auto"
-              ? policy.nvidiaSession
-                ? "This session renders through NVIDIA, where WebKit's accelerated path can freeze windows."
-                : "No NVIDIA rendering detected, so the accelerated path is in use."
-              : MODE_HINTS[settings.rendererMode]
-          }
+          hint={MODE_HINTS[settings.rendererMode]}
         >
           <StatusChip tone={needsRestart ? "warn" : "on"}>{needsRestart ? "Restart required" : activeLabel(policy)}</StatusChip>
           <Segmented label="Graphics mode" value={settings.rendererMode} options={MODES} onChange={(rendererMode) => void update({ rendererMode })} />

@@ -13,12 +13,12 @@ import { receiveReport, verifyProjectActions } from "./linux-terminal-ux.mjs";
 import { verifyLinuxOnboardingAndReport } from "./linux-model-notice-smoke.mjs";
 if (process.platform !== "linux") throw new Error("Native terminal verification requires Linux");
 const application = resolve(process.argv[2] || "");
-if (!application.endsWith(".AppImage") || !existsSync(application)) {
-  throw new Error("Pass an existing Linux .AppImage");
+if (!existsSync(application)) {
+  throw new Error("Pass an existing Linux AppImage or installed executable");
 }
 const output = resolve(process.argv[3] || "release/linux-terminal-smoke");
 mkdirSync(output, { recursive: true });
-chmodSync(application, 0o755);
+if (application.endsWith(".AppImage")) chmodSync(application, 0o755);
 const profile = mkdtempSync(join(tmpdir(), "vibyra-terminal-smoke-"));
 const project = join(profile, "input-repro");
 mkdirSync(project, { recursive: true });

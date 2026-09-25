@@ -4,18 +4,18 @@ import type { RendererMode, RendererPolicy } from "../types";
 // decides the compositing path before the webview exists, and these functions
 // decide what the UI says about it and which xterm renderer to attach.
 
-/** Linux WebGL can paint a typed character a frame late even when WebKit uses
- * accelerated compositing. The DOM terminal paints promptly on both Linux
- * paths; macOS and Windows can keep the faster WebGL addon. */
+/** Linux uses DOM terminals to avoid WebGL buffer presentation problems,
+ * alongside shared-memory compositing by default. macOS and Windows keep
+ * the faster WebGL addon. */
 export function webglIsTrustworthy(probe: Pick<RendererPolicy, "softwareCompositing" | "configurable"> | null): boolean {
   return probe !== null && !probe.configurable && !probe.softwareCompositing;
 }
 
 /** What the selected mode would resolve to on the next launch. */
-export function resolvesToSharedMemory(mode: RendererMode, nvidiaSession: boolean): boolean {
+export function resolvesToSharedMemory(mode: RendererMode, _nvidiaSession: boolean): boolean {
   if (mode === "compatibility") return true;
   if (mode === "accelerated") return false;
-  return nvidiaSession;
+  return true;
 }
 
 /**

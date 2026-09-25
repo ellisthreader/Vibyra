@@ -10,12 +10,24 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
+## 0.8.10 — 25 September 2026 (Linux; candidate)
+
+Automatic Linux graphics now disables WebKit's DMA-BUF compositor as well as
+using the DOM terminal renderer. The 0.8.9 DOM change alone left presentation
+latency: native X11 screenshots from the signed package show the prior typed
+prefix at 80 ms while DOM mutations already contain the key within 2–48 ms.
+The same package with only the compositor changed shows every tested prefix
+at 80 ms in Balanced, Full and Best, in Bash and `cat -v` (run `36130658203`).
+OCR must ignore letter case; inspect failures against pixels before attribution.
+The release gate now captures native OS keys and external X11 screenshots,
+with no WebDriver calls between keys, and tests the installed Debian executable
+as well as the AppImage. Signed 0.8.10 packaging/publication is pending.
+
 ## 0.8.9 — 25 September 2026 (Linux and Mac)
 
 Linux terminal typing could paint one character behind even while the PTY had
-received every key. Native WebKitGTK captures on the same AppImage show the
-accelerated xterm WebGL path missing the final character at 50 ms, while the
-DOM terminal in compatibility mode shows it at 50 ms. The release makes Linux
+received every key. The initial comparison changed both xterm and WebKit renderers, so it did
+not isolate the cause. Follow-up diagnosis is recorded under 0.8.10. The release makes Linux
 terminals use xterm's DOM renderer under either WebKit graphics mode; Mac and
 Windows retain WebGL. Shared Codex terminal writes also use ordered Tauri
 dispatch. The native Linux smoke now compares early and settled screen frames

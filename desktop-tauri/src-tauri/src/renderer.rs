@@ -1,16 +1,11 @@
 //! WebKit compositing policy.
 //!
-//! WebKitGTK's DMA-BUF renderer has a long history of freezing and blanking
-//! windows on the NVIDIA driver, so on those sessions the app falls back to
-//! the shared-memory renderer. That fallback software-composites every frame,
-//! which makes streaming terminals far more CPU-hungry, so it must stay
-//! narrow: only sessions that actually render through NVIDIA pay for it.
-//!
-//! The decision is made here, before the webview exists, and published to the
-//! frontend through `commands::render` — under the shared-memory path WebGL
-//! canvases load but never paint, so xterm has to use its DOM renderer.
+//! Linux's DMA-BUF path can present terminal updates late even with xterm's
+//! DOM renderer and a non-NVIDIA GPU. Automatic therefore uses shared-memory
+//! compositing. An explicit Accelerated choice remains available for testing
+//! driver/runtime combinations; terminal correctness is the default.
 
-/// The user's explicit choice from Settings; `Auto` runs the detection below.
+/// The user's explicit choice from Settings; `Auto` uses the compatibility path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RendererMode {
     #[default]
@@ -91,11 +86,11 @@ pub fn nvidia_drives_session(facts: &GpuFacts) -> bool {
 /// Resolves the policy from the user's mode and the probed facts.
 /// `true` means "disable the DMA-BUF renderer".
 #[cfg(target_os = "linux")]
-pub fn use_shared_memory(mode: RendererMode, facts: &GpuFacts) -> bool {
+pub fn use_shared_memory(mode: RendererMode, _facts: &GpuFacts) -> bool {
     match mode {
         RendererMode::Accelerated => false,
         RendererMode::Compatibility => true,
-        RendererMode::Auto => nvidia_drives_session(facts),
+        RendererMode::Auto => true,
     }
 }
 
@@ -129,7 +124,7 @@ pub fn environment_override() -> bool {
 }
 
 /// Whether detection believes this session renders through NVIDIA, which is
-/// what `Auto` acts on. Always false off Linux.
+/// reported for diagnostics. Always false off Linux.
 pub fn nvidia_session() -> bool {
     #[cfg(target_os = "linux")]
     {

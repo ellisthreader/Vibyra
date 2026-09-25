@@ -35,13 +35,13 @@ test("explicit modes resolve without consulting detection", () => {
   assert.equal(resolvesToSharedMemory("accelerated", true), false);
 });
 
-test("auto follows the NVIDIA detection, matching the Rust policy", () => {
+test("auto uses compatibility regardless of GPU, matching the Rust policy", () => {
   assert.equal(resolvesToSharedMemory("auto", true), true);
-  assert.equal(resolvesToSharedMemory("auto", false), false);
+  assert.equal(resolvesToSharedMemory("auto", false), true);
 });
 
 test("a restart is needed only when the saved mode changes the path", () => {
-  assert.equal(rendererNeedsRestart("auto", policy({ nvidiaSession: false })), false);
+  assert.equal(rendererNeedsRestart("auto", policy({ nvidiaSession: false })), true);
   assert.equal(rendererNeedsRestart("compatibility", policy()), true);
   assert.equal(
     rendererNeedsRestart("accelerated", policy({ softwareCompositing: true })),
