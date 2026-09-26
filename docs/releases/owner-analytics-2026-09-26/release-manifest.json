@@ -11,7 +11,7 @@
     "effect": "Country breakdown remains unknown until production GeoLite2 database is provisioned.",
     "geolite2_database_provisioned": false
   },
-  "generated_at_utc": "2026-09-26T14:35:37.604626+00:00",
+  "generated_at_utc": "2026-09-26T14:57:05.188542+00:00",
   "overlay_sha256": {
     "app/Console/Commands/PruneAnalyticsEvents.php": {
       "sha256": "12cec5e760badd1c752498da38f021ee3b662fd38447d478158ee3b75b179ed2",
@@ -449,6 +449,10 @@
       "sha256": "fd42ca9c38ad4fb202794d0ac04f1a3529db4966e50b925ebb0b6c72c6f44340",
       "source": "owner-google-enrollment"
     },
+    "tests/Feature/VibesAutoGuardrailsTest.php": {
+      "sha256": "48e2fbc51cd77f1495a873c3d03acc5ab8418749a043623417cf54a5317bb6a0",
+      "source": "ci-review-fixture"
+    },
     "tests/Feature/WebsiteAnalyticsTrackingTest.php": {
       "sha256": "3b8845af0f8e5ba791441d665958b852595736bd4d5f95308b2f78bb12f82f96",
       "source": "latest-site-test-adapted-to-production-updater"
@@ -456,6 +460,10 @@
     "tests/Feature/WebsiteOwnerTwoFactorTest.php": {
       "sha256": "e37455205718f229dce4ed294bd6edf17e73bc07937f6c705611548673544ee4",
       "source": "latest-site"
+    },
+    "tests/Fixtures/current-mobile-picker-model-ids.json": {
+      "sha256": "7fe31153e9f5fc7a02fde27c3ab29da6e8d15984cf98d01c7bf3a76875e99d62",
+      "source": "ci-review-fixture"
     },
     "vite.config.js": {
       "sha256": "ee8b3828a9f00bb9136d0549945b71ce0b05b43f983f49a19753e3c335026781",
@@ -470,12 +478,12 @@
     "test caches",
     "Nixpacks runtime output"
   ],
-  "package_file_count": 929,
+  "package_file_count": 930,
   "preservation": {
     "baseline_source_files": 848,
     "composio_source_preserved": true,
     "generated_public_build_replaced": true,
-    "overlay_source_files": 112,
+    "overlay_source_files": 114,
     "unexpected_preserved_source_changes": []
   },
   "railway_environment": "production",
@@ -488,7 +496,8 @@
     "confirm production deployment ID and image digest still match source immediately before upload; rebase if changed",
     "set and verify VIBYRA_OWNER_EMAILS for the verified Google owner account and complete website-only Vibyra TOTP enrollment plus separate owner step-up",
     "back up database and rehearse migration/application rollback",
-    "validate live consent, ingest, owner authorization, and dashboard after release"
+    "validate live consent, ingest, owner authorization, and dashboard after release",
+    "review and resolve the effective PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW production flag; refresh the security audit"
   ],
   "release_status": "NOT APPROVED FOR DEPLOYMENT",
   "required_environment": {
@@ -537,13 +546,13 @@
   },
   "source_tarball": {
     "path": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/source.tar.gz",
-    "sha256": "45452eae3775063184cae43f05c93643ff8b909e158a0120530f56565f861a6c",
-    "size_bytes": 11190934
+    "sha256": "cf4d0831deb28c6735cf7bdbd35af6302370ec7b84c5c659e7d230c1a803ac36",
+    "size_bytes": 11191395
   },
   "stable_artifact": {
     "folder": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate",
     "source_tarball": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/source.tar.gz",
-    "source_tarball_sha256": "45452eae3775063184cae43f05c93643ff8b909e158a0120530f56565f861a6c",
+    "source_tarball_sha256": "cf4d0831deb28c6735cf7bdbd35af6302370ec7b84c5c659e7d230c1a803ac36",
     "source_tree": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/source"
   },
   "validation": {
@@ -554,7 +563,7 @@
     "current_security_audit_delta": "53 passed, 24 failed, 9 manual after mobile EAS production API URL became HTTPS; prior report was 52/25/9.",
     "focused_phpunit": "PASS: 36 tests, 366 assertions before final operational UI copy; final full suite includes owner/analytics cases",
     "full_phpunit": "NON-GREEN: 900 tests, 6301 assertions, 4 errors, 2 failures, 3 notices, 1 skipped; run before final owner UI/data copy; existing connector/preview and snapshot-context cases",
-    "full_phpunit_isolated": "NON-GREEN: 910 tests, 6450 assertions, 1 failure (mobile/backend model shortlist drift), 3 notices, 1 skipped; PHP memory_limit=512M",
+    "full_phpunit_isolated": "NON-GREEN: 910 tests, 6454 assertions, 1 mobile/backend model shortlist failure, 3 notices, 1 skipped; ephemeral test APP_KEY, direct PHPUnit memory_limit=512M, current mobile fixture, isolated source under actual home",
     "full_phpunit_issues": [
       {
         "reason": "Backend-only package omitted root railway.json and example Procfile; both pass with root fixtures.",
@@ -599,7 +608,9 @@
     "security_audit_scope": "Current Vibyra repository CI/mobile configuration plus Railway Vibyra production service variables (121 keys), not the backend-only candidate source tree; report contains names and outcomes only.",
     "source_node_tests": "PASS: 8 tests after final owner UI/data copy",
     "vite_build": "PASS: final owner operational UI and Google enrollment build, 2026-09-26",
-    "owner_google_enrollment": "PASS: protected website provider identity round trip, same-session one-use proof, TOTP confirmation and owner step-up; 5 focused website tests plus other owner tests in full suite"
+    "owner_google_enrollment": "PASS: protected website provider identity round trip, same-session one-use proof, TOTP confirmation and owner step-up; 5 focused website tests plus other owner tests in full suite",
+    "mobile_expo_alignment": "PASS: npm ci --prefix mobile and npx expo install --check after Expo dependency patch",
+    "new_environment_finding_pending_audit": "PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW effective true in production; new root audit check fails until explicitly false, not included in recorded 53/24/9 JSON"
   },
   "git_review": {
     "branch": "codex/owner-analytics-production-review-20260926",
@@ -611,6 +622,10 @@
     "pushed": false,
     "protected_commit_checks_passed": false,
     "tracked_source_matches_package": true,
-    "generated_build_assets_not_tracked": true
+    "generated_build_assets_not_tracked": true,
+    "ci_fix_commit": "b66c9b26",
+    "mobile_expo_commit": "7bb3c06e",
+    "ci_memory_fix_commit": "9dd54440",
+    "review_branch_head_at_package": "9dd54440d1eb78d10083edca6f91d967c61a4448"
   }
 }
