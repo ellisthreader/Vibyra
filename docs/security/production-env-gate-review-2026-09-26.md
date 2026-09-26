@@ -31,6 +31,8 @@ A read-only production aggregate query found six current `published_projects` ro
 
 **Proposed production response:** have the release/incident owner disable the testing override under change control, verify the effective Laravel config after redeploy/restart, test that a crafted under-review submission stays private/pending, and review previously approved records carrying `temp_under_review_force_approved`. Assess whether any must be unpublished or re-reviewed, preserving evidence. Do not alter customer rows blindly. This production change was **not** made during this review.
 
+**Post-change check, 26 September 2026:** the owner authorized disabling the testing override and Railway deployed `6d7c17dc-5f8a-4380-a7db-9355c15559b3`. A read-only follow-up found deployment status `SUCCESS`, `/up` HTTP 200, and effective Laravel config `disabled`. The aggregate marker query still found six current project rows, four public, zero currently marked with first/last marked review times null. The reviewer made no production mutation. A functional under-review publish test and any historical backup review remain separate checks.
+
 ## Release sequence
 
 1. Assign an owner for each product decision and obtain the independent approval required by `docs/security/production-release-gates.md`.
