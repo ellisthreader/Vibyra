@@ -21,6 +21,11 @@ prompt text, terminal output, project names, or file paths. The backend must
 deploy the matching bearer-session consent and event contract before this
 candidate can report real usage. Mac packaging and release distribution are
 tracked in the candidate manifest; this section does not assert publication.
+Build 12 also includes the scoped Host approval update: explicit command,
+network, and running-input review on the phone, with Codex rule choices only
+when the provider offered an exact matching amendment. This preserves the
+0.8.10 Host baseline; unrelated dirty conversation work remains outside this
+candidate. The user-facing release note is in `changelogRelease0811.ts`.
 Art: `public/releases/0.8.11.svg`.
 
 ## 0.8.10 — 25 September 2026 (Linux; candidate)

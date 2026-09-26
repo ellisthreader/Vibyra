@@ -14,5 +14,9 @@ export const RELEASE_0811: ChangelogEntry = {
       heading: "Useful counts without your work",
       body: "When enabled, Vibyra records limited feature and engaged-time counts. Your prompt text, terminal output, project names, and file paths stay out of these events.",
     },
+    {
+      heading: "Clearer phone approvals",
+      body: "Command and network requests show their exact scope on your iPhone. A Codex rule can be remembered only when Codex offered that specific rule for the current request.",
+    },
   ],
 };

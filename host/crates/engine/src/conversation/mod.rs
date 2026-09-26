@@ -11,6 +11,7 @@ mod normalize;
 mod observed;
 mod permission_request;
 mod policy;
+mod provider_decision;
 mod provider_runtime;
 mod question_tool;
 mod requests;
@@ -191,6 +192,12 @@ impl Engine {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tests_amendment;
+
+#[cfg(test)]
+mod tests_approval_analytics;
 
 #[cfg(test)]
 mod tests_artifacts;

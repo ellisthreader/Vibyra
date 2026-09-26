@@ -52,11 +52,15 @@ fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: V
             }
             return;
         }
-        let detail = c
+        let observed = c
             .items
             .iter()
-            .find(|i| i["id"] == p["itemId"])
-            .filter(|i| i["truncated"] != true)
+            .find(|i| i["id"] == p["itemId"] && i["turnId"] == p["turnId"])
+            .filter(|i| i["truncated"] != true);
+        let observed_command = observed
+            .filter(|i| i["category"] == "commandExecution")
+            .and_then(|i| i["command"].as_str());
+        let detail = observed
             .and_then(|i| i["detail"].as_str())
             .unwrap_or("")
             .to_owned();
@@ -67,7 +71,7 @@ fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: V
             .filter(|i| matches!(i["status"].as_str(), Some("pending" | "responding")))
             .count();
         item = if pending_count < 2 {
-            requests::pending(method, &value["id"], p, &detail)
+            requests::pending_observed(method, &value["id"], p, &detail, observed_command)
         } else {
             None
         };
