@@ -39,10 +39,6 @@ class ConnectorOperationsTest extends TestCase
                 'items' => [['number' => 4, 'title' => 'Crash on launch', 'state' => 'open',
                     'repository_url' => 'https://api.github.com/repos/ellis/app']],
             ]], 'Searched GitHub for "crash"'],
-            ['github', 'github_issue', ['repository' => 'ellis/app', 'number' => 4], 'api.github.com/repos/*', [
-                ['number' => 4, 'title' => 'Crash on launch', 'body' => 'Open this screen.', 'comments' => 1],
-                [['body' => 'Repro on iPhone', 'user' => ['login' => 'ellis']]],
-            ], 'Read issue #4'],
             ['github', 'github_recent_commits', ['repository' => 'ellis/app'], 'api.github.com/repos/*', [[
                 ['sha' => 'abcdef1234', 'commit' => ['message' => "Fix the crash\n\nDetails", 'author' => ['name' => 'Ellis', 'date' => '2026-09-01T00:00:00Z']]],
             ]], 'Read the latest commits on ellis/app'],
@@ -291,13 +287,25 @@ class ConnectorOperationsTest extends TestCase
      */
     public function test_every_offered_operation_is_covered_here(): void
     {
-        $covered = array_keys(self::operations());
+        $covered = [
+            ...array_keys(self::operations()),
+            ...array_keys(GoogleTasksConnectorTest::operations()),
+            ...array_keys(DeepWikiConnectorTest::operations()),
+            ...array_keys(HackerNewsConnectorTest::operations()),
+        ];
         $registry = app(Registry::class);
+        $offered = [];
         foreach ($registry->slugs() as $slug) {
             foreach ($registry->for($slug)->definitions() as $definition) {
-                $this->assertContains($definition['function']['name'], $covered,
-                    $definition['function']['name'].' is offered to the model but never run by a test');
+                $operation = $definition['function']['name'];
+                $offered[] = $operation;
+                $this->assertContains($operation, $covered,
+                    $operation.' is offered to the model but never run by a test');
             }
+        }
+        foreach ($covered as $operation) {
+            $this->assertContains($operation, $offered,
+                $operation.' has a test but is not offered by this production registry');
         }
     }
 

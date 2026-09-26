@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Analytics\AuthLoginRecorder;
+
 use App\Models\User;
 use App\Services\Auth\TwoFactor;
 use App\Services\Auth\TwoFactorChallenge;
@@ -101,7 +103,10 @@ trait TwoFactorEndpoints
             return $this->json(['ok' => false, 'error' => 'That code didn’t match. Try the current code from your authenticator app.'], 401);
         }
 
-        return $this->json($this->sessionPayload($request, $user));
+        $payload = $this->sessionPayload($request, $user);
+        app(AuthLoginRecorder::class)->record($user, 'app', 'totp');
+
+        return $this->json($payload);
     }
 
     /** What Settings shows about the second factor, without ever resending the secret. */

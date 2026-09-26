@@ -1,6 +1,13 @@
 <?php
 
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\AnalyticsConsentController;
+use App\Http\Controllers\AnalyticsEventController;
+use App\Http\Controllers\LocalOwnerLoginController;
+use App\Http\Controllers\OwnerAccountsController;
+use App\Http\Controllers\OwnerAnalyticsController;
+use App\Http\Controllers\OwnerTwoFactorEnrollmentController;
+use App\Http\Controllers\WebsiteAnalyticsController;
 use App\Http\Controllers\ReleaseDownloadController;
 use App\Http\Controllers\ReleaseUpdateController;
 use App\Http\Controllers\OpenRouterModelReleaseController;
@@ -10,6 +17,8 @@ use App\Http\Controllers\WebsiteAuthController;
 use App\Http\Controllers\WebsiteBillingController;
 use App\Http\Controllers\WebsiteProviderAuthController;
 use App\Http\Middleware\PublicCommunityCache;
+use App\Http\Middleware\RecordWebsiteView;
+use App\Http\Middleware\RequireOwner;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
@@ -17,16 +26,20 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('marketing'));
-Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
-Route::view('/legal/terms', 'legal.terms')->name('legal.terms');
-Route::view('/login', 'portal')->name('login');
-Route::view('/signup', 'portal');
-Route::view('/billing', 'portal');
-Route::view('/billing/success', 'portal');
-Route::view('/billing/cancel', 'portal');
-Route::view('/downloads', 'portal');
-Route::view('/account/downloads', 'portal');
+Route::get('/', fn () => view('marketing'))->middleware(RecordWebsiteView::class);
+Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy')->middleware(RecordWebsiteView::class);
+Route::view('/legal/terms', 'legal.terms')->name('legal.terms')->middleware(RecordWebsiteView::class);
+Route::view('/login', 'portal')->name('login')->middleware(RecordWebsiteView::class);
+Route::view('/signup', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/billing', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/billing/success', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/billing/cancel', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/downloads', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/account/downloads', 'portal')->middleware(RecordWebsiteView::class);
+Route::get('/owner/login', fn () => response()->view('portal')
+    ->header('Cache-Control', 'private, no-store')
+    ->header('X-Robots-Tag', 'noindex, nofollow'));
+Route::post('/web-api/owner/local-login', LocalOwnerLoginController::class)->middleware('throttle:5,1');
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
 Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
     ->middleware('throttle:30,1');
@@ -51,16 +64,38 @@ Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->mid
 Route::delete('/web-api/auth/logout', [WebsiteAuthController::class, 'logout'])->middleware('auth');
 Route::post('/web-api/auth/login/2fa', [WebsiteAuthController::class, 'loginTwoFactor'])->middleware('throttle:8,1,web-login-2fa');
 Route::get('/web-api/session', [WebsiteAuthController::class, 'session']);
+Route::get('/web-api/analytics/consent', [WebsiteAnalyticsController::class, 'show'])->middleware('throttle:60,1');
+Route::put('/web-api/analytics/consent', [WebsiteAnalyticsController::class, 'update'])->middleware('throttle:20,1');
+Route::post('/web-api/analytics/event', [WebsiteAnalyticsController::class, 'event'])->middleware('throttle:120,1');
 Route::post('/web-api/auth/provider/{provider}/start', [WebsiteProviderAuthController::class, 'start'])
     ->whereIn('provider', ['apple', 'google'])->middleware('throttle:12,1');
 Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'status'])
     ->whereIn('provider', ['apple', 'google'])->middleware('throttle:120,1');
 
 Route::middleware('auth')->group(function (): void {
-    Route::view('/account', 'portal');
+    Route::view('/account', 'portal')->middleware(RecordWebsiteView::class);
+    Route::get('/owner', fn () => response()->view('portal')
+        ->header('Cache-Control', 'private, no-store')
+        ->header('X-Robots-Tag', 'noindex, nofollow'))->middleware(RequireOwner::class);
+    Route::get('/web-api/owner/analytics', OwnerAnalyticsController::class)->middleware(RequireOwner::class);
+    Route::get('/web-api/owner/accounts', [OwnerAccountsController::class, 'index'])->middleware(RequireOwner::class);
+    Route::post('/web-api/owner/verify-2fa', [OwnerAccountsController::class, 'verify'])
+        ->middleware([RequireOwner::class, 'throttle:8,1']);
+    Route::post('/web-api/owner/2fa/provider/start', [OwnerTwoFactorEnrollmentController::class, 'providerStart'])
+        ->middleware([RequireOwner::class, 'throttle:5,1']);
+    Route::get('/web-api/owner/2fa/provider/status/{flowId}', [OwnerTwoFactorEnrollmentController::class, 'providerStatus'])
+        ->where('flowId', '[A-Za-z0-9]{64}')->middleware([RequireOwner::class, 'throttle:60,1']);
+    Route::post('/web-api/owner/2fa/start', [OwnerTwoFactorEnrollmentController::class, 'start'])
+        ->middleware([RequireOwner::class, 'throttle:5,1']);
+    Route::post('/web-api/owner/2fa/confirm', [OwnerTwoFactorEnrollmentController::class, 'confirm'])
+        ->middleware([RequireOwner::class, 'throttle:8,1']);
     Route::post('/web-api/billing/checkout', [WebsiteBillingController::class, 'checkout']);
     Route::post('/web-api/billing/portal', [WebsiteBillingController::class, 'portal']);
 });
+
+Route::post('/api/analytics/events', AnalyticsEventController::class)->middleware('throttle:120,1');
+Route::get('/api/analytics/consent', [AnalyticsConsentController::class, 'show'])->middleware('throttle:60,1');
+Route::put('/api/analytics/consent', [AnalyticsConsentController::class, 'update'])->middleware('throttle:20,1');
 
 if (config('desktop.legacy_routes_enabled')) {
     Route::get('/desktop', [VibyraDesktopController::class, 'app']);

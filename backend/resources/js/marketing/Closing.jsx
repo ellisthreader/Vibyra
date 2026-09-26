@@ -9,8 +9,8 @@ export function FinalCta() {
         <SectionTitle>Keep the build moving.</SectionTitle>
         <p className="text-lg text-ink-muted">Start free. Connect your phone when you are ready.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button href="/downloads" className="max-sm:w-full">Get Vibyra</Button>
-          <Button href="/login" variant="ghost" className="max-sm:w-full">Log in</Button>
+          <Button href="/downloads" data-analytics-cta="home_get_vibyra" className="max-sm:w-full">Get Vibyra</Button>
+          <Button href="/login" data-analytics-cta="home_login" variant="ghost" className="max-sm:w-full">Log in</Button>
         </div>
       </Container>
     </Section>
@@ -22,6 +22,8 @@ const FOOTER_LINKS = [
   ["#pricing", "Pricing"],
   ["#faq", "FAQ"],
   ["/login", "Log in"],
+  ["/legal/privacy", "Privacy"],
+  ["/?analytics=choices", "Analytics choices"],
 ];
 
 export function Footer() {
@@ -37,7 +39,7 @@ export function Footer() {
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-3 sm:ml-auto" aria-label="Footer">
           {FOOTER_LINKS.map(([href, label]) => (
-            <a key={label} href={href} className="text-sm text-ink-muted hover:text-ink">
+            <a key={label} href={href} data-analytics-choices={label === "Analytics choices" || undefined} className="text-sm text-ink-muted hover:text-ink">
               {label}
             </a>
           ))}

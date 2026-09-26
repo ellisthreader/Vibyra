@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Analytics\AuthLoginRecorder;
+
 use App\Models\User;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\ProviderIdentityVerifier;
@@ -157,8 +159,11 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => $error->getMessage()], $error->status);
         }
 
+        $payload = $this->sessionPayload($request, $account['user']);
+        app(AuthLoginRecorder::class)->record($account['user'], 'app', $provider);
+
         return $this->json([
-            ...$this->sessionPayload($request, $account['user']),
+            ...$payload,
             'isNewUser' => $account['created'],
         ]);
     }
@@ -234,7 +239,10 @@ trait AuthEndpoints
             return $this->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
         }
 
-        return $this->json($this->sessionPayload($request, $user));
+        $payload = $this->sessionPayload($request, $user);
+        app(AuthLoginRecorder::class)->record($user, 'app', 'password');
+
+        return $this->json($payload);
     }
 
     private function recordDailyLogin(User $user): void

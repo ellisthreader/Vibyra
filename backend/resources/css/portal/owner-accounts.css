@@ -1,0 +1,25 @@
+.owner-accounts .owner-panel__heading { align-items: end; justify-content: space-between; }
+.owner-accounts .owner-panel__heading > span { color: var(--owner-muted, #8d98aa); font-size: 13px; }
+.owner-accounts .owner-footnote { margin: 0 0 18px; }
+.owner-accounts-scroll { overflow-x: auto; width: 100%; }
+.owner-accounts table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; }
+.owner-accounts th { padding: 10px 14px 12px 0; border-bottom: 1px solid rgba(130, 149, 184, .24); color: #9faec8; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.owner-accounts td { padding: 17px 14px 17px 0; border-bottom: 1px solid rgba(130, 149, 184, .12); color: #dfe7f5; font-size: 13px; vertical-align: top; }
+.owner-accounts td strong, .owner-accounts td small { display: block; }
+.owner-accounts td strong { margin-bottom: 3px; color: #f7f9fc; }
+.owner-accounts td small { margin-top: 2px; color: #9daac0; }
+.owner-accounts-pages { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; color: #9daac0; font-size: 12px; }
+.owner-accounts-pages > div { display: flex; gap: 8px; }
+.owner-accounts-pages button, .owner-accounts-gate button { min-height: 36px; padding: 0 14px; border: 1px solid #536a9d; border-radius: 8px; background: #263a6a; color: #fff; cursor: pointer; font: inherit; font-size: 12px; }
+.owner-accounts-pages button:disabled, .owner-accounts-gate button:disabled { opacity: .45; cursor: default; }
+.owner-accounts-gate h2 { margin: 7px 0 10px; color: #fff; font-size: 25px; }
+.owner-accounts-gate > p:not(.owner-kicker) { max-width: 540px; color: #acbad1; line-height: 1.5; }
+.owner-accounts-gate form { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.owner-accounts-gate label { display: grid; gap: 7px; color: #b9c6d9; font-size: 12px; }
+.owner-accounts-gate input { min-height: 36px; padding: 0 12px; border: 1px solid #536a9d; border-radius: 8px; background: #141f36; color: #fff; font: inherit; }
+.owner-accounts-error { color: #ffb7b7; }
+.owner-setup__secret { display: grid; gap: 8px; max-width: 440px; margin: 20px 0; padding: 16px; border: 1px solid #536a9d; border-radius: 9px; background: #141f36; }
+.owner-setup__secret span { color: #9faec8; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.owner-setup__secret code { overflow-wrap: anywhere; color: #fff; font-size: 17px; letter-spacing: .08em; }
+.owner-setup__codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 20px; max-width: 400px; margin: 20px 0; padding: 17px; border: 1px solid #536a9d; border-radius: 9px; background: #141f36; }
+.owner-setup__codes code { color: #e7edff; font-size: 14px; }

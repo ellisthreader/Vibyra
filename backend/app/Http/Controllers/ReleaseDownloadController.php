@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReleaseArtifact;
+use App\Services\Analytics\Recorder;
 use App\Services\ReleaseChannel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -42,7 +43,11 @@ class ReleaseDownloadController extends Controller
 
     public function download(string $platform): JsonResponse|StreamedResponse
     {
-        return $this->stream($platform, ReleaseChannel::download($platform));
+        $response = $this->stream($platform, ReleaseChannel::download($platform));
+        if ($response instanceof StreamedResponse) {
+            app(Recorder::class)->website(request(), 'website_download', $platform);
+        }
+        return $response;
     }
 
     /**

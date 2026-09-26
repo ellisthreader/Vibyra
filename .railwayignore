@@ -18,3 +18,7 @@ backend/storage/framework/views
 backend/storage/framework/views/**
 backend/bootstrap/cache/*.php
 backend/.phpunit.result.cache
+backend/storage/app
+backend/storage/app/**
+backend/.nixpacks
+backend/.nixpacks/**

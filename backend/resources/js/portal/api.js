@@ -8,6 +8,7 @@ const ENDPOINTS = {
   checkout: "/web-api/billing/checkout",
   portal: "/web-api/billing/portal",
   releases: "/web-api/releases",
+  ownerAnalytics: "/web-api/owner/analytics",
 };
 
 export class ApiError extends Error {
@@ -55,6 +56,7 @@ export const portalApi = {
   }),
   billingPortal: () => apiRequest(ENDPOINTS.portal, { body: {} }),
   releases: () => apiRequest(ENDPOINTS.releases),
+  ownerAnalytics: (days) => apiRequest(`${ENDPOINTS.ownerAnalytics}?days=${days}`),
   startProvider: (provider) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: {} }),
   providerStatus: (provider, flowId) => apiRequest(
     `/web-api/auth/provider/${provider}/status/${encodeURIComponent(flowId)}`

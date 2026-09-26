@@ -6,6 +6,7 @@ use App\Services\Agents\ToolPolicy;
 use App\Services\ChatConnectors\{Catalogue, Installs, Registry};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class HackerNewsConnectorTest extends TestCase
@@ -75,5 +76,38 @@ final class HackerNewsConnectorTest extends TestCase
         self::assertSame(1, $result['result']['storyIds'][0]);
         Http::assertSent(fn ($request) => str_ends_with($request->url(), '/execute')
             && str_contains($request->body(), '"arguments":{}'));
+    }
+
+    public static function operations(): array
+    {
+        return [
+            'hackernews_top_stories' => ['hackernews_top_stories', [], 'HACKERNEWS_GET_TOP_STORIES',
+                ['story_ids' => [1, 2, 3]], 'Read Hacker News top-story IDs'],
+            'hackernews_item' => ['hackernews_item', ['id' => 42], 'HACKERNEWS_GET_ITEM',
+                ['id' => 42, 'title' => 'A public story'], 'Read Hacker News item 42'],
+            'hackernews_user' => ['hackernews_user', ['username' => 'pg'], 'HACKERNEWS_GET_USER',
+                ['username' => 'pg', 'karma' => 100], 'Read Hacker News user pg'],
+        ];
+    }
+
+    #[DataProvider('operations')]
+    public function test_every_public_hacker_news_operation_uses_its_reviewed_tool(
+        string $operation, array $arguments, string $tool, array $answer, string $summary): void
+    {
+        config(['chat_connectors.composio_api_key' => 'test-key']);
+        Http::fake(function ($request) use ($answer) {
+            if ($request->method() === 'DELETE') return Http::response([], 204);
+            if (str_ends_with($request->url(), '/execute')) return Http::response([
+                'data' => $answer, 'error' => null]);
+            return Http::response(['session_id' => 'trs_verified123'], 201);
+        });
+        $connector = app(Registry::class)->for('hackernews');
+        $safe = $connector->validate($operation, $arguments);
+        $result = $connector->run($operation, $safe, '');
+        self::assertIsArray($result['result']);
+        self::assertStringContainsString($summary, $result['summary']);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/execute')
+            && $request['tool_slug'] === $tool
+            && str_contains($request->body(), '"arguments":'.json_encode($safe ?: new \stdClass)));
     }
 }
