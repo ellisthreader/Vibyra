@@ -30,13 +30,23 @@ class VibesAutoGuardrailsTest extends TestCase
 
     public function test_current_shortlist_matches_mobile_and_every_candidate_has_a_reviewed_profile(): void
     {
-        $source = file_get_contents(base_path('../mobile/src/ui/pickerModels.ts'));
-        preg_match('/new Set\(\[(.*?)\]\)/s', $source, $list);
-        preg_match_all("/'([^']+)'/", $list[1], $ids);
-        $this->assertSame($ids[1], config('vibes_auto.models'));
-        foreach ($ids[1] as $id) $this->assertTrue(Profiles::known($id), $id);
+        $fixturePath = __DIR__.'/../Fixtures/current-mobile-picker-model-ids.json';
+        $this->assertFileExists($fixturePath);
+        $ids = json_decode(file_get_contents($fixturePath), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertNotEmpty($ids);
+
+        $pickerPath = base_path('../mobile/src/ui/pickerModels.ts');
+        if (is_file($pickerPath)) {
+            $source = file_get_contents($pickerPath);
+            $this->assertSame(1, preg_match('/PICKER_MODEL_IDS\s*=\s*new Set\(\[(.*?)\]\)/s', $source, $list));
+            preg_match_all("/'([^']+)'/", $list[1], $currentIds);
+            $this->assertSame($ids, $currentIds[1], 'Update the checked-in fixture when the mobile picker changes.');
+        }
+
+        $this->assertSame($ids, config('vibes_auto.models'));
+        foreach ($ids as $id) $this->assertTrue(Profiles::known($id), $id);
         $choices = app(Router::class)->ranked('hello', Situation::of(1200, 50, false, false, 0, 0));
-        foreach ($choices as $row) $this->assertContains($row['id'], $ids[1]);
+        foreach ($choices as $row) $this->assertContains($row['id'], $ids);
     }
 
     public function test_a_decision_reads_one_snapshot_even_with_tools_vision_and_trial_constraints(): void

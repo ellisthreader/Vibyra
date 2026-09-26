@@ -1,0 +1,8 @@
+# Audited false positives in the exact running-source baseline commit 30453116.
+# Fingerprints suppress only these historical findings, not future rules/commits.
+# SpeechEndpointTest uses a synthetic OpenAI test key.
+30453116d696af1b4505469df20d493854fda2e3:backend/tests/Feature/SpeechEndpointTest.php:generic-api-key:17
+# RemoteAccessTest uses a fixed signing test fixture.
+30453116d696af1b4505469df20d493854fda2e3:backend/tests/Feature/RemoteAccessTest.php:generic-api-key:21
+# The generated phone bundle match is xterm FourKeyMap class code.
+30453116d696af1b4505469df20d493854fda2e3:backend/public/phone/_expo/static/js/web/index-eb4d87d19fdf5a9b44f38fd78f24c42d.js:generic-api-key:854
