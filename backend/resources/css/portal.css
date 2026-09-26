@@ -3,3 +3,6 @@
 @import './portal/auth.css';
 @import './portal/billing.css';
 @import './portal/downloads.css';
+@import './portal/owner-layout.css';
+@import './portal/owner-content.css';
+@import './portal/owner-charts.css';

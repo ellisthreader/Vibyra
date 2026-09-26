@@ -3,13 +3,16 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
 use App\Models\VibyraSession;
-use App\Services\Auth\SessionAuthenticator;
+use App\Services\Account\AvatarStore;
 use App\Services\LevelProgression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 trait UserPayloads
 {
+    use SessionRequestIp;
+    use SessionResolution;
+
     private function sessionPayload(Request $request, User $user): array
     {
         if (method_exists($this, 'recordDailyLogin')) {
@@ -45,81 +48,26 @@ trait UserPayloads
 
         return $value === '' ? null : mb_substr($value, 0, 128);
     }
-    private function authenticatedSession(Request $request): VibyraSession
+    /**
+     * The account behind the session token, refusing a guest unless the caller
+     * says it can handle one.
+     *
+     * Guests are ordinary `users` rows, so a guest session would otherwise reach
+     * every authenticated endpoint in the app. The default is the safe one and
+     * `$allowGuest` is opted into by name, which means a new endpoint is closed to
+     * guests unless somebody decided otherwise on purpose.
+     */
+    private function authenticatedUser(Request $request, bool $allowGuest = false): User
     {
-        $token = (string) $request->bearerToken();
-        if ($token === '') {
-            abort($this->json(['ok' => false, 'error' => 'Missing app session token.'], 401));
+        return $this->refuseGuest($this->authenticatedSession($request)->user, $allowGuest);
+    }
+    private function refuseGuest(User $user, bool $allowGuest): User
+    {
+        if ($user->isGuest() && ! $allowGuest) {
+            abort($this->json(['ok' => false, 'error' => 'Create your free account to use this.'], 403));
         }
 
-        $result = $this->resolveSession($request, $token);
-        if (! $result) {
-            abort($this->json(['ok' => false, 'error' => 'Your session expired. Please log in again.'], 401));
-        }
-
-        $request->attributes->set('vibyra.session.used_previous_token', $result['using_previous_token']);
-
-        return $result['session'];
-    }
-    private function sessionRequestIp(Request $request): string
-    {
-        $requestIp = trim((string) ($request->server('REMOTE_ADDR') ?: $request->ip()));
-        $forwardedPublicIp = $this->firstPublicSessionIp([
-            (string) $request->input('publicIp', ''),
-            (string) $request->header('X-Vibyra-Public-IP', ''),
-            (string) $request->header('CF-Connecting-IP', ''),
-            (string) $request->header('X-Real-IP', ''),
-            ...(array) preg_split('/\s*,\s*/', (string) $request->header('X-Forwarded-For', ''), -1, PREG_SPLIT_NO_EMPTY),
-        ]);
-
-        if ($this->isPublicIp($requestIp)) {
-            return $requestIp;
-        }
-
-        return $forwardedPublicIp ?: ($requestIp ?: (string) $request->ip());
-    }
-    private function firstPublicSessionIp(array $candidates): string
-    {
-        foreach ($candidates as $candidate) {
-            $ip = trim((string) $candidate);
-            if ($this->isPublicIp($ip)) {
-                return $ip;
-            }
-        }
-
-        return '';
-    }
-    private function isPublicIp(string $ip): bool
-    {
-        return (bool) filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-    }
-    private function authenticatedUser(Request $request): User
-    {
-        return $this->authenticatedSession($request)->user;
-    }
-    private function optionalAuthenticatedUser(Request $request): ?User
-    {
-        $token = (string) $request->bearerToken();
-        if ($token === '') {
-            return null;
-        }
-
-        $result = $this->resolveSession($request, $token);
-        if (! $result) {
-            return null;
-        }
-
-        $request->attributes->set('vibyra.session.used_previous_token', $result['using_previous_token']);
-
-        return $result['session']->user;
-    }
-
-    private function resolveSession(Request $request, string $token): ?array
-    {
-        return app(SessionAuthenticator::class)->authenticate($token, [
-            'ip_address' => $this->sessionRequestIp($request),
-            'user_agent' => (string) $request->userAgent(),
-        ]);
+        return $user;
     }
     private function userPayload(User $user): array
     {
@@ -133,8 +81,11 @@ trait UserPayloads
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'avatarUrl' => app(AvatarStore::class)->url($user),
+            'createdAt' => optional($user->created_at)->toIso8601String(),
             'provider' => $user->provider ?: 'email',
             'emailVerified' => $user->hasVerifiedEmail(),
+            'twoFactorEnabled' => app(\App\Services\Auth\TwoFactor::class)->enabled($user),
             'phoneNumber' => $user->phone_number,
             'phoneVerified' => $user->phone_verified_at !== null,
             'pendingPhoneNumber' => $user->pending_phone_number,
@@ -172,6 +123,7 @@ trait UserPayloads
             'onboardingComplete' => (bool) $user->onboarding_complete,
             'rememberedDesktops' => $this->normalizeRememberedDesktops($user->remembered_desktops),
             'appState' => is_array($user->app_state) ? $user->app_state : [],
+            ...(app(\App\Services\Vibes\AccountMembership::class)->for($user) ?? []),
         ];
     }
 

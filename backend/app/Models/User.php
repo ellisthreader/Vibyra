@@ -21,6 +21,7 @@ use Illuminate\Notifications\Notifiable;
     'pending_phone_number',
     'provider',
     'provider_id',
+    'guest_at',
     'password',
     'plan',
     'plan_billing_cycle',
@@ -56,6 +57,15 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
 
     /**
+     * An account that has not been signed up yet: it can hold and spend Vibes and
+     * nothing else. Every authenticated endpoint refuses one unless it opts in.
+     */
+    public function isGuest(): bool
+    {
+        return $this->guest_at !== null;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -64,6 +74,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'guest_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
             'credits_balance' => 'integer',

@@ -25,6 +25,7 @@ class WebsiteAccountPayload
             'billingProvider' => $user->billing_provider ?: null,
             'canManageStripeBilling' => $user->billing_provider === 'stripe'
                 && (string) ($user->stripe_customer_id ?? '') !== '',
+            ...(app(\App\Services\Vibes\AccountMembership::class)->for($user) ?? []),
         ];
     }
 }

@@ -22,7 +22,7 @@ export default function DownloadCard({ platform, release, debRelease, recommende
       recommended={recommended}
       disabled={!available}
       action={available && (
-        <a className="platform-row__button" href={downloadPath("windows")} aria-label="Download Vibyra for Windows">
+        <a className="platform-row__button" href={downloadPath("windows")} data-analytics-cta="downloads_windows" data-analytics-download="windows" aria-label="Download Vibyra for Windows">
           Download <span aria-hidden="true">&darr;</span>
         </a>
       )}

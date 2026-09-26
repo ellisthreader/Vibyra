@@ -1,0 +1,532 @@
+{
+  "generatedAt": "2026-09-26T10:54:37.452Z",
+  "root": "/Users/ellis/Desktop/Vibyra",
+  "modes": {
+    "ci": true,
+    "release": true,
+    "environment": true
+  },
+  "summary": {
+    "pass": 53,
+    "fail": 24,
+    "manual": 9
+  },
+  "findings": [
+    {
+      "id": "repository.SECURITY.md",
+      "status": "pass",
+      "severity": "info",
+      "message": "SECURITY.md exists."
+    },
+    {
+      "id": "repository.docs/security/production-release-gates.md",
+      "status": "pass",
+      "severity": "info",
+      "message": "docs/security/production-release-gates.md exists."
+    },
+    {
+      "id": "repository.scripts/security/run-actionlint.sh",
+      "status": "pass",
+      "severity": "info",
+      "message": "scripts/security/run-actionlint.sh exists."
+    },
+    {
+      "id": "repository..github/CODEOWNERS",
+      "status": "pass",
+      "severity": "info",
+      "message": ".github/CODEOWNERS exists."
+    },
+    {
+      "id": "repository..github/dependabot.yml",
+      "status": "pass",
+      "severity": "info",
+      "message": ".github/dependabot.yml exists."
+    },
+    {
+      "id": "repository..github/workflows/security.yml",
+      "status": "pass",
+      "severity": "info",
+      "message": ".github/workflows/security.yml exists."
+    },
+    {
+      "id": "repository..github/workflows/dependency-review.yml",
+      "status": "pass",
+      "severity": "info",
+      "message": ".github/workflows/dependency-review.yml exists."
+    },
+    {
+      "id": "repository..github/workflows/codeql.yml",
+      "status": "pass",
+      "severity": "info",
+      "message": ".github/workflows/codeql.yml exists."
+    },
+    {
+      "id": "repository..github/workflows/production-security-gate.yml",
+      "status": "pass",
+      "severity": "info",
+      "message": ".github/workflows/production-security-gate.yml exists."
+    },
+    {
+      "id": "workflow..github/workflows/codeql.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/codeql.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/codeql.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/codeql.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/dependency-review.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/dependency-review.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/dependency-review.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/dependency-review.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-frontend.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-frontend.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-frontend.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-frontend.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-macos-release.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-macos-release.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-macos-release.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-macos-release.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-release.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-release.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-release.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-release.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-tauri.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-tauri.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-tauri.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/desktop-tauri.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/production-security-gate.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/production-security-gate.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/production-security-gate.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/production-security-gate.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "workflow..github/workflows/security.yml.actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "All external actions use full commit SHAs."
+    },
+    {
+      "id": "workflow..github/workflows/security.yml.timeouts",
+      "status": "pass",
+      "severity": "info",
+      "message": "Every job has a timeout."
+    },
+    {
+      "id": "workflow..github/workflows/security.yml.permissions",
+      "status": "pass",
+      "severity": "info",
+      "message": "Workflow declares contents: read."
+    },
+    {
+      "id": "workflow..github/workflows/security.yml.trigger",
+      "status": "pass",
+      "severity": "info",
+      "message": "No pull_request_target trigger is present."
+    },
+    {
+      "id": "dependabot.npm",
+      "status": "pass",
+      "severity": "info",
+      "message": "npm updates are configured."
+    },
+    {
+      "id": "dependabot.composer",
+      "status": "pass",
+      "severity": "info",
+      "message": "composer updates are configured."
+    },
+    {
+      "id": "dependabot.github-actions",
+      "status": "pass",
+      "severity": "info",
+      "message": "github-actions updates are configured."
+    },
+    {
+      "id": "release.android.cleartext",
+      "status": "fail",
+      "severity": "error",
+      "message": "Android usesCleartextTraffic must be false."
+    },
+    {
+      "id": "release.expo.runtime",
+      "status": "fail",
+      "severity": "error",
+      "message": "Expo runtimeVersion is required for OTA compatibility."
+    },
+    {
+      "id": "release.ios.export",
+      "status": "pass",
+      "severity": "info",
+      "message": "Expo export-compliance configuration is explicit."
+    },
+    {
+      "id": "release.links.ios",
+      "status": "fail",
+      "severity": "error",
+      "message": "Verified iOS Universal Links are not configured."
+    },
+    {
+      "id": "release.links.android",
+      "status": "fail",
+      "severity": "error",
+      "message": "Verified Android App Links are not configured."
+    },
+    {
+      "id": "release.eas.version",
+      "status": "fail",
+      "severity": "error",
+      "message": "EAS appVersionSource must be remote."
+    },
+    {
+      "id": "release.eas.increment",
+      "status": "pass",
+      "severity": "info",
+      "message": "Production build numbers auto-increment."
+    },
+    {
+      "id": "release.eas.channel",
+      "status": "fail",
+      "severity": "error",
+      "message": "Production EAS channel must be production."
+    },
+    {
+      "id": "release.api.https",
+      "status": "pass",
+      "severity": "info",
+      "message": "Production API URL uses HTTPS."
+    },
+    {
+      "id": "release.desktop.cleartext",
+      "status": "pass",
+      "severity": "info",
+      "message": "Production profile has no cleartext desktop URL."
+    },
+    {
+      "id": "manual.secret-revocation",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Verify exposed credentials were revoked provider-side."
+    },
+    {
+      "id": "manual.branch-protection",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Verify the main ruleset and restricted bypass settings."
+    },
+    {
+      "id": "manual.deployment-protection",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Verify production environment reviewers and ref restrictions."
+    },
+    {
+      "id": "manual.signing",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Verify store and desktop artifact signing against the protected commit."
+    },
+    {
+      "id": "manual.backup-restore",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Attach a successful isolated backup restore drill."
+    },
+    {
+      "id": "manual.rollback",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Attach a migration and deployment rollback rehearsal."
+    },
+    {
+      "id": "manual.monitoring",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Attach security alert and incident-response exercise evidence."
+    },
+    {
+      "id": "manual.physical-devices",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Attach production-signed physical-device security results."
+    },
+    {
+      "id": "manual.pentest",
+      "status": "manual",
+      "severity": "warning",
+      "message": "Attach independent penetration-test and retest reports."
+    },
+    {
+      "id": "environment.APP_ENV",
+      "status": "pass",
+      "severity": "info",
+      "message": "APP_ENV has the required production value."
+    },
+    {
+      "id": "environment.APP_DEBUG",
+      "status": "pass",
+      "severity": "info",
+      "message": "APP_DEBUG is disabled."
+    },
+    {
+      "id": "environment.APP_KEY",
+      "status": "pass",
+      "severity": "info",
+      "message": "APP_KEY is configured."
+    },
+    {
+      "id": "environment.APP_URL",
+      "status": "pass",
+      "severity": "info",
+      "message": "APP_URL uses HTTPS."
+    },
+    {
+      "id": "environment.VIBYRA_CORS_ALLOW_ANY_ORIGIN",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_CORS_ALLOW_ANY_ORIGIN must be explicitly false."
+    },
+    {
+      "id": "environment.VIBYRA_CORS_ALLOWED_ORIGINS",
+      "status": "fail",
+      "severity": "error",
+      "message": "CORS origins must be a non-empty list of explicit HTTPS URLs without wildcards."
+    },
+    {
+      "id": "environment.VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED must be explicitly false."
+    },
+    {
+      "id": "environment.VIBYRA_LEGACY_PHONE_TOKEN_ENABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_LEGACY_PHONE_TOKEN_ENABLED must be explicitly false."
+    },
+    {
+      "id": "environment.VIBYRA_LEGACY_PREVIEW_TOKEN_ENABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_LEGACY_PREVIEW_TOKEN_ENABLED must be explicitly false."
+    },
+    {
+      "id": "environment.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED must be explicitly false."
+    },
+    {
+      "id": "environment.PUBLISH_REVIEW_TEMPORARILY_DISABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "PUBLISH_REVIEW_TEMPORARILY_DISABLED must be explicitly false."
+    },
+    {
+      "id": "environment.VIBYRA_PAIR_RATE_LIMIT_ENABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_PAIR_RATE_LIMIT_ENABLED must be explicitly true."
+    },
+    {
+      "id": "environment.VIBYRA_LAN_V2_REQUIRED",
+      "status": "fail",
+      "severity": "error",
+      "message": "VIBYRA_LAN_V2_REQUIRED must be explicitly true."
+    },
+    {
+      "id": "environment.OPENAI_MODERATION_ENABLED",
+      "status": "fail",
+      "severity": "error",
+      "message": "OPENAI_MODERATION_ENABLED must be explicitly true."
+    },
+    {
+      "id": "environment.OPENAI_MODERATION_FAIL_CLOSED",
+      "status": "fail",
+      "severity": "error",
+      "message": "OPENAI_MODERATION_FAIL_CLOSED must be explicitly true."
+    },
+    {
+      "id": "environment.EXPO_PUBLIC_LAN_V2_MODE",
+      "status": "fail",
+      "severity": "error",
+      "message": "EXPO_PUBLIC_LAN_V2_MODE must be required."
+    },
+    {
+      "id": "environment.STRIPE_SECRET_KEY",
+      "status": "fail",
+      "severity": "error",
+      "message": "STRIPE_SECRET_KEY is required."
+    },
+    {
+      "id": "environment.STRIPE_WEBHOOK_SECRET",
+      "status": "fail",
+      "severity": "error",
+      "message": "STRIPE_WEBHOOK_SECRET is required."
+    },
+    {
+      "id": "environment.APPLE_IAP_SHARED_SECRET",
+      "status": "fail",
+      "severity": "error",
+      "message": "APPLE_IAP_SHARED_SECRET is required."
+    },
+    {
+      "id": "environment.GOOGLE_IAP_PACKAGE_NAME",
+      "status": "fail",
+      "severity": "error",
+      "message": "GOOGLE_IAP_PACKAGE_NAME is required."
+    },
+    {
+      "id": "environment.GOOGLE_IAP_SERVICE_ACCOUNT_JSON",
+      "status": "fail",
+      "severity": "error",
+      "message": "GOOGLE_IAP_SERVICE_ACCOUNT_JSON is required."
+    },
+    {
+      "id": "environment.GOOGLE_AUTH_CLIENT_IDS",
+      "status": "fail",
+      "severity": "error",
+      "message": "GOOGLE_AUTH_CLIENT_IDS is required."
+    },
+    {
+      "id": "environment.APPLE_AUTH_CLIENT_IDS",
+      "status": "pass",
+      "severity": "info",
+      "message": "APPLE_AUTH_CLIENT_IDS is configured."
+    }
+  ]
+}
