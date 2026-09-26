@@ -1,0 +1,616 @@
+{
+  "candidate": "owner analytics, consent, local owner access, website and native event ingestion",
+  "connector_patch": {
+    "path": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/connector-test-corrections.patch",
+    "pre_merge_review": true,
+    "sha256": "bc3f17912542a378b07b9d38ec1261d632167573aaf31b88cba893f9271ccdda"
+  },
+  "country_breakdown_setup": {
+    "MAXMIND_ACCOUNT_ID_present": false,
+    "MAXMIND_LICENSE_KEY_present": false,
+    "effect": "Country breakdown remains unknown until production GeoLite2 database is provisioned.",
+    "geolite2_database_provisioned": false
+  },
+  "generated_at_utc": "2026-09-26T14:35:37.604626+00:00",
+  "overlay_sha256": {
+    "app/Console/Commands/PruneAnalyticsEvents.php": {
+      "sha256": "12cec5e760badd1c752498da38f021ee3b662fd38447d478158ee3b75b179ed2",
+      "source": "latest-site"
+    },
+    "app/Console/Commands/RollupAnalyticsEvents.php": {
+      "sha256": "0279d27b371b0b44bf9ab3a74a66ebef4d6367611f9b5221d69c5751d2d3238e",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/AnalyticsConsentController.php": {
+      "sha256": "18142182d51635e4465d7793789912a1f28ef33ed3103ac7c76e1eaf28f8bbd2",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/AnalyticsEventController.php": {
+      "sha256": "16c644aac059f76847bbbe98290a04abd84d832e4ea1adf69b3cac663a98db76",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/Concerns/AuthEndpoints.php": {
+      "sha256": "cd2b4468209e12a7e5d315e86c84d0267e8e1030a3ea5b2331622de7a2db0608",
+      "source": "main"
+    },
+    "app/Http/Controllers/Concerns/DesktopProviderAuthEndpoints.php": {
+      "sha256": "d08a3f61610473559360bff4f88793d7b13e71b047e7c0be33db21d6af59acb6",
+      "source": "main"
+    },
+    "app/Http/Controllers/Concerns/TwoFactorEndpoints.php": {
+      "sha256": "6141a3ee817202b37d95bc8faf4ef26f029df53d9d6b8805c5ad7522ae62eb80",
+      "source": "main"
+    },
+    "app/Http/Controllers/LocalOwnerLoginController.php": {
+      "sha256": "f6c62ceb155ba08e92909782797b39f04422e24187e9280a02836584d8eeba8c",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/OwnerAccountsController.php": {
+      "sha256": "d65225b84902af32c543d96754ab7a2e31456c48ccbb44784c5a4f3ee07b89e0",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/OwnerAnalyticsController.php": {
+      "sha256": "c8ee649f1a825aed8530052f360243daf2f2afb1a3db81f65f0d151b4cd01a91",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/OwnerTwoFactorEnrollmentController.php": {
+      "sha256": "2c55a460dfca2d5917b7c8c546b955c4b2c9074f840b6852ba15b8617f56ae5e",
+      "source": "owner-google-enrollment"
+    },
+    "app/Http/Controllers/ReleaseDownloadController.php": {
+      "sha256": "99513d3b65edbbe13fe1fdef7dbd5ba0b5439271dbdb9e766813e5e7eeb10228",
+      "source": "merge-on-production-baseline"
+    },
+    "app/Http/Controllers/WebsiteAnalyticsController.php": {
+      "sha256": "6f6adf1b035aa3e2f2c46b17e0faa7ee307ceb7a0f964fff82db719d40a4b914",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/WebsiteAuthController.php": {
+      "sha256": "e12e269414c8d00134c714a7a2234b4ee0a9220bd2d016e3dace61a7660fbdee",
+      "source": "latest-site"
+    },
+    "app/Http/Controllers/WebsiteProviderAuthController.php": {
+      "sha256": "23ef786f8970ae25951bf1c86f2206f5c52ac3ad3b9dacad77972ab644375eba",
+      "source": "latest-site"
+    },
+    "app/Http/Middleware/LocalOwnerAccess.php": {
+      "sha256": "9242e413397c46d37e08922663190ff651f74b52c86434b5895aaf60101ac844",
+      "source": "latest-site"
+    },
+    "app/Http/Middleware/RecordWebsiteView.php": {
+      "sha256": "b72b91a346f568bdf354a425219460ab15e5fe494820b47fd250743534e88c67",
+      "source": "latest-site"
+    },
+    "app/Http/Middleware/RequireOwner.php": {
+      "sha256": "e3bdf8a6a54b68c987411c874b5c723843073dd1d88d87419a6cccd0f27f45d0",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/AnalyticsCountry.php": {
+      "sha256": "9a5bd3b539de5ba88f1d70da4a3c92dd789bf3c416fe1865a254f43a999e0859",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/AuthLoginRecorder.php": {
+      "sha256": "92b1bb92ecc8d757ad77c43dcbf5191a7095fddc19bf557e9866eec52dbeda71",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/ConsentStore.php": {
+      "sha256": "5ac7f0a46a190145c151f60721a3ce931b4db0d636ac49a94e0685ffd5b1c1c2",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/CountryResolver.php": {
+      "sha256": "094e39b21bedc7f8dfc381eee78b6afc854d46ae779ff006311e8f0672574e37",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/EventContract.php": {
+      "sha256": "6302fca8c4a9c432ccfb236550a349db624ebccb31e1e95831175df6d31aadc8",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/OwnerOperationalReport.php": {
+      "sha256": "bdee84433993826257277d4f5f5d53e15f0bf1b23d081ae06ffe1b4e48fd6c59",
+      "source": "owner-operational-measures"
+    },
+    "app/Services/Analytics/OwnerProductionSnapshot.php": {
+      "sha256": "eb58778e99ab3b8f06474eb7f1a23439911191d98c70e303d5eac761352447bc",
+      "source": "latest-site-final-owner-operations-and-freshness"
+    },
+    "app/Services/Analytics/OwnerReport.php": {
+      "sha256": "4eb45e828b6f74fc61eb4c677a76742d467c1a2e95e28175b50d7137c442ecea",
+      "source": "latest-site-final-owner-report-199-lines"
+    },
+    "app/Services/Analytics/OwnerReportExtras.php": {
+      "sha256": "36c85e51175989a062758cdfc57288135d7ccb80ce5fe32a16c5c941d49edf24",
+      "source": "latest-site-final-owner-operations-and-freshness"
+    },
+    "app/Services/Analytics/Recorder.php": {
+      "sha256": "6c805155547215f314283b0ca72389473ff3b6c2a785dc601956a218cff4349c",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/WebsiteConsent.php": {
+      "sha256": "577eb27b38bf689e22cba524ef5c3eabd48bc3e4b1aa78e8cc152c82f17c19af",
+      "source": "latest-site"
+    },
+    "app/Services/Analytics/WebsiteEvents.php": {
+      "sha256": "37240d2d64753ae8e322872c7e3efc711ea9ac7681015eb50ab8dc26ce8aab02",
+      "source": "latest-site"
+    },
+    "app/Services/Auth/DesktopProviderOAuthFlow.php": {
+      "sha256": "ccfcfb99735f70cab6d85e949e32e9acc0af7f980806cc9b221a095c7802d238",
+      "source": "owner-google-enrollment"
+    },
+    "app/Services/Auth/ProviderEnrollmentOAuthFlow.php": {
+      "sha256": "17586a0f6c9c988dcda33fec23fa19373cedc2ed2897e93e6440af14453d397e",
+      "source": "owner-google-enrollment"
+    },
+    "app/Services/Auth/ProviderEnrollmentProof.php": {
+      "sha256": "85036c4ce76698e122549858bdfbc540aa67333c75c8acceb15e5bbb3c666fe1",
+      "source": "owner-google-enrollment"
+    },
+    "config/owner_analytics.php": {
+      "sha256": "c01971174c63ed7feb01642974aa3515694d275d67ef00d42552187380947de7",
+      "source": "latest-site"
+    },
+    "database/migrations/2026_09_25_000000_create_analytics_events.php": {
+      "sha256": "b93aae09ad1ab841a70c415d376ab879909f7bc1849602108f19e9572a21acfb",
+      "source": "latest-site"
+    },
+    "database/migrations/2026_09_26_120000_add_analytics_consent_and_website_fields.php": {
+      "sha256": "c5ee71ae1300ff813b94b7608aeb115aa3c40037f356008830ded8c68fa89686",
+      "source": "latest-site"
+    },
+    "database/migrations/2026_09_26_130000_create_analytics_daily_rollups.php": {
+      "sha256": "b3302fb167f127ebad74515cc5de2359de34dc23673a45410318468e96d4cff9",
+      "source": "latest-site"
+    },
+    "database/migrations/2026_09_26_140000_create_auth_login_events.php": {
+      "sha256": "82caa77aa74b7b102ba4c841d3c01e6d0b2453ac6d56af8062cdc52d3144e3e3",
+      "source": "latest-site"
+    },
+    "public/fonts/DMSans.ttf": {
+      "sha256": "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/Inter-OFL.txt": {
+      "sha256": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/JetBrainsMono-OFL.txt": {
+      "sha256": "403581b69dac5cff4079205e01c6b467e56af449ecbd7247693ddb1baafa005b",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/Manrope-OFL.txt": {
+      "sha256": "f612090fb72b6dca3e807e66fa0d2b5def163cef86f1a3209b5c897cba5ee4b7",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/OFL-DMSans.txt": {
+      "sha256": "be5f632588774077cbb19a8d3fd788fbc7861af041f4e7165eae5822b11392b3",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/inter-variable.woff2": {
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/jetbrains-mono-variable.woff2": {
+      "sha256": "18be452724bfdc236c074ca94a249a7f41a86752c7d04ab258ce9ed5651f6a7e",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/manrope-bold.ttf": {
+      "sha256": "b9584e099e0e7f1e1e914c3037aabb9010c50346a3ce8df5eeeeecc0563044d8",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/manrope-bold.woff2": {
+      "sha256": "8b39f28c1601473edf48773382867a842bb6ebd3888612948b0a7c307fedd442",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/manrope-extrabold.ttf": {
+      "sha256": "b8f802f05b322a7345805f5b89f8bb976604cc719a91530918d5ce3c47160950",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/manrope-extrabold.woff2": {
+      "sha256": "685b5dd5d05f0edb0c763068044d6da81fadbc6901153be232174d0d08d34158",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/manrope-regular.ttf": {
+      "sha256": "a13d9b41b0a471ce58f0e46d377fa3cc76615e4632c3b15eb397caadf7a13f0a",
+      "source": "latest-site-public-asset"
+    },
+    "public/fonts/manrope-regular.woff2": {
+      "sha256": "44e63ab0046cd3e82d2c5ad6aadf8fd74b0f810b7ffdc565012566cd3c84dc0e",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/connected-workspace-editorial.png": {
+      "sha256": "a99e157a51e3dc92adae3b75c36ea12a0628e1642cb79e3b3663bef0a6120f1e",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/desktop-memory-voice.png": {
+      "sha256": "39bb17d66a918663a3d6a503088fdd23cdb55e7e66c99e9ddd8daf3ead03f38e",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/desktop-model-catalog-v2.png": {
+      "sha256": "9445394d33e1da3e9a305711443ea7c9521b41bb70dac1071deca4f89d1b8fc5",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/desktop-model-picker.png": {
+      "sha256": "8f0046ee547367066d6f4e620fef1731d4464e7f077c8b43e4cd5dee6f0b7b91",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/desktop-multi-terminal.png": {
+      "sha256": "cabd80b5dc9ecdd5d2fba93d4d48df84d7764582833bbe3135275246b361f3aa",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/desktop-welcome-review.png": {
+      "sha256": "b150ead273fe751fa3bc58586245ed09a5cad6cb9f5145ba13cc58dc23b333f5",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/mobile-vibyra-auth.png": {
+      "sha256": "aa64e8647b858066f20a8d0c8c85616fd26bec2c145d664686c479bef42c5c03",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/phone-review-editorial.png": {
+      "sha256": "5bd48cedea8b899b9a028e3ff9b867bc559107d100d88e2a10edc656608faa19",
+      "source": "latest-site-public-asset"
+    },
+    "public/media/homepage/vibyra-cobalt-stage.png": {
+      "sha256": "f04cf2ae7aaafe9ae598eea96cf73ef9c0969777cef6e4576e4a3a620f671038",
+      "source": "latest-site-public-asset"
+    },
+    "resources/css/analytics-choice.css": {
+      "sha256": "284b24561a925c292261fdc6dcde93bb6d726225691ed02c9a9aeabcb5ae2186",
+      "source": "latest-site"
+    },
+    "resources/css/portal.css": {
+      "sha256": "5bf315147f48189c9d4d042fd09728655fb47fe073f9e9e622eca6eb2fb5e101",
+      "source": "latest-site"
+    },
+    "resources/css/portal/auth.css": {
+      "sha256": "91257fc2b5da0a55f03851342a1ed8fff98aee9ad636a6686ef0a431de166a17",
+      "source": "latest-site"
+    },
+    "resources/css/portal/layout.css": {
+      "sha256": "4685751b4077c68421c95bacc9fb65ead0fb2e6dd3d4afde42b63491580bff1e",
+      "source": "latest-site"
+    },
+    "resources/css/portal/owner-accounts.css": {
+      "sha256": "7a765b44b03d4bee7017a9be963bd9462c19eaba84fb934480a95813f104b797",
+      "source": "latest-site"
+    },
+    "resources/css/portal/owner-charts.css": {
+      "sha256": "2146feffb08c7442d9d4dcd6f4be27758e6273ab3b5de7af6edcbba5141610c8",
+      "source": "latest-site"
+    },
+    "resources/css/portal/owner-content.css": {
+      "sha256": "b5eb1ba1df4ef8bab8f118b227dff99efb7b2e366722daa8927a4c405815dc8d",
+      "source": "latest-site-final-owner-operations-and-freshness"
+    },
+    "resources/css/portal/owner-layout.css": {
+      "sha256": "c412ac67210820eb074e76c7ea0a41f349f0c8b1f2646716cfd953f51ce5c897",
+      "source": "latest-site"
+    },
+    "resources/css/portal/tokens.css": {
+      "sha256": "0596a644c1dc6e39e2cabb4694913fec2e2c3fa9ab63d768d3b8b1976c81b2d4",
+      "source": "latest-site"
+    },
+    "resources/js/analyticsChoice.js": {
+      "sha256": "237082c4ed88e67e8d935a1e3563f6bd018831d1c566b55095a1c57f202bd892",
+      "source": "latest-site"
+    },
+    "resources/js/analyticsChoiceEntry.js": {
+      "sha256": "8efad9ae6169c584da81c6cdd927a5ce7ca65094bf9b3b9b9c66ce8314ac4230",
+      "source": "latest-site"
+    },
+    "resources/js/marketing.jsx": {
+      "sha256": "e57eeb2a6d85605eb7745c37918d8cd3dd4d656bac890af82004f7113f1f5544",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/marketing/Closing.jsx": {
+      "sha256": "ef850543519c52facc9c02c5829ea40ad592566aada4106154f5d393e847a1a7",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/marketing/HeroScrollStory.jsx": {
+      "sha256": "5936fc80e7847ee57826c7fe5a0b58af2e6964e23f6eb7edd7113085fe24e149",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/marketing/Nav.jsx": {
+      "sha256": "fb2ace8b28f06c4a457531b52cf0e62b5a2139e5f136be8d7887adc59ab3878f",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/portal.jsx": {
+      "sha256": "b6f544333a6aba5f521f04f90b6ce390a39af064ec5c1effeb05c3ebe713b341",
+      "source": "latest-site"
+    },
+    "resources/js/portal/PortalApp.jsx": {
+      "sha256": "c439735a0aeb9a0285e2d870cb27b850a9d91422a00f0cea41ac4293d67f68ee",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/portal/api.js": {
+      "sha256": "142071dd57bfdd017f05aa28eeaf92249a6418b73f1db2adb100019ac7b41260",
+      "source": "latest-site"
+    },
+    "resources/js/portal/components/DownloadCard.jsx": {
+      "sha256": "4035b143074bf1cce5b0b61fe7af80a7040bf34979bc7a5a5579924f92ed7b98",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/portal/components/LinuxDownloadCard.jsx": {
+      "sha256": "38492fbfd76e9df132a795dd40e7f98dff0a48e8c4cc17127d05b32498a698e7",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/portal/components/MacDownloadCard.jsx": {
+      "sha256": "e18cea7b792fce0acf8b58d911b27d9ae277b3ee103ca2d46ed2c047a98d0761",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/js/portal/components/PortalShell.jsx": {
+      "sha256": "93c74caa341fe0202da383ab4a14f0f2bdee60d0a694ebd1c22ba23707f80567",
+      "source": "latest-site"
+    },
+    "resources/js/portal/owner/OwnerAccounts.jsx": {
+      "sha256": "256ea3fd50c25a010d06eebab51be6b574d2edcd6b743b079b92996f97542dae",
+      "source": "latest-site"
+    },
+    "resources/js/portal/owner/OwnerDetails.jsx": {
+      "sha256": "7ac1edbede96ccd94be92e8cb257edb9cb0feaa23bcf17380fc2d71b1e142daf",
+      "source": "latest-site"
+    },
+    "resources/js/portal/owner/OwnerMetric.jsx": {
+      "sha256": "e1b6672f680875e46dda7a62151bbdad250d999d806422f56de2ee12f8673505",
+      "source": "latest-site"
+    },
+    "resources/js/portal/owner/OwnerOperations.jsx": {
+      "sha256": "3db37ef6688f96034718b7d2b5626f553da977db8b1c88f654fda7a97664167b",
+      "source": "latest-site-final-owner-operations-and-freshness"
+    },
+    "resources/js/portal/owner/OwnerOverview.jsx": {
+      "sha256": "a1e86ecaabc7050d320427b4a509e3c29f5126d0f8875d95705764fbb955b763",
+      "source": "latest-site"
+    },
+    "resources/js/portal/owner/OwnerTrend.jsx": {
+      "sha256": "3b3d9289323d396ed597eea2da9f6551e04b415d2577654afee2c5bacd2c212f",
+      "source": "latest-site"
+    },
+    "resources/js/portal/owner/OwnerTwoFactorSetup.jsx": {
+      "sha256": "e416e65a3f44a0c392d67833c203dd8ddf9d6435aa94320db2184494e845afaf",
+      "source": "owner-google-enrollment"
+    },
+    "resources/js/portal/owner/format.js": {
+      "sha256": "7b083ff865245d5e5984184ed7d39f9f68b5ec798692dbf0034b6f8e948a9a4b",
+      "source": "latest-site"
+    },
+    "resources/js/portal/pages/AuthPage.jsx": {
+      "sha256": "510c092c9917eb88d89ef59bca0ca0b2cd83a52efc24362f06da2b4b0b3341ea",
+      "source": "latest-site"
+    },
+    "resources/js/portal/pages/OwnerPage.jsx": {
+      "sha256": "43632247d5e9ba080055b7417bcfbdc8ff7faaec9b4d4aa903453a2c2ac2656d",
+      "source": "latest-site-final-owner-operations-and-freshness"
+    },
+    "resources/js/websiteTracking.js": {
+      "sha256": "b74b16dd3d72b9c46ed3a92b7877094d1e61bc4c9b18c01505fa5955b5eb896e",
+      "source": "latest-site"
+    },
+    "resources/views/legal/layout.blade.php": {
+      "sha256": "eb3170e5601aaf34d476404c0703283b192ac5e1212b37b645c9eac9a04a3ce7",
+      "source": "latest-site"
+    },
+    "resources/views/legal/privacy.blade.php": {
+      "sha256": "e3dc6591ed4e8acaccdc4120ba484598a6dc0e5b2a1af3fb685a93fc389cbc02",
+      "source": "latest-site"
+    },
+    "resources/views/marketing.blade.php": {
+      "sha256": "92ac7450e9d5c7bc69b04178dc3e0620583e1daa83333202b8fabee6ce5ad3a5",
+      "source": "merge-on-production-baseline"
+    },
+    "resources/views/portal.blade.php": {
+      "sha256": "6868417959f9a5646cfb2dcc98942221f1ae9d3b90635486d1b0916122f88b69",
+      "source": "latest-site"
+    },
+    "routes/console.php": {
+      "sha256": "28650bce268e554ce1e12a3057b2f0ba9aa6ae1cf9fcb68bbeb2c3e095a999e4",
+      "source": "merge-on-production-baseline"
+    },
+    "routes/web.php": {
+      "sha256": "723bf77295fcd3eee70c4b174fdd3e63f99137cc1ef485b260df23935db64119",
+      "source": "merge-on-production-baseline"
+    },
+    "scripts/export-owner-production.php": {
+      "sha256": "77095fe9d79f7eb84b5d282e1efc9b2cfdf484f6432d570c0cac767c29319810",
+      "source": "local-aggregate-export"
+    },
+    "scripts/owner-operational-activity.php": {
+      "sha256": "5069a7ac161bd63ae0ee1b2744dd9ed1c5f8a79523da5a844051d0a78b316003",
+      "source": "local-aggregate-export"
+    },
+    "tests/Feature/AnalyticsConsentTest.php": {
+      "sha256": "37edae763cef3b5422c5c7640d47f85a0890dd297d55a5d0bf2d6bebf58ab277",
+      "source": "latest-site"
+    },
+    "tests/Feature/ConnectorOperationsTest.php": {
+      "sha256": "baa4f699d40bda3f549414c0a0b3313b39f5c06eb04d9371ed09ed8b8e0e89b0",
+      "source": "test-only-production-connector-coverage-correction"
+    },
+    "tests/Feature/GoogleTasksConnectorTest.php": {
+      "sha256": "db472fbaad211add09d0b4656b618ca4dc9ffbf4fbdeb7513231a41ae4925e8e",
+      "source": "test-only-production-connector-coverage-correction"
+    },
+    "tests/Feature/HackerNewsConnectorTest.php": {
+      "sha256": "15d8fda4d11b884da0305a8d26d99350b13cddb39fd53bb8d9c8407b6e3bd978",
+      "source": "test-only-production-connector-coverage-correction"
+    },
+    "tests/Feature/LocalOwnerAccessTest.php": {
+      "sha256": "975dc9304200e7d9d42cb283ebaf0f3f0764368e32ddc579fb8c93fbd5d46f41",
+      "source": "latest-site"
+    },
+    "tests/Feature/OwnerAccountsTest.php": {
+      "sha256": "854f4753b5e68f8eb400a2cb891933aaf03f26110803fc56b1773e16f67ffea7",
+      "source": "latest-site"
+    },
+    "tests/Feature/OwnerAnalyticsTest.php": {
+      "sha256": "d4bca4159ef2da3213d2b6df441a4a1340987cdc0b9c6b678de60a225faf12e1",
+      "source": "latest-site"
+    },
+    "tests/Feature/OwnerTwoFactorEnrollmentTest.php": {
+      "sha256": "fd42ca9c38ad4fb202794d0ac04f1a3529db4966e50b925ebb0b6c72c6f44340",
+      "source": "owner-google-enrollment"
+    },
+    "tests/Feature/WebsiteAnalyticsTrackingTest.php": {
+      "sha256": "3b8845af0f8e5ba791441d665958b852595736bd4d5f95308b2f78bb12f82f96",
+      "source": "latest-site-test-adapted-to-production-updater"
+    },
+    "tests/Feature/WebsiteOwnerTwoFactorTest.php": {
+      "sha256": "e37455205718f229dce4ed294bd6edf17e73bc07937f6c705611548673544ee4",
+      "source": "latest-site"
+    },
+    "vite.config.js": {
+      "sha256": "ee8b3828a9f00bb9136d0549945b71ce0b05b43f983f49a19753e3c335026781",
+      "source": "merge-on-production-baseline"
+    }
+  },
+  "package_excludes": [
+    "production secrets and .env",
+    "vendor",
+    "node_modules",
+    "storage state and logs",
+    "test caches",
+    "Nixpacks runtime output"
+  ],
+  "package_file_count": 929,
+  "preservation": {
+    "baseline_source_files": 848,
+    "composio_source_preserved": true,
+    "generated_public_build_replaced": true,
+    "overlay_source_files": 112,
+    "unexpected_preserved_source_changes": []
+  },
+  "railway_environment": "production",
+  "railway_project_id": "4e292f83-b6e3-4556-a1db-69a39a2be3b2",
+  "railway_service": "Vibyra",
+  "release_gates": [
+    "independent production reviewer approval and protected artifact provenance",
+    "resolve full candidate suite failures",
+    "resolve production security audit failures and attach manual gate evidence",
+    "confirm production deployment ID and image digest still match source immediately before upload; rebase if changed",
+    "set and verify VIBYRA_OWNER_EMAILS for the verified Google owner account and complete website-only Vibyra TOTP enrollment plus separate owner step-up",
+    "back up database and rehearse migration/application rollback",
+    "validate live consent, ingest, owner authorization, and dashboard after release"
+  ],
+  "release_status": "NOT APPROVED FOR DEPLOYMENT",
+  "required_environment": {
+    "VIBYRA_ANALYTICS_INGESTION_ENABLED": "defaults true; set false only for emergency stop",
+    "VIBYRA_OWNER_EMAILS": "verified production owner account email(s), currently unset"
+  },
+  "security_audit_failed_check_ids": [
+    "release.android.cleartext",
+    "release.expo.runtime",
+    "release.links.ios",
+    "release.links.android",
+    "release.eas.version",
+    "release.eas.channel",
+    "environment.VIBYRA_CORS_ALLOW_ANY_ORIGIN",
+    "environment.VIBYRA_CORS_ALLOWED_ORIGINS",
+    "environment.VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED",
+    "environment.VIBYRA_LEGACY_PHONE_TOKEN_ENABLED",
+    "environment.VIBYRA_LEGACY_PREVIEW_TOKEN_ENABLED",
+    "environment.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED",
+    "environment.PUBLISH_REVIEW_TEMPORARILY_DISABLED",
+    "environment.VIBYRA_PAIR_RATE_LIMIT_ENABLED",
+    "environment.VIBYRA_LAN_V2_REQUIRED",
+    "environment.OPENAI_MODERATION_ENABLED",
+    "environment.OPENAI_MODERATION_FAIL_CLOSED",
+    "environment.EXPO_PUBLIC_LAN_V2_MODE",
+    "environment.STRIPE_SECRET_KEY",
+    "environment.STRIPE_WEBHOOK_SECRET",
+    "environment.APPLE_IAP_SHARED_SECRET",
+    "environment.GOOGLE_IAP_PACKAGE_NAME",
+    "environment.GOOGLE_IAP_SERVICE_ACCOUNT_JSON",
+    "environment.GOOGLE_AUTH_CLIENT_IDS"
+  ],
+  "snapshot_consistency": {
+    "last_checked_at_utc": "2026-09-26T14:28:30.143869+00:00",
+    "last_checked_id": "2fbebed1-eb6a-48e8-9228-2eb6e8dc1881",
+    "last_checked_image_digest": "sha256:3f1605477d6ed3fad6ed4a8e3453ac85eca268d0f76cc54a385eb47b758cfe2a",
+    "source_equals_last_checked": true,
+    "source_equals_post_snapshot": true
+  },
+  "source_deployment": {
+    "created_at_utc": "2026-09-26T10:15:04.401Z",
+    "id": "2fbebed1-eb6a-48e8-9228-2eb6e8dc1881",
+    "image_digest": "sha256:3f1605477d6ed3fad6ed4a8e3453ac85eca268d0f76cc54a385eb47b758cfe2a",
+    "message": "Preserve empty tool properties as JSON object for AI providers",
+    "status": "SUCCESS"
+  },
+  "source_tarball": {
+    "path": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/source.tar.gz",
+    "sha256": "45452eae3775063184cae43f05c93643ff8b909e158a0120530f56565f861a6c",
+    "size_bytes": 11190934
+  },
+  "stable_artifact": {
+    "folder": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate",
+    "source_tarball": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/source.tar.gz",
+    "source_tarball_sha256": "45452eae3775063184cae43f05c93643ff8b909e158a0120530f56565f861a6c",
+    "source_tree": "/Users/ellis/Desktop/Vibyra-owner-analytics-release-candidate/source"
+  },
+  "validation": {
+    "candidate_runtime_changed_during_connector_correction": false,
+    "candidate_source_changed_during_isolated_replay": false,
+    "connector_phpunit": "PASS: 64 tests, 340 assertions; ConnectorOperations, GoogleTasks, HackerNews, DeepWiki",
+    "connector_test_correction": "Three test files only: removed unadvertised github_issue case; added real Google Tasks and HackerNews operation calls; coverage guard checks every offered operation and every tested operation.",
+    "current_security_audit_delta": "53 passed, 24 failed, 9 manual after mobile EAS production API URL became HTTPS; prior report was 52/25/9.",
+    "focused_phpunit": "PASS: 36 tests, 366 assertions before final operational UI copy; final full suite includes owner/analytics cases",
+    "full_phpunit": "NON-GREEN: 900 tests, 6301 assertions, 4 errors, 2 failures, 3 notices, 1 skipped; run before final owner UI/data copy; existing connector/preview and snapshot-context cases",
+    "full_phpunit_isolated": "NON-GREEN: 910 tests, 6450 assertions, 1 failure (mobile/backend model shortlist drift), 3 notices, 1 skipped; PHP memory_limit=512M",
+    "full_phpunit_issues": [
+      {
+        "reason": "Backend-only package omitted root railway.json and example Procfile; both pass with root fixtures.",
+        "test": "ProductionProcessTopologyTest (2 cases)",
+        "type": "packaging_context_resolved"
+      },
+      {
+        "reason": "Runtime trusts preview projects within HOME; passes when HOME is isolated test root.",
+        "test": "VibyraProjectPreviewSecurityApiTest encoded folder case",
+        "type": "packaging_context_resolved"
+      },
+      {
+        "reason": "Tests now match the live advertised registry and exercise Google Tasks, DeepWiki, and HackerNews operations without runtime changes.",
+        "test": "ConnectorOperationsTest github_issue and operation coverage",
+        "type": "test_drift_resolved"
+      },
+      {
+        "type": "failure_remains",
+        "test": "VibesAutoGuardrailsTest shortlist comparison",
+        "reason": "Current mobile picker includes GPT-6 Sol/Luna and Claude Opus 5.5 absent from unchanged production backend shortlist/profile/billing; coordinated model release remains separate."
+      }
+    ],
+    "isolated_test_context": {
+      "HOME": "isolated test root so preview path is within the trusted desktop home",
+      "backend_source": "exact extracted candidate copy; temporary vendor copy/autoload only",
+      "mobile_fixture": "current mobile/src/ui/pickerModels.ts",
+      "root_fixtures": [
+        "railway.json",
+        "backend/Procfile.production.example"
+      ],
+      "test_root": "/tmp/vibyra-owner-analytics-fulltest-isolated"
+    },
+    "owner_report_source_lines": 199,
+    "php_lint": "PASS: 199-line OwnerReport after final copy",
+    "preservation_phpunit": "PASS: 19 tests, 173 assertions before final owner UI/data copy",
+    "production_security_audit": {
+      "fail": 24,
+      "manual": 9,
+      "pass": 53
+    },
+    "route_cache": "PASS: after final owner UI/data copy",
+    "security_audit_scope": "Current Vibyra repository CI/mobile configuration plus Railway Vibyra production service variables (121 keys), not the backend-only candidate source tree; report contains names and outcomes only.",
+    "source_node_tests": "PASS: 8 tests after final owner UI/data copy",
+    "vite_build": "PASS: final owner operational UI and Google enrollment build, 2026-09-26",
+    "owner_google_enrollment": "PASS: protected website provider identity round trip, same-session one-use proof, TOTP confirmation and owner step-up; 5 focused website tests plus other owner tests in full suite"
+  },
+  "git_review": {
+    "branch": "codex/owner-analytics-production-review-20260926",
+    "worktree": "/private/tmp/vibyra-owner-analytics-production-review",
+    "base_ref": "origin/main",
+    "base_commit": "3619067cd68237feeb09009a415c5bd7d66f9912",
+    "running_source_baseline_commit": "30453116",
+    "analytics_overlay_commit": "8d85ad306d8f4a2091db8497ee9a03f796801a7f",
+    "pushed": false,
+    "protected_commit_checks_passed": false,
+    "tracked_source_matches_package": true,
+    "generated_build_assets_not_tracked": true
+  }
+}
