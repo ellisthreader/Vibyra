@@ -83,6 +83,7 @@ test("environment audit never includes secret values in findings", () => {
     OPENAI_MODERATION_ENABLED: "true",
     OPENAI_MODERATION_FAIL_CLOSED: "true",
     PUBLISH_REVIEW_TEMPORARILY_DISABLED: "false",
+    PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW: "false",
     STRIPE_SECRET_KEY: secret,
     STRIPE_WEBHOOK_SECRET: secret,
     APPLE_IAP_SHARED_SECRET: secret,
@@ -95,4 +96,14 @@ test("environment audit never includes secret values in findings", () => {
   const results = auditEnvironment(values);
   assert.equal(results.filter((item) => item.status === "fail").length, 0);
   assert.equal(JSON.stringify(results).includes(secret), false);
+});
+
+test("production audit rejects the temporary publish force-approval switch", () => {
+  const finding = (value) => auditEnvironment({
+    PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW: value
+  }).find((item) => item.id === "environment.PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW");
+
+  assert.equal(finding(undefined).status, "fail");
+  assert.equal(finding("true").status, "fail");
+  assert.equal(finding("false").status, "pass");
 });
