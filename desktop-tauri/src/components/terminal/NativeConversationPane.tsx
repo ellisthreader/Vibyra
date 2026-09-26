@@ -32,7 +32,7 @@ export function NativeConversationPane({ session, hidden, active, fontSize, onOp
     {running ? <ConversationCliView sessionId={session.id} visible={active && !hidden} fontSize={fontSize} onOpenChat={onOpenChat}
       onFocus={() => useConversationTerminals.setState({ focused: session.id })} /> : <>
       <ResumeConversation sessionId={session.id} />
-      <div className="conversation-cli-error"><span>Your conversation and project files are saved. Resume this terminal to continue the same work.</span>
+      <div className="conversation-cli-error"><span>Your conversation and project files are saved. Resume this terminal or view its saved chat.</span>
         <button className="btn" onClick={onOpenChat}>View saved chat</button></div>
     </>}
   </section>;

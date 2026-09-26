@@ -13,7 +13,12 @@ export function ResumeConversation({ sessionId }: { sessionId: string }) {
     try {
       await chatRequest('conversation.resume', { sessionId });
       await useConversationTerminals.getState().refresh();
-    } catch (error) { setError(String(error)); }
+    } catch (error) {
+      const message = String(error);
+      setError(/no rollout found for thread id/i.test(message)
+        ? 'Codex cannot find this terminal’s saved thread. Your Vibyra history and project files are still here. Start a new terminal for new work.'
+        : message);
+    }
     finally { pending.current = false; setBusy(false); }
   };
   return <div className="conversation-cli-error">

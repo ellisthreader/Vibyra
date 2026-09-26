@@ -9,10 +9,11 @@ import './conversationCli.css';
 export const ConversationTerminalPane = memo(function ConversationTerminalPane(props: {
   session: SharedSession; hidden: boolean; active: boolean; fontSize: number;
 }) {
-  const view = useSettingsStore(s => s.settings?.agentView ?? 'terminal');
+  const settings = useSettingsStore(s => s.settings);
+  const view = settings?.agentView ?? 'terminal';
   const [chatPreview, setChatPreview] = useState(false);
-  // A Settings choice takes precedence over a one-pane saved-chat preview.
-  useEffect(() => setChatPreview(false), [view]);
+  // An explicit Settings action takes precedence even when it reselects Terminal.
+  useEffect(() => setChatPreview(false), [settings]);
   const nativeAvailable = (props.session.kind ?? 'codex') === 'codex';
   const nativeVisible = nativeAvailable && view === 'terminal' && !chatPreview;
   // Terminal view means the genuine CLI, which only Codex can attach to a
