@@ -33,6 +33,8 @@ A read-only production aggregate query found six current `published_projects` ro
 
 **Post-change check, 26 September 2026:** the owner authorized disabling the testing override and Railway deployed `6d7c17dc-5f8a-4380-a7db-9355c15559b3`. A read-only follow-up found deployment status `SUCCESS`, `/up` HTTP 200, and effective Laravel config `disabled`. The aggregate marker query still found six current project rows, four public, zero currently marked with first/last marked review times null. The reviewer made no production mutation. A functional under-review publish test and any historical backup review remain separate checks.
 
+**Historical evidence available:** an environment-wide Railway deployment-log search for the exact marker returned zero matches; six sampled deployment-specific searches also returned zero. The application stores this marker in the project's current `review_flags` but does not emit it to deployment logs, so a zero log result is not proof of no past use. Railway Postgres metadata reports PITR disabled, no automatic backup schedules, and one listed backup created 2026-08-22 with recorded expiry 2026-09-21. Its recoverability was not tested, and no backup was restored or inspected. Current review flags remain the only directly queried evidence of affected projects.
+
 ## Release sequence
 
 1. Assign an owner for each product decision and obtain the independent approval required by `docs/security/production-release-gates.md`.
