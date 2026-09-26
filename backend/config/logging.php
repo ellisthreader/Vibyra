@@ -53,12 +53,14 @@ return [
     'channels' => [
 
         'stack' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'stack',
             'channels' => explode(',', (string) env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
         ],
 
         'single' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -66,6 +68,7 @@ return [
         ],
 
         'daily' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -74,6 +77,7 @@ return [
         ],
 
         'slack' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
             'username' => env('LOG_SLACK_USERNAME', env('APP_NAME', 'Laravel')),
@@ -83,6 +87,7 @@ return [
         ],
 
         'papertrail' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
             'handler' => env('LOG_PAPERTRAIL_HANDLER', SyslogUdpHandler::class),
@@ -95,6 +100,7 @@ return [
         ],
 
         'stderr' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
             'handler' => StreamHandler::class,
@@ -106,6 +112,7 @@ return [
         ],
 
         'syslog' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
             'facility' => env('LOG_SYSLOG_FACILITY', LOG_USER),
@@ -113,12 +120,14 @@ return [
         ],
 
         'errorlog' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
         ],
 
         'null' => [
+            'tap' => [\App\Logging\RedactSecrets::class],
             'driver' => 'monolog',
             'handler' => NullHandler::class,
         ],

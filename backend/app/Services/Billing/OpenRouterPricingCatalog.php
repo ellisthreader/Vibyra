@@ -122,6 +122,23 @@ class OpenRouterPricingCatalog
         return is_array($parameters) && in_array('tools', $parameters, true);
     }
 
+    /**
+     * Whether the model can see a photo. A snapshot taken before input modalities
+     * were recorded has no answer, and that counts as no: a model sent a photo it
+     * cannot read answers as if nothing had been attached, which is worse than being
+     * asked to choose another model until the next sync fills the answer in.
+     */
+    public function readsImages(string $slug): bool
+    {
+        if ($this->isStale() || ! isset($this->all()[trim($slug)])) {
+            $this->refreshPricingFor($slug);
+        }
+        $model = $this->all()[trim($slug)] ?? null;
+        $inputs = is_array($model) ? ($model['input_modalities'] ?? null) : null;
+
+        return is_array($inputs) && in_array('image', $inputs, true);
+    }
+
     public function isStale(): bool
     {
         $snapshot = $this->snapshot();
