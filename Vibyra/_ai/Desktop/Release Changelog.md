@@ -26,6 +26,10 @@ network, and running-input review on the phone, with Codex rule choices only
 when the provider offered an exact matching amendment. This preserves the
 0.8.10 Host baseline; unrelated dirty conversation work remains outside this
 candidate. The user-facing release note is in `changelogRelease0811.ts`.
+Build 14 also ports the installed 0.8.9 build-13 agent-view and saved-Codex
+resume fixes from `3e5b0dd6` and `5400e3bf`; those local commits diverged from
+the 0.8.10 baseline used for the analytics candidate. The port retains the
+0.8.11 analytics choice and Host approval fixes.
 Art: `public/releases/0.8.11.svg`.
 
 ## 0.8.10 — 25 September 2026 (Linux; candidate)

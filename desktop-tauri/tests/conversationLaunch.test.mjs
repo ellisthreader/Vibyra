@@ -35,6 +35,23 @@ test('normal launch carries exact account/settings and reveals the same terminal
   assert.deepEqual(calls[0][4],options);
   assert.deepEqual(reveals,['exact-session']);assert.equal(saved.size,0);
 });
+test('a phone launch adds the session without changing the Mac view', async () => {
+  const {calls,reveals,saved} = setup();
+  await launch('project','work','From phone',options,false);
+  assert.equal(calls.length,1);
+  assert.deepEqual(reveals,[]);
+  assert.equal(saved.size,0);
+});
+test('a recovered phone launch also leaves the Mac view alone', async () => {
+  const {calls,reveals,saved} = setup();
+  ops.create = async (...args) => {calls.push(args);if(calls.length===1)throw Error('Lost reply');return {id:'new-session'};};
+  await assert.rejects(launch('project','work','From phone',options,false),/Lost reply/);
+  ops.lookup = async () => ({id:'old-session'});
+  await launch('project','work','From phone',{...options,permissionMode:'full'},false);
+  assert.equal(calls.length,2);
+  assert.deepEqual(reveals,[]);
+  assert.equal(saved.size,0);
+});
 test('lost launch reply reuses identity and accepts a fresh safe-workspace approval', async () => {
   const {calls,saved,reveals} = setup();
   ops.create = async (...args) => {calls.push(args);if(calls.length===1)throw Error('Lost reply');return {id:'original'};};

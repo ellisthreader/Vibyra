@@ -4,7 +4,7 @@ import { useConversationTerminals } from '../state/conversationTerminalStore';
 const launching = new Set<string>();
 /** Resolves to the shared chat's id once it is in the grid. */
 export async function launchConversationTerminal(projectId: string, accountId: string | null,
-  title: string, options: ConversationLaunchOptions): Promise<string> {
+  title: string, options: ConversationLaunchOptions, focusMac = true): Promise<string> {
   const key = `terminal.create.${projectId}.${options.provider ?? 'codex'}.${accountId ?? 'default'}`;
   if (launching.has(key)) throw new Error('This terminal is still starting.');
   launching.add(key);
@@ -23,9 +23,10 @@ export async function launchConversationTerminal(projectId: string, accountId: s
       localStorage.removeItem(key);
       if (old) {
         const store = useConversationTerminals.getState();
-        await store.refresh(); store.reveal(old.id);
+        await store.refresh();
+        if (focusMac) store.reveal(old.id);
       }
-      return launchAfterRecovery(projectId, accountId, title, options, key);
+      return launchAfterRecovery(projectId, accountId, title, options, key, focusMac);
     }
     localStorage.setItem(key, JSON.stringify(request));
     const session = await createSharedChat(projectId, accountId ?? 'default', request.requestId, request.title,
@@ -33,18 +34,20 @@ export async function launchConversationTerminal(projectId: string, accountId: s
     // A lost reply is reconciled with the same request ID, never another execution.
     localStorage.removeItem(key);
     const store = useConversationTerminals.getState();
-    await store.refresh(); store.reveal(session.id);
+    await store.refresh();
+    if (focusMac) store.reveal(session.id);
     return session.id;
   } finally { launching.delete(key); }
 }
 
 async function launchAfterRecovery(projectId: string, accountId: string | null, title: string,
-  options: ConversationLaunchOptions, key: string): Promise<string> {
+  options: ConversationLaunchOptions, key: string, focusMac: boolean): Promise<string> {
   const requestId = crypto.randomUUID();
   localStorage.setItem(key, JSON.stringify({ requestId, title, options }));
   const session = await createSharedChat(projectId, accountId ?? 'default', requestId, title, options);
   localStorage.removeItem(key);
   const store = useConversationTerminals.getState();
-  await store.refresh(); store.reveal(session.id);
+  await store.refresh();
+  if (focusMac) store.reveal(session.id);
   return session.id;
 }

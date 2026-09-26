@@ -24,8 +24,8 @@ import './conversationTerminal.css';
 import '../sharedChats/conversationInspector.css';
 import '../sharedChats/conversationComposer.css';
 
-export function ConversationChatPane({ session, hidden, active, fontSize }: {
-  session: SharedSession; hidden: boolean; active: boolean; fontSize: number;
+export function ConversationChatPane({ session, hidden, active, fontSize, onReturnTerminal }: {
+  session: SharedSession; hidden: boolean; active: boolean; fontSize: number; onReturnTerminal?: () => void;
 }) {
   const { snapshot, error, busy, connected, run, send } = useSharedChat(session.id, active && !hidden);
   const agent = conversationAgent(session.kind);
@@ -136,6 +136,7 @@ export function ConversationChatPane({ session, hidden, active, fontSize }: {
       <AgentMark agentId={agent.id} name={agent.name} accent={agent.accent} size={18} />
       <span className="pane__title" title={snapshot?.workingDirectory ?? session.title}><strong>{session.title}</strong></span>
       <span className="pane__state" role="status">{stateLabel}</span>
+      {onReturnTerminal && <button className="btn" onClick={onReturnTerminal}>Back to Terminal</button>}
       {files.length > 0 && <button className="conversation-changes-button" onClick={() => openInspector('diff')}>Changes <span>{files.length}</span></button>}
       <button className="icon-btn" aria-label="Conversation details" onClick={() => openInspector('status')}>···</button>
       <div className="pane__actions">

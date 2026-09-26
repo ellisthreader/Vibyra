@@ -83,7 +83,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
           permissionMode: launch.permissionMode,
           workspaceMode: launch.safeMode ? "safe" : "shared",
           safeSnapshotFingerprint: fingerprint,
-        });
+        }, launch.view === undefined);
         started.push({ conversationId });
         trackDesktopEvent("desktop_terminal_started", { provider: launch.agent.id, ...(launch.model ? { model: launch.model } : {}) });
       } catch (error) {

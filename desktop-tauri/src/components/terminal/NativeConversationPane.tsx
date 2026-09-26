@@ -7,10 +7,9 @@ import { ExpandIcon } from '../common/Icons';
 import { CloseSessionButton } from './CloseSessionButton';
 import { ConversationCliView } from './ConversationCliView';
 import { ResumeConversation } from './ResumeConversation';
-import { useSettingsStore } from '../../state/settingsStore';
 
-export function NativeConversationPane({ session, hidden, active, fontSize }: {
-  session: SharedSession; hidden: boolean; active: boolean; fontSize: number;
+export function NativeConversationPane({ session, hidden, active, fontSize, onOpenChat }: {
+  session: SharedSession; hidden: boolean; active: boolean; fontSize: number; onOpenChat: () => void;
 }) {
   const terminals = useConversationTerminals();
   const [error, setError] = useState('');
@@ -30,11 +29,11 @@ export function NativeConversationPane({ session, hidden, active, fontSize }: {
         <CloseSessionButton active={active && !hidden} onClose={close} /></div>
     </header>
     {error && <p role="alert" className="shared-error">{error}</p>}
-    {running ? <ConversationCliView sessionId={session.id} visible={active && !hidden} fontSize={fontSize}
+    {running ? <ConversationCliView sessionId={session.id} visible={active && !hidden} fontSize={fontSize} onOpenChat={onOpenChat}
       onFocus={() => useConversationTerminals.setState({ focused: session.id })} /> : <>
       <ResumeConversation sessionId={session.id} />
-      <div className="conversation-cli-error"><span>Your conversation and project files are saved. Resume this terminal to continue the same work.</span>
-        <button className="btn" onClick={() => void useSettingsStore.getState().update({ agentView: 'chat' }).catch(e => setError(String(e)))}>View saved chat</button></div>
+      <div className="conversation-cli-error"><span>Your conversation and project files are saved. Resume this terminal or view its saved chat.</span>
+        <button className="btn" onClick={onOpenChat}>View saved chat</button></div>
     </>}
   </section>;
 }

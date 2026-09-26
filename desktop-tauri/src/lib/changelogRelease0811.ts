@@ -18,5 +18,9 @@ export const RELEASE_0811: ChangelogEntry = {
       heading: "Clearer phone approvals",
       body: "Command and network requests show their exact scope on your iPhone. A Codex rule can be remembered only when Codex offered that specific rule for the current request.",
     },
+    {
+      heading: "Saved Codex work opens reliably",
+      body: "The Mac keeps your chosen agent view when opening previews or starting work from your phone, and explains when an older Codex session cannot resume.",
+    },
   ],
 };

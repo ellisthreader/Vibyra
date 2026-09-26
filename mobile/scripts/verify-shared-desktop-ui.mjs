@@ -3,7 +3,7 @@ import { build } from 'esbuild';
 import { createServer } from 'node:http';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright-core';
-const bundle = await build({entryPoints:[resolve('../desktop-tauri/tests/sharedChatsFixture.tsx')],plugins:[{name:'fixture-artwork',setup(b){b.onLoad({filter:/\/modelArtwork\.ts$/},()=>({contents:'export const modelArtworkUrl = () => null;',loader:'ts'}));}}],bundle:true,write:false,outfile:'/tmp/fixture.js',format:'iife',jsx:'automatic',loader:{'.woff2':'dataurl','.png':'dataurl'},define:{'process.env.NODE_ENV':'"development"'}});
+const bundle = await build({entryPoints:[resolve('../desktop-tauri/tests/sharedChatsFixture.tsx')],plugins:[{name:'fixture-artwork',setup(b){b.onLoad({filter:/\/modelArtwork\.ts$/},()=>({contents:'export const modelArtworkUrl = () => null;',loader:'ts'}));}}],bundle:true,write:false,outfile:'/tmp/fixture.js',format:'iife',jsx:'automatic',loader:{'.woff2':'dataurl','.png':'dataurl','.webp':'dataurl'},define:{'process.env.NODE_ENV':'"development"'}});
 const js=bundle.outputFiles.find(f=>f.path.endsWith('.js')).text,css=bundle.outputFiles.find(f=>f.path.endsWith('.css')).text;
 const server=createServer((req,res)=>{res.setHeader('content-type',req.url==='/fixture.js'?'text/javascript':req.url==='/fixture.css'?'text/css':'text/html');res.end(req.url==='/fixture.js'?js:req.url==='/fixture.css'?css:'<meta charset="utf-8"><link rel="stylesheet" href="/fixture.css"><style>html,body,#root{height:100%;margin:0}body{font-family:Inter,system-ui;background:var(--bg)}</style><div id="root"></div><script src="/fixture.js"></script>');});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -104,5 +104,18 @@ try {
  assert.equal(await input.inputValue(),'Next draft remains editable');
  assert.equal(await page.locator('body').getAttribute('data-submissions'),'1');
  await page.close();
+ const recovery=await browser.newPage({viewport:{width:1120,height:800}});
+ await recovery.goto(`http://127.0.0.1:${server.address().port}/?cli-fail=1`);
+ await recovery.getByRole('button',{name:'Open Chat',exact:true}).click();
+ assert.equal(await recovery.locator('#conversation-shared-one').isVisible(),true);
+ await recovery.getByRole('button',{name:'Settings',exact:true}).click();
+ assert.equal(await recovery.getByRole('radiogroup',{name:'Agent view',exact:true}).getByRole('radio',{name:'Terminal',exact:true}).getAttribute('aria-checked'),'true',
+  'an emergency Chat preview must not rewrite the saved Agent view');
+ await recovery.getByRole('button',{name:'Close settings',exact:true}).click();
+ await recovery.getByRole('button',{name:'Back to Terminal',exact:true}).click();
+ assert.equal(await recovery.locator('#cli-shared-one').isVisible(),true);
+ await recovery.reload();
+ assert.equal(await recovery.locator('#cli-shared-one').isVisible(),true);
+ await recovery.close();
  console.log('PASS Desktop xterm Terminal default, Settings switching without PTY reattachment, retained native/chat drafts, persistence, lost-ack recovery, end/cancel, both themes and compact layout (mock IPC)');
 } finally {await browser.close();server.close();}

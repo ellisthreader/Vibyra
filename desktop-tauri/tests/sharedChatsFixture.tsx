@@ -53,6 +53,7 @@ mockIPC(async (command, args) => {
  if (command !== 'shared_chat_request') return null;
  if (a.method === 'conversation.resume') {
   resumes++; document.body.dataset.resumes = String(resumes); document.body.dataset.resumedId = a.params.sessionId;
+  if (params.has('missing-rollout')) throw new Error('no rollout found for thread id fixture-thread');
   if (resumes === 1) throw new Error('Fixture: saved thread temporarily unavailable');
   session.status = 'running'; snapshot.processState = 'running'; snapshot.generation = 'g2'; snapshot.cursor++;
   return session;

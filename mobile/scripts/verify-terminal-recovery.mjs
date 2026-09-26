@@ -38,5 +38,15 @@ try {
   assert.equal(await page.evaluate(()=>document.body.dataset.submissions??'0'),'0','resume must never submit a draft');
   await page.screenshot({path:out+`/resumed-${theme}.png`});assert.deepEqual(errors,[]);await page.close();
  }
+ const missing=await browser.newPage({viewport:{width:1280,height:800}});
+ await missing.goto(`http://127.0.0.1:${server.address().port}/?resume&missing-rollout`);
+ const saved=missing.locator('#cli-shared-one');
+ await saved.getByRole('button',{name:'Resume Codex',exact:true}).click();
+ const guidance=await saved.getByRole('alert').textContent();
+ assert.match(guidance,/Codex cannot find this terminal’s saved thread/);
+ assert.match(guidance,/Start a new terminal/);
+ assert.doesNotMatch(guidance,/no rollout found|fixture-thread/);
+ assert.equal(await saved.getByRole('button',{name:'View saved chat',exact:true}).isVisible(),true);
+ await missing.close();
  console.log('PASS saved Codex history, failed resume, exact retry, no prompt submission and terminal restoration in both themes.');
 } finally {await browser.close();server.close();}
