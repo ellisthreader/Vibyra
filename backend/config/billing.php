@@ -80,6 +80,11 @@ return [
     // and the OpenRouter slug. credits = openrouter_usd_cost * 100 * multiplier.
     'models' => [
         'auto' => ['slug' => 'openai/gpt-4o-mini', 'tier' => 'budget', 'multiplier' => 1.0],
+        // Legacy short names map to the live-priced OpenRouter slugs. The full
+        // slugs stay dynamic so their existing tier and safety pricing do not move.
+        'gpt-6-sol' => ['slug' => 'openai/gpt-6-sol', 'tier' => 'balanced', 'multiplier' => 1.15],
+        'gpt-6-luna' => ['slug' => 'openai/gpt-6-luna', 'tier' => 'budget', 'multiplier' => 1.0],
+        'claude-opus-5.5' => ['slug' => 'anthropic/claude-opus-5.5', 'tier' => 'balanced', 'multiplier' => 1.15],
         'gpt-5.6' => ['slug' => 'openai/gpt-5.6-sol', 'tier' => 'premium', 'multiplier' => 1.4],
         'gpt-5.6-sol' => ['slug' => 'openai/gpt-5.6-sol', 'tier' => 'premium', 'multiplier' => 1.4],
         'gpt-5.6-terra' => ['slug' => 'openai/gpt-5.6-terra', 'tier' => 'balanced', 'multiplier' => 1.15],
