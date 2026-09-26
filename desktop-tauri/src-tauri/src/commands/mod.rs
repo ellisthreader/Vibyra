@@ -1,5 +1,4 @@
 pub mod account;
-pub mod analytics;
 pub mod account_billing;
 pub mod account_security;
 pub mod agent_conversations;
@@ -16,6 +15,7 @@ mod ai_sse;
 mod ai_sse_tests;
 mod ai_stream;
 mod ai_stream_read;
+pub mod analytics;
 pub mod clipboard;
 pub mod fs;
 pub mod github_publish;

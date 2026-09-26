@@ -1,5 +1,6 @@
 // The full changelog ships with the app so What's New stays accurate offline.
 import { RELEASE_0810 } from "./changelogRelease0810.ts";
+import { RELEASE_0811 } from "./changelogRelease0811.ts";
 import { RELEASE_089 } from "./changelogRelease089.ts";
 import { RELEASE_088 } from "./changelogRelease088.ts";
 import { RELEASE_087 } from "./changelogRelease087.ts";
@@ -30,6 +31,7 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_0811,
   RELEASE_0810,
   RELEASE_089,
   RELEASE_088,
@@ -167,10 +169,8 @@ export function entryFor(version: string): ChangelogEntry | undefined {
 /**
  * Whether this launch should open the window.
  *
- * Only after an actual upgrade: a first-ever launch has nothing to be new
- * relative to, and greeting a brand-new user with a changelog for software
- * they have never seen is noise. An unknown `seen` value is therefore treated
- * as "show nothing, remember this version".
+ * Only after an upgrade: a first launch has no changes to show. An unknown
+ * `seen` value means "show nothing, remember this version".
  */
 export function shouldOpen(
   current: string,

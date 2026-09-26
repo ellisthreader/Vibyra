@@ -10,9 +10,9 @@ use vibyra_core::pty::{FlushConfig, PtyManager};
 use vibyra_core::settings::Settings;
 
 use crate::account_session::AccountSessionManager;
-use crate::analytics_store::AnalyticsStore;
 use crate::ai_usage::AiLimits;
 use crate::ai_usage_guard::AiUsageGuard;
+use crate::analytics_store::AnalyticsStore;
 use crate::commands::voice::VoiceRecording;
 use crate::provider_auth::ProviderAuthManager;
 use crate::secret_store::SecretStore;

@@ -10,6 +10,19 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
+## 0.8.11 — 26 September 2026 (Mac release candidate)
+
+Optional Desktop usage analytics now begins with a signed-in choice: aggregate
+counts, account-linked counts, or decline. Settings > Privacy can change or
+withdraw it. The Rust collector enforces that choice, queues only bounded
+allowlisted metadata offline, and discards pending events on withdrawal. It
+records focused, non-idle engaged time and limited feature counts, without
+prompt text, terminal output, project names, or file paths. The backend must
+deploy the matching bearer-session consent and event contract before this
+candidate can report real usage. Mac packaging and release distribution are
+tracked in the candidate manifest; this section does not assert publication.
+Art: `public/releases/0.8.11.svg`.
+
 ## 0.8.10 — 25 September 2026 (Linux; candidate)
 
 Automatic Linux graphics now disables WebKit's DMA-BUF compositor as well as

@@ -10,9 +10,9 @@ use tauri::Wry;
 
 use super::{
     account, account_billing, account_security, agent_conversations, agent_install, agents, ai,
-    ai_memory, ai_service, analytics, clipboard, fs, github_publish, memory, memory_browser, model_watch,
-    perf, phone, preview, preview_share, project_brief, provider_accounts, render, report,
-    scaffold, screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli,
+    ai_memory, ai_service, analytics, clipboard, fs, github_publish, memory, memory_browser,
+    model_watch, perf, phone, preview, preview_share, project_brief, provider_accounts, render,
+    report, scaffold, screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli,
     shortcuts, speech, speech_synthesis, teammate_upload, teammates, terminal, voice,
 };
 

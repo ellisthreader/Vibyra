@@ -88,27 +88,6 @@ pub async fn consent_get(state: &AppState) -> Result<ConsentSnapshot, String> {
     Ok(snapshot(choice, true, false))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{reassert_on_new_session, Choice};
-
-    #[test]
-    fn a_new_bearer_requires_reassertion_before_collection() {
-        assert_eq!(
-            reassert_on_new_session(Choice::Unknown, Choice::Linked),
-            Some(Choice::Linked)
-        );
-        assert_eq!(
-            reassert_on_new_session(Choice::Unknown, Choice::Unknown),
-            None
-        );
-        assert_eq!(
-            reassert_on_new_session(Choice::Declined, Choice::Linked),
-            None
-        );
-    }
-}
-
 pub async fn consent_set(state: &AppState, choice: Choice) -> Result<ConsentSnapshot, String> {
     if choice == Choice::Unknown {
         return Err("Choose an analytics preference.".into());
@@ -168,4 +147,25 @@ pub async fn flush(state: &AppState) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{reassert_on_new_session, Choice};
+
+    #[test]
+    fn a_new_bearer_requires_reassertion_before_collection() {
+        assert_eq!(
+            reassert_on_new_session(Choice::Unknown, Choice::Linked),
+            Some(Choice::Linked)
+        );
+        assert_eq!(
+            reassert_on_new_session(Choice::Unknown, Choice::Unknown),
+            None
+        );
+        assert_eq!(
+            reassert_on_new_session(Choice::Declined, Choice::Linked),
+            None
+        );
+    }
 }
