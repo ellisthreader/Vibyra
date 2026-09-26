@@ -27,6 +27,10 @@ class VibesFreeTierTest extends TestCase
         Cache::put((string) config('billing.openrouter_pricing.cache_key'), ['synced_at' => now()->toIso8601String(), 'models' => [
             // Curated, and comfortably inside both ceilings.
             'qwen/qwen3.8-flash' => $price(0.15, 0.47),
+            // Deliberately paid-only despite being inside the price ceiling.
+            'openai/gpt-6-luna' => $price(0.10, 0.50),
+            'openai/gpt-6-sol' => $price(2.00, 10.00),
+            'anthropic/claude-opus-5.5' => $price(4.00, 20.00),
             'openai/gpt-oss-120b' => $price(0.04, 0.17),
             // Curated, and right on the ceiling.
             'anthropic/claude-haiku-4.5' => $price(1.00, 5.00),
@@ -50,6 +54,9 @@ class VibesFreeTierTest extends TestCase
         // The flagships stay behind it, which is the whole point of having one.
         $this->assertFalse($catalog->includedFree('x-ai/grok-4.6'), '$6.00/M out is past the ceiling');
         $this->assertFalse($catalog->includedFree('anthropic/claude-opus-5'));
+        $this->assertFalse($catalog->includedFree('openai/gpt-6-luna'), 'Explicit paid-only curation preserves the existing entitlement');
+        $this->assertFalse($catalog->includedFree('openai/gpt-6-sol'));
+        $this->assertFalse($catalog->includedFree('anthropic/claude-opus-5.5'));
     }
 
     public function test_an_explicit_pick_is_included_however_dear_or_uncurated(): void
@@ -88,14 +95,18 @@ class VibesFreeTierTest extends TestCase
         $this->assertFalse($models['openai/gpt-5.5']['trial'],
             'Nothing is named in `free_extra`, so $30/M out is published locked like any other');
         $this->assertFalse($models['anthropic/claude-opus-5']['trial']);
+        $this->assertFalse($models['openai/gpt-6-luna']['trial']);
+        $this->assertFalse($models['openai/gpt-6-sol']['trial']);
+        $this->assertFalse($models['anthropic/claude-opus-5.5']['trial']);
     }
 
     public function test_raising_the_ceiling_includes_more_and_nothing_else_changes(): void
     {
         config(['vibes.free_tier' => ['input_per_million' => 5.00, 'output_per_million' => 25.00]]);
         $catalog = app(Catalog::class);
-        $this->assertTrue($catalog->includedFree('anthropic/claude-opus-5'), 'The ceiling is the only thing deciding');
+        $this->assertTrue($catalog->includedFree('anthropic/claude-opus-5'), 'Price alone controls ordinary curated models');
         $this->assertFalse($catalog->includedFree('someone/uncurated-model'), 'Curation is a separate gate');
+        $this->assertFalse($catalog->includedFree('openai/gpt-6-luna'), 'The paid-only decision is independent of the ceiling');
     }
 
     public function test_a_free_account_cannot_spend_trial_credit_on_a_locked_model(): void
@@ -107,12 +118,14 @@ class VibesFreeTierTest extends TestCase
         $this->postJson('/api/vibes/consent', ['accepted' => true])->assertOk();
         $chat = (string) \Illuminate\Support\Str::uuid();
         $this->postJson('/api/vibes/chats', ['id' => $chat, 'title' => 'Test'])->assertOk();
-        $quote = $this->postJson('/api/vibes/quote', ['chatId' => $chat, 'text' => 'Hello',
-            'model' => 'anthropic/claude-opus-5'])->assertOk()->json();
+        foreach (['anthropic/claude-opus-5', 'openai/gpt-6-luna'] as $model) {
+            $quote = $this->postJson('/api/vibes/quote', ['chatId' => $chat, 'text' => 'Hello',
+                'model' => $model])->assertOk()->json();
 
-        // Priced, but the trial grant cannot fund it, so submitting is refused.
-        $this->postJson('/api/vibes/turns', ['id' => (string) \Illuminate\Support\Str::uuid(), 'quote' => $quote['quote']])
-            ->assertStatus(402);
+            // Both are priced, but the trial grant cannot fund either model.
+            $this->postJson('/api/vibes/turns', ['id' => (string) \Illuminate\Support\Str::uuid(), 'quote' => $quote['quote']])
+                ->assertStatus(402);
+        }
         $this->assertSame((int) config('vibes.trial_credits'),
             (int) $this->getJson('/api/vibes/wallet')->json('wallet.available'));
         $this->assertSame(0, DB::table('vibes_turns')->count());

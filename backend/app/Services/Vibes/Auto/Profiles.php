@@ -26,6 +26,9 @@ final class Profiles
 {
     private const PROFILES = [
         // Conservative routing preferences for current families, not measured rankings.
+        'openai/gpt-6-sol' => ['r' => 0.91, 'c' => 0.94, 'x' => 0.90, 'a' => ['code' => 0.12]],
+        'openai/gpt-6-luna' => ['r' => 0.75, 'c' => 0.79, 'x' => 0.86, 'a' => ['code' => 0.05]],
+        'anthropic/claude-opus-5.5' => ['r' => 0.95, 'c' => 0.97, 'x' => 0.96, 'a' => ['code' => 0.12, 'frontend' => 0.07]],
         'openai/gpt-5.6-sol' => ['r' => 0.85, 'c' => 0.88, 'x' => 0.80, 'a' => ['code' => 0.08]],
         'openai/gpt-5.6-terra' => ['r' => 0.84, 'c' => 0.89, 'x' => 0.80, 'a' => ['code' => 0.10]],
         'anthropic/claude-fable-5.1' => ['r' => 0.90, 'c' => 0.92, 'x' => 0.85, 'a' => ['code' => 0.10, 'frontend' => 0.08]],

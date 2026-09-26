@@ -117,33 +117,33 @@ return [
 
     // What a free account may spend its trial credit on. The line is a price, not
     // a hand-set flag per model, so it cannot drift as providers repost prices:
-    // a curated model at or under both ceilings is included, everything else needs
-    // purchased Vibes. Uncurated catalogue models are never trial-funded whatever
-    // they cost, because they carry no tier and no written blurb.
+    // a curated model at or under both ceilings is included unless paid-only below.
+    // Uncurated catalogue models are never trial-funded whatever they cost,
+    // because they carry no tier and no written blurb.
     //
-    // At these ceilings every curated model is included except the four flagships:
-    // Grok 4.6 ($6/M out), Sonnet 5 ($10), Opus 5 ($25) and GPT-6 Astra ($50).
+    // The price ceiling excludes the flagships. GPT-6 Luna is an explicit paid-only
+    // exception so curating its display metadata does not silently change the
+    // funding rule already shown in the shipped mobile catalogue.
     'free_tier' => [
         'input_per_million' => (float) env('VIBES_FREE_INPUT_PER_MILLION', 1.00),
         'output_per_million' => (float) env('VIBES_FREE_OUTPUT_PER_MILLION', 5.00),
     ],
 
-    // Models included for free regardless of price or curation. Empty, and meant to
-    // stay empty: it is an override, not a place to park flagships. An entry here
-    // skips the price ceiling above, so one line is enough to turn the trial from a
-    // taste of a cheap model into a free sample of a dear one - which is what it did
-    // while it held GPT-5.5 at $30/M out, dearer than Opus 5.
-    //
-    // A three-Vibe trial prices the flagships out by itself: Opus 5 quotes six Vibes
-    // for a single turn and Astra eleven, so neither can be sent at all. Leaving them
-    // off this list is what keeps the picker honest about that, rather than showing
-    // them as included and refusing them at send.
+    // Explicit free exceptions are empty; the paid-only exclusion below takes
+    // precedence, so adding a model here cannot silently unlock GPT-6 Luna.
     'free_extra' => [],
+    'trial_paid_only' => ['openai/gpt-6-luna'],
     // Curated models. 'tier' and 'released' drive the phone's picker sections
     // ("Best for building", "Newest", ...) and its "New" badge; nothing else reads
     // them. Catalogue models from the live OpenRouter snapshot carry no tier and
     // the phone groups them separately.
     'models' => [
+        'openai/gpt-6-sol' => ['family' => 'OpenAI', 'name' => 'GPT-6 Sol', 'trial' => false,
+            'tier' => 'best', 'released' => '2026-09-22', 'blurb' => 'Coding and reasoning for complex projects.'],
+        'openai/gpt-6-luna' => ['family' => 'OpenAI', 'name' => 'GPT-6 Luna', 'trial' => false,
+            'tier' => 'fast', 'released' => '2026-09-22', 'blurb' => 'Fast, focused coding and everyday tasks.'],
+        'anthropic/claude-opus-5.5' => ['family' => 'Claude', 'name' => 'Claude Opus 5.5', 'trial' => false,
+            'tier' => 'best', 'released' => '2026-09-22', 'blurb' => 'Long-running coding and careful project changes.'],
         // Best for building.
         'openai/gpt-6-astra' => ['family' => 'OpenAI', 'name' => 'GPT-6 Astra', 'trial' => false,
             'tier' => 'best', 'released' => '2026-07-14', 'blurb' => 'Deepest reasoning for hard, multi-file work.'],

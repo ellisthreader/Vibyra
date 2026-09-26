@@ -112,20 +112,20 @@ class Catalog
     }
 
     /**
-     * Whether a free account's trial credit may buy this model. The answer is its
-     * price, not a flag someone set by hand: a curated model at or under both
-     * ceilings is included and everything else needs purchased Vibes, so a provider
-     * reposting a price moves the line by itself instead of leaving a model marked
-     * "free" at twenty times what free was meant to cost.
+     * Whether a free account's trial credit may buy this model. A paid-only
+     * decision always takes precedence. Otherwise, a curated model at or under
+     * both price ceilings is included, so a provider price change can move the
+     * trial line without leaving an expensive model funded by trial credit.
      *
      * An uncurated catalogue model is never included whatever it costs — it carries
      * no tier and no written blurb, so nothing has vetted it for a first chat. The
-     * exception is `vibes.free_extra`, which is a deliberate list of picks and so
-     * skips the price ceiling and the curation gate alike.
+     * exception is `vibes.free_extra`, a deliberate list of picks that skips the
+     * price ceiling and curation gate, unless the model is also paid-only.
      */
     public function includedFree(string $id, ?array $price = null): bool
     {
-        // An explicit pick overrides both gates: it is a decision, not a deduction.
+        if (in_array($id, (array) config('vibes.trial_paid_only', []), true)) return false;
+        // An explicit free pick overrides curation and price, but not a paid-only decision.
         if (in_array($id, (array) config('vibes.free_extra', []), true)) return true;
         if (! isset(config('vibes.models')[$id])) return false;
         $price ??= $this->pricing->freshPricingFor($id) ?? $this->pricing->pricingFor($id);

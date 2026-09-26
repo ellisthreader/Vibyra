@@ -9,6 +9,27 @@ use Tests\TestCase;
 
 class CreditCalculatorTest extends TestCase
 {
+    public function test_new_legacy_aliases_match_live_dynamic_slugs_without_changing_tiers_or_estimates(): void
+    {
+        $prices = [
+            'openai/gpt-6-sol' => ['prompt' => '0.000002', 'completion' => '0.00001'],
+            'openai/gpt-6-luna' => ['prompt' => '0.0000001', 'completion' => '0.0000005'],
+            'anthropic/claude-opus-5.5' => ['prompt' => '0.000004', 'completion' => '0.00002'],
+        ];
+        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog->method('freshPricingFor')->willReturnCallback(fn ($id) => $prices[$id] ?? null);
+        $calc = new CreditCalculator($catalog);
+
+        foreach (['gpt-6-sol' => 'openai/gpt-6-sol', 'gpt-6-luna' => 'openai/gpt-6-luna',
+            'claude-opus-5.5' => 'anthropic/claude-opus-5.5'] as $alias => $slug) {
+            $this->assertSame($slug, $calc->resolveSlug($alias));
+            $this->assertSame($calc->tier($slug), $calc->tier($alias));
+            $this->assertSame($calc->modelConfig($slug)['multiplier'], $calc->modelConfig($alias)['multiplier']);
+            $this->assertSame($calc->estimateCredits($slug, 100000, 100000),
+                $calc->estimateCredits($alias, 100000, 100000));
+        }
+    }
+
     public function test_current_claude_models_use_pinned_slugs_and_conservative_fallback_rates(): void
     {
         $catalog = $this->createMock(OpenRouterPricingCatalog::class);

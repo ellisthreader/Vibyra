@@ -49,6 +49,19 @@ class VibesAutoGuardrailsTest extends TestCase
         foreach ($choices as $row) $this->assertContains($row['id'], $ids);
     }
 
+    public function test_paid_only_luna_cannot_be_auto_selected_with_trial_credit(): void
+    {
+        $luna = VibesCatalogue::models()['openai/gpt-5.6-luna'];
+        $luna['pricing'] = ['prompt' => '0.0000001', 'completion' => '0.0000005'];
+        $this->snapshot(['openai/gpt-6-luna' => $luna]);
+        $trial = Situation::of(1200, 3, true, false, 0, 0, paidBudget: 0);
+        $paid = Situation::of(1200, 50, false, false, 0, 0);
+        $this->assertNotContains('openai/gpt-6-luna', array_column((new Candidates(
+            app(Catalog::class), app(OpenRouterPricingCatalog::class)))->for($trial), 'id'));
+        $this->assertContains('openai/gpt-6-luna', array_column((new Candidates(
+            app(Catalog::class), app(OpenRouterPricingCatalog::class)))->for($paid), 'id'));
+    }
+
     public function test_a_decision_reads_one_snapshot_even_with_tools_vision_and_trial_constraints(): void
     {
         $snapshot = VibesCatalogue::models();
