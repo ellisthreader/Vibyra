@@ -1,4 +1,5 @@
 import { chatRequest, type AgentItem } from '../../ipc/sharedChats';
+import { trackDesktopEvent } from '../../ipc/analytics';
 
 // Persist before dispatch. An IPC timeout or webview reload must never invent a
 // second submission for an action the computer may already have accepted.
@@ -10,6 +11,7 @@ export async function sendPrompt(sessionId: string, text: string, sendAsText = f
     const receipt = await chatRequest('turn.submissionStatus', { sessionId, submissionId: previous });
     if (receipt.status === 'accepted') {
       localStorage.removeItem(key);
+      trackDesktopEvent('desktop_prompt_submitted', {}, previous);
       throw new Error('Your previous message was delivered. Review it above before sending another.');
     }
     if (receipt.status !== 'notFound' && receipt.status !== 'failed') {
@@ -26,6 +28,7 @@ export async function sendPrompt(sessionId: string, text: string, sendAsText = f
   }
   if (receipt.status !== 'accepted') throw new Error('Delivery is uncertain. Your draft is kept.');
   localStorage.removeItem(key);
+  trackDesktopEvent('desktop_prompt_submitted', {}, submissionId);
 }
 export async function answerRequest(sessionId: string, item: AgentItem,
   response: { decision: 'accept' | 'decline' | 'acceptForSession' | 'acceptForProject' } | { answers: Record<string, { answers: string[] }> }) {

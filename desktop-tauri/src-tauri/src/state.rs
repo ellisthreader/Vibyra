@@ -10,6 +10,7 @@ use vibyra_core::pty::{FlushConfig, PtyManager};
 use vibyra_core::settings::Settings;
 
 use crate::account_session::AccountSessionManager;
+use crate::analytics_store::AnalyticsStore;
 use crate::ai_usage::AiLimits;
 use crate::ai_usage_guard::AiUsageGuard;
 use crate::commands::voice::VoiceRecording;
@@ -21,6 +22,7 @@ use crate::state_openai_key::{Loaded, SettingsFile, StoredKey};
 pub struct AppState {
     pub shared_chats: Arc<crate::shared_chats::SharedChats>,
     pub account: Arc<AccountSessionManager>,
+    pub analytics: AnalyticsStore,
     pub phone: Arc<Mutex<crate::phone::PhoneConnection>>,
     pub manager: Arc<PtyManager>,
     pub sink: Arc<ChannelSink>,
@@ -106,6 +108,7 @@ impl AppState {
         Self {
             shared_chats,
             account,
+            analytics: AnalyticsStore::load(settings_path.with_file_name("analytics-state.json")),
             phone,
             manager,
             sink,

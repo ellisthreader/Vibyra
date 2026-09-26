@@ -1,4 +1,5 @@
 import { computerName } from "../../lib/platform";
+import { AnalyticsSettings } from "../analytics/AnalyticsSettings";
 import type { Settings } from "../../types";
 import { ClearWorkspaceRow } from "./ClearWorkspaceRow";
 import { PerformanceRow } from "./PerformanceCard";
@@ -60,6 +61,7 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
 
       <SettingsBlock label="Privacy" panel="privacy">
         <div className="settings-group">
+          <AnalyticsSettings />
           <ProjectContextRow settings={settings} update={update} />
           <SettingRow
             label="Restore terminal output"

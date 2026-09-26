@@ -93,6 +93,7 @@ import "./styles/settings-hint.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
 import "./styles/settings-account.css";
+import "./styles/analytics-consent.css";
 import "./styles/settings-account.part-02.css";
 import "./styles/settings-shell.css";
 import "./styles/settings-controls.css";

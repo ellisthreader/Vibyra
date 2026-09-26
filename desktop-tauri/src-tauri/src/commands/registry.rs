@@ -10,7 +10,7 @@ use tauri::Wry;
 
 use super::{
     account, account_billing, account_security, agent_conversations, agent_install, agents, ai,
-    ai_memory, ai_service, clipboard, fs, github_publish, memory, memory_browser, model_watch,
+    ai_memory, ai_service, analytics, clipboard, fs, github_publish, memory, memory_browser, model_watch,
     perf, phone, preview, preview_share, project_brief, provider_accounts, render, report,
     scaffold, screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli,
     shortcuts, speech, speech_synthesis, teammate_upload, teammates, terminal, voice,
@@ -52,6 +52,10 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         phone::phone_disconnect_device,
         phone::phone_vault_choose,
         phone::phone_vault_clear,
+        analytics::analytics_track,
+        analytics::analytics_consent_get,
+        analytics::analytics_consent_set,
+        analytics::analytics_flush,
         account::account_snapshot,
         account::account_restore,
         account::account_login_email,

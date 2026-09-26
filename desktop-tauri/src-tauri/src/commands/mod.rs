@@ -1,4 +1,5 @@
 pub mod account;
+pub mod analytics;
 pub mod account_billing;
 pub mod account_security;
 pub mod agent_conversations;

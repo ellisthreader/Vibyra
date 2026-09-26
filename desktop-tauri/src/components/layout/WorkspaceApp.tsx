@@ -3,6 +3,7 @@ import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
 import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
+import { AnalyticsConsentDialog } from "../analytics/AnalyticsConsentDialog";
 import { NewModelsNotice } from "../home/NewModelsNotice";
 import { CloseConfirmModal } from "./CloseConfirmModal";
 import { ProjectStrip } from "./ProjectStrip";
@@ -168,6 +169,7 @@ export function WorkspaceApp() {
       {!welcomeOpen && newModelsOpen ? <NewModelsNotice
         onClose={() => setNewModelsOpen(false)} onStart={startWithNewModels}
       /> : null}
+      <AnalyticsConsentDialog suspended={welcomeOpen || newModelsOpen} />
     </div>
   );
 }

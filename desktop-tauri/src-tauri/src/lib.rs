@@ -30,6 +30,11 @@ mod ai_usage;
 mod ai_usage_guard;
 mod ai_usage_limits;
 mod ai_usage_permit;
+mod analytics;
+mod analytics_event;
+mod analytics_store;
+#[cfg(test)]
+mod analytics_store_tests;
 #[cfg(test)]
 mod ai_usage_tests;
 mod close_guard;

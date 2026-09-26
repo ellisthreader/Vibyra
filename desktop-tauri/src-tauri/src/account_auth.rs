@@ -83,6 +83,7 @@ pub async fn logout(state: &AppState) -> AccountSnapshot {
 /// than repeating it. A path that only cleared the credential left every
 /// terminal running for the page that reloads next to never see again.
 pub fn teardown(state: &AppState) {
+    state.analytics.clear_session();
     clear_preview_grants(state);
     for id in state.manager.close_all() {
         state.sink.detach(id);

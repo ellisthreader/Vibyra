@@ -2,7 +2,10 @@ import { lazy, Suspense, useEffect, useRef } from "react";
 
 import { AuthScreen } from "./components/auth/AuthScreen";
 import { onAccountChanged } from "./ipc/account";
+import { analyticsFlush, trackDesktopEvent } from "./ipc/analytics";
+import { useDesktopEngagement } from "./lib/useDesktopEngagement";
 import { useAccountStore } from "./state/accountStore";
+import { useAnalyticsConsentStore } from "./state/analyticsConsentStore";
 
 // Loaded once the account gate passes, so the sign-in screen never parses the
 // workspace (terminals, panels, every store) it cannot show yet.
@@ -15,7 +18,12 @@ const PROFILE_REFRESH_GAP_MS = 5_000;
  * mounts once the account gate reports a verified sign-in. */
 export default function App() {
   const status = useAccountStore((s) => s.snapshot.status);
+  const analyticsChoice = useAnalyticsConsentStore((s) => s.choice);
+  const analyticsAvailable = useAnalyticsConsentStore((s) => s.available);
   const wasSignedIn = useRef(false);
+  const countedOpen = useRef(false);
+  useDesktopEngagement(status === "signedIn" && analyticsAvailable
+    && (analyticsChoice === "aggregate" || analyticsChoice === "linked"));
 
   useEffect(() => {
     void useAccountStore.getState().restore();
@@ -55,10 +63,30 @@ export default function App() {
   useEffect(() => {
     if (status === "signedIn") {
       wasSignedIn.current = true;
+      void useAnalyticsConsentStore.getState().load();
     } else if (wasSignedIn.current) {
       window.location.reload();
     }
   }, [status]);
+
+  useEffect(() => {
+    if (status !== "signedIn" || !analyticsAvailable || countedOpen.current) return;
+    if (analyticsChoice !== "aggregate" && analyticsChoice !== "linked") return;
+    countedOpen.current = true;
+    trackDesktopEvent("desktop_app_opened");
+  }, [status, analyticsAvailable, analyticsChoice]);
+
+  useEffect(() => {
+    if (status !== "signedIn" || !analyticsAvailable) return;
+    if (analyticsChoice !== "aggregate" && analyticsChoice !== "linked") return;
+    const flush = () => { void analyticsFlush().catch(() => {}); };
+    window.addEventListener("online", flush);
+    window.addEventListener("focus", flush);
+    return () => {
+      window.removeEventListener("online", flush);
+      window.removeEventListener("focus", flush);
+    };
+  }, [status, analyticsAvailable, analyticsChoice]);
 
   if (status !== "signedIn") {
     return <AuthScreen />;

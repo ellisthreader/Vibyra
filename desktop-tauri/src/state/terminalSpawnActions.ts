@@ -1,5 +1,6 @@
 import type { StoreApi } from "zustand";
 import { createSshTerminal, createTerminal, setTerminalVisibility } from "../ipc/terminal";
+import { trackDesktopEvent } from "../ipc/analytics";
 import { newAgentSessionId } from "../lib/agentSessions";
 import { accentFor } from "../lib/providerAccents";
 import { estimateSpawnDimensions } from "../lib/spawnSize";
@@ -97,6 +98,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
           lastFocusedAt: Date.now(),
         };
         placePane(set, get, pane, options?.replaces);
+        trackDesktopEvent("desktop_terminal_started", { provider: agent.id, ...(options?.model ? { model: options.model } : {}) });
         return info.id;
       } catch (error) {
         if (options?.replaces !== undefined) throw error;
@@ -132,6 +134,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
           lastFocusedAt: Date.now(),
         };
         placePane(set, get, pane, options?.replaces);
+        trackDesktopEvent("desktop_terminal_started", { provider: "ssh" });
       } catch (error) {
         if (options?.replaces !== undefined) throw error;
         useWorkspaceStore.getState().setError(String(error));

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { aiChat, aiChatStop, type ChatMessage } from "../ipc/ai";
+import { trackDesktopEvent } from "../ipc/analytics";
 import { toolSchemas } from "../lib/vibyraTools";
 import { actOnToolCalls } from "./chatAct";
 import { buildPrompt } from "./chatSystemPrompt";
@@ -161,6 +162,7 @@ export const useChatStore = create<ChatStore>((set, get) => {
         threads: { ...state.threads, [projectId]: [...(state.threads[projectId] ?? []), question, answer] },
         error: null,
       }));
+      trackDesktopEvent("desktop_prompt_submitted");
       await run(projectId, answer, content);
     },
 

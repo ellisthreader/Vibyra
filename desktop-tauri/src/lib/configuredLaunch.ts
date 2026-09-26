@@ -1,4 +1,5 @@
 import { resolveLaunchAccount } from "./resolveLaunchAccount";
+import { trackDesktopEvent } from "../ipc/analytics";
 import type { ResolvedAgent } from "../types";
 import { launchConversationTerminal } from "./launchConversationTerminal";
 import { launchRoute, type AgentView } from "./launchRoute";
@@ -84,6 +85,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
           safeSnapshotFingerprint: fingerprint,
         });
         started.push({ conversationId });
+        trackDesktopEvent("desktop_terminal_started", { provider: launch.agent.id, ...(launch.model ? { model: launch.model } : {}) });
       } catch (error) {
         useWorkspaceStore.getState().setError(String(error));
         break;

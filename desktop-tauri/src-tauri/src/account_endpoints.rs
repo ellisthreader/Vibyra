@@ -37,6 +37,9 @@ pub enum Endpoint<'a> {
     HostNotificationCredential,
     HostNotificationEvents,
     ReportReady,
+    AnalyticsEvents,
+    AnalyticsConsent,
+    AnalyticsConsentUpdate,
     OauthStart(&'a str),
     OauthStatus(&'a str, &'a str),
 }
@@ -71,6 +74,10 @@ impl Endpoint<'_> {
             }
             Endpoint::HostNotificationEvents => Ok("/api/notifications/v1/host-events".into()),
             Endpoint::ReportReady => Ok("/api/reports/ready".into()),
+            Endpoint::AnalyticsEvents => Ok("/api/analytics/events".into()),
+            Endpoint::AnalyticsConsent | Endpoint::AnalyticsConsentUpdate => {
+                Ok("/api/analytics/consent?surface=desktop".into())
+            }
             Endpoint::RemoteRegister => Ok("/api/remote/hosts".into()),
             Endpoint::RevokeDevice(device) => {
                 // The backend's device id is a SHA-256 hex digest. Checking the
@@ -106,11 +113,13 @@ impl Endpoint<'_> {
             | Endpoint::BillingPlans
             | Endpoint::VibesWallet
             | Endpoint::ReportReady => reqwest::Method::GET,
+            Endpoint::AnalyticsConsent => reqwest::Method::GET,
             Endpoint::Logout
             | Endpoint::TwoFactorDisable
             | Endpoint::RevokeDevice(_)
             | Endpoint::RevokeSessions
             | Endpoint::DeleteAccount => reqwest::Method::DELETE,
+            Endpoint::AnalyticsConsentUpdate => reqwest::Method::PUT,
             _ => reqwest::Method::POST,
         }
     }
