@@ -13,8 +13,8 @@ import type { TermEvent } from '../../types';
 
 const FIT_THROTTLE_MS = 90;
 
-export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
-  sessionId: string; visible: boolean; fontSize: number; onFocus: () => void;
+export function ConversationCliView({ sessionId, visible, fontSize, onFocus, onOpenChat }: {
+  sessionId: string; visible: boolean; fontSize: number; onFocus: () => void; onOpenChat: () => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<{ term: Terminal; fit: FitAddon } | null>(null);
@@ -102,7 +102,7 @@ export function ConversationCliView({ sessionId, visible, fontSize, onFocus }: {
   return <div className="conversation-cli-body">
     {error && <div className="conversation-cli-error" role="alert"><span>{error}</span>
       <button className="btn" onClick={() => setAttempt(n => n + 1)}>Reconnect terminal</button>
-      <button className="btn" onClick={() => void useSettingsStore.getState().update({ agentView: 'chat' }).catch(fail => setError(String(fail)))}>Open Chat</button></div>}
+      <button className="btn" onClick={onOpenChat}>Open Chat</button></div>}
     <div ref={host} className="conversation-cli-host" aria-label="Codex CLI terminal" onMouseDown={onFocus}
       onDragOver={event => { if (dropCarriesText(event.dataTransfer.types)) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } }}
       onDrop={event => { const text = terminalDropText(event.dataTransfer); if (text) {

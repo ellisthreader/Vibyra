@@ -82,7 +82,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
           permissionMode: launch.permissionMode,
           workspaceMode: launch.safeMode ? "safe" : "shared",
           safeSnapshotFingerprint: fingerprint,
-        });
+        }, launch.view === undefined);
         started.push({ conversationId });
       } catch (error) {
         useWorkspaceStore.getState().setError(String(error));
