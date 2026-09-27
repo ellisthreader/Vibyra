@@ -1,0 +1,20 @@
+.home-footer { background: var(--home-dark); color: #ecf1fa; }
+.footer-cta { padding-block: 92px 80px; border-bottom: 1px solid #ffffff1a; display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+.footer-cta h2 { font-size: clamp(44px, 5.4vw, 76px); line-height: 1.06; letter-spacing: -.055em; font-weight: 600; }
+.footer-cta h2 > span { color: #a6adba; }
+.footer-cta-actions { padding-top: 30px; }
+.footer-cta-actions .action { background: #f5f7fa; color: #171a21 !important; padding-inline: 25px; }
+.footer-cta-actions .action:hover { background: #fff; }
+.footer-cta-actions > p { color: #a6adba; font-size: 12px; text-align: center; margin-top: 15px; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1.15fr 1fr; padding-block: 49px; gap: 40px; }
+.footer-brand .brand { font-size: 28px; }
+.footer-brand > p { font-size: 13px; color: #a6adba; line-height: 1.9; margin-top: 18px; }
+.footer-grid h3 { color: #f5f7fa; font-size: 13px; font-weight: 700; margin-bottom: 17px; }
+.footer-grid > div:not(:first-child) > a { display: block; font-size: 13px; color: #a6adba; margin-block: 3px; padding-block: 7px; }
+.footer-grid a:hover { color: #c5d4f6; }
+.footer-bottom { border-top: 1px solid #ffffff1a; padding-block: 23px; display: flex; align-items: center; gap: 25px; font-size: 11px; color: #a6adba; }
+.footer-bottom > span:nth-child(2) { margin-inline: auto; }
+.footer-bottom > a { color: #b1bfdb; }
+
+.footer-signature { padding-block: 0 32px; overflow: hidden; font-size: clamp(110px, 24vw, 340px); line-height: .85; letter-spacing: -.085em; font-weight: 750; color: #ffffff0a; user-select: none; }
+.footer-signature span { color: #5b7cfa; }

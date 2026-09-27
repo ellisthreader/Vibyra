@@ -75,6 +75,15 @@ jobs:
       - name: Check Expo dependency alignment
         working-directory: mobile
         run: npx expo install --check
+      - name: Set up PHP for mobile/backend catalogue parity
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+      - name: Install locked backend dependencies for catalogue parity
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
       - name: Validate mobile source and tests
         run: npm run check:mobile
       - name: Export iOS and web

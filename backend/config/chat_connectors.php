@@ -36,11 +36,11 @@ return [
             'category' => 'Development',
             'abilities' => [
                 'List the repositories you allow access to',
-                'Search issues and pull requests',
+                'Search and read issues, comments and pull requests',
                 'Review PR changes, tests and CI; summarise commits and merged PRs',
                 'Open a new issue on a repository',
             ],
-            'reads' => 'Repositories, source and test files, pull request diffs, reviews, CI status, issues and commits you allow access to.',
+            'reads' => 'Repositories, source and test files, issue discussions, pull request diffs, reviews, CI status and commits you allow access to.',
             'writes' => 'Opens issues you ask for. It never closes, edits or comments on one, and it touches no code, branch or pull request.',
             'credential' => [
                 'label' => 'Sign in with GitHub',

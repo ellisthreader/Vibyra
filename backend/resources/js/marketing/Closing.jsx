@@ -22,8 +22,6 @@ const FOOTER_LINKS = [
   ["#pricing", "Pricing"],
   ["#faq", "FAQ"],
   ["/login", "Log in"],
-  ["/legal/privacy", "Privacy"],
-  ["/?analytics=choices", "Analytics choices"],
 ];
 
 export function Footer() {
@@ -39,7 +37,7 @@ export function Footer() {
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-3 sm:ml-auto" aria-label="Footer">
           {FOOTER_LINKS.map(([href, label]) => (
-            <a key={label} href={href} data-analytics-choices={label === "Analytics choices" || undefined} className="text-sm text-ink-muted hover:text-ink">
+            <a key={label} href={href} className="text-sm text-ink-muted hover:text-ink">
               {label}
             </a>
           ))}

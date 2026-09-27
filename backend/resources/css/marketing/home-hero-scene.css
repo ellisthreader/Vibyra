@@ -1,0 +1,93 @@
+/* A quiet architectural frame puts the working software in the foreground. */
+.marketing-home-cinematic { --hero-text: #f5f7fa; --hero-muted: #a6adba; --hero-border: #2b2f38; background: var(--home-dark); }
+.marketing-home-cinematic > .home-header { background: #0e0f12ed; border-bottom-color: #ffffff0c; color: var(--hero-text); backdrop-filter: blur(16px); }
+.marketing-home-cinematic > .home-header .desktop-nav a { color: #a6adba; }
+.marketing-home-cinematic > .home-header .desktop-nav a:hover,
+.marketing-home-cinematic > .home-header .desktop-nav a[aria-current],
+.marketing-home-cinematic > .home-header .login-link:hover { color: #fff; }
+.marketing-home-cinematic > .home-header .nav-actions .action { color: #171a21 !important; background: #f5f7fa; border-color: #f5f7fa; box-shadow: none; }
+.marketing-home-cinematic > .home-header .nav-actions .action:hover { background: #fff; }
+.marketing-home-cinematic > .home-header .mobile-nav { background: #13151a; border-color: var(--hero-border); }
+.marketing-home-cinematic > .home-header .mobile-nav a { border-color: var(--hero-border); }
+.home-hero { background: var(--home-dark); color: var(--hero-text); }
+.hero-scene { position: relative; isolation: isolate; padding-bottom: 40px; overflow: hidden; }
+
+/* Atmosphere: a faint drafting grid that fades out, and one cobalt light the
+ * window sits in. Quiet enough that the software stays the subject. */
+.hero-atmosphere { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+.hero-atmosphere::before { content: ''; position: absolute; inset: 0 max(24px, calc((100vw - 1360px) / 2)); border-inline: 1px solid #ffffff06;; -webkit-mask-image: linear-gradient(#000 55%, transparent 92%); mask-image: linear-gradient(#000 55%, transparent 92%); }
+.hero-grid { position: absolute; inset: 0 0 auto; height: 760px; background-image: linear-gradient(#ffffff07 1px, transparent 1px), linear-gradient(90deg, #ffffff07 1px, transparent 1px); background-size: 64px 64px; background-position: center -1px; -webkit-mask-image: radial-gradient(ellipse 70% 62% at 50% 0%, #000 30%, transparent 100%); mask-image: radial-gradient(ellipse 70% 62% at 50% 0%, #000 30%, transparent 100%); }
+.hero-glow { position: absolute; left: 50%; top: 380px; width: min(1500px, 120vw); height: 720px; transform: translateX(-50%); background: radial-gradient(ellipse 50% 42% at 50% 30%, #315bd838, transparent 70%), radial-gradient(ellipse 26% 16% at 50% 14%, #7c95ff24, transparent 72%); }
+
+.hero-intro { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 372px; align-items: end; gap: 56px; padding-block: 60px 52px; }
+
+.hero-announce { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 30px; padding: 5px 13px 5px 5px; border: 1px solid #ffffff14; border-radius: 999px; background: #ffffff06; color: #c9cfda; font-size: 13px; font-weight: 550; letter-spacing: -.01em; line-height: 1.3; transition: border-color .2s, background .2s, color .2s; }
+.hero-announce > span { padding: 3px 9px; border-radius: 999px; background: #315bd8; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .01em; }
+.hero-announce svg { color: #8a93a4; transition: transform .2s, color .2s; }
+.hero-announce:hover { border-color: #ffffff2a; background: #ffffff0b; color: #fff; }
+.hero-announce:hover svg { color: #fff; transform: translateX(2px); }
+
+.hero-intro h1 { font-size: clamp(62px, 6.9vw, 108px); line-height: .98; letter-spacing: -.066em; font-weight: 650; padding-bottom: .06em; background: linear-gradient(180deg, #fff 10%, #dfe3ea 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-intro h1 > span { background: linear-gradient(180deg, #aab3c4 10%, #6d7789 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.hero-aside { padding-bottom: 10px; }
+.hero-description { color: #a6adba; font-size: 17px; line-height: 1.65; letter-spacing: -.018em; text-wrap: pretty; }
+.hero-description span { color: #f5f7fa; }
+.hero-actions { display: flex; align-items: center; gap: 10px; margin-top: 28px; }
+.hero-actions .action { min-height: 48px; border-radius: 9px; padding-inline: 18px; gap: 14px; font-size: 14px; }
+.hero-actions .action-primary { color: #111318 !important; background: #f5f7fa; border-color: #f5f7fa; box-shadow: 0 1px 0 #ffffff inset, 0 8px 24px -10px #b8c6ff66; }
+.hero-actions .action-primary:hover { background: #fff; box-shadow: 0 1px 0 #ffffff inset, 0 10px 30px -10px #b8c6ff99; }
+.hero-actions .action-secondary { color: #dfe3ea; border-color: #ffffff1c; background: #ffffff05; }
+.hero-actions .action-secondary:hover { color: #fff; border-color: #ffffff38; background: #ffffff0c; }
+.hero-proof { display: flex; align-items: center; gap: 12px; white-space: nowrap; margin-top: 22px !important; color: #8e97a7; font-size: 12.5px; line-height: 1.4; }
+.hero-proof-logos { display: flex; flex: none; }
+.hero-proof-logos i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #1c1f26; box-shadow: 0 0 0 2px var(--home-dark); }
+.hero-proof-logos i + i { margin-left: -6px; }
+.hero-proof-logos img { width: 13px; height: 13px; object-fit: contain; }
+
+/* The window: a lit top edge and a deep, slightly cobalt shadow. */
+.hero-showcase { position: relative; scroll-margin-top: 24px; }
+.hero-showcase::before { content: ''; position: absolute; z-index: 2; top: 0; left: 12%; right: 12%; height: 1px; background: linear-gradient(90deg, transparent, #a9b9ff 50%, transparent); opacity: .7; pointer-events: none; }
+.hero-showcase::after { content: ''; position: absolute; z-index: -1; top: -40px; left: 18%; right: 18%; height: 120px; background: radial-gradient(ellipse at 50% 100%, #5b7cfa2e, transparent 70%); pointer-events: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-headline, .hero-aside { animation: hero-arrive .7s cubic-bezier(.2, .7, .2, 1) both; }
+  .hero-aside { animation-delay: .08s; }
+  .hero-showcase { animation: hero-rise 1s .16s cubic-bezier(.2, .7, .2, 1) both; }
+  .hero-glow { animation: hero-light 1.6s .1s ease-out both; }
+}
+@keyframes hero-arrive { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes hero-rise { from { opacity: 0; transform: translateY(28px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes hero-light { from { opacity: 0; } to { opacity: 1; } }
+
+@media (min-width: 1600px) { .hero-intro { padding-block: 92px 68px; } }
+@media (max-width: 1150px) {
+  .hero-intro { grid-template-columns: minmax(0, 1fr) 344px; gap: 32px; padding-block: 60px 50px; }
+  .hero-proof-lead { display: none; }
+  .hero-intro h1 { font-size: clamp(60px, 6.8vw, 84px); }
+  .hero-description { font-size: 15.5px; }
+  .hero-actions .action { padding-inline: 15px; font-size: 13px; }
+}
+@media (max-width: 800px) {
+  .hero-intro { grid-template-columns: 1fr; gap: 26px; padding-block: 48px 40px; }
+  .hero-intro h1 { font-size: clamp(57px, 9.5vw, 76px); }
+  .hero-announce { margin-bottom: 26px; }
+  .hero-aside { max-width: 520px; }
+  .hero-description { max-width: 430px; font-size: 16px; }
+  .hero-actions { margin-top: 24px; }
+  .hero-scene { padding-bottom: 44px; }
+  .hero-glow { top: 460px; }
+}
+@media (max-width: 580px) {
+  .hero-intro { padding-block: 36px 32px; gap: 22px; }
+  .hero-intro h1 { font-size: clamp(46px, 12vw, 60px); line-height: 1.02; }
+  .hero-announce { gap: 8px; margin-bottom: 24px; font-size: 12px; }
+  .hero-description { font-size: 15.5px; }
+  .hero-actions .action { flex: 1 1 0; justify-content: center; padding-inline: 12px; }
+  .hero-actions .action-secondary svg { display: none; }
+  .hero-proof { font-size: 12px; }
+  .hero-proof-lead { display: none; }
+  .hero-showcase { width: calc(100% - 24px); }
+  .hero-atmosphere::before { inset-inline: 12px; }
+  .hero-grid { background-size: 44px 44px; }
+}

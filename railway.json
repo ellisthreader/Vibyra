@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd backend && composer install --no-dev --optimize-autoloader --no-interaction && php artisan config:clear && php artisan route:clear"
+    "buildCommand": "cd backend && composer install --no-dev --optimize-autoloader --no-interaction && npm ci && npm run build && php artisan config:clear && php artisan route:clear"
   },
   "deploy": {
     "startCommand": "cd backend && bash scripts/start-production.sh",

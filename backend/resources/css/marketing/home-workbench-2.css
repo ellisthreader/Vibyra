@@ -1,0 +1,140 @@
+/* ── The window shell, with the sockets its panes sit in ─────────────────── */
+.wbx-shell {
+    left: var(--shell-x);
+    top: var(--shell-y);
+    width: var(--shell-w);
+    height: calc(var(--chrome-h) + var(--body-h));
+}
+.wbx-shell .wbx-lift {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--r-shell);
+    background: var(--bg);
+    box-shadow: 0 2px 6px #10142a1f, 0 44px 90px #1c22443d;
+    overflow: hidden;
+}
+.wbx-chrome {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--chrome-h);
+    padding: 0 12px;
+    flex: none;
+    border-bottom: 1px solid var(--line);
+    background: var(--rail);
+}
+.wbx-mark {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 6px;
+    background: linear-gradient(150deg, #6f8cff, #3f5fd8);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}
+.wbx-brand { font-size: 12.5px; font-weight: 650; color: var(--text); letter-spacing: -0.01em; }
+.wbx-modes { display: inline-flex; gap: 2px; margin-left: 6px; padding: 3px; border-radius: 8px; background: #191c23; }
+.wbx-modes > i {
+    padding: 4px 9px;
+    border-radius: var(--r-control);
+    font-size: 11px;
+    font-style: normal;
+    color: var(--dim);
+}
+.wbx-modes > .is-on { background: var(--accent-soft); color: var(--accent-2); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.wbx-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    height: 26px;
+    margin-left: 8px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: #101218;
+    font-size: 11px;
+    color: var(--dim);
+    white-space: nowrap;
+    overflow: hidden;
+}
+.wbx-search > b {
+    margin-left: auto;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    color: var(--dim);
+}
+.wbx-window { display: inline-flex; gap: 7px; flex: none; margin-left: 2px; }
+.wbx-window > i { width: 9px; height: 1.5px; border-radius: 1px; background: #4b515e; }
+.wbx-window > i:nth-child(2) { height: 8px; width: 8px; border-radius: 2px; background: none; box-shadow: inset 0 0 0 1.5px #4b515e; }
+.wbx-window > i:last-child { transform: rotate(45deg); box-shadow: 0 0 0 0 transparent; position: relative; }
+.wbx-window > i:last-child::after { content: ''; position: absolute; inset: 0; border-radius: 1px; background: #4b515e; transform: rotate(90deg); }
+
+.wbx-body { display: flex; flex: 1; min-height: 0; }
+.wbx-rail {
+    display: flex;
+    flex-direction: column;
+    width: var(--rail-w);
+    flex: none;
+    padding: 12px 10px;
+    border-right: 1px solid var(--line);
+    background: var(--rail);
+}
+.wbx-rail-head {
+    display: flex;
+    align-items: center;
+    padding: 0 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+}
+.wbx-rail-head > span { margin-left: auto; font-size: 13px; font-family: var(--font-ui); }
+.wbx-session {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 8px;
+    border-radius: var(--r-control);
+    font-size: 12px;
+    color: var(--muted);
+}
+.wbx-session.is-on:first-of-type { background: var(--accent-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.wbx-session > b {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--dim);
+}
+.wbx-dot { width: 6px; height: 6px; flex: none; border-radius: 50%; background: #3d434f; }
+.wbx-session.is-on .wbx-dot { background: var(--success); box-shadow: 0 0 0 3px rgba(55, 199, 138, 0.16); }
+.wbx-rail-foot {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: auto;
+    padding: 9px 8px 0;
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    color: var(--dim);
+}
+
+.wbx-sockets { display: flex; gap: var(--gap); flex: 1; min-width: 0; padding: var(--pad); background: var(--workspace); }
+.wbx-socket {
+    border: 1px dashed var(--accent-border);
+    border-radius: var(--r-panel);
+    background: rgba(91, 124, 250, 0.05);
+}
+.wbx-socket-terminals { width: var(--term-w); flex: none; }
+.wbx-socket-dock { width: var(--dock-w); flex: none; }

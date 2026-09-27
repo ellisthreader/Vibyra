@@ -1,0 +1,45 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  group: { borderBottomWidth: StyleSheet.hairlineWidth },
+  company: {
+    minHeight: 64,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    gap: 13,
+    alignItems: 'center',
+  },
+  model: {
+    minHeight: 56,
+    paddingVertical: 10,
+    paddingLeft: 20,
+    paddingRight: 12,
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  more: {
+    minHeight: 46,
+    paddingLeft: 62,
+    paddingRight: 13,
+    justifyContent: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  moreText: { fontSize: 14, fontWeight: '600', letterSpacing: -0.15 },
+  text: { flex: 1, gap: 2 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  name: { fontSize: 15, lineHeight: 20, fontWeight: '600', letterSpacing: -0.25, flexShrink: 1 },
+  badge: {
+    fontSize: 11,
+    fontWeight: '600',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
+  detail: { fontSize: 13, lineHeight: 18 },
+  dim: { opacity: 0.45 },
+  lock: { width: 24, height: 24, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+});

@@ -1,0 +1,120 @@
+/* Section 02: the phone is the star. It stands in front of the Mac it drives,
+ * on a lit desk at night, with the headline beside it. The stage is drawn at
+ * 1240×840 and scaled with `--s`; `--p` is the current chapter's progress. */
+
+.mobile-section {
+  --night: #080c19; --glow: #315bd8; --ice: #eef1f7; --dim: #8d97ad; --rule: #1f2638;
+  position: relative; overflow: hidden; color: var(--ice);
+  background: linear-gradient(var(--home-dark), var(--night) 18%, var(--night) 82%, var(--home-dark));
+}
+.mobile-head { position: relative; z-index: 3; padding-block: 120px 0; pointer-events: none; }
+.mobile-head .section-label { pointer-events: auto; }
+.mobile-head h2 { font-size: clamp(48px, 6vw, 88px); letter-spacing: -.055em; line-height: 1; font-weight: 650; color: var(--ice); text-wrap: balance; }
+
+/* The stage */
+.mobile-visual { position: relative; padding-block: 0 96px; }
+.mobile-visual:focus-visible { outline: 2px solid #809aff; outline-offset: 12px; border-radius: 6px; }
+.mobile-stage { position: relative; height: calc(840px * var(--s, 1)); margin-top: calc(300px * var(--s, 1) * -1 + 20px); }
+.mobile-scene { position: absolute; top: 0; left: 0; width: 1240px; height: 840px; transform-origin: top left; transform: scale(var(--s, 1)); }
+
+/* the light the devices stand in, and the desk they stand on */
+.mobile-light { position: absolute; inset: -120px -200px -40px; background: radial-gradient(ellipse 24% 40% at 67% 57%, #315bd840, transparent 70%), radial-gradient(ellipse 26% 22% at 36% 72%, #315bd81c, transparent 72%); pointer-events: none; }
+.mobile-floor { position: absolute; left: -140px; right: -140px; top: 790px; height: 160px; pointer-events: none; background: radial-gradient(ellipse 50% 60% at 50% 0, #315bd81c, transparent 70%); }
+.mobile-floor::before { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: linear-gradient(90deg, transparent, #3a4768 30%, #4a5a86 62%, transparent); }
+.mobile-floor::after { content: ''; position: absolute; left: 890px; top: -12px; width: 280px; height: 28px; border-radius: 50%; background: radial-gradient(closest-side, #000c, transparent); }
+
+/* the signal between them: out when you send, back while the answer streams */
+.mobile-link { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.mobile-link path { fill: none; stroke: #33405f; stroke-width: 1.5; stroke-dasharray: 2 7; stroke-linecap: round; transition: stroke .4s; }
+.mobile-visual:is([data-phase='sent'], [data-phase='thinking'], [data-phase='stream'], [data-phase='site']) .mobile-link path { stroke: #4d63a8; }
+.mobile-visual[data-phase='done'] .mobile-link path { stroke: #2f7a60; }
+.mobile-signal { position: absolute; top: 0; left: 0; z-index: 4; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #b8c7ff; box-shadow: 0 0 0 3px #315bd855, 0 0 18px 4px #315bd8aa; offset-rotate: 0deg; offset-distance: 0%; opacity: 0; pointer-events: none; }
+.mobile-visual:is([data-phase='sent'], [data-phase='thinking']) .mobile-signal.is-out { animation: mobile-out .7s cubic-bezier(.5, 0, .3, 1) both; }
+.mobile-visual:is([data-phase='stream'], [data-phase='site']) .mobile-signal.is-back { animation: mobile-back .9s cubic-bezier(.5, 0, .3, 1) infinite; }
+.mobile-visual:is([data-phase='stream'], [data-phase='site']) .mobile-signal.is-late { animation-delay: .45s; }
+.mobile-visual[data-phase='done'] .mobile-signal.is-done { background: #c9f5e2; box-shadow: 0 0 0 3px #45c99855, 0 0 18px 4px #45c998aa; animation: mobile-back .8s cubic-bezier(.5, 0, .3, 1) both; }
+@keyframes mobile-out { 0% { offset-distance: 0%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes mobile-back { 0% { offset-distance: 100%; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { offset-distance: 0%; opacity: 0; } }
+.mobile-visual.is-paused *, .mobile-visual.is-paused *::before, .mobile-visual.is-paused *::after { animation: none !important; transition: none !important; }
+.mobile-visual:not(.is-live) .mobile-signal { animation-play-state: paused; }
+.mobile-visual.is-still .mobile-signal { display: none; }
+
+/* the handset, at the front */
+.mobile-phone-wrap { position: absolute; z-index: 3; left: 740px; top: 130px; text-align: left; width: 320px; height: calc(660px * var(--k, 1)); opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .8s cubic-bezier(.2, .7, .2, 1); perspective: 1400px; }
+.mobile-visual.is-shown .mobile-phone-wrap { opacity: 1; transform: none; }
+.mobile-phone-scale { width: 320px; transform-origin: top left; transform: scale(var(--k, 1)); }
+.mobile-visual .ph-shell { --lean: 0deg; transform: rotateY(var(--lean)); transition: transform .5s cubic-bezier(.2, .7, .2, 1); transform-style: preserve-3d; box-shadow: 0 50px 90px #000a, 0 0 0 1px #0a0b0e, 0 0 80px #315bd826, inset 0 0 0 1px #ffffff12; }
+.mobile-visual[data-scene='0'] .ph-shell { --lean: -6deg; }
+.mobile-visual[data-scene='2'] .ph-shell { --lean: 6deg; }
+
+/* behind it, the MacBook the phone drives, at one and a half times its size */
+.mobile-mac { position: absolute; z-index: 2; left: 80px; bottom: 40px; width: 420px; display: grid; justify-items: center; font-family: "Inter Device", Inter, ui-sans-serif, system-ui, sans-serif; font-size: 8.5px; line-height: 1.45; color: #eef0f4; transform-origin: bottom left; transform: scale(1.5); opacity: 0; translate: 0 16px; transition: opacity .6s ease .15s, translate .8s cubic-bezier(.2, .7, .2, 1) .15s; }
+.mobile-visual.is-shown .mobile-mac { opacity: 1; translate: none; }
+.mobile-mac-lid { width: 100%; padding: 9px 9px 12px; border-radius: 14px 14px 4px 4px; background: linear-gradient(#2b2e35, #1c1f25); box-shadow: 0 30px 60px #0007, inset 0 0 0 1px #44474c; position: relative; transition: box-shadow .35s ease; }
+.mobile-visual[data-phase='stream'] .mobile-mac-lid { box-shadow: 0 30px 60px #0007, 0 0 0 2px #315bd866, 0 0 28px #315bd82b; }
+.mobile-visual[data-phase='done'] .mobile-mac-lid { box-shadow: 0 30px 60px #0007, 0 0 0 2px #45c99866, 0 0 28px #45c9982b; }
+.mobile-mac-lid::before { content: ''; position: absolute; top: 3px; left: 50%; width: 44px; height: 7px; border-radius: 0 0 5px 5px; background: #0b0c10; transform: translateX(-50%); z-index: 1; }
+.mobile-mac-screen { display: grid; grid-template-columns: 118px minmax(0, 1fr); grid-template-rows: 236px; height: 236px; border-radius: 6px; background: #101115; overflow: hidden; border: 1px solid #0a0b0e; }
+.mobile-mac-base { width: calc(100% + 40px); height: 9px; border-radius: 2px 2px 10px 10px; background: linear-gradient(#3a3d45, #22252a); box-shadow: 0 12px 24px #0006, inset 0 1px 0 #ffffff1a; position: relative; }
+.mobile-mac-base::after { content: ''; position: absolute; top: 0; left: 50%; width: 64px; height: 3px; border-radius: 0 0 4px 4px; background: #15171c; transform: translateX(-50%); }
+.mobile-mac-caption { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-family: var(--home-mono); font-size: 11px; letter-spacing: .035em; color: var(--home-muted); }
+.mobile-mac-caption i { width: 6px; height: 6px; border-radius: 50%; background: #45c998; position: relative; }
+.mobile-mac-caption i::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid #45c998; animation: mobile-ping 1.6s ease-out infinite; }
+.mobile-visual:not(.is-live) .mobile-mac-caption i::after { animation-play-state: paused; }
+.mobile-visual.is-still .mobile-mac { transition: none; }
+.mobile-visual.is-still .mobile-mac-caption i::after { animation: none; }
+@keyframes mobile-ping { from { transform: scale(.5); opacity: 1; } to { transform: scale(1.9); opacity: 0; } }
+.mobile-mac .ph-icon { width: 9px; height: 9px; }
+.mobile-mac-rail { background: #15171c; border-right: 1px solid #2a2d34; padding: 22px 7px 6px; display: flex; flex-direction: column; gap: 2px; position: relative; min-height: 0; overflow: hidden; }
+.mobile-mac-rail::before { content: ''; position: absolute; top: 8px; left: 9px; width: 26px; height: 6px; background: radial-gradient(circle at 3px 3px, #f45f57 2.2px, transparent 2.6px), radial-gradient(circle at 13px 3px, #f8be2e 2.2px, transparent 2.6px), radial-gradient(circle at 23px 3px, #3ec456 2.2px, transparent 2.6px); }
+.mobile-mac-project { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; letter-spacing: -.3px; padding: 0 5px 6px; }
+.mobile-mac-project .ph-icon { color: #929aa9; margin-top: 2px; }
+.mobile-mac-new { display: flex; align-items: center; justify-content: center; gap: 5px; height: 21px; border: 1px solid #2a2d34; background: #101115; border-radius: 4px; font-weight: 500; margin-bottom: 5px; }
+.mobile-mac-open { display: flex; justify-content: space-between; font-size: 7.5px; color: #929aa9; padding: 3px 5px; }
+.mobile-mac-row { display: flex; align-items: center; gap: 6px; height: 20px; padding: 0 5px; border-radius: 4px; color: #929aa9; }
+.mobile-mac-row span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mobile-mac-row.is-selected { background: #24272f; color: #eef0f4; }
+.mobile-mac-row i { width: 4px; height: 4px; border-radius: 50%; display: none; }
+.mobile-mac-row[data-state='running'] i { display: block; background: #45c998; }
+.mobile-mac-row[data-state='attention'] i { display: block; background: #e8b664; }
+.mobile-mac-row[data-state='done'] i { display: block; width: 8px; height: 8px; background: #1f3a33; box-shadow: inset 0 0 0 1px #45c998; }
+.mobile-mac-computer { margin-top: auto; display: flex; align-items: center; gap: 6px; padding: 6px 5px 0; border-top: 1px solid #2a2d34; color: #929aa9; font-size: 8px; }
+.mobile-mac-computer i { width: 4px; height: 4px; border-radius: 50%; background: #45c998; margin-left: auto; }
+.mobile-mac-work { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.mobile-mac-tabs { display: flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-bottom: 1px solid #2a2d34; font-weight: 500; }
+.mobile-mac-tabs em { margin-left: auto; font-style: normal; font-size: 7px; color: #929aa9; }
+.mobile-mac-thread { flex: 1; min-height: 0; padding: 10px 10px 0; font-family: var(--home-mono); font-size: 7.5px; line-height: 1.7; color: #c9ced9; overflow: hidden; }
+.mobile-mac-thread p { margin: 0 0 6px; opacity: 0; transition: opacity .35s; }
+.mobile-mac-thread p.is-on { opacity: 1; }
+.mobile-mac-user { color: #eef0f4; }
+.mobile-mac-line span { opacity: 0; transition: opacity .28s; }
+.mobile-mac-line span.is-in { opacity: 1; }
+.mobile-mac-diff b { color: #45c998; font-weight: 500; }
+.mobile-mac-diff s { text-decoration: none; color: #929aa9; }
+.mobile-mac-ok { color: #45c998; }
+.mobile-mac-input { margin: 6px 8px 8px; display: flex; gap: 6px; align-items: center; height: 22px; padding: 0 8px; border: 1px solid #2a2d34; border-radius: 4px; font-family: var(--home-mono); font-size: 7.5px; color: #929aa9; white-space: nowrap; overflow: hidden; }
+.mobile-mac-input span { color: #809aff; }
+
+.mobile-scene .mobile-mac-lid { box-shadow: 0 30px 60px #000a, inset 0 0 0 1px #44474c, 0 -1px 0 #ffffff14; }
+.mobile-scene .mobile-mac-caption { gap: 12px; margin-top: 12px; font-size: 7.4px; color: var(--dim); }
+
+/* the chapters: one line of story under each bar */
+.mobile-steps { position: relative; z-index: 3; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 36px; }
+.mobile-step { position: relative; display: grid; gap: 8px; align-content: start; padding: 22px 0 6px; border: 0; background: transparent; text-align: left; color: var(--dim); cursor: pointer; transition: color .25s; }
+.mobile-step::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--rule); border-radius: 2px; }
+.mobile-step:hover, .mobile-step[aria-selected='true'] { color: var(--ice); }
+.mobile-step:focus-visible { outline: 2px solid #809aff; outline-offset: 6px; border-radius: 4px; }
+.mobile-step-title { display: flex; align-items: baseline; gap: 12px; font-size: 17px; font-weight: 650; letter-spacing: -.02em; }
+.mobile-step-title small { font-family: var(--home-mono); font-size: 10.5px; letter-spacing: .1em; color: #58627b; font-weight: 400; }
+.mobile-step[aria-selected='true'] .mobile-step-title small { color: #8ca5ff; }
+.mobile-step-text { max-width: 34ch; font-size: 14.5px; line-height: 1.6; color: #5f6980; transition: color .25s; padding-left: 30px; }
+.mobile-step[aria-selected='true'] .mobile-step-text { color: #aab3c6; }
+.mobile-step-bar { position: absolute; z-index: 1; left: 0; right: 0; top: 0; height: 2px; border-radius: 2px; background: var(--glow); box-shadow: 0 0 12px #315bd8aa; transform: scaleX(0); transform-origin: left; }
+.mobile-step[aria-selected='true'] .mobile-step-bar { transform: scaleX(var(--p, 0)); transition: transform .12s linear; }
+.mobile-step.is-done .mobile-step-bar { transform: scaleX(1); background: #3a4668; box-shadow: none; }
+.mobile-section:has(.mobile-visual.is-still) .mobile-step[aria-selected='true'] .mobile-step-bar { transform: scaleX(1); }
+
+.mobile-controls { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 18px; }
+.marketing-home .mobile-playback { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--dim); font-size: 12px; }
+.mobile-playback:hover { color: var(--ice); }
+.mobile-demo-note { margin-left: auto; font-size: 9px; font-family: var(--home-mono); color: #4d566b; letter-spacing: .12em; }

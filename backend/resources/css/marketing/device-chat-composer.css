@@ -1,0 +1,101 @@
+/* Chat Mode's composer. Mirrors desktop-tauri agent-composer.css: the reach
+ * line above the field, then Access beside Send. */
+
+/* ---- the composer ---- */
+
+.vdev .vdev-chat-composer {
+    flex: none;
+    padding: 8px 20px 14px;
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+
+.vdev .vdev-chat-reach {
+    max-width: 620px;
+    margin: 0 auto 7px;
+    color: var(--dim);
+    font-size: var(--fs-hint);
+    font-weight: var(--fw-medium);
+    line-height: 1.45;
+}
+
+.vdev .vdev-chat-field {
+    max-width: 620px;
+    margin: 0 auto;
+    border: 1px solid var(--line);
+    border-radius: var(--r-panel);
+    background: var(--term-input);
+    transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.vdev .vdev-chat-field:focus-within {
+    border-color: var(--accent-border);
+}
+
+.vdev .vdev-chat-field textarea {
+    display: block;
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 12px 4px;
+    border: 0;
+    background: none;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--fs-ui);
+    font-weight: var(--fw-regular);
+    line-height: 1.55;
+    resize: none;
+}
+
+.vdev .vdev-chat-field textarea:focus {
+    outline: none;
+}
+
+.vdev .vdev-chat-field textarea::placeholder {
+    color: var(--dim);
+}
+
+.vdev .vdev-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 8px 12px;
+}
+
+.vdev .vdev-chat-demo {
+    margin-left: auto;
+}
+
+.vdev .vdev-chat-actions .vdev-send {
+    margin-left: 0;
+}
+
+/* ---- the Access select. Mirrors desktop-tauri base-controls.css ---- */
+
+.vdev .vdev-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vdev select {
+    min-height: 26px;
+    max-width: 100%;
+    padding: 0 22px 0 8px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    background-color: var(--term-input);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23747c8a' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 6px center;
+    background-repeat: no-repeat;
+    background-size: 11px;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--fs-control);
+    font-weight: var(--fw-semi);
+    appearance: none;
+}
+
+.vdev select:focus-visible {
+    border-color: var(--accent-border);
+}

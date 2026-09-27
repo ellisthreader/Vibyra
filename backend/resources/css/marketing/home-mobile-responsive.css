@@ -1,0 +1,22 @@
+/* Section 02 at narrower widths. Down to 760px the whole stage scales as one
+ * picture; below that the phone and the Mac stack, and the signal between
+ * them (which only reads side by side) is left out. */
+@media (max-width: 760px) {
+  .mobile-head { padding-block: 80px 0; }
+  .mobile-head h2 { font-size: 46px; }
+  .mobile-visual { padding-bottom: 72px; }
+  .mobile-stage { height: auto; margin-top: 44px; }
+  .mobile-scene { position: relative; width: auto; height: auto; transform: none; display: flex; flex-direction: column; align-items: center; gap: 48px; }
+  .mobile-light { inset: -80px -60px; background: radial-gradient(ellipse 60% 36% at 50% 30%, #315bd838, transparent 70%); }
+  .mobile-floor, .mobile-link, .mobile-signal { display: none; }
+  .mobile-phone-wrap { position: relative; left: auto; top: auto; order: -1; width: min(320px, 100%); }
+  .mobile-mac { position: relative; left: auto; bottom: auto; width: min(100% - 40px, 420px); transform: none; }
+  .mobile-scene .mobile-mac-caption { margin-top: 16px; font-size: 11px; }
+  .mobile-steps { grid-template-columns: 1fr; gap: 0; margin-top: 40px; }
+  .mobile-step { padding-block: 18px 16px; }
+  .mobile-step-text { padding-left: 0; }
+}
+@media (max-width: 580px) {
+  .mobile-head h2 { font-size: 40px; }
+  .mobile-phone-wrap { width: min(280px, 100%); }
+}

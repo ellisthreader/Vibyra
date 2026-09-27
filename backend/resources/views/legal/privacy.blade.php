@@ -7,7 +7,7 @@
     <div class="eyebrow">Legal</div>
     <h1>Privacy Policy</h1>
     <p class="lead">This policy explains what information Vibyra handles when you use the website, mobile app, desktop app, connected services, and community features.</p>
-    <p class="updated">Effective and last updated: 26 September 2026</p>
+    <p class="updated">Effective and last updated: 27 September 2026</p>
 
     <section>
         <h2>1. Who is responsible</h2>
@@ -30,6 +30,7 @@
     <section>
         <h2>3. Local and cloud processing</h2>
         <p>Vibyra Desktop runs supported coding tools and project operations on your computer. Paired phone and browser clients may communicate with that desktop over your network. Some state remains local unless you connect an account, enable synchronization, publish content, or use a cloud-backed feature.</p>
+        <p>When you ask a question in the public website FAQ, we send that question to OpenAI to generate an answer and cache the answer for one day. This is part of the question service, separate from optional service analytics.</p>
         <p class="notice">Only submit files, prompts, screenshots, or other content that you are permitted to use and share. Review the destination shown in Vibyra before approving an external or destructive action.</p>
     </section>
 

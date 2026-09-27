@@ -1,0 +1,49 @@
+/* ── 05 · Questions ──────────────────────────────────────────────────────────
+ * Plain rows with a chevron, and a last row that is just a line of text you
+ * can type into; the answer is written in underneath it. Scoped to .qa so the
+ * downloads page's own .faq-* rules are untouched. */
+.qa.faq-section { display: block; background: var(--home-paper); border-bottom: 1px solid var(--home-line); }
+.qa-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 1.6fr); gap: 80px; align-items: start; }
+.qa-intro { position: sticky; top: 118px; }
+.qa-intro h2 { font-size: clamp(38px, 4.4vw, 64px); }
+.qa-intro > p { color: var(--home-muted); font-size: 16px; line-height: 1.65; margin-top: 16px; max-width: 30ch; text-wrap: pretty; }
+
+.qa-item { border-bottom: 1px solid var(--home-line); }
+.qa .qa-item summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 0; font-size: 16px; font-weight: 600; letter-spacing: -.015em; list-style: none; cursor: pointer; line-height: 1.5; color: var(--home-ink); }
+.qa .qa-item summary::-webkit-details-marker { display: none; }
+.qa .qa-item summary:hover { color: var(--home-cobalt); }
+.qa .qa-item summary > svg { color: #738199; transform: rotate(90deg); transition: transform .25s; }
+.qa .qa-item[open] summary > svg { transform: rotate(-90deg); }
+.qa-answer { font-size: 15px; line-height: 1.75; color: #56627a; padding: 0 44px 24px 0; max-width: 66ch; text-wrap: pretty; }
+.qa-answer a { color: var(--home-cobalt); text-decoration: underline; text-underline-offset: 3px; }
+
+/* The ask row: no box, just the same row with a cursor in it. A long question
+ * wraps onto new lines and the row grows, so the end is never out of sight. */
+.qa-ask-row { display: flex; align-items: flex-end; gap: 16px; padding: 14px 0; }
+.qa-ask-row textarea { flex: 1; min-width: 0; background: transparent; border: 0; padding: 8px 0; margin: 0; font: inherit; font-size: 16px; font-weight: 600; line-height: 1.5; letter-spacing: -.015em; color: var(--home-ink); resize: none; overflow-y: auto; max-height: 12em; }
+.qa-ask-row textarea::placeholder { color: #626a78; font-weight: 500; }
+.qa-ask-row textarea:focus-visible { outline: none; }
+.qa-ask-row:focus-within { box-shadow: 0 2px 0 var(--home-cobalt); }
+.qa-ask-row textarea:focus-visible::placeholder { color: #626a78; }
+.qa-ask-row button { margin-bottom: 4px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: transparent; color: #8b95a7; transition: background .15s, color .15s; }
+.qa-ask-row button:disabled { cursor: default; }
+.qa-ask-row button.is-ready { background: #e6e9ef; color: var(--home-ink); }
+.qa-ask-row button.is-ready:hover { background: #d9dee8; }
+.qa-ask-privacy { margin: 0 0 12px; max-width: 66ch; color: var(--site-muted, #6b7690); font-size: 12px; line-height: 1.5; }
+.qa-stop { width: 9px; height: 9px; border-radius: 2px; background: currentColor; }
+
+.qa-reply { padding: 14px 44px 26px 0; display: grid; gap: 10px; }
+.qa-reply p { font-size: 15px; line-height: 1.7; color: #2a3140; max-width: 66ch; text-wrap: pretty; }
+.qa-reply .qa-status { color: #6b7690; }
+.qa-reply[aria-busy='true'] .qa-status { animation: qa-pulse 1.4s ease-in-out infinite; }
+@keyframes qa-pulse { 50% { opacity: .45; } }
+
+@media (max-width: 1150px) { .qa-grid { gap: 48px; } }
+@media (max-width: 800px) {
+  .qa-grid { grid-template-columns: 1fr; gap: 32px; }
+  .qa-intro { position: static; }
+  .qa-answer, .qa-reply { padding-right: 0; }
+}
+@media (max-width: 580px) {
+  .qa .qa-item summary, .qa-ask-row textarea { font-size: 15px; }
+}

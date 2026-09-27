@@ -24,7 +24,7 @@ function openChoice() {
   panel.setAttribute("aria-label", "Website analytics choice");
   panel.innerHTML = `<p class="analytics-choice__eyebrow">YOUR CHOICE</p>
     <h2>Help us improve Vibyra?</h2>
-    <p>With your permission, we count visits, named links and downloads, and time spent on pages. We do not record prompts, typing, or page contents. <a href="/legal/privacy">Privacy details</a></p>
+    <p>With your permission, we count page visits, clicks on named links and download buttons, and time spent on active pages. We do not record prompts, typing, or page contents. Successful signups and delivered downloads are counted anonymously even if you decline. <a href="/legal/privacy">Privacy details</a></p>
     <label class="analytics-choice__linked"><input type="checkbox" ${current.choice === "linked" ? "checked" : ""} ${current.can_link ? "" : "disabled"} />
       <span>Connect my usage to my Vibyra account <small>${current.can_link ? "Optional. Helps us understand use across visits." : "Sign in to enable this option."}</small></span></label>
     <p class="analytics-choice__error" role="alert" hidden></p>
