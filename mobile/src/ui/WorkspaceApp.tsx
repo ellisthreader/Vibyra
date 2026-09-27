@@ -168,7 +168,6 @@ export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEna
             onConnectComputer={() => setConnect(true)} />}
         </View>
         </View>
-
       </View>
       <NavigationDrawer visible={drawer} destination={destination} workspace={workspace} project={project} currentProjectId={projectId}
         onClose={() => setDrawer(false)} onNew={() => nav.enterIdeas(null)} onSettings={() => openSettings()} onReport={() => openSettings('report')}
