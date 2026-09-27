@@ -35,6 +35,8 @@ inside a private run directory with fixed filenames.
 For Windows Preview fixtures launched through PHP/Node, pass the absolute
 manifest-relative path and check that it exists. Windows `canonicalize()` may
 add a `\\?\` prefix that a shell command misreads as another drive path.
+Keep the signed updater test payload marked `-text` in `.gitattributes` so a
+Windows checkout cannot change LF bytes before signature verification.
 
 ## Simplicity Review
 

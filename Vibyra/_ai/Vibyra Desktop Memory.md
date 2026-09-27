@@ -49,6 +49,9 @@ website, Expo browser client, and native phone app.
 Windows native Preview tests launch the shared Host WebSocket fixture through
 PHP and Node. Use an absolute manifest-relative path with an existence check;
 `canonicalize()` introduces a `\\?\` prefix that this command path misreads.
+The updater-signing fixture in `src-tauri/tests/fixtures` has exact signed
+bytes; retain its root `.gitattributes` `-text` rule so Windows Git cannot
+rewrite LF to CRLF before `include_bytes!` verification.
 
 ## Local Skills
 
