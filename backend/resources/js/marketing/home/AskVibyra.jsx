@@ -90,6 +90,7 @@ export default function AskVibyra() {
                     maxLength={MAX_CHARS}
                     placeholder="Ask anything else"
                     aria-label="Ask anything else"
+                    aria-describedby="qa-ask-privacy"
                     value={question}
                     onChange={(event) => setQuestion(event.target.value)}
                     onKeyDown={(event) => {
@@ -105,6 +106,9 @@ export default function AskVibyra() {
                     {state === "asking" ? <span className="qa-stop" /> : <Icon name="arrow" size={15} />}
                 </button>
             </form>
+            <p className="qa-ask-privacy" id="qa-ask-privacy">
+                Your question is sent to OpenAI for an answer. Please leave out personal or sensitive details.
+            </p>
             {state !== "idle" && (
                 <div className="qa-reply" role="status" aria-live="polite" aria-busy={state === "asking"}>
                     {state === "asking" && <p className="qa-status">Reading the notes</p>}

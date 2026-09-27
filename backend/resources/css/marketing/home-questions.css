@@ -29,6 +29,7 @@
 .qa-ask-row button:disabled { cursor: default; }
 .qa-ask-row button.is-ready { background: #e6e9ef; color: var(--home-ink); }
 .qa-ask-row button.is-ready:hover { background: #d9dee8; }
+.qa-ask-privacy { margin: 0 0 12px; max-width: 66ch; color: var(--site-muted, #6b7690); font-size: 12px; line-height: 1.5; }
 .qa-stop { width: 9px; height: 9px; border-radius: 2px; background: currentColor; }
 
 .qa-reply { padding: 14px 44px 26px 0; display: grid; gap: 10px; }
