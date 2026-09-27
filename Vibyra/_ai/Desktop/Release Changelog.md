@@ -30,6 +30,11 @@ Build 14 also ports the installed 0.8.9 build-13 agent-view and saved-Codex
 resume fixes from `3e5b0dd6` and `5400e3bf`; those local commits diverged from
 the 0.8.10 baseline used for the analytics candidate. The port retains the
 0.8.11 analytics choice and Host approval fixes.
+Build 15 resets the analytics choice when a new bearer session has no server
+consent, clears queued events after withdrawal, and records project kind,
+Preview opens, and model/provider on accepted structured prompts. The exact
+native JSON for seven Desktop event types passes the backend event contract.
+The Desktop API override now accepts HTTP only for exact loopback hosts.
 Art: `public/releases/0.8.11.svg`.
 
 ## 0.8.10 — 25 September 2026 (Linux; candidate)

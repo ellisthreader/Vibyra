@@ -23,11 +23,25 @@ impl ApiError {
 
 pub use crate::account_endpoints::Endpoint;
 
+fn valid_api_override(value: &str) -> Option<String> {
+    let value = value.trim().trim_end_matches('/');
+    let parsed = reqwest::Url::parse(value).ok()?;
+    let loopback = matches!(parsed.host_str(), Some("localhost" | "127.0.0.1"));
+    if (parsed.scheme() != "https" && !(parsed.scheme() == "http" && loopback))
+        || parsed.username() != ""
+        || parsed.password().is_some()
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+        || parsed.path() != "/"
+    {
+        return None;
+    }
+    Some(value.to_owned())
+}
+
 pub fn base_url() -> String {
     if let Ok(url) = std::env::var("VIBYRA_DESKTOP_API_URL") {
-        let url = url.trim().trim_end_matches('/').to_owned();
-        let loopback = url.starts_with("http://127.0.0.1") || url.starts_with("http://localhost");
-        if loopback || url.starts_with("https://") {
+        if let Some(url) = valid_api_override(&url) {
             return url;
         }
         eprintln!("Vibyra ignored a non-HTTPS account API override.");
@@ -115,4 +129,35 @@ pub fn error_detail(value: &serde_json::Value, status: u16) -> String {
             500..=599 => "The Vibyra account service had a problem. Try again shortly.".into(),
             _ => "The Vibyra account service rejected the request.".into(),
         })
+}
+
+#[cfg(test)]
+mod override_tests {
+    use super::valid_api_override;
+
+    #[test]
+    fn only_exact_local_http_origins_or_https_origins_can_receive_bearers() {
+        assert_eq!(
+            valid_api_override("http://127.0.0.1:8128/"),
+            Some("http://127.0.0.1:8128".into())
+        );
+        assert_eq!(
+            valid_api_override("http://localhost:8128"),
+            Some("http://localhost:8128".into())
+        );
+        assert_eq!(
+            valid_api_override("https://staging.vibyra.app"),
+            Some("https://staging.vibyra.app".into())
+        );
+        for value in [
+            "http://localhost.attacker.test",
+            "http://127.0.0.1.attacker.test",
+            "http://localhost@attacker.test",
+            "http://localhost:8128/redirect",
+            "https://staging.vibyra.app@attacker.test/path",
+            "http://vibyra.app",
+        ] {
+            assert!(valid_api_override(value).is_none(), "accepted {value}");
+        }
+    }
 }

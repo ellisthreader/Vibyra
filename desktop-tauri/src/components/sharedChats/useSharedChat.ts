@@ -65,6 +65,11 @@ export function useSharedChat(sessionId: string, active = true) {
     catch (e) { if (alive.current) setError(String(e)); return false; }
     finally { locked.current = false; if (alive.current) setBusy(false); }
   }, [refresh]);
-  const send = useCallback((text: string, sendAsText = false, attachments: string[] = []) => run(() => sendPrompt(sessionId, text, sendAsText, attachments)), [run, sessionId]);
+  const send = useCallback((text: string, sendAsText = false, attachments: string[] = []) => {
+    const settings = latest.current?.settings;
+    const usage = { ...(settings?.provider ? { provider: settings.provider } : {}),
+      ...(settings?.model ? { model: settings.model } : {}) };
+    return run(() => sendPrompt(sessionId, text, sendAsText, attachments, usage));
+  }, [run, sessionId]);
   return { snapshot, error, busy, connected, run, send };
 }

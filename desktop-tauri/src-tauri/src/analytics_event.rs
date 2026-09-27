@@ -13,6 +13,8 @@ pub enum Event {
     ProjectCreated,
     #[serde(rename = "desktop_project_opened")]
     ProjectOpened,
+    #[serde(rename = "desktop_preview_opened")]
+    PreviewOpened,
     #[serde(rename = "desktop_terminal_started")]
     TerminalStarted,
     #[serde(rename = "desktop_prompt_submitted")]
@@ -36,6 +38,23 @@ fn safe_value(key: &str, value: &Value) -> bool {
         && text.bytes().all(|byte| {
             byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'/' | b'+')
         })
+}
+
+fn backend_model_shape(model: &str) -> bool {
+    if model.len() > 80 || model.contains("..") || model.starts_with('/') {
+        return false;
+    }
+    let mut parts = model.split('/');
+    let valid_part = |part: &str| {
+        (1..=40).contains(&part.len())
+            && part.as_bytes()[0].is_ascii_alphanumeric()
+            && part.bytes().all(|byte| {
+                byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'+' | b'-')
+            })
+    };
+    let first = parts.next().is_some_and(valid_part);
+    let second = parts.next().is_none_or(valid_part);
+    first && second && parts.next().is_none()
 }
 
 fn public_model_shape(model: &str) -> bool {
@@ -71,8 +90,7 @@ fn public_model_shape(model: &str) -> bool {
         "auto",
     ];
     PREFIXES.iter().any(|prefix| bare.starts_with(prefix))
-        && model.matches('/').count() <= 1
-        && !model.contains(':')
+        && backend_model_shape(model)
         && !model.contains('_')
 }
 
@@ -104,8 +122,9 @@ pub fn payload(
 ) -> Result<Value, String> {
     let (name, keys): (&str, &[&str]) = match event {
         Event::AppOpened => ("desktop_app_opened", &[]),
-        Event::ProjectCreated => ("desktop_project_created", &[]),
+        Event::ProjectCreated => ("desktop_project_created", &["project_kind"]),
         Event::ProjectOpened => ("desktop_project_opened", &[]),
+        Event::PreviewOpened => ("desktop_preview_opened", &[]),
         Event::TerminalStarted => ("desktop_terminal_started", &["provider", "model"]),
         Event::PromptSubmitted => ("desktop_prompt_submitted", &["provider", "model"]),
         Event::EngagementInterval => ("desktop_engagement_interval", &["seconds"]),
@@ -130,69 +149,4 @@ pub fn payload(
         json!({"event":name, "surface":"desktop", "event_id":id.to_string(),
         "occurred_at":chrono::Utc::now().to_rfc3339(), "properties":properties}),
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{payload, Event};
-    use serde_json::json;
-    use std::collections::BTreeMap;
-
-    #[test]
-    fn rejects_private_metadata_and_invalid_duration() {
-        for key in ["prompt", "path", "project_name", "url", "email"] {
-            assert!(payload(
-                Event::PromptSubmitted,
-                BTreeMap::from([(key.into(), json!("secret"))]),
-                None,
-                "0.7.9"
-            )
-            .is_err());
-        }
-        assert!(payload(
-            Event::EngagementInterval,
-            BTreeMap::from([("seconds".into(), json!(61))]),
-            None,
-            "0.7.9"
-        )
-        .is_err());
-        assert!(payload(
-            Event::EngagementInterval,
-            BTreeMap::from([("seconds".into(), json!(20))]),
-            None,
-            "0.7.9"
-        )
-        .is_ok());
-    }
-
-    #[test]
-    fn accepted_event_has_stable_id_and_no_content() {
-        let id = "123e4567-e89b-42d3-a456-426614174000".to_owned();
-        let value = payload(
-            Event::TerminalStarted,
-            BTreeMap::from([("provider".into(), json!("codex"))]),
-            Some(id.clone()),
-            "0.7.9",
-        )
-        .unwrap();
-        assert_eq!(value["event_id"], id);
-        assert_eq!(value["properties"]["provider"], "codex");
-        assert!(value["properties"].get("path").is_none());
-    }
-
-    #[test]
-    fn custom_agent_name_cannot_become_a_dimension() {
-        let value = payload(
-            Event::TerminalStarted,
-            BTreeMap::from([
-                ("provider".into(), json!("private_project_name")),
-                ("model".into(), json!("mysecret")),
-            ]),
-            None,
-            "0.7.9",
-        )
-        .unwrap();
-        assert_eq!(value["properties"]["provider"], "other");
-        assert!(value["properties"].get("model").is_none());
-    }
 }

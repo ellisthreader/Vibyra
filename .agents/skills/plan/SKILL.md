@@ -101,6 +101,10 @@ For frontend work, review the plan against the relevant frontend/design skill be
   by name only, and the backend's DMG versus app-updater metadata contract.
   A pushed source branch or local ad-hoc bundle is not a published update.
   Preserve the existing Tauri signing key trusted by installed clients.
+- For consented Desktop analytics, treat each new bearer session's server
+  choice as authoritative. A saved local choice must not opt a fresh session
+  in or replay queued events after withdrawal. Validate the native serialized
+  event JSON against the backend event contract before signing a candidate.
 - For Linux desktop releases, native WebKitGTK smoke must launch a terminal and
   prove its xterm textarea receives focus without the test calling `.focus()`;
   then verify per-character PTY echo, burst commands, Backspace and Shift+Tab.

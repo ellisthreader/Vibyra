@@ -12,7 +12,7 @@ export const RELEASE_0811: ChangelogEntry = {
     },
     {
       heading: "Useful counts without your work",
-      body: "When enabled, Vibyra records limited feature and engaged-time counts. Your prompt text, terminal output, project names, and file paths stay out of these events.",
+      body: "When enabled, Vibyra counts app use, projects, Preview opens, agent prompts by model and engaged time. Your prompt text, terminal output, project names, and file paths stay out of these events.",
     },
     {
       heading: "Clearer phone approvals",

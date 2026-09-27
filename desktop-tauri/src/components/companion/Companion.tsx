@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { COMPANION_MAX_WIDTH, COMPANION_MIN_WIDTH, type CompanionTab } from '../../lib/companionPreferences';
+import { trackDesktopEvent } from '../../ipc/analytics';
 import { useAccountStore } from '../../state/accountStore';
 import { useProjectStore } from '../../state/projectStore';
 import { useTalkStore } from '../../state/talkStore';
@@ -36,6 +37,8 @@ function CompanionContent({ active }: { active: boolean }) {
   ];
   const tabs = useRef<Partial<Record<CompanionTab, HTMLButtonElement | null>>>({});
   const [previewVisited, setPreviewVisited] = useState(tab === 'preview' && open);
+  const previewVisible = active && open && tab === 'preview';
+  const wasPreviewVisible = useRef(false);
   const [scope, setScope] = useState<PreviewScope | null>(null);
   const resize = useCompanionResize(preferredWidth, setWidth, panel, size);
   // A running conversation is marked on the tab, so leaving Chat for Worktrees
@@ -46,6 +49,10 @@ function CompanionContent({ active }: { active: boolean }) {
     panel.current?.parentElement?.style.setProperty('--tools-reserve', size === 'wide' ? '55%' : `${resize.width}px`);
   }, [resize.width, size]);
   useEffect(() => { if (tab === 'preview' && open) setPreviewVisited(true); }, [tab, open]);
+  useEffect(() => {
+    if (previewVisible && !wasPreviewVisible.current) trackDesktopEvent('desktop_preview_opened');
+    wasPreviewVisible.current = previewVisible;
+  }, [previewVisible]);
   const close = () => { toggle(); requestAnimationFrame(() => document.getElementById('workspace-sidebar-toggle')?.focus()); };
   const moveTabFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next = index;

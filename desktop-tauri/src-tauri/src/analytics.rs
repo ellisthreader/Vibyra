@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 
 use crate::account_api::{self, Endpoint};
 use crate::analytics_event::{payload, Event};
-use crate::analytics_store::Choice;
+use crate::analytics_store::{AnalyticsStore, Choice};
 use crate::state::AppState;
 
 #[derive(Serialize)]
@@ -46,8 +46,12 @@ fn snapshot(choice: Choice, available: bool, pending_sync: bool) -> ConsentSnaps
     }
 }
 
-fn reassert_on_new_session(remote: Choice, local: Choice) -> Option<Choice> {
-    (remote == Choice::Unknown && local != Choice::Unknown).then_some(local)
+fn accept_remote_choice(store: &AnalyticsStore, scope: &str, choice: Choice) -> ConsentSnapshot {
+    // A new bearer is a new consent scope on the server. Never turn a saved
+    // choice from an older session into consent for this one: another device
+    // may have withdrawn it in the meantime. Unknown also drops queued events.
+    store.set_verified(scope, choice);
+    snapshot(choice, true, false)
 }
 
 async fn update_remote(token: &str, choice: Choice) -> Result<Choice, String> {
@@ -75,17 +79,8 @@ pub async fn consent_get(state: &AppState) -> Result<ConsentSnapshot, String> {
     let Ok(value) = response else {
         return Ok(snapshot(state.analytics.bind(&scope).choice, false, false));
     };
-    let mut choice = response_choice(&value)?;
-    // A rotated bearer is a fresh server session. A saved choice on this same
-    // Mac/account may be reasserted, but no event leaves until PUT succeeds.
-    if let Some(saved_choice) = reassert_on_new_session(choice, local.choice) {
-        match update_remote(&token, saved_choice).await {
-            Ok(accepted) => choice = accepted,
-            Err(_) => return Ok(snapshot(local.choice, false, false)),
-        }
-    }
-    state.analytics.set_verified(&scope, choice);
-    Ok(snapshot(choice, true, false))
+    let choice = response_choice(&value)?;
+    Ok(accept_remote_choice(&state.analytics, &scope, choice))
 }
 
 pub async fn consent_set(state: &AppState, choice: Choice) -> Result<ConsentSnapshot, String> {
@@ -151,21 +146,47 @@ pub async fn flush(state: &AppState) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{reassert_on_new_session, Choice};
+    use super::{accept_remote_choice, Choice};
+    use crate::analytics_store::AnalyticsStore;
+    use serde_json::json;
 
     #[test]
-    fn a_new_bearer_requires_reassertion_before_collection() {
+    fn new_bearer_does_not_replay_old_choice_or_offline_events() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("analytics.json");
+        let old = AnalyticsStore::load(path.clone());
+        old.bind("account-a");
+        old.set_verified("account-a", Choice::Linked);
+        assert!(old.enqueue("account-a", json!({"event_id":"old"})));
+        old.clear_session();
+
+        let next = AnalyticsStore::load(path);
+        assert_eq!(next.bind("account-a").choice, Choice::Linked);
+        let consent = accept_remote_choice(&next, "account-a", Choice::Unknown);
+        assert_eq!(consent.choice, Choice::Unknown);
+        assert!(consent.available);
+        assert!(next.first("account-a").is_none());
+        assert!(!next.enqueue("account-a", json!({"event_id":"new"})));
+
+        next.set_verified("account-a", Choice::Aggregate);
+        assert!(next.enqueue("account-a", json!({"event_id":"opted-in"})));
         assert_eq!(
-            reassert_on_new_session(Choice::Unknown, Choice::Linked),
-            Some(Choice::Linked)
+            next.first("account-a").unwrap()["consent_mode"],
+            "aggregate"
         );
-        assert_eq!(
-            reassert_on_new_session(Choice::Unknown, Choice::Unknown),
-            None
-        );
-        assert_eq!(
-            reassert_on_new_session(Choice::Declined, Choice::Linked),
-            None
-        );
+    }
+
+    #[test]
+    fn remote_withdrawal_purges_queued_events() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = AnalyticsStore::load(dir.path().join("analytics.json"));
+        store.bind("account-a");
+        store.set_verified("account-a", Choice::Linked);
+        assert!(store.enqueue("account-a", json!({"event_id":"queued"})));
+
+        let consent = accept_remote_choice(&store, "account-a", Choice::Declined);
+        assert_eq!(consent.choice, Choice::Declined);
+        assert!(store.first("account-a").is_none());
+        assert!(!store.enqueue("account-a", json!({"event_id":"after"})));
     }
 }

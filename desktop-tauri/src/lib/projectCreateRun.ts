@@ -103,7 +103,7 @@ async function publishToGithub(path: string, name: string): Promise<boolean> {
 /** Registers the finished folder, then gets out of the way. */
 async function adoptProject(path: string, name: string, entry: ProjectTemplate): Promise<void> {
   const openTerminal = useProjectCreateStore.getState().options.openTerminal;
-  const project = await useProjectStore.getState().create(path, name);
+  const project = await useProjectStore.getState().create(path, name, useProjectCreateStore.getState().kind ?? undefined);
   closeNewProject();
   if (!project) return;
   useNotificationStore.getState().push({
@@ -129,10 +129,10 @@ export function cancelProjectCreate(): void {
 /** Adopts the folder as it stands — after a stall, so the scaffolder can be
  *  finished in a terminal that has a stdin, or after a partial failure. */
 export function adoptAsIs(withTerminal: boolean): void {
-  const { name } = useProjectCreateStore.getState();
+  const { name, kind } = useProjectCreateStore.getState();
   const { destination } = plannedNow();
   if (!destination.path) return;
-  void useProjectStore.getState().create(destination.path, name).then((project) => {
+  void useProjectStore.getState().create(destination.path, name, kind ?? undefined).then((project) => {
     closeNewProject();
     if (project && withTerminal) openShell(project.id);
   });

@@ -34,6 +34,8 @@ mod ai_usage_permit;
 mod ai_usage_tests;
 mod analytics;
 mod analytics_event;
+#[cfg(test)]
+mod analytics_event_tests;
 mod analytics_store;
 #[cfg(test)]
 mod analytics_store_tests;

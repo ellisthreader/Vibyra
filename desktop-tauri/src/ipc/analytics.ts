@@ -4,6 +4,7 @@ type DesktopEvent =
   | "desktop_app_opened"
   | "desktop_project_created"
   | "desktop_project_opened"
+  | "desktop_preview_opened"
   | "desktop_terminal_started"
   | "desktop_prompt_submitted"
   | "desktop_engagement_interval";

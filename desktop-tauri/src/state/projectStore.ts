@@ -3,6 +3,7 @@ import { create } from "zustand";
 
 import { fsHomeDir, unwatchWorkspace, watchWorkspace } from "../ipc/fs";
 import { trackDesktopEvent } from "../ipc/analytics";
+import type { ProjectKind } from "../lib/projectTemplateTypes";
 import { removeSharedChatProject } from "../ipc/sharedChats";
 import { stopProjectPreviews } from "../ipc/preview";
 import { projectBrief } from "../ipc/projectBrief";
@@ -32,7 +33,7 @@ interface ProjectStore {
   activeId: string | null;
   homeDir: string;
   init: () => Promise<void>;
-  create: (root: string, name?: string) => Promise<ProjectSpec | null>;
+  create: (root: string, name?: string, kind?: ProjectKind) => Promise<ProjectSpec | null>;
   /** Renames a project in the list. The folder on disk keeps its own name. */
   rename: (id: string, name: string) => Promise<ProjectSpec | null>;
   /** Native folder picker → project. The one-gesture "new project". */
@@ -120,8 +121,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     await persist(list.map((entry) => (entry.id === id ? renamed : entry)), get().activeId);
     return renamed;
   },
-
-  create: async (root, name) => {
+  create: async (root, name, kind) => {
     const trimmed = root.trim().replace(/\/+$/, "");
     if (!trimmed) return null;
     const list = projects();
@@ -138,7 +138,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       lastOpenedMs: Date.now(),
     };
     await persist([...list, project], project.id);
-    trackDesktopEvent("desktop_project_created");
+    trackDesktopEvent("desktop_project_created", kind ? { project_kind: kind } : {});
     await get().activate(project.id);
     return project;
   },

@@ -3,7 +3,8 @@ import { trackDesktopEvent } from '../../ipc/analytics';
 
 // Persist before dispatch. An IPC timeout or webview reload must never invent a
 // second submission for an action the computer may already have accepted.
-export async function sendPrompt(sessionId: string, text: string, sendAsText = false, attachments: string[] = []) {
+export async function sendPrompt(sessionId: string, text: string, sendAsText = false, attachments: string[] = [],
+  usage: { provider?: string; model?: string } = {}) {
   if (!text.trim() || new TextEncoder().encode(text).length > 8192) throw new Error('Use a prompt under 8 KB. Your draft is kept.');
   const key = `shared.pending.${sessionId}`;
   const previous = localStorage.getItem(key);
@@ -28,7 +29,7 @@ export async function sendPrompt(sessionId: string, text: string, sendAsText = f
   }
   if (receipt.status !== 'accepted') throw new Error('Delivery is uncertain. Your draft is kept.');
   localStorage.removeItem(key);
-  trackDesktopEvent('desktop_prompt_submitted', {}, submissionId);
+  trackDesktopEvent('desktop_prompt_submitted', usage, submissionId);
 }
 export async function answerRequest(sessionId: string, item: AgentItem,
   response: { decision: 'accept' | 'decline' | 'acceptForSession' | 'acceptForProject' } | { answers: Record<string, { answers: string[] }> }) {

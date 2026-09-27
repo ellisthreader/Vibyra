@@ -124,3 +124,20 @@ do not terminate that workspace to force installation.
 Mac 0.1.9 introduced the live, view-only iPhone connection. Mac 0.1.10 is now
 live on both updater feeds and adds IPv6-only network support. See
 [[iPhone Connection]] for setup, matching mobile changes and release evidence.
+
+## Analytics candidate — 27 September 2026
+
+The 0.8.11 build-15 Desktop candidate is sourced from the isolated
+`codex/desktop-analytics-0.8.11` branch. It includes a server-authorized
+per-session consent choice, the 0.8.10 baseline, installed agent-view fixes,
+scoped Host approval behavior, and the seven allowlisted Desktop usage events.
+A new bearer with server choice `unknown` clears the locally saved choice and
+queued events; it never silently reasserts old consent. Native serialized event
+JSON must pass the backend `EventContract` before signing or distributing it.
+
+This Mac currently has 0.8.10 build 14 installed. On 27 September, both live
+Mac updater feeds offered signed 0.8.7 archives to 0.8.6 clients and returned
+204 to 0.8.7 or newer, as designed. The build-15 candidate is not an installed
+or published update. Distribution still needs signed 0.8.11 archives for both
+Mac architectures, updater signatures/metadata, notarization, and a live
+consented event receipt.
