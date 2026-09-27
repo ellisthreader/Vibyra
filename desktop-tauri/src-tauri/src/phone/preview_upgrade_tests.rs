@@ -66,13 +66,8 @@ passthru('node '.escapeshellarg('{}'));
         }
         std::thread::sleep(Duration::from_millis(50));
     }
-    assert_eq!(
-        manager
-            .status(root.to_str().unwrap(), &target)
-            .unwrap()
-            .phase,
-        PreviewPhase::Running
-    );
+    let status = manager.status(root.to_str().unwrap(), &target).unwrap();
+    assert_eq!(status.phase, PreviewPhase::Running, "{status:?}");
     let grants = Arc::new(PreviewGrants::load(temp.path().join("grants")).unwrap());
     grants.set_account(Some("user:fixture-account")).unwrap();
     grants.grant("phone", "project", &root, &target).unwrap();

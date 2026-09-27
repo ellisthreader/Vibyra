@@ -11,13 +11,13 @@ import { NativeDriver } from "./linux-terminal-webdriver.mjs";
 import { probePaint } from "./linux-terminal-paint.mjs";
 import { receiveReport, verifyProjectActions } from "./linux-terminal-ux.mjs";
 import { verifyLinuxOnboardingAndReport } from "./linux-model-notice-smoke.mjs";
+import { createEvidenceRun, writeEvidence } from "./linux-smoke-evidence.mjs";
 if (process.platform !== "linux") throw new Error("Native terminal verification requires Linux");
 const application = resolve(process.argv[2] || "");
 if (!existsSync(application)) {
   throw new Error("Pass an existing Linux AppImage or installed executable");
 }
-const output = resolve(process.argv[3] || "release/linux-terminal-smoke");
-mkdirSync(output, { recursive: true });
+const output = createEvidenceRun(resolve(process.argv[3] || "release/linux-terminal-smoke"));
 if (application.endsWith(".AppImage")) chmodSync(application, 0o755);
 const profile = mkdtempSync(join(tmpdir(), "vibyra-terminal-smoke-"));
 const project = join(profile, "input-repro");
@@ -141,12 +141,12 @@ try {
     await driver.until(async () => (await snapshot(id)).includes(expected),
       `character ${index + 1} echoed by PTY`, 3_000);
     if (index === stepCommand.length - 2)
-      writeFileSync(join(output, "terminal-echo-penultimate.png"), await driver.screenshot());
+      writeEvidence(output, "terminal-echo-penultimate.png", await driver.screenshot());
   }
-  writeFileSync(join(output, "terminal-echo-final.png"), await driver.screenshot());
-  await delay(100); writeFileSync(join(output, "terminal-echo-after-100ms.png"), await driver.screenshot());
-  await delay(400); writeFileSync(join(output, "terminal-echo-after-500ms.png"), await driver.screenshot());
-  writeFileSync(join(output, "terminal-echo-state.json"), JSON.stringify({ documentHidden: await driver.execute("return document.hidden"), terminals: await driver.invoke("list_terminals"), renderer: await driver.invoke("renderer_policy") }, null, 2));
+  writeEvidence(output, "terminal-echo-final.png", await driver.screenshot());
+  await delay(100); writeEvidence(output, "terminal-echo-after-100ms.png", await driver.screenshot());
+  await delay(400); writeEvidence(output, "terminal-echo-after-500ms.png", await driver.screenshot());
+  writeEvidence(output, "terminal-echo-state.json", JSON.stringify({ documentHidden: await driver.execute("return document.hidden"), terminals: await driver.invoke("list_terminals"), renderer: await driver.invoke("renderer_policy") }, null, 2));
   await driver.keyboard("\uE007");
   await driver.until(async () => new RegExp(`(?:\\r|\\n)${stepMarker}(?:\\r|\\n)`).test(await snapshot(id)),
     "single-character command output");
@@ -171,8 +171,8 @@ try {
   const paintMarker = await probePaint(driver, output, () => snapshot(id));
   await driver.until(async () => (await snapshot(id)).includes(paintMarker), "unpolled PTY typing");
   await verifyProjectActions(driver);
-  writeFileSync(join(output, "terminal-input.png"), await driver.screenshot());
-  writeFileSync(join(output, "terminal-input.json"), JSON.stringify({
+  writeEvidence(output, "terminal-input.png", await driver.screenshot());
+  writeEvidence(output, "terminal-input.json", JSON.stringify({
     appImage: application, nativePty: id, characterEcho: stepCommand.length,
     terminalAutofocus: true, linuxNewModelsNotice: true,
     burstCommands: 12, burstToOutputMs, backspace: true, shiftTabEscape: true,
@@ -184,7 +184,7 @@ try {
   failure = error;
   console.error(error);
   if (driver.session) {
-    try { writeFileSync(join(output, "failure.png"), await driver.screenshot()); }
+    try { writeEvidence(output, "failure.png", await driver.screenshot()); }
     catch { /* Keep the original error. */ }
   }
 } finally {
@@ -193,7 +193,7 @@ try {
   processDriver.stderr.destroy();
   api.closeAllConnections();
   api.close();
-  writeFileSync(join(output, "tauri-driver.log"), log);
+  writeEvidence(output, "tauri-driver.log", log);
   try { rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); }
   catch (error) { console.warn(`Disposable terminal profile cleanup deferred: ${error}`); }
 }

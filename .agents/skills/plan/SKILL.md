@@ -30,6 +30,8 @@ In a fresh checkout, install `mobile` npm dependencies before the Desktop Vite
 build because shared modules use Expo's TypeScript base configuration. Install
 `host/relay` npm dependencies before the full Desktop Rust suite; its Preview
 integration fixture imports `ws` from there.
+For Linux smoke runs, keep WebDriver on loopback and capture bounded evidence
+inside a private run directory with fixed filenames.
 
 ## Simplicity Review
 

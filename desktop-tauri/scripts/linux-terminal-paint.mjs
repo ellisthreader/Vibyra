@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
+import { writeEvidence } from "./linux-smoke-evidence.mjs";
 
 const run = promisify(execFile);
 const failedProbes = [];
@@ -11,7 +12,7 @@ const failedProbes = [];
 // itself wake a stalled renderer. No webview IPC runs between the test keys.
 export async function probePaint(driver, output, snapshot, phase = "cat") {
   const folder = join(output, `native-paint-${phase}`);
-  mkdirSync(folder, { recursive: true });
+  mkdirSync(folder, { recursive: true, mode: 0o700 });
   if (phase === "shell") await driver.keyboard("PS1='> '; clear\n");
   await delay(2_000); // Let the window resize and picker transition finish.
   const context = await driver.execute(`const rect = document.querySelector('.pane .xterm-screen').getBoundingClientRect();
@@ -63,7 +64,7 @@ export async function probePaint(driver, output, snapshot, phase = "cat") {
     frame.text = (await run("tesseract", [ocrPath, "stdout", "--psm", "6"], { maxBuffer: 1024 * 1024 })).stdout;
     if (frame.expected.length >= 5 && !frame.text.replace(/\s/g, "").toUpperCase().includes(frame.expected)) failures.push(frame);
   }
-  writeFileSync(join(folder, "evidence.json"), JSON.stringify({ context, frames, failures }, null, 2));
+  writeEvidence(folder, "evidence.json", JSON.stringify({ context, frames, failures }, null, 2));
   await run("xdotool", ["key", "ctrl+u"]);
   await delay(300);
   if (failures.length) failedProbes.push(`${phase}: ${failures.length} stale or unreadable frames`);

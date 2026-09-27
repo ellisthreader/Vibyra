@@ -2,17 +2,17 @@
 // Run in a disposable Linux CI session: dbus-run-session -- xvfb-run -a node ...
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
+import { createEvidenceRun, writeEvidence } from "./linux-smoke-evidence.mjs";
 
 if (process.platform !== "linux") throw new Error("Native AppImage smoke verification requires Linux.");
 const application = resolve(process.argv[2] || "");
 if (!application.endsWith(".AppImage") || !existsSync(application)) throw new Error("Pass an existing .AppImage.");
-const output = resolve(process.argv[3] || "release/linux-smoke");
-mkdirSync(output, { recursive: true });
+const output = createEvidenceRun(resolve(process.argv[3] || "release/linux-smoke"));
 chmodSync(application, 0o755);
 const profile = mkdtempSync(join(tmpdir(), "vibyra-native-smoke-"));
 // Keep HOME intact: changing system shell variables can affect unrelated tools.
@@ -52,7 +52,7 @@ async function until(check, description) {
 const execute = (script, args = []) => request("POST", `/session/${session}/execute/sync`, { script, args });
 async function capture(name) {
   const screenshot = await request("GET", `/session/${session}/screenshot`);
-  writeFileSync(join(output, `${name}.png`), Buffer.from(screenshot, "base64"));
+  writeEvidence(output, `${name}.png`, Buffer.from(screenshot, "base64"));
 }
 
 let smokeError;
@@ -110,7 +110,7 @@ try {
       && input && form && input.getBoundingClientRect().height > 0
       && Number(getComputedStyle(form).opacity) > 0.99`), "Visible email form navigation");
   await capture("email-form");
-  writeFileSync(join(output, "native-smoke.json"), `${JSON.stringify({ ...initial, nativeVersion: nativeVersion.version, decorated: nativeDecoration.decorated, emailNavigation: true }, null, 2)}\n`);
+  writeEvidence(output, "native-smoke.json", `${JSON.stringify({ ...initial, nativeVersion: nativeVersion.version, decorated: nativeDecoration.decorated, emailNavigation: true }, null, 2)}\n`);
   console.log(`Native Linux AppImage sign-in, assets, IPC and email navigation passed. Evidence: ${output}`);
 } catch (error) {
   smokeError = error;
@@ -124,7 +124,7 @@ try {
   driver.kill("SIGKILL");
   driver.stdout.destroy();
   driver.stderr.destroy();
-  writeFileSync(join(output, "tauri-driver.log"), log);
+  writeEvidence(output, "tauri-driver.log", log);
   // Mesa/WebKit children may still be writing shader-cache files briefly
   // after tauri-driver exits. Cleanup must not turn a passed app check red.
   try { rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); }

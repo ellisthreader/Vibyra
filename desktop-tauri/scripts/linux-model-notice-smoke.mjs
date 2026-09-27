@@ -1,6 +1,5 @@
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { verifyReport } from "./linux-terminal-ux.mjs";
+import { writeEvidence } from "./linux-smoke-evidence.mjs";
 
 export async function verifyLinuxOnboardingAndReport(driver, output, reports) {
   await driver.execute(`document.querySelector('.first-welcome__skip')?.click()`);
@@ -11,7 +10,7 @@ export async function verifyLinuxOnboardingAndReport(driver, output, reports) {
       && notice.textContent.includes('GPT-6 Series')
       && notice.textContent.includes('Claude Opus 5.5')
       && notice.querySelector('.new-models__start'));`), "visible Linux new-models notice and launch action");
-  writeFileSync(join(output, "new-models-notice.png"), await driver.screenshot());
+  writeEvidence(output, "new-models-notice.png", await driver.screenshot());
   await driver.click(".new-models__later");
   await driver.dismissWorkspaceOverlays();
   await verifyReport(driver, reports);

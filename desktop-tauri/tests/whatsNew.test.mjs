@@ -139,15 +139,14 @@ test("the Obsidian release log records the shipping version", () => {
   // here rather than by anyone remembering.
   const { version } = JSON.parse(source("../src-tauri/tauri.conf.json"));
   const log = source("../../Vibyra/_ai/Desktop/Release Changelog.md");
-  assert.match(
-    log,
-    new RegExp(`^## ${version.replace(/\./g, "\\.")}\\b`, "m"),
+  const loggedVersions = new Set([...log.matchAll(/^## (\S+)/gm)].map((match) => match[1]));
+  assert.ok(
+    loggedVersions.has(version),
     `add a "## ${version}" section to Vibyra/_ai/Desktop/Release Changelog.md`,
   );
   for (const entry of CHANGELOG) {
-    assert.match(
-      log,
-      new RegExp(`^## ${entry.version.replace(/\./g, "\\.")}\\b`, "m"),
+    assert.ok(
+      loggedVersions.has(entry.version),
       `${entry.version} is in the app's changelog but missing from the vault log`,
     );
   }
