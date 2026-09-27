@@ -49,3 +49,16 @@ Existing usage can be shown only from the server records that were already
 kept; unrecorded website, Desktop, and iOS activity cannot be backfilled.
 Production release also requires independent review and the manual security,
 backup, monitoring, and device evidence listed in the repository release gate.
+
+## Review checkpoint (27 September 2026)
+
+| Surface | Candidate evidence | Still needed before users receive it |
+| --- | --- | --- |
+| Backend and website | Draft PR #32 combines the latest local `8128` public pages with the owner/analytics backend. The isolated backend/site source passed 929 PHP tests, and the integrated Vite build contains the consent, home, downloads, and benchmarks entries. | Passing checks on the exact combined head, independent security review, backup/restore evidence, Railway source parity, migrations, and live analytics route/worker checks. |
+| iOS | A clean 1.0.0(3) source snapshot produced a locally exported Apple Distribution-signed IPA with recorded source and package hashes. | The maintained phone source changed after that snapshot. Freeze, recheck, archive, and sign the final source; verify on a device, App Store privacy answers, upload, and actual distribution. |
+| Desktop | The maintained 0.8.11 source has passing native and UI suites; a separate draft review branch carries a new-session consent fix. The published Mac updater correctly serves 0.8.7 to older clients. | Integrate with the reviewed backend head, finish signed/notarized arm64 and x64 updater archives and metadata, verify updater/device delivery, and produce/test Windows and Linux packages if advertised. |
+| Android | Current shared mobile source includes the consent path. | There is no signed AAB/APK or Play distribution evidence. Android network/deep-link/update configuration needs a separate checked release package. |
+
+The current public homepage also includes a throttled, cached AI FAQ. Its
+external model calls can incur cost and need a production usage/budget check
+before release.
