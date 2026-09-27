@@ -49,10 +49,11 @@ export async function lookUp(
   const controller = new AbortController();
   const deadline = setTimeout(() => controller.abort(), TIMEOUT);
   try {
-    const response = await request(
-      target === 'self' ? `${SERVICE}.json` : `${SERVICE}/${target}.json`,
-      { signal: controller.signal, headers: { accept: 'application/json' } },
-    );
+    // Keep the destination fixed to GeoJS; the validated IP may only fill a
+    // path segment, never the network origin of the request.
+    const endpoint = new URL(`${SERVICE}.json`);
+    if (target !== 'self') endpoint.pathname = `/v1/ip/geo/${encodeURIComponent(target)}.json`;
+    const response = await request(endpoint, { signal: controller.signal, headers: { accept: 'application/json' } });
     if (!response.ok) return null;
     const reply: unknown = await response.json();
     const found = { place: placeOf(reply), ip: ipOf(reply) };

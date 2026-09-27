@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { until } from './ui-test-helpers.mjs';
 
 // Read-only acceptance against the running Desktop. No fixture identity is
@@ -27,6 +29,7 @@ const manifest = await fetch(metro, {
 }).then(r => r.json());
 assert.equal(manifest.extra.expoClient.slug, 'vibyra', 'Metro must serve the maintained Vibyra app');
 const entry = 'tests/nativeDiscoveryFixture.tsx';
+const artifacts = await mkdtemp(join(tmpdir(), 'vibyra-native-discovery-'));
 const bundle = new URL(manifest.launchAsset.url);
 bundle.pathname = `/${entry}.bundle`;
 manifest.launchAsset.url = bundle.toString();
@@ -62,8 +65,9 @@ try {
   assert.equal(result.pairing.network, 'lan');
   assert.equal(result.pairing.nearby, true);
   if (nativeClient) assert.equal(result.nativeBonjour, true, 'Development build must load the native Bonjour module');
-  await writeFile('/tmp/vibyra-native-discovery.json', JSON.stringify(result, null, 2));
-  execFileSync('xcrun', ['simctl', 'io', simulator, 'screenshot', '/tmp/vibyra-native-discovery.png']);
+  await writeFile(join(artifacts, 'discovery.json'), JSON.stringify(result, null, 2), { mode: 0o600 });
+  execFileSync('xcrun', ['simctl', 'io', simulator, 'screenshot', join(artifacts, 'discovery.png')]);
+  console.log(`Review native discovery artifacts in ${artifacts}`);
   console.log(`PASS native phone found ${result.computer.name}; real identity and usable LAN pairing.`);
 } finally {
   await new Promise(resolve => server.close(resolve));

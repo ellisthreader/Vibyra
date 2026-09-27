@@ -32,10 +32,10 @@ const server = createServer(async (req, res) => {
   if (url.pathname === '/authorize') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     return res.end(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Test provider approval</title>
-      <body style="font:18px system-ui;padding:30px;background:#101115;color:white"><h1>${flow.slug} test authorization</h1>
+      <body style="font:18px system-ui;padding:30px;background:#101115;color:white"><h1>Test provider authorization</h1>
       <p>This tests the iOS browser round trip. No real account or provider access.</p>
-      <p><a style="color:#8ab4ff" href="/callback?flow=${id}">Approve test connection</a></p>
-      <p><a style="color:#8ab4ff" href="/callback?flow=${id}&cancel=1">Decline test connection</a></p></body>`);
+      <p><a style="color:#8ab4ff" href="/callback?flow=${encodeURIComponent(id)}">Approve test connection</a></p>
+      <p><a style="color:#8ab4ff" href="/callback?flow=${encodeURIComponent(id)}&cancel=1">Decline test connection</a></p></body>`);
   }
   if (url.pathname === '/callback') {
     flow.status = url.searchParams.has('cancel') ? 'failed' : 'connected';

@@ -24,8 +24,9 @@ export async function totp(base32: string, slot: number): Promise<string> {
   const value = ((mac[offset] & 0x7f) << 24) | (mac[offset + 1] << 16) | (mac[offset + 2] << 8) | mac[offset + 3];
   return String(value % 1_000_000).padStart(6, '0');
 }
+const RECOVERY_ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'; // 32 symbols; each five-bit value is uniform.
 const recovery = () => [...Array(10)].map(() =>
-  [...crypto.getRandomValues(new Uint8Array(10))].map(byte => 'abcdefghjkmnpqrstuvwxyz23456789'[byte % 31]).join('')
+  [...crypto.getRandomValues(new Uint8Array(10))].map(byte => RECOVERY_ALPHABET[byte & 31]).join('')
     .replace(/^(.{5})/, '$1-'));
 
 export function twoFactorServer({ email, enabled, log }: { email: string; enabled: boolean; log: string[] }) {

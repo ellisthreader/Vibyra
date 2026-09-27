@@ -16,6 +16,7 @@ try {
   await page.evaluate(html => {
     window.notices = [];
     window.addEventListener('message', event => {
+      if (event.origin !== 'null' || event.source !== document.querySelector('iframe')?.contentWindow) return;
       try { window.notices.push(JSON.parse(event.data)); } catch {}
     });
     document.querySelector('iframe').srcdoc = html;

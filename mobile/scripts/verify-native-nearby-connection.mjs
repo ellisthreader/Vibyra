@@ -84,8 +84,9 @@ try {
   assert.equal(result.nearby, true);
   const report = { host: name, hostId, discovered: events.find(event => event.stage === 'found'),
     approvalRequested: true, connected: result.stage === 'connected', protocol: result.protocol };
-  const reportPath = join(tmpdir(), 'vibyra-native-nearby-result.json');
-  await writeFile(reportPath, JSON.stringify(report, null, 2));
+  const reportDir = await mkdtemp(join(tmpdir(), 'vibyra-native-nearby-report-'));
+  const reportPath = join(reportDir, 'result.json');
+  await writeFile(reportPath, JSON.stringify(report, null, 2), { mode: 0o600 });
   console.log(`PASS native iOS Bonjour → Noise nearby approval → host.state; report ${reportPath}`);
 } finally {
   child.stdin.end();

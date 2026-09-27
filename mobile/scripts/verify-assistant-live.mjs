@@ -3,8 +3,9 @@
 //   ONLY=fullscreen RUNS=5 node scripts/verify-assistant-live.mjs
 // The chat store, tool loop, prompt and every tool are the app's own code
 // (`desktop-tauri/tests/assistantLiveFixture.ts`); only native IPC is mocked.
-// `ai_chat` is sent to OpenAI with the body `ai_stream.rs` builds — the model,
-// effort and output cap are read from the Rust source so this tests what ships.
+// `ai_chat` is sent to OpenAI with a reviewed model and output cap. The script
+// checks those values against Rust source before sending anything, so source
+// file data cannot silently control an outbound provider request.
 // Needs OPENAI_API_KEY in the environment or in ../backend/.env. Costs cents.
 import { build } from 'esbuild';
 import { createServer } from 'node:http';
@@ -15,9 +16,12 @@ import { SCENARIOS } from './assistant-live-scenarios.mjs';
 
 const rust = async (file, name) => (await readFile(resolve('../desktop-tauri/src-tauri/src/commands', file), 'utf8'))
   .match(new RegExp(`const ${name}: [^=]+= "?([^";]+)"?;`))?.[1].replaceAll('_', '');
-const MODEL = process.env.EVAL_MODEL ?? await rust('ai.rs', 'CHAT_MODEL');
-const EFFORT = process.env.EVAL_EFFORT ?? await rust('ai.rs', 'REASONING_EFFORT');
-const MAX_OUTPUT = Number(await rust('ai_clamp.rs', 'MAX_OUTPUT_TOKENS'));
+const DEFAULT_MODEL = 'gpt-4o-mini';
+const MAX_OUTPUT = 1200;
+if (await rust('ai.rs', 'CHAT_MODEL') !== DEFAULT_MODEL || Number(await rust('ai.rs', 'MAX_OUTPUT_TOKENS')) !== MAX_OUTPUT)
+  throw new Error('Desktop assistant model or output cap changed; review this live test before sending requests.');
+const MODEL = process.env.EVAL_MODEL ?? DEFAULT_MODEL;
+const EFFORT = process.env.EVAL_EFFORT;
 const KEY = process.env.OPENAI_API_KEY
   ?? (await readFile('../backend/.env', 'utf8').catch(() => '')).match(/^OPENAI_API_KEY=(.+)$/m)?.[1]?.trim();
 if (!KEY) throw new Error('No OPENAI_API_KEY in the environment or ../backend/.env');
@@ -38,7 +42,8 @@ function clamp(messages) {
 }
 
 async function complete({ messages, tools }) {
-  const body = { model: MODEL, messages: clamp(messages), max_completion_tokens: MAX_OUTPUT, reasoning_effort: EFFORT };
+  const body = { model: MODEL, messages: clamp(messages), max_completion_tokens: MAX_OUTPUT,
+    ...(EFFORT ? { reasoning_effort: EFFORT } : {}) };
   if (tools?.length) Object.assign(body, { tools, tool_choice: 'auto' });
   for (let attempt = 0; ; attempt += 1) {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

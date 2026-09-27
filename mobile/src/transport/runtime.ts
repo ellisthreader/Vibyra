@@ -1,6 +1,7 @@
 import init, { Client, generateKeypair } from '../../../host/generated/noise/vibyra_transport.js';
 import { decodePreviewBytes } from '../preview/frameCodec';
 import { PreviewOutboundQueue } from './PreviewOutboundQueue';
+import { parsePairing } from './pairing';
 
 declare const NOISE_WASM_BASE64: string;
 const bytes = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -110,7 +111,10 @@ async function command(event: MessageEvent) {
     connectionId = message.connectionId;
     const notify = (notice: object) => post({ ...notice, connectionId: message.connectionId });
     socket?.close(); client?.free(); connected = false;
-    const pairing = message.pairing;
+    // Revalidate at the WebView boundary: a message must not bypass the QR/
+    // discovery parser to open an arbitrary local or insecure socket.
+    if (!message.pairing || typeof message.pairing !== 'object') throw new Error('Invalid computer connection.');
+    const pairing = parsePairing(JSON.stringify(message.pairing));
     client = new Client(hex(message.privateKey), hex(pairing.publicKey));
     requestRoute = pairing.route ?? 'direct'; relayId = ''; relayPreviewPacingMs = 12;
     socket = new WebSocket(pairing.url); socket.binaryType = 'arraybuffer';

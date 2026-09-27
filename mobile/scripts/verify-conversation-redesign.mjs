@@ -1,13 +1,15 @@
 // Real selected-account runtime, isolated workspace and encrypted phone UI.
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { writeFile, readFile, realpath } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, realpath } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { sharedChatProbe } from './shared-chat-probe.mjs';
 import { serveFixture } from './fixture-server.mjs';
 import { until } from './ui-test-helpers.mjs';
 const probe = await sharedChatProbe();
+const artifacts = await mkdtemp(join(tmpdir(), 'vibyra-redesign-'));
 let server, browser;
 const request = (method, extra = {}) => probe.local(method, { sessionId: probe.session.id, ...extra });
 try {
@@ -57,14 +59,15 @@ try {
    else if (command === 'usage') await page.getByText('This conversation', { exact: true }).waitFor();
    else if (command === 'model') await page.getByRole('radio').first().waitFor();
    else await page.getByRole('button', { name: 'Done setting thinking effort' }).waitFor();
-   await page.screenshot({ path: `/tmp/vibyra-redesign-phone-${command}.png` });
+   await page.screenshot({ path: join(artifacts, `phone-${command}.png`) });
    await page.getByRole('button', { name: command === 'model' ? 'Close Choose your AI' : command === 'effort' ? 'Done setting thinking effort' : 'Close command result', exact: true }).click();
  }
  probe.typing(false); await page.getByText('Typing from your phone is off.', { exact: false }).waitFor();
  await page.getByRole('button', { name: 'Review conversation changes', exact: true }).last().click();
  await page.getByRole('button', { name: /change.txt/ }).click();
  await page.getByText('+after', { exact: true }).waitFor();
- await page.screenshot({ path: '/tmp/vibyra-redesign-phone-diff-readonly.png' });
+ await page.screenshot({ path: join(artifacts, 'phone-diff-readonly.png') });
  console.log('PASS phone command sheets and artifact review while typing is off');
- await writeFile('/tmp/vibyra-redesign-runtime-evidence.json', JSON.stringify({ project: probe.dir, settings: applied, commands: catalogue, items: done.items, usage }, null, 2));
+ await writeFile(join(artifacts, 'runtime-evidence.json'), JSON.stringify({ project: probe.dir, settings: applied, commands: catalogue, items: done.items, usage }, null, 2), { mode: 0o600 });
+ console.log(`Review fixture artifacts in ${artifacts}`);
 } finally { await browser?.close(); server?.close(); await probe.close(); }

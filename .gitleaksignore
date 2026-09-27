@@ -6,3 +6,10 @@
 30453116d696af1b4505469df20d493854fda2e3:backend/tests/Feature/RemoteAccessTest.php:generic-api-key:21
 # The generated phone bundle match is xterm FourKeyMap class code.
 30453116d696af1b4505469df20d493854fda2e3:backend/public/phone/_expo/static/js/web/index-eb4d87d19fdf5a9b44f38fd78f24c42d.js:generic-api-key:854
+# Audited PR32 mobile sync commit: generated CocoaPods checksum, not a credential.
+2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/ios/Podfile.lock:generic-api-key:2591
+# Audited PR32 mobile sync commit: fixed pairing and browser-fixture test strings.
+2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/pairing.test.ts:generic-api-key:31
+2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/pairing.test.ts:generic-api-key:32
+2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/walletBrowserFixture.tsx:generic-api-key:42
+2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/vibesBrowserFixture.tsx:generic-api-key:31
