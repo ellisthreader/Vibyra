@@ -51,6 +51,8 @@ jobs:
         run: rustup show active-toolchain
       - name: Install locked frontend dependencies
         run: npm ci --prefix desktop-tauri
+      - name: Install mobile dependencies used by shared Desktop modules
+        run: npm ci --prefix mobile
       - name: Install Host relay Preview fixture dependency
         run: npm ci --prefix host/relay
       - name: Enforce desktop source limits

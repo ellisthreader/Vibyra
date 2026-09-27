@@ -13,3 +13,7 @@
 2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/pairing.test.ts:generic-api-key:32
 2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/walletBrowserFixture.tsx:generic-api-key:42
 2fac7f9bff3ea6bff04e119c8a66a107fafdc1e4:mobile/tests/vibesBrowserFixture.tsx:generic-api-key:31
+# Audited Desktop/Host integration fixtures: a WebSocket protocol test key and
+# a 48-character relay signing test value marked as a test fixture.
+e374abf1f5d96dc9fb87048771cb59b2eae1da2f:host/crates/engine/src/conversation/terminal_socket_tests.rs:generic-api-key:26
+e374abf1f5d96dc9fb87048771cb59b2eae1da2f:host/relay/tests/relay.test.mjs:generic-api-key:10
