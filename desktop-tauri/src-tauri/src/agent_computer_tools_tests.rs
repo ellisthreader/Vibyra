@@ -159,7 +159,10 @@ fn approved_edit_changes_only_the_agent_worktree() {
     let state = tempfile::tempdir().unwrap();
     let engine = open(&grant, state.path()).unwrap();
     let original = read(&grant, &engine, "read_file", &json!({"path":"notes.txt"}));
-    assert_eq!(original["content"], "Original note\n");
+    assert_eq!(
+        original["content"],
+        std::fs::read_to_string(worktree.join("notes.txt")).unwrap()
+    );
     let expiry = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()

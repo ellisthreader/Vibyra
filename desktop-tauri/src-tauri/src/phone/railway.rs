@@ -125,9 +125,22 @@ pub(super) fn locate() -> Option<PathBuf> {
 
 fn on_path(program: &str) -> Option<PathBuf> {
     let paths = std::env::var_os("PATH")?;
-    std::env::split_paths(&paths)
-        .map(|dir| dir.join(program))
-        .find(|candidate| is_executable(candidate))
+    let mut names = vec![program.to_owned()];
+    if cfg!(windows) && Path::new(program).extension().is_none() {
+        let extensions = std::env::var("PATHEXT").unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".into());
+        names.extend(
+            extensions
+                .split(';')
+                .filter(|extension| extension.starts_with('.'))
+                .map(|extension| format!("{program}{extension}")),
+        );
+    }
+    std::env::split_paths(&paths).find_map(|dir| {
+        names
+            .iter()
+            .map(|name| dir.join(name))
+            .find(|path| is_executable(path))
+    })
 }
 
 #[cfg(unix)]

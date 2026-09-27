@@ -111,9 +111,11 @@ pub fn save(file: &Path, grants: &[Grant]) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
         output.sync_all().map_err(|e| e.to_string())?;
         std::fs::rename(&pending, file).map_err(|e| e.to_string())?;
+        #[cfg(unix)]
         std::fs::File::open(parent)
             .and_then(|dir| dir.sync_all())
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+        Ok(())
     })();
     if write.is_err() {
         let _ = std::fs::remove_file(&pending);

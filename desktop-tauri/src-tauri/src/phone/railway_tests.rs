@@ -37,7 +37,8 @@ fn a_checker_that_has_not_answered_yet_says_nothing_at_all() {
 
 #[test]
 fn a_program_on_path_is_found_without_a_shell() {
-    let found = on_path("sh").expect("sh is on every test machine's PATH");
+    let program = if cfg!(windows) { "cmd.exe" } else { "sh" };
+    let found = on_path(program).expect("the platform shell is on PATH");
     assert!(found.is_absolute() && is_executable(&found));
     assert_eq!(on_path("vibyra-no-such-program-anywhere"), None);
 }

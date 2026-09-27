@@ -32,7 +32,7 @@ mod preview_grants_account_tests;
 mod preview_grants_tests;
 #[cfg(all(test, unix))]
 mod preview_live_fixture_tests;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod preview_noise_tests;
 mod preview_service;
 #[cfg(test)]

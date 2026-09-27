@@ -1,4 +1,4 @@
-#![cfg(any(target_os = "linux", test))]
+#![cfg(target_os = "linux")]
 
 // A raw AppImage has no desktop integration: GNOME labels the window with its
 // WM_CLASS and has no icon for it at startup. Install a user-level desktop
@@ -80,7 +80,7 @@ fn refresh(program: &str, args: &[&str]) {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 mod tests {
     use super::*;
 

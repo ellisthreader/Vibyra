@@ -107,14 +107,28 @@ fn only_a_folder_this_mac_was_asked_to_build_can_be_opened() {
 
 #[test]
 fn a_plan_is_refused_before_a_process_runs() {
-    let dir = "/Users/someone/Code/site";
+    let (dir, parent, outside, shell) = if cfg!(windows) {
+        (
+            r"C:\Users\someone\Code\site",
+            r"C:\Users\someone\Code",
+            r"C:\Windows",
+            r"C:\Windows\System32\cmd.exe",
+        )
+    } else {
+        (
+            "/Users/someone/Code/site",
+            "/Users/someone/Code",
+            "/etc",
+            "/bin/sh",
+        )
+    };
     // A shell, an absolute program, and a step that runs somewhere else entirely.
-    assert!(validate(&plan(dir, "/bin/sh", dir)).is_err());
-    assert!(validate(&plan(dir, "npx", "/etc")).is_err());
+    assert!(validate(&plan(dir, shell, dir)).is_err());
+    assert!(validate(&plan(dir, "npx", outside)).is_err());
     assert!(validate(&plan("relative/path", "npx", "relative/path")).is_err());
     // The shape the wizard actually sends is accepted.
     assert!(validate(&plan(dir, "npx", dir)).is_ok());
-    assert!(validate(&plan(dir, "npx", "/Users/someone/Code")).is_ok());
+    assert!(validate(&plan(dir, "npx", parent)).is_ok());
 }
 
 #[test]
