@@ -22,7 +22,7 @@ const config: ExpoConfig = {
   name: 'Vibyra', slug: 'vibyra', version: '1.0.0', scheme: 'vibyra',
   orientation: 'default', userInterfaceStyle: 'automatic',
   ios: {
-    bundleIdentifier: 'app.vibyra.mobile', appleTeamId: '6WXKN5P8K5', buildNumber: '4', supportsTablet: false, usesAppleSignIn: true,
+    bundleIdentifier: 'app.vibyra.mobile', appleTeamId: '6WXKN5P8K5', buildNumber: '5', supportsTablet: false, usesAppleSignIn: true,
     infoPlist: {
       NSLocalNetworkUsageDescription: 'Find your computer running Vibyra Host on the same Wi-Fi so you can connect to it.',
       NSBonjourServices: ['_vibyra-host._tcp'],
