@@ -127,6 +127,10 @@ live on both updater feeds and adds IPv6-only network support. See
 
 ## Analytics candidate — 27 September 2026
 
+In a fresh worktree, run `npm ci --prefix host/relay` before the full Desktop
+Rust test suite. The managed Preview WebSocket fixture imports `ws` from that
+package; a missing install looks like a native Preview startup failure.
+
 The 0.8.11 build-15 Desktop candidate is sourced from the isolated
 `codex/desktop-analytics-0.8.11` branch. It includes a server-authorized
 per-session consent choice, the 0.8.10 baseline, installed agent-view fixes,

@@ -26,6 +26,8 @@ For Desktop analytics releases, verify a new bearer session uses the server's
 consent choice, withdrawal clears queued events, and native serialized events
 pass the backend event contract. Build the release from the checked source and
 verify its package signature before describing it as ready for distribution.
+In a fresh checkout, install `host/relay` npm dependencies before the full
+Desktop Rust suite; its Preview integration fixture imports `ws` from there.
 
 ## Simplicity Review
 
