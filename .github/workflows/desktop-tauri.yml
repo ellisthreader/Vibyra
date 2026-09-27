@@ -7,6 +7,7 @@ on:
       - "host/**"
       - "scripts/check-desktop-lines.mjs"
       - ".github/workflows/desktop-tauri.yml"
+      - ".github/workflows/desktop-release.yml"
   push:
     branches: [main]
     paths:
@@ -14,6 +15,7 @@ on:
       - "host/**"
       - "scripts/check-desktop-lines.mjs"
       - ".github/workflows/desktop-tauri.yml"
+      - ".github/workflows/desktop-release.yml"
   workflow_dispatch:
 
 permissions:
