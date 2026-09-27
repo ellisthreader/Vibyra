@@ -3,25 +3,10 @@ import { icon } from "../common/iconFactory";
 // Report-only glyphs, on the same 24-unit grid as `Icons.tsx` but kept beside
 // the feature so the shared sheet stays under the line limit.
 
-export const LifebuoyIcon = icon(
-  <>
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="4" />
-    <path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6m0-12.8-3.6 3.6m-5.6 5.6-3.6 3.6" />
-  </>,
-);
-
 export const CameraIcon = icon(
   <>
     <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" />
     <circle cx="12" cy="13" r="3.2" />
-  </>,
-);
-
-export const TerminalIcon = icon(
-  <>
-    <rect x="3" y="4" width="18" height="16" rx="2" />
-    <path d="m7 9 3 3-3 3M13 15h4" />
   </>,
 );
 

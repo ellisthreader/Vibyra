@@ -6,12 +6,16 @@ pub fn lock(directory: &Path) -> Result<fs::File, String> {
     fs::create_dir_all(directory).map_err(|e| e.to_string())?;
     let mut options = fs::OpenOptions::new();
     options.read(true).write(true).create(true).truncate(false);
-    #[cfg(unix)] {
+    #[cfg(unix)]
+    {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
-    let file = options.open(directory.join("host.lock")).map_err(|e| e.to_string())?;
-    file.try_lock_exclusive().map_err(|_| "A Vibyra Host is already using this state directory")?;
+    let file = options
+        .open(directory.join("host.lock"))
+        .map_err(|e| e.to_string())?;
+    file.try_lock_exclusive()
+        .map_err(|_| "A Vibyra Host is already using this state directory")?;
     Ok(file)
 }
 

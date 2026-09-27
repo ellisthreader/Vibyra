@@ -1,10 +1,18 @@
 use crate::{identity::Identity, state::Shared};
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap},
     sync::{Arc, Mutex},
 };
 
 pub fn state() -> (tempfile::TempDir, Arc<Shared>) {
+    state_with_nearby(false)
+}
+
+pub fn nearby_state() -> (tempfile::TempDir, Arc<Shared>) {
+    state_with_nearby(true)
+}
+
+fn state_with_nearby(nearby: bool) -> (tempfile::TempDir, Arc<Shared>) {
     let dir = tempfile::tempdir().unwrap();
     let project = dir.path().join("project");
     std::fs::create_dir(&project).unwrap();
@@ -13,16 +21,37 @@ pub fn state() -> (tempfile::TempDir, Arc<Shared>) {
         vibyra_engine::Engine::new(dir.path().join("state"), vec![("Test".into(), project)])
             .unwrap(),
     );
-    let shared = Arc::new(Shared {
+    let shared = shared(identity, engine, nearby);
+    (dir, shared)
+}
+
+/// A Host around a backend a test stages itself, for connection behavior the
+/// engine cannot be made to show on demand.
+pub fn state_with_backend(
+    engine: Arc<dyn crate::backend::Backend>,
+) -> (tempfile::TempDir, Arc<Shared>) {
+    let dir = tempfile::tempdir().unwrap();
+    let identity = Identity::load(&dir.path().join("state"), Some("Test computer")).unwrap();
+    let shared = shared(identity, engine, false);
+    (dir, shared)
+}
+
+fn shared(
+    identity: Identity,
+    engine: Arc<dyn crate::backend::Backend>,
+    nearby: bool,
+) -> Arc<Shared> {
+    Arc::new(Shared {
         engine,
         identity: Mutex::new(identity),
+        writes: Mutex::new(()),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
-        active: Mutex::new(HashSet::new()),
+        active: Mutex::new(HashMap::new()),
         pairing_url: "ws://127.0.0.1:4318".into(),
         relay: false,
-    });
-    (dir, shared)
+        nearby,
+    })
 }
 
 pub fn token(uri: &str) -> String {

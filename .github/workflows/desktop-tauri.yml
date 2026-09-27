@@ -4,14 +4,18 @@ on:
   pull_request:
     paths:
       - "desktop-tauri/**"
+      - "host/**"
       - "scripts/check-desktop-lines.mjs"
       - ".github/workflows/desktop-tauri.yml"
+      - ".github/workflows/desktop-release.yml"
   push:
     branches: [main]
     paths:
       - "desktop-tauri/**"
+      - "host/**"
       - "scripts/check-desktop-lines.mjs"
       - ".github/workflows/desktop-tauri.yml"
+      - ".github/workflows/desktop-release.yml"
   workflow_dispatch:
 
 permissions:
@@ -49,6 +53,10 @@ jobs:
         run: rustup show active-toolchain
       - name: Install locked frontend dependencies
         run: npm ci --prefix desktop-tauri
+      - name: Install mobile dependencies used by shared Desktop modules
+        run: npm ci --prefix mobile
+      - name: Install Host relay Preview fixture dependency
+        run: npm ci --prefix host/relay
       - name: Enforce desktop source limits
         run: node scripts/check-desktop-lines.mjs
       - name: Check dead code and dependency declarations
@@ -90,6 +98,8 @@ jobs:
         run: rustup show active-toolchain
       - name: Install locked frontend dependencies
         run: npm ci --prefix desktop-tauri
+      - name: Install Host relay Preview fixture dependency
+        run: npm ci --prefix host/relay
       # The Linux job cannot compile the `cfg(target_os = "windows")` branches
       # at all, so a Windows-only regression there stays invisible until a user
       # hits it. Lint and test the native crate on a real Windows runner.

@@ -1,12 +1,16 @@
 import { getVersion } from "@tauri-apps/api/app";
+import macosConfig from "../../src-tauri/tauri.macos.conf.json";
 
 import { rendererPolicy } from "../ipc/render";
 import { useAccountStore } from "../state/accountStore";
 import { useProjectStore } from "../state/projectStore";
+import { useProductMode } from "../state/productModeStore";
 import { useSettingsStore } from "../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { areaFor } from "./reportDraft";
+import { reportPlatform } from "./reportPlatform";
+import { reportVersion } from "./reportVersion";
 import { isSuspendedId } from "./sessionRestore";
 
 // Everything Vibyra can answer on the user's behalf, so a report arrives
@@ -24,6 +28,8 @@ export interface ReportContext {
   model: string | null;
   pane: string | null;
   reporter: string | null;
+  hardware: string | null;
+  ip: string | null;
   locale: string | null;
   screen: string | null;
 }
@@ -36,12 +42,6 @@ export interface ReportSurroundings {
   area: string;
   /** Human name for the pane, for the "include output" toggle's label. */
   paneName: string | null;
-}
-
-function platformLabel(): string {
-  const agent = navigator.userAgent;
-  const system = /\(([^)]+)\)/.exec(agent)?.[1] ?? navigator.platform ?? "unknown";
-  return system.split(";")[0]?.trim() || "unknown";
 }
 
 /** Renderer mode is the first question a "looks wrong" report raises, and the
@@ -59,40 +59,46 @@ async function rendererLabel(): Promise<string | null> {
 
 export async function gatherSurroundings(): Promise<ReportSurroundings> {
   const workspace = useWorkspaceStore.getState();
+  const productMode = useProductMode.getState().mode;
   const project = useProjectStore.getState();
   const terminals = useTerminalStore.getState();
   const profile = useAccountStore.getState().snapshot.profile;
   const projects = useSettingsStore.getState().settings?.projects ?? [];
-  const focused = terminals.panes.find((pane) => pane.id === terminals.focusedId) ?? null;
-  const active = projects.find((entry) => entry.id === project.activeId) ?? null;
+  const focused = productMode === "work" ? terminals.panes.find((pane) => pane.id === terminals.focusedId) ?? null : null;
+  const active = productMode === "work" ? projects.find((entry) => entry.id === project.activeId) ?? null : null;
   // A suspended pane has no live session, so there is no output to offer.
   const sessionId = focused && !isSuspendedId(focused.id) ? focused.id : null;
-  const [appVersion, renderer] = await Promise.all([
+  const [version, renderer] = await Promise.all([
     getVersion().catch(() => "unknown"),
     rendererLabel(),
   ]);
+  const platform = reportPlatform(navigator.userAgent, navigator.platform);
+  const appVersion = reportVersion(version, platform, macosConfig.bundle.macOS.bundleVersion);
 
   return {
     sessionId,
     paneName: focused ? paneLabel(focused) : null,
     area: areaFor({
       settingsOpen: workspace.settingsOpen,
+      productMode,
       companionOpen: workspace.companionOpen,
-      projectMode: workspace.projectMode,
+      projectMode: workspace.companionOpen && workspace.companionTab === "preview" ? "preview" : workspace.projectMode,
       view: project.view,
       hasPane: focused !== null,
     }),
     context: {
       appVersion,
-      platform: platformLabel(),
+      platform,
       renderer,
-      view: project.view === "project" ? workspace.projectMode : "home",
+      view: productMode === "agent" ? "teammates" : project.view === "project" ? (workspace.companionOpen && workspace.companionTab === "preview" ? "preview" : workspace.projectMode) : "home",
       project: active?.name ?? null,
       projectRoot: active?.root ?? null,
       agent: focused?.agentId ?? null,
       model: focused?.model ?? null,
       pane: focused ? paneLabel(focused) : null,
       reporter: profile ? `${profile.name} (${profile.email})` : null,
+      hardware: null,
+      ip: null,
       locale: navigator.language || null,
       screen: `${window.screen.width}×${window.screen.height} @ ${window.devicePixelRatio}x`,
     },

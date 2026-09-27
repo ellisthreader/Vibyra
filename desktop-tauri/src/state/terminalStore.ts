@@ -1,34 +1,37 @@
+import { useWorkspaceStore } from "./workspaceStore";
 import { create } from "zustand";
 
 import { loadTerminalSession } from "../ipc/session";
 import { setTerminalVisibility } from "../ipc/terminal";
 import { toPaneStates } from "../lib/sessionRestore";
-import { getTerminal } from "../lib/terminalRegistry";
+import { requestTerminalFocus } from "../lib/terminalRegistry";
 import type { Visibility } from "../types";
 import { terminalLifecycleActions } from "./terminalLifecycleActions";
-import type { PaneState, TerminalStore } from "./terminalStoreTypes";
+import type { TerminalStore } from "./terminalStoreTypes";
 
 export type { PaneState } from "./terminalStoreTypes";
+// Re-exported so every list keeps importing the name from the store it reads.
+export { paneLabel } from "../lib/paneLabel";
 
-export function paneLabel(pane: PaneState): string {
-  return pane.customTitle || pane.osc || pane.title;
-}
+const FOCUS_STAMP_MS = 15_000;
 
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
   panes: [],
   focusedId: null,
   zoomedId: null,
   activity: {},
+  sessionReady: false,
+  relaunching: [],
+  relaunchErrors: {},
   ...terminalLifecycleActions(set, get),
 
   // Runs once at startup. Restored panes are suspended: their output is shown
   // but no process is launched until the user resumes one, so reopening the
   // app never spends money or takes an action on its own.
   restoreSession: async () => {
-    if (get().panes.length > 0) return;
-    const session = await loadTerminalSession().catch(() => null);
-    if (!session?.panes.length) return;
-    set({ panes: toPaneStates(session) });
+    if (get().sessionReady) return;
+    const session = await loadTerminalSession();
+    set({ panes: get().panes.length ? get().panes : toPaneStates(session), sessionReady: true });
   },
 
   toggleZoom: (id) => {
@@ -55,16 +58,37 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
 
   setFocus: (id) => {
+    const workspace = useWorkspaceStore.getState();
+    workspace.setProjectMode("terminals");
+    if (workspace.companionOpen && workspace.companionSize === "full") workspace.toggleCompanion();
     get().markFocused(id);
-    getTerminal(id)?.term.focus();
+    const pane = get().panes.find((p) => p.id === id);
+    if (get().zoomedId !== null && get().zoomedId !== id) get().toggleZoom(id);
+    if (pane?.visibility === "hibernated" && pane.status === "running") void get().wake(id);
+    window.requestAnimationFrame(() => {
+      if (pane?.status === "running") requestTerminalFocus(id);
+      else document.querySelector<HTMLButtonElement>(`[data-pane-id="${id}"] .pane-recovery .btn`)?.focus();
+    });
   },
 
   markFocused: (id) => {
-    set((state) => ({
-      focusedId: id,
-      panes: state.panes.map((pane) =>
-        pane.id === id ? { ...pane, lastFocusedAt: Date.now() } : pane),
-    }));
+    set((state) => {
+      // Every mousedown lands here, and a new `panes` array re-renders every
+      // list. Clicks inside the pane already in front, which is already the
+      // most recently focused, only refresh the stamp once it could read
+      // differently ("just now" lasts 45 s); the recency order never changes.
+      const now = Date.now();
+      const pane = state.panes.find((candidate) => candidate.id === id);
+      if (
+        state.focusedId === id && pane && now - pane.lastFocusedAt < FOCUS_STAMP_MS &&
+        state.panes.every((other) => other.lastFocusedAt <= pane.lastFocusedAt)
+      ) return state;
+      return {
+        focusedId: id,
+        panes: state.panes.map((candidate) =>
+          candidate.id === id ? { ...candidate, lastFocusedAt: now } : candidate),
+      };
+    });
   },
 
   rename: (id, title) => {

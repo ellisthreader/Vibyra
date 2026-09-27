@@ -13,8 +13,7 @@ pub const VERSION: u32 = 1;
 /// Ceilings on what a single save may cost. Terminal output is unbounded in
 /// principle — a noisy build loop can fill the 4 MiB scrollback ring of every
 /// pane — so the file is capped rather than left to track it.
-const MAX_PANES: usize = 24;
-const MAX_SNAPSHOT_BYTES: usize = 256 * 1024;
+pub(crate) const MAX_SNAPSHOT_BYTES: usize = 256 * 1024;
 const MAX_TOTAL_BYTES: usize = 8 * 1024 * 1024;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -32,6 +31,7 @@ pub struct PersistedPane {
     pub permission_mode: String,
     pub reasoning_effort: Option<String>,
     pub source_cwd: Option<String>,
+    pub resume_cwd: Option<String>,
     pub workspace_mode: String,
     pub accent: String,
     pub snapshot: Option<String>,
@@ -84,7 +84,6 @@ pub fn trim_snapshot(snapshot: String) -> String {
 /// their snapshot, so a busy workspace still restores its layout in full.
 pub fn normalize(mut session: TerminalSession) -> TerminalSession {
     session.version = VERSION;
-    session.panes.truncate(MAX_PANES);
     let mut budget = MAX_TOTAL_BYTES;
     for pane in &mut session.panes {
         let Some(snapshot) = pane.snapshot.take() else {
@@ -100,16 +99,27 @@ pub fn normalize(mut session: TerminalSession) -> TerminalSession {
     session
 }
 
-/// A missing, unreadable, corrupt or foreign-version file is not an error —
-/// it simply means there is nothing to restore. Never block startup on it.
-pub fn load(path: &Path) -> TerminalSession {
-    let Ok(raw) = std::fs::read_to_string(path) else {
-        return TerminalSession::default();
+/// Only a missing file is an empty workspace. A damaged save must not be
+/// mistaken for an empty layout and overwritten by the next checkpoint.
+pub fn load(path: &Path) -> CoreResult<TerminalSession> {
+    let raw = match std::fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(TerminalSession::default())
+        }
+        Err(error) => return Err(error.into()),
     };
-    match serde_json::from_str::<TerminalSession>(&raw) {
-        Ok(session) if session.version == VERSION => session,
-        _ => TerminalSession::default(),
+    let session: TerminalSession = serde_json::from_str(&raw).map_err(|error| {
+        CoreError::Settings(format!(
+            "Saved terminals could not be read; the original file was kept: {error}"
+        ))
+    })?;
+    if session.version != VERSION {
+        return Err(CoreError::Settings(
+            "Saved terminals use an unsupported version; the original file was kept".into(),
+        ));
     }
+    Ok(session)
 }
 
 pub fn save(path: &Path, session: TerminalSession) -> CoreResult<()> {
@@ -117,9 +127,15 @@ pub fn save(path: &Path, session: TerminalSession) -> CoreResult<()> {
         std::fs::create_dir_all(parent)?;
     }
     let session = normalize(session);
+    let digest = unchanged::digest(&session)?;
+    if unchanged::already_written(path, digest) {
+        return Ok(());
+    }
     let raw = serde_json::to_vec_pretty(&session)
         .map_err(|error| CoreError::Settings(error.to_string()))?;
-    write_private_atomic(path, &raw)
+    write_private_atomic(path, &raw)?;
+    unchanged::written(path, digest);
+    Ok(())
 }
 
 pub fn now_ms() -> u64 {
@@ -130,6 +146,7 @@ pub fn now_ms() -> u64 {
 }
 
 pub fn clear(path: &Path) -> CoreResult<()> {
+    unchanged::forget(path);
     match std::fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
@@ -139,5 +156,6 @@ pub fn clear(path: &Path) -> CoreResult<()> {
 
 #[cfg(test)]
 pub(crate) const TEST_MAX_SNAPSHOT_BYTES: usize = MAX_SNAPSHOT_BYTES;
-#[cfg(test)]
-pub(crate) const TEST_MAX_PANES: usize = MAX_PANES;
+
+#[path = "session_store_unchanged.rs"]
+mod unchanged;

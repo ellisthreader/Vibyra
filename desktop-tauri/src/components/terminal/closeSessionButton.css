@@ -1,0 +1,3 @@
+.session-close { transition: color 120ms ease, background-color 120ms ease; }
+.pane__actions .icon-btn.session-close.session-close--armed { color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent); }
+@media (prefers-reduced-motion: reduce) { .session-close { transition: none; } }

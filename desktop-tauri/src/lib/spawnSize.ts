@@ -1,6 +1,6 @@
-import { gridColumns } from "./gridLayout";
-import { spawnDimensionsFor } from "./spawnGeometry";
-import { measuredCellSize } from "./terminalRegistry";
+import { terminalGridColumns } from "./terminalGridColumns.ts";
+import { spawnDimensionsFor } from "./spawnGeometry.ts";
+import { measuredCellSize } from "./terminalRegistry.ts";
 
 // Measures the live stage for `spawnGeometry`, which owns the arithmetic and
 // explains why the prediction deliberately undershoots.
@@ -22,14 +22,15 @@ export function estimateSpawnDimensions(
   if (rect.width < 120 || rect.height < 90) return null;
 
   const count = Math.max(1, paneCount);
-  const columns = gridColumns(count);
   const cell = measuredCellSize() ?? fallbackCell(fontSize);
+  const columns = terminalGridColumns(count, rect.width - 16, rect.height - 16);
   return spawnDimensionsFor({
     stageWidth: rect.width,
     stageHeight: rect.height,
     columns,
     paneRows: Math.ceil(count / columns),
-    cellWidth: cell.width,
-    cellHeight: cell.height,
+    cellWidth: Math.ceil(cell.width),
+    cellHeight: Math.ceil(cell.height),
+    chrome: { header: 34, insetX: 12, insetY: 12, gap: 8, padding: 8 },
   });
 }

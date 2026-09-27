@@ -21,6 +21,7 @@ fn repeated(
     if session.meta.project_id != project
         || session.meta.kind != kind
         || session.meta.title != title
+        || session.meta.runner.is_some()
     {
         return Err("request ID was already used for a different action".into());
     }
@@ -28,6 +29,23 @@ fn repeated(
 }
 
 impl Engine {
+    pub(crate) fn lookup_request(&self, device: &str, params: &Value) -> Result<Value, String> {
+        let request = text(params, "requestId")?;
+        identifier(request)?;
+        let project = text(params, "projectId")?;
+        let state = self.shared.lock();
+        Ok(state
+            .sessions
+            .values()
+            .find(|session| {
+                session.owner == device
+                    && session.request == request
+                    && session.meta.project_id == project
+                    && session.meta.runner.as_deref() == Some("conversation")
+            })
+            .map_or(Value::Null, |session| json!(session.meta)))
+    }
+
     pub(crate) fn create(&self, device: &str, params: &Value) -> Result<Value, String> {
         let project_id = text(params, "projectId")?;
         let request = text(params, "requestId")?;
@@ -70,6 +88,7 @@ impl Engine {
             kind: kind.into(),
             status: "interrupted".into(),
             created_at: now(),
+            runner: None,
         };
         let mut session = Session::restored(metadata, device.into(), request.into());
         // Commit the idempotency receipt before spawning anything. A crash after
@@ -119,6 +138,15 @@ impl Engine {
                 .is_some_and(|lease| lease.device == device)
         {
             return Err("claim control before stopping another device's session".into());
+        }
+        if let Some(conversation) = state.conversations.get(&session.meta.id) {
+            let runtime = conversation.runtime.clone();
+            let thread = conversation.thread_id.clone();
+            drop(state);
+            if let Some(runtime) = runtime {
+                runtime.stop_thread(&thread);
+            }
+            return Ok(json!({"ok":true}));
         }
         if session.meta.status == "running" {
             self.ptys

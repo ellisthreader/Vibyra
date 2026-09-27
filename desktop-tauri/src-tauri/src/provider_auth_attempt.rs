@@ -7,7 +7,11 @@ use std::time::{Duration, Instant};
 use parking_lot::Mutex;
 
 use crate::provider_auth_output::ProcessOutput;
-use crate::provider_auth_process::stop_child;
+
+/// Cancelling and quitting live next door, as a child module so they can
+/// still reach the store's private fields.
+#[path = "provider_auth_attempt_stop.rs"]
+mod stop;
 
 /// A login that exits without the account showing up has not succeeded, but
 /// the probe that proves it needs a moment to run.
@@ -77,19 +81,20 @@ impl LoginAttemptStore {
         self.cancel(id);
     }
 
-    /// Which accounts have a child running right now.
+    /// Which accounts have a sign-in or install still in play: running, or
+    /// exited cleanly and inside the settle window where the probe has to
+    /// confirm it. A failed attempt stays listed to explain itself, but its
+    /// account is not expected to change, so it is not force-probed forever.
     ///
     /// These are exactly the accounts whose answer is expected to change at
     /// any moment, so the probe cache must not speak for them.
     pub fn active_ids(&self) -> Vec<String> {
-        self.attempts.lock().keys().cloned().collect()
-    }
-
-    pub fn cancel(&self, id: &str) {
-        if let Some(mut attempt) = self.attempts.lock().remove(id) {
-            drop(attempt.stdin.take());
-            stop_child(&mut attempt.child);
-        }
+        let now = Instant::now();
+        let mut attempts = self.attempts.lock();
+        attempts
+            .iter_mut()
+            .filter_map(|(id, attempt)| (!attempt.observe(now)).then(|| id.clone()))
+            .collect()
     }
 
     pub fn sign_in_url(&self, id: &str) -> Option<String> {
@@ -144,17 +149,7 @@ impl LoginAttemptStore {
         let Some(attempt) = attempts.get_mut(id) else {
             return AttemptView::default();
         };
-        match attempt.child.try_wait() {
-            Ok(Some(status)) if !status.success() => attempt.failed = true,
-            Ok(Some(_)) if attempt.finished_at.is_none() => {
-                attempt.finished_at = Some(Instant::now())
-            }
-            Ok(_) => {}
-            Err(_) => attempt.failed = true,
-        }
-        if settled_without_connection(attempt.finished_at, Instant::now()) {
-            attempt.failed = true;
-        }
+        attempt.observe(Instant::now());
         let output = attempt.output.lock();
         AttemptView {
             state: if attempt.failed {
@@ -170,12 +165,20 @@ impl LoginAttemptStore {
     }
 }
 
-impl Drop for LoginAttemptStore {
-    fn drop(&mut self) {
-        for (_, mut attempt) in self.attempts.get_mut().drain() {
-            drop(attempt.stdin.take());
-            stop_child(&mut attempt.child);
+impl Attempt {
+    /// Folds in whether the child has exited, reaping it if so, and returns
+    /// whether the attempt has failed.
+    fn observe(&mut self, now: Instant) -> bool {
+        match self.child.try_wait() {
+            Ok(Some(status)) if !status.success() => self.failed = true,
+            Ok(Some(_)) if self.finished_at.is_none() => self.finished_at = Some(now),
+            Ok(_) => {}
+            Err(_) => self.failed = true,
         }
+        if settled_without_connection(self.finished_at, now) {
+            self.failed = true;
+        }
+        self.failed
     }
 }
 

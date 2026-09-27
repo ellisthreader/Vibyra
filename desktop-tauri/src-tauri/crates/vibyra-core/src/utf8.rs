@@ -30,11 +30,16 @@ pub fn incomplete_suffix_len(bytes: &[u8]) -> usize {
 
 /// Drains `pending` up to the last complete UTF-8 boundary and returns the
 /// decoded text; incomplete trailing bytes stay in `pending` for next time.
+///
+/// The buffer itself becomes the returned `String` and `pending` restarts
+/// from just the carried bytes. Collecting a drained copy and then decoding
+/// it lossily copied every flush twice, and left `pending` holding whatever
+/// capacity its largest burst ever needed — a megabyte per noisy session.
 pub fn take_complete_utf8(pending: &mut Vec<u8>) -> String {
-    let carry = incomplete_suffix_len(pending);
-    let cut = pending.len() - carry;
-    let chunk: Vec<u8> = pending.drain(..cut).collect();
-    String::from_utf8_lossy(&chunk).into_owned()
+    let cut = pending.len() - incomplete_suffix_len(pending);
+    let carry = pending[cut..].to_vec();
+    pending.truncate(cut);
+    crate::ring::decode(std::mem::replace(pending, carry))
 }
 
 #[cfg(test)]
@@ -71,5 +76,18 @@ mod tests {
         let mut pending = vec![b'a', 0xFF, b'b'];
         assert_eq!(incomplete_suffix_len(&pending), 0);
         assert_eq!(take_complete_utf8(&mut pending), "a\u{FFFD}b");
+        let mut pending = vec![0xFF, b'c', 0xE2, 0x94];
+        assert_eq!(take_complete_utf8(&mut pending), "\u{FFFD}c");
+        assert_eq!(pending, [0xE2, 0x94]);
+    }
+
+    #[test]
+    fn a_burst_does_not_leave_its_capacity_behind() {
+        let mut pending = Vec::with_capacity(1024 * 1024);
+        pending.extend_from_slice("ok─".as_bytes());
+        pending.pop();
+        assert_eq!(take_complete_utf8(&mut pending), "ok");
+        assert_eq!(pending.len(), 2);
+        assert!(pending.capacity() < 64);
     }
 }

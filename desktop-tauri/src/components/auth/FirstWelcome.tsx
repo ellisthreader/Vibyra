@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
-
-import logoUrl from "../../assets/vibyra-cobalt.png";
-import {
-  FIRST_WELCOME_BEAT_MS,
-  FIRST_WELCOME_DURATION_MS,
-  firstWelcomeBeats,
-  rememberFirstWelcome,
-} from "../../lib/firstWelcomePolicy";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { vibyraLogoUrl as logoUrl } from "../../assets/vibyraLogo";
+import { firstWelcomeBeats, rememberFirstWelcome, WELCOME_DURATIONS } from "../../lib/firstWelcomePolicy";
+import { useWelcomePlayback } from "../../lib/useWelcomePlayback";
 import { useModalFocus } from "../../lib/useModalFocus";
+import { WelcomeArtwork } from "./WelcomeArtwork";
+import { preloadWelcomeImages } from "./WelcomeScreens";
+import { WelcomeScene } from "./WelcomeScene";
+import { WelcomeControls } from "./WelcomeControls";
 import type { AccountProfile } from "../../types";
 
 interface FirstWelcomeProps {
@@ -17,150 +15,68 @@ interface FirstWelcomeProps {
   onHandoffStart: () => void;
 }
 
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () => globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
-  );
-  useEffect(() => {
-    const media = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!media) return;
-    const update = () => setReduced(media.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-  return reduced;
-}
-
-function AnimatedTitle({ text, reduced }: { text: string; reduced: boolean }) {
-  if (reduced) return <h1 id="first-welcome-title">{text}</h1>;
-  return (
-    <h1 id="first-welcome-title" aria-label={text}>
-      {text.split(/\s+/).map((word, index) => (
-        <span className="first-welcome__word-mask" aria-hidden="true" key={`${word}-${index}`}>
-          <span
-            className="first-welcome__word"
-            style={{ "--welcome-word": index } as CSSProperties}
-          >
-            {word}
-          </span>{" "}
-        </span>
-      ))}
-    </h1>
-  );
-}
-
 export function FirstWelcome({ profile, onFinish, onHandoffStart }: FirstWelcomeProps) {
-  const reduced = usePrefersReducedMotion();
-  const beats = firstWelcomeBeats(profile.name);
-  const [beatIndex, setBeatIndex] = useState(0);
-  const [complete, setComplete] = useState(reduced);
-  const [exitMode, setExitMode] = useState<"handoff" | "skip" | null>(null);
+  const player = useWelcomePlayback(WELCOME_DURATIONS);
+  const [leaving, setLeaving] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const playbackGeneration = useRef(0);
   const closing = useRef(false);
   const closeTimer = useRef<number | null>(null);
+  const beats = useMemo(() => firstWelcomeBeats(profile.name), [profile.name]);
+  const beat = beats[player.step];
+  const still = player.reduced || (player.paused && player.progress === 0);
 
   useEffect(() => {
     if (dialogRef.current) rememberFirstWelcome(profile);
+    preloadWelcomeImages();
   }, [profile]);
-
-  useEffect(() => {
-    const generation = ++playbackGeneration.current;
-    setBeatIndex(0);
-    setComplete(reduced);
-    if (reduced) return;
-    const timers = [1, 2, 3].map((index) => window.setTimeout(() => {
-      if (playbackGeneration.current === generation) setBeatIndex(index);
-    }, index * FIRST_WELCOME_BEAT_MS));
-    timers.push(window.setTimeout(() => {
-      if (playbackGeneration.current === generation) setComplete(true);
-    }, FIRST_WELCOME_DURATION_MS));
-    return () => {
-      for (const timer of timers) window.clearTimeout(timer);
-    };
-  }, [reduced]);
-
   useEffect(() => () => {
-    playbackGeneration.current += 1;
     if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
   }, []);
 
   const requestClose = useCallback((handoff: boolean) => {
     if (closing.current) return;
     closing.current = true;
-    playbackGeneration.current += 1;
-    setExitMode(handoff ? "handoff" : "skip");
+    setLeaving(true);
     if (handoff) onHandoffStart();
-    closeTimer.current = window.setTimeout(
-      () => onFinish(handoff),
-      reduced ? 0 : handoff ? 440 : 180,
-    );
-  }, [onFinish, onHandoffStart, reduced]);
+    const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    closeTimer.current = window.setTimeout(() => onFinish(handoff), reduced ? 0 : 850);
+  }, [onFinish, onHandoffStart]);
+  useEffect(() => { if (player.complete) requestClose(true); }, [player.complete, requestClose]);
   const closeFromEscape = useCallback(() => requestClose(false), [requestClose]);
+  const finish = useCallback(() => requestClose(true), [requestClose]);
   useModalFocus(dialogRef, true, closeFromEscape);
-
-  const beat = beats[beatIndex];
-  const className = [
-    "first-welcome",
-    reduced ? "first-welcome--reduced" : "",
-    complete ? "first-welcome--complete" : "",
-    exitMode ? `first-welcome--leaving first-welcome--${exitMode}` : "",
-  ].filter(Boolean).join(" ");
+  useEffect(() => {
+    // WebKit does not focus a button after a mouse click. Own these keys for the modal.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.metaKey || event.ctrlKey || event.shiftKey || closing.current) return;
+      if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+      event.preventDefault();
+      event.stopPropagation();
+      player.go(player.step + (event.key === "ArrowRight" ? 1 : -1));
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [player.go, player.step]);
 
   return (
-    <div
-      className={className}
-      data-beat={beatIndex}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="first-welcome-title"
-      ref={dialogRef}
-    >
-      <div className="first-welcome__atmosphere" aria-hidden="true"><span /></div>
-      <button className="first-welcome__skip" onClick={() => requestClose(false)}>
-        Skip intro <span aria-hidden="true">Esc</span>
-      </button>
-      <div
-        className="first-welcome__dialog"
-      >
-        <main className="first-welcome__stage">
-          <div className="first-welcome__mark" aria-hidden="true">
-            <img src={logoUrl} alt="" draggable={false} />
-          </div>
-          {reduced ? (
-            <div className="first-welcome__static">
-              <AnimatedTitle text={beats[0].title} reduced />
-              <p>{beats[0].body}</p>
-              <ul>{beats.slice(1).map((item) => <li key={item.title}>{item.title}</li>)}</ul>
-            </div>
-          ) : (
-            <div className="first-welcome__beat" key={beat.title}>
-              <p className="first-welcome__eyebrow">{beat.eyebrow}</p>
-              <AnimatedTitle text={beat.title} reduced={false} />
-              <p className="first-welcome__body">{beat.body}</p>
-            </div>
-          )}
-          <div className="first-welcome__action" aria-hidden={!complete}>
-            {complete && (
-              <>
-                <button className="first-welcome__primary" onClick={() => requestClose(true)}>
-                  Start building <span aria-hidden="true">→</span>
-                </button>
-                <small>Runs on this computer.</small>
-              </>
-            )}
-          </div>
-        </main>
-        <div
-          className="first-welcome__progress"
-          role="progressbar"
-          aria-label="Welcome introduction"
-          aria-valuemin={1}
-          aria-valuemax={4}
-          aria-valuenow={complete ? 4 : beatIndex + 1}
-        ><span /></div>
-        <p className="sr-only" role="status" aria-live="polite">{beat.title} {beat.body}</p>
-      </div>
+    <div className={`first-welcome${leaving ? " first-welcome--leaving" : ""}`}
+      role="dialog" aria-modal="true" aria-labelledby="first-welcome-title" ref={dialogRef}
+      data-step={player.step} data-playing={player.playing && !leaving}>
+      <div className="first-welcome__atmosphere" aria-hidden="true" />
+      <header className="first-welcome__header">
+        <div className="first-welcome__brand"><img src={logoUrl} alt="" />Vibyra</div>
+        <button type="button" className="first-welcome__skip" disabled={leaving} onClick={closeFromEscape}>Skip intro <kbd aria-hidden="true">esc</kbd></button>
+      </header>
+      <main className="first-welcome__stage">
+        {beats.map((item, index) => <WelcomeScene key={item.label} beat={item} index={index}
+          activeStep={player.step} time={still || index < player.step ? 3 : index === player.step ? player.progress * WELCOME_DURATIONS[player.step] / 1000 : 0}
+          manual={player.paused} onFinish={finish} />)}
+        <WelcomeArtwork step={player.step} time={player.progress * WELCOME_DURATIONS[player.step] / 1000} reduced={still} playing={player.playing && !leaving} />
+        <p className="first-welcome__note" data-visible={Boolean(beat.note)}>{beat.note ?? "\u00a0"}</p>
+      </main>
+      <WelcomeControls beats={beats} step={player.step} progress={player.progress} paused={player.paused}
+        disabled={leaving} onToggle={player.toggle} onSeek={index => !closing.current && player.go(index)} />
+      <p className="sr-only" role="status" aria-live="polite">{beat.title} {beat.body} {beat.note}</p>
     </div>
   );
 }

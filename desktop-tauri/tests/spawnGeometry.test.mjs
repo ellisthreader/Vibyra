@@ -4,15 +4,18 @@ import test from "node:test";
 import { spawnDimensionsFor } from "../src/lib/spawnGeometry.ts";
 
 // Mirrors FitAddon.proposeDimensions() for the box `.term-host` ends up with:
-// the pane minus its 36px header, the `.term-view` padding and the scrollbar
+// the pane minus its 44px header, the `.term-view` padding and the scrollbar
 // gutter xterm reserves while scrollback is on.
-const HEADER = 36;
+const HEADER = 44;
+const PADDING = 8;
+const GAP = 8;
+const BORDER = 2;
 const INSET = 12;
 const SCROLLBAR = 14;
 
 function fitAddonGrid({ stageWidth, stageHeight, columns, paneRows, cellWidth, cellHeight }) {
-  const hostWidth = Math.floor(stageWidth / columns) - INSET;
-  const hostHeight = Math.floor(stageHeight / paneRows) - HEADER - INSET;
+  const hostWidth = Math.floor((stageWidth - PADDING * 2 - GAP * (columns - 1)) / columns) - BORDER - INSET;
+  const hostHeight = Math.floor((stageHeight - PADDING * 2 - GAP * (paneRows - 1)) / paneRows) - BORDER - HEADER - INSET;
   return {
     cols: Math.max(2, Math.floor((hostWidth - SCROLLBAR) / cellWidth)),
     rows: Math.max(1, Math.floor(hostHeight / cellHeight)),
@@ -30,10 +33,9 @@ test("reserves the scrollbar gutter the old estimate spent on columns", () => {
     paneRows: 2,
     ...CELL,
   };
-  // floor((576 - 12) / 7.8) = 72 columns was handed to the PTY while xterm
-  // built 70, so every line the CLI drew wrapped a row early.
-  assert.equal(fitAddonGrid(geometry).cols, 70);
-  assert.deepEqual(spawnDimensionsFor(geometry), { rows: 23, cols: 69 });
+  // Pane borders, grid spacing and the scrollbar all consume measured space.
+  assert.equal(fitAddonGrid(geometry).cols, 68);
+  assert.deepEqual(spawnDimensionsFor(geometry), { rows: 22, cols: 67 });
 });
 
 test("never predicts a grid larger than the first fit will build", () => {

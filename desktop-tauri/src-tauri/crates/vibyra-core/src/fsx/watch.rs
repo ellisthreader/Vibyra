@@ -2,7 +2,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use notify::{EventKind, RecursiveMode};
-use notify_debouncer_full::{new_debouncer, DebounceEventResult, Debouncer, RecommendedCache};
+use notify_debouncer_full::{new_debouncer_opt, DebounceEventResult, Debouncer, NoCache};
 use serde::Serialize;
 
 use crate::error::{CoreError, CoreResult};
@@ -40,8 +40,13 @@ fn ignored(path: &Path) -> bool {
 /// Recursive, debounced filesystem watcher for the workspace root.
 /// Events are coalesced in Rust (300 ms) so a `cargo build` or `npm install`
 /// storm becomes a handful of IPC messages instead of thousands.
+///
+/// No file-id cache: on macOS the default one walks and stores every path
+/// under the root (all of `target/` and `node_modules/`) before the ignore
+/// filter ever runs, and rescans it on every removal. It only buys rename
+/// stitching, and consumers treat a batch as "something changed".
 pub struct WorkspaceWatcher {
-    _debouncer: Debouncer<notify::RecommendedWatcher, RecommendedCache>,
+    _debouncer: Debouncer<notify::RecommendedWatcher, NoCache>,
     pub root: String,
 }
 
@@ -54,7 +59,7 @@ impl WorkspaceWatcher {
         if !path.is_dir() {
             return Err(CoreError::InvalidPath(format!("not a directory: {root}")));
         }
-        let mut debouncer = new_debouncer(
+        let mut debouncer = new_debouncer_opt::<_, notify::RecommendedWatcher, NoCache>(
             Duration::from_millis(300),
             None,
             move |result: DebounceEventResult| {
@@ -85,6 +90,8 @@ impl WorkspaceWatcher {
                     on_changes(changes);
                 }
             },
+            NoCache::new(),
+            notify::Config::default(),
         )
         .map_err(|e| CoreError::Watch(e.to_string()))?;
         debouncer
@@ -121,8 +128,20 @@ mod tests {
         .unwrap();
         std::thread::sleep(Duration::from_millis(100));
         std::fs::write(tmp.path().join("new-file.txt"), "hello").unwrap();
-        let changes = rx.recv_timeout(Duration::from_secs(5)).unwrap();
-        assert!(changes.iter().any(|c| c.path.contains("new-file.txt")));
+        // macOS can deliver a directory setup batch before the file event.
+        // Keep the original deadline while waiting for the event being tested.
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        loop {
+            let changes = rx
+                .recv_timeout(deadline.saturating_duration_since(std::time::Instant::now()))
+                .expect("watcher did not report the created file before the deadline");
+            if changes
+                .iter()
+                .any(|c| Path::new(&c.path).ends_with("new-file.txt"))
+            {
+                break;
+            }
+        }
         drop(watcher);
     }
 }

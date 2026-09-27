@@ -1,6 +1,7 @@
-import { shortcutLabel } from "../../lib/hotkeys";
+import { shortcutCaps } from "../../lib/hotkeys";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useVoiceStore } from "../../state/voiceStore";
+import { KeyCaps } from "../common/KeyCaps";
 
 function MicIcon() {
   return (
@@ -58,7 +59,7 @@ export function VoiceHud() {
         <small>{sub}</small>
       </span>
       <span className="voice-hud__key">
-        <kbd>{shortcutLabel(shortcut)}</kbd>
+        <KeyCaps caps={shortcutCaps(shortcut)} />
       </span>
       {(phase === "listening" || phase === "starting") && (
         <button className="icon-btn" title="Cancel" onClick={cancel}>

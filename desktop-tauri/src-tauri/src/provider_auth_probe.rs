@@ -135,6 +135,20 @@ impl ProbeCache {
     pub fn forget(&mut self, id: &ProbeKey) {
         self.entries.remove(id);
     }
+
+    /// Whether the account said it was signed in within the cache window.
+    /// Only a yes is trusted: a login made a moment ago must not be refused
+    /// from memory.
+    pub fn signed_in_recently(&self, id: &ProbeKey) -> bool {
+        self.entries
+            .get(id)
+            .is_some_and(|(at, snapshot)| at.elapsed() < CACHE_TTL && snapshot.connected)
+    }
+
+    /// Files an answer probed outside a refresh round.
+    pub fn remember(&mut self, id: ProbeKey, snapshot: AuthSnapshot) {
+        self.entries.insert(id, (Instant::now(), snapshot));
+    }
 }
 
 /// Runs one bounded batch, each account on its own thread.

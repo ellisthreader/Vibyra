@@ -22,6 +22,22 @@ Use this skill when the task is large enough that a quick edit would risk drift,
 6. Validate with the narrowest useful checks.
 7. Update durable memory or local skills when the work creates reusable rules.
 
+For Desktop analytics releases, verify a new bearer session uses the server's
+consent choice, withdrawal clears queued events, and native serialized events
+pass the backend event contract. Build the release from the checked source and
+verify its package signature before describing it as ready for distribution.
+In a fresh checkout, install `mobile` npm dependencies before the Desktop Vite
+build because shared modules use Expo's TypeScript base configuration. Install
+`host/relay` npm dependencies before the full Desktop Rust suite; its Preview
+integration fixture imports `ws` from there.
+For Linux smoke runs, keep WebDriver on loopback and capture bounded evidence
+inside a private run directory with fixed filenames.
+For Windows Preview fixtures launched through PHP/Node, pass the absolute
+manifest-relative path and check that it exists. Windows `canonicalize()` may
+add a `\\?\` prefix that a shell command misreads as another drive path.
+Keep the signed updater test payload marked `-text` in `.gitattributes` so a
+Windows checkout cannot change LF bytes before signature verification.
+
 ## Simplicity Review
 
 Before editing a “big thing,” remove avoidable complexity from the plan:

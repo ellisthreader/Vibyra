@@ -78,13 +78,13 @@ button:disabled {
 .input {
   width: 100%;
   min-width: 0;
-  min-height: 32px;
+  min-height: 36px;
   padding: 6px 10px;
   border: 1px solid var(--line);
   border-radius: var(--r-shell);
   background: var(--bg);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 560;
   transition: border-color var(--t-ui) var(--e-standard), box-shadow var(--t-ui) var(--e-standard);
 }
@@ -119,12 +119,12 @@ select.input {
   justify-content: center;
   gap: 7px;
   padding: 0 13px;
-  min-height: 32px;
+  min-height: 36px;
   border: 1px solid var(--line);
   border-radius: var(--r-shell);
   background: var(--hover);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 650;
   white-space: nowrap;
   transition: background var(--t-ui) var(--e-standard), border-color var(--t-ui) var(--e-standard);
@@ -149,8 +149,8 @@ select.input {
 .icon-btn {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--r-sm);
   color: var(--muted);
   transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);

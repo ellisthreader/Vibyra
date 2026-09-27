@@ -22,7 +22,7 @@
   /* text */
   --text: #f5f7fa;
   --muted: #a6adba;
-  --dim: #747c8a;
+  --dim: #939baa;
 
   /* the cobalt nerve */
   --accent: #5b7cfa;
@@ -38,8 +38,16 @@
   --success-soft: rgba(55, 199, 138, 0.14);
   --amber: #e8a94b;
   --amber-soft: rgba(232, 169, 75, 0.16);
+  --notification-badge: #c9364b;
   --danger: #f06472;
   --danger-soft: rgba(240, 100, 114, 0.15);
+
+  /* keycaps — a cap sits above the panel it rests on, never cut into it */
+  --key-face: #31353f;
+  --key-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0));
+  --key-edge: rgba(255, 255, 255, 0.14);
+  --key-lip: rgba(0, 0, 0, 0.5);
+  --key-text: #f1f3f8;
 
   /* states */
   --hover: rgba(255, 255, 255, 0.04);
@@ -57,12 +65,12 @@
     radial-gradient(circle at 50% -12%, rgba(81, 99, 150, 0.2), transparent 34%),
     radial-gradient(circle at 8% 9%, rgba(49, 91, 216, 0.14), transparent 24%);
 
-  /* chrome (the only blur in the product) */
+  /* chrome — near-opaque and deliberately unblurred (see chrome.css) */
   --chrome-bg: rgba(10, 10, 15, 0.92);
 
   /* shape — the system is 7/8px; panes 12; menus 10 */
   --r-sm: 6px;
-  --r-shell: 7px;
+  --r-shell: 8px;
   --r-control: 8px;
   --r-card: 9px;
   --r-menu: 10px;
@@ -80,15 +88,15 @@
   --e-hero: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* layout */
-  --chrome-h: 52px;
-  --rail-w: 236px;
+  --chrome-h: 56px;
+  --rail-w: 224px;
 
   /* terminal screen (deepest well) */
   --term-screen: #0b0c10;
   --term-input: #08090c;
-  --term-text: #eeeaf8;
-  --term-muted: #a9a3b8;
-  --term-dim: #918ca1;
+  --term-text: #f0f2f6;
+  --term-muted: #a6adba;
+  --term-dim: #939baa;
 }
 
 :root[data-theme="light"] {
@@ -108,7 +116,7 @@
 
   --text: #171a21;
   --muted: #626a78;
-  --dim: #7a8290;
+  --dim: #697180;
 
   --accent: #315bd8;
   --accent-2: #2449b8;
@@ -124,6 +132,12 @@
   --amber-soft: rgba(169, 104, 18, 0.12);
   --danger: #c9364b;
   --danger-soft: rgba(201, 54, 75, 0.1);
+
+  --key-face: #ffffff;
+  --key-gloss: linear-gradient(180deg, #ffffff, #f4f6f9);
+  --key-edge: #ccd2dc;
+  --key-lip: rgba(28, 31, 42, 0.16);
+  --key-text: #1c2029;
 
   --hover: rgba(30, 28, 31, 0.045);
   --hover-strong: rgba(30, 28, 31, 0.075);

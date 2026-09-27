@@ -8,38 +8,23 @@ use vibyra_core::CoreError;
 
 use super::terminal_launch::invalid;
 
-/// Gives a new pane its own conversation, so resuming it later can name that
-/// one rather than "whichever is newest in this folder". Only Claude Code
-/// accepts an id at launch *and* resumes by it; Gemini takes one but cannot
-/// resume by it, and Codex takes none, so neither is worth pinning.
+/// Claude accepts a caller-assigned UUID; Codex IDs are discovered from the process.
 pub fn pin_session(agent: &str, session: &str, args: &mut Vec<String>) {
     if agent == "claude" {
         args.extend(["--session-id".into(), session.into()]);
     }
 }
 
-/// Asks an agent to continue the conversation it was last in.
-///
-/// With an id it names that conversation exactly, and `--resume` keeps the id
-/// (only `--fork-session` changes it), so a pane survives any number of
-/// resumes. Without one the best available is recency — the frontend only asks
-/// for that when no sibling pane could mean the same thing.
-///
-/// Unlike full access and reasoning effort, an unsupported agent is **not** an
-/// error: resuming a plain shell, an SSH session or a custom CLI is a normal
-/// thing to do, it simply relaunches. The recency forms below cope with there
-/// being no previous conversation too — verified against claude 2.1.237, codex
-/// 0.144.6 and gemini: each falls back to starting a fresh session.
-///
-/// **Naming an id does not.** `claude --resume <id>` reports `No conversation
-/// found with session ID: …` and exits 1, so the caller must know the
-/// conversation exists before asking for it; see `agent_conversations`.
+/// Exact IDs resume exact chats. Older panes use a chooser, never recency.
+/// Gemini's bare --resume means latest, so without an ID it opens normally;
+/// the recovery UI tells the user to select the chat with /resume.
 pub fn add_resume(agent: &str, session: Option<&str>, args: &mut Vec<String>) {
     match (agent, session) {
         ("claude", Some(session)) => args.extend(["--resume".into(), session.into()]),
-        ("claude", None) => args.push("--continue".into()),
-        ("codex", _) => args.extend(["resume".into(), "--last".into()]),
-        ("gemini", _) => args.extend(["--resume".into(), "latest".into()]),
+        ("claude", None) => args.push("--resume".into()),
+        ("codex", Some(session)) => args.extend(["resume".into(), session.into()]),
+        ("codex", None) => args.push("resume".into()),
+        ("gemini", Some(session)) => args.extend(["--resume".into(), session.into()]),
         _ => {}
     }
 }

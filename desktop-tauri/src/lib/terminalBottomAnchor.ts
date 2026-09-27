@@ -53,8 +53,29 @@ export function terminalBottomAnchorPixels(blankRows: number, cellHeight: number
   return Math.max(0, blankRows) * cellHeight;
 }
 
+/** The private path to the grid xterm laid out; see `renderedCellHeight`. */
+interface RenderCore {
+  _core?: { _renderService?: { dimensions?: { css?: { cell?: { height?: number } } } } };
+}
+
+/**
+ * The cell height xterm lays rows out with — the exact value FitAddon divides
+ * the pane by — read from the render service instead of measured, so a fit
+ * costs one forced layout rather than two. Measures only if a release moves
+ * the field or the renderer has no cell yet.
+ */
+export function renderedCellHeight(term: ViewportTerminal): number {
+  let height: number | undefined;
+  try {
+    height = (term as unknown as RenderCore)._core?._renderService?.dimensions?.css?.cell?.height;
+  } catch {
+    // `dimensions` is a getter over the live renderer; none means no value.
+  }
+  return typeof height === "number" && height > 0 ? height : measureTerminalCellHeight(term);
+}
+
 /** Measures the rendered cell height. Forces layout — call on fit, not per write. */
-export function measureTerminalCellHeight(term: ViewportTerminal): number {
+function measureTerminalCellHeight(term: ViewportTerminal): number {
   const element = term.element;
   const row = element?.querySelector<HTMLElement>(".xterm-rows > div");
   const rowHeight = row?.getBoundingClientRect().height ?? 0;
@@ -86,7 +107,16 @@ export function applyTerminalBottomAnchor(
   }
   if (followOutput) term.scrollToBottom();
 
-  if (anchor.cellHeight <= 0) anchor.cellHeight = measureTerminalCellHeight(term);
+  // No cell height means no fit yet (mounted hidden or detached). Measuring
+  // here would force a layout on every write and scroll only to read zero
+  // again; the first real fit re-applies the anchor instead.
+  if (anchor.cellHeight <= 0) {
+    if (anchor.appliedOffset !== 0) {
+      anchor.appliedOffset = 0;
+      element.style.transform = "";
+    }
+    return;
+  }
   const offset = terminalBottomAnchorPixels(
     terminalBottomAnchorRows(term),
     anchor.cellHeight,

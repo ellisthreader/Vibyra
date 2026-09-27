@@ -26,6 +26,9 @@ pub enum CoreError {
     #[error("preview error: {0}")]
     Preview(String),
 
+    #[error("scaffold error: {0}")]
+    Scaffold(String),
+
     #[error("background task failed: {0}")]
     Task(String),
 }

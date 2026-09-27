@@ -43,6 +43,15 @@ website, Expo browser client, and native phone app.
 - Workspace Preview: `Desktop/Projects And Preview.md`
 - System-wide F9 screenshot capture and annotation editor:
   `Desktop/Screenshot Capture.md`
+- Desktop packaging, updater publication, and verified analytics consent:
+  `Desktop/Mac Setup.md` and `Desktop/Release Changelog.md`.
+
+Windows native Preview tests launch the shared Host WebSocket fixture through
+PHP and Node. Use an absolute manifest-relative path with an existence check;
+`canonicalize()` introduces a `\\?\` prefix that this command path misreads.
+The updater-signing fixture in `src-tauri/tests/fixtures` has exact signed
+bytes; retain its root `.gitattributes` `-text` rule so Windows Git cannot
+rewrite LF to CRLF before `include_bytes!` verification.
 
 ## Local Skills
 

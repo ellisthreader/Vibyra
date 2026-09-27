@@ -1,3 +1,5 @@
+import { openNewProject } from '../../state/newProject';
+import { keyLabel } from "../../lib/platform";
 import { useProjectStore } from "../../state/projectStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
 import { useSettingsStore } from "../../state/settingsStore";
@@ -51,7 +53,7 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       id: `proj-${project.id}`,
       group: "Projects",
       label: project.name,
-      hint: index < 9 ? `Ctrl ⇧ ${index + 1}` : undefined,
+      hint: index < 9 ? keyLabel(`Mod+Shift+${index + 1}`) : undefined,
       accent: project.color,
       mono: project.name.charAt(0).toUpperCase(),
       run: () => void projectStore.activate(project.id),
@@ -65,7 +67,7 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
         id: `sess-${pane.id}`,
         group: "Sessions",
         label: paneLabel(pane),
-        hint: index < 9 ? `Ctrl ${index + 1}` : undefined,
+        hint: index < 9 ? keyLabel(`Mod+${index + 1}`) : undefined,
         accent: pane.accent,
         mono: pane.title.charAt(0).toUpperCase(),
         run: () => setFocus(pane.id),
@@ -84,8 +86,8 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       id: "act-new-project",
       group: "Actions",
       label: "New project…",
-      hint: "folder picker",
-      run: () => void projectStore.pickAndCreate(),
+      hint: "create a folder",
+      run: openNewProject,
     },
     {
       id: "act-shot",
@@ -98,8 +100,14 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       id: "act-home",
       group: "Actions",
       label: "Go home",
-      hint: "Ctrl ⇧ H",
+      hint: keyLabel("Mod+Shift+H"),
       run: projectStore.goHome,
+    },
+    {
+      id: "act-history",
+      group: "Actions",
+      label: "Saved history",
+      run: () => workspace.setHistoryOpen(true),
     },
     {
       id: "act-panel",

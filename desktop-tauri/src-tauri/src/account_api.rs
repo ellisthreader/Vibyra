@@ -21,71 +21,27 @@ impl ApiError {
     }
 }
 
-/// The only account API paths this client can reach. The renderer never
-/// supplies URLs or methods; commands pick a variant.
-pub enum Endpoint<'a> {
-    Signup,
-    Login,
-    Session,
-    Rotate,
-    Logout,
-    Profile,
-    PasswordForgot,
-    EmailResend,
-    OauthStart(&'a str),
-    OauthStatus(&'a str, &'a str),
-}
+pub use crate::account_endpoints::Endpoint;
 
-impl Endpoint<'_> {
-    pub(crate) fn path(&self) -> Result<String, ApiError> {
-        let invalid = || ApiError::Rejected("Unsupported sign-in provider.".into());
-        match self {
-            Endpoint::Signup => Ok("/api/auth/signup".into()),
-            Endpoint::Login => Ok("/api/auth/login".into()),
-            Endpoint::Session => Ok("/api/session".into()),
-            Endpoint::Rotate => Ok("/api/auth/session/rotate".into()),
-            Endpoint::Logout => Ok("/api/auth/logout".into()),
-            Endpoint::Profile => Ok("/api/account/profile".into()),
-            Endpoint::PasswordForgot => Ok("/api/auth/password/forgot".into()),
-            Endpoint::EmailResend => Ok("/api/auth/email/resend".into()),
-            Endpoint::OauthStart(provider) => {
-                let provider = valid_provider(provider).ok_or_else(invalid)?;
-                Ok(format!("/api/auth/desktop/{provider}/start"))
-            }
-            Endpoint::OauthStatus(provider, flow) => {
-                let provider = valid_provider(provider).ok_or_else(invalid)?;
-                let flow_ok = (40..=100).contains(&flow.len())
-                    && flow.chars().all(|c| c.is_ascii_alphanumeric());
-                if !flow_ok {
-                    return Err(ApiError::Rejected("Invalid sign-in attempt.".into()));
-                }
-                Ok(format!("/api/auth/desktop/{provider}/status/{flow}"))
-            }
-        }
+fn valid_api_override(value: &str) -> Option<String> {
+    let value = value.trim().trim_end_matches('/');
+    let parsed = reqwest::Url::parse(value).ok()?;
+    let loopback = matches!(parsed.host_str(), Some("localhost" | "127.0.0.1"));
+    if (parsed.scheme() != "https" && !(parsed.scheme() == "http" && loopback))
+        || parsed.username() != ""
+        || parsed.password().is_some()
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+        || parsed.path() != "/"
+    {
+        return None;
     }
-
-    fn method(&self) -> reqwest::Method {
-        match self {
-            Endpoint::Session | Endpoint::OauthStatus(..) => reqwest::Method::GET,
-            Endpoint::Logout => reqwest::Method::DELETE,
-            _ => reqwest::Method::POST,
-        }
-    }
-}
-
-fn valid_provider(provider: &str) -> Option<&'static str> {
-    match provider {
-        "google" => Some("google"),
-        "apple" => Some("apple"),
-        _ => None,
-    }
+    Some(value.to_owned())
 }
 
 pub fn base_url() -> String {
     if let Ok(url) = std::env::var("VIBYRA_DESKTOP_API_URL") {
-        let url = url.trim().trim_end_matches('/').to_owned();
-        let loopback = url.starts_with("http://127.0.0.1") || url.starts_with("http://localhost");
-        if loopback || url.starts_with("https://") {
+        if let Some(url) = valid_api_override(&url) {
             return url;
         }
         eprintln!("Vibyra ignored a non-HTTPS account API override.");
@@ -109,7 +65,7 @@ pub async fn request_raw(
         if attempt > 0 {
             tokio::time::sleep(RETRY_DELAY).await;
         }
-        let mut request = reqwest::Client::new()
+        let mut request = crate::http_client::shared()
             .request(method.clone(), &url)
             .header("Accept", "application/json")
             .timeout(REQUEST_TIMEOUT);
@@ -173,4 +129,35 @@ pub fn error_detail(value: &serde_json::Value, status: u16) -> String {
             500..=599 => "The Vibyra account service had a problem. Try again shortly.".into(),
             _ => "The Vibyra account service rejected the request.".into(),
         })
+}
+
+#[cfg(test)]
+mod override_tests {
+    use super::valid_api_override;
+
+    #[test]
+    fn only_exact_local_http_origins_or_https_origins_can_receive_bearers() {
+        assert_eq!(
+            valid_api_override("http://127.0.0.1:8128/"),
+            Some("http://127.0.0.1:8128".into())
+        );
+        assert_eq!(
+            valid_api_override("http://localhost:8128"),
+            Some("http://localhost:8128".into())
+        );
+        assert_eq!(
+            valid_api_override("https://staging.vibyra.app"),
+            Some("https://staging.vibyra.app".into())
+        );
+        for value in [
+            "http://localhost.attacker.test",
+            "http://127.0.0.1.attacker.test",
+            "http://localhost@attacker.test",
+            "http://localhost:8128/redirect",
+            "https://staging.vibyra.app@attacker.test/path",
+            "http://vibyra.app",
+        ] {
+            assert!(valid_api_override(value).is_none(), "accepted {value}");
+        }
+    }
 }

@@ -47,6 +47,10 @@ jobs:
           librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget xvfb
       - name: Install locked frontend dependencies
         run: npm ci
+      - name: Install shared mobile modules
+        run: npm ci --prefix ../mobile
+      - name: Install Host relay Preview fixture dependency
+        run: npm ci --prefix ../host/relay
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates

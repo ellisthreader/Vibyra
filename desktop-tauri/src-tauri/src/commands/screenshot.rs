@@ -78,10 +78,11 @@ fn saved_screenshot(path: &Path, image: &DynamicImage) -> Result<Screenshot, Str
 pub async fn capture_screen(
     state: State<'_, AppState>,
     window: tauri::Window,
+    selection: Option<bool>,
 ) -> Result<tauri::ipc::Response, String> {
     let hide_window = state.settings.lock().screenshot_hide_window;
     tauri::async_runtime::spawn_blocking(move || {
-        let image = capture_screen_image(&window, hide_window)?;
+        let image = capture_screen_image(&window, hide_window, selection.unwrap_or(false))?;
         let mut response = Vec::with_capacity(12 + image.as_raw().len());
         response.extend_from_slice(b"VSH\x01");
         response.extend_from_slice(&image.width().to_be_bytes());

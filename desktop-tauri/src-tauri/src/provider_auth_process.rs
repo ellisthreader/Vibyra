@@ -150,18 +150,14 @@ fn is_credential_name(name: &str) -> bool {
     .any(|suffix| name.ends_with(suffix))
 }
 
+/// How long a sign-in or install gets to exit on its own before it is killed.
+pub const STOP_GRACE: Duration = Duration::from_millis(300);
+
+/// Stops a tracked child and everything it started. `codex` is a node wrapper
+/// around the native binary that runs the sign-in callback server; killing
+/// only the wrapper left that server listening after a cancel.
 pub fn stop_child(child: &mut std::process::Child) {
-    #[cfg(target_os = "windows")]
-    {
-        let _ = Command::new("taskkill")
-            .args(["/pid", &child.id().to_string(), "/T", "/F"])
-            .status();
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = child.kill();
-    }
-    let _ = child.wait();
+    vibyra_core::process_group::stop(child, STOP_GRACE);
 }
 
 #[cfg(test)]

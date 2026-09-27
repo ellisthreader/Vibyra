@@ -1,115 +1,95 @@
-import { useRef } from "react";
-import type { ComponentType, CSSProperties, KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { COMPANION_MAX_WIDTH, COMPANION_MIN_WIDTH, type CompanionTab } from '../../lib/companionPreferences';
+import { trackDesktopEvent } from '../../ipc/analytics';
+import { useAccountStore } from '../../state/accountStore';
+import { useProjectStore } from '../../state/projectStore';
+import { useTalkStore } from '../../state/talkStore';
+import { useChatStore } from '../../state/chatStore';
+import { useWorkspaceStore } from '../../state/workspaceStore';
+import { useShallow } from 'zustand/shallow';
+import { CloseIcon } from '../common/Icons';
+import { FilesPanel } from './FilesPanel';
+import { DockSizeControl } from '../layout/DockSizeControl';
+import { ChatPanel } from './ChatPanel';
+import { useCompanionResize } from './useCompanionResize';
+import { WorktreesPanel } from '../worktrees/WorktreesPanel';
+import { SidebarPreview } from '../preview/SidebarPreview';
+import type { PreviewScope } from '../worktrees/types';
+import './sidebarDesign.css';
 
-import {
-  COMPANION_MAX_WIDTH,
-  COMPANION_MIN_WIDTH,
-  type CompanionTab,
-} from "../../lib/companionPreferences";
-import { useWorkspaceStore } from "../../state/workspaceStore";
-import { CloseIcon, FolderIcon, MemoryIcon, SparklesIcon } from "../common/Icons";
-import { FileTree } from "../rail/FileTree";
-import { ChatPanel } from "./ChatPanel";
-import { MemoryPanel } from "./MemoryPanel";
-import { useCompanionResize } from "./useCompanionResize";
-
-const TABS: { id: CompanionTab; label: string; icon: ComponentType<{ size?: number }> }[] = [
-  { id: "chat", label: "Chat", icon: SparklesIcon },
-  { id: "memory", label: "Memory", icon: MemoryIcon },
-  { id: "files", label: "Files", icon: FolderIcon },
-];
-
-export function Companion() {
-  const open = useWorkspaceStore((s) => s.companionOpen);
-  const tab = useWorkspaceStore((s) => s.companionTab);
-  const preferredWidth = useWorkspaceStore((s) => s.companionWidth);
-  const setTab = useWorkspaceStore((s) => s.setCompanionTab);
-  const setWidth = useWorkspaceStore((s) => s.setCompanionWidth);
-  const toggle = useWorkspaceStore((s) => s.toggleCompanion);
-  const tabs = useRef<Record<CompanionTab, HTMLButtonElement | null>>({
-    chat: null,
-    memory: null,
-    files: null,
-  });
-  const resize = useCompanionResize(preferredWidth, setWidth);
-
-  if (!open) return null;
-
+export function Companion({ active = true }: { active?: boolean }) {
+  const account = useAccountStore(s => s.snapshot.profile?.email ?? 'guest');
+  const projectId = useProjectStore(s => s.activeId);
+  return <CompanionContent key={`${account}:${projectId}`} active={active} />;
+}
+function CompanionContent({ active }: { active: boolean }) {
+  const projectId = useProjectStore(s => s.activeId);
+  const panel = useRef<HTMLElement>(null);
+  // Only the fields read here: the whole store changes on every file-system
+  // bump, which would re-render Chat, Worktrees and Preview with it.
+  const { companionOpen: open, companionSize: size, companionTab: savedTab, companionWidth: preferredWidth,
+    setCompanionTab: setTab, setCompanionWidth: setWidth, toggleCompanion: toggle } = useWorkspaceStore(useShallow(s => ({
+      companionOpen: s.companionOpen, companionSize: s.companionSize, companionTab: s.companionTab, companionWidth: s.companionWidth,
+      setCompanionTab: s.setCompanionTab, setCompanionWidth: s.setCompanionWidth, toggleCompanion: s.toggleCompanion })));
+  const tab = savedTab;
+  const entries: { id: CompanionTab; label: string }[] = [
+    { id: 'chat', label: 'Chat' }, { id: 'worktrees', label: 'Worktrees' }, { id: 'preview', label: 'Preview' },
+  ];
+  const tabs = useRef<Partial<Record<CompanionTab, HTMLButtonElement | null>>>({});
+  const [previewVisited, setPreviewVisited] = useState(tab === 'preview' && open);
+  const previewVisible = active && open && tab === 'preview';
+  const wasPreviewVisible = useRef(false);
+  const [scope, setScope] = useState<PreviewScope | null>(null);
+  const resize = useCompanionResize(preferredWidth, setWidth, panel, size);
+  // A running conversation is marked on the tab, so leaving Chat for Worktrees
+  // or Preview never loses the fact that Vibyra is still listening.
+  const talking = useTalkStore(state => state.phase !== 'idle' && state.phase !== 'error');
+  const replying = useChatStore(state => state.active?.projectId === projectId);
+  useLayoutEffect(() => {
+    panel.current?.parentElement?.style.setProperty('--tools-reserve', size === 'wide' ? '55%' : `${resize.width}px`);
+  }, [resize.width, size]);
+  useEffect(() => { if (tab === 'preview' && open) setPreviewVisited(true); }, [tab, open]);
+  useEffect(() => {
+    if (previewVisible && !wasPreviewVisible.current) trackDesktopEvent('desktop_preview_opened');
+    wasPreviewVisible.current = previewVisible;
+  }, [previewVisible]);
+  const close = () => { toggle(); requestAnimationFrame(() => document.getElementById('workspace-sidebar-toggle')?.focus()); };
   const moveTabFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next = index;
-    if (event.key === "ArrowLeft") next = (index - 1 + TABS.length) % TABS.length;
-    else if (event.key === "ArrowRight") next = (index + 1) % TABS.length;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = TABS.length - 1;
+    if (event.key === 'ArrowLeft') next = (index - 1 + entries.length) % entries.length;
+    else if (event.key === 'ArrowRight') next = (index + 1) % entries.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = entries.length - 1;
     else return;
-    event.preventDefault();
-    const nextTab = TABS[next].id;
-    setTab(nextTab);
-    requestAnimationFrame(() => tabs.current[nextTab]?.focus());
+    event.preventDefault(); setTab(entries[next].id); tabs.current[entries[next].id]?.focus();
   };
-
-  return (
-    <aside
-      className="companion"
-      aria-label="Project companion"
-      style={{ "--companion-width": `${resize.width}px` } as CSSProperties}
-    >
-      <div
-        className="companion__resize"
-        role="separator"
-        aria-label="Resize project companion"
-        aria-orientation="vertical"
-        aria-valuemin={COMPANION_MIN_WIDTH}
-        aria-valuemax={COMPANION_MAX_WIDTH}
-        aria-valuenow={resize.width}
-        tabIndex={0}
-        onPointerDown={resize.start}
-        onKeyDown={resize.resizeWithKeyboard}
-        onDoubleClick={resize.reset}
-      />
-      <header className="companion__head">
-        <nav className="companion__tabs" role="tablist" aria-label="Companion tools">
-          {TABS.map((entry, index) => {
-            const Icon = entry.icon;
-            return (
-              <button
-                key={entry.id}
-                ref={(node) => {
-                  tabs.current[entry.id] = node;
-                }}
-                id={`companion-tab-${entry.id}`}
-                role="tab"
-                aria-selected={tab === entry.id}
-                aria-controls={`companion-panel-${entry.id}`}
-                tabIndex={tab === entry.id ? 0 : -1}
-                className={`companion__tab ${tab === entry.id ? "companion__tab--active" : ""}`}
-                onClick={() => setTab(entry.id)}
-                onKeyDown={(event) => moveTabFocus(event, index)}
-              >
-                <Icon size={13} />
-                {entry.label}
-              </button>
-            );
-          })}
-        </nav>
-        <button className="icon-btn companion__close" aria-label="Close companion" title="Close" onClick={toggle}>
-          <CloseIcon size={14} />
-        </button>
-      </header>
-      <div
-        className="companion__body"
-        id={`companion-panel-${tab}`}
-        role="tabpanel"
-        aria-labelledby={`companion-tab-${tab}`}
-      >
-        {tab === "chat" && <ChatPanel />}
-        {tab === "memory" && <MemoryPanel />}
-        {tab === "files" && (
-          <div className="companion-panel companion-panel--files">
-            <FileTree />
-          </div>
-        )}
-      </div>
-    </aside>
-  );
+  return <aside ref={panel} id="project-companion" className="companion workspace-sidebar" data-size={size} hidden={!open}
+    aria-label="Workspace sidebar" style={{ '--companion-width': `${resize.width}px` } as CSSProperties}
+    onKeyDown={event => { if (event.key === 'Escape' && !event.defaultPrevented) { event.stopPropagation(); close(); } }}>
+    {size !== 'full' && <div className="companion__resize" role="separator" aria-label="Resize project companion"
+      aria-orientation="vertical" aria-valuemin={COMPANION_MIN_WIDTH} aria-valuemax={COMPANION_MAX_WIDTH} aria-valuenow={resize.width}
+      tabIndex={0} onPointerDown={resize.start} onKeyDown={resize.resizeWithKeyboard} onDoubleClick={resize.reset} />}
+    <header className="companion__head">
+      <nav className="companion__tabs" role="tablist" aria-label="Companion tools">
+        {entries.map((entry, index) => <button key={entry.id} ref={node => { tabs.current[entry.id] = node; }}
+          id={`companion-tab-${entry.id}`} role="tab" aria-selected={tab === entry.id || (tab === 'files' && entry.id === 'chat')}
+          aria-controls={`companion-panel-${entry.id}`} tabIndex={tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 0 : -1}
+          className={`companion__tab ${tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 'companion__tab--active' : ''} ${talking && entry.id === 'chat' ? 'companion__tab--talking' : ''}`}
+          onClick={() => setTab(entry.id)} onKeyDown={event => moveTabFocus(event, index)}>{entry.label}
+          {entry.id === 'chat' && (replying || talking) && <span className="companion__activity" aria-label={talking ? 'Voice conversation active' : 'Reply in progress'} />}</button>)}
+      </nav>
+      <DockSizeControl />
+      <button className="icon-btn companion__close" aria-label="Close sidebar" title="Close sidebar" onClick={close}><CloseIcon size={15} /></button>
+    </header>
+    <div className="companion__body" id="companion-panel-chat" role="tabpanel" aria-labelledby="companion-tab-chat" hidden={tab !== 'chat' && tab !== 'files'}>
+      <div className="companion__chat-view" hidden={tab === 'files'}><ChatPanel active={active && open && tab === 'chat'} /></div>
+      {tab === 'files' && <><button className="worktree-back sidebar-files-back" onClick={() => setTab('chat')}>← Chat</button><FilesPanel active={active && open} /></>}
+    </div>
+    <div className="companion__body" id="companion-panel-worktrees" role="tabpanel" aria-labelledby="companion-tab-worktrees" hidden={tab !== 'worktrees'}>
+      <WorktreesPanel active={active && open && tab === 'worktrees'} onPreview={next => { setScope(next); setTab('preview'); }} />
+    </div>
+    <div className="companion__body" id="companion-panel-preview" role="tabpanel" aria-labelledby="companion-tab-preview" hidden={tab !== 'preview'}>
+      {previewVisited && <SidebarPreview scope={scope} onReset={() => setScope(null)} active={active && open && tab === 'preview'} />}
+    </div>
+  </aside>;
 }

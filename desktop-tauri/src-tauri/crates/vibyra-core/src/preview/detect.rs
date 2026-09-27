@@ -76,8 +76,14 @@ fn detect_project(root: &Path) -> CoreResult<Vec<DetectedTarget>> {
         {
             continue;
         }
-        if let Some(target) = detect_app_root(root, &candidate)? {
-            targets.push(target);
+        match detect_app_root(root, &candidate) {
+            Ok(Some(target)) => targets.push(target),
+            Ok(None) => {}
+            Err(error) => targets.push(unsupported_target(
+                &relative_label(root, &candidate),
+                "Could not inspect app",
+                &error.to_string(),
+            )),
         }
         if targets.len() >= 12 {
             break;

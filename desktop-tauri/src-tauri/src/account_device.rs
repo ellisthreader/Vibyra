@@ -30,7 +30,14 @@ pub fn device_label() -> String {
     }
 }
 
-fn hostname() -> Option<String> {
+/// Asked once per run: it spawns `hostname`, and sign-in, device and phone
+/// paths — some of them on the async runtime — all ask for it.
+pub fn hostname() -> Option<String> {
+    static HOSTNAME: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    HOSTNAME.get_or_init(read_hostname).clone()
+}
+
+fn read_hostname() -> Option<String> {
     let output = std::process::Command::new("hostname").output().ok()?;
     let name = String::from_utf8_lossy(&output.stdout).trim().to_owned();
     let safe = name.len() <= 64
@@ -69,12 +76,12 @@ fn persist(path: &PathBuf, id: &str) {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    if let Err(error) = std::fs::write(path, id) {
+    let written = std::fs::write(path, id);
+    if let Err(error) = &written {
         eprintln!("Vibyra could not persist the installation id: {error}");
-        return;
     }
     #[cfg(unix)]
-    {
+    if written.is_ok() {
         use std::os::unix::fs::PermissionsExt;
         let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
     }

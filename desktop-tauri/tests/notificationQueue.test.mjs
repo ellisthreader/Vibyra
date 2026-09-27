@@ -63,6 +63,13 @@ test("a different category in the same instant stays its own item", () => {
   assert.equal(second.history.length, 2);
 });
 
+test("different model releases keep separate notifications in the same instant", () => {
+  const first = push(EMPTY, { category: "models", dedupeKey: "model:openai/one" }, 500);
+  const second = push(first, { category: "models", dedupeKey: "model:openai/two" }, 500);
+  assert.equal(second.isRepeat, false);
+  assert.equal(second.history.length, 2);
+});
+
 test("a repeat outside the burst window keeps its own wording", () => {
   const first = push(EMPTY, { dedupeKey: "k" }, 0);
   const second = push(first, { dedupeKey: "k" }, BURST_MS + 500);
@@ -112,4 +119,13 @@ test("every category has summary wording", () => {
   ]) {
     assert.match(summaryTitle(category, 4), /^4 \w/);
   }
+});
+
+test('distinct launch errors retain both complete messages, including rapid retries', () => {
+  const first = push(EMPTY,{category:'system',severity:'danger',title:'Something went wrong',body:'First complete error',dedupeKey:'first'},100);
+  const second = push(first,{category:'system',severity:'danger',title:'Something went wrong',body:'Second complete error',dedupeKey:'second'},101);
+  assert.deepEqual(second.history.map(item=>item.body),['Second complete error','First complete error']);
+  const repeat = push(second,{category:'system',severity:'danger',title:'Something went wrong',body:'Second complete error',dedupeKey:'second'},102);
+  assert.equal(repeat.item.count,2); assert.equal(repeat.item.title,'Something went wrong');
+  assert.equal(repeat.item.body,'Second complete error');
 });

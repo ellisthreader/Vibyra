@@ -1,0 +1,2 @@
+# The updater test signature covers exact bytes; Windows must not rewrite LF.
+desktop-tauri/src-tauri/tests/fixtures/updater-fixture.bin -text

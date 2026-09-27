@@ -1,0 +1,12 @@
+.preview-device-trigger { display: flex; align-items: center; min-width: 0; flex: 1; gap: 7px; padding: 7px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text); font-size: 11px; text-align: left; cursor: pointer; }
+.preview-device-trigger:hover, .preview-device-trigger[aria-expanded="true"] { background: var(--hover); }
+.preview-device-trigger > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-device-trigger svg, .preview-device-menu svg { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; }
+.preview-device-trigger .preview-picker-chevron { margin-left: auto; width: 14px; }
+.preview-device-menu { position: fixed; z-index: 1200; overflow-y: auto; overscroll-behavior: contain; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 12px 36px #0003, 0 2px 6px #0001; outline: none; }
+.preview-device-menu__group { padding: 12px 10px 6px; font-size: 10px; font-weight: 550; color: var(--dim); }
+.preview-device-menu [role="option"] { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; scroll-margin: 6px; }
+.preview-device-menu [role="option"][data-active="true"] { background: var(--hover); }
+.preview-device-menu [role="option"][aria-selected="true"] { color: var(--accent); }
+.preview-device-menu small { display: block; color: var(--dim); font-size: 10px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.preview-device-menu__check { margin-left: auto; }

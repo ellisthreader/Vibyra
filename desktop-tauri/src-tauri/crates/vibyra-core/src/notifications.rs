@@ -17,7 +17,7 @@ const CHANNELS: [&str; 3] = ["off", "app", "system"];
 const CUES: [&str; 7] = ["none", "chime", "done", "ask", "fail", "alert", "blip"];
 
 /// The categories this build knows about, as `(id, channel, cue)`.
-const DEFAULTS: [(&str, &str, &str); 8] = [
+const DEFAULTS: [(&str, &str, &str); 9] = [
     ("agentAttention", "system", "ask"),
     ("agentDone", "system", "done"),
     ("agentFailed", "system", "fail"),
@@ -25,6 +25,7 @@ const DEFAULTS: [(&str, &str, &str); 8] = [
     ("preview", "app", "none"),
     ("models", "app", "none"),
     ("performance", "app", "none"),
+    ("appUpdate", "system", "chime"),
     ("system", "app", "fail"),
 ];
 

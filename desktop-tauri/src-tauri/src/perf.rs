@@ -17,16 +17,20 @@
 use std::sync::{Mutex, OnceLock};
 
 use serde::Serialize;
+#[cfg(not(target_os = "macos"))]
+use sysinfo::Pid;
 use sysinfo::{
-    CpuRefreshKind, MemoryRefreshKind, Pid, ProcessRefreshKind, ProcessesToUpdate, RefreshKind,
-    System, MINIMUM_CPU_UPDATE_INTERVAL,
+    CpuRefreshKind, MemoryRefreshKind, ProcessRefreshKind, ProcessesToUpdate, RefreshKind, System,
+    MINIMUM_CPU_UPDATE_INTERVAL,
 };
 
 /// Whole-system CPU at which the child-process confirm pass below earns its
 /// cost. Mirrors `CPU_DEGRADED` in `perfPolicy.ts`.
+#[cfg(not(target_os = "macos"))]
 const CONFIRM_SYSTEM_CPU: f32 = 85.0;
 /// Our own normalised CPU at which the confirm pass runs even on an otherwise
 /// quiet machine. Mirrors `APP_CPU_DEGRADED`.
+#[cfg(not(target_os = "macos"))]
 const CONFIRM_APP_CPU: f32 = 70.0;
 
 #[derive(Debug, Clone, Serialize)]
@@ -100,6 +104,12 @@ fn system() -> &'static Mutex<System> {
 /// inserted process reports 0.0 % CPU for the same delta reason as above.
 /// Rare by construction — at most once per 15 s poll, in practice once per
 /// cooldown.
+///
+/// Not on macOS: WebKit's content processes there are XPC services parented
+/// to launchd, so the only children this finds are our own terminal shells
+/// and agents — their work would be billed to the app, after two machine-wide
+/// walks and a 200 ms sleep under the sampler lock.
+#[cfg(not(target_os = "macos"))]
 fn add_children(system: &mut System, pid: Pid, cpu: &mut f32, mem: &mut u64) {
     system.refresh_processes_specifics(ProcessesToUpdate::All, true, process_kind());
     std::thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL);
@@ -135,8 +145,9 @@ pub fn sample() -> PerfSample {
 
     let cores = system.cpus().len().max(1);
     let cpu_percent = system.global_cpu_usage().clamp(0.0, 100.0);
-    let normalised = app_cpu / cores as f32;
+    #[cfg(not(target_os = "macos"))]
     if let Some(pid) = pid {
+        let normalised = app_cpu / cores as f32;
         if cpu_percent >= CONFIRM_SYSTEM_CPU || normalised >= CONFIRM_APP_CPU {
             add_children(&mut system, pid, &mut app_cpu, &mut app_mem);
         }
