@@ -55,10 +55,23 @@ backup, monitoring, and device evidence listed in the repository release gate.
 | Surface | Candidate evidence | Still needed before users receive it |
 | --- | --- | --- |
 | Backend and website | Draft PR #32 combines the latest local `8128` public pages with the owner/analytics backend. The isolated backend/site source passed 929 PHP tests, and the integrated Vite build contains the consent, home, downloads, and benchmarks entries. | Passing checks on the exact combined head, independent security review, backup/restore evidence, Railway source parity, migrations, and live analytics route/worker checks. |
-| iOS | A clean 1.0.0(3) source snapshot produced a locally exported Apple Distribution-signed IPA with recorded source and package hashes. | The maintained phone source changed after that snapshot. Freeze, recheck, archive, and sign the final source; verify on a device, App Store privacy answers, upload, and actual distribution. |
+| iOS | Earlier 1.0.0(3) and 1.0.0(4) snapshots produced local signed IPAs for provenance. The maintained phone source was frozen after a five-minute quiet window on 27 September at 13:40 BST; the current combined candidate is 1.0.0(5). | Archive and sign build 5 from the final reviewed commit, verify on a device, confirm App Store privacy answers, upload, and prove actual distribution. |
 | Desktop | The maintained 0.8.11 source has passing native and UI suites; a separate draft review branch carries a new-session consent fix. The published Mac updater correctly serves 0.8.7 to older clients. | Integrate with the reviewed backend head, finish signed/notarized arm64 and x64 updater archives and metadata, verify updater/device delivery, and produce/test Windows and Linux packages if advertised. |
 | Android | Current shared mobile source includes the consent path. | There is no signed AAB/APK or Play distribution evidence. Android network/deep-link/update configuration needs a separate checked release package. |
 
 The current public homepage also includes a throttled, cached AI FAQ. Its
 external model calls can incur cost and need a production usage/budget check
 before release.
+
+PR #32 code head `963bd178` passed all eight GitHub checks, including the
+591-test mobile source job, backend suite, CodeQL, and secret history scan.
+The iOS build-number and release-evidence commits after that head require their
+own exact-head CI run before packaging or release.
+
+The exact PR #32 head cleared the secret history scan and CodeQL after the
+mobile security patch. CodeQL still annotates one medium client-side request
+forgery pattern where the phone connects to a user-selected computer WebSocket.
+The worker revalidates the pairing payload; `parsePairing` requires a pinned
+Noise public key and limits insecure `ws:` to local/direct or loopback relay
+addresses. This dynamic pairing behavior needs independent review before
+shipping; a passing CodeQL job alone is not that review.
