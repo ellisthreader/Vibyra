@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "./shared.jsx";
+import { SoundIcon, FullIcon } from "./FilmIcons.jsx";
 
 const SRC = "/media/vibyra-film.mp4?v=2";
 // The film's own first frame, so the hand-over from poster to playback is invisible.
@@ -182,22 +183,5 @@ export default function Film() {
                 </div>
             </div>
         </section>
-    );
-}
-
-function SoundIcon({ off = false }) {
-    return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />
-            {off ? <path d="m16 9.5 5 5m0-5-5 5" /> : <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.5a8 8 0 0 1 0 11" />}
-        </svg>
-    );
-}
-
-function FullIcon() {
-    return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-        </svg>
     );
 }

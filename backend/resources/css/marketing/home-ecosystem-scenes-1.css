@@ -1,0 +1,121 @@
+/* ── 03 · The eight stories (EcosystemScenes.jsx) ───────────────────────────
+ * Every scene is a 300×180 stage drawn in pixels. `.t` fades in at `--in`
+ * (and out at `--out` with `.out`); `.type` types `--n` characters over
+ * `--dur` from `--in`. Base styles are the finished frame, so a still cell
+ * (reduced motion) shows the story's end. */
+.es { --blue: #6f8cff; --blue-2: #8fa6ff; --blue-3: #3f5bc7; --dim: rgba(111, 140, 255, 0.16); --panel: #171a22; --panel-2: #1c2030; --line: #262a35; --ink: #eef1f7; --text: #c2c9d8; --muted: #8d96a8; --faint: #5c6478; --ease: cubic-bezier(0.22, 1, 0.36, 1); --ui: "Inter Device", Inter, ui-sans-serif, system-ui, sans-serif; --mono: "JetBrains Device", ui-monospace, Menlo, Consolas, monospace; position: absolute; inset: 0; font: 500 11px/1.4 var(--ui); color: var(--text); }
+.es * { box-sizing: border-box; }
+.es p { margin: 0; }
+.es code { font-family: var(--mono); font-size: 10px; color: var(--ink); }
+.es .t { animation: es-in 0.4s var(--ease) var(--in, 0s) both; }
+.es .t.out { animation: es-in 0.4s var(--ease) var(--in, 0s) both, es-out 0.3s ease var(--out) forwards; }
+.is-still .es .t.out { display: none; }
+@keyframes es-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes es-out { to { opacity: 0; visibility: hidden; } }
+.es .type { display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; width: calc(var(--n) * 1ch); font-family: var(--mono); animation: es-type var(--dur) steps(var(--n)) var(--in) both; }
+@keyframes es-type { from { width: 0; } }
+.es-words { display: inline; }
+.es-words .t { display: inline-block; margin-right: 0.5ch; animation-duration: 0.25s; }
+.es-caret { display: inline-block; width: 7px; height: 13px; margin-left: 2px; vertical-align: -2px; background: var(--blue); animation: es-blink 1s steps(1) infinite; }
+@keyframes es-blink { 50% { opacity: 0; } }
+
+/* Shared parts: a keycap, a mark, a terminal, a pointer. */
+.es-key { display: inline-grid; place-items: center; min-width: 28px; height: 26px; padding: 0 8px; border-radius: 7px; font: 650 12px/1 var(--ui); color: var(--ink); background: linear-gradient(#2a3040, #1c202b); border: 1px solid #3f4860; box-shadow: 0 2px 0 #0d0f14, 0 4px 10px #00000059; animation: es-press 0.5s var(--ease) var(--in, 0s) both; }
+@keyframes es-press { 0%, 100% { transform: none; } 40% { transform: translateY(2px); box-shadow: 0 0 0 #0d0f14; color: var(--blue-2); border-color: var(--blue-3); } }
+.es-mark { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); flex: none; }
+.es-term { position: absolute; left: 0; right: 0; bottom: 0; height: 58px; border-radius: 10px 10px 0 0; background: var(--panel); border: 1px solid var(--line); border-bottom: 0; overflow: hidden; }
+.es-termbar { display: flex; align-items: center; gap: 6px; height: 20px; padding: 0 9px; background: #191d28; border-bottom: 1px solid var(--line); font: 600 9.5px/1 var(--ui); color: var(--text); }
+.es-termbar span { padding: 2px 6px; border-radius: 4px; background: #232a40; color: var(--blue-2); font-size: 8.5px; }
+.es-termbar b { width: 5px; height: 5px; margin-left: auto; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px var(--dim); }
+.es-termbody { padding: 7px 9px; display: grid; gap: 4px; }
+.es-line { display: flex; align-items: center; gap: 6px; font: 500 11px/1 var(--mono); color: var(--ink); white-space: nowrap; }
+.es-line em { font-style: normal; color: var(--blue-2); }
+.es-line-wrap { display: block; white-space: normal; line-height: 1.45; }
+.es-line-wrap em { margin-right: 6px; }
+.es-sent { color: var(--blue-2); }
+.es-reply { font: 500 10.5px/1.35 var(--mono); color: var(--text); white-space: nowrap; }
+.es-reply b { font-weight: 600; color: var(--blue-2); margin-right: 3px; }
+.es-reply.es-dim { color: var(--muted); }
+.es-reply-wrap { white-space: normal; }
+.es-pointer { position: absolute; z-index: 6; filter: drop-shadow(0 2px 3px #0009); }
+.es-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px 3px 4px; border-radius: 5px; background: #232a40; border: 1px solid #34406a; font: 600 9.5px/1 var(--ui); color: var(--blue-2); }
+.es-chip i { width: 13px; height: 10px; border-radius: 2px; background: linear-gradient(135deg, var(--blue), var(--blue-3)); }
+
+/* 1 · Screenshot: a real page with a broken card, the capture tool over it,
+ * and the fix landing at the end. */
+.es-shot .es-term { z-index: 3; height: 64px; }
+.es-shot .es-termbody { gap: 5px; }
+.es-sh-window { position: absolute; left: 0; top: 0; right: 0; height: 112px; border-radius: 9px; background: #fbfaf7; overflow: hidden; box-shadow: 0 10px 30px #0008; }
+.es-sh-bar { display: flex; align-items: center; gap: 3px; height: 15px; padding: 0 7px; background: #eceae4; }
+.es-sh-bar i { width: 5px; height: 5px; border-radius: 50%; background: #cfccc4; }
+.es-sh-bar span { margin: 0 auto; padding: 2px 10px; border-radius: 4px; background: #fbfaf7; font: 500 6.5px/1 var(--ui); color: #7a7f8c; }
+.es-sh-page { --site: #1b1d24; --accent: #f26b3a; display: grid; gap: 6px; padding: 7px 12px 0; color: var(--site); }
+.es-sh-nav { display: flex; align-items: center; gap: 4px; font: 800 8px/1 var(--ui); }
+.es-sh-nav i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.es-sh-h { font: 800 13px/1 var(--ui); letter-spacing: -0.03em; }
+.es-sh-h span { color: var(--accent); }
+.es-sh-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+.es-sh-cards p { display: grid; gap: 4px; padding: 7px; border-radius: 7px; background: #fff; border: 1px solid #ebe8e1; font: 700 7.5px/1 var(--ui); box-shadow: 0 2px 6px #1b1d240d; }
+.es-sh-cards p i { width: 11px; height: 11px; border-radius: 3px; background: #fde3d8; box-shadow: inset 0 0 0 3px #fde3d8, inset 0 0 0 5.5px var(--accent); }
+.es-sh-cards p b { display: block; height: 3px; width: 80%; border-radius: 2px; background: #eceae4; }
+.es-sh-cards p.bug { animation: es-sh-fix 0.6s var(--ease) 6.3s both; }
+@keyframes es-sh-fix { from { transform: translate(5px, 11px); box-shadow: 0 0 0 1px #ff5a5f55; } }
+.es-key-corner { position: absolute; right: 8px; top: 22px; z-index: 4; }
+.es-sel { position: absolute; left: 6px; top: 49px; width: 288px; height: 60px; border: 1.5px solid var(--blue-2); border-radius: 4px; box-shadow: 0 0 0 600px rgba(9, 10, 14, 0.62); z-index: 2; transform-origin: left top; animation: es-in 0.2s var(--in) both, es-sel 0.9s var(--ease) var(--in) both, es-out 0.3s ease var(--out) forwards !important; }
+@keyframes es-sel { from { transform: scale(0.04, 0.06); } }
+.es-sel-size { position: absolute; left: 0; top: -17px; padding: 3px 5px; border-radius: 3px; background: var(--blue); color: #fff; font: 600 8.5px/1 var(--mono); }
+.es-tools { position: absolute; right: 50px; top: 20px; z-index: 3; display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 4px; border-radius: 7px; background: #fff; box-shadow: 0 6px 18px #0008; }
+.es-tools i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; color: #2b3040; }
+.es-tools i.on { background: #ffe8e8; color: #e5484d; }
+.es-tools em { width: 1px; height: 14px; background: #d9dde6; margin: 0 2px; }
+.es-tools b { padding: 0 9px; height: 20px; line-height: 20px; border-radius: 4px; background: var(--blue); color: #fff; font: 700 9.5px/20px var(--ui); }
+.es-tools b.press { animation: es-tap 0.3s ease var(--in) both; }
+@keyframes es-tap { 50% { transform: scale(0.9); background: var(--blue-3); } }
+.es-sh-ink { position: absolute; left: 90px; top: 56px; z-index: 3; }
+.es-sh-ink svg { display: block; overflow: visible; }
+.es-sh-ink path { fill: none; stroke: #ff5a5f; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1; animation: es-draw 0.8s ease-in-out var(--in) both; }
+.es-pointer-shot { left: 8px; top: 52px; animation: es-drag 0.9s var(--ease) 0.8s both, es-tosend 0.7s var(--ease) 2.2s both, es-out 0.3s ease 3.4s forwards; }
+@keyframes es-drag { to { left: 290px; top: 112px; } }
+@keyframes es-tosend { from { left: 290px; top: 112px; } to { left: 232px; top: 34px; } }
+.is-still .es-pointer-shot { display: none; }
+.es-fly { position: absolute; left: 6px; top: 49px; width: 288px; height: 60px; border-radius: 4px; background: #fbfaf7; border: 1.5px solid var(--blue-2); z-index: 5; animation: es-in 0.1s var(--in) both, es-fly 0.6s var(--ease) var(--in) both !important; }
+@keyframes es-fly { to { left: 12px; top: 150px; width: 22px; height: 14px; opacity: 0; } }
+.is-still .es-fly { display: none; }
+.es-sh-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px 2px 2px; border-radius: 5px; background: #232a40; border: 1px solid #34406a; font: 600 9.5px/1 var(--ui); color: var(--blue-2); }
+.es-sh-thumb { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px; align-items: start; width: 22px; height: 13px; padding: 2px; border-radius: 3px; background: #fbfaf7; }
+.es-sh-thumb i { height: 5px; border-radius: 1px; background: #fde3d8; }
+.es-sh-thumb i:nth-child(2) { margin-top: 3px; box-shadow: 0 0 0 1.2px #ff5a5f; }
+
+/* 2 · Voice: the mic, and words landing in the terminal as you say them. */
+.es-mic-row { position: absolute; left: 0; right: 0; top: 14px; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.es-mic { position: relative; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--blue); box-shadow: 0 8px 24px -8px var(--blue); }
+.es-mic i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--blue); opacity: 0; animation: es-ring 1.8s ease-out infinite; }
+.es-mic i + i { animation-delay: 0.9s; }
+@keyframes es-ring { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.1); opacity: 0; } }
+.es-wave { display: flex; align-items: center; gap: 3px; height: 26px; }
+.es-wave i { width: 3px; border-radius: 2px; background: var(--blue-2); height: calc(20% + var(--v) * 80%); animation: es-wave 0.7s ease-in-out infinite alternate; animation-delay: var(--d); }
+@keyframes es-wave { to { height: 20%; } }
+.es-voice-term { height: 92px; }
+.es-voice .es-line { font-size: 12px; }
+
+/* 3 · Worktrees: a branch graph. main across the top, one branch and one
+ * worktree per agent, commits landing side by side, then each merging back. */
+.es-wt-graph { position: absolute; inset: 0; overflow: visible; }
+.es-wt-graph path { fill: none; stroke-linecap: round; stroke-dasharray: 1; }
+.es-wt-main { stroke: #4a5470; stroke-width: 2.5; animation: es-draw 0.7s var(--ease) 0.1s both; }
+.es-wt-fork { stroke: var(--blue); stroke-width: 2; animation: es-draw 0.8s var(--ease) var(--in) both; }
+.es-wt-merge { stroke: var(--blue-2); stroke-width: 2; stroke-dasharray: 1; animation: es-draw 0.6s var(--ease) var(--in) both; }
+@keyframes es-draw { from { stroke-dashoffset: 1; } }
+.es-wt-commit { fill: #0f1117; stroke: var(--blue-2); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: es-pop 0.35s var(--ease) var(--in) both; }
+@keyframes es-pop { from { transform: scale(0); opacity: 0; } }
+.es-wt-root { fill: #4a5470; }
+.es-wt-head { fill: var(--blue-2); transform-box: fill-box; transform-origin: center; filter: drop-shadow(0 0 4px var(--blue)); animation: es-pop 0.4s var(--ease) var(--in) both; }
+.es-wt-mainlabel { position: absolute; left: 6px; top: 10px; font: 700 9.5px/1 var(--mono); color: var(--text); }
+.es-wt-label { position: absolute; left: 56px; display: flex; align-items: center; gap: 6px; height: 14px; white-space: nowrap; }
+.es-wt-label b { font: 700 9.5px/1 var(--ui); color: var(--ink); }
+.es-wt-label code { padding: 2px 5px; border-radius: 4px; background: #1a2036; color: var(--blue-2); font: 500 8.5px/1 var(--mono); }
+.es-wt-logo { width: 11px; height: 11px; object-fit: contain; }
+.es-wt-logo-openai { filter: invert(1); }
+.es-wt-path { position: absolute; left: 58px; display: flex; align-items: center; gap: 4px; font: 500 8px/1 var(--mono); color: var(--faint); white-space: nowrap; }
+.es-wt-path i { width: 8px; height: 6px; border-radius: 1px; background: #3a4256; box-shadow: -1px -1.5px 0 -0.5px #3a4256; }
+.es-wt-done { position: absolute; right: 4px; top: 4px; padding: 4px 7px; border-radius: 999px; background: rgba(95, 209, 155, 0.14); box-shadow: inset 0 0 0 1px rgba(95, 209, 155, 0.35); color: #7ee0b0; font: 700 8.5px/1 var(--ui); white-space: nowrap; }

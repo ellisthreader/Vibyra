@@ -1,0 +1,136 @@
+.vdev .vdev-bots-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    scrollbar-width: thin;
+}
+
+.vdev .vdev-bot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 62px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    text-align: left;
+    transition: background var(--t-ui) var(--e-standard);
+}
+
+.vdev .vdev-bot:hover {
+    background: var(--hover);
+}
+
+.vdev .vdev-bot-on,
+.vdev .vdev-bot-on:hover {
+    background: var(--hover-strong);
+}
+
+.vdev .vdev-bot-on .vdev-face {
+    --ring: var(--hover-strong);
+}
+
+.vdev .vdev-bot-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.vdev .vdev-bot-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.vdev .vdev-bot-top strong {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-size: var(--fs-body);
+    font-weight: 550;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vdev .vdev-bot-time {
+    flex: none;
+    color: var(--dim);
+    font-size: var(--fs-tiny);
+    font-weight: var(--fw-medium);
+    font-variant-numeric: tabular-nums;
+}
+
+.vdev .vdev-bot-last {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vdev .vdev-bot-last > span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vdev .vdev-bot-dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--accent);
+}
+
+.vdev .vdev-bot-dot-ask {
+    background: var(--ask);
+}
+
+.vdev .vdev-bots-none {
+    margin: 6px 16px;
+    color: var(--quiet);
+    font-size: var(--fs-hint);
+    line-height: 1.5;
+}
+
+.vdev .vdev-bots-label {
+    padding: 0 8px 8px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.vdev .vdev-bots-foot {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+}
+
+.vdev .vdev-bots-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 34px;
+    padding: 0 8px;
+    color: var(--muted);
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 8px;
+}
+
+.vdev .vdev-bots-link:hover { background: var(--hover); color: var(--text); }

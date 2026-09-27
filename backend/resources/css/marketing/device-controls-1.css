@@ -1,0 +1,149 @@
+/* Shared control primitives. Mirrors desktop-tauri base-controls.css,
+ * base-badges.css, base-activity-dots.css, kbd.css and nav-segmented.css.
+ * Every rule is scoped under .vdev so it outweighs `.marketing-home button`. */
+
+.vdev .vdev-icon-btn {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-sm);
+    color: var(--muted);
+    transition:
+        background var(--t-ui) var(--e-standard),
+        color var(--t-ui) var(--e-standard);
+}
+
+.vdev .vdev-icon-btn:hover {
+    background: var(--hover-strong);
+    color: var(--text);
+}
+
+.vdev .vdev-icon-btn-sm {
+    width: 22px;
+    height: 22px;
+}
+
+.vdev .vdev-kbd {
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--bg);
+    box-shadow: inset 0 -1px 0 var(--line);
+    color: var(--muted);
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: var(--fw-heavy);
+    letter-spacing: 0.02em;
+}
+
+.vdev .vdev-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: var(--fs-label);
+    font-weight: 680;
+    letter-spacing: 0.01em;
+}
+
+.vdev .vdev-pill-accent {
+    background: var(--accent-soft);
+    color: var(--accent-2);
+}
+
+.vdev .vdev-pill-amber {
+    background: var(--amber-soft);
+    color: var(--amber);
+}
+
+.vdev .vdev-dot {
+    display: inline-block;
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+}
+
+.vdev .vdev-dot-working {
+    background: var(--success);
+    box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.vdev .vdev-dot-attention {
+    background: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-soft);
+}
+
+.vdev .vdev-dot-idle {
+    background: var(--dim);
+}
+
+.vdev .vdev-label {
+    font-size: var(--fs-label);
+    font-weight: 760;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    color: var(--dim);
+}
+
+/* ---- segmented tab groups (mode switch, dock tabs, dock size) ----
+ * Selection is an inset cobalt underscore, never a border, so heights hold. */
+
+.vdev .vdev-seg {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-control);
+    background: color-mix(in srgb, var(--workspace) 72%, transparent);
+}
+
+.vdev .vdev-seg button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 28px;
+    padding: 0 11px;
+    border-radius: var(--r-sm);
+    color: var(--dim);
+    font-size: var(--fs-control);
+    font-weight: var(--fw-heavy);
+    white-space: nowrap;
+    transition:
+        background var(--t-ui) var(--e-standard),
+        color var(--t-ui) var(--e-standard);
+}
+
+.vdev .vdev-seg button:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.vdev .vdev-seg .vdev-seg-on {
+    background: var(--surface);
+    box-shadow: inset 0 -2px 0 var(--accent);
+    color: var(--text);
+}
+
+.vdev .vdev-seg .vdev-seg-on svg {
+    color: var(--accent-2);
+}
+
+.vdev .vdev-seg-icons button {
+    width: 30px;
+    padding: 0;
+}
+
+.vdev .vdev-mode-switch {
+    margin-left: 14px;
+}
+
+.vdev .vdev-mode-switch button {
+    min-height: 26px;
+}

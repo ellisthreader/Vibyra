@@ -1,0 +1,80 @@
+/* The installed Mac has two quiet title bar modes. The old framed segment
+ * treatment remains available to the right dock tabs, not to this switch. */
+.vdev .vdev-mode-switch {
+    position: absolute;
+    top: 50%;
+    left: calc(50% + var(--rail-w) / 2);
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    transform: translate(-50%, -50%);
+}
+
+.vdev .vdev-mode-switch button {
+    min-height: 34px;
+    padding: 0 16px;
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 550;
+}
+
+.vdev .vdev-mode-switch button:hover,
+.vdev .vdev-mode-switch button[aria-selected="true"] {
+    background: var(--hover-strong);
+    color: var(--text);
+}
+
+/* The drawn window in the marketing page depicts macOS native traffic lights.
+ * They do not stand in for clickable app controls. */
+.vdev .vdev-brand {
+    position: relative;
+    justify-content: flex-end;
+    gap: 5px;
+    width: var(--rail-w);
+    min-width: var(--rail-w);
+    padding: 0 14px;
+    border-right: 1px solid var(--line);
+    background: var(--rail);
+}
+
+.vdev .vdev-brand img { width: 17px; height: 17px; }
+.vdev .vdev-word { color: var(--muted); font-size: 11px; font-weight: 550; text-transform: lowercase; }
+.vdev .vdev-chrome { position: relative; background: var(--workspace); }
+.vdev .vdev-drag { position: static; justify-content: center; padding: 0; }
+.vdev .vdev-right { gap: 10px; padding-right: 12px; }
+.vdev .vdev-traffic-lights { position: absolute; left: 14px; top: 50%; display: flex; gap: 8px; transform: translateY(-50%); }
+.vdev .vdev-traffic-lights i { display: block; width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.2); }
+.vdev .vdev-traffic-lights i:nth-child(1) { background: #ff5f57; }
+.vdev .vdev-traffic-lights i:nth-child(2) { background: #febc2e; }
+.vdev .vdev-traffic-lights i:nth-child(3) { background: #28c840; }
+.vdev .vdev-sidebar-show { margin-right: auto; }
+
+.vdev[data-sidebar-open="false"] .vdev-brand { width: 126px; min-width: 126px; border-right: 0; background: var(--workspace); }
+.vdev[data-sidebar-open="false"] .vdev-brand img,
+.vdev[data-sidebar-open="false"] .vdev-word { display: none; }
+.vdev[data-sidebar-open="false"] .vdev-mode-switch { left: 50%; }
+
+@media (max-width: 800px) {
+    .hero-showcase .vdev.vdev .vdev-drag { display: flex; }
+    .vdev .vdev-mode-switch { left: 52%; }
+    .hero-showcase .vdev.vdev .vdev-brand { width: 125px; min-width: 125px; }
+    .vdev .vdev-brand img, .vdev .vdev-word { display: none; }
+}
+
+.vdev .vdev-mode-pip {
+    min-width: 15px;
+    height: 15px;
+    border-radius: 8px;
+    background: var(--ask);
+    color: var(--bg);
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-heavy);
+    font-variant-numeric: tabular-nums;
+    line-height: 15px;
+    text-align: center;
+}
+
+/* With the rail hidden, the sidebar button sits after the traffic lights. */
+.vdev[data-sidebar-open="false"] .vdev-brand { padding-left: 76px; }

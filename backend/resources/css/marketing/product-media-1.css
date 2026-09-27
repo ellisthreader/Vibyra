@@ -1,0 +1,163 @@
+.product-capture {
+    overflow: hidden;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+}
+
+.product-capture img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.product-capture figcaption {
+    padding: 11px 14px;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-ink-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.marketing-product-frame,
+.desktop-campaign-stage,
+.editorial-phone-stage {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(93, 129, 255, 0.26);
+    border-radius: 18px;
+    background: #090b10;
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+}
+
+.marketing-product-frame {
+    min-height: 470px;
+    padding: clamp(28px, 5vw, 64px) clamp(18px, 4vw, 52px) 48px;
+    background-image: linear-gradient(135deg, rgba(5, 8, 15, 0.18), rgba(4, 7, 14, 0.86)), url("/media/homepage/vibyra-cobalt-stage.png");
+    background-position: center;
+    background-size: cover;
+}
+
+.marketing-product-frame__ambient {
+    position: absolute;
+    inset: 14% 12%;
+    border-radius: 50%;
+    background: rgba(55, 102, 255, 0.2);
+    filter: blur(70px);
+}
+
+.marketing-product-frame__window {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: #101217;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.62);
+    transform: perspective(1400px) rotateX(1.5deg) rotateY(-1.5deg);
+}
+
+.marketing-product-frame__bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 23, 31, 0.96);
+}
+
+.marketing-product-frame__bar span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.marketing-product-frame__bar strong {
+    margin-left: 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.marketing-product-frame__viewport {
+    height: clamp(310px, 35vw, 405px);
+    overflow: hidden;
+}
+
+.marketing-product-frame__viewport img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.marketing-product-frame--memory .marketing-product-frame__viewport img {
+    width: 170%;
+    max-width: none;
+    object-position: right top;
+    transform: translateX(-41%);
+}
+
+.marketing-product-frame--models .marketing-product-frame__viewport img {
+    width: 130%;
+    max-width: none;
+    object-position: right top;
+    transform: translateX(-22%);
+}
+
+.marketing-product-frame figcaption,
+.desktop-campaign-stage figcaption,
+.editorial-phone-stage figcaption {
+    position: absolute;
+    z-index: 3;
+    right: 16px;
+    bottom: 13px;
+    left: 16px;
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.52);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.marketing-product-frame figcaption span {
+    color: #9bb3ff;
+}
+
+.capability-stage {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    background: var(--color-canvas-raised);
+}
+
+.capability-stage__media {
+    position: absolute;
+    inset: 0;
+    opacity: 0.34;
+}
+
+.capability-stage__media::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, rgba(8, 10, 16, 0.98) 4%, rgba(8, 10, 16, 0.9) 52%, rgba(8, 10, 16, 0.72));
+    content: "";
+}
+
+.capability-stage__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

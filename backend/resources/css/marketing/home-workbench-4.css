@@ -1,0 +1,124 @@
+/* ── Labels, held flat so the type stays crisp ───────────────────────────── */
+/* The scene fills the frame at every width, so there is no gutter beside it to
+ * label into: the labels live in the bands above and below the artwork and
+ * reach their part with a leader. The leader is one rotated rule pinned to the
+ * label's own edge — `--lead` its length, `--lead-angle` its slope — so the
+ * label carries its line with it, and every leader runs at the same angle.
+ *
+ * Each pair below is where a label has to sit for its leader to land on the
+ * part it names: the scene is in perspective, so those landing points are the
+ * projected corners, not the CSS boxes, and they move whenever the scene's
+ * size or rotation does. Re-measure after changing either — the anchors are the
+ * terminals pane's top edge, the dock's left edge, and the rail's bottom edge. */
+.wbx-tags { position: absolute; inset: 0; margin: 0; pointer-events: none; }
+.wbx-tag {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 18px;
+    letter-spacing: 0.02em;
+    color: #5f6776;
+    white-space: nowrap;
+}
+.wbx-tag::before { content: ''; width: 5px; height: 5px; flex: none; border-radius: 50%; background: var(--accent); order: -1; }
+.wbx-tag::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: var(--lead);
+    height: 1px;
+    transform-origin: 0 50%;
+    transform: rotate(var(--lead-angle));
+    background: linear-gradient(90deg, transparent, #aab5d2);
+}
+/* Sitting left of its part, so the leader leaves the right end instead. */
+.wbx-tag-flip { flex-direction: row-reverse; }
+.wbx-tag-flip::after { left: 100%; }
+.wbx-tag-shell { --lead: 72px; --lead-angle: 213.7deg; left: calc(50% - 340px); top: 618px; }
+.wbx-tag-terminals { --lead: 90px; --lead-angle: 33.7deg; right: calc(50% + 204px); top: 112px; }
+.wbx-tag-dock { --lead: 72px; --lead-angle: 33.7deg; right: calc(50% - 138px); top: 112px; }
+
+.wbx > figcaption {
+    margin-top: 6px;
+    font-family: Manrope, sans-serif;
+    font-size: 13px;
+    color: #5f6776;
+    text-align: center;
+}
+
+/* ── The agents finish the job, once, after the panes have landed ────────── */
+.wbx-type { display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; }
+.wbx.is-visible .wbx-type { animation: wbx-type 560ms steps(22, end) var(--d, 0s) backwards; }
+.wbx.is-visible .wbx-out > b,
+.wbx.is-visible .wbx-caret { animation: wbx-fade 320ms ease var(--d, 0s) backwards; }
+.wbx.is-visible .wbx-caret > i { animation: wbx-blink 900ms steps(2, jump-none) var(--d, 0s) 4; }
+@keyframes wbx-type { from { width: 0; } }
+@keyframes wbx-fade { from { opacity: 0; } }
+@keyframes wbx-blink { 50% { opacity: 0.15; } }
+
+/* ── Narrower: the panes narrow the way the app's do ─────────────────────── */
+@media (max-width: 1180px) {
+    .wbx { --rail-w: 172px; --term-w: 356px; --dock-w: 228px; --shell-x: 30px; }
+    .wbx-scene { width: 880px; margin-left: -440px; }
+    .wbx-tag-shell { left: calc(50% - 260px); top: 618px; }
+    .wbx-tag-terminals { right: calc(50% + 136px); top: 111px; }
+    .wbx-tag-dock { right: calc(50% - 181px); top: 111px; }
+}
+@media (max-width: 1000px) {
+    .wbx { --rail-w: 148px; --term-w: 320px; --dock-w: 210px; --shell-x: 20px; --body-h: 400px; }
+    .wbx-scene { width: 800px; margin-left: -400px; transform: rotateX(6deg) rotateY(-15deg); }
+    /* The taller body pushes the window's bottom edge to 653px here, so the
+     * stage keeps the same clearance under it as the wider breakpoints do. */
+    .wbx-stage { height: 712px; perspective: 1700px; }
+    .wbx-tag-shell { left: calc(50% - 240px); top: 665px; }
+    .wbx-tag-terminals { right: calc(50% + 144px); top: 111px; }
+    .wbx-tag-dock { right: calc(50% - 149px); top: 111px; }
+}
+
+/* ── Narrow: no perspective, just the three parts of the window, stacked ─── */
+@media (max-width: 860px) {
+    .wbx { margin-bottom: 44px; --term-w: auto; --dock-w: auto; --rail-w: 100%; }
+    .wbx-stage { height: auto; perspective: none; }
+    .wbx-scene {
+        position: static;
+        display: grid;
+        gap: 14px;
+        width: auto;
+        height: auto;
+        margin: 0;
+        transform: none;
+    }
+    .wbx-slab { position: static; width: auto; height: auto; transform: none !important; }
+    .wbx-lift { transform: none !important; }
+    .wbx-shell .wbx-lift { box-shadow: 0 14px 34px #1c224426; }
+    .wbx-body { display: block; }
+    .wbx-rail { width: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    .wbx-rail-foot { margin-top: 10px; }
+    .wbx-sockets { display: none; }
+    .wbx-pane { min-height: 244px; }
+    .wbx-pane-dock .wbx-pane { min-height: 320px; }
+    .wbx-tags { position: static; display: grid; gap: 14px; }
+    /* Stacked, every label reads the same way round and leads nowhere. */
+    .wbx-tag { position: static; flex-direction: row; }
+    .wbx-tag::after { display: none; }
+    .wbx-scene, .wbx-tags { display: contents; }
+    .wbx-stage { display: grid; gap: 12px; }
+    .wbx-tag-shell { order: 1; }
+    .wbx-shell { order: 2; }
+    .wbx-tag-terminals { order: 3; }
+    .wbx-pane-terminals { order: 4; }
+    .wbx-tag-dock { order: 5; }
+    .wbx-pane-dock { order: 6; }
+    .wbx > figcaption { margin-top: 14px; text-align: left; }
+}
+@media (max-width: 460px) {
+    .wbx-term { font-size: 10.5px; }
+    .wbx-screen { font-size: 10.5px; padding: 9px; }
+    .wbx-modes, .wbx-search { display: none; }
+    .wbx-chrome { gap: 8px; }
+    .wbx-window { margin-left: auto; }
+}

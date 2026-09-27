@@ -1,0 +1,135 @@
+@import "./device-agent-profile.css";
+
+/* Agent Mode, laid out like messaging a coworker: your teammates on the left
+ * and the conversation beside them. The device is a fixed height with no
+ * scrollers, so columns clip instead: the list loses its last rows, the
+ * conversation its oldest. */
+
+/* --quiet is the small print: times, file details, the engine's name. --dim
+ * is 4.3:1 on these grounds at 10-11px, so it is lifted toward --muted to pass. */
+.vdev .vdev-agentview {
+    --bots-w: 248px;
+    --quiet: color-mix(in srgb, var(--muted) 45%, var(--dim));
+    display: flex;
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ---- a teammate's face ----
+ * The teammate itself: a soft vinyl character with a smile and one prop for
+ * its job, standing on the row with no tile behind it. */
+
+.vdev .vdev-face {
+    --ring: var(--rail);
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: var(--face);
+    height: var(--face);
+}
+
+.vdev .vdev-face-art {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+/* The engine rides on the face's corner, ringed in whatever it sits on. */
+.vdev .vdev-face-engine {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--elevated);
+    box-shadow: 0 0 0 2px var(--ring);
+}
+
+.vdev .vdev-face-engine img {
+    width: 8px;
+    height: 8px;
+    object-fit: contain;
+}
+
+.vdev .vdev-face-engine-mono img {
+    filter: brightness(0) invert(1);
+}
+
+/* ---- the teammate list ---- */
+
+.vdev .vdev-bots {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: var(--bots-w);
+    min-width: 0;
+    padding: 14px 10px 10px;
+    background: var(--rail);
+    border-right: 1px solid var(--line);
+}
+
+.vdev .vdev-bots-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.vdev .vdev-bots-search {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    height: 32px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-control);
+    background: var(--surface);
+    color: var(--dim);
+    transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.vdev .vdev-bots-search:focus-within {
+    border-color: var(--accent-border);
+}
+
+.vdev .vdev-bots-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: var(--fs-ui);
+    font-weight: var(--fw-medium);
+    appearance: none;
+}
+
+.vdev .vdev-bots-search input::placeholder {
+    color: var(--dim);
+}
+
+.vdev .vdev-bots-search input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.vdev .vdev-bots-head .vdev-icon-btn[disabled] {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.vdev .vdev-bots-head .vdev-icon-btn[disabled]:hover {
+    background: none;
+    color: var(--muted);
+}
