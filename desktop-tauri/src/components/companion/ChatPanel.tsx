@@ -1,184 +1,121 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import logoUrl from "../../assets/vibyra-cobalt.png";
-import { useChatStore, type ChatTurn } from "../../state/chatStore";
+import { requestRun } from "../../lib/runCommand";
+import { useAccountStore } from "../../state/accountStore";
+import { useChatStore } from "../../state/chatStore";
+import type { ChatTurn } from "../../state/chatTypes";
 import { useProjectStore } from "../../state/projectStore";
 import { useSettingsStore } from "../../state/settingsStore";
-import { useWorkspaceStore } from "../../state/workspaceStore";
-import { MoreIcon, SendIcon, SparklesIcon } from "../common/Icons";
+import { useTalkStore } from "../../state/talkStore";
+
+import { ChatComposer } from "./ChatComposer";
+import { ChatPanelHeader } from "./ChatPanelHeader";
+import { ChatTurns } from "./ChatTurns";
+import { VoiceMode, VoiceModeStrip } from "./VoiceMode";
+import { useChatScroll } from './useChatScroll';
+import { ChevronDownIcon } from '../common/Icons';
+import "./chatDesign.css";
 
 const NO_TURNS: ChatTurn[] = [];
-const STARTERS = [
-  {
-    label: "Explain this project",
-    prompt: "Give me a concise overview of this project, its main entry points, and how the pieces fit together.",
-  },
-  {
-    label: "Choose the next useful task",
-    prompt: "Review this project and suggest the smallest useful next task, with a clear reason.",
-  },
-];
 
-export function ChatPanel() {
+export function ChatPanel({ active = true }: { active?: boolean }) {
   const projectId = useProjectStore((s) => s.activeId);
-  const threads = useChatStore((s) => s.threads);
-  const turns = (projectId ? threads[projectId] : undefined) ?? NO_TURNS;
-  const sending = useChatStore((s) => s.sending);
-  const error = useChatStore((s) => s.error);
+  // One project's thread, never the whole record: a delta lands about sixty
+  // times a second, and every other project would repaint with it.
+  const turns = useChatStore((s) => (projectId ? s.threads[projectId] : undefined) ?? NO_TURNS);
+  const inFlight = useChatStore((s) => s.active);
   const send = useChatStore((s) => s.send);
+  const retry = useChatStore((s) => s.retry);
+  const stop = useChatStore((s) => s.stop);
   const clear = useChatStore((s) => s.clear);
+  const projects = useSettingsStore((s) => s.settings?.projects);
   const serviceConfigured = useSettingsStore((s) => Boolean(s.settings?.openaiKeyConfigured));
-  const openKeySettings = useWorkspaceStore((s) => s.openSettingsSection);
-  const [draft, setDraft] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const composerRef = useRef<HTMLTextAreaElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const email = useAccountStore((s) => s.snapshot.profile?.email ?? "guest");
+  const draftKey = `companion.draft.${encodeURIComponent(email)}.${projectId}`;
+  const [draft, updateDraft] = useState(() => { try { return localStorage.getItem(draftKey) ?? ""; } catch { return ""; } });
+  const [draftError, setDraftError] = useState("");
+  const setDraft = useCallback((text: string) => { updateDraft(text); try { localStorage.setItem(draftKey, text); } catch { setDraftError("This draft could not be saved. Keep Chat open until you send it."); } }, [draftKey]);
+  const speakingTurn = useTalkStore((s) => s.speakingTurn);
+  const talkPhase = useTalkStore((s) => s.phase);
+  const showTranscript = useTalkStore((s) => s.showTranscript);
+  const talking = talkPhase !== "idle";
+  const scroll = useChatScroll(turns, active && (!talking || showTranscript));
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [turns, sending]);
+  const submit = useCallback((value: string) => {
+    const text = value.trim();
+    if (!text || !projectId || useChatStore.getState().active) return;
+    setDraft("");
+    // Your own question always brings you back to the end of the thread.
+    scroll.jump();
+    void send(projectId, text);
+  }, [projectId, send, setDraft, scroll.jump]);
+  const onRetry = useCallback((turnId: string) => { if (projectId) void retry(projectId, turnId); }, [projectId, retry]);
+  // Stable, or `MarkdownBlocks`' memo is defeated on every delta.
+  const onRun = useCallback((_command: string, lines: string[]) => requestRun(lines, projectId ?? ""), [projectId]);
 
+  // `role="log"` below is a polite live region, and rich markdown arriving
+  // token by token through one is unusable. The in-flight turn carries
+  // `aria-busy`, and the finished reply is announced once, here.
+  const streaming = turns.some((turn) => turn.status === "streaming");
+  const wasStreaming = useRef(false);
+  const [finished, setFinished] = useState("");
   useEffect(() => {
-    if (!menuOpen) return;
-    const closeMenu = (event: globalThis.PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("pointerdown", closeMenu);
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      window.removeEventListener("pointerdown", closeMenu);
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [menuOpen]);
+    if (streaming) { wasStreaming.current = true; setFinished(""); }
+    else if (wasStreaming.current) { wasStreaming.current = false; setFinished("Reply complete"); }
+  }, [streaming]);
 
   if (!projectId) return null;
 
-  const submit = (value = draft) => {
-    const text = value.trim();
-    if (!text || sending) return;
-    setDraft("");
-    if (composerRef.current) composerRef.current.style.height = "";
-    void send(projectId, text);
-  };
+  // Voice mode takes the whole panel: a conversation you are having out loud is
+  // not a variation on a page of bubbles, and pretending otherwise is how
+  // people lose track of which mode they are in.
+  if (talking && !showTranscript) return <div className="companion-panel companion-panel--voice"><VoiceMode /></div>;
+
+  // A failure that wrote nothing already says so in its own row; the panel's
+  // copy of the same sentence would only announce it twice.
+  const lastReply = turns.filter(turn => turn.role === 'assistant').at(-1);
+  const silent = lastReply?.status === 'failed' && !lastReply.content;
+  const threadError = lastReply?.error;
+  const elsewhere = inFlight && inFlight.projectId !== projectId
+    ? projects?.find((project) => project.id === inFlight.projectId)?.name ?? "another project"
+    : null;
 
   return (
     <div className="companion-panel companion-panel--chat">
-      <div className="chat-identity">
-        <img src={logoUrl} alt="" />
-        <div>
-          <strong>Vibyra AI</strong>
-          <span>Project companion</span>
-        </div>
-        {turns.length > 0 && (
-          <div className="chat-menu" ref={menuRef}>
-            <button
-              className="icon-btn"
-              aria-label="Conversation options"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              title="Conversation options"
-              onClick={() => setMenuOpen((value) => !value)}
-            >
-              <MoreIcon size={14} />
-            </button>
-            {menuOpen && (
-              <div className="chat-menu__popover" role="menu">
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    clear(projectId);
-                    setMenuOpen(false);
-                  }}
-                >
-                  Clear conversation
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="chat-scroll" ref={scrollRef}>
-        {turns.length === 0 && (
-          <div className="chat-empty">
-            <h3>How can I help?</h3>
-            <p>Understand the codebase, trace a problem, or plan the next move.</p>
-            <div className="chat-starters">
-              {STARTERS.map((starter) => (
-                <button
-                  key={starter.label}
-                  title={serviceConfigured ? undefined : "Add your OpenAI key to use Vibyra AI"}
-                  onClick={() => (serviceConfigured ? submit(starter.prompt) : openKeySettings("ai"))}
-                >
-                  <SparklesIcon size={13} />
-                  <span>{starter.label}</span>
-                  <span aria-hidden="true">→</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {turns.map((turn, index) => (
-          <div key={index} className={`chat-turn chat-turn--${turn.role}`}>
-            {turn.role === "assistant" && <span className="chat-turn__token">❯</span>}
-            <div className="chat-turn__bubble">{turn.content}</div>
-          </div>
-        ))}
-        {sending && (
-          <div className="chat-turn chat-turn--assistant">
-            <span className="chat-turn__token">❯</span>
-            <div className="chat-turn__bubble chat-turn__bubble--thinking">
-              <i />
-              <i />
-              <i />
-            </div>
-          </div>
-        )}
-        {error && <p className="chat-error" role="alert">{error}</p>}
-      </div>
-      {!serviceConfigured && (
-        <div className="chat-setup" role="note">
-          <span>Vibyra AI needs your OpenAI API key.</span>
-          <button onClick={() => openKeySettings("ai")}>Add a key</button>
-        </div>
-      )}
-      <div className="chat-input">
-        <textarea
-          ref={composerRef}
-          className="chat-input__area"
-          value={draft}
-          rows={1}
-          placeholder={serviceConfigured ? "Message Vibyra…" : "Add an OpenAI key to chat"}
-          aria-label="Message Vibyra"
-          disabled={!serviceConfigured}
-          spellCheck={false}
-          onChange={(e) => setDraft(e.target.value)}
-          onInput={(event) => {
-            const field = event.currentTarget;
-            field.style.height = "auto";
-            field.style.height = `${Math.min(field.scrollHeight, 120)}px`;
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit();
-            }
-          }}
+      <ChatPanelHeader projectName={projects?.find(project => project.id === projectId)?.name ?? 'Project'}
+        working={inFlight?.projectId === projectId} hasTurns={turns.length > 0} onClear={() => clear(projectId)} />
+      <div className="chat-transcript">
+      <div
+        className="chat-scroll"
+        ref={scroll.ref}
+        role="log"
+        aria-label="Conversation"
+        onScroll={scroll.onScroll}
+      >
+        <ChatTurns
+          turns={turns}
+          active={active}
+          speakingTurn={speakingTurn}
+          notice={draftError || (silent ? "" : threadError ?? "")}
+          onStart={submit}
+          onRetry={onRetry}
+          onRun={onRun}
         />
-        <button
-          className="chat-input__send"
-          aria-label="Send message"
-          title="Send"
-          onClick={() => submit()}
-          disabled={!serviceConfigured || !draft.trim() || sending}
-        >
-          <SendIcon size={14} />
-        </button>
       </div>
+      {!scroll.atLatest && <button className="chat-jump" onClick={scroll.jump}><ChevronDownIcon size={14} />Jump to latest</button>}
+      </div>
+      <p className="sr-only" role="status">{finished}</p>
+      {talking ? <VoiceModeStrip /> : null}
+      <ChatComposer
+        active={active}
+        draft={draft}
+        setDraft={setDraft}
+        serviceConfigured={serviceConfigured}
+        sending={Boolean(inFlight) && !elsewhere}
+        elsewhere={elsewhere}
+        onSubmit={() => submit(draft)}
+        onStop={stop}
+      />
     </div>
   );
 }

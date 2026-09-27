@@ -1,0 +1,52 @@
+/* Workspace-first navigation: names, disclosure, count, then quiet session dots. */
+.workspace-tree__heading { display:flex; align-items:center; justify-content:space-between; min-height:48px; padding:0 10px 8px; color:var(--dim); font-size:13px; font-weight:600; letter-spacing:.02em; }
+.workspace-tree__heading .icon-btn { color:var(--muted); }
+.workspace-tree__heading-actions { display:flex; align-items:center; gap:2px; }
+.workspace-tree__heading .icon-btn { width:28px; height:28px; }
+.workspace-tree__heading .icon-btn:hover { color:var(--text); background:var(--hover-strong); }
+.workspace-tree { padding:0 2px; }
+.workspace-tree section { position:relative; margin-bottom:4px; }
+.workspace-tree__row { display:flex; align-items:center; gap:12px; width:100%; min-height:40px; padding:0 12px; border-radius:9px; color:var(--muted); text-align:left; font-size:15px; letter-spacing:.01em; }
+.workspace-tree__row:hover { background:var(--hover); color:var(--text); }
+.workspace-tree__row.is-active { background:var(--hover-strong); color:var(--text); font-weight:600; }
+.workspace-tree__count { display:grid; place-items:center; min-width:24px; height:22px; padding:0 5px; border-radius:20px; background:var(--hover-strong); color:var(--muted); font-size:12px; font-weight:500; }
+.workspace-tree__disclosure-space { width:18px; flex:none; }
+.workspace-tree__disclosure { position:absolute; top:8px; right:43px; display:grid; place-items:center; width:24px; height:24px; border-radius:6px; color:var(--muted); }
+.workspace-tree__disclosure:hover { background:var(--hover-strong); color:var(--text); }
+.workspace-tree__collapsed { transform:rotate(-90deg); }
+.workspace-tree__sessions { padding:2px 0 5px 23px; }
+.focus-rail .workspace-tree__sessions .pstrip__row { min-height:35px; font-size:14px; font-weight:400; gap:12px; padding-left:12px; }
+.workspace-tree__sessions .pstrip__trail--rest { visibility:hidden; }
+.workspace-tree__sessions .pstrip__row--active { background:transparent; color:var(--text); }
+/* Opening a project is what offers a new terminal, the way the iPhone drawer
+   does it: a quiet last row under the sessions rather than a control that only
+   exists while the pointer happens to be on the name. */
+.workspace-tree__new { display:flex; align-items:center; gap:12px; width:100%; min-height:35px; padding:0 12px; border-radius:9px; color:var(--dim); font-size:14px; text-align:left; }
+.workspace-tree__new:hover { background:var(--hover); color:var(--text); }
+/* The + rides in the same 6px slot the session dots use, so every label in an
+   open project starts on one line. */
+.workspace-tree__mark { display:flex; align-items:center; justify-content:center; flex:0 0 6px; min-width:0; }
+.workspace-tree__mark svg { flex-shrink:0; overflow:visible; }
+
+.workspace-tree__row.is-active .workspace-tree__count { background:var(--hover); }
+
+.workspace-tree__sessions .pstrip__list { grid-template-columns:minmax(0, 1fr); }
+
+.project-context { position:fixed; z-index:110; width:292px; padding:6px; border:1px solid var(--line); border-radius:11px; background:var(--surface); box-shadow:0 16px 42px #0005; color:var(--text); font:13px var(--font-ui); }
+.project-context__title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:9px 10px 10px; border-bottom:1px solid var(--line-soft); color:var(--dim); font-size:12px; }
+.project-context__choices { display:grid; gap:2px; padding-top:5px; }
+.project-context__choices button { width:100%; min-height:34px; padding:0 10px; border-radius:7px; text-align:left; color:var(--text); }
+.project-context__choices button:hover,.project-context__choices button:focus-visible { background:var(--hover-strong); }
+.project-context__choices .project-context__danger { color:var(--danger); }
+.project-context form,.project-context__confirmation { padding:10px; }
+.project-context label { display:block; margin-bottom:8px; color:var(--muted); font-size:12px; }
+.project-context input { width:100%; height:36px; padding:0 10px; border:1px solid var(--line); border-radius:7px; outline:none; background:var(--workspace); color:var(--text); font:inherit; }
+.project-context input:focus { border-color:var(--accent); }
+.project-context__hint { margin:10px 0 12px; color:var(--muted); font-size:12px; line-height:1.45; }
+.project-context__error { margin:0 0 10px; color:var(--danger); font-size:12px; }
+.project-context__buttons { display:flex; justify-content:flex-end; gap:7px; }
+.project-context__buttons button { min-height:32px; padding:0 10px; border-radius:7px; color:var(--muted); }
+.project-context__buttons button:hover { background:var(--hover-strong); color:var(--text); }
+.project-context__buttons .project-context__primary { background:var(--accent); color:#fff; }
+.project-context__buttons .project-context__confirm-danger { background:var(--danger); color:#fff; }
+.project-context__buttons button:disabled { opacity:.6; cursor:wait; }

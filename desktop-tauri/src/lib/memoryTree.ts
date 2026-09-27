@@ -69,9 +69,7 @@ export function searchMemoryPaths(paths: string[], query: string, limit = 80): s
     .slice(0, limit);
 }
 
-export function memoryNoteTitle(path: string): string {
-  return title(path.split("/").at(-1) ?? path);
-}
+
 
 export function resolveMemoryLink(paths: string[], target: string): string | null {
   const raw = target.split("|")[0].split("#")[0].trim().replace(/\\/g, "/");

@@ -1,6 +1,7 @@
 use tauri::{AppHandle, State};
 
 use crate::account_auth;
+use crate::account_login;
 use crate::account_oauth;
 use crate::account_profile;
 use crate::account_types::AccountSnapshot;
@@ -22,7 +23,7 @@ pub async fn account_login_email(
     email: String,
     password: String,
 ) -> Result<AccountSnapshot, String> {
-    Ok(account_auth::login_email(&state, email, password).await)
+    Ok(account_login::login_email(&state, email, password).await)
 }
 
 #[tauri::command]
@@ -32,7 +33,23 @@ pub async fn account_signup_email(
     email: String,
     password: String,
 ) -> Result<AccountSnapshot, String> {
-    Ok(account_auth::signup_email(&state, name, email, password).await)
+    Ok(account_login::signup_email(&state, name, email, password).await)
+}
+
+/// The second half of a login on an account with a second factor. The
+/// challenge itself is held natively; the renderer only sends the code.
+#[tauri::command]
+pub async fn account_two_factor_submit(
+    state: State<'_, AppState>,
+    code: String,
+) -> Result<AccountSnapshot, String> {
+    Ok(account_login::submit_two_factor(&state, code).await)
+}
+
+#[tauri::command]
+pub fn account_two_factor_cancel(state: State<'_, AppState>) -> AccountSnapshot {
+    state.account.cancel_two_factor();
+    state.account.snapshot()
 }
 
 #[tauri::command]
@@ -73,6 +90,13 @@ pub async fn account_password_forgot(email: String) -> Result<String, String> {
 #[tauri::command]
 pub async fn account_resend_verification(state: State<'_, AppState>) -> Result<String, String> {
     account_profile::resend_verification(&state).await
+}
+
+/// The signed-in account's photo as a `data:` URL, fetched natively because
+/// the renderer's content policy has no reach to the network.
+#[tauri::command]
+pub async fn account_avatar(state: State<'_, AppState>) -> Result<Option<String>, String> {
+    account_profile::avatar(&state).await
 }
 
 #[tauri::command]

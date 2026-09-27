@@ -1,0 +1,158 @@
+/* Settings › Account, continued: turning a second step on, the one sight
+   of a set of recovery codes, and leaving. */
+
+/* ── two-factor ─────────────────────────────────────────────────────────── */
+
+.two-factor {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.two-factor__lead {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.two-factor__pair {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.two-factor__qr {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: #fff;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.two-factor__steps {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.two-factor__secret {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-tint);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 1px;
+  justify-self: start;
+  word-break: break-all;
+  user-select: all;
+}
+
+.two-factor__account {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.two-factor__confirm {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.two-factor__confirm .input {
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
+  margin-right: auto;
+}
+
+.recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface-tint);
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.5px;
+  user-select: all;
+}
+
+/* ── leaving ────────────────────────────────────────────────────────────── */
+
+.account-danger__open {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-danger {
+  display: grid;
+  gap: 8px;
+  padding: 16px 16px 14px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.account-danger ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.account-danger__note {
+  color: var(--danger);
+  font-weight: 560;
+}
+
+.account-danger + .setting-row,
+.account-danger + .profile-actions {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* A password is a short thing to type: a full-width field reads like a
+   search box rather than the last step before something irreversible. */
+.account-danger + .setting-row .setting-row__control .input {
+  max-width: 300px;
+}
+
+.account-legal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.account-legal__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: inherit;
+  font-weight: 560;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-legal__link:hover {
+  color: var(--accent);
+}

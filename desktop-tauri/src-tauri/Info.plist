@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Record speech when you start dictation. Vibyra sends that recording to OpenAI for transcription using your configured API key.</string>
+<key>NSLocalNetworkUsageDescription</key>
+<string>Connect your paired iPhone to view live Vibyra desktop terminals on your private network.</string>
+<key>NSBonjourServices</key>
+<array><string>_vibyra-host._tcp</string></array>
+</dict></plist>

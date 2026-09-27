@@ -1,6 +1,8 @@
 mod catalog;
+pub mod install;
 
 pub use catalog::{builtin_agents, program_in_path, resolve_agents};
+pub use install::{install_hint, npm_package, InstallHint, InstallManager};
 
 use serde::{Deserialize, Serialize};
 
@@ -36,6 +38,9 @@ pub struct ResolvedAgent {
     #[serde(flatten)]
     pub spec: AgentSpec,
     pub installed: bool,
+    /// How this agent's command gets onto the machine, or `None` for a custom
+    /// entry the user pointed at themselves.
+    pub install: Option<InstallHint>,
 }
 
 impl AgentSpec {

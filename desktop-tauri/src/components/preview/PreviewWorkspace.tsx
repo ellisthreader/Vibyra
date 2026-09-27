@@ -10,25 +10,48 @@ import type {
   PreviewViewportState,
 } from "../../previewTypes";
 import { PreviewDeviceFrame } from "./PreviewDeviceFrame";
+import { PreviewAddress } from "./PreviewAddress";
 import { PreviewToolbar } from "./PreviewToolbar";
 import { useProjectPreview } from "./useProjectPreview";
+import { attachedPreviewPort } from "../../lib/previewAttached";
 
 interface Props {
   projectId: string;
+  shareProjectId?: string;
   root: string;
+  projectRoot?: string;
+  onResetScope?: () => void;
+  /** False while mounted out of sight; status checks then slow right down. */
+  active?: boolean;
 }
 
-export function PreviewWorkspace({ projectId, root }: Props) {
-  const controller = useProjectPreview(projectId, root);
-  const surfaceKey = controller.target?.id ?? "inspection";
+export function PreviewWorkspace({ projectId, shareProjectId, root, projectRoot = root, onResetScope, active: shown = true }: Props) {
+  const controller = useProjectPreview(projectId, root, projectRoot, shown);
+  const [manualUrl, setManualUrl] = useState<string | null>(null);
+  const attachedPort = manualUrl ? attachedPreviewPort(manualUrl) : null;
+  const surfaceKey = manualUrl ? "manual-url" : controller.target?.id ?? "inspection";
+  const active = manualUrl ? {
+    ...controller, inspecting: false, inspection: null, targetId: "manual-url",
+    target: { id: attachedPort ? `attached-port:${attachedPort}` : "manual-url", name: "Your website", framework: "URL", relativeRoot: ".", command: null,
+      runnable: true, reason: null, deviceHint: "desktop" as const, landscape: false },
+    status: { phase: "running" as const, targetId: "manual-url", url: manualUrl, command: null, logs: [], error: null },
+    stop: async () => setManualUrl(null),
+  } : controller;
 
   return (
     <div className="preview-workspace">
+      <PreviewAddress url={active.status.url} onOpen={setManualUrl} />
       <PreviewSurface
         key={surfaceKey}
         projectId={projectId}
-        target={controller.target}
-        controller={controller}
+        target={active.target}
+        controller={active}
+        share={!shareProjectId || (manualUrl && !attachedPort) ? undefined : {
+          projectId: shareProjectId, root,
+          startPath: manualUrl ? new URL(manualUrl).pathname + new URL(manualUrl).search : undefined,
+        }}
+        onAutomatic={manualUrl ? () => { setManualUrl(null); void controller.inspect(); } : undefined}
+        onResetScope={onResetScope}
       />
     </div>
   );
@@ -38,9 +61,12 @@ interface SurfaceProps {
   projectId: string;
   target: PreviewTarget | null;
   controller: ReturnType<typeof useProjectPreview>;
+  share?: { projectId: string; root: string; startPath?: string };
+  onAutomatic?: () => void;
+  onResetScope?: () => void;
 }
 
-function PreviewSurface({ projectId, target, controller }: SurfaceProps) {
+function PreviewSurface({ projectId, target, controller, share, onResetScope, onAutomatic }: SurfaceProps) {
   const [viewport, setViewport] = useState<PreviewViewportState>(() =>
     target
       ? loadViewport(projectId, target.id, target.deviceHint, target.landscape)
@@ -86,11 +112,14 @@ function PreviewSurface({ projectId, target, controller }: SurfaceProps) {
         device={device}
         viewport={viewport}
         scale={scale}
+        onResetScope={onResetScope}
+        onAutomatic={onAutomatic}
         onTarget={(id) => void controller.selectTarget(id)}
         onViewport={updateViewport}
         onRefresh={() => setRevision((current) => current + 1)}
         onRun={() => void controller.start()}
         onStop={() => void controller.stop()}
+        share={share}
       />
       <PreviewDeviceFrame
         device={device}

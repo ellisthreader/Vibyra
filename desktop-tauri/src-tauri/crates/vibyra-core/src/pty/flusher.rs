@@ -22,18 +22,30 @@ pub fn spawn(
         .spawn(move || {
             // Reused across ticks: a fresh Vec per tick is allocator churn.
             let mut due = Vec::new();
-            // Loops until the wake channel disconnects; a timeout is just a
-            // quiet tick and drives the hidden-session flush interval.
-            while let Ok(()) | Err(RecvTimeoutError::Timeout) =
-                wake_rx.recv_timeout(config.hidden_interval)
-            {
-                if shutdown.load(Ordering::SeqCst) {
+            let mut pass = Pass::default();
+            // Loops until the wake channel disconnects. A timeout is just a
+            // quiet tick that drives the hidden-session flush interval, so it
+            // is only armed while a hidden session holds undelivered output;
+            // otherwise the thread sleeps until a read or a visibility change
+            // wakes it. Every manager owns one of these, most with no
+            // sessions at all, and each used to wake four times a second.
+            loop {
+                let woke = if pass.hidden_pending {
+                    !matches!(
+                        wake_rx.recv_timeout(config.hidden_interval),
+                        Err(RecvTimeoutError::Disconnected)
+                    )
+                } else {
+                    wake_rx.recv().is_ok()
+                };
+                if !woke || shutdown.load(Ordering::SeqCst) {
                     break;
                 }
                 // Flush immediately on wake so an isolated keystroke echoes
                 // with no added latency, then rest one tick after a delivery
                 // so sustained output coalesces instead of flushing per read.
-                if flush_due(&sessions, sink.as_ref(), &config, &mut due) {
+                pass = flush_due(&sessions, sink.as_ref(), &config, &mut due);
+                if pass.delivered {
                     std::thread::sleep(config.tick);
                 }
             }
@@ -41,39 +53,44 @@ pub fn spawn(
         .expect("failed to spawn pty flusher thread");
 }
 
-/// Returns true when anything was delivered, so the caller can pace itself.
+/// What one flush pass saw, so the caller can pace itself and knows whether
+/// the hidden interval still has anything to time.
+#[derive(Default)]
+struct Pass {
+    delivered: bool,
+    hidden_pending: bool,
+}
+
 fn flush_due(
     sessions: &RwLock<HashMap<SessionId, Arc<Session>>>,
     sink: &dyn OutputSink,
     config: &FlushConfig,
     snapshot: &mut Vec<Arc<Session>>,
-) -> bool {
+) -> Pass {
     snapshot.clear();
     snapshot.extend(sessions.read().values().cloned());
-    let mut delivered = false;
+    let mut pass = Pass::default();
     for session in snapshot.drain(..) {
         let drained = {
             let mut output = session.output.lock();
-            let due = match output.visibility {
-                Visibility::Visible => output.has_pending(),
-                Visibility::Hidden => {
-                    output.has_pending() && output.last_flush.elapsed() >= config.hidden_interval
-                }
-                Visibility::Hibernated => false,
-            };
-            due.then(|| output.drain())
+            let drained = output.due(config.hidden_interval).then(|| output.drain());
+            // A held pane's output is timed like a hidden one's: its hold can
+            // lapse with nothing else left to wake this thread.
+            pass.hidden_pending |= (output.visibility == Visibility::Hidden || output.is_held())
+                && output.has_pending();
+            drained
         };
         match drained {
             Some(Drained::Chunk(text)) => {
-                delivered = true;
+                pass.delivered = true;
                 sink.on_output(session.id, text);
             }
             Some(Drained::Resync(snapshot)) => {
-                delivered = true;
+                pass.delivered = true;
                 sink.on_resync(session.id, snapshot);
             }
             Some(Drained::Nothing) | None => {}
         }
     }
-    delivered
+    pass
 }

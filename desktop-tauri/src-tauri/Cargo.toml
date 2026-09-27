@@ -24,11 +24,19 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 # shipped public key against a real signature rather than a lookalike.
 minisign-verify = "0.2"
 base64 = "0.22"
+vibyra-transport = { path = "../../host/crates/transport" }
+tokio-tungstenite = { version = "0.29", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+hex = "0.4"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
+sha1 = "0.10"
+sha2 = "0.10"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
@@ -38,10 +46,13 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 parking_lot = { workspace = true }
 vibyra-core = { path = "crates/vibyra-core" }
+vibyra-host = { path = "../../host/crates/server", default-features = false }
+vibyra-engine = { package = "vibyra-host-engine", path = "../../host/crates/engine" }
 dirs = "6"
 image = { version = "0.25", default-features = false, features = ["png"] }
 base64 = "0.22"
 time = "0.3"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "multipart", "json"] }
 getrandom = "0.3"
 tokio = { version = "1", default-features = false, features = ["time"] }
@@ -61,12 +72,15 @@ strip = true
 tauri-plugin-global-shortcut = "2"
 
 [target.'cfg(target_os = "linux")'.dependencies]
+dbus = "0.9"
 keyring = { version = "3.6", default-features = false, features = ["sync-secret-service"] }
 raw-window-handle = "0.6"
 x11rb = { version = "0.13", features = ["randr"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
+cpal = "=0.18.2"
 keyring = { version = "3.6", default-features = false, features = ["apple-native"] }
+libc = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3.6", default-features = false, features = ["windows-native"] }

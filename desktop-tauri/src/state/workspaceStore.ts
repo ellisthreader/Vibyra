@@ -4,24 +4,31 @@ import { fsReadPreview, onFsChanged } from "../ipc/fs";
 import { useNotificationStore } from "./notificationStore";
 import {
   clampCompanionWidth,
+  restoreCompanionSize,
+  saveCompanionSize,
+  type CompanionSize,
   restoreCompanionTab,
+  restoreCompanionOpen,
+  saveCompanionOpen,
   restoreCompanionWidth,
   saveCompanionTab,
   saveCompanionWidth,
   type CompanionTab,
 } from "../lib/companionPreferences";
 import type { FilePreview } from "../types";
+import type { SettingsPanelId, SettingsSectionId } from "./workspaceSettingsTypes";
+export type { SettingsPanelId, SettingsSectionId } from "./workspaceSettingsTypes";
+
+const PROJECT_SIDEBAR_KEY = "vibyra.desktop.projectsSidebarOpen";
+function restoreProjectsSidebar(): boolean {
+  try { return localStorage.getItem(PROJECT_SIDEBAR_KEY) !== "false"; } catch { return true; }
+}
+function saveProjectsSidebar(open: boolean): void {
+  try { localStorage.setItem(PROJECT_SIDEBAR_KEY, String(open)); } catch { /* Convenience preference. */ }
+}
 
 export type { CompanionTab } from "../lib/companionPreferences";
 export type ProjectMode = "terminals" | "preview";
-export type SettingsSectionId =
-  | "profile"
-  | "general"
-  | "notifications"
-  | "ai"
-  | "integrations"
-  | "agents"
-  | "shortcuts";
 
 /** Routes a failure into the notification system as a sticky app error. */
 function reportProblem(message: string | null): void {
@@ -29,7 +36,8 @@ function reportProblem(message: string | null): void {
   useNotificationStore.getState().push({
     category: "system",
     severity: "danger",
-    title: message,
+    title: "Something went wrong",
+    body: message,
     dedupeKey: `system:${message}`,
     osEligible: false,
   });
@@ -41,25 +49,35 @@ interface WorkspaceStore {
   projectMode: ProjectMode;
   settingsOpen: boolean;
   settingsSection: SettingsSectionId;
+  /** Set by a deep link; the pane opens that group, then clears it. */
+  settingsPanel: SettingsPanelId | null;
   agentPickerOpen: boolean;
   paletteOpen: boolean;
+  /** Saved chats from earlier runs, opened from the command palette. */
+  historyOpen: boolean;
+  projectsSidebarOpen: boolean;
   companionOpen: boolean;
   companionTab: CompanionTab;
   companionWidth: number;
+  companionSize: CompanionSize;
   /** Bumped on every debounced fs change batch; tree nodes refetch on it. */
   fsVersion: number;
   preview: FilePreview | null;
   init: () => Promise<void>;
   openSettings: () => void;
-  openSettingsSection: (section: SettingsSectionId) => void;
+  openSettingsSection: (section: SettingsSectionId, panel?: SettingsPanelId) => void;
   closeSettings: () => void;
   setSettingsSection: (section: SettingsSectionId) => void;
+  clearSettingsPanel: () => void;
   openAgentPicker: () => void;
   closeAgentPicker: () => void;
   setPaletteOpen: (open: boolean) => void;
+  setHistoryOpen: (open: boolean) => void;
+  setProjectsSidebarOpen: (open: boolean) => void;
   toggleCompanion: () => void;
   setCompanionTab: (tab: CompanionTab) => void;
   setCompanionWidth: (width: number) => void;
+  setCompanionSize: (size: CompanionSize) => void;
   setProjectMode: (mode: ProjectMode) => void;
   openPreview: (path: string) => Promise<void>;
   closePreview: () => void;
@@ -71,11 +89,15 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   projectMode: "terminals",
   settingsOpen: false,
   settingsSection: "general",
+  settingsPanel: null,
   agentPickerOpen: false,
   paletteOpen: false,
-  companionOpen: true,
+  historyOpen: false,
+  projectsSidebarOpen: restoreProjectsSidebar(),
+  companionOpen: restoreCompanionOpen(),
   companionTab: restoreCompanionTab(),
   companionWidth: restoreCompanionWidth(),
+  companionSize: restoreCompanionSize(),
   fsVersion: 0,
   preview: null,
 
@@ -94,23 +116,46 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
 
   openSettings: () => set({ settingsOpen: true }),
 
-  openSettingsSection: (settingsSection) => set({ settingsOpen: true, settingsSection }),
+  openSettingsSection: (settingsSection, panel) =>
+    set({ settingsOpen: true, settingsSection, settingsPanel: panel ?? null }),
 
-  closeSettings: () => set({ settingsOpen: false, settingsSection: "general" }),
+  closeSettings: () => set({ settingsOpen: false, settingsSection: "general", settingsPanel: null }),
 
-  setSettingsSection: (settingsSection) => set({ settingsSection }),
+  setSettingsSection: (settingsSection) => set({ settingsSection, settingsPanel: null }),
 
-  openAgentPicker: () => set({ agentPickerOpen: true }),
+  clearSettingsPanel: () => set({ settingsPanel: null }),
+
+  openAgentPicker: () => set((state) => {
+    if (state.companionSize === "full") saveCompanionOpen(false);
+    return { agentPickerOpen: true, projectMode: "terminals", companionOpen: state.companionSize === "full" ? false : state.companionOpen };
+  }),
 
   closeAgentPicker: () => set({ agentPickerOpen: false }),
 
   setPaletteOpen: (open) => set({ paletteOpen: open }),
 
-  toggleCompanion: () => set((state) => ({ companionOpen: !state.companionOpen })),
+  setHistoryOpen: (historyOpen) => set({ historyOpen }),
+
+  setProjectsSidebarOpen: (open) => {
+    saveProjectsSidebar(open);
+    set({ projectsSidebarOpen: open });
+  },
+
+  toggleCompanion: () => set((state) => {
+    saveCompanionOpen(!state.companionOpen);
+    return { companionOpen: !state.companionOpen };
+  }),
 
   setCompanionTab: (tab) => {
+    saveCompanionOpen(true);
     saveCompanionTab(tab);
-    set({ companionTab: tab, companionOpen: true });
+    set({ companionTab: tab, companionOpen: true, projectMode: "terminals" });
+  },
+
+  setCompanionSize: (size) => {
+    saveCompanionOpen(true);
+    saveCompanionSize(size);
+    set({ companionSize: size, companionOpen: true });
   },
 
   setCompanionWidth: (width) => {
@@ -119,7 +164,12 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
     set({ companionWidth });
   },
 
-  setProjectMode: (projectMode) => set({ projectMode }),
+  setProjectMode: (mode) => {
+    if (mode === "preview") {
+      saveCompanionOpen(true); saveCompanionTab("preview");
+      set({ projectMode: "terminals", companionOpen: true, companionTab: "preview" });
+    } else set({ projectMode: "terminals" });
+  },
 
   openPreview: async (path) => {
     try {

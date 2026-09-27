@@ -1,59 +1,28 @@
-import { useProjectStore } from "../../state/projectStore";
-import { useProjects } from "../../state/settingsStore";
-import { useTerminalStore } from "../../state/terminalStore";
-
-function HomeGlyph() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 10.5 12 4l8 6.5V20a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20z" />
-    </svg>
-  );
-}
-
-/** Discord-style project tiles on the far-left edge. */
+import { useProjectStore } from '../../state/projectStore';
+import { openNewProject } from '../../state/newProject';
+import '../../styles/workspace-tree.css';
+import { usePhoneStore } from '../../state/phoneStore';
+import { keyLabel } from '../../lib/platform';
+import { useWorkspaceStore } from '../../state/workspaceStore';
+import { GearIcon, PlusIcon, LinkIcon, CloseIcon } from '../common/Icons';
+import { ReportProblemButton } from '../report/ReportProblemButton';
+import { WorkspaceTree } from './WorkspaceTree';
 export function ProjectStrip() {
-  const view = useProjectStore((s) => s.view);
-  const activeId = useProjectStore((s) => s.activeId);
-  const activate = useProjectStore((s) => s.activate);
-  const goHome = useProjectStore((s) => s.goHome);
-  const projects = useProjects();
-  const panes = useTerminalStore((s) => s.panes);
-  const activity = useTerminalStore((s) => s.activity);
-  const pickAndCreate = useProjectStore((s) => s.pickAndCreate);
-
-  const needsAttention = (projectId: string) =>
-    panes.some((p) => p.projectId === projectId && activity[p.id] === "attention");
-
-  return (
-    <nav className="pstrip" aria-label="Projects">
-      <button
-        className={`pstrip__tile pstrip__tile--home ${view === "home" ? "pstrip__tile--active" : ""}`}
-        data-tip="Home"
-        onClick={goHome}
-      >
-        <HomeGlyph />
-      </button>
-      <span className="pstrip__sep" />
-      <div className="pstrip__list">
-        {projects.map((project, index) => (
-          <button
-            key={project.id}
-            className={`pstrip__tile pstrip__tile--project ${
-              view === "project" && activeId === project.id ? "pstrip__tile--active" : ""
-            }`}
-            style={{ "--tile-c": project.color } as React.CSSProperties}
-            data-tip={`${project.name}${index < 9 ? `  ·  Ctrl+Shift+${index + 1}` : ""}`}
-            onClick={() => void activate(project.id)}
-          >
-            {project.name.charAt(0).toUpperCase()}
-            {needsAttention(project.id) && <span className="pstrip__badge" />}
-          </button>
-        ))}
-      </div>
-      <span className="pstrip__sep" />
-      <button className="pstrip__tile pstrip__tile--add" data-tip="New project" onClick={() => void pickAndCreate()}>
-        ＋
-      </button>
-    </nav>
-  );
+  const inProject = useProjectStore(s => s.view === 'project');
+  const fullscreenPreview = useWorkspaceStore(s => s.companionOpen && s.companionTab === 'preview' && s.companionSize === 'full');
+  const sidebarOpen = useWorkspaceStore(s => s.projectsSidebarOpen);
+  const phone = usePhoneStore(s => s.status);
+  const connected = Boolean(phone?.active.length);
+  const connection = !phone ? 'Checking connection' : connected ? 'Phone connected' : 'No phone connected';
+  return <aside hidden={!sidebarOpen || (inProject && fullscreenPreview)} className="pstrip focus-rail" aria-label="Workspace navigation">
+    <header className="workspace-tree__heading"><span>Projects</span><span className="workspace-tree__heading-actions"><button className="icon-btn" aria-label="New project" title="New project" onClick={openNewProject}><PlusIcon size={18} /></button><button className="icon-btn" aria-label="Hide projects sidebar" title="Hide projects sidebar" onClick={() => useWorkspaceStore.getState().setProjectsSidebarOpen(false)}><CloseIcon size={16} /></button></span></header>
+    <div className="pstrip__scroll" onClick={event => {
+      if (event.button === 0 && event.target instanceof Element && !event.target.closest('button')) useProjectStore.getState().goHome();
+    }}><WorkspaceTree /></div>
+    <footer className="pstrip__footer">
+      <button className="pstrip__row" aria-label={`Remote, ${connection}`} onClick={() => useWorkspaceStore.getState().openSettingsSection('iphone')}><LinkIcon size={16} /><span className="pstrip__connection"><span>Remote</span><small role="status">{connection}</small></span><span className={`pstrip__connection-dot ${connected ? 'connected' : ''}`} aria-hidden="true" /></button>
+      <ReportProblemButton />
+      <button className="pstrip__row" onClick={() => useWorkspaceStore.getState().openSettings()}><GearIcon size={16} /><span className="pstrip__name">Settings</span><kbd>{keyLabel('Mod+,')}</kbd></button>
+    </footer>
+  </aside>;
 }

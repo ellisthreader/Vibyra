@@ -11,6 +11,7 @@ export type NotificationCategory =
   | "preview"
   | "aiSpend"
   | "models"
+  | "appUpdate"
   | "system";
 
 export type NotificationSeverity = "info" | "success" | "warning" | "danger";
@@ -26,10 +27,10 @@ export type NotificationActionId =
   | "focusSession"
   | "hibernateIdleTerminals"
   | "openGraphicsSettings"
-  | "openAiSettings"
   | "openShortcutSettings"
   | "openModelPicker"
-  | "openPreview";
+  | "openPreview"
+  | "installUpdate";
 
 export interface NotificationAction {
   id: NotificationActionId;
@@ -50,6 +51,12 @@ export interface NotificationInput {
   cue?: SoundCueId;
   /** false = never escalate to the operating system, whatever the preferences. */
   osEligible?: boolean;
+  /**
+   * false = recorded in history and still eligible for the OS, but never takes
+   * a slot in the toast stack. For the rare notice that already owns a
+   * dedicated surface in the window, so it is not announced twice at once.
+   */
+  toast?: boolean;
   /** Milliseconds; 0 is sticky. Omitted means "derive from severity". */
   timeoutMs?: number;
 }

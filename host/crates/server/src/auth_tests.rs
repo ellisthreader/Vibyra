@@ -1,7 +1,7 @@
 use crate::{
     auth::authenticate,
     identity::Identity,
-    test_support::{approve_when_pending, state, token},
+    test_support::{approve_when_pending, nearby_state, state, token},
 };
 use serde_json::json;
 
@@ -76,4 +76,29 @@ fn new_invitation_invalidates_previous_and_identity_is_private() {
             .mode();
         assert_eq!(mode & 0o777, 0o600);
     }
+}
+
+#[tokio::test]
+async fn discovered_phones_pair_without_a_code_but_never_without_approval() {
+    let (_dir, shared) = nearby_state();
+    let hello = json!({"protocol":1,"deviceName":"Phone"}).to_string();
+    let approved = "44".repeat(32);
+    let task = tokio::spawn(approve_when_pending(shared.clone(), approved.clone()));
+    authenticate(&shared, &approved, hello.as_bytes())
+        .await
+        .unwrap();
+    task.await.unwrap();
+    assert!(shared.trusted(&approved));
+    // An invitation that is present must still be real, even for a nearby phone.
+    let forged = json!({"protocol":1,"deviceName":"Phone","invite":"x".repeat(32)}).to_string();
+    assert!(authenticate(&shared, &"55".repeat(32), forged.as_bytes())
+        .await
+        .is_err());
+    // Discovery off means the code path is the only way in.
+    let (_quiet_dir, quiet) = state();
+    let denied = "66".repeat(32);
+    assert!(authenticate(&quiet, &denied, hello.as_bytes())
+        .await
+        .is_err());
+    assert!(!quiet.trusted(&denied));
 }

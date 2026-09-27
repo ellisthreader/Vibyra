@@ -51,10 +51,12 @@ pub async fn save_terminal_session(
                 // full save would bring them back with nothing in them.
                 pane.snapshot = if !persist_output {
                     None
-                } else if include_snapshots {
+                } else if include_snapshots || pane.snapshot.is_none() {
+                    // Only the tail the file keeps is copied out of the ring.
                     manager
-                        .snapshot(pane.id)
+                        .snapshot_tail(pane.id, session_store::MAX_SNAPSHOT_BYTES)
                         .ok()
+                        .map(session_store::trim_snapshot)
                         .or_else(|| pane.snapshot.take())
                 } else {
                     pane.snapshot.take()
@@ -77,7 +79,7 @@ pub async fn save_terminal_session(
 #[tauri::command]
 pub async fn load_terminal_session(state: State<'_, AppState>) -> CoreResult<TerminalSession> {
     let path = session_path(&state);
-    run_blocking_core(move || Ok(session_store::load(&path))).await
+    run_blocking_core(move || session_store::load(&path)).await
 }
 
 #[tauri::command]
@@ -94,10 +96,7 @@ pub async fn confirm_close(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     state.closing.store(true, Ordering::SeqCst);
-    if let Some(window) = tauri::Manager::get_webview_window(&app, "main") {
-        window.close().map_err(|error| error.to_string())?;
-    }
-    Ok(())
+    crate::close_guard::finish(&app)
 }
 
 /// Arms the close veto. Called by the workspace when it mounts the handler

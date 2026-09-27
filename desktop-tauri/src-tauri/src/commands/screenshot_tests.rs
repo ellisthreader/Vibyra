@@ -35,6 +35,19 @@ fn screenshot_decoder_rejects_oversized_dimensions() {
 }
 
 #[test]
+fn a_header_check_holds_the_decoder_limits_without_decoding() {
+    use super::screenshot_png::{check_png_header, png_data};
+
+    let small = png_data(&png_data_url(&DynamicImage::new_rgba8(2, 3))).unwrap();
+    assert!(check_png_header(&small).is_ok());
+    let wide = png_data(&png_data_url(&DynamicImage::new_rgba8(16_385, 1))).unwrap();
+    assert!(check_png_header(&wide)
+        .unwrap_err()
+        .contains("could not be decoded"));
+    assert!(check_png_header(b"not a png").is_err());
+}
+
+#[test]
 fn file_uri_percent_encodes_but_keeps_drive_letters_readable() {
     use std::path::Path;
 

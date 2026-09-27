@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232" fill="none">
+  <defs>
+    <linearGradient id="ground" x1="370" y1="0" x2="370" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#1d2130"/><stop offset=".58" stop-color="#151a27"/><stop offset="1" stop-color="#101219"/></linearGradient>
+    <radialGradient id="field" cx="0" cy="0" r="1" gradientTransform="translate(370 105) scale(310 157)" gradientUnits="userSpaceOnUse"><stop stop-color="#5b7cfa" stop-opacity=".17"/><stop offset=".58" stop-color="#5b7cfa" stop-opacity=".055"/><stop offset="1" stop-color="#5b7cfa" stop-opacity="0"/></radialGradient>
+    <radialGradient id="quiet" cx="0" cy="0" r="1" gradientTransform="translate(370 115) scale(390 168)" gradientUnits="userSpaceOnUse"><stop offset=".45" stop-color="#101219" stop-opacity="0"/><stop offset="1" stop-color="#101219" stop-opacity=".5"/></radialGradient>
+    <linearGradient id="shell" x1="0" y1="0" x2="160" y2="128" gradientUnits="userSpaceOnUse"><stop stop-color="#28334e"/><stop offset="1" stop-color="#171c2b"/></linearGradient>
+    <linearGradient id="heroShell" x1="0" y1="0" x2="220" y2="150" gradientUnits="userSpaceOnUse"><stop stop-color="#293550"/><stop offset=".5" stop-color="#202a40"/><stop offset="1" stop-color="#171c2b"/></linearGradient>
+    <linearGradient id="screen" x1="0" y1="12" x2="0" y2="122" gradientUnits="userSpaceOnUse"><stop stop-color="#111827"/><stop offset="1" stop-color="#101521"/></linearGradient>
+    <linearGradient id="fade" x1="370" y1="155" x2="370" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#101219" stop-opacity="0"/><stop offset="1" stop-color="#101219"/></linearGradient>
+  </defs>
+  <rect width="740" height="232" fill="url(#ground)"/>
+  <rect width="740" height="232" fill="url(#field)"/>
+  <path d="M111 133C175 131 192 53 260 49M481 49C546 54 562 127 628 132" stroke="#7490ff" stroke-opacity=".075" stroke-width="1.4"/>
+
+  <g opacity=".47" transform="translate(154 66) rotate(-7 82 56)">
+    <rect width="164" height="112" rx="13" fill="url(#shell)" stroke="#7490ff" stroke-opacity=".3"/>
+    <rect x="11" y="12" width="142" height="87" rx="7" fill="url(#screen)"/>
+    <path d="M27 34h34m9 0h18M27 51h68m9 0h17M27 68h25m9 0h49" stroke="#7490ff" stroke-opacity=".38" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M27 83h43m8 0h26" stroke="#7490ff" stroke-opacity=".23" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="135" cy="25" r="2.2" fill="#7792ff" opacity=".55"/>
+  </g>
+
+  <g opacity=".42" transform="translate(425 55) rotate(6 77 55)">
+    <rect width="154" height="110" rx="13" fill="url(#shell)" stroke="#7490ff" stroke-opacity=".29"/>
+    <rect x="11" y="12" width="132" height="85" rx="7" fill="url(#screen)"/>
+    <path d="M27 34h48m8 0h32M27 51h23m8 0h59M27 68h58m8 0h33M27 84h33" stroke="#7490ff" stroke-opacity=".38" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="126" cy="25" r="2" fill="#7792ff" opacity=".48"/>
+  </g>
+
+  <g transform="translate(267 37) rotate(1.5 110 67)">
+    <rect width="220" height="134" rx="15" fill="url(#heroShell)" stroke="#8ba2ff" stroke-opacity=".38"/>
+    <rect x="12" y="12" width="196" height="110" rx="8" fill="url(#screen)"/>
+    <path d="M29 34h38m8 0h68m8 0h28M29 53h24m8 0h47m8 0h55M29 72h70m8 0h29M29 91h35m9 0h80m8 0h23" stroke="#7490ff" stroke-opacity=".43" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M29 108h51m9 0h30" stroke="#7490ff" stroke-opacity=".24" stroke-width="2.8" stroke-linecap="round"/>
+    <circle cx="183" cy="25" r="2.3" fill="#d4b18a" opacity=".82"/>
+  </g>
+
+  <circle cx="228" cy="40" r="1.8" fill="#7490ff" opacity=".48"/>
+  <circle cx="517" cy="35" r="1.5" fill="#7490ff" opacity=".38"/>
+  <circle cx="596" cy="118" r="1.5" fill="#7490ff" opacity=".35"/>
+  <circle cx="136" cy="126" r="1.3" fill="#7490ff" opacity=".3"/>
+  <rect width="740" height="232" fill="url(#quiet)"/>
+  <rect y="154" width="740" height="78" fill="url(#fade)"/>
+</svg>

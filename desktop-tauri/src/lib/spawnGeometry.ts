@@ -16,8 +16,16 @@
 // margin, which the mount-time size sync in `terminalRegistry` closes on the
 // next frame.
 
-/** Pane chrome around the xterm host: header row + `.term-view` padding. */
-export const PANE_HEADER_PX = 36;
+/**
+ * Pane chrome around the xterm host: header row + `.term-view` padding. These
+ * are the comfortable density's numbers, which is what a pane gets until the
+ * grid is crowded enough to trade frame for terminal; `paneChrome.ts` owns the
+ * tighter sets, and a caller that lays out at one of those passes it in.
+ */
+export const PANE_HEADER_PX = 44;
+export const GRID_PADDING_PX = 8;
+export const GRID_GAP_PX = 8;
+export const PANE_BORDER_PX = 2;
 export const TERM_INSET_X = 12;
 export const TERM_INSET_Y = 12;
 
@@ -46,6 +54,14 @@ export interface PaneGeometry {
   /** Rendered cell size, ideally measured off a live terminal. */
   cellWidth: number;
   cellHeight: number;
+  /** Frame the pane will actually render with; defaults to the comfortable one. */
+  chrome?: {
+    header: number;
+    insetX: number;
+    insetY: number;
+    gap: number;
+    padding: number;
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -55,9 +71,16 @@ function clamp(value: number, min: number, max: number): number {
 export function spawnDimensionsFor(geometry: PaneGeometry): { rows: number; cols: number } | null {
   const { stageWidth, stageHeight, columns, paneRows, cellWidth, cellHeight } = geometry;
   if (columns < 1 || paneRows < 1 || cellWidth <= 0 || cellHeight <= 0) return null;
+  const chrome = geometry.chrome ?? {
+    header: PANE_HEADER_PX,
+    insetX: TERM_INSET_X,
+    insetY: TERM_INSET_Y,
+    gap: GRID_GAP_PX,
+    padding: GRID_PADDING_PX,
+  };
 
-  const hostWidth = Math.floor(stageWidth / columns) - TERM_INSET_X;
-  const hostHeight = Math.floor(stageHeight / paneRows) - PANE_HEADER_PX - TERM_INSET_Y;
+  const hostWidth = Math.floor((stageWidth - chrome.padding * 2 - chrome.gap * (columns - 1)) / columns) - PANE_BORDER_PX - chrome.insetX;
+  const hostHeight = Math.floor((stageHeight - chrome.padding * 2 - chrome.gap * (paneRows - 1)) / paneRows) - PANE_BORDER_PX - chrome.header - chrome.insetY;
   const usableWidth = hostWidth - SCROLLBAR_PX;
   if (usableWidth <= 0 || hostHeight <= 0) return null;
 

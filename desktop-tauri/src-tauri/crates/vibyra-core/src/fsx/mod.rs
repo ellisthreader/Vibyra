@@ -1,5 +1,10 @@
+pub mod git_changes;
+pub(crate) mod git_command_policy;
+mod git_memo;
 mod private;
+pub mod project_folder;
 mod watch;
+pub mod worktrees;
 
 pub use private::{harden, write_private_atomic};
 pub use watch::{FsChange, WorkspaceWatcher};

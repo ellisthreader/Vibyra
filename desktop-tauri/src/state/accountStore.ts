@@ -11,6 +11,8 @@ import {
   accountResendVerification,
   accountRestore,
   accountSignupEmail,
+  accountTwoFactorCancel,
+  accountTwoFactorSubmit,
 } from "../ipc/account";
 import { clearTerminalSession } from "../ipc/session";
 import type { AccountSnapshot } from "../types";
@@ -39,7 +41,28 @@ interface AccountStore {
   /** Both resolve to a confirmation or failure message for inline display. */
   forgotPassword: (email: string) => Promise<string>;
   resendVerification: () => Promise<string>;
+  /** The code half of a login, and abandoning it. */
+  submitTwoFactor: (code: string) => Promise<void>;
+  cancelTwoFactor: () => Promise<void>;
   logout: () => Promise<void>;
+  /** Returns to the sign-in screen after native code has already ended the
+   * session: signing this Mac out from Devices, or deleting the account. */
+  endSession: () => Promise<void>;
+}
+
+/** The saved session holds the departing user's terminals — and, with
+ * scrollback saving on, their output. Discard it so it cannot be restored
+ * into the next account, then reload so no account-scoped renderer state
+ * survives either. */
+async function finishSession() {
+  await clearTerminalSession().catch(() => {});
+  window.location.reload();
+}
+
+/** The profile is re-fetched every minute and on every focus. Keeping the old
+ * object when nothing changed spares everything subscribed to it a render. */
+function unchangedOr(current: AccountSnapshot, next: AccountSnapshot): AccountSnapshot {
+  return JSON.stringify(current) === JSON.stringify(next) ? current : next;
 }
 
 async function runAuthAction(
@@ -69,7 +92,7 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     }
   },
 
-  applySnapshot: (snapshot) => set({ snapshot }),
+  applySnapshot: (snapshot) => set({ snapshot: unchangedOr(get().snapshot, snapshot) }),
 
   clearError: () => set({ snapshot: { ...get().snapshot, error: null } }),
 
@@ -90,7 +113,7 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
 
   refreshProfile: async () => {
     try {
-      set({ snapshot: await accountProfileRefresh() });
+      set({ snapshot: unchangedOr(get().snapshot, await accountProfileRefresh()) });
     } catch {
       // Keep the last known profile on transient failures.
     }
@@ -121,6 +144,16 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     }
   },
 
+  submitTwoFactor: (code) => runAuthAction(set, get, () => accountTwoFactorSubmit(code)),
+
+  cancelTwoFactor: async () => {
+    try {
+      set({ snapshot: await accountTwoFactorCancel() });
+    } catch (error) {
+      set({ snapshot: { ...get().snapshot, status: "signedOut", error: String(error) } });
+    }
+  },
+
   logout: async () => {
     set({ busy: true });
     try {
@@ -128,13 +161,8 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     } catch (error) {
       console.error("Vibyra logout cleanup issue:", error);
     }
-    // The saved session holds the signed-out user's terminals — and, with
-    // scrollback saving on, their output. Discard it so it cannot be restored
-    // into the next account to sign in on this machine.
-    await clearTerminalSession().catch(() => {});
-    // Reload so no account-scoped renderer state survives into the next
-    // session; the credential is already cleared, so the app returns to
-    // the authentication screen.
-    window.location.reload();
+    await finishSession();
   },
+
+  endSession: finishSession,
 }));

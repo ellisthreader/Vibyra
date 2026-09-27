@@ -1,13 +1,16 @@
 import type { AccountProfile } from "../types";
 
 export const FIRST_WELCOME_STORAGE_KEY = "vibyra.desktop.firstWelcomeSeenAccounts";
-export const FIRST_WELCOME_BEAT_MS = 1_600;
-export const FIRST_WELCOME_DURATION_MS = 6_400;
+
+export const WELCOME_DURATIONS = [2_000, 8_200, 8_200, 13_000, 1_500] as const;
 
 export interface WelcomeBeat {
-  eyebrow: string;
+  label: string;
   title: string;
   body: string;
+  emphasis?: string;
+  shortLabel?: string;
+  note?: string;
 }
 
 interface WelcomeStorage {
@@ -42,26 +45,17 @@ export function welcomeFirstName(name: string): string {
 export function firstWelcomeBeats(name: string): WelcomeBeat[] {
   const firstName = welcomeFirstName(name);
   return [
-    {
-      eyebrow: `Made for ${firstName}`,
-      title: `Welcome to Vibyra, ${firstName}.`,
-      body: "Your AI workspace is ready on this computer.",
-    },
-    {
-      eyebrow: "Begin with what matters",
-      title: "Choose the work.",
-      body: "Open a project, describe the outcome, and keep the work grounded in your files.",
-    },
-    {
-      eyebrow: "Set the shape",
-      title: "One focused agent. Or a coordinated team.",
-      body: "Move quickly on one task, or let Vibyra divide a bigger goal with clear ownership.",
-    },
-    {
-      eyebrow: "Stay in the loop",
-      title: "Build here. Review anywhere.",
-      body: "Follow live work, approve changes, and check progress from this desktop or your phone.",
-    },
+    { label: "Welcome", title: `Welcome to Vibyra, ${firstName}.`,
+      body: "" },
+    { label: "Code", title: "Your ideas. Your agents.", emphasis: "Your agents.",
+      body: "Build with Codex, Claude and Gemini side by side. One project. A workspace that keeps up." },
+    { label: "Agents", title: "Good work starts with a great team.", emphasis: "a great team.",
+      body: "Give each teammate a role, tools and instructions. Turn a focused conversation into your next step." },
+    { label: "iPhone & Remote", shortLabel: "iPhone", title: "Your workspace. Wherever you are.", emphasis: "Wherever you are.",
+      body: "Find your computer on iPhone and approve the connection here. Stay connected across networks with Vibyra Cloud.",
+      note: "Enable remote phone control in Settings → Phone." },
+    { label: "Start", title: "Let’s build.",
+      body: "" },
   ];
 }
 

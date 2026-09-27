@@ -1,7 +1,7 @@
 import type { StoreApi } from "zustand";
 
 import { listAgents } from "../ipc/agents";
-import { agentConversationResumable, removeTerminal } from "../ipc/terminal";
+import { agentConversationResumable, removeTerminal, terminalSnapshot } from "../ipc/terminal";
 import { dropStats } from "../lib/activity";
 import { suppressExitNotice } from "../lib/sessionExitNotifications";
 import { isSuspendedId } from "../lib/sessionRestore";
@@ -39,32 +39,37 @@ export async function switchPaneAccount(
     return;
   }
 
-  // Torn down directly rather than through `close`, which would drop the pane
-  // out of the list and take its slot with it — the new pane replaces this one
-  // by id, so the old entry has to still be there when it arrives.
-  suppressExitNotice(id);
-  destroySession(id);
-  dropStats(id);
-  if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
+  const snapshot = pane.snapshot ?? (id > 0 ? await terminalSnapshot(id).catch(() => null) : null);
+  try {
+    await get().spawnAgent(agent, pane.projectId, {
+      model: pane.model,
+      permissionMode: pane.permissionMode,
+      reasoningEffort: pane.reasoningEffort,
+      title: pane.customTitle ?? pane.title,
+      cwd: pane.sourceCwd,
+      workspaceMode: pane.workspaceMode,
+      safeSnapshotFingerprint: pane.safeSnapshotFingerprint ?? undefined,
+      replaces: id,
+      // What was on screen stays on screen, above whatever the new account's
+      // process prints. Losing it would make a switch look like a crash.
+      replaySnapshot: snapshot,
+      // A fresh conversation, deliberately: the old one is in the old account's
+      // folder, and asking the new account to resume it would only fail.
+      resume: false,
+      agentSessionId: null,
+      accountId,
+    });
+    // Torn down directly rather than through `close`, which would drop the pane
+    // out of the list and take its slot with it — the new pane replaces this one
+    // by id, so the old entry has to still be there when it arrives.
+    suppressExitNotice(id);
+    destroySession(id);
+    dropStats(id);
+    if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
 
-  await get().spawnAgent(agent, pane.projectId, {
-    model: pane.model,
-    permissionMode: pane.permissionMode,
-    reasoningEffort: pane.reasoningEffort,
-    title: pane.customTitle ?? pane.title,
-    cwd: pane.sourceCwd,
-    workspaceMode: pane.workspaceMode,
-    safeSnapshotFingerprint: pane.safeSnapshotFingerprint ?? undefined,
-    replaces: id,
-    // What was on screen stays on screen, above whatever the new account's
-    // process prints. Losing it would make a switch look like a crash.
-    replaySnapshot: pane.snapshot ?? null,
-    // A fresh conversation, deliberately: the old one is in the old account's
-    // folder, and asking the new account to resume it would only fail.
-    resume: false,
-    agentSessionId: null,
-    accountId,
-  });
+  } catch (error) {
+    useWorkspaceStore.getState().setError(`Account switch failed: ${String(error)}`);
+  }
 }
 
 /**

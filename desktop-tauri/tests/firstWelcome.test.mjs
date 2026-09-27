@@ -3,9 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
-  FIRST_WELCOME_BEAT_MS,
-  FIRST_WELCOME_DURATION_MS,
   FIRST_WELCOME_STORAGE_KEY,
+  WELCOME_DURATIONS,
   firstWelcomeBeats,
   hasSeenFirstWelcome,
   rememberFirstWelcome,
@@ -27,17 +26,22 @@ const profile = (welcomeKey, name = "Ada Lovelace") => ({
   welcomeKey,
 });
 
-test("welcome copy is personal and completes four measured beats in 6.4 seconds", () => {
-  assert.equal(FIRST_WELCOME_BEAT_MS, 1_600);
-  assert.equal(FIRST_WELCOME_DURATION_MS, 6_400);
+test("welcome automatically introduces real product features with readable timing", () => {
   assert.equal(welcomeFirstName("  Ada Lovelace "), "Ada");
   assert.equal(welcomeFirstName(""), "there");
   const beats = firstWelcomeBeats("Ada Lovelace");
-  assert.equal(beats.length, 4);
+  assert.equal(beats.length, 5);
   assert.equal(beats[0].title, "Welcome to Vibyra, Ada.");
-  assert.match(beats[1].title, /Choose the work/);
-  assert.match(beats[2].title, /coordinated team/);
-  assert.match(beats[3].title, /Review anywhere/);
+  assert.deepEqual(beats.map(beat => beat.label), ['Welcome', 'Code', 'Agents', 'iPhone & Remote', 'Start']);
+  assert.match(beats[3].note, /remote phone control/);
+  assert.match(beats[3].body, /approve/);
+  assert.match(beats[3].note, /Settings → Phone/);
+  assert.equal(WELCOME_DURATIONS.length, beats.length);
+  assert.equal(WELCOME_DURATIONS.at(-1), 1500);
+  for (let i = 0; i < beats.length - 1; i++) {
+    const words = [beats[i].title, beats[i].body, beats[i].note ?? ''].join(' ').trim().split(/\s+/).length;
+    assert.ok(WELCOME_DURATIONS[i] >= words * 200 + 1000, `scene ${i} permits reading plus its entrance`);
+  }
 });
 
 test("completion is persisted once per opaque account key", () => {
@@ -86,13 +90,14 @@ test("cinematic mounts over the workspace with accessible escape and reduced mot
   assert.match(component, /role="dialog"/);
   assert.match(component, /useModalFocus\(dialogRef, true, closeFromEscape\)/);
   assert.match(component, /rememberFirstWelcome\(profile\)/);
-  assert.match(component, /Start building/);
+  assert.match(component, /WelcomeScene/);
   assert.match(component, /Skip intro/);
   assert.match(component, /prefers-reduced-motion: reduce/);
+  assert.match(component, /useWelcomePlayback/);
   assert.ok(workspace.indexOf("<FirstWelcome") > workspace.indexOf("<ProjectWorkspace"));
   assert.match(workspace, /data-welcome-focus/);
-  assert.match(baseStyles, /background: #0e0f12/);
-  assert.match(motion, /firstWelcomeProgress 6\.4s/);
+  assert.match(baseStyles, /background: var\(--bg\)/);
+  assert.match(component, /<WelcomeArtwork/);
   assert.match(motion, /@media \(prefers-reduced-motion: reduce\)/);
   assert.doesNotMatch(`${component}\n${baseStyles}\n${motion}`, /carousel|fake log|backdrop-filter|infinite|#7b2cff|#ff35c8/i);
 });

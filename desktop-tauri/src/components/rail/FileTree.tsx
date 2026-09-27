@@ -15,6 +15,7 @@ function TreeNode({
   selectedPath,
   showGenerated,
   showHidden,
+  refreshVersion = 0,
 }: {
   entry: DirEntryInfo;
   depth: number;
@@ -22,6 +23,7 @@ function TreeNode({
   selectedPath: string | null;
   showGenerated: boolean;
   showHidden: boolean;
+  refreshVersion?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [children, setChildren] = useState<DirEntryInfo[]>([]);
@@ -39,7 +41,7 @@ function TreeNode({
     return () => {
       cancelled = true;
     };
-  }, [entry.isDir, entry.path, expanded, showHidden, fsVersion]);
+  }, [entry.isDir, entry.path, expanded, showHidden, fsVersion, refreshVersion]);
 
   const indent = { paddingLeft: `${depth * 13 + 6}px` };
   const visibleChildren = useMemo(
@@ -89,14 +91,16 @@ function TreeNode({
             selectedPath={selectedPath}
             showGenerated={showGenerated}
             showHidden={showHidden}
+            refreshVersion={refreshVersion}
           />
         ))}
     </>
   );
 }
 
-export function FileTree() {
-  const root = useWorkspaceStore((s) => s.root);
+export function FileTree({ folder, refreshVersion = 0 }: { folder?: string | null; refreshVersion?: number } = {}) {
+  const workspaceRoot = useWorkspaceStore((s) => s.root);
+  const root = folder === undefined ? workspaceRoot : folder;
   const fsVersion = useWorkspaceStore((s) => s.fsVersion);
   const selectedPath = useWorkspaceStore((s) => s.preview?.path ?? null);
   const [entries, setEntries] = useState<DirEntryInfo[]>([]);
@@ -104,19 +108,21 @@ export function FileTree() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [showGenerated, setShowGenerated] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => { setEntries([]); setError(''); }, [root]);
 
   useEffect(() => {
-    if (!root) return;
+    if (!root) { setEntries([]); return; }
     let cancelled = false;
     fsListDir(root, showHidden)
       .then((list) => {
-        if (!cancelled) setEntries(list);
+        if (!cancelled) { setEntries(list); setError(''); }
       })
-      .catch(() => {});
+      .catch(error => { if (!cancelled) setError(String(error)); });
     return () => {
       cancelled = true;
     };
-  }, [root, showHidden, fsVersion]);
+  }, [root, showHidden, fsVersion, refreshVersion]);
 
   const visibleEntries = useMemo(
     () => visibleFileEntries(entries, { query, showGenerated }),
@@ -137,6 +143,7 @@ export function FileTree() {
         onShowHidden={() => setShowHidden((value) => !value)}
       />
       <div className="tree">
+        {error && <p className="chat-error" role="alert">{error}</p>}
         {visibleEntries.map((entry) => (
           <TreeNode
             key={entry.path}
@@ -146,9 +153,10 @@ export function FileTree() {
             selectedPath={selectedPath}
             showGenerated={showGenerated}
             showHidden={showHidden}
+            refreshVersion={refreshVersion}
           />
         ))}
-        {visibleEntries.length === 0 && (
+        {visibleEntries.length === 0 && !error && (
           <p className="tree-empty">{query ? "No matching files here." : "This folder is empty."}</p>
         )}
       </div>

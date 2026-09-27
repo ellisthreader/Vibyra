@@ -59,32 +59,6 @@
   display: none;
 }
 
-/* Which account the next terminal runs as. Sits with the model and effort
- * pickers, and appears only when there is more than one to choose from. */
-.launch-account {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.launch-account__label {
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.66;
-}
-
-.launch-account__select {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--vb-border, rgba(127, 127, 127, 0.24));
-  background: var(--vb-surface-2, rgba(127, 127, 127, 0.06));
-  color: inherit;
-  font: inherit;
-  font-size: 13px;
-}
-
 @media (max-width: 720px) {
   .integration-account-row {
     grid-template-columns: 1fr;
@@ -96,16 +70,14 @@
 }
 
 /* A quieter third action. Remove sits next to Disconnect and must read as the
- * rarer, heavier of the two without shouting for attention first. */
+ * rarer, heavier of the two without shouting for attention first. The look is
+ * the global `.btn--ghost`; only the extra fade is local. */
 .integration-account__actions .btn--ghost {
-  background: transparent;
-  border-color: transparent;
   opacity: 0.6;
 }
 
 .integration-account__actions .btn--ghost:hover:not(:disabled) {
   opacity: 1;
-  border-color: var(--vb-border, rgba(127, 127, 127, 0.24));
 }
 
 /* Which account a pane is running as, in its header. Only rendered when the

@@ -1,0 +1,138 @@
+/* Settings shell, "tiles" direction: coloured icon tiles in the nav, a find
+   field above them, one title per page, rounded groups. Loads after modals*.css
+   and interface-layout.css and overrides their settings rules. */
+
+.settings-modal--tiles {
+  width: min(920px, 94vw);
+  height: min(640px, 88vh);
+  max-height: min(640px, 88vh);
+}
+
+.settings-modal--tiles .settings-nav {
+  width: 212px;
+  padding: 14px 10px 12px;
+  gap: 0;
+}
+
+.settings-modal--tiles .settings-nav__title {
+  padding: 2px 10px 10px;
+  font-size: 14px;
+}
+
+/* tiles */
+
+.settings-modal--tiles .settings-nav__item {
+  min-height: 34px;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.settings-tile {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 1px 1px rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+}
+
+.settings-modal--tiles .settings-nav__item svg {
+  color: #fff;
+}
+
+.settings-modal--tiles .settings-nav__item--active {
+  background: var(--accent-soft);
+}
+
+.settings-nav__sep {
+  height: 1px;
+  margin: 8px 6px;
+  background: var(--line-soft);
+}
+
+/* pane */
+
+.settings-modal--tiles .settings-pane__header {
+  align-items: center;
+  padding: 18px 26px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.settings-modal--tiles .settings-pane__title {
+  font-size: 19px;
+}
+
+.settings-pane__tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-modal--tiles .settings-pane__body {
+  gap: 20px;
+  padding: 18px 26px 26px;
+}
+
+.settings-modal--tiles .settings-block {
+  gap: 7px;
+}
+
+.settings-modal--tiles .settings-block > .section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding-left: 2px;
+}
+
+.settings-block__note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  padding-left: 2px;
+}
+
+.settings-modal--tiles .settings-group {
+  border-radius: 12px;
+}
+
+.settings-modal--tiles .setting-row {
+  gap: 18px;
+  min-height: 48px;
+  padding: 11px 16px;
+}
+
+.settings-modal--tiles .setting-row__label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-modal--tiles .setting-row__hint {
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.setting-row--danger .setting-row__label {
+  color: var(--danger);
+}
+
+/* deep-link reveal */
+
+.settings-reveal {
+  scroll-margin-top: 8px;
+  animation: settings-reveal 1.6s var(--e-standard);
+}
+
+@keyframes settings-reveal {
+  0%, 60% { box-shadow: 0 0 0 2px var(--accent); border-radius: 12px; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@media (max-width: 700px) {
+  .settings-modal--tiles .settings-nav { padding: 8px 10px; }
+  .settings-find, .settings-nav__sep { display: none; }
+}

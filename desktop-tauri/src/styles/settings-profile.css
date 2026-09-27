@@ -95,11 +95,5 @@
   line-height: 1.45;
 }
 
-.profile-logout {
-  border-color: var(--danger-soft);
-  color: var(--danger);
-}
-
-.profile-logout:hover:enabled {
-  background: var(--danger-soft);
-}
+/* Log out and Delete account are `.btn--danger` now — the same destructive
+   button as every other one, rather than a third treatment of their own. */

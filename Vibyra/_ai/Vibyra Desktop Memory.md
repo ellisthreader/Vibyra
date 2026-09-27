@@ -43,6 +43,8 @@ website, Expo browser client, and native phone app.
 - Workspace Preview: `Desktop/Projects And Preview.md`
 - System-wide F9 screenshot capture and annotation editor:
   `Desktop/Screenshot Capture.md`
+- Desktop packaging, updater publication, and verified analytics consent:
+  `Desktop/Mac Setup.md` and `Desktop/Release Changelog.md`.
 
 ## Local Skills
 

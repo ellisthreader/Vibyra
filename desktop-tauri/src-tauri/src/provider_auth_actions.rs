@@ -10,8 +10,9 @@ use std::process::Command;
 use super::{unknown_provider, ProviderAuthManager};
 use crate::provider_auth_files::{disconnect_gemini, prepare_gemini_oauth};
 use crate::provider_auth_install::install_command;
-use crate::provider_auth_probe::key;
+use crate::provider_auth_probe::{key, probe};
 use crate::provider_auth_process::{command_status, select_account};
+use crate::provider_auth_registry::Registry;
 use crate::provider_auth_state::{definition, installed, ProviderView};
 
 impl ProviderAuthManager {
@@ -105,6 +106,44 @@ impl ProviderAuthManager {
             "Could not disconnect {}. {message}",
             provider.company
         ))
+    }
+
+    /// Whether an account can be used right now, answered from the probe
+    /// cache when it has just said yes. A new shared chat used to spawn its
+    /// provider's CLI every time; the CLI runs outside the cache lock, so a
+    /// refresh round in progress never holds a chat up.
+    pub fn signed_in(&self, provider_id: &str, account_id: &str) -> Result<bool, String> {
+        let home = self.home(provider_id, account_id)?;
+        let Some(provider) = definition(provider_id) else {
+            return Ok(false);
+        };
+        let id = key(provider_id, account_id);
+        if self.probes.lock().signed_in_recently(&id) {
+            return Ok(true);
+        }
+        let snapshot = probe(provider, &home);
+        let connected = snapshot.connected;
+        self.probes.lock().remember(id, snapshot);
+        Ok(connected)
+    }
+
+    /// Signs an account out, then forgets it and deletes its folder.
+    ///
+    /// Signing out first is what keeps the provider's own record straight: a
+    /// deleted folder would leave the session live at their end with nothing
+    /// here able to end it.
+    pub fn remove_account(
+        &self,
+        provider_id: &str,
+        account_id: &str,
+    ) -> Result<Vec<ProviderView>, String> {
+        definition(provider_id).ok_or_else(unknown_provider)?;
+        let _ = self.disconnect(provider_id, account_id);
+        let mut registry = Registry::load();
+        registry.remove(provider_id, account_id)?;
+        self.attempts.cancel(&key(provider_id, account_id));
+        self.probes.lock().forget(&key(provider_id, account_id));
+        Ok(self.accounts())
     }
 }
 

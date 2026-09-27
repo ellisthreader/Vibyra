@@ -22,6 +22,11 @@ Use this skill when the task is large enough that a quick edit would risk drift,
 6. Validate with the narrowest useful checks.
 7. Update durable memory or local skills when the work creates reusable rules.
 
+For Desktop analytics releases, verify a new bearer session uses the server's
+consent choice, withdrawal clears queued events, and native serialized events
+pass the backend event contract. Build the release from the checked source and
+verify its package signature before describing it as ready for distribution.
+
 ## Simplicity Review
 
 Before editing a “big thing,” remove avoidable complexity from the plan:

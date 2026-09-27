@@ -1,0 +1,53 @@
+/* The allowance meter in Settings > Account > Credits (`AccountCreditsBlock`).
+   All that survives of the old Vibyra AI pane's stylesheets: the key entry,
+   usage breakdown and spend-guard rules went with the pane itself, because the
+   service credential is the deployment's and has no page here any more. */
+
+.ai-meter {
+  display: grid;
+  gap: 5px;
+}
+
+.ai-meter__head {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.ai-meter__label {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.ai-meter__value {
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-meter__value i {
+  color: var(--dim);
+  font-style: normal;
+  font-weight: 520;
+}
+
+.ai-meter__track {
+  background: var(--surface-tint);
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.ai-meter__fill {
+  background: var(--accent);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+  transition: width 240ms ease;
+}
+
+.ai-meter__fill--high {
+  background: var(--amber);
+}

@@ -46,7 +46,7 @@ export interface PreviewDevice {
   dpr: number;
   radius: number;
   screenRadius: number;
-  camera: "island" | "dot" | "none";
+  camera: "island" | "notch" | "dot" | "none";
 }
 
 export interface PreviewViewportState {

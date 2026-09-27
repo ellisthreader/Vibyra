@@ -7,10 +7,10 @@ use parking_lot::Mutex;
 use super::{FlushConfig, LaunchSpec, OutputSink, PtyManager, SessionId, Visibility};
 
 #[derive(Default)]
-struct TestSink {
-    output: Mutex<HashMap<SessionId, String>>,
+pub(super) struct TestSink {
+    pub(super) output: Mutex<HashMap<SessionId, String>>,
     resyncs: Mutex<Vec<SessionId>>,
-    exits: Mutex<Vec<(SessionId, Option<i32>)>>,
+    pub(super) exits: Mutex<Vec<(SessionId, Option<i32>)>>,
 }
 
 impl OutputSink for TestSink {
@@ -28,7 +28,7 @@ impl OutputSink for TestSink {
     }
 }
 
-fn wait_for(mut condition: impl FnMut() -> bool, timeout: Duration) -> bool {
+pub(super) fn wait_for(mut condition: impl FnMut() -> bool, timeout: Duration) -> bool {
     let deadline = std::time::Instant::now() + timeout;
     while std::time::Instant::now() < deadline {
         if condition() {
@@ -39,7 +39,7 @@ fn wait_for(mut condition: impl FnMut() -> bool, timeout: Duration) -> bool {
     false
 }
 
-fn shell(command: &str) -> LaunchSpec {
+pub(super) fn shell(command: &str) -> LaunchSpec {
     LaunchSpec {
         program: "/bin/sh".into(),
         args: vec!["-c".into(), command.into()],

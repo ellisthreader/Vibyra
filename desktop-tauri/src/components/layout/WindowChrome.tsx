@@ -1,4 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { isLinux, isMac } from "../../lib/platform";
+import { useWindowState } from "../../lib/useWindowState";
 
 type ResizeDirection =
   | "East"
@@ -46,6 +48,7 @@ function CloseGlyph() {
 }
 
 export function WindowControls() {
+  if (isMac || isLinux) return null;
   const appWindow = getCurrentWindow();
   return (
     <div className="window-controls">
@@ -68,7 +71,14 @@ export function WindowControls() {
 }
 
 export function ResizeHandles() {
+  if (isMac || isLinux) return null;
+  return <CustomResizeHandles />;
+}
+
+function CustomResizeHandles() {
   const appWindow = getCurrentWindow();
+  const { maximized, fullscreen } = useWindowState();
+  if (maximized || fullscreen) return null;
   return (
     <>
       {HANDLES.map(({ className, direction }) => (

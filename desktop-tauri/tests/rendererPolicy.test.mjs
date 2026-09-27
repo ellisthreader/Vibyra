@@ -18,9 +18,10 @@ function policy(overrides = {}) {
   };
 }
 
-test("WebGL is trusted only on the accelerated path", () => {
-  assert.equal(webglIsTrustworthy({ softwareCompositing: false }), true);
-  assert.equal(webglIsTrustworthy({ softwareCompositing: true }), false);
+test("Linux terminals use DOM even on the accelerated WebKit path", () => {
+  assert.equal(webglIsTrustworthy({ configurable: true, softwareCompositing: false }), false);
+  assert.equal(webglIsTrustworthy({ configurable: true, softwareCompositing: true }), false);
+  assert.equal(webglIsTrustworthy({ configurable: false, softwareCompositing: false }), true);
 });
 
 test("a failed compositing probe falls back to the DOM renderer", () => {
@@ -34,13 +35,13 @@ test("explicit modes resolve without consulting detection", () => {
   assert.equal(resolvesToSharedMemory("accelerated", true), false);
 });
 
-test("auto follows the NVIDIA detection, matching the Rust policy", () => {
+test("auto uses compatibility regardless of GPU, matching the Rust policy", () => {
   assert.equal(resolvesToSharedMemory("auto", true), true);
-  assert.equal(resolvesToSharedMemory("auto", false), false);
+  assert.equal(resolvesToSharedMemory("auto", false), true);
 });
 
 test("a restart is needed only when the saved mode changes the path", () => {
-  assert.equal(rendererNeedsRestart("auto", policy({ nvidiaSession: false })), false);
+  assert.equal(rendererNeedsRestart("auto", policy({ nvidiaSession: false })), true);
   assert.equal(rendererNeedsRestart("compatibility", policy()), true);
   assert.equal(
     rendererNeedsRestart("accelerated", policy({ softwareCompositing: true })),
