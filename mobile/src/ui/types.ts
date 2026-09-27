@@ -67,6 +67,14 @@ export interface TerminalModel {
   kind: 'codex' | 'claude';
   isNew: boolean;
 }
+export type TerminalPermission = 'standard' | 'full';
+export interface TerminalLaunchOptions { safeMode?: boolean; model?: string; permissionMode?: TerminalPermission }
+export interface TerminalModelCatalogue {
+  models: TerminalModel[];
+  permissionModes?: TerminalPermission[];
+  /** Both the native bridge and its renderer must support explicit permissions. */
+  permissionsVersion?: number;
+}
 export interface WorkspaceModel {
   terminalModelsAvailable?: boolean;
   /** Gated by a native Preview adapter and an explicit Mac capability. */

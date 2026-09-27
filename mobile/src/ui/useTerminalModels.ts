@@ -8,20 +8,23 @@ export function useTerminalModels(visible: boolean, workspace: WorkspaceModel) {
     models: TerminalModel[];
     loading: boolean;
     error: string | null;
+    permissions: boolean;
   }>({
     models: [],
     loading: false,
     error: null,
+    permissions: false,
   });
   const load = workspace.actions.listTerminalModels;
   const supported = workspace.terminalModelsAvailable === true;
   useEffect(() => {
     let current = true;
-    setState({ models: [], loading: visible && supported, error: null });
+    setState({ models: [], loading: visible && supported, error: null, permissions: false });
     if (visible && supported && workspace.status === 'connected' && load) {
       void load().then(
         (result) => {
-          if (current) setState({ models: result.models, loading: false, error: null });
+          if (current) setState({ models: result.models, loading: false, error: null,
+            permissions: result.permissionsVersion === 1 && result.permissionModes?.includes('standard') === true && result.permissionModes.includes('full') });
         },
         (error) => {
           if (current)
@@ -29,10 +32,11 @@ export function useTerminalModels(visible: boolean, workspace: WorkspaceModel) {
               models: [],
               loading: false,
               error: error instanceof Error ? error.message : 'Could not load models.',
+              permissions: false,
             });
         },
       );
-    } else setState({ models: [], loading: false, error: null });
+    } else setState({ models: [], loading: false, error: null, permissions: false });
     return () => {
       current = false;
     };

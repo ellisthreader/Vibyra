@@ -40,8 +40,8 @@ export interface WorkspaceComputerActions {
   disconnect(): void | Promise<void>;
   refresh(): Promise<void>;
   selectSession(id: string | null): void;
-  listTerminalModels?(): Promise<{ models: import('./types').TerminalModel[] }>;
-  createSession(projectId: string, kind: SessionKind, title: string, options?: { safeMode?: boolean; model?: string }): Promise<Session | void>;
+  listTerminalModels?(): Promise<import('./types').TerminalModelCatalogue>;
+  createSession(projectId: string, kind: SessionKind, title: string, options?: import('./types').TerminalLaunchOptions): Promise<Session | void>;
   sendInput(data: string): Promise<void>;
 }
 export interface WorkspaceConversationActions {

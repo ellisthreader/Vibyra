@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { palettes, useTheme } from '../theme';
+import { useTheme } from '../theme';
 import { useReducedMotion } from '../ui/useReducedMotion';
-import { Icon } from '../ui/primitives';
+import { ComposerSurface } from '../vibes/ComposerSurface';
+import { useGlass } from '../vibes/glass';
 import { rulePrefix } from './permissionRule';
 import type { ConversationDecision, ConversationPermission, ConversationViewProps, RequestBlock } from './types';
 
-const ink = palettes.dark;
-
-/** The live CLI decision sits immediately above the phone's message box. */
+/** A pending decision rises from the composer and uses the same material. */
 export function ConversationApprovalDock({ item, canRespond, blocked, onDecision }: {
   item: ConversationPermission;
   canRespond: boolean;
@@ -16,6 +15,7 @@ export function ConversationApprovalDock({ item, canRespond, blocked, onDecision
   onDecision: ConversationViewProps['onDecision'];
 }) {
   const { colors } = useTheme();
+  const glass = useGlass();
   const reduced = useReducedMotion();
   const rise = useRef(new Animated.Value(24)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -43,82 +43,70 @@ export function ConversationApprovalDock({ item, canRespond, blocked, onDecision
     } finally { inFlight.current = false; }
   };
   const detail = item.detail ?? '';
-  const match = detail.match(/^Environment: ([^\n]+)\n([\s\S]*)$/);
-  const environment = match?.[1] ?? 'local';
-  const command = match?.[2] ?? detail;
+  const command = (detail.match(/^Environment: [^\n]+\n([\s\S]*)$/)?.[1] ?? detail).trim();
   const prefix = rulePrefix(item.ruleSummary);
-  const options: { label: string; decision: ConversationDecision }[] = [
+  const options: { label: string; decision: ConversationDecision; prefix?: string }[] = [
     { label: item.allowLabel ?? 'Allow once', decision: 'accept' },
     ...(item.choices?.includes('acceptWithExecpolicyAmendment') && item.ruleSummary
-      ? [{ label: 'Allow and remember', decision: 'acceptWithExecpolicyAmendment' as const }] : []),
+      ? [{ label: 'Always allow matching commands', decision: 'acceptWithExecpolicyAmendment' as const,
+        prefix: prefix ?? item.ruleSummary }] : []),
     ...(item.choices?.includes('acceptForSession')
       ? [{ label: 'Allow for this session', decision: 'acceptForSession' as const }] : []),
     { label: 'Decline', decision: 'decline' },
   ];
   const disabled = !canRespond || sent !== null || item.status !== 'pending';
-  return <Animated.View style={[s.shell, { borderColor: ink.border, backgroundColor: ink.surface,
-    opacity, transform: [{ translateY: rise }] }]}>
-    <View style={s.head}>
-      <Icon name="terminal-outline" size={17} color={colors.accent} />
-      <Text accessibilityRole="header" style={s.heading}>Codex needs approval</Text>
-      <Text style={s.environment}>{environment}</Text>
-    </View>
-    <ScrollView style={s.context} contentContainerStyle={s.contextInner} keyboardShouldPersistTaps="always">
-      {item.reason && <Text style={s.reason}>{item.reason}</Text>}
-      {command ? <Text selectable style={s.command}>$ {command}</Text> : null}
-      <Text selectable style={s.scope}>{item.scope ?? 'This action only'}</Text>
-    </ScrollView>
-    {item.choices?.includes('acceptWithExecpolicyAmendment') && item.ruleSummary &&
-      <View style={s.ruleBlock}>
-        <Text style={s.ruleCaption}>Remembering skips future approval for this prefix:</Text>
-        <ScrollView style={s.ruleScroll} keyboardShouldPersistTaps="always">
-          <Text selectable style={s.rule}>{prefix ?? item.ruleSummary}</Text>
-        </ScrollView>
+  return <Animated.View style={[s.wrap, { opacity, transform: [{ translateY: rise }] }]}>
+    <ComposerSurface testID="approval-dock" style={s.surface}>
+      <ScrollView style={s.commandScroll} contentContainerStyle={s.commandBox} keyboardShouldPersistTaps="always">
+        <Text selectable style={[s.command, { color: colors.text }]}>
+          {command ? `$ ${command}` : item.reason ?? item.title}
+        </Text>
+      </ScrollView>
+      <View style={[s.divider, { backgroundColor: glass.rim }]} />
+      {error && <Text accessibilityRole="alert" style={[s.message, { color: colors.error }]}>{error}</Text>}
+      {!canRespond && <View style={s.blocked}>
+        <Text style={[s.message, { color: colors.muted }]}>{blocked?.reason ?? 'Take control to answer.'}</Text>
+        {blocked?.action && <Pressable accessibilityRole="button" onPress={blocked.action.onPress} style={s.fix}>
+          <Text style={[s.fixText, { color: colors.accent }]}>{blocked.action.label}</Text>
+        </Pressable>}
       </View>}
-    {error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
-    {!canRespond && <View style={s.blocked}>
-      <Text style={s.scope}>{blocked?.reason ?? 'Take control to answer.'}</Text>
-      {blocked?.action && <Pressable accessibilityRole="button" onPress={blocked.action.onPress} style={s.fix}>
-        <Text style={[s.fixText, { color: colors.accent }]}>{blocked.action.label}</Text>
-      </Pressable>}
-    </View>}
-    <View style={s.options}>
-      {options.map((option, index) => <Pressable key={option.decision} accessibilityRole="button"
-        accessibilityLabel={option.label} disabled={disabled}
-        onPress={() => void choose(option.decision)}
-        style={({ pressed }) => [s.option, { backgroundColor: index === 0 ? colors.action : pressed ? ink.elevated : 'transparent',
-          opacity: disabled && !sent ? 0.5 : 1 }]}>
-        <Text style={[s.number, { color: index === 0 ? colors.onAction : ink.muted }]}>{index === 0 ? '›' : ' '} {index + 1}.</Text>
-        <Text style={[s.optionText, { color: index === 0 ? colors.onAction : ink.text }]}>{option.label}</Text>
-        {sent === option.decision && <Text style={s.sent}>Sending…</Text>}
-      </Pressable>)}
-    </View>
+      <View style={s.options}>
+        {options.map((option, index) => <Pressable key={option.decision} accessibilityRole="button"
+          accessibilityLabel={option.label}
+          accessibilityHint={option.prefix ? `Future commands starting with ${option.prefix} can run without asking.` : undefined}
+          disabled={disabled} onPress={() => void choose(option.decision)}
+          style={({ pressed }) => [s.option, {
+            backgroundColor: pressed ? glass.well : index === 0 ? colors.accentSoft : 'transparent',
+            opacity: disabled && !sent ? 0.5 : 1,
+          }]}>
+          <Text style={[s.number, { color: index === 0 ? colors.accent : colors.muted }]}>{index + 1}</Text>
+          <View style={s.optionCopy}>
+            <Text style={[s.optionText, { color: index === 0 ? colors.accent : colors.text }]}>{option.label}</Text>
+            {option.prefix && <Text selectable style={[s.prefix, { color: colors.muted }]}>{option.prefix}</Text>}
+          </View>
+          {sent === option.decision && <Text style={[s.message, { color: colors.muted }]}>Sending…</Text>}
+        </Pressable>)}
+      </View>
+    </ComposerSurface>
   </Animated.View>;
 }
 
 const s = StyleSheet.create({
-  shell: { marginHorizontal: 12, marginBottom: 2, borderWidth: StyleSheet.hairlineWidth, borderRadius: 18,
-    padding: 12, gap: 8, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: -4 } },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  heading: { color: ink.text, fontSize: 14, fontWeight: '700', flex: 1 },
-  environment: { color: ink.muted, fontFamily: 'Menlo', fontSize: 11 },
-  context: { maxHeight: 150, flexGrow: 0 },
-  contextInner: { gap: 7 },
-  reason: { color: ink.text, fontSize: 14, lineHeight: 19 },
-  command: { color: ink.text, backgroundColor: ink.elevated, fontFamily: 'Menlo', fontSize: 11.5,
-    lineHeight: 17, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, overflow: 'hidden' },
-  scope: { color: ink.muted, fontSize: 11, lineHeight: 16 },
-  ruleBlock: { gap: 3 },
-  ruleCaption: { color: ink.muted, fontSize: 11, lineHeight: 16 },
-  ruleScroll: { maxHeight: 44, flexGrow: 0 },
-  rule: { color: ink.text, fontFamily: 'Menlo', fontSize: 11, lineHeight: 16 },
-  error: { color: ink.error, fontSize: 12, lineHeight: 17 },
-  blocked: { gap: 2 },
+  wrap: { width: '100%', maxWidth: 624, alignSelf: 'center', paddingHorizontal: 12, marginBottom: 2 },
+  surface: { borderRadius: 28, paddingHorizontal: 10, paddingTop: 10, paddingBottom: 9 },
+  commandScroll: { maxHeight: 92, flexGrow: 0 },
+  commandBox: { paddingHorizontal: 11, paddingVertical: 8 },
+  command: { fontFamily: 'Menlo', fontSize: 12.5, lineHeight: 18 },
+  divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 8, marginVertical: 5 },
+  options: { gap: 2 },
+  option: { minHeight: 46, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 9,
+    flexDirection: 'row', alignItems: 'center', gap: 11 },
+  number: { fontFamily: 'Menlo', fontSize: 12, width: 14 },
+  optionCopy: { flex: 1, gap: 2 },
+  optionText: { fontSize: 14, fontWeight: '600', lineHeight: 19 },
+  prefix: { fontFamily: 'Menlo', fontSize: 11, lineHeight: 16 },
+  message: { fontSize: 12, lineHeight: 17 },
+  blocked: { paddingHorizontal: 12, paddingBottom: 4 },
   fix: { minHeight: 36, justifyContent: 'center' },
   fixText: { fontSize: 12, fontWeight: '600' },
-  options: { gap: 2 },
-  option: { minHeight: 42, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 11, gap: 7 },
-  number: { fontFamily: 'Menlo', fontSize: 12, width: 36 },
-  optionText: { fontSize: 14, fontWeight: '600', flex: 1 },
-  sent: { color: ink.muted, fontSize: 11 },
 });

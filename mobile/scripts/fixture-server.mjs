@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 // Bundles one fixture and serves it, so each verification script is a list of
 // assertions rather than a copy of the same esbuild and http setup.
-export async function serveFixture(entry) {
+export async function serveFixture(entry, aliases = {}) {
   const bundle = await build({ absWorkingDir: fileURLToPath(new URL('..', import.meta.url)),
     entryPoints: [entry], bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
     resolveExtensions: ['.web.tsx', '.web.ts', '.web.jsx', '.web.js', '.tsx', '.ts', '.jsx', '.js', '.json'],
     // `expo` itself also starts Metro's hot-reload client, which throws outside Metro;
     // what the image picker and manipulator import from it all lives in the core.
-    alias: { 'react-native': 'react-native-web', expo: 'expo-modules-core' },
+    alias: { 'react-native': 'react-native-web', expo: 'expo-modules-core', ...aliases },
     define: { 'process.env.NODE_ENV': '"development"', 'process.env': '{}', __DEV__: 'true', global: 'globalThis' },
     loader: { '.js': 'jsx', '.ttf': 'dataurl', '.png': 'dataurl', '.webp': 'dataurl' },
     plugins: [{ name: 'fixture-shims', setup(b) {

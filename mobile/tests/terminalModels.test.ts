@@ -17,6 +17,42 @@ test('different models have separate retry identities; old no-model receipts sur
   restored.restore(requests.serialize());
   assert.equal(restored.begin(key('openai/gpt-6-sol')), first);
 });
+
+test('permission changes have separate persistent retry identities', () => {
+  let serial = 0;
+  const requests = new CreateRequests(() => String(++serial));
+  const key = (permission?: 'standard' | 'full') => requests.key('mac', 'p', 'codex', 'Work', false, 'openai/gpt-6-sol', permission);
+  const full = requests.begin(key('full'));
+  assert.notEqual(full, requests.begin(key('standard')));
+  assert.notEqual(full, requests.begin(key()));
+  const restored = new CreateRequests(() => 'new');
+  restored.restore(requests.serialize());
+  assert.equal(restored.begin(key('full')), full);
+});
+
+test('permissions are revalidated on the connected computer before launching', async () => {
+  const h = runtimeHarness();
+  let version: number | undefined = 1;
+  h.handle(message => {
+    const method = message.payload?.method;
+    if (method === 'host.state') h.reply(message, { ...hostState,
+      capabilities: { readOnly: true, canInput: true, canManage: true, terminalModelsV1: true } });
+    else if (method === 'session.models') h.reply(message, { models: [], permissionsVersion: version, permissionModes: ['standard', 'full'] });
+    else if (method === 'session.create') h.reply(message, { ...hostState.sessions[0], kind: 'codex', canInput: true });
+    else return false;
+    return true;
+  });
+  await h.store.actions.connect(JSON.stringify(pairing));
+  await h.store.actions.createSession('project1', 'codex', 'Work', { permissionMode: 'full', safeMode: true });
+  const sent = h.sent.find(message => message.payload?.method === 'session.create').payload.params;
+  assert.equal(sent.permissionMode, 'full');
+  assert.equal(sent.safeMode, true);
+  version = undefined;
+  await assert.rejects(h.store.actions.createSession('project1', 'codex', 'Work', { permissionMode: 'standard' }), /Update Vibyra/);
+  await assert.rejects(h.store.actions.createSession('project1', 'shell', 'Shell', { permissionMode: 'full' }), /cannot apply/);
+  assert.equal(h.sent.filter(message => message.payload?.method === 'session.create').length, 1);
+  h.store.dispose();
+});
 test('latest phone cloud models preserve API reasoning and funding metadata', () => {
   const menu = pickerModels(fallbackModels);
   for (const id of ['openai/gpt-6-sol', 'openai/gpt-6-luna', 'anthropic/claude-opus-5.5']) {

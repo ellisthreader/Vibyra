@@ -21,6 +21,23 @@ test('chat advertises only a running approved browser target', () => {
   assert.equal(previewTargetRunning({ targetId: 'managed:website', running: true }), true);
   assert.equal(previewTargetRunning({ targetId: 'managed:website', running: false }), false);
   assert.equal(previewTargetRunning({ targetId: 'attached-port:8001' }), false);
+  assert.equal(previewTargetRunning({ targetId: 'auto-port:8001', running: false }), false);
+  assert.equal(previewTargetRunning({ targetId: 'auto-port:8001' }), true);
+});
+
+test('a matching folder suffix cannot advertise another project’s site', () => {
+  const projects = [
+    { id: 'site', path: '~/Desktop/Site' },
+    { id: 'backup', path: '/Volumes/Backup/Desktop/Site' },
+    { id: 'nested', path: '/Users/ellis/Archive/Desktop/Site' },
+    { id: 'sibling', path: '/Users/ellis/Desktop/Site-copy' },
+    { id: 'child', path: '/Users/ellis/Desktop/Site/child' },
+  ];
+  for (const id of ['backup', 'nested', 'sibling', 'child']) {
+    assert.equal(previewTargetMatchesProject({ projectId: 'site' }, id, projects), false);
+    assert.equal(previewTargetMatchesProject({ projectId: id }, 'site', projects), false);
+  }
+  assert.equal(previewTargetMatchesProject({ projectId: '' }, '', projects), false);
 });
 
 test('a site is named by the address a developer knows it by', async () => {

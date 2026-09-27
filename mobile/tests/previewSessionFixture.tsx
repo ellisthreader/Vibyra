@@ -38,7 +38,8 @@ function Fixture() {
     closePreviewSheet: () => setVisible(false),
   });
   const workspace: WorkspaceModel = {
-    ...fixtureWorkspace, status: 'connected', projects, actions,
+    // Real adapters can wrap the same actions on every snapshot.
+    ...fixtureWorkspace, status: 'connected', projects, actions: { ...actions },
   };
   return <ThemeContext.Provider value={{ colors: palettes.dark, dark: true }}>
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 },

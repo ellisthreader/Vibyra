@@ -12,9 +12,11 @@ export class CreateRequests {
     title: string,
     safeMode = false,
     model?: string,
+    permissionMode?: 'standard' | 'full',
   ) {
     // Keep old no-model receipts compatible across app updates.
-    return JSON.stringify([host, project, kind, title, safeMode, ...(model ? [model] : [])]);
+    return JSON.stringify([host, project, kind, title, safeMode, ...(model ? [model] : []),
+      ...(permissionMode ? [{ permissionMode }] : [])]);
   }
   begin(key: string) {
     if (!this.ids.has(key) && this.ids.size >= 32)

@@ -50,21 +50,25 @@ try {
         await page.getByText('Conversation design fixture', { exact: true }).waitFor();
         await page.evaluate(() => document.fonts.ready);
         if (state === 'approval-dock') {
-          await page.getByRole('heading', { name: 'Codex needs approval' }).waitFor();
-          await page.getByText('npm run test -- welcome', { exact: true }).waitFor();
+          await page.getByText(/\$ .*npm run test -- welcome/).waitFor();
+          assert.equal(await page.getByTestId('approval-dock').evaluate(el => getComputedStyle(el).backgroundColor),
+            theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(26, 29, 36)',
+            'The approval surface follows the conversation theme');
+          assert.equal(await page.getByText('Environment: local').count(), 0);
+          assert.equal(await page.getByText('This command only · /projects/pocket').count(), 0);
           const composer = await page.getByText('Message…', { exact: true }).boundingBox();
-          for (const label of ['Allow once', 'Allow and remember', 'Decline']) {
+          for (const label of ['Allow once', 'Always allow matching commands', 'Decline']) {
             const bounds = await page.getByRole('button', { name: label, exact: true }).boundingBox();
-            assert.ok(bounds && composer && bounds.height >= 40 && bounds.y + bounds.height <= composer.y,
+            assert.ok(bounds && composer && bounds.height >= 44 && bounds.y + bounds.height <= composer.y,
               `${label} stays above the composer`);
           }
           assert.equal(await page.evaluate(() => window.conversationCalls.length), 0);
           await capture(page, `${out}/${size}-${theme}-${state}.png`);
-          for (const [label, response] of [['Allow once', 'accept'], ['Allow and remember', 'acceptWithExecpolicyAmendment'], ['Decline', 'decline']]) {
+          for (const [label, response] of [['Allow once', 'accept'], ['Always allow matching commands', 'acceptWithExecpolicyAmendment'], ['Decline', 'decline']]) {
             await page.getByRole('button', { name: label, exact: true }).click();
             assert.deepEqual(await page.evaluate(() => window.conversationCalls), [{ id: 'permission', response }]);
             await page.goto(`${url}/?state=${state}&theme=${theme}`);
-            await page.getByRole('heading', { name: 'Codex needs approval' }).waitFor();
+            await page.getByText(/\$ .*npm run test -- welcome/).waitFor();
           }
         } else if (state === 'permission') {
           const allow = page.getByRole('button', { name: 'Allow once', exact: true });

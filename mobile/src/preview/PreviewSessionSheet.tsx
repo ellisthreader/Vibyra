@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { Button, Icon } from '../ui/primitives';
 import type { WorkspaceModel } from '../ui/types';
 import { PreviewWebView } from './PreviewWebView';
 import { previewTargetMatchesProject, previewTargetRunning } from './targetMatch';
+import { PreviewStatus } from './PreviewStatus';
+import { previewProblem } from './previewProblem';
 
 interface Target { grantId: string; projectId: string; targetId: string; name?: string | null; running?: boolean }
 interface OpenPage { url: string; label: string; close(): Promise<void> }
@@ -23,6 +25,9 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
   const [page, setPage] = useState<OpenPage | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const actionsRef = useRef(workspace.actions);
+  actionsRef.current = workspace.actions;
   const request = useRef(0);
   const lastTarget = useRef<string | null>(null);
   const pageRef = useRef<OpenPage | null>(null);
@@ -57,27 +62,28 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
   }, []);
 
   const open = useCallback(async (target: Target) => {
+    const actions = actionsRef.current;
     if (!previewTargetMatchesProject(target, projectId, projectsRef.current) ||
-      !previewTargetRunning(target) || !workspace.actions.startPreview || !workspace.actions.openPreview) return;
+      !previewTargetRunning(target) || !actions.startPreview || !actions.openPreview) return;
     const version = ++request.current;
     setBusy(true); setError('');
     try {
       // A running target was verified by preview.list; preview.open checks its
       // grant and listener again. Skip an extra start round trip on reopen.
       if (!target.running) {
-        const started = await workspace.actions.startPreview(target.grantId);
+        const started = await actions.startPreview(target.grantId);
         if (started.phase === 'failed') throw new Error('The Mac could not start this site. Check Preview on your Mac.');
       }
       let opened: { url: string; close(): Promise<void> } | null = null;
-      for (let attempt = 0; attempt < 75 && request.current === version; attempt++) {
-        try { opened = await workspace.actions.openPreview(target.grantId); break; }
+      for (let attempt = 0; attempt < 8 && request.current === version; attempt++) {
+        try { opened = await actions.openPreview(target.grantId); break; }
         catch (cause) {
-          if (!/not running|no local address/i.test(message(cause)) || attempt === 74) throw cause;
+          if (!/not running|no local address/i.test(message(cause)) || attempt === 7) throw cause;
           if (target.running && attempt === 0) {
-            const started = await workspace.actions.startPreview(target.grantId);
+            const started = await actions.startPreview(target.grantId);
             if (started.phase === 'failed') throw new Error('The Mac could not start this site. Check Preview on your Mac.');
           }
-          await wait(1000);
+          await wait(Math.min(500 * 2 ** attempt, 4000));
         }
       }
       if (!opened) return;
@@ -89,15 +95,15 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
       setPage(pageWithLabel);
     } catch (cause) { if (request.current === version) setError(message(cause)); }
     finally { if (request.current === version) setBusy(false); }
-  }, [workspace.actions, projectId]);
+  }, [projectId]);
 
   useEffect(() => {
-    if (!visible) {
+    if (!visible || workspace.status !== 'connected') {
       releasePage();
       return;
     }
-    // A changed project or connection action set is a new Preview scope.
-    // Ordinary Host project refreshes must leave the current proxy running.
+    // Only a host/project change or explicit retry starts a new session.
+    // Refreshed callbacks, target lists and Host snapshots must not reload it.
     releasePage();
     const version = ++request.current;
     setTargets([]); setError(''); setBusy(true);
@@ -110,7 +116,7 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
     }
     // Nothing running yet: keep looking, and open the site the moment its server starts.
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const look = () => void workspace.actions.listPreviews?.().then(result => {
+    const look = () => void actionsRef.current.listPreviews?.().then(result => {
       if (request.current !== version) return;
       const matches = result.targets.filter(target =>
         previewTargetMatchesProject(target, projectId, projectsRef.current) && previewTargetRunning(target));
@@ -125,7 +131,7 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
     }).catch(cause => { if (request.current === version) { setError(message(cause)); setBusy(false); } });
     look();
     return () => { pending.current++; clearTimeout(timer); };
-  }, [visible, projectId, workspace.actions, open, releasePage]);
+  }, [visible, projectId, workspace.host?.id, workspace.status, retry, open, releasePage]);
 
   useEffect(() => {
     if (visible && workspace.status !== 'connected') {
@@ -144,24 +150,19 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
     {page ? <PreviewWebView startUrl={page.url} label={page.label} onClose={close} /> :
       <SafeAreaView style={[styles.empty, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
-          <View style={styles.heading}><Text style={[styles.eyebrow, { color: colors.accent }]}>ON YOUR MAC</Text>
-            <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>Live preview</Text></View>
+          <Text accessibilityRole="header" style={[styles.title, { color: colors.text }]}>Live preview</Text>
           <Pressable accessibilityRole="button" accessibilityLabel="Close Live Preview" onPress={close}
             style={[styles.dismiss, { backgroundColor: colors.elevated }]}><Icon name="close" size={19} color={colors.text} /></Pressable>
         </View>
+        {error || busy || targets.length === 0 ? <PreviewStatus phase={busy ? 'connecting' : 'waiting'}
+          problem={error ? previewProblem('connection', error) : undefined} onClose={close}
+          onRetry={workspace.status === 'connected' ? () => setRetry(value => value + 1) : undefined} /> :
         <View style={styles.list}>
-          {busy && <View style={styles.wait}><ActivityIndicator color={colors.accent} />
-            <Text style={[styles.explain, { color: colors.muted }]}>Opening your site…</Text></View>}
-          {error ? <Text accessibilityRole="alert" style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
-          {!busy && targets.length === 0 ? <View style={styles.wait}>
-            <Icon name="globe-outline" size={32} color={colors.muted} />
-            <Text style={[styles.explain, { color: colors.muted }]}>No site is running for this project yet. Start it on your Mac and it opens here by itself.</Text>
-          </View> : null}
-          {!busy && targets.map(target => <Button key={target.grantId}
+          {targets.map(target => <Button key={target.grantId}
             title={target.name ? `Open ${target.name}` : `Open ${target.targetId}`}
             icon="globe-outline" disabled={workspace.status !== 'connected'}
             onPress={() => void open(target)} />)}
-        </View>
+        </View>}
       </SafeAreaView>}
     </SafeAreaProvider>
   </Modal>;
@@ -170,11 +171,7 @@ export function PreviewSessionSheet({ visible, onClose, projectId, workspace, kn
 const styles = StyleSheet.create({
   empty: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingTop: 16 },
-  heading: { gap: 5 }, eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
-  title: { fontSize: 27, fontWeight: '700', letterSpacing: -0.6 },
+  title: { fontSize: 17, fontWeight: '600', letterSpacing: -0.35 },
   dismiss: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   list: { flex: 1, padding: 22, gap: 16 },
-  wait: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 14 },
-  explain: { fontSize: 14, lineHeight: 21, textAlign: 'center' },
-  error: { fontSize: 14, lineHeight: 21 },
 });

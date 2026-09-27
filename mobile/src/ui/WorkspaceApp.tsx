@@ -27,6 +27,7 @@ import { SettingsSheet } from '../settings/SettingsSheet';
 import type { SettingsPageId } from '../settings/pages';
 import { AccountSheet } from './AccountSheet';
 import { WorkScreen } from './WorkScreen';
+import { ProjectTerminalLauncher } from './ProjectTerminalLauncher';
 import { VibesScreen } from '../vibes/VibesScreen';
 import { VibesDrawer } from '../vibes/VibesDrawer';
 import { WalletScreen } from '../vibes/WalletScreen';
@@ -90,15 +91,13 @@ export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEna
     close: () => { setSettings(null); setDrawer(false); }, mode: setProductMode, chat: nav.enterIdeas,
     work: () => setDestination('work'), computers: () => setDestination('computers'),
   });
-  // Settings rows lead into the Work body, which the Agent tab hides, so they switch back to Work.
   const lead = (to: Destination) => { setProductMode('work'); setSettingsLed(to); setDestination(to); };
   const session = destination === 'work' ? projectSession(workspace.sessions, projectId, nav.focusedSessionId, workspace.selectedSessionId) : undefined;
   const project = destination === 'work' ? (connected ? workspace.projects : workspace.remembered?.projects ?? []).find(item => item.id === projectId) : undefined;
   // Ideas, or a folder the computer no longer lists: the phone's own chat surface.
   const ideas = destination === 'work' && !session && !project;
   const chat = chats.find(item => item.id === selected);
-  // A computer project shows one of its own chats while that chat is open.
-  const phoneChat = ideas || Boolean(project && chat && chatProjectId(chat, workspace) === project.id);
+  const phoneChat = ideas || Boolean(nav.projectChatOpen && project && chat && chatProjectId(chat, workspace) === project.id);
   useMobileScreenAnalytics({ enabled: workspace.onboarding.status === 'complete', settings: Boolean(settings),
     destination, agentMode, phoneChat, inProject: Boolean(session || project) });
   useEffect(() => { setSettings(null); }, [workspace.demo, workspace.onboarding.status]);
@@ -133,7 +132,6 @@ export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEna
       <AccountSheet visible={walletSignIn} workspace={workspace} onClose={() => setWalletSignIn(false)} />
     </SafeAreaView>
   </ThemeContext.Provider>;
-  // The Work/Agent switch sits where the home is: Ideas, the chat the app opens into.
   const modeSwitch = agentsAvailable && destination === 'work';
   return <ThemeContext.Provider value={theme}>
     <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
@@ -160,7 +158,9 @@ export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEna
               onWallet={() => openSettings('vibes')} onIntegrations={() => setDestination('integrations')}
               onMemory={() => openSettings('memory')} previewProjectId={previewProjectId}
               onPreview={previewProjectId ? openPreview : undefined} /> :
-              <WorkScreen workspace={workspace} project={project} cloud={vibesEnabled} connected={connected} onWallet={() => openSettings('vibes')}
+              project ? <ProjectTerminalLauncher key={`${workspace.host?.id}:${project.id}`} workspace={workspace} project={project}
+                onOpenSession={nav.openSession} onConnect={() => setConnect(true)} /> :
+              <WorkScreen workspace={workspace} cloud={vibesEnabled} connected={connected} onWallet={() => openSettings('vibes')}
                 onProjects={() => setDrawer(true)} onPhoneChat={showChat} />)}
           {destination === 'computers' && <ComputersScreen workspace={workspace} />}
           {destination === 'integrations' && <IntegrationsScreen onUse={useIntegrationInChat}

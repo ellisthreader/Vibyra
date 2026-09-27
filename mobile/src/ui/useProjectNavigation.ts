@@ -14,6 +14,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
   const [destination, setDestination] = useState<Destination>('work');
   const [projectId, setProjectId] = useState<string | null>(IDEAS_PROJECT_ID);
   const [focusedSessionId, setFocusedSessionId] = useState<string | null>(null);
+  const [projectChatOpen, setProjectChatOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const live = useRef({ workspace, vibes, destination, projectId });
   live.current = { workspace, vibes, destination, projectId };
@@ -22,12 +23,14 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
     setDestination('work');
     setProjectId(IDEAS_PROJECT_ID);
     setFocusedSessionId(null);
+    setProjectChatOpen(false);
     setDrawer(false);
   }, [workspace.demo, workspace.onboarding.status]);
   // Opening a terminal puts you in its project.
   useEffect(() => {
     const open = workspace.sessions.find((item) => item.id === workspace.selectedSessionId);
     if (open) {
+      setProjectChatOpen(false);
       setFocusedSessionId(open.id);
       setProjectId(open.projectId);
       setDestination('work');
@@ -58,8 +61,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
     workspace.actions.selectSession(null);
     setDestination('work');
   };
-  /** Enter a project from its row. A folder opens the rail at once on its own
-   *  face; Ideas is a chat, so it takes the screen and the rail steps aside. */
+  /** Folder taps open a terminal or its launcher; saved phone chats require a chat tap. */
   const enterProject = (id: string) => {
     if (isIdeas(id)) {
       backToIdeas();
@@ -69,6 +71,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
     const chat = selectedChat();
     if (chat && chatProjectId(chat, workspace) !== id) selectChat(null);
     setProjectId(id);
+    setProjectChatOpen(false);
     const current = workspace.sessions.find((item) => item.id === workspace.selectedSessionId && item.projectId === id);
     const next = current ?? sessionsInProject(workspace.sessions, id)[0];
     setFocusedSessionId(next?.id ?? null);
@@ -82,6 +85,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
     const session = workspace.sessions.find((item) => item.id === id);
     if (!session) return;
     setFocusedSessionId(id);
+    setProjectChatOpen(false);
     setProjectId(session.projectId);
     workspace.actions.selectSession(id);
     setDestination('work');
@@ -91,6 +95,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
   const leaveProject = () => backToIdeas();
   /** Show whichever chat is selected in the store, inside the project it belongs to. */
   const showSelectedChat = () => {
+    setProjectChatOpen(true);
     const chat = selectedChat();
     const id = chat ? chatProjectId(chat, live.current.workspace) : IDEAS_PROJECT_ID;
     setProjectId(id);
@@ -103,6 +108,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
    *  anywhere else it is a fresh chat in Ideas. */
   const newChat = () => {
     if (destination === 'work' && projectId && !isIdeas(projectId)) {
+      setProjectChatOpen(false);
       const chat = selectedChat();
       if (chat && chatProjectId(chat, workspace) === projectId) selectChat(null);
       setFocusedSessionId(null);
@@ -113,6 +119,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
     enterIdeas(null);
   };
   const projectBuilt = (built: { id: string }, openTerminal: boolean) => {
+    setProjectChatOpen(false);
     setProjectId(built.id);
     setFocusedSessionId(null);
     setDestination('work');
@@ -125,6 +132,7 @@ export function useProjectNavigation(workspace: WorkspaceModel, vibes: VibesStor
     setDestination,
     projectId,
     focusedSessionId,
+    projectChatOpen,
     drawer,
     setDrawer,
     enterIdeas,

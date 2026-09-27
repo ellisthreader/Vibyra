@@ -1,4 +1,4 @@
-import type { Session, SessionKind, WorkspaceActions } from '../ui/types';
+import type { Session, SessionKind, TerminalLaunchOptions, TerminalModelCatalogue, WorkspaceActions } from '../ui/types';
 import { terminalInput } from './terminalInput';
 import type { Snapshot } from './output';
 import { scaffoldActions } from './scaffoldActions';
@@ -46,7 +46,7 @@ export function makeActions(
       projectId: string,
       kind: SessionKind,
       title: string,
-      options?: { safeMode?: boolean; model?: string },
+      options?: TerminalLaunchOptions,
     ) => {
       project(projectId);
       const epoch = store.epoch;
@@ -57,6 +57,15 @@ export function makeActions(
       if (model && (!store.state.terminalModelsAvailable || kind === 'shell'))
         throw new Error('This computer cannot start that model. Refresh and choose again.');
       const safeMode = options?.safeMode === true;
+      const permissionMode = options?.permissionMode;
+      if (permissionMode !== undefined) {
+        if (kind === 'shell' || !['standard', 'full'].includes(permissionMode) || !store.state.terminalModelsAvailable)
+          throw new Error('This computer cannot apply that permission choice.');
+        const catalogue = await request<TerminalModelCatalogue>('session.models', {});
+        if (catalogue.permissionsVersion !== 1 || !catalogue.permissionModes?.includes(permissionMode))
+          throw new Error('Update Vibyra on your computer to choose permissions from your phone.');
+        project(projectId);
+      }
       const key = store.creates.key(
         store.state.host!.id,
         projectId,
@@ -64,6 +73,7 @@ export function makeActions(
         cleanTitle,
         safeMode,
         model,
+        permissionMode,
       );
       const requestId = store.creates.begin(key);
       await store.persistCreates();
@@ -77,6 +87,7 @@ export function makeActions(
           requestId,
           safeMode,
           ...(model ? { model } : {}),
+          ...(permissionMode ? { permissionMode } : {}),
           // A chat, for any agent that computer runs as one; a terminal otherwise.
           ...(store.state.conversationAvailable &&
           (store.state.conversationProviders ?? ['codex']).includes(kind)
