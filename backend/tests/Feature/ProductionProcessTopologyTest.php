@@ -23,6 +23,10 @@ class ProductionProcessTopologyTest extends TestCase
         // queue worker at all while this file proved the backend copy was fine.
         $root = json_decode((string) file_get_contents(dirname($backend).'/railway.json'), true, flags: JSON_THROW_ON_ERROR);
         $this->assertStringContainsString('scripts/start-production.sh', $root['deploy']['startCommand']);
+        // The root config overrides backend Nixpacks phases. Without these
+        // commands, Laravel serves a missing or stale Vite manifest, including
+        // the website analytics choice and owner dashboard bundles.
+        $this->assertStringContainsString('npm ci && npm run build', $root['build']['buildCommand']);
     }
 
     public function test_the_all_in_one_role_runs_the_queue_worker_that_answers_phone_chat(): void
