@@ -22,7 +22,8 @@ export default function App() { return <AppErrorBoundary><AppContent /></AppErro
 
 function AppContent() {
   const runtime = useWorkspace();
-  const [analyticsReady, setAnalyticsReady] = useState(false);
+  const [analyticsReadyRevision, setAnalyticsReadyRevision] = useState(0);
+  const analyticsReady = analyticsReadyRevision > 0;
   const [introVisible, setIntroVisible] = useState(Platform.OS === 'ios');
   const [previewVisible, setPreviewVisible] = useState(false);
   // The sample workspace opens signed out from Settings, or signed in to the demo account from the test button.
@@ -40,7 +41,7 @@ function AppContent() {
   const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
   useEffect(() => {
     if (analyticsReady && !demo && workspace.onboarding.status === 'complete') void runtime.analytics.refresh(scope);
-  }, [analyticsReady, demo, workspace.onboarding.status, scope, runtime.analytics, runtime.analyticsSessionRevision]);
+  }, [analyticsReady, analyticsReadyRevision, demo, workspace.onboarding.status, scope, runtime.analytics, runtime.analyticsSessionRevision]);
   useEffect(() => {
     if (!analyticsReady || demo || consent.choice !== 'declined') return;
     const listener = AppState.addEventListener('change', status => {
@@ -60,7 +61,7 @@ function AppContent() {
       identity={demo ? demoAccount.email : workspace.account?.email ?? null}
       purchases={demo ? null : purchaseBridge}
       onMembershipChange={demo ? undefined : runtime.refreshMembership}
-      onReady={demo ? undefined : () => setAnalyticsReady(true)}
+      onReady={demo ? undefined : () => setAnalyticsReadyRevision(value => value + 1)}
       guest={!demo && Platform.OS !== 'web' && workspace.onboarding.status === 'complete'}>
       {/* Integrations use the real server and the real account even inside the
           sample workspace: connections belong to the account or guest session, and connecting
