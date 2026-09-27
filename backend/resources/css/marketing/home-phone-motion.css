@@ -1,0 +1,63 @@
+/* ── Section 02 · how the phone moves ────────────────────────────────────────
+ * `usePhoneStory` puts `data-phase` on the shell and accumulates `at-<phase>`
+ * classes for every phase already reached in the cycle, so a rule can read
+ * "from this point on". Base styles in the device sheet are what the drawer
+ * and the workspace look like before anything happens; the reduced-motion
+ * still is the `card` phase. */
+
+.ph-rail { transform: translateX(0); transition: transform .38s var(--ease); }
+.ph-scrim { opacity: 1; transition: opacity .38s ease; }
+.at-reveal .ph-rail { transform: translateX(-102%); }
+.at-reveal .ph-scrim { opacity: 0; }
+
+/* Scene 1 · the list settles in, then a tap opens the first piece of work. */
+[data-phase='rail'] .ph-row { animation: ph-row-in .3s var(--ease) both; }
+[data-phase='rail'] .ph-row:nth-child(2) { animation-delay: .035s; }
+[data-phase='rail'] .ph-row:nth-child(3) { animation-delay: .07s; }
+[data-phase='rail'] .ph-row:nth-child(4) { animation-delay: .105s; }
+[data-phase='rail'] .ph-row:nth-child(5) { animation-delay: .14s; }
+[data-phase='rail'] .ph-row:nth-child(6) { animation-delay: .175s; }
+[data-phase='rail'] .ph-row:nth-child(7) { animation-delay: .21s; }
+[data-phase='rail'] .ph-project, [data-phase='rail'] .ph-new, [data-phase='rail'] .ph-search { animation: ph-row-in .3s var(--ease) both; }
+[data-phase='rail'] .ph-new { animation-delay: .04s; }
+[data-phase='rail'] .ph-search { animation-delay: .08s; }
+@keyframes ph-row-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+[data-phase='tap'] .ph-finger-row { animation: ph-tap .38s ease both; }
+[data-phase='tap'] .ph-row.is-selected { animation: ph-press .38s ease both; }
+@keyframes ph-tap { 0% { opacity: 0; transform: scale(.6); } 25% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
+@keyframes ph-press { 0%, 100% { background: var(--elevated); } 30% { background: #2e3240; } }
+
+/* The workspace rises into place as the drawer leaves. */
+[data-phase='reveal'] .ph-overline, [data-phase='reveal'] .ph-title, [data-phase='reveal'] .ph-subtitle { animation: ph-rise .42s var(--ease) both; }
+[data-phase='reveal'] .ph-title { animation-delay: .06s; }
+[data-phase='reveal'] .ph-subtitle { animation-delay: .12s; }
+@keyframes ph-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Scene 2 · an instruction is typed, sent, thought about and answered. */
+.ph-user, .ph-reply, .ph-file, .ph-done { opacity: 0; }
+.ph-thinking { display: none; }
+[data-phase='compose'] .ph-composer { border-color: #4d5aa8; box-shadow: 0 0 0 3px #315bd833, 0 3px 12px #00000030; }
+[data-phase='compose'] .ph-caret { opacity: 1; animation: ph-blink 1s steps(2) infinite; }
+.has-text .ph-placeholder { opacity: 0; }
+[data-phase='compose'] .ph-send { background: #315bd8; color: #fff; }
+@keyframes ph-blink { to { opacity: 0; } }
+[data-phase='sent'] .ph-finger-send { animation: ph-tap .3s ease both; }
+.at-sent .ph-user { opacity: 1; animation: ph-bubble .38s var(--ease) both; }
+@keyframes ph-bubble { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+.at-thinking .ph-reply { opacity: 1; animation: ph-rise .38s var(--ease) both; }
+[data-phase='thinking'] .ph-thinking { display: inline-flex; }
+[data-phase='thinking'] .ph-thinking i { animation: ph-dots 1s ease-in-out infinite; }
+[data-phase='thinking'] .ph-thinking i:nth-child(2) { animation-delay: .15s; }
+[data-phase='thinking'] .ph-thinking i:nth-child(3) { animation-delay: .3s; }
+@keyframes ph-dots { 0%, 100% { opacity: .35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+.at-card .ph-file { opacity: 1; animation: ph-pop .38s var(--ease) both; }
+@keyframes ph-pop { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Scene 3 · the change lands and the checks pass. */
+.at-done .ph-done { opacity: 1; animation: ph-rise .38s var(--ease) both; }
+
+/* Off screen the phone stops; under reduced motion it holds its still. */
+.mobile-visual:not(.is-live) .ph-shell * { animation-play-state: paused !important; }
+.mobile-visual.is-still .ph-shell *, .mobile-visual.is-still .ph-shell *::after { animation: none !important; transition: none !important; }
+.mobile-visual.is-still .ph-user, .mobile-visual.is-still .ph-reply, .mobile-visual.is-still .ph-file { opacity: 1; }
+.mobile-visual.is-still .ph-reply-text span { opacity: 1; }

@@ -1,0 +1,154 @@
+/* ── 01 · One workspace, three ways to work ──────────────────────────────────
+ * A dark section with three cards across, one per mode: a word, a line, a
+ * small screen holding the scene, and a note. The teammates' compact form
+ * lives in home-team.css.
+ * Elements that are <p>/<h*> lose their margins to `.marketing-home p`, so
+ * spacing here comes from gap. Scenes borrow the device typefaces. */
+.workspace-section { background: var(--home-dark); color: #f5f7fa; }
+.workspace-section.section-space { padding-top: 36px; padding-bottom: 112px; }
+.workspace-section .section-heading { margin-bottom: 40px; }
+.mf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.mf-card {
+    position: relative; display: grid; grid-template-rows: auto 1fr; gap: 24px;
+    min-width: 0; padding: 26px 20px 20px; background: #16181e;
+    border: 1px solid #2b2f38; border-radius: 12px; transition: border-color .2s;
+}
+.mf-card:hover { border-color: #48505f; }
+.mf-head { display: grid; gap: 12px; }
+.mf-num { font-family: var(--home-mono); font-size: 11px; color: #97a8d2; letter-spacing: .1em; }
+.mf-head h3 { font-size: 40px; line-height: 1.05; letter-spacing: -.05em; font-weight: 600; }
+.mf-line { color: #a6adba; font-size: 14px; line-height: 1.6; min-height: 45px; text-wrap: pretty; }
+.mf-screen { position: relative; display: grid; min-width: 0; min-height: 478px; overflow: hidden; border: 1px solid #ffffff06; border-radius: 6px; padding: 16px; background: #0e0f12; }
+.mf-foot { margin-top: 22px !important; font-size: 12px; color: #959dac; }
+
+/* The figure is bare; the card's screen is its surface. */
+.mf-fig {
+    position: relative; min-width: 0;
+    font-family: "Inter Device", Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: 1.5; color: #e9ecf2;
+}
+.mf-fig { display: grid; }
+.mf-take { display: grid; align-content: start; }
+.mf-chatmode .mf-take { grid-template-rows: minmax(0, 1fr); }
+.mf-fig:not(.is-live) .mf-take * { animation-play-state: paused !important; }
+
+/* Arrivals: a piece with --at fades up at that second; a swap trades an
+ * "out" piece for an "in" piece at the same moment. */
+.mf-fig [style*="--at"]:not(.mf-out, .mf-in, .mf-word) { animation: mf-arrive .45s cubic-bezier(.2, .7, .2, 1) var(--at) both; }
+@keyframes mf-arrive { from { opacity: 0; transform: translateY(6px); } }
+.mf-out, .mf-in { grid-area: 1 / 1; }
+.mf-fig .mf-out { animation: mf-leave .25s ease var(--done, var(--at)) forwards; }
+.mf-fig .mf-in { animation: mf-arrive .4s cubic-bezier(.2, .7, .2, 1) var(--done, var(--at)) both; }
+@keyframes mf-leave { to { opacity: 0; visibility: hidden; } }
+.mf-fig .mf-word { animation: mf-word .2s ease var(--at) both; }
+@keyframes mf-word { from { opacity: 0; } }
+
+.mf-buttons { display: flex; gap: 8px; }
+.mf-buttons b { flex: 1; text-align: center; padding: 7px 14px; border-radius: 9px; border: 1px solid #333948; font-size: 12.5px; font-weight: 600; color: #dfe3ea; background: #1d2029; }
+.mf-buttons b.is-primary { background: #4f6ff0; border-color: #4f6ff0; color: #fff; }
+.mf-logo { width: 15px; height: 15px; object-fit: contain; flex: none; }
+.mf-logo.agent-mono { filter: brightness(0) invert(1); }
+.mf-logo.mf-logo-wide { width: 30px; }
+
+/* Code: four terminals in a 2×2 grid, each a tiny dark window with a title
+ * bar. The task types itself in (a clip that widens one character at a
+ * time), output lines fade up one by one, and a cursor blinks until the
+ * agent is done, when its dot becomes a tick. */
+.mf-code .mf-take { grid-template-rows: minmax(0, 1fr); }
+/* The terminals fill the screen edge to edge, a hairline between them, the
+ * way the app tiles its panes with no gap. */
+.mf-screen:has(.mf-code) { padding: 0; }
+.mf-terms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 1px; background: #1f232d; }
+.mf-term { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; min-width: 0; overflow: hidden; background: #0b0d12; }
+.mf-term-bar { position: relative; display: flex; align-items: center; gap: 5px; padding: 7px 8px; border-bottom: 1px solid #1c202a; background: linear-gradient(#181c25, #141820); font-size: 11px; font-weight: 600; color: #dfe3ea; white-space: nowrap; }
+.mf-term-bar::before { content: ""; position: absolute; inset: 0 0 auto; height: 1px; background: #ffffff0f; }
+.mf-term-bar strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.mf-lights { display: flex; gap: 3px; margin-right: 3px; }
+.mf-term-bar .mf-state { flex: none; }
+.mf-lights i { width: 5px; height: 5px; border-radius: 50%; background: #ff5f57; }
+.mf-lights i:nth-child(2) { background: #febc2e; }
+.mf-lights i:nth-child(3) { background: #28c840; }
+.mf-state { display: grid; place-items: center; width: 14px; height: 14px; }
+.mf-dot { width: 5px; height: 5px; border-radius: 50%; background: #5b7cfa; animation: mf-pulse 1.6s ease-in-out infinite; }
+@keyframes mf-pulse { 50% { opacity: .3; } }
+.mf-tick { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #173427; color: #5fe0a4; }
+.mf-term-out { display: grid; align-content: start; gap: 6px; min-height: 96px; padding: 12px 12px 10px; font-family: "JetBrains Mono Device", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.5; color: #98a1b3; }
+.mf-term-out > span { display: block; min-width: 0; white-space: nowrap; overflow: hidden; }
+.mf-echo { color: #eceff4; }
+.mf-echo b, .mf-input > b { color: #8fa6ff; font-weight: 600; }
+@keyframes mf-type { to { clip-path: inset(0 0 0 0); } }
+
+/* The input box under the output, like the agent's own. The task types
+ * into it (a clip that widens a character at a time), an Enter key shows,
+ * then the box clears and reads "Working…" until the agent is done. */
+.mf-input { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0 10px 10px; padding: 8px 10px; border-radius: 8px; background: #12151c; box-shadow: inset 0 0 0 1px #262b37; font-family: "JetBrains Mono Device", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45; }
+.mf-field { display: grid; flex: 1; min-width: 0; }
+.mf-field > span { grid-area: 1 / 1; min-width: 0; white-space: nowrap; overflow: hidden; }
+.mf-fig .mf-cmd[style] { color: #eceff4; clip-path: inset(0 100% 0 0); animation: mf-type var(--type) steps(var(--chars)) var(--at) forwards, mf-leave .15s ease var(--gone) forwards; }
+.mf-ph { color: #5b6270; }
+.mf-fig .mf-ph[style*="--gone"] { animation: mf-arrive .3s ease var(--at) both, mf-leave .2s ease var(--gone) forwards; }
+.mf-ph-work { display: inline-flex; align-items: center; gap: 6px; color: #8fa6ff; }
+.mf-ph-work i { width: 5px; height: 5px; border-radius: 50%; background: #8fa6ff; animation: mf-pulse .9s ease-in-out infinite; }
+.mf-ln::before { content: "⏺"; margin-right: 6px; font-size: 8px; vertical-align: 1px; color: #3d4455; }
+.mf-sign { font-style: normal; font-weight: 700; }
+.mf-add { color: #5fe0a4; }
+.mf-mod { color: #f3c273; }
+.mf-ok { color: #5fe0a4; }
+.mf-ok::before { content: "✓"; font-size: 10.5px; vertical-align: 0; color: #5fe0a4; }
+/* The cursor is each line's own: it blinks after the line from when the
+ * line arrives (--at) until the next one does (--next), so it follows the
+ * output down and leaves with the last line. */
+.mf-term .mf-cmd::after, .mf-term .mf-ln::after { content: ""; display: inline-block; width: 6px; height: 11px; margin-left: 5px; vertical-align: -1px; background: #8fa6ff; opacity: 0; animation: mf-blink 1s steps(2) var(--at) infinite, mf-cursor-off .01s linear var(--next) forwards; }
+@keyframes mf-blink { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes mf-cursor-off { to { opacity: 0; } }
+.mf-fig .mf-term .mf-out { animation-delay: var(--done); }
+.mf-fig .mf-term .mf-in { animation-delay: var(--done); }
+.mf-review { display: grid; gap: 14px; margin-top: 14px; padding-top: 16px; border-top: 1px solid #262a35; }
+.mf-review > span:first-child { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; color: #8fa6ff; }
+.mf-review strong { font-size: 13.5px; font-weight: 600; color: #eef1f7; }
+.mf-review em { grid-column: 2; font-style: normal; font-size: 12px; color: #8d96a8; }
+
+/* Chat: a quiet thread. Your turns are cobalt bubbles on the right, the
+ * answers sit on the left beside the mark with no bubble, and a pill
+ * composer with attach and send closes the screen. */
+.mf-chat { display: flex; flex-direction: column; gap: 18px; }
+.mf-chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 600; color: #eceff4; }
+.mf-chat-head em { padding: 3px 9px; border-radius: 20px; background: #1c2440; color: #9fb3ff; font-style: normal; font-size: 11px; font-weight: 600; }
+.mf-thread { display: flex; flex: 1; flex-direction: column; gap: 14px; }
+.mf-turn { display: flex; gap: 10px; align-items: flex-start; max-width: 92%; }
+.mf-turn-you { align-self: flex-end; max-width: 82%; }
+.mf-face { display: grid; flex: none; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #1a2033; box-shadow: inset 0 0 0 1px #2b3350; }
+.mf-face img { width: 15px; height: 11px; object-fit: contain; }
+.mf-bubble { font-size: 14px; line-height: 1.6; color: #d5dae4; }
+.mf-turn-you .mf-bubble { padding: 10px 15px; border-radius: 18px 18px 5px 18px; background: linear-gradient(180deg, #5a7bff, #4a68ee); color: #fff; box-shadow: 0 8px 20px -12px #4f6ff0aa; }
+.mf-steps { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.mf-steps li { display: flex; gap: 10px; align-items: baseline; }
+.mf-steps li::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; border-radius: 6px; background: #1c2440; color: #9fb3ff; font-size: 11px; font-weight: 600; }
+.mf-fig .mf-typing[style] { display: flex; gap: 5px; height: 12px; margin-left: 38px; animation: mf-arrive .3s ease var(--at) both, mf-typed .25s ease var(--gone) forwards; }
+/* Once the reply starts the dots collapse, so the row leaves no gap behind. */
+@keyframes mf-typed { to { opacity: 0; height: 0; margin-top: -14px; visibility: hidden; } }
+.mf-typing i { width: 6px; height: 6px; border-radius: 50%; background: #5b6270; animation: mf-bob 1s ease-in-out infinite; }
+.mf-typing i:nth-child(2) { animation-delay: .15s; }
+.mf-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes mf-bob { 50% { transform: translateY(-3px); opacity: .5; } }
+.mf-composer { display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 6px 6px 6px 8px; border-radius: 999px; background: #12151c; box-shadow: inset 0 0 0 1px #262b37; }
+.mf-composer > span:not(.mf-attach, .mf-send) { flex: 1; font-size: 14px; color: #6f7787; }
+.mf-attach, .mf-send { display: grid; flex: none; place-items: center; width: 30px; height: 30px; border-radius: 50%; }
+.mf-attach { color: #8d96a8; background: #1a1e28; }
+.mf-send { color: #fff; background: #4f6ff0; }
+
+@media (max-width: 1000px) {
+    .mf { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .mf-card { padding: 24px 20px 20px; }
+    .mf-screen { min-height: 330px; }
+    .mf-screen:has(.mf-chatmode) { min-height: 440px; }
+    .mf-line { min-height: 0; }
+    .mf-head h3 { font-size: 36px; }
+}
+@media (max-width: 640px) {
+    .mf-screen { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mf-fig .mf-take *, .mf-fig .mf-take { animation-duration: 0s !important; animation-delay: 0s !important; }
+    .mf-typing, .mf-typing i, .mf-dot { animation: none !important; }
+    .mf-typing { display: none; }
+}

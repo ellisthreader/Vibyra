@@ -1,0 +1,35 @@
+/* ── 03 · Typing stays instant ───────────────────────────────────────────────
+ * An 8s take on a 560×320 stage. Three panes stream without pause; in the
+ * focused terminal each key appears the moment its cap goes down (keys 7.5%
+ * + 3.5% apart, Enter at 45%). Resting frame: the command and its answer. */
+.fx-stage-lat { --cyc: 8s; width: 560px; height: 320px; font-family: var(--fx-ui); }
+.lat-busy { position: absolute; left: 24px; right: 24px; top: 24px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lat-pane { height: 104px; overflow: hidden; border-radius: 10px; background: var(--fx-surface); border: 1px solid var(--fx-line); box-shadow: 0 10px 22px -18px #00000059; }
+.lat-pane-bar { position: relative; z-index: 1; display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; background: var(--fx-tint-2); border-bottom: 1px solid var(--fx-line); font: 600 9.5px/1 var(--fx-ui); color: var(--fx-text); }
+.lat-pane-bar .fx-mark { color: var(--fx-blue); }
+.lat-flow { display: grid; gap: 5px; padding: 8px 9px; animation: lat-flow var(--s) linear infinite; }
+.lat-flow i { width: var(--w); height: 3px; border-radius: 2px; background: #2a3040; }
+.lat-flow i:nth-child(3n) { background: var(--fx-blue-4); }
+.lat-flow i:nth-child(5n) { background: var(--fx-blue-3); }
+
+.lat-term { position: absolute; left: 24px; right: 24px; top: 146px; height: 84px; overflow: hidden; border-radius: 11px; background: var(--fx-surface); border: 1px solid var(--fx-blue-3); box-shadow: 0 0 0 4px rgba(111, 140, 255, 0.1), 0 16px 32px -24px #00000059; }
+.lat-term-bar { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-bottom: 1px solid var(--fx-line); background: var(--fx-tint-2); font: 600 10px/1 var(--fx-ui); color: var(--fx-ink); }
+.lat-term-bar i { font-style: normal; color: var(--fx-muted); }
+.lat-term-bar b { margin-left: auto; padding: 3px 7px; border-radius: 999px; background: var(--fx-tint); border: 1px solid var(--fx-blue-4); font-size: 8.5px; font-weight: 700; color: #a8bcff; }
+.lat-line { padding: 9px 12px 0; font: 500 11.5px/16px var(--fx-mono); color: var(--fx-ink); white-space: nowrap; }
+.lat-cwd { margin-right: 6px; color: var(--fx-muted); }
+.lat-line em { margin-right: 6px; font-style: normal; color: var(--fx-blue); }
+.lat-typed { display: inline-block; overflow: hidden; vertical-align: bottom; width: 10ch; animation: lat-type var(--cyc) linear infinite both; }
+.lat-out { padding: 2px 12px; font: 500 10.5px/15px var(--fx-mono); color: var(--fx-muted); white-space: nowrap; animation: lat-out var(--cyc) var(--fx-ease) infinite both; }
+
+.lat-keys { position: absolute; left: 0; right: 0; top: 256px; display: flex; justify-content: center; gap: 6px; }
+.fx .lat-key { position: relative; min-width: 28px; height: 30px; padding: 0 7px; font: 600 12px/1 var(--fx-mono); animation: lat-press var(--cyc) var(--d) infinite both; }
+.fx .lat-space { min-width: 54px; }
+.fx .lat-enter { min-width: 36px; font-family: var(--fx-ui); }
+.lat-key::after { content: ""; position: absolute; left: 50%; bottom: calc(100% + 2px); width: 2px; height: 22px; margin-left: -1px; border-radius: 2px; background: linear-gradient(transparent, var(--fx-blue)); opacity: 0; transform-origin: bottom; animation: lat-beam var(--cyc) var(--d) infinite both; }
+
+@keyframes lat-flow { to { transform: translateY(-50%); } }
+@keyframes lat-type { 0%, 7.5% { width: 0; animation-timing-function: steps(10, jump-start); } 42.5%, 94% { width: 10ch; animation-timing-function: steps(1, end); } 95%, 100% { width: 0; } }
+@keyframes lat-out { 0%, 46% { opacity: 0; transform: translateY(3px); } 48%, 94% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+@keyframes lat-press { 0% { transform: none; } 0.6% { transform: translateY(2px); background: #1b2340; color: #6f8cff; border-color: #4360c9; box-shadow: 0 0 0 #101219, 0 0 0 3px #6f8cff33; } 4%, 100% { transform: none; } }
+@keyframes lat-beam { 0% { opacity: 0; transform: scaleY(0.2); } 0.6% { opacity: 1; transform: none; } 5%, 100% { opacity: 0; transform: none; } }

@@ -1,0 +1,181 @@
+/* Chat Mode's workspace. Mirrors desktop-tauri agent-transcript.css and
+ * agent-composer.css: the prompt is a left-bordered block rather than a
+ * right-aligned bubble, and the answer sits on no surface at all. */
+
+.vdev .vdev-chatview {
+    display: flex;
+    flex-direction: column;
+}
+
+.vdev .vdev-chat-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 9px;
+    min-height: var(--subhead-h);
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.vdev .vdev-chat-title {
+    overflow: hidden;
+    min-width: 0;
+    font-size: var(--fs-strong);
+    font-weight: var(--fw-bold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The rail owns New chat until the rail itself is hidden below 700px. */
+.vdev .vdev-chat-head .vdev-btn {
+    display: none;
+    margin-left: auto;
+}
+
+.vdev .vdev-chat-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 16px 20px 4px;
+}
+
+/* Nothing said yet, so the invitation sits in the middle rather than clinging
+ * to the top of an empty window. */
+.vdev .vdev-chat-scroll-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---- the thread ---- */
+
+.vdev .vdev-transcript {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+}
+
+.vdev .vdev-tr-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vdev .vdev-tr-prompt {
+    margin: 0;
+    padding: 8px 12px;
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--r-panel) var(--r-panel) 0;
+    background: var(--accent-soft);
+    color: var(--text);
+    font-size: var(--fs-ui);
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.vdev .vdev-tr-answer p {
+    margin: 0 0 9px;
+    color: var(--text);
+    font-size: var(--fs-ui);
+    line-height: 1.65;
+}
+
+.vdev .vdev-tr-answer p:last-child {
+    margin-bottom: 0;
+}
+
+.vdev .vdev-turn-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding-top: 6px;
+    border-top: 1px solid var(--line-soft);
+    color: var(--dim);
+    font-family: var(--font-mono);
+    font-size: var(--fs-micro);
+}
+
+.vdev .vdev-turn-foot-demo {
+    margin-left: auto;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* ---- the empty thread ---- */
+
+.vdev .vdev-chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    max-width: 560px;
+    margin: 4px auto 0;
+    text-align: center;
+}
+
+.vdev .vdev-chat-glyph {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--accent-2);
+}
+
+.vdev .vdev-chat-empty h2 {
+    margin: 5px 0 0;
+    font-size: 16px;
+    font-weight: var(--fw-black);
+    letter-spacing: -0.012em;
+}
+
+.vdev .vdev-chat-empty p {
+    max-width: 44ch;
+    margin: 0;
+    color: var(--dim);
+    font-size: var(--fs-hint);
+    font-weight: var(--fw-medium);
+    line-height: 1.55;
+}
+
+.vdev .vdev-starters {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    margin-top: 10px;
+}
+
+.vdev .vdev-starters button {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-control);
+    background: var(--surface);
+    text-align: left;
+    transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.vdev .vdev-starters button:hover {
+    border-color: var(--accent-border);
+}
+
+.vdev .vdev-starters strong {
+    font-size: var(--fs-body);
+    font-weight: var(--fw-bold);
+}
+
+.vdev .vdev-starters span {
+    color: var(--dim);
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-medium);
+    line-height: 1.45;
+}

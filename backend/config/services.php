@@ -49,6 +49,9 @@ return [
 
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
+        'chat_url' => env('OPENAI_CHAT_URL', 'https://api.openai.com/v1/chat/completions'),
+        'faq_model' => env('OPENAI_FAQ_MODEL', 'gpt-5-nano'),
+        'faq_reasoning' => env('OPENAI_FAQ_REASONING', 'low'),
         'moderation_url' => env('OPENAI_MODERATION_URL', 'https://api.openai.com/v1/moderations'),
         'moderation_model' => env('OPENAI_MODERATION_MODEL', 'omni-moderation-latest'),
     ],

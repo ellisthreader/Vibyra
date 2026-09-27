@@ -1,35 +1,54 @@
-@import 'tailwindcss';
-@import './marketing/base.css';
-@import './marketing/hero-story.css';
-@import './marketing/hero-animation.css';
-@import './marketing/interactions.css';
-@import './marketing/product-media.css';
-@import './marketing/product-film.css';
+@layer base;
+@import 'tailwindcss/preflight' layer(base);
+@import './marketing/home-base.css';
+@import './marketing/home-hero.css';
+@import './marketing/home-mobile.css';
+@import './marketing/home-phone-device.css';
+@import './marketing/home-phone-motion.css';
+@import './marketing/home-phone-preview.css';
+@import './marketing/home-mobile-responsive.css';
+@import './marketing/home-commerce.css';
+@import './marketing/home-footer.css';
+@import './marketing/home-questions.css';
+@import './marketing/home-responsive.css';
+@import './marketing/home-small.css';
+@import './marketing/home-hero-scene.css';
+@import './marketing/home-hero-product.css';
+@import './marketing/home-film.css';
+@import './marketing/home-pricing.css';
 
-@source '../js/marketing.jsx';
-@source '../js/marketing/**/*.jsx';
-@source '../js/marketing/**/*.js';
+/* The homepage device mirrors Vibyra Desktop; these sheets carry its shell. */
+@import './marketing/device-tokens.css';
+@import './marketing/device-shell.css';
+@import './marketing/device-controls.css';
+@import './marketing/device-strip.css';
+@import './marketing/device-rail.css';
+@import './marketing/device-workspace.css';
+@import './marketing/device-terminal.css';
+@import './marketing/device-dock.css';
+@import './marketing/device-ask.css';
+@import './marketing/device-panels.css';
+@import './marketing/device-home.css';
+@import './marketing/device-agent.css';
+@import './marketing/device-agent-thread.css';
+@import './marketing/device-chat.css';
+@import './marketing/device-chat-composer.css';
+@import './marketing/home-hero-device-responsive.css';
+@import './marketing/device-modes-responsive.css';
 
-@theme {
-    /* Vibyra "Connected Momentum" tokens — derived from the product */
-    --color-canvas: #0e0f12;
-    --color-canvas-raised: #101115;
-    --color-surface: #181a20;
-    --color-surface-elevated: #20232a;
-    --color-rail: #13151a;
-    --color-line: rgba(255, 255, 255, 0.09);
-    --color-line-strong: rgba(255, 255, 255, 0.16);
-    --color-ink: #f5f7fa;
-    --color-ink-muted: #a6adba;
-    --color-violet: #5b7cfa;
-    --color-violet-bright: #7490ff;
-    --color-violet-soft: rgba(91, 124, 250, 0.14);
-    --color-pink: #91a7ff;
-    --color-amber: #e8a94b;
-    --color-ok: #37c78a;
+@import './marketing/home-agents.css';
+@import './marketing/device-preview.css';
 
-    --font-sans: 'Inter', 'Segoe UI Variable', 'Segoe UI', -apple-system, system-ui, sans-serif;
-    --font-mono: 'Cascadia Code', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+/* Section 01's three-mode showcase; borrows the device typefaces declared above. */
+@import './marketing/home-desktop.css';
+@import './marketing/home-team.css';
 
-    --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
-}
+/* The six ecosystem stories use their own scenes and styles. */
+@import './marketing/home-ecosystem.css';
+@import './marketing/home-ecosystem-scenes.css';
+
+/* Pauses looping artwork in sections that are off screen. */
+@import './marketing/home-idle.css';
+
+/* Shared homepage surfaces and hierarchy; excludes the product illustrations. */
+@import './marketing/home-design-system.css';

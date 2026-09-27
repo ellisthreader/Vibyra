@@ -1,0 +1,46 @@
+/* Benchmarks page: the Downloads page's pearl editorial frame, holding white chart cards. */
+.benchmarks-page { --bm-line: #d9dfe9; --bm-soft: #eef1f6; --bm-grey: #8a94a6; --bm-ink-2: #4b5363; }
+.benchmarks-page .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.benchmarks-page .bm-hero { padding-block: 84px 56px; }
+.benchmarks-page .bm-hero h1 { margin-top: 22px; font-size: clamp(48px, 5.6vw, 80px); letter-spacing: -.06em; line-height: 1.02; font-weight: 650; }
+.benchmarks-page .bm-hero h1 > span { color: var(--home-cobalt); }
+.benchmarks-page .bm-eyebrow { display: flex; align-items: center; gap: 10px; font: 10px var(--home-mono); letter-spacing: .12em; color: var(--home-muted); }
+.benchmarks-page .bm-eyebrow::before { content: ''; width: 18px; height: 3px; background: var(--home-cobalt); }
+.benchmarks-page .bm-hero-meta { margin-top: 20px !important; font-size: 14px; color: var(--home-muted); }
+
+/* Top picks: four answers on one open row, split by hairlines. */
+.benchmarks-page .bm-picks { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--bm-line); }
+.benchmarks-page .bm-pick { display: grid; justify-items: start; align-content: start; padding: 28px 28px 4px 0; min-width: 0; }
+.benchmarks-page .bm-pick + .bm-pick { padding-left: 28px; border-left: 1px solid var(--bm-line); }
+.benchmarks-page .bm-pick .bm-mark { border-radius: 9px; }
+.benchmarks-page .bm-pick-label { margin-top: 18px !important; font: 10px var(--home-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--home-cobalt); }
+.benchmarks-page .bm-pick-name { margin-top: 6px !important; font-size: 22px; line-height: 1.25; font-weight: 700; letter-spacing: -.035em; }
+.benchmarks-page .bm-pick-value { margin-top: 6px !important; font-size: 13px; color: var(--home-muted); }
+.benchmarks-page .bm-pick-value strong { color: var(--home-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Model identity: logo tile, name, provider. */
+.benchmarks-page .bm-model { display: inline-flex; align-items: center; gap: 11px; min-width: 0; text-align: left; }
+.benchmarks-page .bm-model > span { display: grid; min-width: 0; }
+.benchmarks-page .bm-model strong { font-size: 14px; font-weight: 700; letter-spacing: -.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.benchmarks-page .bm-model small { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--home-muted); white-space: nowrap; }
+.benchmarks-page .bm-model em { font-style: normal; font: 9px var(--home-mono); letter-spacing: .04em; color: #2f7a55; border: 1px solid #bfe0cf; border-radius: 4px; padding: 1px 5px; }
+.benchmarks-page .bm-model em.is-early { color: #8a5a00; border-color: #ecd9a8; }
+.benchmarks-page .bm-mark { display: inline-grid; place-items: center; flex: none; border-radius: 7px; background: #fff; border: 1px solid var(--bm-line); }
+.benchmarks-page .bm-mark img { width: 62%; height: 62%; object-fit: contain; }
+.benchmarks-page .bm-mark b { font-size: 12px; }
+.benchmarks-page .bm-mark.is-dark { background: #171a21; border-color: #171a21; }
+
+/* Segmented control, shared by every switch on the page. */
+.benchmarks-page .bm-segment { display: inline-flex; padding: 3px; gap: 2px; background: var(--bm-soft); border: 1px solid var(--bm-line); border-radius: 9px; flex: none; }
+.benchmarks-page .bm-segment button { height: 32px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; font-size: 12px; font-weight: 700; color: var(--bm-ink-2); transition: background .15s, color .15s, box-shadow .15s; }
+.benchmarks-page .bm-segment button:hover { color: var(--home-ink); }
+.benchmarks-page .bm-segment button[aria-checked="true"] { background: #fff; color: var(--home-ink); box-shadow: 0 1px 2px #171a211a, 0 0 0 1px #171a210d; }
+
+/* Section frame. */
+.benchmarks-page .bm-section { padding-top: 88px; }
+.benchmarks-page .bm-section-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 22px; }
+.benchmarks-page .bm-section-head h2 { font-size: 30px; letter-spacing: -.045em; line-height: 1.2; }
+.benchmarks-page .bm-section-head p { margin-top: 6px !important; font-size: 13px; color: var(--home-muted); max-width: 560px; }
+.benchmarks-page .bm-card { position: relative; background: #fff; border: 1px solid var(--bm-line); border-radius: 12px; }
+.benchmarks-page .bm-footnote { padding: 14px 24px; border-top: 1px solid var(--bm-soft); font-size: 12px; color: var(--home-muted); }
+.benchmarks-page main { padding-bottom: 120px; }

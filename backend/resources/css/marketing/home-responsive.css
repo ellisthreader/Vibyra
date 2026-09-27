@@ -1,0 +1,34 @@
+@media (min-width: 1600px) {
+  .page-width { width: min(1320px, calc(100% - 140px)); }
+  .product-stage { height: 650px; }
+}
+@media (max-width: 1150px) {
+  .page-width { width: calc(100% - 64px); }
+  .desktop-nav { margin-left: 0; gap: 23px; }
+  .product-stage { height: 540px; }
+  .provider-extra:last-child { display: none; }
+  .faq-section { gap: 45px; }
+  .faq-intro h2 { font-size: 34px; }
+}
+@media (max-width: 800px) {
+  html { scroll-padding-top: 66px; }
+  .page-width { width: calc(100% - 48px); }
+  .desktop-nav, .login-link { display: none; }
+  .menu-button { display: flex; }
+  .nav-inner { height: 66px; gap: 14px; }
+  .nav-actions { gap: 9px; }
+  .brand { font-size: 25px; }
+  .brand img { width: 27px; height: 20px; }
+  .product-stage { height: 420px; }
+  .provider-extra:last-child { display: flex; }
+  .section-space { padding-block: 76px; }
+  .section-heading { display: block; margin-bottom: 35px; }
+  .section-heading > p { margin-top: 20px; font-size: 14px; }
+  .section-heading br.desktop-break { display: none; }
+  .faq-section { grid-template-columns: 1fr; gap: 35px; }
+  .footer-cta h2 { font-size: 43px; }
+  .footer-cta { gap: 24px; padding-block: 65px; }
+  .footer-cta-actions .action { font-size: 11px; gap: 12px; padding-inline: 17px; }
+  .footer-cta-actions > p { font-size: 11px; }
+  .footer-grid { gap: 23px; grid-template-columns: 1.4fr 1fr 1.2fr 1fr; }
+}

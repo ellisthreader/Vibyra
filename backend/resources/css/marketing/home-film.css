@@ -1,0 +1,62 @@
+/* The launch film as a scroll moment. --p (0→1) is written by Film.jsx as the
+ * section scrolls in: the frame lifts out of a tilt, grows to fill the
+ * screen and the heading steps back; then the film plays on its own. */
+.film-section { --p: 0; position: relative; height: 175vh; background: var(--home-dark); color: #f5f7fa; }
+.film-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: grid; place-items: center; padding-top: 76px; box-sizing: border-box; }
+
+.film-glow { position: absolute; inset: -20% -10%; pointer-events: none;
+    background: radial-gradient(ellipse 46% 40% at 50% 55%, #315bd84d, transparent 70%), radial-gradient(ellipse 28% 24% at 58% 40%, #7c95ff26, transparent 70%);
+    opacity: calc(.25 + .75 * var(--p)); transform: scale(calc(.8 + .3 * var(--p))); }
+
+.film-heading { position: absolute; top: max(88px, 11vh); left: 0; right: 0; text-align: center; z-index: 1;
+    opacity: clamp(0, calc(1 - (var(--p) - .45) * 3), 1); transform: translateY(calc(var(--p) * -48px)); }
+.film-heading .section-label { justify-content: center; margin-bottom: 18px !important; }
+.film-heading h2 { font-size: clamp(38px, 4.4vw, 64px); line-height: 1.08; letter-spacing: -.055em; font-weight: 650; margin: 0; }
+.film-heading h2 span { color: #727b8a; }
+
+.film-frame { position: relative; z-index: 2; width: min(calc(100vw - 64px), calc((100vh - 76px - 48px) * 16 / 9)); aspect-ratio: 16 / 9;
+    border-radius: calc(26px - 12px * var(--p)); overflow: hidden; background: #0b0c0f; border: 1px solid #2b2f38;
+    transform: perspective(1800px) translateY(calc((1 - var(--p)) * 16vh)) rotateX(calc((1 - var(--p)) * 24deg)) scale(calc(.6 + .4 * var(--p)));
+    box-shadow: 0 60px 140px -40px #000, 0 40px 120px -60px #315bd8a6, 0 0 calc(80px * var(--p)) -10px #5b7cfa40; }
+.film-frame::before { content: ""; position: absolute; z-index: 2; top: 0; left: 12%; right: 12%; height: 1px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, #a9b9ff, transparent); }
+.film-frame video { display: block; width: 100%; height: 100%; object-fit: cover; cursor: pointer; filter: brightness(calc(.6 + .4 * var(--p))); }
+
+.film-progress { position: absolute; z-index: 3; left: 0; bottom: 0; height: 2px; width: 100%; background: linear-gradient(90deg, #5b7cfa, #a9b9ff);
+    transform-origin: 0 50%; transform: scaleX(var(--t, 0)); opacity: .9; pointer-events: none; }
+
+.film-controls { position: absolute; z-index: 4; right: 16px; bottom: 16px; display: flex; gap: 8px; opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s cubic-bezier(.22, 1, .36, 1); }
+.film-frame:hover .film-controls, .film-controls:focus-within, .film-frame[data-ended="true"] .film-controls { opacity: 1; transform: none; }
+.film-controls button { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 1px solid #ffffff24; background: #0e0f12b3; color: #f5f7fa; cursor: pointer; backdrop-filter: blur(10px); }
+.film-controls button:hover { background: #1b1e26e6; border-color: #ffffff40; }
+.film-controls button:focus-visible, .film-sound-hint:focus-visible, .film-replay:focus-visible { outline: 2px solid #7490ff; outline-offset: 2px; }
+
+.film-sound-hint { position: absolute; z-index: 4; left: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 9px; padding: 9px 14px; border-radius: 999px;
+    border: 1px solid #ffffff24; background: #0e0f12c4; color: #f5f7fa; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; backdrop-filter: blur(10px);
+    animation: film-hint 2.4s ease-in-out infinite; }
+@keyframes film-hint { 50% { box-shadow: 0 0 0 6px #5b7cfa2e; } }
+
+.film-replay { position: absolute; z-index: 3; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; border: 0; cursor: pointer;
+    background: #0b0c0f99; color: #f5f7fa; font: inherit; font-size: 15px; font-weight: 600; backdrop-filter: blur(4px); }
+.film-replay span { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: #fff; color: #0e0f12; box-shadow: 0 20px 60px -16px #5b7cfa, 0 0 0 10px #ffffff14; }
+.film-replay svg { margin-left: 4px; fill: currentColor; }
+
+.film-section[data-still="true"] { height: auto; }
+.film-section[data-still="true"] .film-sticky { position: relative; height: auto; padding: 200px 0 96px; }
+
+@media (max-width: 860px) {
+    .film-section { height: 150vh; }
+    .film-frame { width: calc(100vw - 24px); border-radius: calc(18px - 8px * var(--p)); }
+    .film-heading { top: 72px; padding-inline: 16px; }
+    .film-controls { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .film-sound-hint { animation: none; } .film-controls { transition: none; } }
+
+/* The hero's quiet link to the film, under "Works with". */
+.hero-film { display: inline-flex; align-items: center; gap: 10px; margin-top: 16px; color: #dfe3ea; font-size: 14px; font-weight: 500; letter-spacing: -.01em; text-decoration: none; }
+.hero-film-disc { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #f5f7fa; color: #111318; box-shadow: 0 6px 18px -6px #b8c6ff99; transition: transform .2s cubic-bezier(.22, 1, .36, 1); }
+.hero-film-disc svg { margin-left: 2px; fill: currentColor; }
+.hero-film-time { color: #7f8898; font-family: var(--home-mono); font-size: 12px; }
+.hero-film:hover { color: #fff; }
+.hero-film:hover .hero-film-disc { transform: scale(1.1); }
+.hero-film:focus-visible { outline: 2px solid #7490ff; outline-offset: 4px; border-radius: 6px; }

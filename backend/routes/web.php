@@ -7,6 +7,9 @@ use App\Http\Controllers\LocalOwnerLoginController;
 use App\Http\Controllers\OwnerAccountsController;
 use App\Http\Controllers\OwnerAnalyticsController;
 use App\Http\Controllers\OwnerTwoFactorEnrollmentController;
+use App\Http\Controllers\PhoneWaitlistController;
+use App\Http\Controllers\WebsiteDownloadsController;
+use App\Http\Controllers\WebsiteFaqController;
 use App\Http\Controllers\WebsiteAnalyticsController;
 use App\Http\Controllers\ReleaseDownloadController;
 use App\Http\Controllers\ReleaseUpdateController;
@@ -34,12 +37,16 @@ Route::view('/signup', 'portal')->middleware(RecordWebsiteView::class);
 Route::view('/billing', 'portal')->middleware(RecordWebsiteView::class);
 Route::view('/billing/success', 'portal')->middleware(RecordWebsiteView::class);
 Route::view('/billing/cancel', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/downloads', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/account/downloads', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/downloads', 'downloads')->middleware(RecordWebsiteView::class);
+Route::view('/benchmarks', 'benchmarks')->middleware(RecordWebsiteView::class);
+Route::view('/account/downloads', 'downloads')->middleware(RecordWebsiteView::class);
 Route::get('/owner/login', fn () => response()->view('portal')
     ->header('Cache-Control', 'private, no-store')
     ->header('X-Robots-Tag', 'noindex, nofollow'));
 Route::post('/web-api/owner/local-login', LocalOwnerLoginController::class)->middleware('throttle:5,1');
+Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'catalog']);
+Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware('throttle:5,10');
+Route::post('/web-api/faq/ask', [WebsiteFaqController::class, 'ask'])->middleware('throttle:12,1');
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
 Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
     ->middleware('throttle:30,1');

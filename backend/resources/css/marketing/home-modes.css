@@ -1,0 +1,91 @@
+/* ── The three ways to work. Quiet by design: the cutaway above is the image,
+ *    this is the explanation that goes with it. ───────────────────────────── */
+.modes-block { padding-bottom: 56px; }
+.modes-tabs {
+    display: inline-flex;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid var(--ds-line);
+    border-radius: var(--ds-radius);
+    background: var(--ds-sunken);
+}
+.modes-tabs button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: var(--ds-radius-sm);
+    background: none;
+    color: var(--ds-ink-3);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    transition: color 0.16s ease, background 0.16s ease;
+}
+.modes-tabs button:hover { color: var(--ds-ink); }
+.modes-tabs button[aria-selected='true'] {
+    background: var(--ds-surface);
+    border-color: var(--ds-line-2);
+    color: var(--ds-accent-ink);
+    box-shadow: 0 1px 2px #171a2114;
+}
+.modes-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    align-items: start;
+    gap: 56px;
+    margin-top: 34px;
+}
+.modes-panel h3 {
+    max-width: 11em;
+    font-size: 28px;
+    line-height: 1.22;
+    letter-spacing: -0.042em;
+    font-weight: 700;
+    color: var(--ds-ink);
+    text-wrap: balance;
+}
+.modes-panel p { max-width: 56ch; font-size: 16px; line-height: 1.72; color: var(--ds-ink-3); }
+.modes-panel .modes-note {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ds-line);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ds-ink-2);
+}
+.agent-capabilities {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px;
+    margin: 44px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.agent-capabilities > li { position: relative; padding-left: 30px; }
+.agent-capabilities > li > svg { position: absolute; left: 0; top: 2px; color: var(--ds-accent); }
+.agent-capabilities h4 { font-size: 15px; font-weight: 700; letter-spacing: -0.025em; color: var(--ds-ink); }
+.agent-capabilities p { margin-top: 7px; font-size: 14px; line-height: 1.7; color: var(--ds-ink-3); }
+
+@media (max-width: 1000px) {
+    .modes-panel { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .modes-panel h3 { max-width: 16em; }
+    .agent-capabilities { gap: 28px; }
+}
+@media (max-width: 860px) {
+    .modes-block { padding-bottom: 44px; }
+    .agent-capabilities { grid-template-columns: minmax(0, 1fr); gap: 22px; margin-top: 34px; }
+}
+@media (max-width: 700px) {
+    .modes-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+    .modes-tabs button { justify-content: center; padding: 0 8px; }
+    .modes-panel { margin-top: 26px; }
+    .modes-panel h3 { font-size: 24px; }
+    .modes-panel p { font-size: 15px; }
+}
+@media (max-width: 400px) {
+    .modes-tabs button { gap: 6px; font-size: 12px; }
+    .modes-tabs button svg { display: none; }
+}

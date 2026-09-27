@@ -1,0 +1,236 @@
+/* The window frame and its title bar. Mirrors desktop-tauri chrome.css. */
+
+.vdev {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--wash), var(--bg);
+    box-shadow: 0 40px 90px rgba(4, 8, 24, 0.55);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: var(--fw-regular);
+    -webkit-font-smoothing: antialiased;
+    text-align: left;
+    user-select: none;
+}
+
+.vdev *,
+.vdev *::before,
+.vdev *::after {
+    box-sizing: border-box;
+}
+
+/* Zero specificity, so every component style below still wins on source order.
+ * The page-wide `.marketing-home button` reset would otherwise beat them. */
+:where(.vdev) :where(button, textarea) {
+    margin: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+}
+
+:where(.vdev) :where(button) {
+    cursor: pointer;
+}
+
+.vdev :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+    outline-offset: 2px;
+}
+
+/* ---- title bar ---- */
+
+.vdev-chrome {
+    display: flex;
+    flex: none;
+    align-items: stretch;
+    height: var(--chrome-h);
+    background: var(--chrome-bg);
+    border-bottom: 1px solid var(--line);
+}
+
+.vdev-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: calc(var(--strip-w) + var(--rail-w));
+    padding: 0 12px 0 14px;
+}
+
+.vdev-brand img {
+    width: 27px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.vdev-word {
+    font-size: var(--fs-title-sm);
+    font-weight: var(--fw-heavy);
+    letter-spacing: -0.01em;
+    line-height: 17px;
+}
+
+.vdev-drag {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+
+.vdev-cmdbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: min(420px, 100%);
+    min-height: 30px;
+    padding: 0 8px 0 11px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-control);
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    color: var(--dim);
+    font-size: var(--fs-body);
+    font-weight: var(--fw-regular);
+    transition:
+        border-color var(--t-ui) var(--e-standard),
+        color var(--t-ui) var(--e-standard);
+}
+
+.vdev-cmdbar:hover {
+    border-color: var(--accent-border);
+    color: var(--muted);
+}
+
+.vdev-cmdbar-hint {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.vdev-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 8px;
+}
+
+.vdev-sep {
+    flex: none;
+    width: 1px;
+    height: 20px;
+    margin: 0 3px;
+    background: var(--line);
+}
+
+.vdev-bell {
+    position: relative;
+}
+
+.vdev-count {
+    position: absolute;
+    top: -1px;
+    right: -2px;
+    min-width: 15px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-action);
+    font-size: var(--fs-micro);
+    font-weight: var(--fw-heavy);
+    font-variant-numeric: tabular-nums;
+    line-height: 15px;
+    text-align: center;
+}
+
+.vdev-account {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--elevated);
+    font-size: var(--fs-control);
+    font-weight: var(--fw-bold);
+    transition:
+        border-color var(--t-ui) var(--e-standard),
+        background var(--t-ui) var(--e-standard);
+}
+
+.vdev-account:hover {
+    border-color: var(--accent-border);
+    background: var(--surface-tint);
+}
+
+.vdev-wcontrols {
+    display: flex;
+    align-items: center;
+    margin-left: 6px;
+}
+
+.vdev-wcontrols span {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 30px;
+    border-radius: var(--r-shell);
+    color: var(--muted);
+}
+
+/* ---- the shell row ---- */
+
+.vdev-shell {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.vdev .vdev-modal-backdrop {
+    position: absolute;
+    z-index: 20;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(4, 5, 9, .7);
+}
+.vdev .vdev-modal {
+    width: min(100%, 520px);
+    max-height: 100%;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--e-panel);
+}
+.vdev .vdev-modal > header { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 0 16px; border-bottom: 1px solid var(--line-soft); }
+.vdev .vdev-modal h2 { margin: 0; font-size: 15px; font-weight: 650; }
+.vdev .vdev-modal > header button { width: 26px; height: 26px; border-radius: 6px; color: var(--muted); font-size: 20px; }
+.vdev .vdev-modal > header button:hover { background: var(--hover-strong); }
+.vdev .vdev-modal form, .vdev .vdev-modal-content { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.vdev .vdev-modal p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.vdev .vdev-modal form > label { display: grid; gap: 7px; font-size: 12px; }
+.vdev .vdev-modal input { width: 100%; min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--workspace); color: var(--text); font: inherit; }
+.vdev .vdev-modal form footer { display: flex; justify-content: flex-end; gap: 8px; }
+.vdev .vdev-modal form footer button, .vdev .vdev-modal-content > button { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--elevated); font-size: 12px; }
+.vdev .vdev-modal form footer .vdev-modal-primary { border-color: var(--action); background: var(--action); color: var(--on-action); }
+.vdev .vdev-modal form footer button:disabled { opacity: .5; cursor: default; }
+.vdev .vdev-modal-agents { display: grid; gap: 6px; }
+.vdev .vdev-modal-agents button { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--workspace); text-align: left; }
+.vdev .vdev-modal-agents button:hover { border-color: var(--accent-border); }
+.vdev .vdev-modal-agents button span { margin-left: auto; color: var(--muted); font-size: 11px; }
+.vdev .vdev-modal-settings { display: flex; min-height: 220px; }
+.vdev .vdev-modal-settings nav { display: grid; align-content: start; gap: 2px; flex: none; width: 135px; padding: 12px 8px; border-right: 1px solid var(--line-soft); }
+.vdev .vdev-modal-settings nav button { padding: 7px 8px; border-radius: 6px; color: var(--muted); text-align: left; font-size: 11px; }
+.vdev .vdev-modal-settings nav button.is-active { background: var(--elevated); color: var(--text); }
+.vdev .vdev-modal-settings > div { padding: 18px; }
+.vdev .vdev-modal-settings h3 { margin: 0 0 10px; font-size: 13px; }

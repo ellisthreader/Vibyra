@@ -1,0 +1,4 @@
+/* The hero's frame around the device. The device inside it is styled by the
+ * device-*.css sheets; nothing sits under the window. */
+.walkthrough { position: relative; overflow: hidden; }
+.product-stage { position: relative; overflow: hidden; }

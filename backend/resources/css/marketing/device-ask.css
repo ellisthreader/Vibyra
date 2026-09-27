@@ -1,0 +1,58 @@
+/* Project Chat inside the Mac-style companion. */
+.vdev .vdev-chat-panel { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.vdev .vdev-chat-context {
+    display: flex; align-items: center; flex: none; gap: 10px;
+    min-height: 67px; padding: 12px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.vdev .vdev-chat-context > img { flex: none; object-fit: contain; }
+.vdev .vdev-chat-identity { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.vdev .vdev-chat-identity strong { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.vdev .vdev-chat-identity strong span { padding: 1px 4px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 8px; font-weight: 500; letter-spacing: .04em; }
+.vdev .vdev-chat-identity small { display: flex; align-items: center; gap: 5px; overflow: hidden; color: var(--muted); font-size: 10.5px; white-space: nowrap; text-overflow: ellipsis; }
+.vdev .vdev-chat-identity small svg { flex: none; }
+.vdev .vdev-chat-working { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 9px; }
+.vdev .vdev-chat-working i { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.vdev .vdev-chat-files { display: flex; align-items: center; gap: 5px; padding: 6px 7px; border-radius: 7px; color: var(--muted); font-size: 10.5px; }
+.vdev .vdev-chat-files:hover { background: var(--hover); color: var(--text); }
+.vdev .vdev-chat-menu { position: relative; }
+.vdev .vdev-chat-menu > button { width: 25px; height: 28px; font-size: 17px; letter-spacing: 1px; }
+.vdev .vdev-chat-menu-pop { position: absolute; z-index: 8; top: 32px; right: 0; width: 174px; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: var(--e-panel); }
+.vdev .vdev-chat-menu-pop button { width: 100%; min-height: 34px; padding-inline: 8px; border-radius: 5px; color: var(--text); font-size: 12px; text-align: left; }
+.vdev .vdev-chat-menu-pop button:hover { background: var(--hover); }
+.vdev .vdev-chat-transcript { display: flex; flex: 1; flex-direction: column; gap: 26px; min-height: 0; overflow: auto; padding: 24px 20px 20px; scrollbar-width: thin; }
+.vdev .vdev-chat-turn { display: flex; flex: none; gap: 10px; min-width: 0; }
+.vdev .vdev-chat-turn > img { flex: none; width: 22px; height: 22px; margin-top: 4px; object-fit: contain; }
+.vdev .vdev-chat-turn p { margin: 0; color: var(--text); font-size: 13px; font-weight: 400; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vdev .vdev-chat-turn-user { justify-content: flex-end; }
+.vdev .vdev-chat-turn-user p { max-width: 88%; padding: 11px 14px; border: 1px solid var(--line-soft); border-radius: 15px 15px 5px 15px; background: var(--hover); }
+.vdev .vdev-chat-thinking { display: flex; align-items: center; gap: 4px; min-height: 24px; }
+.vdev .vdev-chat-thinking i { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); animation: vdev-think 1.2s ease-in-out infinite alternate; }
+.vdev .vdev-chat-thinking i:nth-child(2) { animation-delay: 150ms; }
+.vdev .vdev-chat-thinking i:nth-child(3) { animation-delay: 300ms; }
+@keyframes vdev-think { to { opacity: .3; transform: translateY(-2px); } }
+.vdev .vdev-chat-empty { display: flex; flex-direction: column; align-items: flex-start; width: 100%; max-width: 320px; gap: 12px; margin: auto; padding: 18px 2px 28px; }
+.vdev .vdev-chat-empty > img { margin-bottom: 8px; object-fit: contain; }
+.vdev .vdev-chat-empty h2 { max-width: 245px; margin: 0; font-size: 25px; font-weight: 550; line-height: 1.18; letter-spacing: -.8px; }
+.vdev .vdev-chat-empty p { max-width: 265px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.vdev .vdev-chat-starters { display: flex; flex-direction: column; width: 100%; gap: 6px; margin-top: 16px; }
+.vdev .vdev-chat-starters button { display: flex; align-items: center; justify-content: space-between; gap: 11px; min-height: 59px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--workspace); color: var(--text); text-align: left; }
+.vdev .vdev-chat-starters button:hover { border-color: var(--accent-border); background: var(--hover); }
+.vdev .vdev-chat-starters button > span:first-child { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.vdev .vdev-chat-starters strong { font-size: 11.5px; font-weight: 450; }
+.vdev .vdev-chat-starters small { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.vdev .vdev-chat-starters button > span:last-child { color: var(--muted); }
+.vdev .vdev-chat-composer { display: flex; flex: none; flex-direction: column; gap: 10px; margin: 10px 14px 14px; padding: 14px 12px 10px; border: 1px solid var(--border); border-radius: 15px; background: var(--workspace); }
+.vdev .vdev-chat-composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.vdev .vdev-chat-composer textarea { width: 100%; min-height: 48px; max-height: 144px; padding: 0 2px; border: 0; outline: 0; resize: none; background: transparent; color: var(--text); font: inherit; font-size: 13px; line-height: 1.65; }
+.vdev .vdev-chat-composer textarea::placeholder { color: var(--muted); }
+.vdev .vdev-chat-compose-tools { display: flex; align-items: center; gap: 8px; }
+.vdev .vdev-chat-voice { display: flex; align-items: center; gap: 6px; height: 31px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 10.5px; }
+.vdev .vdev-chat-voice:hover { color: var(--text); background: var(--hover-strong); }
+.vdev .vdev-chat-voice[aria-pressed="true"] { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-2); }
+.vdev .vdev-chat-hint { flex: 1; overflow: hidden; color: var(--muted); font-size: 9px; text-align: right; white-space: nowrap; text-overflow: ellipsis; }
+.vdev .vdev-chat-send { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 9px; background: var(--action); color: var(--on-action); }
+.vdev .vdev-chat-send:hover:not(:disabled) { background: var(--action-hover); }
+.vdev .vdev-chat-send:disabled { background: var(--hover-strong); color: var(--dim); cursor: default; }
+.vdev .vdev-chat-stop { border: 1px solid var(--line); background: var(--elevated); color: var(--text); }
+@media (max-height: 650px) { .vdev .vdev-chat-context { min-height: 58px; padding-block: 8px; } .vdev .vdev-chat-empty { padding-block: 8px 16px; } .vdev .vdev-chat-empty h2 { font-size: 23px; } .vdev .vdev-chat-starters { margin-top: 8px; } }
+@media (prefers-reduced-motion: reduce) { .vdev .vdev-chat-thinking i { animation: none; } }

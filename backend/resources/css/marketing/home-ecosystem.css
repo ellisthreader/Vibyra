@@ -1,0 +1,67 @@
+/* ── 03 · The Vibyra ecosystem ──────────────────────────────────────────────
+ * Big soft cards, two per row: title and one line up top, then a panel of the
+ * cobalt stage (a different crop per card, `--crop`) running off the card’s
+ * bottom edge, with the tool’s live scene on it. Every scene loop’s resting
+ * CSS is its finished frame; `.is-live` lets it play. */
+.eco {
+    --eco-blue: #6f8cff;
+    --eco-blue-2: #8fa6ff;
+    --eco-blue-3: #3f5bc7;
+    --eco-dim: rgba(111, 140, 255, 0.16);
+    --eco-line: #232733;
+    --eco-ink: #f3f5f9;
+    --eco-text: #c2c9d8;
+    --eco-muted: #98a1b3;
+    --eco-faint: #5c6478;
+    --eco-panel: #171a22;
+    --eco-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --eco-ui: "Inter Device", Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    --eco-mono: "JetBrains Device", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    position: relative;
+    background: var(--home-dark);
+    color: var(--eco-ink);
+    border-top: 1px solid #1f222b;
+    border-bottom: 1px solid #1f222b;
+}
+.eco.section-space { padding-block: 112px 84px; }
+.eco-head { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: end; margin-bottom: 48px; }
+.eco-head > p { max-width: 42ch; padding-bottom: 8px; color: #a3abbb; font-size: 15px; line-height: 1.7; text-wrap: pretty; }
+
+/* The cards. */
+.eco-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.eco-cell { display: flex; flex-direction: column; min-width: 0; padding-top: 30px; background: #17181c; border-radius: 28px; overflow: hidden; }
+.eco-copy { display: grid; gap: 2px; padding: 0 32px 28px; }
+.eco-copy h3, .eco-copy p { font-size: 18px; line-height: 1.45; letter-spacing: -0.015em; text-wrap: pretty; }
+.eco-copy h3 { font-weight: 500; color: var(--eco-ink); }
+.eco-copy p { font-weight: 400; color: #9aa1ae; }
+
+/* The panel: the cobalt stage behind the scene, open at the bottom. */
+.es-art { position: relative; height: 250px; margin: auto 28px 0; overflow: hidden; border-radius: 18px 18px 0 0; border: 1px solid rgba(255, 255, 255, 0.06); border-bottom: 0; background: linear-gradient(rgba(9, 11, 17, 0.3), rgba(9, 11, 17, 0.55)), url("/media/marketing/ecosystem-backdrop.webp") var(--crop, 50% 50%) / 210% auto no-repeat, #0d1020; }
+.es-stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(var(--k, 1)); transform-origin: center; }
+.eco-cell-shot { --crop: 88% 18%; }
+.eco-cell-voice { --crop: 62% 72%; }
+.eco-cell-lanes { --crop: 100% 45%; }
+.eco-cell-latency { --crop: 30% 40%; }
+.eco-cell-preview { --crop: 78% 95%; }
+.eco-cell-builder { --crop: 8% 30%; }
+.eco-cell-notes { --crop: 92% 62%; }
+.eco-cell-keys { --crop: 48% 100%; }
+
+.eco-cell:not(.is-live):not(.is-still) .es *, .eco-cell:not(.is-live):not(.is-still) .es *::before, .eco-cell:not(.is-live):not(.is-still) .es *::after { animation-play-state: paused !important; }
+
+/* The platform footnote. */
+.eco .fx-foot { margin-top: 28px; font-size: 12.5px; line-height: 1.7; color: #949dac; text-wrap: pretty; }
+.eco .fx-foot a { color: #b4bccb; border-bottom: 1px solid #3a4150; }
+.eco .fx-foot a:hover { color: #8ba3ff; }
+
+@media (max-width: 1000px) {
+    .eco-head { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 28px; }
+}
+@media (max-width: 760px) {
+    .eco.section-space { padding-block: 64px 48px; }
+    .eco-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .eco-cell { padding-top: 24px; border-radius: 22px; }
+    .eco-copy { padding: 0 22px 22px; }
+    .eco-copy h3, .eco-copy p { font-size: 16px; }
+    .es-art { height: 220px; margin-inline: 18px; }
+}

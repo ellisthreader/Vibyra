@@ -1,0 +1,34 @@
+@media (max-width: 580px) {
+  html { scroll-padding-top: 64px; }
+  .page-width { width: calc(100% - 40px); }
+  .nav-inner { height: 64px; }
+  .nav-actions .action { font-size: 12px; padding-inline: 13px; gap: 10px; min-height: 44px; }
+  .nav-actions .action svg { width: 12px; }
+  .walkthrough { border-radius: 8px; }
+  .product-stage { height: 342px; }
+  .section-space { padding-block: 64px; }
+  .section-label { font-size: 10px; gap: 10px; margin-bottom: 20px !important; }
+  .section-label > span { padding-right: 10px; }
+  .marketing-home h2 { font-size: 34px; letter-spacing: -.05em; }
+  .section-heading > p { font-size: 14px; margin-top: 18px; }
+  .faq-intro h2 { font-size: 34px; }
+  .faq-item summary { font-size: 14px; gap: 12px; padding-block: 20px; }
+  .faq-answer { padding-left: 24px; padding-right: 10px; font-size: 14px; }
+  .footer-cta { flex-direction: column; align-items: start; padding-block: 60px 45px; gap: 24px; }
+  .footer-cta h2 { font-size: 41px; }
+  .footer-cta-actions { padding-top: 0; }
+  .footer-cta-actions .action { font-size: 12px; padding-inline: 20px; }
+  .footer-cta-actions > p { font-size: 11px; }
+  .footer-grid { grid-template-columns: repeat(2, 1fr); gap: 35px 25px; padding-block: 36px; }
+  .footer-brand { grid-column: 1 / 3; }
+  .footer-brand > p > br { display: none; }
+  .footer-grid > div:not(:first-child) > a { font-size: 13px; margin-block: 0; padding-block: 10px; }
+  .footer-grid h3 { font-size: 12px; margin-bottom: 18px; }
+  .footer-bottom { flex-wrap: wrap; row-gap: 11px; font-size: 10px; }
+  .footer-bottom > span:nth-child(2) { order: 3; flex-basis: 100%; }
+  .footer-bottom > a { margin-left: auto; }
+}
+@media (max-width: 380px) {
+  .nav-inner > a .brand { font-size: 22px; }
+  .nav-actions { gap: 4px; }
+}

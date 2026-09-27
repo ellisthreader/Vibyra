@@ -1,0 +1,73 @@
+/* Section 04, pricing: one centred card, the way the iPhone app sells it.
+ * Vibyra Pro, a 10× / 20× switch, the price, four lines and one button. */
+.pricing-section { position: relative; isolation: isolate; overflow: hidden; background: var(--home-dark); color: #f5f7fa; border-bottom: 1px solid #1a1d24; }
+.pricing-atmosphere { position: absolute; inset: 0; pointer-events: none;
+    background:
+        radial-gradient(ellipse 18% 55% at 50% 0%, #7c95ff1f, transparent 72%),
+        radial-gradient(ellipse 42% 46% at 50% 60%, #315bd840, transparent 72%); }
+.pricing-section .page-width { position: relative; display: flex; flex-direction: column; align-items: center; }
+
+.pricing-heading { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 48px; }
+.pricing-heading .section-label { margin-bottom: 20px !important; }
+
+.plan-pro { position: relative; width: min(440px, 100%); padding: 40px 36px 32px; border-radius: 24px; text-align: center;
+    border: 1px solid #262b38; background: linear-gradient(180deg, #161a24, #101217);
+    box-shadow: 0 50px 110px -50px #000, 0 0 0 1px #5b7cfa1f, 0 30px 120px -40px #315bd8cc, inset 0 1px 0 #ffffff12; }
+.plan-pro::before { content: ""; position: absolute; z-index: 1; top: -1px; left: 14%; right: 14%; height: 1px; background: linear-gradient(90deg, transparent, #c9d4ff, transparent); box-shadow: 0 0 18px 2px #7490ff99; }
+
+/* Light around the card: a wide cobalt halo behind it, and a slow travelling
+ * light on its edge. */
+.pro-halo { position: absolute; z-index: -1; inset: -140px -180px; pointer-events: none;
+    background: radial-gradient(ellipse 50% 46% at 50% 45%, #3d63e666, #315bd82e 45%, transparent 72%); filter: blur(10px);
+    animation: pro-halo 7s ease-in-out infinite; }
+@keyframes pro-halo { 50% { opacity: .72; transform: scale(.96); } }
+@property --pro-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.pro-edge { position: absolute; inset: -1px; border-radius: 25px; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(from var(--pro-angle), transparent 0 58%, #5b7cfa 72%, #c9d4ff 78%, #5b7cfa 84%, transparent 94%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: pro-edge 9s linear infinite; }
+@keyframes pro-edge { to { --pro-angle: 360deg; } }
+
+.pro-gem { display: block; width: 72px; height: auto; margin: 0 auto 18px; filter: drop-shadow(0 0 28px #5b7cfacc) drop-shadow(0 14px 26px #315bd899); }
+.plan-pro h3 { font-size: 24px; font-weight: 650; letter-spacing: -.04em; }
+
+.pro-sizes { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; margin-top: 22px; padding: 4px; border-radius: 12px; border: 1px solid #2b2f38; background: #13151a; }
+.pro-sizes > i { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); border-radius: 9px; background: #24272f; box-shadow: inset 0 1px 0 #ffffff10;
+    transition: transform .35s cubic-bezier(.22, 1, .36, 1); }
+.pro-sizes[data-size="pro"] > i { transform: translateX(100%); }
+.pro-sizes button { position: relative; min-width: 84px; min-height: 36px; border: 0; background: none; color: #8a93a3; font: inherit; font-size: 15px; font-weight: 650; cursor: pointer; transition: color .2s; }
+.pro-sizes button[aria-pressed="true"] { color: #f5f7fa; }
+.pro-sizes button:focus-visible { outline: 2px solid #7490ff; outline-offset: 2px; border-radius: 9px; }
+
+.plan-price { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-top: 26px !important; }
+.plan-price strong { font-size: 64px; line-height: 1; font-weight: 650; letter-spacing: -.06em; animation: plan-price-in .45s cubic-bezier(.22, 1, .36, 1); }
+.plan-price span { color: #8a93a3; font-size: 15px; }
+@keyframes plan-price-in { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } }
+
+.plan-pro ul { display: grid; gap: 11px; margin: 28px 0 0; padding: 26px 0 0; border-top: 1px solid #22262f; list-style: none; text-align: left; }
+.plan-pro li { display: flex; align-items: center; gap: 10px; color: #a6adba; font-size: 14.5px; }
+.plan-pro li svg { flex: none; color: #7490ff; }
+.plan-pro li strong { color: #f5f7fa; font-weight: 650; }
+
+.pro-buy { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; margin-top: 30px; border-radius: 12px; background: #f5f7fa; color: #111318 !important;
+    font-size: 15px; font-weight: 650; text-decoration: none; box-shadow: 0 12px 34px -14px #b8c6ffb3; transition: background .18s, transform .18s; }
+.pro-buy:hover { background: #fff; transform: translateY(-1px); }
+.pro-buy:focus-visible { outline: 2px solid #7490ff; outline-offset: 3px; }
+.pro-free { margin-top: 18px !important; color: #6f7787; font-size: 13.5px; }
+.pro-free a { color: #dfe3ea; text-decoration: underline; text-decoration-color: #ffffff40; text-underline-offset: 3px; }
+.pro-free a:hover { color: #fff; }
+
+.pricing-loading, .pricing-error { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; width: min(440px, 100%); min-height: 520px;
+    border-radius: 24px; border: 1px solid #262b38; background: #111318; color: #8a93a3; font-size: 14px; text-align: center; padding: 24px; }
+.pricing-loading i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #2b2f38; border-top-color: #7490ff; animation: pricing-spin .9s linear infinite; }
+@keyframes pricing-spin { to { transform: rotate(360deg); } }
+.pricing-error .action-secondary { color: #dfe3ea; border-color: #ffffff1c; }
+
+@media (max-width: 520px) {
+    .plan-pro { padding: 32px 22px 26px; }
+    .plan-price strong { font-size: 54px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pro-sizes > i, .pro-buy { transition: none; }
+    .plan-price strong, .pricing-loading i, .pro-halo, .pro-edge { animation: none; }
+}
