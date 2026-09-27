@@ -46,6 +46,8 @@ class ConnectorOperationsTest extends TestCase
                 'api.github.com/repos/*', [['number' => 12, 'title' => 'It crashes', 'html_url' => 'https://github.com/ellis/app/issues/12']],
                 'Opened issue #12 on ellis/app'],
 
+            ['github', 'github_issue', ['repository' => 'ellis/app', 'number' => 4], 'api.github.com/repos/*',
+                [['number' => 4, 'title' => 'Crash on launch', 'comments' => 0]], 'Read issue #4 on ellis/app'],
             ['github', 'github_pull_request', ['repository' => 'ellis/app', 'number' => 4], 'api.github.com/repos/*',
                 [['number' => 4, 'title' => 'Fix', 'head' => ['sha' => 'abc']], [], ['check_runs' => []], ['statuses' => []]], 'Read pull request'],
             ['github', 'github_pull_request_files', ['repository' => 'ellis/app', 'number' => 4], 'api.github.com/repos/*',
