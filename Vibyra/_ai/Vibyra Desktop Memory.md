@@ -46,6 +46,10 @@ website, Expo browser client, and native phone app.
 - Desktop packaging, updater publication, and verified analytics consent:
   `Desktop/Mac Setup.md` and `Desktop/Release Changelog.md`.
 
+Windows native Preview tests launch the shared Host WebSocket fixture through
+PHP and Node. Use an absolute manifest-relative path with an existence check;
+`canonicalize()` introduces a `\\?\` prefix that this command path misreads.
+
 ## Local Skills
 
 - Use `.agents/skills/VibyraOptimse/SKILL.md` for desktop permission and

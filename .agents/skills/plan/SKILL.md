@@ -32,6 +32,9 @@ build because shared modules use Expo's TypeScript base configuration. Install
 integration fixture imports `ws` from there.
 For Linux smoke runs, keep WebDriver on loopback and capture bounded evidence
 inside a private run directory with fixed filenames.
+For Windows Preview fixtures launched through PHP/Node, pass the absolute
+manifest-relative path and check that it exists. Windows `canonicalize()` may
+add a `\\?\` prefix that a shell command misreads as another drive path.
 
 ## Simplicity Review
 

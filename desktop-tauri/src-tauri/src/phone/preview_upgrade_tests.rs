@@ -16,9 +16,8 @@ fn approved_websocket_echo_is_full_duplex_and_revocation_cancels_it() {
         return;
     }
     let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../host/relay/tests/fixtures/preview-site.mjs")
-        .canonicalize()
-        .unwrap();
+        .join("../../host/relay/tests/fixtures/preview-site.mjs");
+    assert!(fixture.is_file());
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("managed");
     fs::create_dir(&root).unwrap();
