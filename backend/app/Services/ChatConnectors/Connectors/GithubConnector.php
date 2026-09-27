@@ -3,17 +3,11 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
-use App\Services\ChatConnectors\Github\{ReadTools, PullRequests, Activity, Files, Prompt};
+use App\Services\ChatConnectors\Github\{ReadTools, PullRequests, Activity, Files, Prompt, Issues};
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-/**
- * Reading is most of what this does; the one thing it may change is that an issue
- * now exists. It cannot close, edit, comment on or delete anything already there,
- * and it never touches code — a reply that could push a commit or close someone's
- * bug is a reply nobody would let near a real repository, and `writes` in the
- * catalogue says exactly that.
- */
+/** Bounded GitHub reads; creating an explicitly requested issue is its only write. */
 class GithubConnector implements Connector
 {
     private const BASE = 'https://api.github.com';
@@ -83,12 +77,14 @@ class GithubConnector implements Connector
     {
         if (in_array($operation, ReadTools::NAMES, true)) {
             $result = match ($operation) {
+                'github_issue' => app(Issues::class)->read($arguments, $credential),
                 'github_pull_request' => app(PullRequests::class)->read($arguments, $credential),
                 'github_pull_request_files' => app(PullRequests::class)->files($arguments, $credential),
                 'github_repository_activity' => app(Activity::class)->read($arguments, $credential),
                 'github_read_file' => app(Files::class)->read($arguments, $credential),
             };
             $label = match ($operation) {
+                'github_issue' => 'issue #'.$arguments['number'],
                 'github_pull_request' => 'pull request #'.$arguments['number'],
                 'github_pull_request_files' => 'changed files for PR #'.$arguments['number'],
                 'github_repository_activity' => 'repository activity',
