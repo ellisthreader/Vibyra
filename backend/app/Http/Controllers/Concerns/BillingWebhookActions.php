@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
+use App\Services\Analytics\Recorder;
 use App\Services\Referrals\ReferralService;
 use Illuminate\Support\Carbon;
 use Stripe\Event;
@@ -42,6 +43,10 @@ trait BillingWebhookActions
                 throw new \RuntimeException('Stripe subscription metadata is invalid.');
             }
             $this->applySubscription($user, $plan, $cycle, 'stripe', $subscriptionId, "stripe-subscription:{$subscriptionId}");
+            if (($session->metadata->channel ?? '') === 'website'
+                && ($session->payment_status ?? '') === 'paid') {
+                app(Recorder::class)->operational('website_purchase', 'subscription');
+            }
             return;
         }
 
@@ -53,6 +58,9 @@ trait BillingWebhookActions
             $credits = (int) config("billing.topups.{$topupKey}.credits", 0);
             if ($credits > 0) {
                 $this->deductor->grant($user, $credits, 'topup', 'stripe:'.$session->id, ['topup' => $topupKey]);
+                if (($session->metadata->channel ?? '') === 'website') {
+                    app(Recorder::class)->operational('website_purchase', 'topup');
+                }
             }
         }
     }

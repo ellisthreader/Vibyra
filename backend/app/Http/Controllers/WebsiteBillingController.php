@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Analytics\Recorder;
 use App\Http\Controllers\Concerns\BillingCheckoutActions;
 use App\Services\Billing\CreditDeductor;
 use Illuminate\Http\JsonResponse;
@@ -27,11 +28,16 @@ class WebsiteBillingController extends Controller
             return $this->json(['ok' => false, 'error' => 'Stripe is not configured on the backend.'], 503);
         }
 
-        return match ((string) $request->input('kind', 'subscription')) {
+        $kind = (string) $request->input('kind', 'subscription');
+        $response = match ($kind) {
             'subscription' => $this->createSubscriptionCheckout($stripe, $user, $request),
             'topup' => $this->createTopupCheckout($stripe, $user, $request),
             default => $this->json(['ok' => false, 'error' => 'Unknown checkout kind.'], 422),
         };
+        if ($response->getStatusCode() === 200 && ($response->getData(true)['ok'] ?? false) === true) {
+            app(Recorder::class)->consented($request, 'website_checkout_started', $kind);
+        }
+        return $response;
     }
 
     public function portal(Request $request): JsonResponse

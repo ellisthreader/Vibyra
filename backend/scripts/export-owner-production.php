@@ -67,6 +67,7 @@ try {
     $sessions = columns($db, 'vibyra_sessions');
     $turns = columns($db, 'vibes_turns');
     $events = columns($db, 'analytics_events');
+    $ingestStats = columns($db, 'analytics_ingest_counts');
     $consents = columns($db, 'analytics_consents');
     $canUsers = hasColumns($users, ['guest_at', 'created_at']);
     $canSessions = hasColumns($sessions, ['user_id', 'last_used_at']);
@@ -76,13 +77,18 @@ try {
         'project_kind', 'screen', 'effort', 'user_id', 'visitor_hash', 'consent_subject_hash',
         'country_code', 'engaged_seconds',
         'occurred_at', 'created_at']);
+    $canWebsiteDetails = $canEvents && hasColumns($events, ['region_code',
+        'acquisition_channel', 'source', 'medium', 'campaign', 'referrer_domain',
+        'device_type', 'browser_family', 'metric_name', 'metric_value', 'error_category']);
+    $canIngestStats = hasColumns($ingestStats, ['day', 'surface', 'status', 'count']);
     $canConsents = hasColumns($consents, ['surface', 'choice']);
     $tracking = ['website' => null, 'desktop' => null, 'mobile' => null];
     $lastEvent = $tracking;
     if ($canEvents) {
         foreach (rows($db, 'SELECT surface, MIN(created_at) AS started_at,
             MAX(created_at) AS last_at FROM analytics_events
-            WHERE surface IN (\'website\', \'desktop\', \'mobile\') GROUP BY surface') as $item) {
+            WHERE surface IN (\'website\', \'desktop\', \'mobile\')
+                AND (surface <> \'website\' OR visitor_hash IS NOT NULL) GROUP BY surface') as $item) {
             $tracking[$item['surface']] = $item['started_at'];
             $lastEvent[$item['surface']] = $item['last_at'];
         }
@@ -139,7 +145,8 @@ try {
             'operations' => productionOperations($db, $from, $captured,
                 $canUsers, $canSessions, $canTurns),
             'cloud_series' => productionCloudSeries($db, $from, $captured, $canTurns),
-            'analytics' => $canEvents ? productionAnalytics($db, $from, $captured, $tracking) : null,
+            'analytics' => $canEvents ? productionAnalytics($db, $from, $captured,
+                $tracking, $canWebsiteDetails, $canIngestStats) : null,
         ];
     }
     $db->exec('COMMIT');
@@ -156,6 +163,7 @@ try {
             'website_tracking' => (bool) $tracking['website'],
             'desktop_tracking' => (bool) $tracking['desktop'],
             'mobile_tracking' => (bool) $tracking['mobile'],
+            'website_details' => $canWebsiteDetails,
         ],
         'tracking_by_surface' => $tracking,
         'last_event_by_surface' => $lastEvent,

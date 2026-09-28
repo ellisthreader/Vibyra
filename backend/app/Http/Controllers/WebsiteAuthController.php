@@ -25,6 +25,7 @@ class WebsiteAuthController extends Controller
 
     public function signup(Request $request): JsonResponse
     {
+        app(Recorder::class)->consented($request, 'website_signup_attempted');
         $email = $this->normalizedEmail($request->input('email'));
         $password = (string) $request->input('password', '');
         $name = trim((string) $request->input('name', ''));
@@ -68,7 +69,7 @@ class WebsiteAuthController extends Controller
         }
 
         $this->establishSession($request, $user);
-        app(Recorder::class)->signup();
+        app(Recorder::class)->signup($request);
 
         return response()->json(['ok' => true, 'user' => $this->payload->for($user)], 201);
     }

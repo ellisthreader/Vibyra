@@ -37,8 +37,8 @@ export default function OwnerOverview({ data, onSelect }) {
     <div className="owner-section-heading"><div><p className="owner-kicker">Product pulse</p><h2>Where people are active</h2></div><span>Selected period · UTC</span></div>
     <div className="owner-pulse-grid">
       <div className="owner-pulse"><button type="button" onClick={() => onSelect("website")}><span>01 / Website</span><span aria-hidden="true">↗</span></button>
-        <strong>{formatCount(website.page_views)}</strong><small>Page views</small>
-        <OwnerTrend rows={series.website ?? []} primary={{ key: "page_views", label: "Page views" }} title="Website activity" compact />
+        <strong>{formatCount(website.unique_visitors)}</strong><small>Consented sessions</small>
+        <OwnerTrend rows={series.website ?? []} primary={{ key: "unique_visitors", label: "Sessions" }} title="Website activity" compact />
       </div>
       <div className="owner-pulse"><button type="button" onClick={() => onSelect("desktop")}><span>02 / Desktop</span><span aria-hidden="true">↗</span></button>
         <strong>{formatCount(desktop.active_users)}</strong><small>Active app sessions</small>

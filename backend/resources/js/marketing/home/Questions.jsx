@@ -29,7 +29,7 @@ const questions = [
     [
         "Which computers and phones can I use?",
         <>
-            Visit <a href={DOWNLOAD_URL}>Downloads</a> to see the current Windows, macOS and Linux
+            Visit <a href={DOWNLOAD_URL} data-analytics-cta="faq_downloads">Downloads</a> to see the current Windows, macOS and Linux
             installers and system requirements. The phone companion is in development. You can explore
             the <a href="#mobile">phone walkthrough</a> here on the website.
         </>,

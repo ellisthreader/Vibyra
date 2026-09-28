@@ -54,7 +54,7 @@ export default function GettingStarted() {
                         I’m a developer
                     </button>
                 </div>
-                <Action secondary icon="download">
+                <Action secondary icon="download" data-analytics-cta="getting_started_download">
                     Start building
                 </Action>
             </div>

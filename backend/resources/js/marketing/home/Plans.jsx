@@ -102,11 +102,11 @@ export default function Plans() {
                             <li><Icon name="check" size={16} /><span>Unused paid Vibes roll over</span></li>
                             <li><Icon name="check" size={16} /><span>All Pro features included</span></li>
                         </ul>
-                        <a className="pro-buy" href={`/billing?plan=${size}&cycle=monthly`}>
+                        <a className="pro-buy" href={`/billing?plan=${size}&cycle=monthly`} data-analytics-cta="plans_buy">
                             Get Pro {label}
                         </a>
                         <p className="pro-free">
-                            Or <a href="/signup?next=/account">start free</a> with {count(plans.free.monthlyCredits)} Vibes a month.
+                            Or <a href="/signup?next=/account" data-analytics-cta="plans_signup">start free</a> with {count(plans.free.monthlyCredits)} Vibes a month.
                         </p>
                     </article>
                 )}

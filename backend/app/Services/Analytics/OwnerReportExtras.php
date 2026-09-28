@@ -86,6 +86,7 @@ class OwnerReportExtras
             unset($row);
         }
         $report['data_quality']['notes'][] = 'Optional usage and engaged time cover only people who allowed analytics. An active app count combines linked accounts and consented app sessions. The 5-minute figure is a recent engagement estimate, not a live connection count.';
+        $report = app(OwnerWebsiteReport::class)->apply($report, $from, $to, (bool) $tracking['website']);
         return app(OwnerOperationalReport::class)->apply($report, $from, $to);
     }
 }

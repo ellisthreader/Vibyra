@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__.'/owner-website-details.php';
+
 function eventRows(PDO $db, string $sql, array $bounds): array
 {
     return rows($db, $sql, $bounds);
@@ -17,7 +19,8 @@ function eventBreakdown(PDO $db, array $bounds, string $event, string $field, st
     }, rows($db, $query, [...$bounds, $event]));
 }
 
-function productionAnalytics(PDO $db, DateTimeImmutable $from, DateTimeImmutable $to, array $tracking): array
+function productionAnalytics(PDO $db, DateTimeImmutable $from, DateTimeImmutable $to,
+    array $tracking, bool $websiteDetailsAvailable = false, bool $ingestStatsAvailable = false): array
 {
     $bounds = [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')];
     $surfaceKeys = [
@@ -37,7 +40,8 @@ function productionAnalytics(PDO $db, DateTimeImmutable $from, DateTimeImmutable
     $overview = [];
     foreach ($surfaceKeys as $surface => $keys) {
         foreach ($keys as $metric => $event) {
-            $overview[$surface][$metric] = $tracking[$surface]
+            $overview[$surface][$metric] = ($tracking[$surface]
+                || ($surface === 'website' && in_array($metric, ['signups', 'downloads'], true)))
                 ? ($counts[$surface][$event] ?? 0) : null;
         }
     }
@@ -138,5 +142,20 @@ function productionAnalytics(PDO $db, DateTimeImmutable $from, DateTimeImmutable
             WHERE occurred_at BETWEEN ? AND ? AND event IN ('desktop_prompt_submitted', 'mobile_chat_prompt_sent')
             AND dimension IS NOT NULL GROUP BY surface, dimension ORDER BY count DESC LIMIT 12", $bounds));
 
-    return ['overview' => $overview, 'series' => array_map('array_values', $series), 'breakdowns' => $breakdowns];
+    $website = productionWebsiteDetails($db, $bounds, (bool) $tracking['website'],
+        $websiteDetailsAvailable);
+    $overview['website'] = array_merge($overview['website'], $website['overview']);
+    if ($websiteDetailsAvailable) {
+        $breakdowns = array_merge($breakdowns, $website['breakdowns']);
+        foreach ($series['website'] as $day => &$point) {
+            $point += $website['daily'][$day] ?? ['errors' => 0, 'slow_loads' => 0];
+        }
+        unset($point);
+    }
+    $quality = $website['quality'];
+    if ($ingestStatsAvailable) {
+        $quality['website_ingest_counts'] = productionWebsiteIngestCounts($db, $bounds);
+    }
+    return ['overview' => $overview, 'series' => array_map('array_values', $series),
+        'breakdowns' => $breakdowns, 'quality' => $quality];
 }

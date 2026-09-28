@@ -33,7 +33,8 @@ trait BillingCheckoutActions
             'line_items' => [['price' => $priceId, 'quantity' => 1]],
             'success_url' => (string) config('services.stripe.success_url'),
             'cancel_url' => (string) config('services.stripe.cancel_url'),
-            'metadata' => ['userId' => (string) $user->id, 'plan' => $plan, 'cycle' => $cycle],
+            'metadata' => ['userId' => (string) $user->id, 'plan' => $plan, 'cycle' => $cycle,
+                'channel' => $request->is('web-api/*') ? 'website' : 'app'],
             'subscription_data' => ['metadata' => ['userId' => (string) $user->id, 'plan' => $plan, 'cycle' => $cycle]],
             'allow_promotion_codes' => (bool) config('billing.economics.allow_stripe_promotion_codes', false),
         ]);
@@ -60,7 +61,8 @@ trait BillingCheckoutActions
             'line_items' => [['price' => $priceId, 'quantity' => 1]],
             'success_url' => (string) config('services.stripe.success_url'),
             'cancel_url' => (string) config('services.stripe.cancel_url'),
-            'metadata' => ['userId' => (string) $user->id, 'topup' => $topupKey],
+            'metadata' => ['userId' => (string) $user->id, 'topup' => $topupKey,
+                'channel' => $request->is('web-api/*') ? 'website' : 'app'],
             'payment_intent_data' => ['metadata' => ['userId' => (string) $user->id, 'topup' => $topupKey]],
         ]);
 

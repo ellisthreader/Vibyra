@@ -128,7 +128,7 @@ export default function AuthPage({ mode }) {
         </div>
         <div className="auth-divider"><span>or continue with email</span></div>
         {error && <Notice tone="error">{error}</Notice>}
-        <form className="portal-form" onSubmit={submit}>
+        <form className="portal-form" onSubmit={submit} data-analytics-form={creating ? "signup" : undefined}>
           {creating && <label>Name<input name="name" value={fields.name} onChange={update} autoComplete="name" required /></label>}
           <label>Email address<input name="email" type="email" placeholder="you@example.com" value={fields.email} onChange={update} autoComplete="email" required /></label>
           <div className="auth-password">

@@ -1,6 +1,7 @@
 import React from "react";
 import OwnerMetric, { OwnerBars } from "./OwnerMetric.jsx";
 import OwnerTrend from "./OwnerTrend.jsx";
+import OwnerWebsiteInsights from "./OwnerWebsiteInsights.jsx";
 import { readableDimension, readableEvent } from "./format.js";
 
 function labelled(rows, key) {
@@ -18,7 +19,6 @@ export function WebsiteDetails({ data }) {
   const website = data.overview?.website ?? {};
   const rows = labelled(data.breakdowns?.downloads, "platform");
   const clicks = labelled(data.breakdowns?.website_ctas, "action");
-  const countries = labelled(data.breakdowns?.website_countries, "country");
   const pages = (data.breakdowns?.website_pages ?? []).map((row) => ({ ...row, label: row.path === "/" ? "Homepage" : row.path }));
   return <div className="owner-flow">
     <div className="owner-metrics owner-metrics--six">
@@ -27,15 +27,16 @@ export function WebsiteDetails({ data }) {
       <OwnerMetric label="Active · 5m" value={website.recent_engaged_sessions_5m} note="Recent engagement" />
       <OwnerMetric label="Signups" value={website.signups} note="Accounts created" />
       <OwnerMetric label="Downloads" value={website.downloads} note="Successful artifacts" />
-      <OwnerMetric label="Engaged minutes" value={minutes(website.engaged_seconds)} note="Focused, non-idle estimate" />
+      <OwnerMetric label="Waitlist" value={website.waitlist_signups} note="New addresses" />
     </div>
     <OwnerTrend rows={data.series?.website ?? []} primary={{ key: "page_views", label: "Page views" }} secondary={{ key: "unique_visitors", label: "Sessions" }} title="Website traffic" />
     <div className="owner-duo"><OwnerBars title="Downloads by platform" rows={rows} labelKey="label" empty="No successful downloads in this period." />
       <OwnerBars title="Most viewed pages" rows={pages} labelKey="label" empty="No page views in this period." /></div>
     <div className="owner-duo"><OwnerBars title="Named link clicks" rows={clicks} labelKey="label" empty="No consented link clicks in this period." />
-      <OwnerBars title="Visitor countries" rows={countries} labelKey="label" empty="No country group with at least five consented sessions." /></div>
+      <OwnerMetric label="Engaged minutes" value={minutes(website.engaged_seconds)} note="Focused, non-idle estimate" /></div>
+    <OwnerWebsiteInsights data={data} />
     <section className="owner-panel owner-explainer"><p className="owner-kicker">Reading the numbers</p><h3>From visit to download</h3>
-        <p>Sessions, clicks and engaged time cover visitors who allowed analytics. Countries are approximate and groups smaller than five are hidden. Downloads count successful file responses, not installations. Signups and downloads may come from different sessions.</p>
+        <p>Sessions, sources, clicks, funnels and page quality cover visitors who allowed analytics. Signups, new waitlist addresses and download responses also include people who declined. Downloads are not installations. Country and region are approximate; small location and campaign groups are hidden.</p>
     </section>
   </div>;
 }
