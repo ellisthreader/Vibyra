@@ -23,7 +23,7 @@ export default function PlanCard({ plan, cycle, current, selected, busy, onChoos
         <li>{plan.maxActiveProjects} active {plan.maxActiveProjects === 1 ? "project" : "projects"}</li>
         <li>{plan.maxConcurrentAgents > 0 ? `${plan.maxConcurrentAgents} concurrent agents` : "Explore the Vibyra workflow"}</li>
       </ul>
-      <button className={`portal-button ${plan.key === "builder" ? "portal-button--primary" : "portal-button--secondary"}`} disabled={busy || current} onClick={() => onChoose(plan)}>
+      <button className={`portal-button ${plan.key === "builder" ? "portal-button--primary" : "portal-button--secondary"}`} disabled={busy || current} onClick={() => onChoose(plan)} data-analytics-cta={plan.key === "free" ? "billing_start_free" : "billing_buy"}>
         {current ? "Current membership" : plan.key === "free" ? "Create free account" : `Choose ${plan.label}`}
       </button>
     </article>

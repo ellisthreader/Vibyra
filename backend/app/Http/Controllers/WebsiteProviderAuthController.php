@@ -63,7 +63,7 @@ class WebsiteProviderAuthController extends Controller
         $session->delete();
         app(AuthLoginRecorder::class)->record($user, 'website', strtolower($provider));
         if (($result['isNewUser'] ?? false) === true) {
-            app(Recorder::class)->signup();
+            app(Recorder::class)->signup($request);
         }
 
         return response()->json([

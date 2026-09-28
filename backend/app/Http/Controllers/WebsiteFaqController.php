@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Analytics\Recorder;
 use App\Services\Website\FaqAnswerer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class WebsiteFaqController extends Controller
 
         try {
             $result = $answerer->answer($question);
+            app(Recorder::class)->consented($request, 'website_faq_answered');
         } catch (Throwable $error) {
             Log::warning('website faq answer failed', ['error' => $error->getMessage()]);
 

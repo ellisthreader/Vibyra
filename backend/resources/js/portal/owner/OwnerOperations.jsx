@@ -44,6 +44,7 @@ export function CommercialDetails({ data }) {
 export function DataQualityDetails({ data }) {
   const quality = data.data_quality ?? {};
   const choices = quality.current_consent_choices;
+  const intake = quality.website_ingest_counts;
   const lastCloudTurn = data.overview?.operations?.cloud_last_turn_at;
   return <div className="owner-flow">
     <div className="owner-metrics owner-metrics--quality">
@@ -55,6 +56,18 @@ export function DataQualityDetails({ data }) {
     <section className="owner-panel owner-quality"><p className="owner-kicker">Operational source</p><h3>Vibes cloud</h3>
       <div className="owner-fact-list"><div><span>Last recorded turn</span><strong>{utc(lastCloudTurn)}</strong></div></div>
       <p className="owner-footnote">This server record is separate from optional website, Desktop, and Mobile product analytics.</p>
+    </section>
+    <section className="owner-panel owner-quality"><p className="owner-kicker">Website</p><h3>Collection health</h3>
+      <div className="owner-fact-list">
+        <div><span>Detailed collector</span><strong>{quality.website_details_available ? "Available" : "Unavailable"}</strong></div>
+        <div><span>Ingestion switch</span><strong>{quality.website_ingestion_enabled == null ? "Not in snapshot" : quality.website_ingestion_enabled ? "On" : "Off"}</strong></div>
+        <div><span>GeoLite2 database</span><strong>{quality.website_geo_available == null ? "Not in snapshot" : quality.website_geo_available ? "Available" : "Unavailable"}</strong></div>
+        <div><span>Last browser error</span><strong>{utc(quality.website_last_error_at)}</strong></div>
+        <div><span>Accepted events · period</span><strong>{formatCount(intake?.accepted)}</strong></div>
+        <div><span>Rejected events · period</span><strong>{formatCount(intake?.rejected)}</strong></div>
+        <div><span>Blocked events · period</span><strong>{formatCount(intake?.blocked)}</strong></div>
+      </div>
+      <p className="owner-footnote">These are anonymous request counts. They cannot identify visitors or prove that every browser event arrived.</p>
     </section>
     <div className="owner-section-heading"><div><p className="owner-kicker">Collection status</p>
       <h2>Freshness by surface</h2></div><span>Server receipt time · UTC</span></div>

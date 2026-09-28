@@ -46,7 +46,7 @@ export default function PhoneWaitlist() {
     }
 
     return (
-        <form className="phone-waitlist" onSubmit={submit} noValidate>
+        <form className="phone-waitlist" onSubmit={submit} noValidate data-analytics-form="waitlist">
             <label htmlFor="phone-waitlist-email">Get told the day it lands</label>
             <div className="phone-waitlist-row">
                 <input

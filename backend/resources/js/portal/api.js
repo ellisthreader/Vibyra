@@ -30,13 +30,21 @@ export async function apiRequest(path, options = {}) {
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (!["GET", "HEAD"].includes(method.toUpperCase())) headers["X-CSRF-TOKEN"] = csrfToken();
 
-  const response = await fetch(path, {
-    ...options,
-    method,
-    headers,
-    credentials: "same-origin",
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  let response;
+  try {
+    response = await fetch(path, {
+      ...options,
+      method,
+      headers,
+      credentials: "same-origin",
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    });
+  } catch (error) {
+    if (error?.name !== "AbortError" && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("vibyra:network-error"));
+    }
+    throw error;
+  }
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.ok === false) {
     throw new ApiError(payload?.error ?? "Vibyra could not complete that request.", response.status, payload);

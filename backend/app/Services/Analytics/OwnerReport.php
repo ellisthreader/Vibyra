@@ -14,10 +14,14 @@ class OwnerReport
         $from = $to->copy()->startOfDay()->subDays($days - 1);
         $events = DB::table('analytics_events')->whereBetween('occurred_at', [$from, $to]);
         $tracking = collect(['website', 'desktop', 'mobile'])->mapWithKeys(
-            fn (string $surface) => [$surface => DB::table('analytics_events')->where('surface', $surface)->min('created_at')]
+            fn (string $surface) => [$surface => DB::table('analytics_events')->where('surface', $surface)
+                ->when($surface === 'website', fn ($query) => $query->whereNotNull('visitor_hash'))
+                ->min('created_at')]
         )->all();
         $lastEvent = collect(['website', 'desktop', 'mobile'])->mapWithKeys(
-            fn (string $surface) => [$surface => DB::table('analytics_events')->where('surface', $surface)->max('created_at')]
+            fn (string $surface) => [$surface => DB::table('analytics_events')->where('surface', $surface)
+                ->when($surface === 'website', fn ($query) => $query->whereNotNull('visitor_hash'))
+                ->max('created_at')]
         )->all();
         $series = $this->blankSeries($from, $days);
         $counts = (clone $events)->selectRaw('DATE(occurred_at) as day, surface, event, COUNT(*) as total')
@@ -67,8 +71,8 @@ class OwnerReport
             'website' => [
                 'page_views' => $tracking['website'] ? $this->sum($series['website'], 'page_views') : null,
                 'unique_visitors' => $tracking['website'] ? (clone $events)->where('event', 'website_page_view')->distinct()->count('visitor_hash') : null,
-                'signups' => $tracking['website'] ? $this->sum($series['website'], 'signups') : null,
-                'downloads' => $tracking['website'] ? $this->sum($series['website'], 'downloads') : null,
+                'signups' => (clone $events)->where('event', 'website_signup')->count(),
+                'downloads' => (clone $events)->where('event', 'website_download')->count(),
             ],
             'desktop' => [
                 'active_users' => $tracking['desktop'] ? (clone $events)->where('surface', 'desktop')->selectRaw("COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN 'u:' || user_id ELSE 's:' || consent_subject_hash END) as total")->value('total') : null,
@@ -134,7 +138,7 @@ class OwnerReport
                     'The tracking date is the oldest retained metadata event; events older than the retention window are deleted daily.',
                     'Website page views require analytics consent; people who decline or leave before choosing are not counted.',
                     'Website visitors are distinct browser sessions, not verified people.',
-                    'Page views can include bots; traffic analytics are approximate.',
+                    'Known crawler user agents are excluded, but traffic analytics remain approximate.',
                     'Downloads count accepted public attachment responses, not completed installations; shared update URLs can contribute.',
                     'Desktop and mobile telemetry starts when the instrumented clients ship; historical sessions cannot identify a surface reliably.',
                     'Client events are best effort and can be missed or manipulated; cloud AI totals come from server records.',

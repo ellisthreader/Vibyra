@@ -101,7 +101,7 @@ export function HomeFooter({ homePath = "" }) {
                     </h2>
                 </div>
                 <div className="footer-cta-actions">
-                    <Action icon={null}>Get Vibyra Desktop</Action>
+                    <Action icon={null} data-analytics-cta="nav_mobile_download">Get Vibyra Desktop</Action>
                     <p>Free to download. Yours to build with.</p>
                 </div>
             </div>

@@ -23,6 +23,7 @@ class PruneAnalyticsEvents extends Command
         } while ($ids->count() === 1000);
 
         DB::table('auth_login_events')->where('created_at', '<', $cutoff)->delete();
+        DB::table('analytics_ingest_counts')->where('day', '<', now()->subMonths(13)->toDateString())->delete();
 
         return self::SUCCESS;
     }

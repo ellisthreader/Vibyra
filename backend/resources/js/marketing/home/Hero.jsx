@@ -38,8 +38,8 @@ export default function Hero() {
                             Everything you need to turn <span>“what if”</span> into something real.
                         </p>
                         <div className="hero-actions">
-                            <Action icon={null}>Get Vibyra for free</Action>
-                            <Action href="#walkthrough" secondary icon={null}>
+                            <Action icon={null} data-analytics-cta="hero_download">Get Vibyra for free</Action>
+                            <Action href="#walkthrough" secondary icon={null} data-analytics-cta="hero_walkthrough">
                                 Try the demo
                             </Action>
                         </div>
@@ -49,7 +49,7 @@ export default function Hero() {
                             </span>
                             <span><span className="hero-proof-lead">Works with </span>Claude Code, Codex, Gemini CLI +{others} more</span>
                         </p>
-                        <a className="hero-film" href="#film">
+                        <a className="hero-film" href="#film" data-analytics-cta="hero_film">
                             <span className="hero-film-disc" aria-hidden="true"><Icon name="play" size={12} /></span>
                             Watch the film <span className="hero-film-time">1:04</span>
                         </a>

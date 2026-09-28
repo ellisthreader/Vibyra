@@ -43,7 +43,11 @@ class ReleaseDownloadController extends Controller
 
     public function download(string $platform): JsonResponse|StreamedResponse
     {
-        $response = $this->stream($platform, ReleaseChannel::download($platform));
+        $release = ReleaseChannel::download($platform);
+        if (in_array($platform, self::PLATFORMS, true) && $release !== []) {
+            app(Recorder::class)->consented(request(), 'website_download_requested', $platform);
+        }
+        $response = $this->stream($platform, $release);
         if ($response instanceof StreamedResponse) {
             app(Recorder::class)->website(request(), 'website_download', $platform);
         }

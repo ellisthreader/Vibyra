@@ -81,7 +81,7 @@ export default function AskVibyra() {
 
     return (
         <div className="qa-item qa-ask">
-            <form className="qa-ask-row" onSubmit={ask}>
+            <form className="qa-ask-row" onSubmit={ask} data-analytics-form="faq">
                 <textarea
                     ref={field}
                     rows={1}

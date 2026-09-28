@@ -44,7 +44,11 @@ class OwnerProductionSnapshot
             'desktop_platforms', 'desktop_providers', 'desktop_prompt_providers',
             'desktop_project_kinds', 'mobile_platforms', 'mobile_screens',
             'mobile_chat_efforts', 'mobile_project_providers', 'models',
-            'website_ctas', 'website_download_clicks', 'website_countries'] as $key) {
+            'website_ctas', 'website_download_clicks', 'website_countries',
+            'website_channels', 'website_sources', 'website_campaigns', 'website_referrers',
+            'website_landing_pages', 'website_exit_pages', 'website_devices',
+            'website_browsers', 'website_regions', 'website_performance',
+            'website_errors', 'website_funnels'] as $key) {
             $report['breakdowns'][$key] = $analytics['breakdowns'][$key] ?? [];
         }
         $tracking = array_intersect_key((array) ($snapshot['tracking_by_surface'] ?? []),
@@ -61,6 +65,11 @@ class OwnerProductionSnapshot
                 'website' => null, 'desktop' => null, 'mobile' => null,
             ]),
             'current_consent_choices' => $snapshot['current_consent_choices'] ?? null,
+            'website_details_available' => (bool) ($snapshot['availability']['website_details'] ?? false),
+            'website_ingestion_enabled' => null,
+            'website_geo_available' => null,
+            'website_last_error_at' => $analytics['quality']['website_last_error_at'] ?? null,
+            'website_ingest_counts' => $analytics['quality']['website_ingest_counts'] ?? null,
             'retention_days' => 90,
             'cloud_turns_available' => (bool) ($snapshot['availability']['vibes_turns'] ?? false),
             'notes' => [
