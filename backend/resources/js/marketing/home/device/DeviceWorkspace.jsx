@@ -46,15 +46,19 @@ function useStageSize(ref) {
 
 function Terminal({ agent, projectName, model, lines, history, live, onCommand, anchorBottom }) {
     const [command, setCommand] = useState("");
+    const providerPrompt = agent === "claude" ? "❯" : "›";
+    const hint = agent === "codex" ? "Ask Codex to do anything" : agent === "claude" ? "Ask Claude for a change" : "Type help";
     return <div className="vdev-term"><div className={`vdev-term-content${anchorBottom ? "" : " vdev-term-content-top"}`}>
             <CliBanner agent={agent} projectName={projectName} model={model} />
             {lines.map(([tone, line], index) => <div key={index} className={tone ? `vdev-term-${tone}` : ""}>{line || " "}</div>)}
             {history.map(([tone, line], index) => <div key={`history-${index}`} className={tone ? `vdev-term-${tone}` : ""}>{line}</div>)}
             <form className="vdev-term-input" onSubmit={(event) => { event.preventDefault(); onCommand(command); setCommand(""); }}>
-                <span className="vdev-term-prompt">› </span>
-                <input value={command} aria-label="Terminal input" spellCheck="false" onChange={(event) => setCommand(event.target.value)} placeholder={live ? "" : "Type help"} />
+                <span className="vdev-term-prompt">{providerPrompt} </span>
+                <input value={command} aria-label="Terminal input" spellCheck="false" onChange={(event) => setCommand(event.target.value)} placeholder={live ? "" : hint} />
                 {live && !command && <span className="vdev-caret" aria-hidden="true" />}
             </form>
+            {agent === "claude" && <div className="vdev-cli-footer" aria-hidden="true"><span>⏵⏵ auto mode on</span><span>← for agents</span></div>}
+            {agent === "codex" && <div className="vdev-cli-footer" aria-hidden="true"><span>{model ?? "GPT-6 Sol"} · ~/projects/{projectName.toLowerCase().replace(/\s+/g, "-")}</span><span>? for shortcuts</span></div>}
         </div>
     </div>;
 }

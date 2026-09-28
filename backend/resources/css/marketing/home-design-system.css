@@ -54,8 +54,7 @@ body:has(.marketing-home-cinematic) { background: var(--home-dark); }
 }
 .marketing-home-cinematic .fx-foot { color: var(--site-muted); text-align: center; }
 .marketing-home-cinematic .agent-flow { border: 0; background: transparent; border-radius: 0; }
-.marketing-home-cinematic .agent-lane + .agent-lane,
-.marketing-home-cinematic .agent-lane-label { border: 0; }
+.marketing-home-cinematic .agent-lane + .agent-lane { border: 0; }
 .marketing-home-cinematic .agent-card + .agent-card { box-shadow: none; }
 .marketing-home-cinematic .agent-card { border-radius: 14px; }
 .marketing-home-cinematic .agent-card:hover { background: var(--site-surface); }

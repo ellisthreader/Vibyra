@@ -1,9 +1,5 @@
 import React from "react";
 
-// The welcome screen each CLI prints when it starts, so an agent pane opens
-// the way it does on the Mac instead of as an empty black box. Sample only.
-
-
 // "GEMINI" as a 5-row pixel bitmap, drawn as SVG so it stays crisp at any scale.
 const gemini = [
     " ### #### #   # ### #   # ###",
@@ -22,23 +18,37 @@ export function GeminiArt() {
     </svg>;
 }
 
+// Claude Code 2.1.283, captured with truecolour enabled. Each terminal cell
+// occupies 2 × 2 quadrants. The body is ANSI background colour; the black
+// lower-quarter glyphs are eyes. Drawing the cells avoids font-dependent gaps.
+function ClaudeCliMark() {
+    return <svg className="vdev-claude-mark" viewBox="0 0 18 6" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
+        <path fill="#d77757" d="M2 0h14v4H2z M1 1h1v1H1z M16 1h1v1h-1z M2 4h1v1H2z M4 4h1v1H4z M13 4h1v1h-1z M15 4h1v1h-1z" />
+        <path fill="#000" d="M5 1h1v1H5z M12 1h1v1h-1z" />
+    </svg>;
+}
+
 export default function CliBanner({ agent, projectName = "Orbit", model }) {
     const cwd = `~/projects/${projectName.toLowerCase().replace(/\s+/g, "-")}`;
     if (agent === "claude") {
-        return <div className="vdev-cli vdev-cli-claude" aria-hidden="true">
-            <div className="vdev-cli-box">
-                <div><b>✻</b> Welcome to <strong>Claude Code</strong>!</div>
-                <div className="vdev-term-dim">  /help for help, /status for your current setup</div>
-                <div className="vdev-term-dim">  cwd: {cwd}</div>
+        return <div className="vdev-cli vdev-cli-claude">
+            <div className="vdev-claude-heading">
+                <ClaudeCliMark />
+                <div className="vdev-claude-details">
+                    <div><strong>Claude Code</strong><span className="vdev-cli-version">v2.1.283</span></div>
+                    <span>{model ?? "Claude Opus 5.5"} <span className="vdev-term-dim">· medium effort</span></span>
+                    <span className="vdev-term-dim">{cwd}</span>
+                </div>
             </div>
+            <div className="vdev-cli-rule" />
         </div>;
     }
     if (agent === "codex") {
-        return <div className="vdev-cli vdev-cli-codex" aria-hidden="true">
-            <div className="vdev-cli-box">
-                <div><b>&gt;_</b> <strong>OpenAI Codex</strong></div>
-                <div><span className="vdev-term-dim">model:</span>     {model ?? "default"}  <span className="vdev-term-dim">/model to change</span></div>
-                <div><span className="vdev-term-dim">directory:</span> {cwd}</div>
+        return <div className="vdev-cli vdev-cli-codex">
+            <div className="vdev-codex-card">
+                <div className="vdev-codex-title"><b aria-hidden="true">&gt;_</b><strong>OpenAI Codex</strong><span className="vdev-cli-version">v0.157.1</span></div>
+                <div className="vdev-codex-data"><span>model:</span><strong>{model ?? "GPT-6 Sol"}</strong><span className="vdev-codex-hint">/model to change</span></div>
+                <div className="vdev-codex-data"><span>directory:</span><strong>{cwd}</strong></div>
             </div>
         </div>;
     }

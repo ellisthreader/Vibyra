@@ -24,11 +24,11 @@ export default function PreviewPanel({ workspace, compact = false, hideToolbar =
             <button type="button" key={name} onClick={() => setPhone(value)} aria-pressed={phone === value} aria-label={`${name} sample preview`}><Icon name={icon} size={15} /></button>)}</div></div>}
         <div className={`pg-preview-stage${mobile ? " pg-preview-phone" : ""}`}>
             <article className="pg-orbit" data-theme={config.theme} aria-label={`${project.name} interactive sample app`}>
-                <header className="pg-orbit-header"><div className="pg-orbit-brand"><span className="pg-orbit-logo" />{project.name.toLowerCase()}</div><div className="pg-orbit-today">Today <span>Y</span></div></header>
+                <header className="pg-orbit-header"><div className="pg-orbit-brand"><span className="pg-orbit-logo" />{project.name.toLowerCase()}</div><div className="pg-orbit-today">Today <b>Y</b></div></header>
                 <main className="pg-orbit-content">
-                    <div className="pg-orbit-intro"><span className="pg-orbit-kicker">A LITTLE BETTER, EVERY DAY</span><h3>{config.title}</h3><p>Make a little space for yourself.</p></div>
+                    <div className="pg-orbit-intro"><span className="pg-orbit-kicker"><i aria-hidden="true" /> YOUR SPACE, TODAY</span><h3>{config.title}</h3><p>Make a little space for yourself.</p></div>
                     <section className="pg-orbit-progress" aria-label={`${done} of ${config.habits.length} habits complete`}>
-                        <div><span>TODAY'S PROGRESS</span><strong>{done === config.habits.length ? "All done for today" : "You're finding your rhythm"}</strong><small>{DATE.format(today)}</small></div>
+                        <div><span>DAILY PROGRESS</span><strong>{done === config.habits.length ? "All done for today" : "You're finding your rhythm"}</strong><small>{DATE.format(today)}</small></div>
                         <div className="pg-progress-ring" role="progressbar" aria-valuemin="0" aria-valuemax={config.habits.length} aria-valuenow={done} aria-label="Habits complete" style={{ "--progress": `${progress}%` }}><b>{done}<small>/{config.habits.length}</small></b></div>
                     </section>
                     <div className="pg-orbit-week" aria-label="This week, today selected">{WEEK.map((day, index) => <span key={index} className={index === weekday ? "selected" : ""}><small>{day}</small><b>{index === weekday ? "●" : index < weekday ? "✓" : "·"}</b></span>)}</div>

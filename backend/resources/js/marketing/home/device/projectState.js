@@ -12,7 +12,7 @@ export function validateConfig(text) {
 }
 export function createProject(id, name) {
     const files = {
-        "app.json": encode({ title: "Small steps. Good things.", theme: "light", summary: false,
+        "app.json": encode({ title: "Small steps. Good things.", theme: "dark", summary: false,
             habits: [{ name: "A little movement", done: true }, { name: "Stay hydrated", done: false }] }),
         "README.md": `# ${name}\n\nA little better, every day.\n\nA sample habit tracker. Edit app.json to change the live preview.`,
     };

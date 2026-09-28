@@ -43,12 +43,36 @@ function PackageLink({ catalog, item, secondary = false }) {
     );
 }
 
-function PlatformCard({ platform, catalog }) {
-    const ready = packages[platform.key].filter(([key]) => available(catalog.releases[key]));
+function PendingPackage({ item, secondary = false }) {
+    const [, label, system, secondaryHint] = item;
     return (
-        <article className={'dl-card' + (platform.key === 'macos'
-            ? ready.length ? ' dl-card--mac-ready' : ' dl-card--mac-pending' : '')}
-            aria-labelledby={'dl-' + platform.key}>
+        <div className={'dl-package dl-package--pending' + (secondary ? ' dl-package--secondary' : '')}>
+            <button className='dl-package-link' type='button' disabled>
+                <span>{label}</span>
+                {secondary && secondaryHint && <small>{secondaryHint}</small>}
+                <Icon name='download' size={17} />
+            </button>
+            {!secondary && <p>{system}</p>}
+            {!secondary && <small>Checking current release…</small>}
+        </div>
+    );
+}
+
+function moveCardGlow(event) {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty('--dl-pointer-x', `${event.clientX - bounds.left}px`);
+    event.currentTarget.style.setProperty('--dl-pointer-y', `${event.clientY - bounds.top}px`);
+}
+
+function PlatformCard({ platform, catalog }) {
+    const pending = !catalog;
+    const ready = pending ? [] : packages[platform.key].filter(([key]) => available(catalog.releases[key]));
+    return (
+        <article className={'dl-card' + (ready.length ? ' dl-card--interactive' : '') + (platform.key === 'macos'
+            ? pending || ready.length ? ' dl-card--mac-ready' : ' dl-card--mac-pending' : '')}
+            aria-labelledby={'dl-' + platform.key}
+            onPointerMove={ready.length ? moveCardGlow : undefined}>
             <div className='dl-card-top'>
                 <span className={'dl-icon dl-icon--' + platform.key} aria-hidden='true'>
                     <img src={'/platform-icons/' + platform.icon} alt='' width='36' height='36' />
@@ -60,12 +84,14 @@ function PlatformCard({ platform, catalog }) {
             <p className='dl-card-description'>
                 {platform.key === 'windows' && 'A simple installer for your Windows PC.'}
                 {platform.key === 'linux' && 'Pick the package that fits your distro.'}
-                {platform.key === 'macos' && (ready.length
+                {platform.key === 'macos' && (pending || ready.length
                     ? 'Choose the build for your Mac’s chip.'
                     : 'Apple Silicon and Intel')}
             </p>
             <div className='dl-card-actions'>
-                {ready.length ? ready.map((item, index) => <PackageLink key={item[0]}
+                {pending ? packages[platform.key].map((item, index) => <PendingPackage key={item[0]}
+                    item={item} secondary={index > 0 && platform.key !== 'windows'} />) :
+                    ready.length ? ready.map((item, index) => <PackageLink key={item[0]}
                     catalog={catalog} item={item}
                     secondary={index > 0 && (platform.key === 'linux' || platform.key === 'macos')} />) :
                     <p className='dl-unavailable'>{platform.key === 'macos'
@@ -106,21 +132,20 @@ function LinuxCommand({ catalog }) {
 }
 
 export default function PlatformCards({ catalog, error, retry }) {
-    if (!catalog && !error) return null;
-
     return (
         <section className='dl-platforms page-width' id='installers' aria-label='Desktop downloads'>
+            {!catalog && !error && <p className='sr-only' role='status'>Checking current installers</p>}
             {error ? <div className='dl-error' role='alert'>
                 <h2>Downloads couldn’t load.</h2>
                 <p>Please try again to check the current installers.</p>
                 <button type='button' onClick={retry}>Try again <Icon size={17} /></button>
             </div> : <>
-                <div className={'dl-grid' + (!packages.macos.some(([key]) =>
+                <div className={'dl-grid' + (catalog && !packages.macos.some(([key]) =>
                     available(catalog.releases[key])) ? ' dl-grid--mac-pending' : '')}>
                     {platforms.map((platform) => <PlatformCard key={platform.key} platform={platform}
                         catalog={catalog} />)}
                 </div>
-                <LinuxCommand catalog={catalog} />
+                {catalog && <LinuxCommand catalog={catalog} />}
                 <p className='dl-note'>Vibyra Desktop is in beta. Check for updates from inside the app.</p>
             </>}
         </section>

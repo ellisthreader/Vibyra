@@ -1,0 +1,40 @@
+/* The marketing demo mirrors Desktop's Preview chassis, with an exact CSS screen. */
+.vdev .vdev-preview-viewport { display: grid; place-items: center; padding: 32px; background: radial-gradient(circle at 50% 36%, rgba(91,124,250,.05), transparent 34%), var(--workspace); }
+.vdev .vdev-preview-sizer { position: relative; flex: none; }
+.vdev .vdev-preview-device-select { position: relative; flex: 1; min-width: 0; color: var(--muted); }
+.vdev .vdev-preview-device-select > svg { position: absolute; z-index: 1; top: 50%; left: 8px; width: 17px; height: 17px; pointer-events: none; transform: translateY(-50%); }
+.vdev .vdev-preview-device-select .vdev-preview-device-chevron { right: 7px; left: auto; width: 14px; height: 14px; }
+.vdev .vdev-preview-device-select select { appearance: none; width: 100%; padding: 7px 25px 7px 31px; cursor: pointer; }
+.vdev-demo-device {
+    position: absolute; top: 0; box-sizing: border-box; padding: var(--device-bezel);
+    border: 2px solid #343842; border-radius: var(--device-radius);
+    background: linear-gradient(145deg, #393d47, #08090c 18%, #191c23 74%, #050608);
+    box-shadow: 0 20px 50px #0006, 0 3px 8px #0004, 0 0 0 1px #b5bfd333, inset 0 0 0 1px #ffffff20;
+    transform-origin: top left;
+}
+.vdev-demo-device--phone { border-color: #777b83; background: linear-gradient(115deg,#8a8d93,#1a1c20 5%,#08090b 94%,#656970); }
+.vdev-demo-device--tablet { border-color: #7a7e86; background: #111216; }
+.vdev-demo-device--laptop, .vdev-demo-device--desktop { border-width: 3px; background: #131416; }
+.vdev-demo-device--laptop { border-color: #777b83; border-radius: 14px; }
+.vdev-demo-device--desktop { border-color: #51555d; border-radius: 10px; }
+.vdev-demo-device__screen { position: relative; box-sizing: content-box; width: var(--device-w); height: var(--device-h); overflow: hidden; border-radius: var(--screen-radius); background: #111925; box-shadow: 0 0 0 1px rgba(0,0,0,.9); }
+.vdev-demo-device--laptop .vdev-demo-device__screen, .vdev-demo-device--desktop .vdev-demo-device__screen { border-radius: 5px; }
+.vdev-demo-device__screen .pg-preview, .vdev-demo-device__screen .pg-preview-stage { width: 100%; height: 100%; }
+.vdev-demo-device__screen .pg-preview-stage { padding: 0; }
+.vdev-demo-device__screen .pg-orbit { width: 100%; min-height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.vdev-demo-device__camera, .vdev-demo-device__tablet-lens, .vdev-demo-device__laptop-lens, .vdev-demo-device__button { pointer-events: none; }
+.vdev-demo-device__camera { position: absolute; top: calc(var(--device-bezel) + 8px); left: 50%; z-index: 4; width: 14px; height: 14px; border: 3px solid #15171d; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #315bd8, #050608 52%); transform: translateX(-50%); }
+.vdev-demo-device__camera--island { width: 94px; height: 27px; border: 0; border-radius: 999px; background: #050608; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.vdev-demo-device[data-landscape="true"] .vdev-demo-device__camera { top: 50%; left: calc(var(--device-bezel) + 20px); transform: translate(-50%,-50%) rotate(-90deg); }
+.vdev-demo-device__button { position: absolute; right: -6px; width: 4px; height: 64px; border-radius: 0 4px 4px 0; background: #414650; }
+.vdev-demo-device__button--top { top: 23%; }
+.vdev-demo-device__button--bottom { top: 34%; height: 92px; }
+.vdev-demo-device__tablet-lens, .vdev-demo-device__laptop-lens { position: absolute; top: 8px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle,#34425a,#08090b 65%); transform: translateX(-50%); }
+.vdev-demo-device__tablet-lens { top: 50%; left: 10px; transform: translateY(-50%); }
+.vdev-demo-device[data-landscape="true"] .vdev-demo-device__tablet-lens { top: 10px; left: 50%; transform: translateX(-50%); }
+.vdev-demo-device[data-model="macbook-pro-14"] .vdev-demo-device__laptop-lens { top: 13px; z-index: 4; width: 130px; height: 20px; border-radius: 0 0 7px 7px; background: #101114; }
+.vdev-demo-device[data-model="macbook-pro-14"] .vdev-demo-device__laptop-lens::after { position: absolute; top: 7px; left: 50%; width: 5px; height: 5px; border-radius: 50%; background: #253047; content: ""; }
+.vdev-demo-device__laptop-base { position: absolute; top: 100%; left: -37px; width: calc(100% + 74px); height: 25px; border-radius: 2px 2px 15px 15px; background: linear-gradient(#b5b8be,#73777e 18%,#34373d 75%,#1f2227); box-shadow: 0 16px 24px rgba(0,0,0,.34); }
+.vdev-demo-device__laptop-base::after { position: absolute; top: 0; left: 42%; width: 16%; height: 5px; border-radius: 0 0 7px 7px; background: #262930; content: ""; }
+.vdev-demo-device__stand { position: absolute; top: 100%; left: 50%; width: 54px; height: 58px; background: linear-gradient(90deg,#252830,#676c75 48%,#24272d); transform: translateX(-50%); }
+.vdev-demo-device__stand-foot { position: absolute; top: calc(100% + 54px); left: 50%; width: 180px; height: 12px; border-radius: 50% 50% 4px 4px; background: linear-gradient(#5c616a,#202229); transform: translateX(-50%); }

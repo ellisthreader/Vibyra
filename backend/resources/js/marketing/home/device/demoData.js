@@ -18,13 +18,13 @@ const orbitSessions = [
         agent: "claude",
         state: "working",
         lines: [
-            ["dim", "~/projects/orbit"],
-            ["prompt", "› claude"],
-            ["", "Build a calm habit tracker."],
-            ["", ""],
-            ["ok", "✓ HabitCard.tsx    +48"],
-            ["ok", "✓ TodayView.tsx    +32"],
-            ["muted", "Polishing the empty state…"],
+            ["prompt", "❯ Build a calm habit tracker."],
+            ["tool", "⏺ Read 3 files"],
+            ["output", "⎿  HabitCard.tsx · TodayView.tsx"],
+            ["tool", "⏺ Update(HabitCard.tsx)"],
+            ["output", "⎿  Added the daily progress card"],
+            ["tool", "⏺ Update(TodayView.tsx)"],
+            ["thinking", "✳ Polishing the empty state…"],
         ],
     },
     {
@@ -33,12 +33,11 @@ const orbitSessions = [
         agent: "codex",
         state: "idle",
         lines: [
-            ["dim", "~/projects/orbit"],
-            ["prompt", "› codex"],
-            ["", "Review habit state edge cases."],
-            ["", ""],
-            ["muted", "· Checked daily reset"],
-            ["ok", "✓ 12 tests passed"],
+            ["prompt", "› Review habit state edge cases."],
+            ["tool", "• Explored daily reset and streak logic"],
+            ["output", "└ Checked project state and tests"],
+            ["tool", "• Ran npm test"],
+            ["output", "└ 12 tests passed"],
             ["ok", "✓ Types clean"],
         ],
     },
@@ -123,7 +122,7 @@ export const askTurns = [
 
 export const suggestions = [
     'Add a habit called "Go for a walk"',
-    "Switch to dark theme",
+    "Rename the title to \"Make time for you\"",
     "Add a weekly summary",
 ];
 
@@ -134,7 +133,15 @@ export const startedLines = (agent, projectName = "Orbit") => ({
     label: providers[agent.id]?.name ?? agent.name,
     agent: agent.id,
     state: agent.id === "terminal" ? "idle" : "working",
-    lines: [
+    lines: agent.id === "claude" ? [
+        ["prompt", "❯ Ready for your next task."],
+        ["dim", agent.model ?? "Claude Opus 5.5"],
+        ["dim", "Type help or ask Chat for a change."],
+    ] : agent.id === "codex" ? [
+        ["prompt", "› Ask Codex to do anything"],
+        ["dim", agent.model ?? "GPT-6 Sol"],
+        ["dim", "Type help or ask Chat for a change."],
+    ] : [
         ["dim", `~/projects/${projectName.toLowerCase().replace(/\s+/g, "-")}`],
         ["prompt", `› ${providers[agent.id]?.command ?? agent.id}`],
         ["muted", `${providers[agent.id]?.name ?? agent.name} · sample session`],

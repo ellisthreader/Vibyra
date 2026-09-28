@@ -38,6 +38,7 @@
 
 @import './marketing/home-agents.css';
 @import './marketing/device-preview.css';
+@import './marketing/device-preview-frame.css';
 @import './marketing/device-flows.css';
 
 /* Section 01's two ways to work; borrows the device typefaces declared above. */

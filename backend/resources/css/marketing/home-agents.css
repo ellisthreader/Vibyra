@@ -1,43 +1,48 @@
-/* Static, keyboard-accessible provider shelves. No duplicated marquee items.
- * One hairline table: a label column, then open cells that light on hover. */
+/* Two seamless, opposing provider rows; keyboard/reduced motion use a static shelf. */
 .agent-showcase { padding: 8px 0 96px; background: var(--home-dark); }
 .agent-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding-block: 30px 22px; }
 .agent-heading h2 { font-size: 22px; line-height: 1.4; font-weight: 600; letter-spacing: -.035em; color: #eef0f5; }
 .agent-heading h2 span { color: #929cac; }
 .agent-heading p { color: #7f8898; font-size: 13px; }
 .agent-flow { display: grid; border: 1px solid #ffffff0f; border-radius: 14px; overflow: hidden; background: #ffffff03; }
-.agent-lane { display: grid; grid-template-columns: 148px minmax(0, 1fr); }
+.agent-lane { min-width: 0; }
 .agent-lane + .agent-lane { border-top: 1px solid #ffffff0f; }
-.agent-lane-label { display: flex; align-items: center; padding: 0 22px; border-right: 1px solid #ffffff0f; color: #7f8898; font-family: var(--home-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
-.agent-group { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.agent-lane-1 .agent-group { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.marketing-home .agent-card { position: relative; display: flex; align-items: center; gap: 11px; min-width: 0; height: 72px; padding: 0 16px; border: 0; border-radius: 0; background: transparent; text-align: left; transition: background .2s; }
+.agent-window { min-width: 0; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
+.agent-track { display: flex; width: max-content; animation: agents-drift var(--agent-duration, 36s) linear infinite; }
+.agent-lane-1 .agent-track { animation-direction: reverse; }
+.agent-group { display: flex; flex: none; gap: 8px; padding-right: 8px; }
+.agent-showcase[data-paused="true"] .agent-track { animation-play-state: paused; }
+@media (hover: hover) { .agent-flow:hover .agent-track { animation-play-state: paused; } }
+/* Three equal copies cover the full viewport even with compact content widths. */
+@keyframes agents-drift { to { transform: translateX(calc(-100% / 3)); } }
+.agent-window:has(:focus-visible) { overflow: visible; mask-image: none; }
+.agent-window:has(:focus-visible) .agent-track { animation: none; transform: none; width: 100%; }
+.agent-window:has(:focus-visible) .agent-group { width: 100%; flex-wrap: wrap; padding-right: 0; }
+.agent-window:has(:focus-visible) .agent-group[aria-hidden] { display: none; }
+.marketing-home .agent-card { position: relative; display: flex; flex: 0 0 auto; align-items: center; gap: 10px; min-width: 0; height: 84px; padding: 0 12px; border: 0; border-radius: 0; background: transparent; text-align: left; transition: background .2s; }
 .marketing-home .agent-card + .agent-card { box-shadow: -1px 0 0 #ffffff0a; }
 .agent-card:hover { background: #ffffff08; }
-.agent-logo { display: grid; place-items: center; flex: none; width: 28px; height: 30px; }
-.agent-logo img { width: 24px; height: 24px; object-fit: contain; transition: transform .25s cubic-bezier(.2, .7, .2, 1); }
+.agent-logo { display: grid; place-items: center; flex: none; width: 34px; height: 36px; }
+.agent-logo img { width: 30px; height: 30px; object-fit: contain; transition: transform .25s cubic-bezier(.2, .7, .2, 1); }
 .agent-card:hover .agent-logo img { transform: scale(1.08); }
-.agent-wordmark .agent-logo { width: 36px; }
-.agent-wordmark .agent-logo img { width: 36px; }
+.agent-wordmark .agent-logo { width: 44px; }
+.agent-wordmark .agent-logo img { width: 44px; }
 .agent-mono { filter: brightness(0) invert(1); }
 .agent-card > span:nth-child(2) { min-width: 0; }
-.agent-card strong { display: block; font-size: 12.5px; font-weight: 600; color: #e9edf4; white-space: nowrap; }
-.agent-card small { display: block; font-size: 10.5px; color: #858e9e; margin-top: 2px; white-space: nowrap; }
-.agent-card > svg { position: absolute; right: 12px; top: 50%; color: #8ca5ff; opacity: 0; transform: translate(-4px, -50%); transition: opacity .2s, transform .2s; }
-.agent-card:hover > svg, .agent-card:focus-visible > svg { opacity: 1; transform: translate(0, -50%); }
+.agent-card strong { display: block; font-size: 14.5px; font-weight: 600; color: #e9edf4; white-space: nowrap; }
+.agent-card small { display: block; font-size: 12px; color: #858e9e; margin-top: 2px; white-space: nowrap; }
 @media (max-width: 1150px) {
-  .agent-lane { grid-template-columns: 1fr; }
-  .agent-lane-label { padding: 14px 18px 4px; border-right: 0; }
-  .agent-group { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .agent-lane-1 .agent-group { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .marketing-home .agent-card + .agent-card { box-shadow: none; }
 }
 @media (max-width: 700px) {
   .agent-showcase { padding-bottom: 56px; }
   .agent-heading { flex-direction: column; gap: 4px; padding-block: 26px 18px; }
   .agent-heading h2 { font-size: 20px; }
-  .agent-group, .agent-lane-1 .agent-group { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .marketing-home .agent-card { flex-direction: column; justify-content: center; height: 86px; padding: 8px 4px; gap: 8px; text-align: center; }
-  .agent-card strong { font-size: 11px; }
-  .agent-card small, .agent-card > svg { display: none; }
+  .agent-card strong { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce), print {
+  .agent-window { overflow: visible; mask-image: none; }
+  .agent-track { animation: none; transform: none; width: 100%; }
+  .agent-group { width: 100%; flex-wrap: wrap; padding-right: 0; }
+  .agent-group[aria-hidden] { display: none; }
 }

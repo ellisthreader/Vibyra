@@ -13,8 +13,8 @@
     white-space: pre-wrap;
     word-break: break-word;
 }
-.vdev .vdev-term-content { display: flex; flex-direction: column; justify-content: flex-end; min-height: 100%; }
-.vdev .vdev-term-content-top { justify-content: flex-start; }
+.vdev .vdev-term-content { display: flex; flex-direction: column; min-height: 100%; }
+.vdev .vdev-term-content:not(.vdev-term-content-top) > .vdev-term-input { margin-top: auto; }
 
 .vdev .vdev-term-prompt {
     color: var(--accent-2);
@@ -35,6 +35,10 @@
 .vdev .vdev-term-input input::placeholder { color: var(--term-dim); }
 .vdev .vdev-term-input .vdev-caret { position: absolute; top: 3px; left: 20px; pointer-events: none; }
 .vdev .vdev-term-input:focus-within .vdev-caret { display: none; }
+.vdev .vdev-cli-footer { display: flex; justify-content: space-between; gap: 10px; margin-top: 3px; color: var(--term-dim); font-size: 10px; line-height: 1.4; }
+.vdev .vdev-cli-footer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vdev .vdev-cli-footer span:last-child { flex: none; }
+.vdev .vdev-term:has(.vdev-cli-claude) .vdev-term-prompt { color: #d58e76; }
 
 .vdev .vdev-term-muted {
     color: var(--term-muted);
@@ -51,6 +55,10 @@
 .vdev .vdev-term-warn {
     color: var(--amber);
 }
+
+.vdev .vdev-term-tool { color: #e9e5ef; }
+.vdev .vdev-term-output { color: #aaa5b5; padding-left: 10px; }
+.vdev .vdev-term-thinking { color: #d58e76; }
 
 .vdev .vdev-caret {
     display: inline-block;
@@ -151,15 +159,29 @@
     object-fit: contain;
 }
 
-/* CLI welcome banners sit at the top while the session stays bottom-anchored. */
-.vdev .vdev-cli { margin-bottom: auto; padding: 4px 0 14px; }
-.vdev .vdev-cli-box { display: inline-block; max-width: 100%; padding: 7px 14px 7px 11px; border: 1px solid; border-radius: 6px; line-height: 1.55; }
-.vdev .vdev-cli-box b { font-weight: 400; }
-.vdev .vdev-cli-box strong { font-weight: 700; color: #fff; }
-.vdev .vdev-cli-claude .vdev-cli-box { border-color: #d97757; }
-.vdev .vdev-cli-claude b { color: #d97757; }
-.vdev .vdev-cli-codex .vdev-cli-box { border-color: #3a3f4b; }
-.vdev .vdev-cli-codex b { color: #8f9bb3; }
+/* The real CLIs own their distinct startup chrome inside the xterm pane. */
+.vdev .vdev-cli { flex: none; margin-bottom: 8px; padding: 4px 0 8px; }
+.vdev .vdev-cli strong { color: #f2f0f5; font-weight: 700; }
+.vdev .vdev-cli-version { margin-left: auto; color: var(--term-dim); font-size: 10px; font-weight: 400; }
+.vdev .vdev-claude-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.vdev .vdev-claude-mark { display: block; flex: none; width: 9ch; height: 4.44em; }
+.vdev .vdev-claude-details { display: flex; flex-direction: column; min-width: 0; line-height: 1.48; }
+.vdev .vdev-claude-details > div { display: flex; align-items: baseline; gap: 7px; }
+.vdev .vdev-claude-details > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vdev .vdev-cli-claude .vdev-cli-version { margin-left: 0; }
+.vdev .vdev-cli-rule { width: 100%; height: 1px; margin-top: 10px; background: #706b745c; }
+.vdev .vdev-codex-card { width: min(100%, 390px); box-sizing: border-box; padding: 9px 12px; border: 1px solid #65646d; border-radius: 7px; color: #e9e7ee; line-height: 1.55; }
+.vdev .vdev-codex-title { display: flex; align-items: baseline; gap: 7px; margin-bottom: 6px; }
+.vdev .vdev-codex-title b { color: #c6c6d1; font-weight: 500; }
+.vdev .vdev-codex-data { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.vdev .vdev-codex-data > span:first-child { flex: none; width: 70px; color: var(--term-dim); white-space: nowrap; }
+.vdev .vdev-codex-data strong { min-width: 0; overflow: hidden; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.vdev .vdev-codex-hint { flex: none; color: var(--term-dim); font-size: 10px; }
 .vdev .vdev-cli-art { display: block; margin: 6px 0 10px; }
 .vdev .vdev-pane { container-type: inline-size; }
-@container (max-width: 340px) { .vdev .vdev-cli { display: none; } }
+@container (max-width: 340px) {
+    .vdev .vdev-cli { font-size: 10px; }
+    .vdev .vdev-codex-hint, .vdev .vdev-cli-version { display: none; }
+    .vdev .vdev-cli-footer span:last-child { display: none; }
+    .vdev .vdev-codex-card { padding: 6px 8px; }
+}

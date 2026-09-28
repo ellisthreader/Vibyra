@@ -17,8 +17,9 @@
     .hero-showcase .vdev { height: 480px; }
     .hero-showcase .vdev .vdev-rail { position: absolute; z-index: 6; top: var(--chrome-h); bottom: 0; left: 0; box-shadow: var(--e-panel); }
     .hero-showcase .vdev .vdev-stage { min-width: 0; }
-    .hero-showcase .vdev .vdev-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .hero-showcase .vdev .vdev-grid { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(0, 1fr) !important; }
     .hero-showcase .vdev .vdev-pane:not(.vdev-pane-focused) { display: none; }
+    .hero-showcase .vdev .vdev-pane-focused { grid-column: 1 !important; grid-row: 1 !important; }
     .hero-showcase .vdev .vdev-dock { flex-basis: 48%; width: 48%; }
 }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import PortalShell from "../components/PortalShell.jsx";
+import AuthShell from "../components/AuthShell.jsx";
 import Notice from "../components/Notice.jsx";
 import ProviderIcon from "../components/ProviderIcon.jsx";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
@@ -103,71 +103,79 @@ export default function AuthPage({ mode }) {
 
   if (welcome) return <SignupWelcome name={welcome.name} onDone={() => go(welcome.path)} />;
 
-  if (challenge) return <PortalShell layout="auth" eyebrow="VERIFY YOUR ACCOUNT"
-    title={<>One more<br /><span>step.</span></>} intro="Enter the code from your authenticator app or a recovery code.">
-    <div className="auth-panel"><div className="auth-panel-heading"><h2>Two-factor verification</h2></div>
-      {error && <Notice tone="error">{error}</Notice>}
-      <form className="portal-form" onSubmit={submitCode}>
-        <label>Authentication or recovery code<input name="code" inputMode="text" autoComplete="one-time-code"
-          maxLength={20} value={code} onChange={(event) => setCode(event.target.value)} autoFocus required /></label>
-        <button className="portal-button portal-button--primary" disabled={busy || !code.trim()} type="submit">
-          {busy ? "Checking…" : "Verify and log in"}</button>
-      </form>
-      <p className="auth-switch"><button type="button" onClick={() => { setChallenge(null); setCode(""); }}>Use another account</button></p>
+  const switchTo = ownerLogin ? null : creating
+    ? { label: "Log in", href: authPath("login", next, intent) }
+    : { label: "Create account", href: authPath("signup", next, intent) };
+
+  if (challenge) return <AuthShell>
+    <div className="auth-heading">
+      <h1>Two-factor verification</h1>
+      <p>Enter the code from your authenticator app, or one of your recovery codes.</p>
     </div>
-  </PortalShell>;
+    {error && <Notice tone="error">{error}</Notice>}
+    <form className="auth-form" onSubmit={submitCode}>
+      <label className="auth-field"><span>Authentication or recovery code</span>
+        <input name="code" inputMode="text" autoComplete="one-time-code" maxLength={20} value={code}
+          onChange={(event) => setCode(event.target.value)} autoFocus required /></label>
+      <button className="auth-pill auth-pill--light auth-submit" disabled={busy || !code.trim()} type="submit">
+        {busy ? "Checking…" : "Verify and log in"}</button>
+    </form>
+    <p className="auth-foot"><button type="button" onClick={() => { setChallenge(null); setCode(""); }}>Use another account</button></p>
+  </AuthShell>;
 
   return (
-    <PortalShell layout="auth" eyebrow={ownerLogin ? "PRIVATE WORKSPACE" : "YOUR SPACE TO BUILD"}
-      title={creating ? <>Make room for<br /><span>your next idea.</span></> : ownerLogin ? <>See the<br /><span>whole picture.</span></> : <>Good to<br /><span>have you back.</span></>}
-      intro={ownerLogin ? "Your Vibyra website, desktop and mobile activity in one place." : "Your projects, your agents, your next big idea. All connected with one Vibyra account."}>
-      <div className="auth-panel">
-        <div className="auth-panel-heading">
-          <h2>{creating ? "Create your account" : ownerLogin ? "Owner access" : "Log in to Vibyra"}</h2>
-          <p>{creating ? "A little less between you and what’s next." : ownerLogin ? "Open your private analytics workspace." : "Pick up where you left off."}</p>
-        </div>
-        {localOwnerAvailable && <div className="owner-local-entry">
-          <span>LOCAL TEST ACCESS</span>
-          <strong>Open owner dashboard</strong>
-          <p>One click signs in with a local test account. The dashboard shows recorded data, with unavailable metrics clearly marked.</p>
-          <button type="button" className="portal-button portal-button--primary" disabled={busy} onClick={localOwnerLogin}>
-            {busy ? "Opening…" : "Log in as owner"}
-          </button>
-          <small>owner.local@vibyra.test</small>
-        </div>}
-        <div className="provider-actions">
-          {["google", "apple", "microsoft"].map((provider) => (
-            <button key={provider} className="provider-button" disabled={busy || !providers?.[provider]} onClick={() => providerLogin(provider)}>
-              <ProviderIcon provider={provider} /> Continue with {provider[0].toUpperCase() + provider.slice(1)}
-            </button>
-          ))}
-          {providers && !Object.values(providers).some(Boolean) && <p className="provider-status" role="status">Social sign-in is not configured on this server yet. You can continue with email.</p>}
-          {providerStatus && <p className="provider-status" role="status">{providerStatus}</p>}
-        </div>
-        <div className="auth-divider"><span>or continue with email</span></div>
-        {error && <Notice tone="error">{error}</Notice>}
-        <form className="portal-form" data-analytics-form={creating ? "signup" : undefined} onSubmit={submit}>
-          {creating && <label>Name<input name="name" value={fields.name} onChange={update} autoComplete="name" required /></label>}
-          <label>Email address<input name="email" type="email" placeholder="you@example.com" value={fields.email} onChange={update} autoComplete="email" required /></label>
-          <div className="auth-password">
-            <label htmlFor="auth-password">Password</label>
-            <div>
-              <input id="auth-password" name="password" type={showPassword ? "text" : "password"} value={fields.password} onChange={update} autoComplete={creating ? "new-password" : "current-password"} minLength={8} required />
-              <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            {creating && <small>At least 8 characters.</small>}
-          </div>
-          <button className="portal-button portal-button--primary" data-analytics-cta={creating ? "signup_submit" : undefined} disabled={busy || loading} type="submit">
-            {busy ? "Please wait…" : creating ? "Create account" : "Log in"}
-          </button>
-        </form>
-        {!ownerLogin && <p className="auth-switch">
-          {creating ? "Already have an account? " : "New to Vibyra? "}
-          <a href={authPath(creating ? "login" : "signup", next, intent)}>{creating ? "Log in" : "Create an account"}</a>
-        </p>}
+    <AuthShell switchTo={switchTo}>
+      <div className="auth-heading">
+        <h1>{creating ? "Create your account" : ownerLogin ? "Owner access" : "Welcome back"}</h1>
+        <p>{creating ? "A little less between you and what’s next." : ownerLogin ? "Open your private analytics workspace." : "Log in to pick up where you left off."}</p>
       </div>
-    </PortalShell>
+      {localOwnerAvailable && <div className="owner-local-entry">
+        <span>LOCAL TEST ACCESS</span>
+        <strong>Open owner dashboard</strong>
+        <p>One click signs in with a local test account. The dashboard shows recorded data, with unavailable metrics clearly marked.</p>
+        <button type="button" className="auth-pill auth-pill--light" disabled={busy} onClick={localOwnerLogin}>
+          {busy ? "Opening…" : "Log in as owner"}
+        </button>
+        <small>owner.local@vibyra.test</small>
+      </div>}
+      <div className="auth-providers">
+        {["google", "apple"].map((provider) => (
+          <button key={provider} type="button" className="auth-provider" aria-label={`Continue with ${provider[0].toUpperCase() + provider.slice(1)}`}
+            disabled={busy || !providers?.[provider]} onClick={() => providerLogin(provider)}>
+            <ProviderIcon provider={provider} /> {provider[0].toUpperCase() + provider.slice(1)}
+          </button>
+        ))}
+      </div>
+      {providers && ![providers.google, providers.apple].some(Boolean) && <p className="auth-provider-status" role="status">Social sign-in is not configured on this server yet. You can continue with email.</p>}
+      {providerStatus && <p className="auth-provider-status" role="status">{providerStatus}</p>}
+      <div className="auth-divider"><span>or with email</span></div>
+      {error && <Notice tone="error">{error}</Notice>}
+      <form className="auth-form" data-analytics-form={creating ? "signup" : undefined} onSubmit={submit}>
+        {creating && <label className="auth-field"><span>Name</span>
+          <input name="name" value={fields.name} onChange={update} autoComplete="name" placeholder="Your name" required /></label>}
+        <label className="auth-field"><span>Email</span>
+          <input name="email" type="email" placeholder="you@example.com" value={fields.email} onChange={update} autoComplete="email" required /></label>
+        <div className="auth-field">
+          <label htmlFor="auth-password">Password</label>
+          <div className="auth-password">
+            <input id="auth-password" name="password" type={showPassword ? "text" : "password"} value={fields.password} onChange={update}
+              placeholder={creating ? "At least 8 characters" : "Your password"} autoComplete={creating ? "new-password" : "current-password"} minLength={8} required />
+            <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3" />
+                {showPassword && <path d="M4 4l16 16" />}
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button className="auth-pill auth-pill--light auth-submit" data-analytics-cta={creating ? "signup_submit" : undefined} disabled={busy || loading} type="submit">
+          {busy ? "Please wait…" : creating ? "Create account" : "Log in"}
+        </button>
+      </form>
+      {!ownerLogin && <p className="auth-foot">
+        {creating ? "Already have an account? " : "New to Vibyra? "}
+        <a href={switchTo.href}>{creating ? "Log in" : "Create an account"}</a>
+      </p>}
+    </AuthShell>
   );
 }
