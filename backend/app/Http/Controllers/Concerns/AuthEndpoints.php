@@ -58,7 +58,6 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => 'You are already signed in. Log out to create another account.'], 403);
         }
 
-        User::releaseUnverifiedClaim($email);
         if (User::where('email', $email)->exists()) {
             if (User::emailTakenLimitReached((string) $request->ip())) {
                 return $this->json(['ok' => false, 'error' => 'Too many signup attempts. Try again later.'], 429);

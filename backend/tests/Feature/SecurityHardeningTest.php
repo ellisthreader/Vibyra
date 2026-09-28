@@ -197,16 +197,28 @@ class SecurityHardeningTest extends TestCase
         $this->withHeader('User-Agent', 'Slackbot-LinkExpanding 1.0')->get('/downloads')->assertOk();
     }
 
-    // 9. An unverified Microsoft email does not keep the address from its owner.
-    public function test_unverified_microsoft_email_is_released_on_signup(): void
+    // 9. An unverified Microsoft email yields only to a verified claim, never to a password signup.
+    public function test_unverified_microsoft_email_yields_only_to_a_verified_claim(): void
     {
         $squatter = User::factory()->create([
             'email' => 'owner@example.com', 'provider' => 'microsoft', 'email_verified_at' => null,
         ]);
 
-        $this->postJson('/api/auth/signup', ['name' => 'Owner', 'email' => 'owner@example.com', 'password' => 'secret-123'])
-            ->assertCreated();
+        $this->postJson('/api/auth/signup', ['name' => 'Anyone', 'email' => 'owner@example.com', 'password' => 'secret-123'])
+            ->assertStatus(409);
+        $this->assertSame('owner@example.com', $squatter->fresh()->email);
+
+        User::releaseUnverifiedClaim('owner@example.com');
         $this->assertStringEndsWith('@users.invalid', $squatter->fresh()->email);
+    }
+
+    public function test_a_website_bound_flow_still_asks_when_finished_elsewhere(): void
+    {
+        $flows = app(DesktopProviderOAuthFlow::class);
+        $flow = $flows->start('google', ['deviceName' => 'Vibyra Website'], 'website:attacker', '9.9.9.9');
+        parse_str((string) parse_url($flow['authUrl'], PHP_URL_QUERY), $query);
+
+        $this->assertTrue($flows->needsConfirmation($flows->peekState('google', $query['state']), '1.2.3.4'));
     }
 
     // 10. Checking many addresses from one network is capped.
@@ -219,6 +231,33 @@ class SecurityHardeningTest extends TestCase
         }
         User::factory()->create(['email' => 'taken6@example.com']);
         $this->postJson('/api/auth/signup', ['email' => 'taken6@example.com', 'password' => 'secret-123'])
+            ->assertStatus(429);
+    }
+
+    // Second audit: clients cannot add OpenRouter fallbacks or paid plugins.
+    public function test_terminal_requests_drop_upstream_routing_fields(): void
+    {
+        $clean = VibyraAppController::withoutUpstreamRouting([
+            'messages' => [], 'models' => ['premium/model'], 'plugins' => [['id' => 'web']],
+            'route' => 'fallback', 'transforms' => ['x'], 'preset' => 'p', 'provider' => ['order' => ['x']],
+        ]);
+
+        $this->assertSame(['messages' => []], $clean);
+    }
+
+    // Second audit: verification texts are capped per number.
+    public function test_verification_texts_are_capped_per_number(): void
+    {
+        $this->mock(\App\Services\Auth\PhoneVerificationService::class, fn ($mock) => $mock->shouldReceive('start')->times(3));
+        $user = User::factory()->create();
+        $token = 'sms-token';
+        VibyraSession::create(['user_id' => $user->id, 'token_hash' => hash('sha256', $token), 'last_used_at' => now()]);
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+
+        foreach (range(1, 3) as $attempt) {
+            $this->postJson('/api/account/phone/start', ['phoneNumber' => '+447700900123'], ['Authorization' => "Bearer {$token}"])->assertOk();
+        }
+        $this->postJson('/api/account/phone/start', ['phoneNumber' => '+447700900123'], ['Authorization' => "Bearer {$token}"])
             ->assertStatus(429);
     }
 }

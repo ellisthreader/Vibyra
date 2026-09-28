@@ -111,8 +111,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Microsoft does not prove mailbox ownership, so an unverified Microsoft
-     * account must not keep someone else's address from them. The account
-     * stays usable through its Microsoft sign-in; only the address is released.
+     * account must not keep an address from someone who has proved it (a
+     * verified Google or Apple sign-in). Password signups prove nothing and
+     * must never call this. The Microsoft account keeps working; only the
+     * address is released.
      */
     public static function releaseUnverifiedClaim(string $email): void
     {

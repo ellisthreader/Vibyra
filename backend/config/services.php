@@ -78,6 +78,9 @@ return [
         'service_sid' => env('TWILIO_VERIFY_SERVICE_SID'),
         'api_key' => env('TWILIO_API_KEY'),
         'api_secret' => env('TWILIO_API_SECRET'),
+        // Comma-separated E.164 prefixes such as "+44,+1,+353"; empty allows every country.
+        'allowed_prefixes' => array_values(array_filter(array_map('trim', explode(',', (string) env('TWILIO_VERIFY_ALLOWED_PREFIXES', ''))))),
+        'daily_global_limit' => (int) env('TWILIO_VERIFY_DAILY_LIMIT', 300),
     ],
 
     'apple_iap' => [

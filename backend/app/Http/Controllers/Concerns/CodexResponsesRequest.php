@@ -12,7 +12,7 @@ use Throwable;
 trait CodexResponsesRequest {
     public function codexResponses(Request $request): Response {
             $user = $this->authenticatedUser($request);
-            $payload = $request->all();
+            $payload = self::withoutUpstreamRouting($request->all());
             if (($payload['stream'] ?? null) !== true || ! isset($payload['input'])) {
                 return $this->codexError('Vibyra Codex terminals require a streaming Responses API request.', 422);
             }

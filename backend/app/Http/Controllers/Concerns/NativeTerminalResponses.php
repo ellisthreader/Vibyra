@@ -40,10 +40,23 @@ trait NativeTerminalResponses
     private function anthropicTerminalPayload(array $payload, string $model, bool $stream): array
         {
             unset($payload['_vibyraHeaders']);
+            $payload = self::withoutUpstreamRouting($payload);
             $payload['model'] = $model;
             $payload['stream'] = $stream;
             return $payload;
         }
+    /**
+     * OpenRouter reads these to pick fallback models, add paid plugins or apply
+     * presets. Vibyra prices one model per request, so clients never set them.
+     */
+    public static function withoutUpstreamRouting(array $payload): array
+    {
+        foreach (['models', 'route', 'plugins', 'transforms', 'preset', 'web_search_options', 'provider'] as $key) {
+            unset($payload[$key]);
+        }
+
+        return $payload;
+    }
     private function nativeTerminalHeaders(string $apiKey, string $protocol, array $payload): array
         {
             $headers = [

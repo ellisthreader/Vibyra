@@ -39,6 +39,8 @@ trait CommunityPublishingPublishEndpoint
             ->first();
 
         $this->enforceCommunityRateLimit('publish:'.sha1($sourceProjectId), $request, $user->id, 30, 600);
+        // Per account too: a new sourceProjectId must not open a fresh bucket.
+        $this->enforceCommunityRateLimit('publish-any', $request, $user->id, 20, 3600);
 
         $hostedDemoInput = $request->input('hostedDemo');
         $hostedDemo = is_array($hostedDemoInput)

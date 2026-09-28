@@ -174,7 +174,8 @@ class BillingController extends Controller
             // review demo account (and only listed accounts) may use them.
             $sandboxAccounts = array_map('strtolower', (array) config('services.apple_iap.sandbox_accounts', []));
             $verified = $this->iapVerifier->verify($platform, $productId, $receipt,
-                in_array(strtolower((string) $user->email), $sandboxAccounts, true));
+                $user->email_verified_at !== null
+                    && in_array(strtolower((string) $user->email), $sandboxAccounts, true));
             $claim = $this->iapPurchaseClaimer->claim(
                 $user,
                 $platform,

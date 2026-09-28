@@ -22,6 +22,10 @@ trait AccountVerificationEndpoints
             return $this->json(['ok' => false, 'error' => 'That phone number is already linked to another account.'], 409);
         }
 
+        if ($blocked = $this->phoneSendBlocked($phoneNumber, (int) $user->getKey())) {
+            return $blocked;
+        }
+
         try {
             app(PhoneVerificationService::class)->start($phoneNumber);
         } catch (RuntimeException) {
@@ -77,5 +81,34 @@ trait AccountVerificationEndpoints
         $phoneNumber = preg_replace('/[\s().-]+/', '', trim((string) $value));
 
         return preg_match('/^\+[1-9]\d{7,14}$/', $phoneNumber) ? $phoneNumber : null;
+    }
+
+    /**
+     * SMS pumping sends codes to premium numbers for the sender's profit, so
+     * texts are capped per number, per account and for the whole service per
+     * day, and can be limited to chosen country codes.
+     */
+    private function phoneSendBlocked(string $phoneNumber, int $userId): ?JsonResponse
+    {
+        $prefixes = (array) config('services.twilio_verify.allowed_prefixes', []);
+        if ($prefixes !== [] && ! collect($prefixes)->contains(fn ($prefix) => str_starts_with($phoneNumber, (string) $prefix))) {
+            return $this->json(['ok' => false, 'error' => 'Phone verification is not available for that country yet.'], 422);
+        }
+
+        $limits = [
+            'sms:number:'.hash('sha256', $phoneNumber) => 3,
+            'sms:user:'.$userId => 5,
+            'sms:global' => (int) config('services.twilio_verify.daily_global_limit', 300),
+        ];
+        foreach ($limits as $key => $max) {
+            if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, $max)) {
+                return $this->json(['ok' => false, 'error' => 'Too many verification codes today. Try again tomorrow.'], 429);
+            }
+        }
+        foreach (array_keys($limits) as $key) {
+            \Illuminate\Support\Facades\RateLimiter::hit($key, 86400);
+        }
+
+        return null;
     }
 }

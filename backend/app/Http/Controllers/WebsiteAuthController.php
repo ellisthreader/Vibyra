@@ -36,7 +36,6 @@ class WebsiteAuthController extends Controller
         if (! $email || strlen($password) < 8) {
             return response()->json(['ok' => false, 'error' => 'Enter a valid email and a password with at least 8 characters.'], 422);
         }
-        User::releaseUnverifiedClaim($email);
         if (User::where('email', $email)->exists()) {
             if (User::emailTakenLimitReached((string) $request->ip())) {
                 return response()->json(['ok' => false, 'error' => 'Too many signup attempts. Try again later.'], 429);

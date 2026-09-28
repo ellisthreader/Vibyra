@@ -24,8 +24,8 @@ class DesktopProviderOAuthFlow
     /**
      * A finished sign-in is only released to whoever started it: the website
      * passes its session as the binding, and apps may pass a flowSecret they
-     * hold. Flows with neither record the starting network, so the callback
-     * can ask the person to confirm when the link was opened somewhere else.
+     * hold. Every flow also records the starting network, so the callback asks
+     * the person to confirm when the link was opened somewhere else.
      */
     public function start(string $provider, array $client, ?string $binding = null, ?string $startIp = null): array
     {
@@ -56,7 +56,10 @@ class DesktopProviderOAuthFlow
 
     public function needsConfirmation(array $flow, ?string $callbackIp): bool
     {
-        if (($flow['binding'] ?? null) || ($flow['secretHash'] ?? null) || ($flow['purpose'] ?? null)) {
+        // Binding and secrets prove who *started* a flow, and an attacker can start
+        // one and send the link on. Only returning on the starting network proves
+        // the person finishing it is the one who started it.
+        if ($flow['purpose'] ?? null) {
             return false;
         }
         $startIp = (string) ($flow['startIp'] ?? '');
