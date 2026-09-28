@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -8,9 +8,10 @@ import test from 'node:test';
 const launcher = readFileSync(new URL('./start-production.sh', import.meta.url), 'utf8');
 
 for (const role of ['web', 'all']) {
-  test(`${role} launches concurrent web workers with Laravel reload disabled`, () => {
+  test(`${role} launches concurrent web workers without a reload loop`, () => {
     const cwd = mkdtempSync(join(tmpdir(), 'vibyra-web-workers-'));
     try {
+      mkdirSync(join(cwd, 'public'));
       // Capture what the actual launcher hands PHP, including inherited env.
       writeFileSync(join(cwd, 'php'), '#!/bin/sh\nprintf "%s|%s\\n" "$PHP_CLI_SERVER_WORKERS" "$*"\n', { mode: 0o755 });
       const result = spawnSync('bash', ['-c', `
@@ -22,7 +23,7 @@ for (const role of ['web', 'all']) {
         env: { ...process.env, PATH: `${cwd}:${process.env.PATH}`, VIBYRA_PROCESS_ROLE: role,
           VIBYRA_RUN_MIGRATIONS: '0', VIBYRA_WEB_WORKERS: '8', PORT: '8000' } });
       assert.equal(result.error, undefined);
-      assert.match(result.stdout, /8\|artisan serve --host=0\.0\.0\.0 --port=8000 --no-reload/);
+      assert.match(result.stdout, /8\|-d upload_max_filesize=8M -d post_max_size=32M -S 0\.0\.0\.0:8000 \.\.\/vendor\/laravel\/framework\/src\/Illuminate\/Foundation\/resources\/server\.php/);
       assert.equal(result.status, role === 'web' ? 0 : 1, result.stderr);
     } finally { rmSync(cwd, { recursive: true, force: true }); }
   });
