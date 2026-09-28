@@ -47,6 +47,15 @@ return [
         'webhook_url' => env('VIBYRA_REPORT_WEBHOOK_URL'),
     ],
 
+    // Cloudflare Turnstile human check in front of website pages. Local
+    // development falls back to Cloudflare's always-pass test keys; elsewhere
+    // the check stays off until real keys are set, so it can't lock people out.
+    'turnstile' => [
+        'enabled' => env('TURNSTILE_ENABLED', env('APP_ENV') === 'local'),
+        'site_key' => env('TURNSTILE_SITE_KEY', env('APP_ENV') === 'local' ? '1x00000000000000000000AA' : null),
+        'secret_key' => env('TURNSTILE_SECRET_KEY', env('APP_ENV') === 'local' ? '1x0000000000000000000000000000000AA' : null),
+    ],
+
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
         'chat_url' => env('OPENAI_CHAT_URL', 'https://api.openai.com/v1/chat/completions'),

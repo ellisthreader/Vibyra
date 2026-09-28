@@ -6,6 +6,7 @@ use App\Http\Controllers\AnalyticsConsentController;
 use App\Http\Controllers\OwnerAnalyticsController;
 use App\Http\Controllers\OwnerAccountsController;
 use App\Http\Controllers\OwnerTwoFactorEnrollmentController;
+use App\Http\Controllers\HumanCheckController;
 use App\Http\Controllers\LocalOwnerLoginController;
 use App\Http\Controllers\PhoneWaitlistController;
 use App\Http\Controllers\WebsiteFaqController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\WebsiteProviderAuthController;
 use App\Http\Middleware\PublicCommunityCache;
 use App\Http\Middleware\RecordWebsiteView;
 use App\Http\Middleware\RequireOwner;
+use App\Http\Middleware\VerifyHuman;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
@@ -29,21 +31,22 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('marketing'))->middleware(RecordWebsiteView::class);
+Route::get('/', fn () => view('marketing'))->middleware([VerifyHuman::class, RecordWebsiteView::class]);
 Route::view('/legal/privacy', 'legal.privacy')->middleware(RecordWebsiteView::class)->name('legal.privacy');
 Route::view('/legal/terms', 'legal.terms')->middleware(RecordWebsiteView::class)->name('legal.terms');
-Route::view('/login', 'portal')->middleware(RecordWebsiteView::class)->name('login');
-Route::view('/signup', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/billing', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/checkout', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/billing/success', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/billing/cancel', 'portal')->middleware(RecordWebsiteView::class);
-Route::view('/downloads', 'downloads')->middleware(RecordWebsiteView::class);
-Route::view('/benchmarks', 'benchmarks')->middleware(RecordWebsiteView::class);
-Route::view('/account/downloads', 'downloads')->middleware(RecordWebsiteView::class);
+Route::view('/login', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class])->name('login');
+Route::view('/signup', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/billing', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/checkout', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/billing/success', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/billing/cancel', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/downloads', 'downloads')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/benchmarks', 'benchmarks')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::view('/account/downloads', 'downloads')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
 Route::get('/owner/login', fn () => response()->view('portal')
     ->header('Cache-Control', 'private, no-store')
     ->header('X-Robots-Tag', 'noindex, nofollow'));
+Route::post('/web-api/human-check', HumanCheckController::class)->middleware('throttle:20,1');
 Route::post('/web-api/owner/local-login', LocalOwnerLoginController::class)->middleware('throttle:5,1');
 Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'catalog']);
 Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware('throttle:5,10');
@@ -83,7 +86,7 @@ Route::get('/web-api/auth/providers', [WebsiteProviderAuthController::class, 'pr
     ->middleware('throttle:60,1');
 
 Route::middleware('auth')->group(function (): void {
-    Route::view('/account', 'portal')->middleware(RecordWebsiteView::class);
+    Route::view('/account', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
     Route::get('/owner', fn () => response()->view('portal')
         ->header('Cache-Control', 'private, no-store')
         ->header('X-Robots-Tag', 'noindex, nofollow'))->middleware(RequireOwner::class);
