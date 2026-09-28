@@ -18,13 +18,12 @@ export function GeminiArt() {
     </svg>;
 }
 
-// Claude Code 2.1.283, captured with truecolour enabled. Each terminal cell
-// occupies 2 × 2 quadrants. The body is ANSI background colour; the black
-// lower-quarter glyphs are eyes. Drawing the cells avoids font-dependent gaps.
+// Claude Code 2.1.283: ANSI body/eyes with the glyph bearings measured from
+// the supplied terminal screenshot. The feet sit below the body with a gap.
 function ClaudeCliMark() {
-    return <svg className="vdev-claude-mark" viewBox="0 0 18 6" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
-        <path fill="#d77757" d="M2 0h14v4H2z M1 1h1v1H1z M16 1h1v1h-1z M2 4h1v1H2z M4 4h1v1H4z M13 4h1v1h-1z M15 4h1v1h-1z" />
-        <path fill="#000" d="M5 1h1v1H5z M12 1h1v1h-1z" />
+    return <svg className="vdev-claude-mark" viewBox="0 0 126 90" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
+        <path fill="#d77757" d="M14 0h98v60H14z M7 17h7v12H7z M112 17h7v12h-7z M14 65h7v12h-7z M28 65h7v12h-7z M91 65h7v12h-7z M105 65h7v12h-7z" />
+        <path fill="#000" d="M35 17h7v12h-7z M84 17h7v12h-7z" />
     </svg>;
 }
 
@@ -36,11 +35,10 @@ export default function CliBanner({ agent, projectName = "Orbit", model }) {
                 <ClaudeCliMark />
                 <div className="vdev-claude-details">
                     <div><strong>Claude Code</strong><span className="vdev-cli-version">v2.1.283</span></div>
-                    <span>{model ?? "Claude Opus 5.5"} <span className="vdev-term-dim">· medium effort</span></span>
+                    <span>{(model ?? "Opus 5.5").replace(/^Claude\s+/, "")} with medium effort · Claude Max</span>
                     <span className="vdev-term-dim">{cwd}</span>
                 </div>
             </div>
-            <div className="vdev-cli-rule" />
         </div>;
     }
     if (agent === "codex") {
