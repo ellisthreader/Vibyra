@@ -170,7 +170,11 @@ class BillingController extends Controller
         }
 
         try {
-            $verified = $this->iapVerifier->verify($platform, $productId, $receipt);
+            // App Review buys with sandbox receipts on the production build, so the
+            // review demo account (and only listed accounts) may use them.
+            $sandboxAccounts = array_map('strtolower', (array) config('services.apple_iap.sandbox_accounts', []));
+            $verified = $this->iapVerifier->verify($platform, $productId, $receipt,
+                in_array(strtolower((string) $user->email), $sandboxAccounts, true));
             $claim = $this->iapPurchaseClaimer->claim(
                 $user,
                 $platform,

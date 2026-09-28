@@ -23,10 +23,10 @@ class IapReceiptVerifier
      *     payload: array
      * }
      */
-    public function verify(string $platform, string $productId, string $receipt): array
+    public function verify(string $platform, string $productId, string $receipt, bool $sandboxAllowed = false): array
     {
         if ($platform === 'apple') {
-            return $this->verifyApple($productId, $receipt);
+            return $this->verifyApple($productId, $receipt, $sandboxAllowed);
         }
         if ($platform === 'google') {
             return $this->verifyGoogle($productId, $receipt);
@@ -34,7 +34,7 @@ class IapReceiptVerifier
         throw new RuntimeException('Unsupported IAP platform.');
     }
 
-    private function verifyApple(string $productId, string $receipt): array
+    private function verifyApple(string $productId, string $receipt, bool $sandboxAllowed = false): array
     {
         $body = [
             'receipt-data' => $receipt,
@@ -49,7 +49,7 @@ class IapReceiptVerifier
 
         if ($status === 21007) {
             // Sandbox purchases are free TestFlight buys; they never unlock anything in production.
-            if (! config('services.apple_iap.allow_sandbox')) {
+            if (! $sandboxAllowed && ! config('services.apple_iap.allow_sandbox')) {
                 throw new RuntimeException('Test purchases are not accepted.');
             }
             $sandboxUrl = (string) config('services.apple_iap.sandbox_url');

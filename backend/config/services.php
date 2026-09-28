@@ -87,6 +87,8 @@ return [
         'bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
         // Only local/testing accept sandbox receipts unless explicitly switched on.
         'allow_sandbox' => (bool) env('APPLE_IAP_ALLOW_SANDBOX', in_array(env('APP_ENV'), ['local', 'testing'], true)),
+        // Comma-separated emails that may redeem sandbox receipts in production (the App Review demo account).
+        'sandbox_accounts' => array_values(array_filter(array_map('trim', explode(',', (string) env('APPLE_IAP_SANDBOX_ACCOUNTS', ''))))),
     ],
 
     'google_iap' => [
