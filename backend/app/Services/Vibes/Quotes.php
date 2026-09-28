@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Services\Vibes;
 
 use App\Services\ChatConnectors\ConnectorTools;
@@ -9,8 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
-class Quotes
-{
+class Quotes {
     public const MAX_ENCODED_LENGTH = 262144;
     public function __construct(
         private readonly Catalog $catalog,
@@ -22,22 +20,14 @@ class Quotes
         private readonly ModelRouter $agentRouter,
     ) {}
 
-    /** The level to price and send: what was asked for, if this model takes it. */
     private function effort(array $selected, ?string $wanted): ?string
     {
         $available = $selected['efforts'];
         if (! $available) return null;
         if ($wanted !== null && in_array($wanted, $available, true)) return $wanted;
-        // A level this model never offered is not an error the person can act on;
-        // the provider's own default is used and the quote reports what it priced.
         return $selected['defaultEffort'] ?? null;
     }
 
-    /**
-     * `$integrations` are the connectors the person named in this message. They are
-     * resolved against what the account has really connected before anything is
-     * priced, because their schemas travel with the prompt and are paid for.
-     */
     public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = [], array $attachments = [], ?array $semantic = null): array
     {
         app(\App\Services\Membership\Allowances::class)->refresh($userId);
@@ -49,6 +39,7 @@ class Quotes
             app(TerminalCatalog::class)->resolve($model);
             abort_if($integrations !== [], 422, 'Use project tools in this terminal. Connected app actions belong in AI chat.');
         }
+        if ($terminal) $effort = $chat->terminal_effort ?? $effort;
         $bound = (bool) $chat->binding && (! $terminal || $chat->terminal_tools);
         $agent = \App\Services\Agents\TaskContext::forChat($chat);
         $computer = $agent ? app(\App\Services\Agents\Workspaces::class)->forAgent($agent) : null;

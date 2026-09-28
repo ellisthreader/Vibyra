@@ -16,7 +16,7 @@ final class TerminalCatalog
         $version = hash('sha256', json_encode($snapshot));
         abort_if($revision !== null && $revision !== $version, 409, 'The model list changed. Refresh it to continue.');
         $fresh = ! $this->pricing->isStale();
-        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m) => in_array('text', $m['output_modalities'] ?? [], true))
+        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => self::executable($id) && in_array('text', $m['output_modalities'] ?? [], true))
             ->sortKeys()->map(fn ($m, $id) => $this->row($id, $m, $fresh))->values();
         return ['version' => 1, 'source' => 'vibyra', 'revision' => $version,
             'models' => $rows->slice(($page - 1) * 100, 100)->values()->all(),
@@ -25,6 +25,7 @@ final class TerminalCatalog
 
     public function resolve(string $id): array
     {
+        abort_unless(self::executable($id), 422, 'Choose Vibyra Auto or a specific chat or code model.');
         $price = $this->pricing->refreshPricingFor($id);
         $m = $this->pricing->all()[$id] ?? null;
         abort_unless($m && in_array('text', $m['output_modalities'] ?? [], true), 422, 'Choose a chat or code model.');
@@ -32,10 +33,17 @@ final class TerminalCatalog
         return $this->row($id, $m, true);
     }
 
+    public static function executable(string $id): bool
+    {
+        return ! preg_match('~^(?:typesafe/jev(?:[-/]|$)|openrouter/(?:auto|free|bodybuilder)(?:$|:))~i', ltrim($id, '~'));
+    }
+
     private function row(string $id, array $m, bool $fresh): array
     {
         $available = $fresh && isset($m['pricing']['prompt'], $m['pricing']['completion']);
         return ['id' => $id, 'name' => $m['name'] ?? $id, 'family' => explode('/', $id)[0],
+            'created' => $m['created'] ?? null,
+            'efforts' => app(Catalog::class)->efforts($id), 'defaultEffort' => app(Catalog::class)->defaultEffort($id),
             'source' => 'vibyra', 'available' => $available, 'trial' => false,
             'unavailableReason' => $available ? null : 'Pricing is being refreshed. Try again shortly.',
             'tools' => in_array('tools', $m['supported_parameters'] ?? [], true),

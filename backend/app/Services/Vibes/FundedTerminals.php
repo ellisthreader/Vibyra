@@ -21,7 +21,7 @@ final class FundedTerminals
             abort_unless($wallet->consented_at, 403, 'Allow AI processing before launching.');
             $prior = DB::table('vibes_chats')->where('id', $data['id'])->first();
             if ($prior) {
-                abort_unless($prior->user_id == $user && $prior->terminal_model === $data['model'] &&
+                abort_unless($prior->user_id == $user && $prior->terminal_model === $data['model'] && ($prior->terminal_effort ?? null) === ($data['effort'] ?? null) &&
                     $prior->host_id === $data['hostId'] && $prior->project_id === $data['projectId'] &&
                     $prior->binding === $data['binding'] && (bool) $prior->terminal_tools === $data['tools'] && $prior->terminal_budget_micro == $data['budget'] * 10000,
                     409, 'This launch was already used for a different session.');
@@ -29,11 +29,14 @@ final class FundedTerminals
             }
             abort_if(DB::table('vibes_chats')->where('user_id', $user)->count() >= 500, 422, 'Session limit reached.');
             $model = app(TerminalCatalog::class)->resolve($data['model']);
+            $effort = $data['effort'] ?? null;
+            $catalog = app(Catalog::class)->resolve($model['id'], app(Wallet::class)->planFor($user));
+            abort_if($effort !== null && !in_array($effort, $catalog['efforts'], true), 422, 'Choose a supported effort for this model.');
             abort_unless($model['tools'] === $data['tools'], 409, 'This model’s capabilities changed. Refresh the model list before launching.');
             app(\App\Services\Membership\Projects::class)->activate($user, $data['hostId'], $data['projectId']);
             DB::table('vibes_chats')->insert(['id' => $data['id'], 'user_id' => $user, 'title' => $data['title'],
                 'host_id' => $data['hostId'], 'project_id' => $data['projectId'], 'binding' => $data['binding'],
-                'terminal_model' => $model['id'], 'terminal_model_name' => mb_substr($model['name'], 0, 200), 'terminal_tools' => $model['tools'],
+                'terminal_model' => $model['id'], 'terminal_effort' => $effort, 'terminal_model_name' => mb_substr($model['name'], 0, 200), 'terminal_tools' => $model['tools'],
                 'terminal_budget_micro' => $data['budget'] * 10000, 'created_at' => now(), 'updated_at' => now()]);
             return DB::table('vibes_chats')->where('id', $data['id'])->first();
         });

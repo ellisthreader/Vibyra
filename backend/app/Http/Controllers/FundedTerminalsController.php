@@ -25,7 +25,7 @@ final class FundedTerminalsController extends Controller
         $user = $this->authenticatedUser($request);
         app(Wallet::class)->ensure($user);
         $data = $request->validate(['id' => 'required|uuid', 'title' => 'required|string|max:100',
-            'model' => 'required|string|max:200', 'hostId' => 'required|string|max:150',
+            'model' => 'required|string|max:200', 'effort' => 'sometimes|nullable|in:none,minimal,low,medium,high,xhigh,max', 'hostId' => 'required|string|max:150',
             'projectId' => 'required|string|max:150', 'binding' => 'required|uuid',
             'tools' => 'required|boolean', 'budget' => 'required|integer|min:1|max:1000', 'source' => 'required|in:vibyra']);
         return $this->json(['session' => $terminals->create($user->id, $data)]);

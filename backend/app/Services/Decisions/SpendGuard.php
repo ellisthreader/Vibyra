@@ -16,7 +16,11 @@ final class SpendGuard
             }
             $d = DB::table('ai_decisions')->where('id', $id)->lockForUpdate()->first();
             if (!$d || $d->state !== 'pending' || now()->gte($d->deadline)) return false;
-            if (!DB::table('notification_preferences')->where('user_id', $d->user_id)->value('smart')) return false;
+            if ($d->purpose === 'terminal') {
+                // The terminal Auto action carries explicit per-request consent, separate from background advice.
+                $input = json_decode(\Illuminate\Support\Facades\Crypt::decryptString($d->input), true);
+                if (($input['consent'] ?? false) !== true || !config('intelligence.terminal_auto') || config('intelligence.jev_mode') !== 'active') return false;
+            } elseif (!DB::table('notification_preferences')->where('user_id', $d->user_id)->value('smart')) return false;
             $reserve = max(1, (int) config('intelligence.call_reserve_micro_usd'));
             $day = now()->utc()->format('Ymd'); $minute = now()->utc()->format('YmdHi');
             $limits = [
