@@ -26,13 +26,13 @@ trait BillingMembershipActions
         }
 
         $provider = strtolower((string) ($user->billing_provider ?? ''));
+        // Manual memberships are granted by support; letting the account pick its
+        // own plan here would be a free upgrade and a free credit refill.
         if ($provider === 'manual') {
-            $this->applySubscription($user, $plan, $cycle, 'manual');
             return $this->json([
-                'ok' => true,
-                'status' => 'completed',
-                'user' => $this->userPayload($user->fresh()),
-            ]);
+                'ok' => false,
+                'error' => 'Contact billing support to change this membership.',
+            ], 422);
         }
         if ($provider === 'stripe') {
             return $this->portal($request);

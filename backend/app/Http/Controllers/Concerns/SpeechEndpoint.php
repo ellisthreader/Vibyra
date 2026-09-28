@@ -69,6 +69,22 @@ trait SpeechEndpoint
             $voice = $this->defaultSpeechVoice();
         }
 
+        // One reading at a time per account: the balance is checked before the
+        // provider call and spent after it, so parallel requests could overspend.
+        $lock = \Illuminate\Support\Facades\Cache::lock('speech-credits:'.$user->getKey(), 90);
+        if (! $lock->get()) {
+            return $this->json(['ok' => false, 'error' => 'Vibyra is already reading something aloud. Try again in a moment.'], 429);
+        }
+        try {
+            return $this->speakWithinLock($user, $text, $voice);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function speakWithinLock($user, string $text, string $voice)
+    {
+        $user->refresh();
         $credits = $this->speechCredits($text);
         $deductor = app(CreditDeductor::class);
         $deductor->maybeResetDaily($user);

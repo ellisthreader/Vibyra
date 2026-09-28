@@ -84,6 +84,9 @@ return [
         'shared_secret' => env('APPLE_IAP_SHARED_SECRET'),
         'verify_url' => env('APPLE_IAP_VERIFY_URL', 'https://buy.itunes.apple.com/verifyReceipt'),
         'sandbox_url' => env('APPLE_IAP_SANDBOX_URL', 'https://sandbox.itunes.apple.com/verifyReceipt'),
+        'bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
+        // Only local/testing accept sandbox receipts unless explicitly switched on.
+        'allow_sandbox' => (bool) env('APPLE_IAP_ALLOW_SANDBOX', in_array(env('APP_ENV'), ['local', 'testing'], true)),
     ],
 
     'google_iap' => [

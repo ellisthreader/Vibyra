@@ -49,8 +49,8 @@ Route::get('/owner/login', fn () => response()->view('portal')
 Route::post('/web-api/human-check', HumanCheckController::class)->middleware('throttle:20,1');
 Route::post('/web-api/owner/local-login', LocalOwnerLoginController::class)->middleware('throttle:5,1');
 Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'catalog']);
-Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware('throttle:5,10');
-Route::post('/web-api/faq/ask', [WebsiteFaqController::class, 'ask'])->middleware('throttle:12,1');
+Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware([VerifyHuman::class.':api', 'throttle:5,10']);
+Route::post('/web-api/faq/ask', [WebsiteFaqController::class, 'ask'])->middleware([VerifyHuman::class.':api', 'throttle:12,1']);
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
 Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
     ->middleware('throttle:30,1');
@@ -70,7 +70,7 @@ Route::get('/web-api/updates/{target}/{arch}/{bundleType}/{current}', [ReleaseUp
     ->where('current', '[0-9A-Za-z.+-]+')
     ->middleware('throttle:60,1');
 
-Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:auth-signup');
+Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware([VerifyHuman::class.':api', 'throttle:auth-signup']);
 Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:auth-login');
 Route::delete('/web-api/auth/logout', [WebsiteAuthController::class, 'logout'])->middleware('auth');
 Route::post('/web-api/auth/login/2fa', [WebsiteAuthController::class, 'loginTwoFactor'])->middleware('throttle:8,1,web-login-2fa');

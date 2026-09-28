@@ -143,6 +143,11 @@ trait AuthRecoveryEndpoints
                 'remember_token' => Str::random(60),
             ])->save();
             VibyraSession::where('user_id', $user->id)->delete();
+            // Website sessions live in Laravel's session store, not VibyraSession.
+            if (config('session.driver') === 'database') {
+                \Illuminate\Support\Facades\DB::table((string) config('session.table', 'sessions'))
+                    ->where('user_id', $user->id)->delete();
+            }
             event(new PasswordReset($user));
         });
 

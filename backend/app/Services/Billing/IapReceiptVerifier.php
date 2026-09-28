@@ -48,6 +48,10 @@ class IapReceiptVerifier
         $status = (int) ($data['status'] ?? -1);
 
         if ($status === 21007) {
+            // Sandbox purchases are free TestFlight buys; they never unlock anything in production.
+            if (! config('services.apple_iap.allow_sandbox')) {
+                throw new RuntimeException('Test purchases are not accepted.');
+            }
             $sandboxUrl = (string) config('services.apple_iap.sandbox_url');
             $response = Http::timeout(15)->acceptJson()->post($sandboxUrl, $body);
             $data = (array) $response->json();
@@ -88,6 +92,12 @@ class IapReceiptVerifier
         $expiresAt = $expiresMs > 0 ? Carbon::createFromTimestampMs($expiresMs) : null;
         if ($expiresAt !== null && $expiresAt->isPast()) {
             throw new RuntimeException('Apple subscription receipt has expired.');
+        }
+
+        $expectedBundle = trim((string) config('services.apple_iap.bundle_id'));
+        $bundle = (string) data_get($data, 'receipt.bundle_id', '');
+        if ($expectedBundle === '' || ! hash_equals($expectedBundle, $bundle)) {
+            throw new RuntimeException('Apple receipt belongs to a different app.');
         }
 
         return [

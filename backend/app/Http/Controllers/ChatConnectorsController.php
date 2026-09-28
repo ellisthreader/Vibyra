@@ -42,7 +42,7 @@ class ChatConnectorsController extends Controller
     {
         $user = $this->available($request, $integration);
         $data = $request->validate(['returnUrl' => 'nullable|string|max:500']);
-        return $this->json($oauth->start($user->id, $integration, $data['returnUrl'] ?? null));
+        return $this->json($oauth->start($user->id, $integration, $data['returnUrl'] ?? null, (string) $request->ip()));
     }
 
     /** How a sign-in ended, with the catalogue as it now stands, for the account that started it. */
@@ -60,6 +60,19 @@ class ChatConnectorsController extends Controller
      */
     public function callback(Request $request, string $integration, ConnectorOAuth $oauth, Installs $installs)
     {
+        $state = (string) $request->query('state', '');
+        $code = (string) $request->query('code', '');
+        if ($code !== '' && $oauth->needsConfirmation($integration, $state, $request->ip())) {
+            $token = hash_hmac('sha256', 'connector|'.$state.'|'.$code, (string) config('app.key'));
+            if (! hash_equals($token, (string) $request->query('vibyra_confirm', ''))) {
+                $name = e($oauth->name($integration));
+                $continue = e($request->fullUrlWithQuery(['vibyra_confirm' => $token]));
+
+                return $this->page('Did you start connecting '.$oauth->name($integration).'?',
+                    'This was started from a different network. Only continue if you started it yourself in Vibyra. If someone sent you this link, close this page.',
+                    '<a href="'.$continue.'" style="display:inline-block;margin-top:16px;padding:12px 22px;border-radius:10px;background:#4f7bff;color:#fff;text-decoration:none">Yes, connect '.$name.'</a>');
+            }
+        }
         [$flow, $grant] = $oauth->finish($integration, (string) $request->query('state', ''),
             (string) $request->query('code', ''), (string) $request->query('error', ''));
         if ($flow && $grant !== null) {
@@ -73,13 +86,14 @@ class ChatConnectorsController extends Controller
             : $this->page($name.' was not connected', 'You can close this page and try again in Vibyra.');
     }
 
-    private function page(string $title, string $detail)
+    private function page(string $title, string $detail, string $actionHtml = '')
     {
         return response('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
             .'<title>'.e($title).'</title><body style="margin:0;display:grid;place-items:center;min-height:100vh;'
             .'font:16px/1.5 -apple-system,system-ui,sans-serif;background:#0E0F12;color:#F5F7FA">'
             .'<main style="text-align:center;padding:24px"><h1 style="font-size:23px;margin:0 0 8px">'.e($title).'</h1>'
-            .'<p style="margin:0;color:#A6ADBA">'.e($detail).'</p></main>')->header('Content-Type', 'text/html');
+            .'<p style="margin:0;color:#A6ADBA">'.e($detail).'</p>'.$actionHtml.'</main>')->header('Content-Type', 'text/html')
+            ->header('Cache-Control', 'no-store');
     }
 
     /**

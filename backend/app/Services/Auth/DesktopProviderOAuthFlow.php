@@ -21,13 +21,47 @@ class DesktopProviderOAuthFlow
         }
     }
 
-    public function start(string $provider, array $client): array
+    /**
+     * A finished sign-in is only released to whoever started it: the website
+     * passes its session as the binding, and apps may pass a flowSecret they
+     * hold. Flows with neither record the starting network, so the callback
+     * can ask the person to confirm when the link was opened somewhere else.
+     */
+    public function start(string $provider, array $client, ?string $binding = null, ?string $startIp = null): array
     {
+        $secret = trim((string) ($client['flowSecret'] ?? ''));
+        if ($secret !== '' && strlen($secret) < 32) {
+            throw new ProviderIdentityException('The sign-in secret is too short.');
+        }
+
         return $this->create($provider, [
             'deviceName' => mb_substr(trim((string) ($client['deviceName'] ?? 'Vibyra Desktop')), 0, 120),
             'installId' => mb_substr(trim((string) ($client['installId'] ?? '')), 0, 128),
             'publicIp' => trim((string) ($client['publicIp'] ?? '')),
+            'binding' => $binding !== null ? hash('sha256', $binding) : null,
+            'secretHash' => $secret !== '' ? hash('sha256', $secret) : null,
+            'startIp' => $startIp,
         ]);
+    }
+
+    /** Reads a flow by its state without consuming it, for the confirmation step. */
+    public function peekState(string $provider, string $state): ?array
+    {
+        $flowId = $state === '' ? null : Cache::get($this->stateKey($state));
+        $flow = is_string($flowId) ? Cache::get($this->flowKey($flowId)) : null;
+
+        return is_array($flow) && ($flow['provider'] ?? null) === $provider
+            && hash_equals((string) ($flow['state'] ?? ''), $state) ? $flow : null;
+    }
+
+    public function needsConfirmation(array $flow, ?string $callbackIp): bool
+    {
+        if (($flow['binding'] ?? null) || ($flow['secretHash'] ?? null) || ($flow['purpose'] ?? null)) {
+            return false;
+        }
+        $startIp = (string) ($flow['startIp'] ?? '');
+
+        return $startIp === '' || $callbackIp === null || ! hash_equals($startIp, $callbackIp);
     }
 
     public function startDeletion(string $provider, int $accountId, string $providerSubject): array
@@ -62,25 +96,30 @@ class DesktopProviderOAuthFlow
         Cache::forget($this->flowKey($flowId));
         Cache::put($this->resultKey($flowId), [
             'provider' => is_array($flow) ? ($flow['provider'] ?? null) : null,
+            'binding' => is_array($flow) ? ($flow['binding'] ?? null) : null,
+            'secretHash' => is_array($flow) ? ($flow['secretHash'] ?? null) : null,
             'enrollment' => is_array($flow) && ($flow['purpose'] ?? null) === 'two_factor_enrollment'
                 ? $this->enrollmentBinding($flow) : null,
             'result' => $result,
         ], now()->addMinutes(5));
     }
 
-    public function status(string $provider, string $flowId): array
+    public function status(string $provider, string $flowId, ?string $binding = null, ?string $secret = null): array
     {
         if ($this->isEnrollment($flowId)) {
             return ['ok' => false, 'status' => 'forbidden', 'error' => 'Account verification requires its original session.'];
         }
 
-        return $this->statusResult($provider, $flowId);
+        return $this->statusResult($provider, $flowId, $binding, $secret);
     }
 
-    private function statusResult(string $provider, string $flowId): array
+    private function statusResult(string $provider, string $flowId, ?string $binding = null, ?string $secret = null): array
     {
         $completed = Cache::get($this->resultKey($flowId));
         if (is_array($completed) && ($completed['provider'] ?? null) === $provider) {
+            if (! $this->ownsFlow($completed, $binding, $secret)) {
+                return ['ok' => false, 'status' => 'forbidden', 'error' => 'This sign-in belongs to another session.'];
+            }
             $claimed = Cache::pull($this->resultKey($flowId));
             if (is_array($claimed) && ($claimed['provider'] ?? null) === $provider) {
                 return (array) ($claimed['result'] ?? []);
@@ -95,6 +134,19 @@ class DesktopProviderOAuthFlow
         }
 
         return ['ok' => false, 'status' => 'expired', 'error' => 'This sign-in attempt expired. Try again.'];
+    }
+
+    private function ownsFlow(array $flow, ?string $binding, ?string $secret): bool
+    {
+        $expectedBinding = $flow['binding'] ?? null;
+        if (is_string($expectedBinding)
+            && ($binding === null || ! hash_equals($expectedBinding, hash('sha256', $binding)))) {
+            return false;
+        }
+        $expectedSecret = $flow['secretHash'] ?? null;
+
+        return ! is_string($expectedSecret)
+            || ($secret !== null && $secret !== '' && hash_equals($expectedSecret, hash('sha256', $secret)));
     }
 
     private function create(string $provider, array $details): array

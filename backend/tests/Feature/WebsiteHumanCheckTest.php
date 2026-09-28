@@ -31,7 +31,13 @@ class WebsiteHumanCheckTest extends TestCase
     public function test_verified_visitor_and_crawlers_go_straight_through(): void
     {
         $this->withCookie(VerifyHuman::COOKIE, '1')->get('/downloads')->assertOk();
-        $this->withHeader('User-Agent', 'Mozilla/5.0 (compatible; Googlebot/2.1)')->get('/downloads')->assertOk();
+        $this->withHeader('User-Agent', 'Slackbot-LinkExpanding 1.0')->get('/downloads')->assertOk();
+    }
+
+    public function test_a_crawler_name_alone_does_not_skip_the_check(): void
+    {
+        // The address must reverse-resolve to the crawler; a local test address never does.
+        $this->withHeader('User-Agent', 'Mozilla/5.0 (compatible; Googlebot/2.1)')->get('/downloads')->assertForbidden();
     }
 
     public function test_legal_pages_and_disabled_check_are_not_gated(): void

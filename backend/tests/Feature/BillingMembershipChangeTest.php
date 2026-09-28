@@ -10,24 +10,23 @@ class BillingMembershipChangeTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_manual_membership_can_change_plan_and_cycle(): void
+    public function test_manual_membership_cannot_pick_its_own_plan(): void
     {
         [$user, $token] = $this->paidUser('manual-change@example.test', 'manual');
+        $before = $user->fresh();
 
         $this->postJson('/api/billing/change', [
-            'plan' => 'starter',
-            'cycle' => 'monthly',
+            'plan' => 'pro',
+            'cycle' => 'annual',
         ], ['Authorization' => "Bearer {$token}"])
-            ->assertOk()
-            ->assertJsonPath('status', 'completed')
-            ->assertJsonPath('user.plan', 'starter')
-            ->assertJsonPath('user.planBillingCycle', 'monthly')
-            ->assertJsonPath('user.creditsBalance', (int) config('billing.plans.starter.monthly_credits'));
+            ->assertStatus(422)
+            ->assertJsonPath('ok', false);
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
-            'plan' => 'starter',
-            'plan_billing_cycle' => 'monthly',
+            'plan' => $before->plan,
+            'plan_billing_cycle' => $before->plan_billing_cycle,
+            'credits_balance' => $before->credits_balance,
             'billing_provider' => 'manual',
         ]);
     }

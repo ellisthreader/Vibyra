@@ -108,4 +108,34 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $this->notify(new VibyraResetPassword($token));
     }
+
+    /**
+     * Microsoft does not prove mailbox ownership, so an unverified Microsoft
+     * account must not keep someone else's address from them. The account
+     * stays usable through its Microsoft sign-in; only the address is released.
+     */
+    public static function releaseUnverifiedClaim(string $email): void
+    {
+        static::query()
+            ->where('email', $email)
+            ->whereNull('email_verified_at')
+            ->where('provider', 'microsoft')
+            ->get()
+            ->each(fn (self $user) => $user->forceFill(['email' => 'unverified+'.$user->getKey().'@users.invalid'])->save());
+    }
+
+    /**
+     * Signup has to say when an address is taken (it logs straight in), so
+     * checking many addresses from one network is capped instead.
+     */
+    public static function emailTakenLimitReached(string $ip): bool
+    {
+        $key = 'signup-email-taken:'.hash('sha256', $ip);
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            return true;
+        }
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 3600);
+
+        return false;
+    }
 }

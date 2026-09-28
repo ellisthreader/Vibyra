@@ -42,6 +42,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->remove(HandleCors::class);
         $middleware->append(VibyraCors::class);
         $middleware->append(\App\Http\Middleware\VibesLegacyGuard::class);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        // Any password change signs out every other website session of that account.
+        $middleware->appendToGroup('web', \Illuminate\Session\Middleware\AuthenticateSession::class);
         $middleware->validateCsrfTokens(except: [
             'pair',
             'pair/status',

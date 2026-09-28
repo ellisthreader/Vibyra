@@ -141,14 +141,33 @@ trait AccountEndpoints
             return $this->json(['ok' => false, 'error' => 'Change the email through your sign-in provider.'], 422);
         }
 
-        $this->moderation->assertLocalTextAllowed($name, 'account.name');
         $emailChanged = $email !== $user->email;
+        // A stolen session token must not be enough to move the account elsewhere.
+        if ($emailChanged) {
+            $password = (string) $request->input('currentPassword', $request->input('password', ''));
+            if ($password === '' || ! Hash::check($password, (string) $user->password)) {
+                return $this->json([
+                    'ok' => false,
+                    'error' => 'Enter your current password to change your email.',
+                    'code' => 'password_required',
+                ], 401);
+            }
+        }
+
+        $this->moderation->assertLocalTextAllowed($name, 'account.name');
+        $previousEmail = (string) $user->email;
         $user->forceFill([
             'name' => $name,
             'email' => $email,
             'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
         ])->save();
         if ($emailChanged) {
+            try {
+                \Illuminate\Support\Facades\Notification::route('mail', $previousEmail)
+                    ->notify(new \App\Notifications\AccountEmailChanged($email));
+            } catch (\Throwable) {
+                // The change itself stands; the notice is best effort.
+            }
             try {
                 $user->sendEmailVerificationNotification();
             } catch (\Throwable) {

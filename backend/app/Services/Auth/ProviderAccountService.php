@@ -43,6 +43,9 @@ class ProviderAccountService
                 422
             );
         }
+        if ($identity['emailVerified'] ?? true) {
+            User::releaseUnverifiedClaim($email);
+        }
         if (User::where('email', $email)->exists()) {
             throw new ProviderAccountException(
                 'An account already exists for that email. Log in with its original method.',

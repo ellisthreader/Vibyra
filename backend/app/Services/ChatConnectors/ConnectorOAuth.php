@@ -34,14 +34,14 @@ class ConnectorOAuth
     }
 
     /** The provider's page to open, and the flow id the phone reads the outcome from. */
-    public function start(int $userId, string $slug, ?string $returnUrl): array
+    public function start(int $userId, string $slug, ?string $returnUrl, ?string $startIp = null): array
     {
         abort_unless($this->configured($slug), 422, $this->name($slug).' sign-in is not available right now. Please try again later.');
         $flowId = (string) Str::uuid();
         $state = Str::random(48);
         $verifier = Str::random(64);
         Cache::put($this->stateKey($state), ['userId' => $userId, 'slug' => $slug, 'flowId' => $flowId,
-            'verifier' => $verifier, 'return' => $this->safeReturn($returnUrl)], now()->addMinutes(self::FLOW_MINUTES));
+            'verifier' => $verifier, 'return' => $this->safeReturn($returnUrl), 'startIp' => $startIp], now()->addMinutes(self::FLOW_MINUTES));
         $this->record($flowId, $userId, ['status' => 'pending']);
         $settings = $this->settings($slug);
         $query = array_filter([
@@ -67,6 +67,22 @@ class ConnectorOAuth
      *
      * @return array{0: ?array, 1: ?array{access: string, refresh: ?string, expires_in: ?int}}
      */
+    /**
+     * True when the provider sent the browser back from a different network than
+     * the app that started the connection: someone may have sent this person the
+     * link to attach their account to someone else's Vibyra. Reads without claiming.
+     */
+    public function needsConfirmation(string $slug, string $state, ?string $callbackIp): bool
+    {
+        $flow = $state === '' ? null : Cache::get($this->stateKey($state));
+        if (! is_array($flow) || ($flow['slug'] ?? '') !== $slug) {
+            return false;
+        }
+        $startIp = (string) ($flow['startIp'] ?? '');
+
+        return $startIp !== '' && ($callbackIp === null || ! hash_equals($startIp, $callbackIp));
+    }
+
     public function finish(string $slug, string $state, string $code, string $error = ''): array
     {
         // Atomic claim: Cache::pull alone is a get/delete pair and can be replayed concurrently.
