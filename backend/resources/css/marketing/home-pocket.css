@@ -1,0 +1,61 @@
+/* Native reference composition; device and landscape are React/CSS/SVG. */
+.pocket-section { position: relative; isolation: isolate; background: var(--home-dark); color: #f6f7fb; container-type: inline-size; scroll-margin-top: 0; }
+.pocket-scene { position: relative; width: 100%; aspect-ratio: 1672 / 970; overflow: hidden; }
+.pocket-copy { position: absolute; top: 28%; left: 8%; z-index: 1; }
+.marketing-home .pocket-eyebrow { font-size: .718cqw; font-weight: 600; letter-spacing: .6em; line-height: 1.5; color: var(--site-muted, #a1a6b0); margin: 0 0 2.05cqw; }
+.marketing-home .pocket-copy h2 { font-family: Manrope, "Segoe UI", sans-serif; font-weight: 500; font-size: 5.5cqw; line-height: .96; letter-spacing: -.061em; color: var(--site-text, #f4f5f7); margin: 0; }
+.marketing-home .pocket-copy h2 > span { display: inline-block; padding-bottom: .08em; color: inherit; }
+.marketing-home .pocket-description { margin-top: 1.38cqw; font-size: 1.55cqw; line-height: 1.35; font-weight: 400; color: #bbc0ce; letter-spacing: -.022em; }
+.pocket-actions { display: flex; gap: 1.15cqw; margin-top: 2.45cqw; align-items: center; }
+.marketing-home .pocket-actions button { display: inline-flex; justify-content: center; align-items: center; height: 4.06cqw; width: 13.16cqw; padding: 0; gap: 1.1cqw; border-radius: 999px; font-size: 1.08cqw; font-weight: 600; line-height: 1; white-space: nowrap; transition: background .2s, box-shadow .2s; }
+.marketing-home .pocket-join { background: #fafbff; color: #080c18; border: 1px solid #fff; box-shadow: 0 3px 26px #e1eaff17, inset 0 0 10px #c7d3e51c; }
+.marketing-home .pocket-join:hover { background: #fff; box-shadow: 0 4px 30px #e1eaff35; }
+.marketing-home .pocket-preview { background: #080c1580; color: #f6f7fb; border: 1px solid #354056; padding-inline: 1.32cqw 1.85cqw; }
+.marketing-home .pocket-preview:hover { background: #172039; }
+.pocket-play { width: 2.6cqw; height: 2.6cqw; display: grid; place-items: center; border: 1px solid #3a475c; border-radius: 50%; box-shadow: inset 0 0 10px #0008; }
+.pocket-play svg { fill: currentColor; stroke-width: 0; margin-left: 2px; }
+.marketing-home .pocket-availability { margin-top: 1.32cqw; font-size: .91cqw; line-height: 1.6; color: #8898b6; letter-spacing: -.015em; }
+.pocket-availability span { margin-inline: .7cqw; }
+
+/* Native dialog retains keyboard focus, Escape and the existing waitlist API. */
+.pocket-dialog { padding: 30px; margin: auto; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; color: #f4f5f7; background: #0e1119; border: 1px solid #303a50; border-radius: 24px; box-shadow: 0 30px 120px #000b; }
+.pocket-dialog::backdrop { background: #02040bd9; backdrop-filter: blur(12px); }
+.pocket-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.marketing-home .pocket-dialog-head h3 { font-size: 23px; line-height: 1.25; font-weight: 500; letter-spacing: -.03em; }
+.pocket-dialog-head > button { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: #202737; }
+.marketing-home .pocket-dialog-intro { margin-top: 18px; color: #aab3c6; font-size: 15px; line-height: 1.6; }
+.pocket-dialog .phone-waitlist { margin-top: 28px; }
+.pocket-dialog .phone-waitlist label { display: block; margin-bottom: 10px; font-size: 14px; }
+.pocket-dialog .phone-waitlist-row { display: flex; flex-direction: column; gap: 12px; }
+.pocket-dialog .phone-waitlist input { width: 100%; min-width: 0; padding: 13px 16px; border: 1px solid #36415b; border-radius: 12px; background: #090d15; color: #fff; font: inherit; }
+.pocket-dialog .phone-waitlist button { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px; border: 0; border-radius: 999px; color: #0a0d15; background: #f4f5f7; font-size: 15px; font-weight: 600; }
+.pocket-dialog .phone-waitlist button:disabled { opacity: .6; cursor: wait; }
+.marketing-home .pocket-dialog .phone-waitlist-note, .marketing-home .pocket-dialog .phone-waitlist-error { margin-top: 14px; font-size: 13px; color: #9daac0; }
+.marketing-home .pocket-dialog .phone-waitlist-error { color: #ffb5b5; }
+.pocket-dialog .phone-waitlist-done { display: flex; gap: 12px; align-items: flex-start; padding-top: 24px; }
+.pocket-dialog.is-preview { width: min(1120px, calc(100vw - 32px)); }
+.pocket-demo .mobile-visual { width: 100%; padding-bottom: 10px; }
+.pocket-demo .mobile-stage { margin-top: 20px; }
+@media (max-width: 900px) {
+  .pocket-scene { aspect-ratio: auto; padding: 64px 24px 0; }
+  .pocket-copy { position: relative; top: auto; left: auto; }
+  .marketing-home .pocket-eyebrow { font-size: 10px; margin-bottom: 24px; letter-spacing: .4em; }
+  .marketing-home .pocket-copy h2 { font-size: clamp(44px, 8.3vw, 74px); line-height: 1.02; letter-spacing: -.06em; }
+  .marketing-home .pocket-description { margin-top: 22px; max-width: 36ch; font-size: clamp(16px, 2.4vw, 21px); line-height: 1.5; }
+  .pocket-desktop-break { display: none; }
+  .pocket-actions { gap: 12px; margin-top: 28px; }
+  .marketing-home .pocket-actions button { height: 52px; width: auto; padding: 0 23px; gap: 12px; font-size: 14px; }
+  .marketing-home .pocket-preview { padding-inline: 12px 20px; }
+  .pocket-play { width: 32px; height: 32px; }
+  .marketing-home .pocket-availability { font-size: 11px; margin-top: 18px; }
+  .pocket-availability span { margin-inline: 7px; }
+  .pocket-copy { z-index: 2; }
+  .pocket-scene { display: flex; flex-direction: column; }
+}
+@media (max-width: 380px) {
+  .pocket-scene { padding-inline: 18px; }
+  .marketing-home .pocket-copy h2 { font-size: 42px; }
+  .marketing-home .pocket-actions button { padding-inline: 17px; font-size: 13px; }
+  .marketing-home .pocket-preview { padding-inline: 9px 14px; gap: 8px; }
+  .pocket-dialog { padding: 22px; }
+}

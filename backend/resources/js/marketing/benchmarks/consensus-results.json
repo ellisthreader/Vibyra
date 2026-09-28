@@ -1,0 +1,2237 @@
+{
+ "generatedAt": "2026-09-23T14:50:23.808Z",
+ "method": {
+  "minSources": 3,
+  "categoryWeights": {
+   "overall": 1,
+   "coding": 1,
+   "agents": 1,
+   "reasoning": 1,
+   "knowledge": 1,
+   "preference": 1
+  },
+  "scale": "50 = average of these models; 15 points = one standard deviation"
+ },
+ "sources": [
+  {
+   "id": "aa-intelligence",
+   "name": "Artificial Analysis Intelligence Index",
+   "org": "Artificial Analysis",
+   "url": "https://artificialanalysis.ai/leaderboards/models",
+   "updated": "2026-09-23",
+   "metric": "Intelligence Index v4.3 (0–100)",
+   "category": "overall",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Highest reasoning effort per model.",
+   "models": 19
+  },
+  {
+   "id": "aa-coding-agent",
+   "name": "Artificial Analysis Coding Agent Index",
+   "org": "Artificial Analysis",
+   "url": "https://artificialanalysis.ai/agents/coding-agents",
+   "updated": "2026-09-23",
+   "metric": "Coding Agent Index v1.5",
+   "category": "coding",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Scores a model inside its own coding agent.",
+   "models": 11
+  },
+  {
+   "id": "terminal-bench",
+   "name": "Terminal-Bench 4.0",
+   "org": "Stanford / Laude Institute (Harbor)",
+   "url": "https://www.tbench.ai/leaderboard",
+   "updated": "2026-09-21",
+   "metric": "% tasks resolved (resolution rate, agent+model)",
+   "category": "agents",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Parsed from the RSC payload embedded in tbench.ai/leaderboard (27 rows). tbench.ai now only hosts the TB 4.0 leaderboard (released 2026-08-28); /leaderboard/terminal-bench/2.0 and /3.0 serve the same 4.0 page and the Harbor Hub 2.1/3.0 leaderboard pages are client-rendered/404, so no older-version board could be read. Not listed: Claude Opus 5.5 (press reports an Anthropic-claimed 66.4% on TB 4.0 but it is not on the board), GPT-6 Sol/Luna (only GPT-5.6 Sol/Luna/Terra), Opus 5 (not Opus 5.5), and all other roster models. Only 6 roster models covered. Artificial Analysis runs its own TB 4.0 with near-full roster coverage (see aa-terminal-bench-4).",
+   "models": 6
+  },
+  {
+   "id": "matharena-arxivmath",
+   "name": "MathArena ArXivMath (08/2026 round)",
+   "org": "MathArena (ETH Zurich SRI Lab)",
+   "url": "https://matharena.ai/competition_tables/arxiv--august",
+   "updated": "2026-09-15",
+   "metric": "% accuracy on the August 2026 ArXivMath questions",
+   "category": "reasoning",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Most recent MathArena competition (arXiv-derived problems, Aug 2026; GitHub eth-sri/matharena commit \"Update harnesses and August versions\" 2026-09-15; HF MathArena/arxivmath-0826_outputs). Read from the site's JSON table endpoint. All but Kimi K3 flagged by MathArena as released after the competition data (possible contamination). Alternative: the ArXivMath overall average over 05/06/08-2026 (https://matharena.ai/competition_tables/overall--arxivmath): GPT-6 Astra (max) 92.68, Qwen3.8-Max 67.59, Muse Spark 1.3 65.23, Grok 4.7 (xhigh) 59.15, Kimi K3 57.26, Claude-Fable-5.1 (low) 56.25, Gemini 3.8 Flash 55.35, DeepSeek-V4.1-Flash 53.28 — but Fable 5.1 high/max only have partial months there (88%, 88/91%), so the full average only exists for its low effort; the August round is fairer. No Claude Opus 5.5/Sonnet 5/Haiku, GPT-6 Sol/Luna, GLM-5.3, MiniMax-M3, MiMo, Mistral, DeepSeek V4 Pro 0813.",
+   "models": 8
+  },
+  {
+   "id": "epoch-eci",
+   "name": "Epoch Capabilities Index",
+   "org": "Epoch AI",
+   "url": "https://epoch.ai/data/eci_scores.csv",
+   "updated": "2026-09-23",
+   "metric": "ECI score (IRT-fitted composite across ~40 benchmarks; unitless, ~frontier 150-167)",
+   "category": "overall",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Raw CSV (linked from https://epoch.ai/benchmarks/eci). One ECI per model family, not per effort. No Last-Modified header; newest row dated 2026-09-09, fetched 2026-09-23. Not yet listed: Opus 5.5, GPT-6 Sol, GPT-6 Luna, Grok 4.7 (all released 2026-09-21/22), MiMo-V2.6-Pro. Qwen3.8 Max has two rows: Qwen 3.8 Max 156.69 (used) and Qwen3.8 Max (0902) 155.28. Gemini 3.1 Pro row is the Preview model (model_versions gemini-3.1-pro-preview*).",
+   "models": 14
+  },
+  {
+   "id": "epoch-frontiermath-t1-3",
+   "name": "FrontierMath Tiers 1-3 (v2, private)",
+   "org": "Epoch AI",
+   "url": "https://epoch.ai/data/benchmark_data.zip#frontiermath_tiers_1_3_v2.csv",
+   "updated": "2026-09-23",
+   "metric": "Accuracy % (Best score across scorers x100)",
+   "category": "reasoning",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Epoch-run. From benchmark_data.zip (files dated 2026-09-23). Value = column \"Best score (across scorers)\" x100. Highest effort variant per model. Missing: Opus 5.5, GPT-6 Sol/Luna, Grok 4.7, DeepSeek V4.1 Flash, Haiku 4.5, MiniMax-M3, MiMo, Mistral.",
+   "models": 10
+  },
+  {
+   "id": "epoch-simpleqa-verified",
+   "name": "SimpleQA Verified (Epoch-run)",
+   "org": "Epoch AI",
+   "url": "https://epoch.ai/data/benchmark_data.zip#simpleqa_verified.csv",
+   "updated": "2026-09-23",
+   "metric": "Accuracy % (Best score across scorers x100)",
+   "category": "knowledge",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Epoch-run factuality benchmark. Qwen3.8 Max best is the 0902 snapshot.",
+   "models": 10
+  },
+  {
+   "id": "epoch-apex-agents",
+   "name": "APEX-Agents (via Epoch hub)",
+   "org": "Epoch AI",
+   "url": "https://epoch.ai/data/benchmark_data.zip#apex_agents_external.csv",
+   "updated": "2026-09-23",
+   "metric": "Pass@1 %",
+   "category": "agents",
+   "higherIsBetter": true,
+   "confidence": "medium",
+   "notes": "External data (Mercor APEX-Agents) mirrored in Epoch hub file apex_agents_external.csv; single run per model, effort usually unrecorded (\"unknown\").",
+   "models": 10
+  },
+  {
+   "id": "scale-swe-bench-pro-v2",
+   "name": "SWE-Bench Pro V2 (public, full)",
+   "org": "Scale AI (SEAL)",
+   "url": "https://labs.scale.com/leaderboard/swe_bench_pro_public_v2?tab=full",
+   "updated": "2026-09-22",
+   "metric": "Resolve rate %",
+   "category": "coding",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "V2 released September 22, 2026 (642 tasks, locked protocol). Scores are agent+harness combos (Claude Code / Codex / mini-swe-agent), so harness differs across labs. Values are much higher than old SWE-Bench Pro (v1 top ~61%). Opus 5 (98.0) is listed, NOT Opus 5.5. The HARD tab is client-rendered and was not captured.",
+   "models": 7
+  },
+  {
+   "id": "scale-mcp-atlas",
+   "name": "MCP Atlas",
+   "org": "Scale AI (SEAL)",
+   "url": "https://labs.scale.com/leaderboard/mcp_atlas",
+   "updated": "2026-09-23",
+   "metric": "Pass rate %",
+   "category": "agents",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Page text says \"Updated April 8, 2026\" but contains models released through 2026-09; updated date set to fetch date. Omitted \"Qwen3.8-2.4T-A95B (xHigh)\" 84.50 - unclear whether that is Qwen3.8 Max. No GPT-6 Astra entry.",
+   "models": 5
+  },
+  {
+   "id": "vals-terminal-bench-2-1",
+   "name": "Terminal-Bench 2.1 (Vals)",
+   "org": "Vals.ai",
+   "url": "https://www.vals.ai/benchmarks/terminal-bench-2-1",
+   "updated": "2026-09-22",
+   "metric": "Accuracy %",
+   "category": "agents",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Parsed from the page's embedded (server-rendered) benchmark JSON, \"overall\" task accuracy; variant = Vals model id (+ effort when recorded). COMPONENT of Vals Index - drop one or the other to avoid double counting.",
+   "models": 19
+  },
+  {
+   "id": "vals-vibe-code-bench",
+   "name": "Vibe Code Bench v1.1 (Vals)",
+   "org": "Vals.ai",
+   "url": "https://www.vals.ai/benchmarks/vibe-code",
+   "updated": "2026-09-22",
+   "metric": "Accuracy %",
+   "category": "coding",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Parsed from the page's embedded (server-rendered) benchmark JSON, \"overall\" task accuracy; variant = Vals model id (+ effort when recorded). COMPONENT of Vals Index - drop one or the other to avoid double counting.",
+   "models": 19
+  },
+  {
+   "id": "vals-proofbench",
+   "name": "ProofBench v1.1 (Vals)",
+   "org": "Vals.ai",
+   "url": "https://www.vals.ai/benchmarks/proof_bench",
+   "updated": "2026-09-22",
+   "metric": "Accuracy %",
+   "category": "reasoning",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Parsed from the page's embedded (server-rendered) benchmark JSON, \"overall\" task accuracy; variant = Vals model id (+ effort when recorded). Not part of the Vals Index. Missing Haiku 4.5 and MiMo-V2.6-Pro. Top is saturated (Opus 5.5 and Fable 5.1 both 100). Epoch mirrors this file as proofbench_external.csv - do not count twice.",
+   "models": 17
+  },
+  {
+   "id": "cais-hle",
+   "name": "Humanity's Last Exam (CAIS official)",
+   "org": "Center for AI Safety",
+   "url": "https://dashboard.safe.ai/api/models",
+   "updated": "2026-09-23",
+   "metric": "Accuracy %",
+   "category": "knowledge",
+   "higherIsBetter": true,
+   "confidence": "medium",
+   "notes": "Raw JSON API that feeds the live results widget on lastexam.ai and the CAIS AI Dashboard (dashboard.safe.ai). Returns 403 unless sent with Origin/Referer lastexam.ai. One entry per model (usually the \"high\" effort run). Numbers differ from Scale SEAL HLE (e.g. Fable 5.1 54.6 vs 46.5, Astra 53.6 vs 54.8) - likely different eval set/judge (HLE-Rolling vs original); treat as a separate source, not a duplicate. No update date in the payload; newest entry released 2026-09-04. The static table on lastexam.ai itself is stale (Apr 2025 dataset, Gemini 3 Pro top). Medium confidence because the dataset version behind the \"hle\" field is undocumented.",
+   "models": 8
+  },
+  {
+   "id": "lmarena-text",
+   "name": "LMArena Text (style control, default view)",
+   "org": "LMArena",
+   "url": "https://arena.ai/leaderboard/text",
+   "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset (config text_style_control, split latest, category overall)",
+   "updated": "2026-09-13",
+   "metric": "Arena score (Bradley-Terry, style control)",
+   "category": "preference",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Machine-readable HF parquet; values cross-checked against the live arena.ai/leaderboard/text page (default view is style-controlled, e.g. claude-fable-5.1-max 1498.47, gpt-6-astra-max 1479.77; page shows \"Sep 13, 2026\"). Not listed: Claude Opus 5.5, GPT-6 Sol, GPT-6 Luna, Grok 4.7, DeepSeek V4.1 Flash, MiMo-V2.6-Pro (only mimo-v2.5-pro). DeepSeek uses the 0813 snapshot row (deepseek-v4-pro-high-20260813, 1463.36); the older deepseek-v4-pro row is 1457.34. Raw (non style control) config also exists: e.g. fable-5.1-max 1507.58 rank 1. rank field = published rank.",
+   "models": 13
+  },
+  {
+   "id": "lmarena-webdev",
+   "name": "LMArena WebDev (Code Arena)",
+   "org": "LMArena",
+   "url": "https://arena.ai/leaderboard/code",
+   "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset (config webdev, split latest, category overall)",
+   "updated": "2026-09-22",
+   "metric": "Arena score (Bradley-Terry)",
+   "category": "coding",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "arena.ai/leaderboard/webdev and /code serve the same board (page shows \"Sep 22, 2026\"; gpt-6-astra-max 1793.18 matches). Qwen3.8 Max: highest of qwen3.8-max (1670.89) and qwen3.8-max-0902 (1662.18). Muse Spark 1.3: muse-spark-1.3-max (1656.71) beats muse-spark-1.3 (xHigh) (1623.72). Not listed: Claude Opus 5.5, GPT-6 Sol, GPT-6 Luna, MiMo-V2.6-Pro.",
+   "models": 15
+  },
+  {
+   "id": "lmarena-agent",
+   "name": "LMArena Agent Arena",
+   "org": "LMArena",
+   "url": "https://arena.ai/leaderboard/agent",
+   "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset (config agent, split latest)",
+   "updated": "2026-09-15",
+   "metric": "Average agent score across 5 pipelines, shown as percent (can be negative)",
+   "category": "agents",
+   "higherIsBetter": true,
+   "confidence": "medium",
+   "notes": "Value = published avgScore x100, matching page display (e.g. Kimi K3 (Max) 6.22 %). Scale is a relative latent score centred near 0, not an Elo; normalise before averaging. Only 46 models; not listed: Opus 5.5, Haiku 4.5, GPT-6 Sol/Luna, Grok 4.7, MiMo-V2.6-Pro. Medium confidence only because the metric is new/unusual, the numbers themselves are exact.",
+   "models": 13
+  },
+  {
+   "id": "livebench-global",
+   "name": "LiveBench Global Average",
+   "org": "LiveBench",
+   "url": "https://livebench.ai/",
+   "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
+   "updated": "2026-09-22",
+   "metric": "Global average (mean of 7 category means)",
+   "category": "overall",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Release LiveBench-2026-06-25 (latest release; models appended after). updated = table CSV Last-Modified header (2026-09-22 20:51 GMT). Averages recomputed from the per-task CSV exactly as the site bundle does (task mean per category, then mean of category means, toFixed(2)); no missing cells for roster models. Opus 5.5: max-effort 83.22 vs xhigh-effort 82.06. DeepSeek: deepseek-v4-pro-0813 row (77.44); the original deepseek-v4-pro row is 71.57. Not listed: Claude Haiku 4.5, MiMo-V2.6-Pro, Mistral Medium 3.5.",
+   "models": 16
+  },
+  {
+   "id": "livebench-coding",
+   "name": "LiveBench Coding",
+   "org": "LiveBench",
+   "url": "https://livebench.ai/",
+   "dataUrl": "https://livebench.ai/table_2026_06_25.csv",
+   "updated": "2026-09-22",
+   "metric": "Coding category average (code_generation, code_completion)",
+   "category": "coding",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Same data/method as livebench-global. Opus 5.5 max and xhigh tie at 89.25. Same models missing.",
+   "models": 16
+  },
+  {
+   "id": "livebench-agentic-coding",
+   "name": "LiveBench Agentic Coding",
+   "org": "LiveBench",
+   "url": "https://livebench.ai/",
+   "dataUrl": "https://livebench.ai/table_2026_06_25.csv",
+   "updated": "2026-09-22",
+   "metric": "Agentic Coding category average (python, javascript, typescript; agentic v2)",
+   "category": "agents",
+   "higherIsBetter": true,
+   "confidence": "high",
+   "notes": "Same data/method as livebench-global. Opus 5.5 max-effort 71.72 vs xhigh 65.35. Same models missing.",
+   "models": 16
+  }
+ ],
+ "models": [
+  {
+   "id": "claude-opus-5-5",
+   "name": "Claude Opus 5.5",
+   "provider": "anthropic",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 4,
+   "priceOut": 20,
+   "context": 1000000,
+   "provisional": false,
+   "score": 72,
+   "categories": {
+    "overall": 71,
+    "agents": 72.2,
+    "coding": 70.2,
+    "reasoning": 74.6
+   },
+   "sourceCount": 7,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 57.6,
+     "variant": "Claude Opus 5.5",
+     "rank": 1,
+     "of": 19
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 87.64,
+     "variant": "anthropic/claude-opus-5-5 (high)",
+     "rank": 1,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 90.294,
+     "variant": "anthropic/claude-opus-5-5",
+     "rank": 1,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 100,
+     "variant": "anthropic/claude-opus-5-5",
+     "rank": 1,
+     "of": 17
+    },
+    "livebench-global": {
+     "value": 83.22,
+     "variant": "claude-opus-5-5-max-effort",
+     "rank": 2,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 89.25,
+     "variant": "claude-opus-5-5-max-effort",
+     "rank": 1,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 71.72,
+     "variant": "claude-opus-5-5-max-effort",
+     "rank": 2,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "claude-fable-5-1",
+   "name": "Claude Fable 5.1",
+   "provider": "anthropic",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 10,
+   "priceOut": 50,
+   "context": 1000000,
+   "provisional": false,
+   "score": 67.8,
+   "categories": {
+    "overall": 69.4,
+    "coding": 66.9,
+    "agents": 67.2,
+    "reasoning": 69.9,
+    "knowledge": 67.5,
+    "preference": 66
+   },
+   "sourceCount": 20,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 53.4,
+     "variant": "Claude Fable 5.1",
+     "rank": 2,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 62.2,
+     "variant": "Claude Code + Fable 5.1",
+     "rank": 1,
+     "of": 11
+    },
+    "terminal-bench": {
+     "value": 57.88,
+     "variant": "Fable 5.1 (max; xhigh ties at 57.88) + Claude Code, 2026-09-01",
+     "rank": 2,
+     "of": 6
+    },
+    "matharena-arxivmath": {
+     "value": 87.72,
+     "variant": "Claude-Fable-5.1 (high)",
+     "rank": 2,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 165,
+     "variant": "Claude Fable 5.1",
+     "rank": 2,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 90.1754,
+     "variant": "Claude Fable 5.1 (max) [claude-fable-5-1_max]",
+     "rank": 2,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 70.8,
+     "variant": "Claude Fable 5.1 (max) [claude-fable-5-1_max]",
+     "rank": 3,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 68.6,
+     "variant": "Fable 5.1 [claude-fable-5.1] [claude-fable-5-1_unknown]",
+     "rank": 1,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 92.2,
+     "variant": "Fable 5.1 (Claude Code) high",
+     "rank": 1,
+     "of": 7
+    },
+    "scale-mcp-atlas": {
+     "value": 87.2,
+     "variant": "Fable 5.1",
+     "rank": 1,
+     "of": 5
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 85.019,
+     "variant": "anthropic/claude-fable-5-1 (high)",
+     "rank": 3,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 90.263,
+     "variant": "anthropic/claude-fable-5-1",
+     "rank": 2,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 100,
+     "variant": "anthropic/claude-fable-5-1",
+     "rank": 2,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 54.6,
+     "variant": "Fable 5.1 [claude-fable-5-1-high]",
+     "rank": 1,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1498.47,
+     "variant": "claude-fable-5.1-max",
+     "rank": 1,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1754.93,
+     "variant": "claude-fable-5.1-max",
+     "rank": 2,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 13.71,
+     "variant": "Claude Fable 5.1 (Max)",
+     "rank": 1,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 83.41,
+     "variant": "claude-fable-5-1-max-effort",
+     "rank": 1,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 86.38,
+     "variant": "claude-fable-5-1-max-effort",
+     "rank": 2,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 66.06,
+     "variant": "claude-fable-5-1-max-effort",
+     "rank": 3,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "claude-sonnet-5",
+   "name": "Claude Sonnet 5",
+   "provider": "anthropic",
+   "released": "2026-06",
+   "openWeights": false,
+   "priceIn": 2,
+   "priceOut": 10,
+   "context": 1000000,
+   "provisional": false,
+   "score": 47.5,
+   "categories": {
+    "overall": 48.9,
+    "agents": 52.6,
+    "reasoning": 55.5,
+    "knowledge": 32.3,
+    "coding": 54.9,
+    "preference": 40.9
+   },
+   "sourceCount": 16,
+   "agreement": "fair",
+   "sources": {
+    "aa-intelligence": {
+     "value": 38.2,
+     "variant": "Claude Sonnet 5",
+     "rank": 13,
+     "of": 19
+    },
+    "terminal-bench": {
+     "value": 12.42,
+     "variant": "Sonnet 5 (max) + Claude Code, 2026-06-30",
+     "rank": 6,
+     "of": 6
+    },
+    "epoch-eci": {
+     "value": 156.34,
+     "variant": "Claude Sonnet 5",
+     "rank": 7,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 65.614,
+     "variant": "Claude Sonnet 5 (max) [claude-sonnet-5_max]",
+     "rank": 8,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 33.7,
+     "variant": "Claude Sonnet 5 (max) [claude-sonnet-5_max]",
+     "rank": 9,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 54.5,
+     "variant": "Sonnet 5 [claude-sonnet-5_unknown]",
+     "rank": 6,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 88.2,
+     "variant": "Sonnet 5 (Claude Code) xhigh",
+     "rank": 3,
+     "of": 7
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 74.532,
+     "variant": "anthropic/claude-sonnet-5 (max)",
+     "rank": 9,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 81.325,
+     "variant": "anthropic/claude-sonnet-5",
+     "rank": 12,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 77,
+     "variant": "anthropic/claude-sonnet-5",
+     "rank": 6,
+     "of": 17
+    },
+    "lmarena-text": {
+     "value": 1461.21,
+     "variant": "claude-sonnet-5-high",
+     "rank": 10,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1537.81,
+     "variant": "claude-sonnet-5-high",
+     "rank": 11,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 5.97,
+     "variant": "Claude Sonnet 5 (High)",
+     "rank": 4,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 76.04,
+     "variant": "claude-sonnet-5-xhigh-effort",
+     "rank": 13,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 80.68,
+     "variant": "claude-sonnet-5-xhigh-effort",
+     "rank": 6,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 59.39,
+     "variant": "claude-sonnet-5-xhigh-effort",
+     "rank": 8,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "claude-haiku-4-5",
+   "name": "Claude Haiku 4.5",
+   "provider": "anthropic",
+   "released": "2025-10",
+   "openWeights": false,
+   "priceIn": 1,
+   "priceOut": 5,
+   "context": 200000,
+   "provisional": false,
+   "score": 13.2,
+   "categories": {
+    "overall": 17.2,
+    "knowledge": 12.2,
+    "coding": 13.3,
+    "agents": 13.9,
+    "preference": 9.4
+   },
+   "sourceCount": 10,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 16.9,
+     "variant": "Claude Haiku 4.5",
+     "rank": 18,
+     "of": 19
+    },
+    "epoch-eci": {
+     "value": 142.42,
+     "variant": "Claude Haiku 4.5",
+     "rank": 13,
+     "of": 14
+    },
+    "epoch-simpleqa-verified": {
+     "value": 13.2,
+     "variant": "claude-haiku-4-5-20251001 [claude-haiku-4-5-20251001]",
+     "rank": 10,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 25.5,
+     "variant": "Haiku 4.5 (Claude Code) xhigh",
+     "rank": 7,
+     "of": 7
+    },
+    "scale-mcp-atlas": {
+     "value": 40.2,
+     "variant": "claude-haiku-4-5",
+     "rank": 5,
+     "of": 5
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 43.82,
+     "variant": "anthropic/claude-haiku-4-5-20251001-thinking",
+     "rank": 18,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 11.393,
+     "variant": "anthropic/claude-haiku-4-5-20251001-thinking",
+     "rank": 18,
+     "of": 19
+    },
+    "cais-hle": {
+     "value": 9.7,
+     "variant": "Haiku 4.5 [haiku-4-5-thinking-32k]",
+     "rank": 8,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1414.55,
+     "variant": "claude-haiku-4-5-20251001",
+     "rank": 13,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1329.52,
+     "variant": "claude-haiku-4-5-20251001",
+     "rank": 14,
+     "of": 15
+    }
+   }
+  },
+  {
+   "id": "gpt-6-astra",
+   "name": "GPT-6 Astra",
+   "provider": "openai",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 10,
+   "priceOut": 50,
+   "context": 1050000,
+   "provisional": false,
+   "score": 65.2,
+   "categories": {
+    "overall": 69.3,
+    "coding": 64.4,
+    "agents": 64.5,
+    "reasoning": 70.7,
+    "knowledge": 69.1,
+    "preference": 53.4
+   },
+   "sourceCount": 19,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 52.7,
+     "variant": "GPT-6 Astra",
+     "rank": 3,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 61.6,
+     "variant": "Codex + GPT-6 Astra",
+     "rank": 2,
+     "of": 11
+    },
+    "terminal-bench": {
+     "value": 58.18,
+     "variant": "GPT-6 Astra (max) + Codex, 2026-09-03",
+     "rank": 1,
+     "of": 6
+    },
+    "matharena-arxivmath": {
+     "value": 88.6,
+     "variant": "GPT-6 Astra (max)",
+     "rank": 1,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 166.6,
+     "variant": "GPT-6 Astra",
+     "rank": 1,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 93.6842,
+     "variant": "GPT-6 Astra (max) [gpt-6-astra_max]",
+     "rank": 1,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 75.6,
+     "variant": "GPT-6 Astra (max) [gpt-6-astra_max]",
+     "rank": 1,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 64.7,
+     "variant": "GPT-6 Astra [gpt-6-astra_unknown]",
+     "rank": 2,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 90.2,
+     "variant": "GPT-6 Astra (Codex) high",
+     "rank": 2,
+     "of": 7
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 87.266,
+     "variant": "openai/gpt-6-astra (max)",
+     "rank": 2,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 89.594,
+     "variant": "openai/gpt-6-astra",
+     "rank": 3,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 99,
+     "variant": "openai/gpt-6-astra",
+     "rank": 3,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 53.6,
+     "variant": "GPT-6 Astra [gpt-6-astra-high]",
+     "rank": 2,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1479.77,
+     "variant": "gpt-6-astra-max",
+     "rank": 8,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1793.18,
+     "variant": "gpt-6-astra-max",
+     "rank": 1,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 11.54,
+     "variant": "GPT 6 Astra (Max)",
+     "rank": 2,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 82.16,
+     "variant": "gpt-6-astra-max",
+     "rank": 3,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 80.36,
+     "variant": "gpt-6-astra-max",
+     "rank": 7,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 57.32,
+     "variant": "gpt-6-astra-max",
+     "rank": 9,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "gpt-6-sol",
+   "name": "GPT-6 Sol",
+   "provider": "openai",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 2,
+   "priceOut": 10,
+   "context": 1050000,
+   "provisional": false,
+   "score": 59.9,
+   "categories": {
+    "overall": 58.7,
+    "coding": 60.9,
+    "agents": 54.9,
+    "reasoning": 65.1
+   },
+   "sourceCount": 8,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 47.5,
+     "variant": "GPT-6 Sol",
+     "rank": 5,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 56.7,
+     "variant": "Codex + GPT-6 Sol",
+     "rank": 3,
+     "of": 11
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 83.146,
+     "variant": "openai/gpt-6-sol (max)",
+     "rank": 4,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 87.824,
+     "variant": "openai/gpt-6-sol",
+     "rank": 4,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 83,
+     "variant": "openai/gpt-6-sol",
+     "rank": 5,
+     "of": 17
+    },
+    "livebench-global": {
+     "value": 79.25,
+     "variant": "gpt-6-sol-max",
+     "rank": 6,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 81.77,
+     "variant": "gpt-6-sol-max",
+     "rank": 3,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 52.88,
+     "variant": "gpt-6-sol-max",
+     "rank": 13,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "gpt-6-luna",
+   "name": "GPT-6 Luna",
+   "provider": "openai",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 0.09999999999999999,
+   "priceOut": 0.5,
+   "context": 1050000,
+   "provisional": false,
+   "score": 49.1,
+   "categories": {
+    "overall": 42.1,
+    "coding": 52.1,
+    "agents": 47.6,
+    "reasoning": 54.6
+   },
+   "sourceCount": 8,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 37.3,
+     "variant": "GPT-6 Luna",
+     "rank": 14,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 41.1,
+     "variant": "Codex + GPT-6 Luna",
+     "rank": 11,
+     "of": 11
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 73.034,
+     "variant": "openai/gpt-6-luna (max)",
+     "rank": 11,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 81.649,
+     "variant": "openai/gpt-6-luna",
+     "rank": 11,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 64,
+     "variant": "openai/gpt-6-luna",
+     "rank": 7,
+     "of": 17
+    },
+    "livebench-global": {
+     "value": 72.03,
+     "variant": "gpt-6-luna-max",
+     "rank": 15,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 78.95,
+     "variant": "gpt-6-luna-max",
+     "rank": 9,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 51.21,
+     "variant": "gpt-6-luna-max",
+     "rank": 14,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "gemini-3-1-pro",
+   "name": "Gemini 3.1 Pro Preview",
+   "provider": "google",
+   "released": "2026-02",
+   "openWeights": false,
+   "priceIn": 2,
+   "priceOut": 12,
+   "context": 1048576,
+   "provisional": false,
+   "score": 46.6,
+   "categories": {
+    "overall": 44.6,
+    "reasoning": 39.2,
+    "knowledge": 63.2,
+    "agents": 38.9,
+    "coding": 35.3,
+    "preference": 58.1
+   },
+   "sourceCount": 16,
+   "agreement": "fair",
+   "sources": {
+    "aa-intelligence": {
+     "value": 29.7,
+     "variant": "Gemini 3.1 Pro Preview",
+     "rank": 16,
+     "of": 19
+    },
+    "epoch-eci": {
+     "value": 154.92,
+     "variant": "Gemini 3.1 Pro",
+     "rank": 11,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 59.6491,
+     "variant": "Gemini 3.1 Pro Preview [gemini-3.1-pro-preview]",
+     "rank": 10,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 73.5,
+     "variant": "Gemini 3.1 Pro Preview [gemini-3.1-pro-preview_high]",
+     "rank": 2,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 35.3,
+     "variant": "Gemini 3.1 Pro [gemini-3.1-pro-preview]",
+     "rank": 10,
+     "of": 10
+    },
+    "scale-mcp-atlas": {
+     "value": 78.2,
+     "variant": "gemini-3.1-pro-preview (high)",
+     "rank": 4,
+     "of": 5
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 70.787,
+     "variant": "google/gemini-3.1-pro-preview (high)",
+     "rank": 13,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 32.034,
+     "variant": "google/gemini-3.1-pro-preview",
+     "rank": 17,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 26,
+     "variant": "google/gemini-3.1-pro-preview",
+     "rank": 15,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 45.9,
+     "variant": "Gemini 3.1 Pro [gemini-3.1-pro-preview-high]",
+     "rank": 4,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1486.81,
+     "variant": "gemini-3.1-pro-preview",
+     "rank": 4,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1446.74,
+     "variant": "gemini-3.1-pro-preview",
+     "rank": 13,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": -5.81,
+     "variant": "Gemini 3.1 Pro Preview",
+     "rank": 12,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 76.95,
+     "variant": "gemini-3.1-pro-preview-high",
+     "rank": 11,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 76.45,
+     "variant": "gemini-3.1-pro-preview-high",
+     "rank": 13,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 44.14,
+     "variant": "gemini-3.1-pro-preview-high",
+     "rank": 15,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "gemini-3-8-flash",
+   "name": "Gemini 3.8 Flash",
+   "provider": "google",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 0.75,
+   "priceOut": 3.75,
+   "context": 1048576,
+   "provisional": false,
+   "score": 54.1,
+   "categories": {
+    "overall": 50.7,
+    "coding": 45.2,
+    "agents": 55,
+    "reasoning": 49.7,
+    "knowledge": 61.7,
+    "preference": 62.3
+   },
+   "sourceCount": 19,
+   "agreement": "fair",
+   "sources": {
+    "aa-intelligence": {
+     "value": 40.9,
+     "variant": "Gemini 3.8 Flash",
+     "rank": 11,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 41.9,
+     "variant": "Antigravity SDK + Gemini 3.8 Flash",
+     "rank": 10,
+     "of": 11
+    },
+    "terminal-bench": {
+     "value": 19.09,
+     "variant": "Gemini 3.8 Flash (high) + mini-SWE-agent, 2026-09-02",
+     "rank": 5,
+     "of": 6
+    },
+    "matharena-arxivmath": {
+     "value": 40.35,
+     "variant": "Gemini 3.8 Flash",
+     "rank": 7,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 157.13,
+     "variant": "Gemini 3.8 Flash",
+     "rank": 4,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 68.4211,
+     "variant": "Gemini 3.8 Flash (high) [gemini-3.8-flash_high]",
+     "rank": 7,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 69.7,
+     "variant": "Gemini 3.8 Flash (high) [gemini-3.8-flash_high]",
+     "rank": 4,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 64.3,
+     "variant": "Gemini 3.8 Flash [gemini-3.8-flash_unknown]",
+     "rank": 3,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 58.8,
+     "variant": "Gemini 3.8 Flash (mini-swe-agent) high",
+     "rank": 6,
+     "of": 7
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 81.273,
+     "variant": "google/gemini-3.8-flash (high)",
+     "rank": 5,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 78.651,
+     "variant": "google/gemini-3.8-flash",
+     "rank": 13,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 48,
+     "variant": "google/gemini-3.8-flash",
+     "rank": 13,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 46.2,
+     "variant": "Gemini 3.8 Flash [gemini-3.8-flash-high]",
+     "rank": 3,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1493.01,
+     "variant": "gemini-3.8-flash-high",
+     "rank": 3,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1583.38,
+     "variant": "gemini-3.8-flash-high",
+     "rank": 9,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 4.71,
+     "variant": "Gemini 3.8 Flash (High)",
+     "rank": 6,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 75.83,
+     "variant": "gemini-3.8-flash-high",
+     "rank": 14,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 72.49,
+     "variant": "gemini-3.8-flash-high",
+     "rank": 15,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 54.24,
+     "variant": "gemini-3.8-flash-high",
+     "rank": 11,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "grok-4-7",
+   "name": "Grok 4.7",
+   "provider": "xai",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 1.5999999999999999,
+   "priceOut": 4.8,
+   "context": 500000,
+   "provisional": false,
+   "score": 51.9,
+   "categories": {
+    "overall": 55.5,
+    "coding": 56.2,
+    "agents": 52.1,
+    "reasoning": 43.9
+   },
+   "sourceCount": 11,
+   "agreement": "fair",
+   "sources": {
+    "aa-intelligence": {
+     "value": 46.4,
+     "variant": "Grok 4.7",
+     "rank": 6,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 56.3,
+     "variant": "Grok Build + Grok 4.7",
+     "rank": 4,
+     "of": 11
+    },
+    "terminal-bench": {
+     "value": 37.58,
+     "variant": "Grok 4.7 (xhigh) + Grok Build, 2026-09-21",
+     "rank": 4,
+     "of": 6
+    },
+    "matharena-arxivmath": {
+     "value": 46.49,
+     "variant": "Grok 4.7 (xhigh)",
+     "rank": 4,
+     "of": 8
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 73.408,
+     "variant": "grok/grok-4.7 (xhigh)",
+     "rank": 10,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 86.175,
+     "variant": "grok/grok-4.7",
+     "rank": 5,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 26,
+     "variant": "grok/grok-4.7",
+     "rank": 14,
+     "of": 17
+    },
+    "lmarena-webdev": {
+     "value": 1632.48,
+     "variant": "grok-4.7-xhigh",
+     "rank": 6,
+     "of": 15
+    },
+    "livebench-global": {
+     "value": 77.4,
+     "variant": "grok-4.7-xhigh",
+     "rank": 10,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 77.16,
+     "variant": "grok-4.7-xhigh",
+     "rank": 11,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 53.99,
+     "variant": "grok-4.7-xhigh",
+     "rank": 12,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "muse-spark-1-3",
+   "name": "Muse Spark 1.3",
+   "provider": "meta",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 1.25,
+   "priceOut": 4.25,
+   "context": 1048576,
+   "provisional": false,
+   "score": 57.5,
+   "categories": {
+    "overall": 58.8,
+    "coding": 58.6,
+    "reasoning": 53.6,
+    "agents": 58,
+    "knowledge": 53.5,
+    "preference": 62.4
+   },
+   "sourceCount": 16,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 48.1,
+     "variant": "Muse Spark 1.3",
+     "rank": 4,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 54.3,
+     "variant": "Muse Code + Muse Spark 1.3",
+     "rank": 5,
+     "of": 11
+    },
+    "matharena-arxivmath": {
+     "value": 45.61,
+     "variant": "Muse Spark 1.3",
+     "rank": 5,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 156.89,
+     "variant": "Muse Spark 1.3",
+     "rank": 5,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 74.386,
+     "variant": "Muse Spark 1.3 (xhigh) [muse-spark-1.3_xhigh]",
+     "rank": 4,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 57.8,
+     "variant": "Muse Spark 1.3 [muse-spark-1.3_unknown]",
+     "rank": 4,
+     "of": 10
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 79.026,
+     "variant": "meta/muse_spark_1_3_max (max)",
+     "rank": 7,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 85.856,
+     "variant": "meta/muse_spark_1_3_max",
+     "rank": 6,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 58,
+     "variant": "meta/muse_spark_1_3_max",
+     "rank": 8,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 43.2,
+     "variant": "Muse Spark 1.3 [muse-spark-1.3-high]",
+     "rank": 5,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1493.11,
+     "variant": "muse-spark-1.3-max",
+     "rank": 2,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1656.71,
+     "variant": "muse-spark-1.3-max",
+     "rank": 5,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 4.2,
+     "variant": "Muse Spark 1.3 (Max)",
+     "rank": 7,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 81.59,
+     "variant": "muse-spark-1.3-xhigh",
+     "rank": 4,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 81.06,
+     "variant": "muse-spark-1.3-xhigh",
+     "rank": 5,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 64.09,
+     "variant": "muse-spark-1.3-xhigh",
+     "rank": 5,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "deepseek-v4-pro",
+   "name": "DeepSeek V4 Pro",
+   "provider": "deepseek",
+   "released": "2026-08",
+   "openWeights": true,
+   "priceIn": 0.46199999999999997,
+   "priceOut": 1.386,
+   "context": 1048576,
+   "provisional": false,
+   "score": 47.2,
+   "categories": {
+    "overall": 48.4,
+    "coding": 50.7,
+    "reasoning": 47.6,
+    "knowledge": 50.3,
+    "agents": 44.2,
+    "preference": 42.3
+   },
+   "sourceCount": 15,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 36,
+     "variant": "DeepSeek V4 Pro",
+     "rank": 15,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 43.1,
+     "variant": "Codex + DeepSeek V4 Pro 0813",
+     "rank": 9,
+     "of": 11
+    },
+    "epoch-eci": {
+     "value": 155.39,
+     "variant": "DeepSeek V4 Pro 0813",
+     "rank": 9,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 64.5614,
+     "variant": "DeepSeek V4 Pro 0813 (max) [deepseek-v4-pro-0813_max]",
+     "rank": 9,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 52.9058,
+     "variant": "DeepSeek V4 Pro 0813 (max) [deepseek-v4-pro-0813_max]",
+     "rank": 5,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 47.3,
+     "variant": "DeepSeek-V4-Pro-0813 [deepseek-v4-pro-0813_unknown]",
+     "rank": 8,
+     "of": 10
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 54.682,
+     "variant": "deepseek/deepseek-v4-pro-0813 (max)",
+     "rank": 16,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 82.297,
+     "variant": "deepseek/deepseek-v4-pro-0813",
+     "rank": 10,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 50,
+     "variant": "deepseek/deepseek-v4-pro-0813",
+     "rank": 11,
+     "of": 17
+    },
+    "lmarena-text": {
+     "value": 1463.36,
+     "variant": "deepseek-v4-pro-high-20260813",
+     "rank": 9,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1580.19,
+     "variant": "deepseek-v4-pro-high-20260813",
+     "rank": 10,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 4.14,
+     "variant": "DeepSeek V4 Pro (High) (0813)",
+     "rank": 8,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 77.44,
+     "variant": "deepseek-v4-pro-0813",
+     "rank": 9,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 77.16,
+     "variant": "deepseek-v4-pro-0813",
+     "rank": 12,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 54.95,
+     "variant": "deepseek-v4-pro-0813",
+     "rank": 10,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "deepseek-v4-1-flash",
+   "name": "DeepSeek V4.1 Flash",
+   "provider": "deepseek",
+   "released": "2026-09",
+   "openWeights": true,
+   "priceIn": 0.09999999999999999,
+   "priceOut": 0.5,
+   "context": 1048576,
+   "provisional": false,
+   "score": 56,
+   "categories": {
+    "overall": 52.9,
+    "reasoning": 51.2,
+    "agents": 63.9,
+    "coding": 56
+   },
+   "sourceCount": 11,
+   "agreement": "fair",
+   "sources": {
+    "aa-intelligence": {
+     "value": 39.5,
+     "variant": "DeepSeek V4.1 Flash",
+     "rank": 12,
+     "of": 19
+    },
+    "matharena-arxivmath": {
+     "value": 43.86,
+     "variant": "DeepSeek-V4.1-Flash (Max)",
+     "rank": 6,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 155.01,
+     "variant": "DeepSeek V4.1 Flash",
+     "rank": 10,
+     "of": 14
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 74.532,
+     "variant": "deepseek/deepseek-v4.1-flash (high)",
+     "rank": 8,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 84.739,
+     "variant": "deepseek/deepseek-v4.1-flash",
+     "rank": 9,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 54,
+     "variant": "deepseek/deepseek-v4.1-flash",
+     "rank": 10,
+     "of": 17
+    },
+    "lmarena-webdev": {
+     "value": 1616.08,
+     "variant": "deepseek-v4.1-flash-max",
+     "rank": 8,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 4.88,
+     "variant": "Deepseek V4.1 Flash (Max)",
+     "rank": 5,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 81.11,
+     "variant": "deepseek-v4.1-flash-max",
+     "rank": 5,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 80.04,
+     "variant": "deepseek-v4.1-flash-max",
+     "rank": 8,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 77.27,
+     "variant": "deepseek-v4.1-flash-max",
+     "rank": 1,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "qwen3-8-max",
+   "name": "Qwen3.8 Max",
+   "provider": "alibaba",
+   "released": "2026-09",
+   "openWeights": false,
+   "priceIn": 2,
+   "priceOut": 6,
+   "context": 1000000,
+   "provisional": false,
+   "score": 51.7,
+   "categories": {
+    "overall": 54.7,
+    "coding": 48.1,
+    "reasoning": 55.1,
+    "knowledge": 45,
+    "agents": 53.4,
+    "preference": 53.9
+   },
+   "sourceCount": 15,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 45.4,
+     "variant": "Qwen3.8 Max",
+     "rank": 8,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 43.3,
+     "variant": "Claude Code + Qwen3.8 Max",
+     "rank": 8,
+     "of": 11
+    },
+    "matharena-arxivmath": {
+     "value": 57.89,
+     "variant": "Qwen3.8-Max",
+     "rank": 3,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 156.69,
+     "variant": "Qwen 3.8 Max",
+     "rank": 6,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 74.7368,
+     "variant": "Qwen3.8 Max (xhigh) [qwen3.8-max_xhigh]",
+     "rank": 3,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 47.3,
+     "variant": "Qwen3.8 Max (0902) (xhigh) [qwen3.8-max-0902_xhigh]",
+     "rank": 7,
+     "of": 10
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 67.416,
+     "variant": "alibaba/qwen3.8-max",
+     "rank": 15,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 64.696,
+     "variant": "alibaba/qwen3.8-max",
+     "rank": 15,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 58,
+     "variant": "alibaba/qwen3.8-max",
+     "rank": 9,
+     "of": 17
+    },
+    "lmarena-text": {
+     "value": 1480.56,
+     "variant": "qwen3.8-max",
+     "rank": 7,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1670.89,
+     "variant": "qwen3.8-max",
+     "rank": 3,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 3.3,
+     "variant": "Qwen3.8 Max",
+     "rank": 9,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 78.46,
+     "variant": "qwen3.8-max",
+     "rank": 8,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 72.87,
+     "variant": "qwen3.8-max",
+     "rank": 14,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 64.65,
+     "variant": "qwen3.8-max",
+     "rank": 4,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "kimi-k3",
+   "name": "Kimi K3",
+   "provider": "moonshot",
+   "released": "2026-07",
+   "openWeights": true,
+   "priceIn": 3,
+   "priceOut": 15,
+   "context": 1048576,
+   "provisional": false,
+   "score": 55.8,
+   "categories": {
+    "overall": 55.3,
+    "coding": 58.8,
+    "reasoning": 57.6,
+    "knowledge": 49.5,
+    "agents": 56.6,
+    "preference": 56.7
+   },
+   "sourceCount": 19,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 43.6,
+     "variant": "Kimi K3",
+     "rank": 10,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 51.9,
+     "variant": "Kimi Code CLI + Kimi K3",
+     "rank": 7,
+     "of": 11
+    },
+    "matharena-arxivmath": {
+     "value": 38.6,
+     "variant": "Kimi K3 (Think)",
+     "rank": 8,
+     "of": 8
+    },
+    "epoch-eci": {
+     "value": 157.68,
+     "variant": "Kimi K3",
+     "rank": 3,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 72.1831,
+     "variant": "Kimi K3 (max) [kimi-k3_max]",
+     "rank": 5,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 50.6,
+     "variant": "Kimi K3 (max) [kimi-k3_max]",
+     "rank": 6,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 50.6,
+     "variant": "Kimi K3 [kimi-k3_unknown]",
+     "rank": 7,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 88.2,
+     "variant": "Kimi-K3 (mini-swe-agent) max",
+     "rank": 4,
+     "of": 7
+    },
+    "scale-mcp-atlas": {
+     "value": 82.3,
+     "variant": "kimi-k3 (max)",
+     "rank": 3,
+     "of": 5
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 80.899,
+     "variant": "kimi/kimi-k3",
+     "rank": 6,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 84.963,
+     "variant": "kimi/kimi-k3",
+     "rank": 8,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 87,
+     "variant": "kimi/kimi-k3",
+     "rank": 4,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 41.08,
+     "variant": "Kimi K3 [kimi-k3-high]",
+     "rank": 6,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1484.77,
+     "variant": "kimi-k3-max",
+     "rank": 5,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1657.91,
+     "variant": "kimi-k3-max",
+     "rank": 4,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 6.22,
+     "variant": "Kimi K3 (Max)",
+     "rank": 3,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 79.19,
+     "variant": "kimi-k3",
+     "rank": 7,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 81.45,
+     "variant": "kimi-k3",
+     "rank": 4,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 62.17,
+     "variant": "kimi-k3",
+     "rank": 6,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "glm-5-3",
+   "name": "GLM-5.3",
+   "provider": "zai",
+   "released": "2026-08",
+   "openWeights": true,
+   "priceIn": 0.5614,
+   "priceOut": 1.7644,
+   "context": 1310720,
+   "provisional": false,
+   "score": 51.7,
+   "categories": {
+    "overall": 51.5,
+    "coding": 55.6,
+    "agents": 55.1,
+    "reasoning": 48.9,
+    "knowledge": 43.7,
+    "preference": 55.6
+   },
+   "sourceCount": 19,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 44.8,
+     "variant": "GLM-5.3",
+     "rank": 9,
+     "of": 19
+    },
+    "aa-coding-agent": {
+     "value": 53.6,
+     "variant": "Opencode + GLM-5.3",
+     "rank": 6,
+     "of": 11
+    },
+    "terminal-bench": {
+     "value": 41.82,
+     "variant": "GLM-5.3 (max) + Claude Code, 2026-08-14",
+     "rank": 3,
+     "of": 6
+    },
+    "epoch-eci": {
+     "value": 155.56,
+     "variant": "GLM-5.3",
+     "rank": 8,
+     "of": 14
+    },
+    "epoch-frontiermath-t1-3": {
+     "value": 68.7719,
+     "variant": "GLM-5.3 (max) [glm-5.3_max]",
+     "rank": 6,
+     "of": 10
+    },
+    "epoch-simpleqa-verified": {
+     "value": 41,
+     "variant": "GLM-5.3 (max) [glm-5.3_max]",
+     "rank": 8,
+     "of": 10
+    },
+    "epoch-apex-agents": {
+     "value": 56.6,
+     "variant": "GLM-5.3 [glm-5.3_unknown]",
+     "rank": 5,
+     "of": 10
+    },
+    "scale-swe-bench-pro-v2": {
+     "value": 84.3,
+     "variant": "GLM-5.3 (mini-swe-agent) max",
+     "rank": 5,
+     "of": 7
+    },
+    "scale-mcp-atlas": {
+     "value": 84.2,
+     "variant": "GLM 5.3",
+     "rank": 2,
+     "of": 5
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 71.536,
+     "variant": "zai/glm-5.3 (max)",
+     "rank": 12,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 78.125,
+     "variant": "zai/glm-5.3",
+     "rank": 14,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 49,
+     "variant": "zai/glm-5.3",
+     "rank": 12,
+     "of": 17
+    },
+    "cais-hle": {
+     "value": 39.11,
+     "variant": "GLM 5.3 [glm-5.3]",
+     "rank": 7,
+     "of": 8
+    },
+    "lmarena-text": {
+     "value": 1483.02,
+     "variant": "glm-5.3-max",
+     "rank": 6,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1619.7,
+     "variant": "glm-5.3-max",
+     "rank": 7,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": 3.05,
+     "variant": "GLM 5.3 (Max)",
+     "rank": 10,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 76.14,
+     "variant": "glm-5.3",
+     "rank": 12,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 78.95,
+     "variant": "glm-5.3",
+     "rank": 10,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 60.91,
+     "variant": "glm-5.3",
+     "rank": 7,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "minimax-m3",
+   "name": "MiniMax-M3",
+   "provider": "minimax",
+   "released": "2026-06",
+   "openWeights": true,
+   "priceIn": 0.3,
+   "priceOut": 1.2,
+   "context": 1048576,
+   "provisional": false,
+   "score": 30,
+   "categories": {
+    "overall": 29.6,
+    "agents": 30.1,
+    "coding": 33.8,
+    "reasoning": 29,
+    "preference": 27.4
+   },
+   "sourceCount": 12,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 29.2,
+     "variant": "MiniMax-M3",
+     "rank": 17,
+     "of": 19
+    },
+    "epoch-eci": {
+     "value": 147,
+     "variant": "MiniMax-M3",
+     "rank": 12,
+     "of": 14
+    },
+    "epoch-apex-agents": {
+     "value": 37.7,
+     "variant": "MiniMax-M3 [MiniMax-M3]",
+     "rank": 9,
+     "of": 10
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 53.558,
+     "variant": "minimax/MiniMax-M3",
+     "rank": 17,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 47.566,
+     "variant": "minimax/MiniMax-M3",
+     "rank": 16,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 18,
+     "variant": "minimax/MiniMax-M3",
+     "rank": 16,
+     "of": 17
+    },
+    "lmarena-text": {
+     "value": 1441.25,
+     "variant": "minimax-m3",
+     "rank": 11,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1485,
+     "variant": "minimax-m3",
+     "rank": 12,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": -5.76,
+     "variant": "Minimax M3",
+     "rank": 11,
+     "of": 13
+    },
+    "livebench-global": {
+     "value": 67.26,
+     "variant": "minimax-m3",
+     "rank": 16,
+     "of": 16
+    },
+    "livebench-coding": {
+     "value": 68.2,
+     "variant": "minimax-m3",
+     "rank": 16,
+     "of": 16
+    },
+    "livebench-agentic-coding": {
+     "value": 40.66,
+     "variant": "minimax-m3",
+     "rank": 16,
+     "of": 16
+    }
+   }
+  },
+  {
+   "id": "mimo-v2-6-pro",
+   "name": "MiMo-V2.6-Pro",
+   "provider": "xiaomi",
+   "released": "2026-09",
+   "openWeights": true,
+   "priceIn": 0.435,
+   "priceOut": 0.87,
+   "context": 1048576,
+   "provisional": true,
+   "score": 54.6,
+   "categories": {
+    "overall": 58.3,
+    "agents": 46.3,
+    "coding": 59.2
+   },
+   "sourceCount": 3,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 46.3,
+     "variant": "MiMo-V2.6-Pro",
+     "rank": 7,
+     "of": 19
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 67.79,
+     "variant": "xiaomi/mimo-v2.6-pro",
+     "rank": 14,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 85.223,
+     "variant": "xiaomi/mimo-v2.6-pro",
+     "rank": 7,
+     "of": 19
+    }
+   }
+  },
+  {
+   "id": "mistral-medium-3-5",
+   "name": "Mistral Medium 3.5",
+   "provider": "mistral",
+   "released": "2026-04",
+   "openWeights": true,
+   "priceIn": 1.5,
+   "priceOut": 7.5,
+   "context": 262144,
+   "provisional": false,
+   "score": 16,
+   "categories": {
+    "overall": 14.1,
+    "agents": 15.8,
+    "coding": 8.8,
+    "reasoning": 24,
+    "preference": 17.3
+   },
+   "sourceCount": 8,
+   "agreement": "strong",
+   "sources": {
+    "aa-intelligence": {
+     "value": 14.2,
+     "variant": "Mistral Medium 3.5",
+     "rank": 19,
+     "of": 19
+    },
+    "epoch-eci": {
+     "value": 141.42,
+     "variant": "Mistral Medium 3.5",
+     "rank": 14,
+     "of": 14
+    },
+    "vals-terminal-bench-2-1": {
+     "value": 38.951,
+     "variant": "mistralai/mistral-medium-3.5 (high)",
+     "rank": 19,
+     "of": 19
+    },
+    "vals-vibe-code-bench": {
+     "value": 2.888,
+     "variant": "mistralai/mistral-medium-3.5",
+     "rank": 19,
+     "of": 19
+    },
+    "vals-proofbench": {
+     "value": 9,
+     "variant": "mistralai/mistral-medium-3.5",
+     "rank": 17,
+     "of": 17
+    },
+    "lmarena-text": {
+     "value": 1426.35,
+     "variant": "mistral-medium-3.5",
+     "rank": 12,
+     "of": 13
+    },
+    "lmarena-webdev": {
+     "value": 1264.56,
+     "variant": "mistral-medium-3.5",
+     "rank": 15,
+     "of": 15
+    },
+    "lmarena-agent": {
+     "value": -10.88,
+     "variant": "Mistral Medium 3.5",
+     "rank": 13,
+     "of": 13
+    }
+   }
+  }
+ ]
+}

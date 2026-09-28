@@ -1,0 +1,104 @@
+/* Mac 0.7.9 companion: a flush right sidebar, with its own resize edge. */
+.vdev .vdev-dock {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex: 0 0 var(--dock-w);
+    flex-direction: column;
+    width: var(--dock-w);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 0;
+    border-left: 1px solid var(--line-soft);
+    border-radius: 0;
+    background: var(--surface);
+    box-shadow: none;
+    animation: none;
+}
+
+.vdev .vdev-dock[data-size="wide"] { flex-basis: 55%; width: 55%; }
+.vdev .vdev-dock[data-size="full"] { flex: 1 1 100%; width: 100%; }
+
+.vdev .vdev-dock-grip {
+    position: absolute;
+    z-index: 4;
+    inset: 0 auto 0 -4px;
+    width: 8px;
+    cursor: ew-resize;
+    touch-action: none;
+}
+.vdev .vdev-dock-grip::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 3px;
+    width: 2px;
+    background: transparent;
+}
+.vdev .vdev-dock-grip:hover::after,
+.vdev .vdev-dock-grip:focus-visible::after,
+body.vdev-resizing .vdev-dock-grip::after { background: var(--accent); }
+body.vdev-resizing, body.vdev-resizing * { cursor: ew-resize !important; }
+
+.vdev .vdev-dock-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    height: 54px;
+    min-height: 54px;
+    gap: 3px;
+    padding: 0 10px 0 12px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--surface);
+}
+.vdev .vdev-dock-tabs {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 3px;
+    margin-right: auto;
+    padding: 3px;
+    border: 1px solid var(--line-soft);
+    border-radius: 9px;
+    background: var(--workspace);
+}
+.vdev .vdev-dock-tabs button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    min-height: 28px;
+    padding: 0 9px;
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+.vdev .vdev-dock-tabs button:hover { background: var(--hover); color: var(--text); }
+.vdev .vdev-dock-tabs .vdev-dock-tab-active { background: var(--hover-strong); color: var(--text); }
+.vdev .vdev-dock-expand, .vdev .vdev-dock-close { flex: none; width: 27px; height: 28px; }
+.vdev .vdev-dock-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--surface);
+}
+.vdev .vdev-dock-back {
+    align-self: flex-start;
+    flex: none;
+    margin: 18px 22px 0;
+    color: var(--muted);
+    font-size: 11px;
+}
+.vdev .vdev-dock-back:hover { color: var(--text); }
+.vdev .vdev-panel { display: flex; flex: 1; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; padding: 12px; }
+
+@media (max-width: 600px) {
+    .hero-showcase .vdev .vdev-dock-head { padding-inline: 8px 6px; }
+    .hero-showcase .vdev .vdev-dock-tabs button { padding-inline: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .vdev .vdev-dock-grip::after { transition: none; }
+}

@@ -1,0 +1,35 @@
+/* ── 03 · Connect all your accounts (ecosystem/AccountsStory.jsx) ───────────
+ * Three AI sign-ins, then five apps, each tile waking from grey to its own
+ * colours with a check; the API key field is struck out at the end. */
+.ecs-acc-panel { left: 36px; top: 22px; width: 408px; bottom: 0; }
+.ecs-acc-count { display: grid; margin-left: auto; font: 500 10.5px/1 var(--ui); color: var(--mute); }
+.ecs-acc-count > * { grid-area: 1 / 1; justify-self: end; }
+.ecs-acc-count .is-on { display: inline-flex; align-items: center; gap: 6px; color: #86efac; }
+.ecs-acc-count .is-on::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+.ecs-acc-body { display: grid; gap: 12px; padding: 18px 16px; }
+.ecs-acc-ai { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ecs-acc-apps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+.ecs-acc-tile { position: relative; display: flex; align-items: center; gap: 10px; height: 68px; padding: 0 12px; border-radius: 12px; background: #1a1b20; border: 1px solid rgba(255, 255, 255, 0.08); animation: ecs-wake 0.5s var(--ease) var(--in) both; }
+@keyframes ecs-wake { from { background: #141519; border-color: rgba(255, 255, 255, 0.04); } }
+.ecs-acc-tile .ecs-logo { animation: ecs-colour 0.5s ease var(--in) both; }
+.ecs-acc-tile .ecs-logo-invert { animation-name: ecs-colour-invert; }
+@keyframes ecs-colour { from { opacity: 0.4; filter: grayscale(1) brightness(0.75); } }
+@keyframes ecs-colour-invert { from { opacity: 0.4; filter: invert(1) grayscale(1) brightness(0.75); } }
+.ecs-acc-tile p { display: grid; gap: 5px; font: 600 12px/1 var(--ui); color: var(--ink); }
+.ecs-acc-state { display: grid; }
+.ecs-acc-state > * { grid-area: 1 / 1; font: 500 10px/1 var(--ui); color: var(--blue-2); }
+.ecs-acc-state .is-on { color: #86efac; }
+
+.ecs-acc-apps .ecs-acc-tile { flex-direction: column; justify-content: center; gap: 10px; height: 80px; padding: 0; }
+.ecs-acc-apps .ecs-acc-tile p { font: 500 10px/1 var(--ui); color: var(--text); }
+
+.ecs-acc-badge { position: absolute; right: -5px; top: -5px; padding: 2px; border-radius: 50%; background: var(--win); }
+.ecs-acc-badge.t { animation-name: ecs-pop; animation-timing-function: cubic-bezier(0.3, 1.6, 0.5, 1); }
+.ecs-acc-badge .ecs-check { width: 14px; height: 14px; }
+
+.ecs-acc-key { display: flex; align-items: center; gap: 8px; height: 38px; margin-top: 4px; padding: 0 7px 0 12px; border-radius: 10px; border: 1px dashed rgba(255, 255, 255, 0.15); font: 500 10.5px/1 var(--ui); color: var(--mute); }
+.ecs-acc-key svg * { fill: none; stroke: var(--mute); stroke-width: 1.4; stroke-linecap: round; }
+.ecs-acc-key s { font: 500 10px/1 var(--mono); color: var(--mute); text-decoration-color: #ff5a5f; text-decoration-thickness: 1.5px; }
+.ecs-acc-key b { margin-left: auto; padding: 6px 10px; border-radius: 999px; background: rgba(74, 222, 128, 0.14); color: #86efac; font: 600 10px/1 var(--ui); }

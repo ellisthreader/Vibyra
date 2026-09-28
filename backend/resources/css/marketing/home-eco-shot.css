@@ -1,0 +1,57 @@
+/* ── 03 · Screenshot to prompt (ecosystem/ShotStory.jsx) ────────────────────
+ * The site window sits on the painting; Claude Code runs off the bottom.
+ * Stage coordinates: site at (40,14), cards row 106–200 inside it. */
+.ecs-shot-site { left: 40px; top: 10px; width: 400px; height: 206px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; }
+.ecs-url { margin: 0 auto; transform: translateX(-20px); padding: 5px 14px; border-radius: 6px; background: #1d1e23; font: 500 9.5px/1 var(--mono); color: var(--mute); }
+
+.ecs-site { --accent: #ff8a5b; padding: 14px 20px 0; }
+.ecs-site-nav { display: flex; align-items: center; gap: 10px; height: 16px; font: 750 12px/1 var(--ui); letter-spacing: -0.01em; color: var(--ink); }
+.ecs-site-nav > i:first-child { width: 9px; height: 9px; margin-right: -4px; border-radius: 50%; background: var(--accent); }
+.ecs-site-nav > i:nth-child(2) { margin-left: auto; }
+.ecs-site-nav b { padding: 4px 10px; border-radius: 999px; background: #f3f4f6; color: #111216; font: 650 9px/1 var(--ui); }
+.ecs-site-h { margin-top: 16px !important; font: 700 20px/24px var(--ui); letter-spacing: -0.035em; color: var(--ink); }
+.ecs-site-h span { color: var(--accent); }
+.ecs-site-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.ecs-site-cards p { display: flex; flex-direction: column; gap: 7px; padding: 10px; border-radius: 10px; background: #1a1b20; border: 1px solid rgba(255, 255, 255, 0.06); font: 650 10.5px/1 var(--ui); color: var(--ink); }
+.ecs-site-cards p > i:first-child { width: 16px; height: 16px; margin-bottom: 1px; border-radius: 5px; background: linear-gradient(135deg, #ffb18f, var(--accent)); box-shadow: 0 4px 10px -4px var(--accent); }
+.ecs-site-cards .ecs-skel { height: 5px; background: #2a2c31; }
+.ecs-site-cards p.is-off { animation: ecs-fix 0.7s var(--ease) 6.3s both; }
+@keyframes ecs-fix { from { transform: translate(6px, 11px) rotate(2.5deg); } }
+
+/* F9: the selection drags round the cards, and the red pen circles one. */
+.ecs-shot-key { position: absolute; z-index: 5; left: 416px; top: 30px; }
+.ecs-sel {
+    position: absolute;
+    z-index: 2;
+    left: 12px;
+    top: 106px;
+    width: 376px;
+    height: 94px;
+    border: 1.5px solid var(--blue-2);
+    border-radius: 6px;
+    box-shadow: 0 0 0 600px rgba(4, 6, 12, 0.62);
+    transform-origin: left top;
+    animation: ecs-in 0.2s var(--in) both, ecs-grow 0.8s var(--ease) var(--in) both, ecs-out 0.3s ease var(--out) forwards !important;
+}
+@keyframes ecs-grow { from { transform: scale(0.03, 0.05); } }
+.ecs-ink { position: absolute; z-index: 3; left: 132px; top: 113px; }
+.ecs-ink svg { display: block; overflow: visible; }
+.ecs-ink path { fill: none; stroke: #ff5a5f; stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 1 2; animation: ecs-draw 0.75s ease-in-out var(--in) both; filter: drop-shadow(0 0 4px rgba(255, 90, 95, 0.5)); }
+.ecs-shot-pointer { left: 52px; top: 120px; opacity: 0; animation: ecs-shot-ptr 2.4s var(--ease) 0.6s both; }
+@keyframes ecs-shot-ptr {
+    0% { opacity: 0; left: 30px; top: 150px; }
+    10% { opacity: 1; left: 52px; top: 120px; }
+    45% { left: 428px; top: 214px; }
+    80% { opacity: 1; left: 438px; top: 228px; }
+    100% { opacity: 0; left: 446px; top: 238px; }
+}
+
+/* The capture shrinks from the selection into the terminal's image chip. */
+.ecs-shot-fly { position: absolute; z-index: 6; left: 94px; top: 267px; width: 24px; height: 14px; border-radius: 2px; opacity: 0; background: rgba(169, 184, 255, 0.28); box-shadow: 0 0 0 0.5px rgba(169, 184, 255, 0.8); animation: ecs-fly 0.6s cubic-bezier(0.5, 0, 0.2, 1) 3.3s forwards; }
+@keyframes ecs-fly { 0% { opacity: 1; transform: translate(134px, -111px) scale(15.67, 6.71); } 85% { opacity: 1; } 100% { opacity: 0; transform: none; } }
+
+.ecs-shot-term { left: 64px; top: 224px; width: 352px; bottom: 0; }
+.ecs-image-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 7px 2px 2px; border-radius: 5px; background: rgba(111, 140, 255, 0.14); border: 1px solid rgba(111, 140, 255, 0.32); font: 600 10px/1 var(--mono); color: var(--blue-2); }
+.ecs-thumb { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px; align-items: start; width: 24px; height: 14px; padding: 2px; border-radius: 3px; background: #1d1e24; }
+.ecs-thumb i { height: 6px; border-radius: 1px; background: #3a3c44; }
+.ecs-thumb i:nth-child(2) { margin-top: 2.5px; box-shadow: 0 0 0 1.2px #ff5a5f; }

@@ -1,0 +1,76 @@
+/* ── 03 · Screenshot to prompt: the 13s take ─────────────────────────────────
+ *  0–9%   F9, shutter flash, editor opens      27–37%  Rectangle around Sat
+ *  9–22%  crop drag, size counts up            40–51%  Draw an arrow at it
+ *  54%    Save → tray thumbnail                61–70%  drag onto Claude Code
+ *  72–80% type the ask, 81–88% agent answers   89–96%  chart calms, then reset */
+@keyframes shot-f9 {
+    0%, 4% { transform: none; }
+    5% { transform: translateY(2px); background: #1b2340; color: #6f8cff; box-shadow: 0 0 0 #101219, 0 0 0 4px #6f8cff40; }
+    8%, 100% { transform: none; }
+}
+@keyframes shot-flash { 0%, 5% { opacity: 0; } 5.6% { opacity: 0.9; } 9%, 100% { opacity: 0; } }
+@keyframes shot-sel {
+    0%, 5.9% { opacity: 0; width: 0; height: 0; }
+    6%, 9.5% { opacity: 1; width: 0; height: 0; }
+    22%, 55% { opacity: 1; width: 210px; height: 190px; }
+    58%, 100% { opacity: 0; width: 210px; height: 190px; }
+}
+@keyframes shot-ants { to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px; } }
+@keyframes shot-pop { 0%, 21.5% { opacity: 0; transform: scale(0.3); } 23.5%, 100% { opacity: 1; transform: none; } }
+@keyframes shot-size {
+    0%, 9.5% { opacity: 0; --shot-w: 0; --shot-h: 0; }
+    10% { opacity: 1; --shot-w: 0; --shot-h: 0; }
+    22%, 100% { opacity: 1; --shot-w: 420; --shot-h: 380; }
+}
+@keyframes shot-tools { 0%, 7% { opacity: 0; transform: translateY(8px) scale(0.96); } 9.5%, 55% { opacity: 1; transform: none; } 58%, 100% { opacity: 0; transform: translateY(6px); } }
+@keyframes shot-use-crop { 0%, 27% { background: #1b2340; color: #6f8cff; } 27.4%, 100% { background: transparent; color: #8d96a8; } }
+@keyframes shot-use-rect { 0%, 27% { background: transparent; color: #8d96a8; } 27.4%, 40.5% { background: #1b2340; color: #6f8cff; } 41%, 100% { background: transparent; color: #8d96a8; } }
+@keyframes shot-use-draw { 0%, 40.5% { background: transparent; color: #8d96a8; } 41%, 100% { background: #1b2340; color: #6f8cff; } }
+@keyframes shot-rect {
+    0%, 30.9% { opacity: 0; width: 0; height: 0; }
+    31% { opacity: 1; width: 0; height: 0; }
+    37%, 55% { opacity: 1; width: 24px; height: 106px; }
+    58%, 100% { opacity: 0; width: 24px; height: 106px; }
+}
+@keyframes shot-ink { 0%, 43% { opacity: 1; stroke-dashoffset: 1; } 51%, 55% { opacity: 1; stroke-dashoffset: 0; } 58%, 100% { opacity: 0; stroke-dashoffset: 0; } }
+@keyframes shot-save { 0%, 53.5% { transform: none; } 54.3% { transform: scale(0.9); background: #7490ff; } 56%, 100% { transform: none; } }
+@keyframes shot-thumb {
+    0%, 56% { opacity: 0; transform: scale(0.7); }
+    58.5% { opacity: 1; transform: none; }
+    61% { opacity: 1; transform: scale(1.05) rotate(-2deg); box-shadow: 0 26px 40px -14px #00000080; }
+    69% { opacity: 1; transform: translate(176px, 27px) scale(0.9) rotate(-4deg); }
+    71%, 100% { opacity: 0; transform: translate(150px, 22px) scale(0.3); }
+}
+/* In the input box until Enter at 81%, then in the transcript above it. */
+@keyframes shot-drop { 0%, 69.5% { opacity: 0; transform: scale(0.6); } 71%, 80.5% { opacity: 1; transform: none; } 81.5%, 100% { opacity: 0; } }
+@keyframes shot-idle { 0%, 69.5% { visibility: visible; } 70%, 81.5% { visibility: hidden; } 82%, 100% { visibility: visible; } }
+@keyframes shot-ask { 0%, 70.5% { opacity: 0; } 71%, 80.5% { opacity: 1; } 81.5%, 100% { opacity: 0; } }
+@keyframes shot-type { 0%, 72% { width: 0; animation-timing-function: steps(22, jump-start); } 79.5%, 100% { width: 22ch; } }
+@keyframes shot-sent { 0%, 81% { opacity: 0; transform: translateY(8px); } 83%, 96% { opacity: 1; transform: none; } 99%, 100% { opacity: 0; } }
+@keyframes shot-out { 0%, 83.5% { opacity: 0; transform: translateY(5px); } 85.5%, 96% { opacity: 1; transform: none; } 99%, 100% { opacity: 0; } }
+@keyframes shot-done { 0%, 87% { opacity: 0; transform: translateY(5px); } 89%, 96% { opacity: 1; transform: none; } 99%, 100% { opacity: 0; } }
+@keyframes shot-calm { 0%, 88.5% { opacity: 0; } 91.5%, 96% { opacity: 1; } 99.5%, 100% { opacity: 0; } }
+
+@keyframes shot-cursor {
+    0%, 2% { opacity: 0; transform: translate(300px, 330px); }
+    5% { opacity: 1; transform: translate(262px, 170px); }
+    9.5% { transform: translate(207px, 61px); }
+    22% { transform: translate(417px, 251px); }
+    25.5%, 27.5% { transform: translate(132px, 278px); }
+    30.5% { transform: translate(347px, 104px); }
+    37% { transform: translate(371px, 210px); }
+    39.5%, 41% { transform: translate(169px, 278px); }
+    43% { transform: translate(271px, 199px); animation-timing-function: linear; }
+    46.1% { transform: translate(299px, 159px); animation-timing-function: linear; }
+    49.3% { transform: translate(339px, 141px); animation-timing-function: linear; }
+    50.2% { transform: translate(326px, 138px); animation-timing-function: steps(1, end); }
+    50.3% { transform: translate(339px, 141px); animation-timing-function: linear; }
+    51% { transform: translate(334px, 153px); }
+    53.5%, 55% { transform: translate(342px, 278px); }
+    59.5%, 61% { transform: translate(366px, 240px); }
+    69%, 70% { opacity: 1; transform: translate(542px, 267px); }
+    75% { opacity: 1; transform: translate(600px, 300px); }
+    78%, 100% { opacity: 0; transform: translate(620px, 318px); }
+}
+@keyframes shot-cross { 0%, 8.4% { opacity: 0; } 8.5%, 23% { opacity: 1; } 23.1%, 30% { opacity: 0; } 30.1%, 37.5% { opacity: 1; } 37.6%, 100% { opacity: 0; } }
+@keyframes shot-point { 0%, 8.4% { opacity: 1; } 8.5%, 23% { opacity: 0; } 23.1%, 30% { opacity: 1; } 30.1%, 37.5% { opacity: 0; } 37.6%, 100% { opacity: 1; } }

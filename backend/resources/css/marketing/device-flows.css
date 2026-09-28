@@ -1,0 +1,175 @@
+/* Product UI only: never inherit the landing page's typography or pill rules. */
+.vdev .vdev-flow-backdrop { padding: 30px; background: #05070ba8; backdrop-filter: blur(3px); }
+.vdev .vdev-flow { width: min(100%, 600px); outline: none; }
+.vdev .vdev-flow-settings .vdev-flow { width: min(100%, 850px); }
+.vdev .vdev-demo-label { margin-left: auto; margin-right: 12px; color: var(--muted); font-size: 10px; font-weight: 500; }
+.vdev .vdev-flow h3 { color: var(--text); font-size: 25px; font-weight: 600; letter-spacing: -.7px; line-height: 1.25; margin: 0 0 26px; }
+.vdev .vdev-flow h4 { margin: 0 0 10px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.vdev .vdev-flow button { font: inherit; }
+.vdev .vdev-flow button:disabled { opacity: .4; cursor: default; }
+.vdev .vdev-flow select { max-width: 180px; padding: 7px; background: var(--hover-strong); color: var(--text); border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+.vdev .vdev-flow button.vdev-flow-primary { min-height: 36px; padding: 8px 17px; border: 0; border-radius: 7px; background: var(--action); color: white; font-size: 12px; font-weight: 600; }
+.vdev .vdev-flow button.vdev-flow-primary:hover { background: var(--action-hover); }
+.vdev .vdev-flow-project { inset: var(--chrome-h) 0 0; padding: 28px; background: var(--workspace); backdrop-filter: none; }
+.vdev .vdev-flow-project .vdev-flow { width: min(100%, 650px); background: transparent; border: 0; box-shadow: none; }
+.vdev .vdev-flow-project .vdev-flow > header { border: 0; padding: 0 28px; }
+.vdev .vdev-flow-project .vdev-flow > header h2 { visibility: hidden; }
+.vdev .vdev-project-flow { padding: 16px 28px 32px; }
+.vdev .vdev-flow-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 17px; color: var(--muted); font-size: 10px; letter-spacing: 1.4px; }
+.vdev .vdev-flow-meta > button { color: var(--text); font-size: 18px; }
+.vdev .vdev-step-dots { display: flex; gap: 4px; margin-left: auto; }
+.vdev .vdev-step-dots i { width: 19px; height: 3px; border-radius: 2px; background: var(--line); }
+.vdev .vdev-step-dots .is-on { background: var(--accent); }
+.vdev .vdev-start-choices { display: grid; gap: 8px; }
+.vdev .vdev-start-choices button { display: flex; gap: 20px; align-items: center; padding: 22px 12px; border-radius: 10px; text-align: left; color: var(--text); }
+.vdev .vdev-start-choices button:hover { background: var(--hover-strong); }
+.vdev .vdev-start-choices button > svg { flex: none; color: var(--accent); }
+.vdev .vdev-start-choices button > span { display: grid; gap: 7px; }
+.vdev .vdev-start-choices strong { font-size: 16px; font-weight: 550; }
+.vdev .vdev-start-choices small { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.vdev .vdev-start-choices b { margin-left: auto; color: var(--muted); }
+.vdev .vdev-kind-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.vdev .vdev-kind-grid button { display: grid; justify-items: center; align-content: center; gap: 13px; min-height: 100px; border: 1px solid var(--line-soft); border-radius: 9px; color: var(--muted); font-size: 12px; }
+.vdev .vdev-kind-grid button:hover { background: var(--accent-soft); border-color: var(--accent-border); color: var(--text); }
+.vdev .vdev-quiet { padding: 10px 0; color: var(--muted); font-size: 11px; }
+.vdev .vdev-project-flow > .vdev-quiet { margin-top: 16px; }
+.vdev .vdev-stack-list { display: grid; gap: 8px; }
+.vdev .vdev-stack-list > button { display: flex; align-items: center; padding: 17px; border-radius: 8px; border: 1px solid var(--line-soft); text-align: left; }
+.vdev .vdev-stack-list > button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-border); }
+.vdev .vdev-stack-list > button > span { display: grid; gap: 7px; }
+.vdev .vdev-stack-list strong { font-weight: 550; }
+.vdev .vdev-stack-list small { color: var(--muted); font-size: 11px; }
+.vdev .vdev-stack-list b { margin-left: auto; color: var(--accent); }
+.vdev .vdev-flow em { display: inline-block; margin-left: 8px; padding: 3px 6px; background: var(--hover-strong); border-radius: 4px; color: var(--muted); font-size: 9px; font-style: normal; font-weight: 500; }
+.vdev .vdev-project-flow footer { display: flex; align-items: center; gap: 16px; margin-top: 25px; }
+.vdev .vdev-project-flow form { padding: 0; gap: 18px; }
+.vdev .vdev-project-flow form footer { justify-content: flex-start; }
+.vdev .vdev-stack-chip { align-self: flex-start; padding: 6px 9px; border-radius: 6px; background: var(--hover-strong); font-size: 11px; }
+.vdev .vdev-project-flow input.vdev-project-name-input { height: 66px; border: 0; border-bottom: 1px solid var(--accent); border-radius: 0; padding: 0; background: transparent; font-size: 30px; font-weight: 500; }
+.vdev .vdev-flow .vdev-flow-summary { color: var(--text); margin-bottom: 24px; font-size: 15px; }
+.vdev .vdev-flow-summary span { color: var(--muted); }
+.vdev .vdev-flow .vdev-flow-note { margin-top: 20px; font-size: 11px; line-height: 1.6; color: var(--muted); }
+.vdev .vdev-project-done { display: grid; justify-items: start; gap: 20px; }
+.vdev .vdev-project-done > span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--success-soft); color: var(--success); font-size: 24px; }
+.vdev .vdev-project-done > strong { font-size: 20px; overflow-wrap: anywhere; }
+.vdev .vdev-terminal-picker { padding: 22px; }
+.vdev .vdev-terminal-picker > input { margin: 18px 0; height: 38px; }
+.vdev .vdev-company-list { display: grid; gap: 7px; max-height: 400px; overflow: auto; }
+.vdev .vdev-company-list > section { border: 1px solid var(--line-soft); border-radius: 9px; overflow: hidden; }
+.vdev .vdev-company { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 10px 14px; text-align: left; }
+.vdev .vdev-company:hover, .vdev .vdev-company-models button:hover { background: var(--hover-strong); }
+.vdev .vdev-company img { object-fit: contain; }
+.vdev .vdev-company strong { font-size: 14px; font-weight: 550; }
+.vdev .vdev-company small { margin-left: auto; color: var(--muted); }
+.vdev .vdev-company-models { border-top: 1px solid var(--line-soft); padding: 5px; }
+.vdev .vdev-company-models button { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 11px 14px 11px 50px; border-radius: 5px; text-align: left; }
+.vdev .vdev-company-models button > span:first-child { display: grid; gap: 4px; }
+.vdev .vdev-company-models small { color: var(--muted); font-size: 10px; }
+.vdev .vdev-company-list > h4 { margin: 12px 12px 0; }
+.vdev .vdev-terminal-picker > footer { display: flex; gap: 5px; margin-top: 20px; color: var(--muted); font-size: 10px; }
+.vdev .vdev-terminal-picker > footer span { margin-left: auto; }
+.vdev .vdev-settings-layout { display: grid; grid-template-columns: 185px minmax(0,1fr); height: 535px; max-height: 65vh; }
+.vdev .vdev-settings-layout > aside { padding: 18px 10px; border-right: 1px solid var(--line-soft); background: var(--rail); overflow: auto; }
+.vdev .vdev-settings-layout > aside input { min-height: 30px; font-size: 11px; margin-bottom: 14px; }
+.vdev .vdev-settings-layout nav { display: grid; gap: 3px; }
+.vdev .vdev-settings-layout nav button { display: flex; align-items: center; gap: 9px; padding: 9px; text-align: left; color: var(--muted); border-radius: 6px; font-size: 12px; }
+.vdev .vdev-settings-layout nav button[aria-current] { background: var(--hover-strong); color: var(--text); }
+.vdev .vdev-settings-layout nav button:last-child { margin-top: 12px; }
+.vdev .vdev-settings-layout nav i { display: grid; flex: none; place-items: center; width: 23px; height: 23px; border-radius: 5px; color: white; }
+.vdev .vdev-settings-content { overflow: auto; padding: 25px 26px; }
+.vdev .vdev-settings-content > header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
+.vdev .vdev-settings-content > header h3 { font-size: 20px; margin: 0; }
+.vdev .vdev-settings-content > header > span { font-size: 10px; color: var(--muted); }
+.vdev .vdev-setting-group { margin-bottom: 22px; }
+.vdev .vdev-setting-group > div { border: 1px solid var(--line-soft); border-radius: 9px; overflow: hidden; }
+.vdev .vdev-setting-row { display: flex; justify-content: space-between; gap: 18px; align-items: center; min-height: 58px; padding: 13px; border-bottom: 1px solid var(--line-soft); }
+.vdev .vdev-setting-row:last-child { border-bottom: 0; }
+.vdev .vdev-setting-row > span { display: grid; gap: 5px; min-width: 0; }
+.vdev .vdev-setting-row strong { font-size: 12px; font-weight: 550; }
+.vdev .vdev-setting-row small { color: var(--muted); font-size: 10px; line-height: 1.5; max-width: 235px; }
+.vdev .vdev-setting-row > div { flex: none; }
+.vdev .vdev-setting-row code, .vdev .vdev-setting-status { font-size: 10px; color: var(--muted); }
+.vdev .vdev-switch { display: block; width: 31px; height: 19px; padding: 2px; border-radius: 20px; background: var(--line); }
+.vdev .vdev-switch i { display: block; width: 15px; height: 15px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.vdev .vdev-switch[aria-checked="true"] { background: var(--action); }
+.vdev .vdev-switch[aria-checked="true"] i { transform: translateX(12px); }
+.vdev .vdev-segments, .vdev .vdev-stepper { display: flex; align-items: center; padding: 3px; border: 1px solid var(--line); border-radius: 7px; background: var(--hover); }
+.vdev .vdev-segments button { padding: 5px 9px; border-radius: 4px; color: var(--muted); font-size: 11px; }
+.vdev .vdev-segments button[aria-pressed="true"] { background: var(--hover-strong); color: var(--text); box-shadow: 0 1px 3px #0002; }
+.vdev .vdev-stepper button { width: 25px; height: 22px; }
+.vdev .vdev-stepper span { min-width: 38px; text-align: center; font-size: 11px; }
+.vdev .vdev-account-row { display: flex; gap: 12px; align-items: center; padding: 16px; border-bottom: 1px solid var(--line-soft); }
+.vdev .vdev-account-row:last-child { border: 0; }
+.vdev .vdev-account-row > span { display: grid; gap: 5px; }
+.vdev .vdev-account-row strong { font-size: 13px; font-weight: 550; }
+.vdev .vdev-account-row small { color: var(--muted); font-size: 10px; }
+.vdev .vdev-account-row em { margin-left: auto; }
+.vdev .vdev-phone-device { display: flex; gap: 12px; align-items: center; padding: 16px; }
+.vdev .vdev-phone-device > span { display: grid; gap: 7px; flex: 1; }
+.vdev .vdev-phone-device strong { font-size: 12px; }
+.vdev .vdev-phone-device small { font-size: 10px; color: var(--muted); }
+.vdev .vdev-phone-silhouette { color: var(--dim); }
+.vdev .vdev-phone-silhouette.is-connected { color: var(--success); }
+.vdev .vdev-phone-device > button, .vdev .vdev-phone-approval button, .vdev .vdev-phone-connect { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 11px; }
+.vdev .vdev-phone-connect { margin: 0 16px 16px; }
+.vdev .vdev-phone-approval { padding: 16px; border-top: 1px solid var(--line-soft); background: var(--hover); }
+.vdev .vdev-phone-approval p { margin: 8px 0 14px; font-size: 11px; }
+.vdev .vdev-phone-approval > div { display: flex; justify-content: flex-end; gap: 8px; }
+.vdev .vdev-sample-profile { display: grid; justify-items: center; gap: 12px; padding: 20px 15px 30px; text-align: center; }
+.vdev .vdev-sample-profile > span { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 22px; }
+.vdev .vdev-setting-row kbd { padding: 6px 10px; background: var(--hover-strong); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 5px; font: 11px var(--font-ui); }
+.vdev .vdev-term { font-size: var(--demo-font-size, 11px); font-family: var(--demo-font, var(--font-mono)); }
+.vdev[data-motion="false"] *, .vdev[data-motion="false"] *::before, .vdev[data-motion="false"] *::after { animation: none !important; transition: none !important; }
+.vdev[data-theme="light"] { --bg: #f2f3f6; --workspace: #eceef2; --rail: #f5f6f8; --surface: #fff; --elevated: #e2e5eb; --text: #202631; --muted: #616b7a; --dim: #616b7a; --line: #d0d5df; --line-soft: #dfe3e9; --border: #ced3de; --hover: #00000006; --hover-strong: #e9ecf2; --chrome-bg: #f5f6f8; --wash: linear-gradient(transparent,transparent); }
+@media (prefers-color-scheme: light) { .vdev[data-theme="auto"] { --bg: #f2f3f6; --workspace: #eceef2; --rail: #f5f6f8; --surface: #fff; --elevated: #e2e5eb; --text: #202631; --muted: #616b7a; --dim: #616b7a; --line: #d0d5df; --line-soft: #dfe3e9; --border: #ced3de; --hover: #00000006; --hover-strong: #e9ecf2; --chrome-bg: #f5f6f8; --wash: linear-gradient(transparent,transparent); } }
+@media (max-width: 700px) {
+    .vdev .vdev-flow-backdrop { padding: 8px; }
+    .vdev .vdev-flow { max-height: 100%; }
+    .vdev .vdev-project-flow { padding: 16px; }
+    .vdev .vdev-flow h3 { font-size: 23px; }
+    .vdev .vdev-flow-project .vdev-flow > header { padding-inline: 16px; }
+    .vdev .vdev-start-choices button { gap: 12px; padding: 18px 0; }
+    .vdev .vdev-kind-grid { gap: 6px; }
+    .vdev .vdev-kind-grid button { min-height: 84px; font-size: 10px; }
+    .vdev .vdev-settings-layout { grid-template-columns: minmax(0,1fr); height: 580px; max-height: none; }
+    .vdev .vdev-settings-layout > aside { padding: 10px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .vdev .vdev-settings-layout > aside input { margin-bottom: 8px; }
+    .vdev .vdev-settings-layout nav { display: flex; overflow-x: auto; }
+    .vdev .vdev-settings-layout nav button { flex: none; padding: 6px 8px; font-size: 11px; }
+    .vdev .vdev-settings-layout nav button:last-child { margin-top: 0; }
+    .vdev .vdev-settings-layout nav i { display: none; }
+    .vdev .vdev-settings-content { padding: 16px 12px; }
+    .vdev .vdev-setting-row { padding: 11px 9px; gap: 9px; }
+    .vdev .vdev-setting-row strong { font-size: 11px; }
+    .vdev .vdev-segments button { padding: 5px 6px; font-size: 10px; }
+    .vdev .vdev-phone-device { padding: 12px; flex-wrap: wrap; }
+    .vdev .vdev-account-row { padding: 12px; gap: 9px; flex-wrap: wrap; }
+    .vdev .vdev-account-row em { margin-left: 38px; }
+    .vdev .vdev-stack-list em { display: block; margin: 5px 0 0; width: fit-content; }
+    .vdev .vdev-project-flow footer { gap: 10px; flex-wrap: wrap; }
+    .vdev .vdev-terminal-picker { padding: 16px; }
+}
+
+@media (max-width: 700px) {
+    .hero-showcase .vdev .vdev-mode-switch { position: static; transform: none; margin: 0; gap: 2px; }
+    .hero-showcase .vdev.vdev .vdev-brand { width: 110px; min-width: 110px; }
+    .hero-showcase .vdev .vdev-right { flex: none; gap: 0; padding-right: 4px; }
+}
+@media (max-width: 420px) {
+    .hero-showcase .vdev.vdev .vdev-brand { width: 36px; min-width: 36px; padding: 0 3px; border: 0; }
+    .hero-showcase .vdev .vdev-traffic-lights { display: none; }
+    .hero-showcase .vdev .vdev-mode-switch button { padding: 0 8px; font-size: 11px; }
+}
+
+.vdev .vdev-flow-settings .vdev-flow { display: flex; flex-direction: column; height: min(590px, 100%); overflow: hidden; }
+.vdev .vdev-flow-settings .vdev-flow > header { flex: none; }
+.vdev .vdev-settings-layout { flex: 1; min-height: 0; height: auto; max-height: none; }
+@media (max-width: 700px) {
+    .vdev .vdev-settings-layout { grid-template-rows: auto minmax(0,1fr); }
+    .vdev .vdev-flow-project .vdev-flow > header { min-height: 32px; }
+    .vdev .vdev-project-flow { padding: 10px 14px 16px; }
+    .vdev .vdev-flow-meta { margin-bottom: 10px; }
+    .vdev .vdev-project-flow h3 { font-size: 21px; margin-bottom: 16px; }
+    .vdev .vdev-kind-grid button { min-height: 66px; gap: 7px; }
+    .vdev .vdev-kind-grid svg { width: 23px; height: 23px; }
+}

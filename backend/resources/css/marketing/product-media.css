@@ -1,0 +1,319 @@
+.product-capture {
+    overflow: hidden;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+}
+
+.product-capture img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.product-capture figcaption {
+    padding: 11px 14px;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-ink-muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.marketing-product-frame,
+.desktop-campaign-stage,
+.editorial-phone-stage {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(93, 129, 255, 0.26);
+    border-radius: 18px;
+    background: #090b10;
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+}
+
+.marketing-product-frame {
+    min-height: 470px;
+    padding: clamp(28px, 5vw, 64px) clamp(18px, 4vw, 52px) 48px;
+    background-image: linear-gradient(135deg, rgba(5, 8, 15, 0.18), rgba(4, 7, 14, 0.86)), url("/media/homepage/vibyra-cobalt-stage.png");
+    background-position: center;
+    background-size: cover;
+}
+
+.marketing-product-frame__ambient {
+    position: absolute;
+    inset: 14% 12%;
+    border-radius: 50%;
+    background: rgba(55, 102, 255, 0.2);
+    filter: blur(70px);
+}
+
+.marketing-product-frame__window {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: #101217;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.62);
+    transform: perspective(1400px) rotateX(1.5deg) rotateY(-1.5deg);
+}
+
+.marketing-product-frame__bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 11px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 23, 31, 0.96);
+}
+
+.marketing-product-frame__bar span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.marketing-product-frame__bar strong {
+    margin-left: 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.marketing-product-frame__viewport {
+    height: clamp(310px, 35vw, 405px);
+    overflow: hidden;
+}
+
+.marketing-product-frame__viewport img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+}
+
+.marketing-product-frame--memory .marketing-product-frame__viewport img {
+    width: 170%;
+    max-width: none;
+    object-position: right top;
+    transform: translateX(-41%);
+}
+
+.marketing-product-frame--models .marketing-product-frame__viewport img {
+    width: 130%;
+    max-width: none;
+    object-position: right top;
+    transform: translateX(-22%);
+}
+
+.marketing-product-frame figcaption,
+.desktop-campaign-stage figcaption,
+.editorial-phone-stage figcaption {
+    position: absolute;
+    z-index: 3;
+    right: 16px;
+    bottom: 13px;
+    left: 16px;
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.52);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.marketing-product-frame figcaption span {
+    color: #9bb3ff;
+}
+
+.capability-stage {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    background: var(--color-canvas-raised);
+}
+
+.capability-stage__media {
+    position: absolute;
+    inset: 0;
+    opacity: 0.34;
+}
+
+.capability-stage__media::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, rgba(8, 10, 16, 0.98) 4%, rgba(8, 10, 16, 0.9) 52%, rgba(8, 10, 16, 0.72));
+    content: "";
+}
+
+.capability-stage__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.capability-stage__content {
+    position: relative;
+    z-index: 1;
+    padding: clamp(28px, 5vw, 64px);
+}
+
+.desktop-campaign-stage,
+.editorial-phone-stage {
+    min-height: 520px;
+    padding: clamp(34px, 5vw, 58px) clamp(20px, 4vw, 46px) 42px;
+}
+
+.desktop-campaign-stage__backdrop,
+.editorial-phone-stage__backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.72;
+}
+
+.desktop-campaign-stage::after,
+.editorial-phone-stage::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, rgba(6, 8, 14, 0.08), rgba(6, 8, 14, 0.7));
+    content: "";
+}
+
+.desktop-campaign-stage__window {
+    position: relative;
+    z-index: 1;
+    margin-top: 42px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 11px;
+    background: #0b0d12;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.58);
+    transform: rotate(-1.5deg);
+}
+
+.desktop-campaign-stage__window img {
+    display: block;
+    width: 112%;
+    max-width: none;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: top left;
+}
+
+.desktop-campaign-stage__label {
+    position: absolute;
+    z-index: 2;
+    top: 12px;
+    right: 12px;
+    padding: 7px 9px;
+    border: 1px solid rgba(126, 157, 255, 0.35);
+    border-radius: 7px;
+    background: rgba(10, 14, 24, 0.84);
+    color: #bac8ff;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.editorial-phone-stage__desktop {
+    position: absolute;
+    z-index: 1;
+    top: 72px;
+    left: -12%;
+    width: 88%;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 11px;
+    background: #0b0d12;
+    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.55);
+    transform: perspective(1100px) rotateY(7deg) rotateZ(-1deg);
+}
+
+.editorial-phone-stage__desktop > img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    object-position: center;
+}
+
+.editorial-phone-stage__chrome {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding-left: 9px;
+    background: #151821;
+}
+
+.editorial-phone-stage__chrome i {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.editorial-phone-stage__screen {
+    position: absolute;
+    z-index: 1;
+    right: clamp(20px, 5vw, 60px);
+    bottom: 46px;
+    width: min(210px, 38%);
+    overflow: hidden;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 22px;
+    background: #090b10;
+    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.62), 0 0 0 8px rgba(9, 11, 16, 0.62);
+}
+
+.editorial-phone-stage__screen img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+@media (max-width: 720px) {
+    .editorial-phone-stage {
+        min-height: 420px;
+    }
+
+    .editorial-phone-stage__screen {
+        right: 20px;
+        bottom: 40px;
+        width: 34%;
+    }
+
+    .marketing-product-frame {
+        min-height: 360px;
+        padding: 22px 14px 42px;
+    }
+
+    .marketing-product-frame__viewport {
+        height: 270px;
+    }
+
+    .desktop-campaign-stage,
+    .editorial-phone-stage {
+        min-height: 420px;
+    }
+
+    .editorial-phone-stage__desktop {
+        top: 78px;
+        left: -28%;
+        width: 112%;
+    }
+}

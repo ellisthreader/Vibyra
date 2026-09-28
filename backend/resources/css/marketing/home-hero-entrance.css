@@ -1,0 +1,62 @@
+/* Keep final geometry in normal flow. Only the first document entrance moves. */
+.hero-intro h1 > .hero-title-lead { margin-left: 0; }
+.hero-intro h1 > .hero-title-lead,
+.hero-intro h1 > .hero-title-follow { display: inline-block; }
+
+@media (prefers-reduced-motion: no-preference) {
+    [data-hero-entrance="true"] {
+        --entrance-ease: cubic-bezier(.16, 1, .3, 1);
+    }
+    [data-hero-entrance="true"] .hero-title-lead,
+    [data-hero-entrance="true"] .hero-title-follow {
+        animation: hero-title-focus 1s var(--entrance-ease) both;
+    }
+    [data-hero-entrance="true"] .hero-title-follow { animation-delay: .24s; }
+    [data-hero-entrance="true"] .hero-description {
+        animation: hero-copy-focus .9s .48s var(--entrance-ease) both;
+    }
+    [data-hero-entrance="true"] .hero-actions {
+        animation: hero-content-rise .85s .68s var(--entrance-ease) both;
+    }
+    [data-hero-entrance="true"] .hero-meta {
+        animation: hero-content-rise .85s .84s var(--entrance-ease) both;
+    }
+    [data-hero-entrance="true"] > .home-header {
+        animation: hero-chrome-fade .9s .6s ease-out both;
+    }
+    [data-hero-entrance="true"] .hero-showcase .walkthrough {
+        transform-origin: 50% 0;
+        animation: hero-workspace-rise 1.3s .92s var(--entrance-ease) both;
+    }
+    [data-hero-entrance="true"] .hero-light {
+        animation: hero-light-bloom 1.5s .72s var(--entrance-ease) both;
+    }
+    [data-hero-entrance="true"] .agent-showcase {
+        animation: hero-content-rise .9s 1.2s var(--entrance-ease) both;
+    }
+}
+
+@keyframes hero-title-focus {
+    from { opacity: 0; filter: blur(7px); transform: translate3d(0, 24px, 0); }
+    to { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes hero-copy-focus {
+    from { opacity: 0; filter: blur(4px); transform: translate3d(0, 12px, 0); }
+    to { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes hero-content-rise {
+    from { opacity: 0; transform: translate3d(0, 12px, 0); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes hero-chrome-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes hero-workspace-rise {
+    from { opacity: 0; transform: translate3d(0, 44px, 0) scale(.975); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes hero-light-bloom {
+    from { opacity: 0; transform: scale(.88); }
+    to { opacity: 1; transform: none; }
+}

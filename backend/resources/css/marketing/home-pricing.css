@@ -1,0 +1,130 @@
+/* Free and Pro as two soft cards in the homepage card family. Pro is lit from
+ * its corner; on phones it comes first. */
+.pricing-section { position: relative; background: var(--home-dark); color: var(--site-text); }
+.marketing-home-cinematic .pricing-layout { display: flex; flex-direction: column; align-items: center; max-width: 1000px; }
+.marketing-home-cinematic .pricing-layout > .home-section-heading > p { max-width: 52ch; }
+
+.plan-cycle { display: inline-flex; gap: 4px; margin: 0 0 28px; padding: 4px; border-radius: 999px; background: var(--site-surface); }
+.plan-cycle button {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 18px; border: 0; border-radius: 999px;
+    background: transparent; color: var(--site-muted); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .18s, color .18s;
+}
+.plan-cycle button:hover { color: var(--site-text); }
+.plan-cycle button[aria-pressed="true"] { background: #2a2c33; color: var(--site-text); }
+.plan-cycle button:focus-visible { outline: 2px solid #9db0ff; outline-offset: 2px; }
+.plan-cycle span { padding: 3px 8px; border-radius: 999px; background: rgba(91, 124, 250, .18); color: #b4c5ff; font-size: 12px; font-weight: 600; }
+.plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; width: 100%; max-width: 980px; margin-top: 8px; }
+.plan-card { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 36px; border-radius: var(--site-radius); background: var(--site-surface); }
+.plan-pro {
+    background:
+        radial-gradient(ellipse at 85% -10%, rgba(86, 118, 255, .32), transparent 55%),
+        linear-gradient(180deg, #1a1f33, #15171d 60%);
+}
+.plan-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; min-height: 64px; }
+.plan-top h3 { font-size: 22px; font-weight: 600; line-height: 1.3; letter-spacing: -.02em; }
+.plan-for { margin-top: 6px !important; font-size: 15px; color: var(--site-muted); }
+.pro-gem-light { position: relative; flex: none; width: 64px; margin-top: -6px; overflow: visible; filter: drop-shadow(0 10px 24px rgba(40, 72, 220, .5)); }
+.pro-gem { display: block; width: 100%; height: auto; }
+
+/* The glint: 26 frames × 50ms inside a 5s loop, exactly as the original WebP. */
+.pro-gem-sparkle { position: absolute; top: 50%; left: 50%; width: 200%; aspect-ratio: 1; overflow: hidden; transform: translate(-50%, -50%); pointer-events: none; }
+.pro-gem-sparkle img { display: block; width: 2600%; max-width: none; height: 100%; opacity: 0; }
+.pro-gem-light.is-playing .pro-gem-sparkle img { animation: pro-glint 5s infinite; }
+@keyframes pro-glint {
+    0%, 52.99% { transform: translateX(0); opacity: 0; }
+    53% { transform: translateX(0); opacity: 1; animation-timing-function: steps(26, end); }
+    79% { transform: translateX(-100%); opacity: 1; }
+    79.01%, 100% { transform: translateX(-100%); opacity: 0; }
+}
+
+/* The gem lights the card: a blue glow that breathes, swelling into each
+ * flash, and a white bloom that follows the glint (frames 8–10 peak at ~61%). */
+.plan-pro { --gem-x: calc(100% - 68px); --gem-y: 57px; --glint-x: calc(100% - 88px); --glint-y: 26px; isolation: isolate; }
+.plan-pro > * { position: relative; z-index: 1; }
+.plan-pro::before, .plan-pro::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none; }
+/* The glow's reach is a registered length, so it pulses without the layer ever
+ * growing past the card's edge. */
+@property --pro-glow { syntax: "<length>"; inherits: false; initial-value: 250px; }
+.plan-pro::before {
+    background: radial-gradient(circle at var(--gem-x) var(--gem-y), rgba(110, 144, 255, .3), rgba(80, 112, 244, .12) calc(var(--pro-glow) * .36), rgba(70, 103, 232, .04) calc(var(--pro-glow) * .68), transparent var(--pro-glow));
+    mix-blend-mode: screen; opacity: .75;
+}
+.plan-pro::after {
+    background: radial-gradient(circle at var(--glint-x) var(--glint-y), rgba(255, 255, 255, .3), rgba(200, 216, 255, .14) 46px, rgba(120, 150, 255, .06) 140px, transparent 300px);
+    mix-blend-mode: screen; opacity: 0;
+}
+.plan-pro:has(.pro-gem-light.is-playing)::before { animation: pro-pulse 5s ease-in-out infinite; }
+.plan-pro:has(.pro-gem-light.is-playing)::after { animation: pro-flash 5s infinite; }
+@keyframes pro-flash {
+    0%, 53% { opacity: 0; }
+    57% { opacity: .35; }
+    61% { opacity: 1; }
+    64% { opacity: .82; }
+    68% { opacity: .42; }
+    72% { opacity: .16; }
+    79%, 100% { opacity: 0; }
+}
+@keyframes pro-pulse {
+    0%, 100% { opacity: .62; --pro-glow: 220px; }
+    61% { opacity: 1; --pro-glow: 280px; }
+}
+
+.plan-price { display: flex; align-items: baseline; gap: 8px; margin-top: 28px !important; white-space: nowrap; }
+.plan-price strong { font-size: 52px; font-weight: 500; line-height: 1; letter-spacing: -.05em; }
+.plan-price span { font-size: 15px; color: var(--site-muted); }
+.plan-billing { margin-top: 10px !important; font-size: 13.5px; line-height: 1.5; color: #7d8390; }
+.plan-billing b { font-weight: 600; color: #b4c5ff; }
+.plan-tokens { margin-top: 16px !important; font-size: 15px; line-height: 1.5; color: var(--site-muted); }
+.plan-tokens strong { font-weight: 600; color: var(--site-text); }
+
+.plan-list { margin: 28px 0 32px; padding-top: 28px; border-top: 1px solid rgba(255, 255, 255, .07); }
+.plan-list-lead { margin: 0 0 16px !important; font-size: 13px; font-weight: 600; letter-spacing: .01em; color: #b4c5ff; }
+.plan-ticks { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.plan-ticks li { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; line-height: 1.45; color: var(--site-muted); }
+.plan-ticks li strong { font-weight: 600; color: var(--site-text); }
+.plan-ticks svg { flex: none; width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: #262a36; color: #b4c5ff; }
+.plan-missing { margin-top: 14px; }
+.plan-missing li { color: #6f7581; }
+.plan-missing svg { background: transparent; box-shadow: inset 0 0 0 1px #2c2f37; color: #6f7581; }
+
+.marketing-home-cinematic .pricing-section .plan-cta {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 52px; min-height: 0; margin-top: auto; padding: 0 24px; border-radius: 999px; line-height: 1;
+    font-size: 15px; font-weight: 600; text-decoration: none; transition: background .18s;
+}
+.marketing-home-cinematic .pricing-section .plan-cta-free { background: #25262b; color: var(--site-text); }
+.marketing-home-cinematic .pricing-section .plan-cta-free:hover { background: #32343a; }
+.plan-cta:focus-visible { outline: 2px solid #9db0ff; outline-offset: 3px; }
+.pro-guarantee { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 28px !important; font-size: 14.5px; line-height: 1.5; color: var(--site-muted); text-align: center; }
+.pro-guarantee svg { flex: none; color: #b4c5ff; }
+.pro-guarantee strong { font-weight: 600; color: var(--site-text); }
+.pro-terms { max-width: 680px; margin-top: 10px !important; text-align: center; font-size: 12.5px; line-height: 1.6; color: #7d8390; }
+.pro-terms a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.pro-terms a:hover { color: var(--site-text); }
+
+.pricing-loading, .pricing-error {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    width: 100%; max-width: 980px; min-height: 560px; padding: 28px; border-radius: var(--site-radius);
+    background: var(--site-surface); color: var(--site-muted); text-align: center;
+}
+
+@media (max-width: 760px) {
+    .plan-grid { grid-template-columns: minmax(0, 1fr); max-width: 520px; margin-top: 0; }
+    .plan-pro { order: -1; --gem-x: calc(100% - 54px); --gem-y: 49px; --glint-x: calc(100% - 74px); --glint-y: 18px; }
+    .plan-card { padding: 28px 22px; }
+    .plan-price strong { font-size: 46px; }
+    .pricing-loading, .pricing-error { max-width: 520px; }
+    .plan-cycle { margin-bottom: 20px; }
+    .pro-guarantee { align-items: flex-start; text-align: left; max-width: 520px; font-size: 14px; }
+    .pro-guarantee svg { margin-top: 2px; }
+}
+@media (max-width: 380px) {
+    .plan-card { padding: 24px 18px; }
+    .plan-pro { --gem-x: calc(100% - 50px); --gem-y: 45px; --glint-x: calc(100% - 70px); --glint-y: 14px; }
+    .plan-ticks li { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .pro-gem-sparkle { display: none; }
+    .plan-pro::before, .plan-pro::after { animation: none !important; }
+    .marketing-home-cinematic .pricing-section .plan-cta { transition: none; }
+}

@@ -1,0 +1,68 @@
+@layer base;
+@import 'tailwindcss/preflight' layer(base);
+@import './marketing/home-base.css';
+@import './marketing/home-hero.css';
+@import './marketing/home-mobile.css';
+@import './marketing/home-phone-device.css';
+@import './marketing/home-phone-motion.css';
+@import './marketing/home-phone-preview.css';
+@import './marketing/home-mobile-responsive.css';
+@import './marketing/home-commerce.css';
+@import './marketing/home-footer.css';
+@import './marketing/home-questions.css';
+@import './marketing/home-responsive.css';
+@import './marketing/home-small.css';
+@import './marketing/home-hero-scene.css';
+@import './marketing/home-hero-product.css';
+@import './marketing/home-film.css';
+@import './marketing/home-pricing.css';
+
+/* The homepage device mirrors Vibyra Desktop; these sheets carry its shell. */
+@import './marketing/device-tokens.css';
+@import './marketing/device-shell.css';
+@import './marketing/device-controls.css';
+@import './marketing/device-strip.css';
+@import './marketing/device-rail.css';
+@import './marketing/device-workspace.css';
+@import './marketing/device-terminal.css';
+@import './marketing/device-dock.css';
+@import './marketing/device-ask.css';
+@import './marketing/device-panels.css';
+@import './marketing/device-home.css';
+@import './marketing/device-agent.css';
+@import './marketing/device-agent-thread.css';
+@import './marketing/device-chat.css';
+@import './marketing/device-chat-composer.css';
+@import './marketing/home-hero-device-responsive.css';
+@import './marketing/device-modes-responsive.css';
+
+@import './marketing/home-agents.css';
+@import './marketing/device-preview.css';
+@import './marketing/device-flows.css';
+
+/* Section 01's two ways to work; borrows the device typefaces declared above. */
+@import './marketing/home-desktop.css';
+
+/* The ecosystem's four cards: shared window parts, then one file per story. */
+@import './marketing/home-ecosystem.css';
+@import './marketing/home-eco-parts.css';
+@import './marketing/home-eco-shot.css';
+@import './marketing/home-eco-voice.css';
+@import './marketing/home-eco-safe.css';
+@import './marketing/home-eco-accounts.css';
+
+/* Pauses looping artwork in sections that are off screen. */
+@import './marketing/home-idle.css';
+
+/* Shared homepage surfaces and hierarchy; excludes the product illustrations. */
+@import './marketing/home-design-system.css';
+@import './marketing/home-hero-light.css';
+
+@import './marketing/home-pocket.css';
+
+@import './marketing/home-pocket-artwork.css';
+@import './marketing/home-pocket-phone.css';
+
+@import './marketing/home-pocket-workspace.css';
+
+@import "./marketing/home-pocket-link.css";

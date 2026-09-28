@@ -1,0 +1,52 @@
+/* Once-per-view section reveals */
+.reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 500ms var(--ease-entrance), transform 500ms var(--ease-entrance);
+}
+.reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* FAQ marker */
+details.faq > summary {
+    list-style: none;
+}
+details.faq > summary::-webkit-details-marker {
+    display: none;
+}
+details.faq > summary::after {
+    content: '+';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-ink-muted);
+    font-size: 22px;
+    font-weight: 400;
+    transition: transform 200ms var(--ease-entrance);
+}
+details.faq[open] > summary::after {
+    transform: translateY(-50%) rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .reveal {
+        opacity: 1;
+        transform: none;
+    }
+    .signal-path {
+        stroke-dashoffset: 0;
+    }
+}

@@ -1,0 +1,28 @@
+import { defineConfig } from 'vite';
+import laravel from 'laravel-vite-plugin';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+    plugins: [
+        laravel({
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.jsx',
+                'resources/css/marketing.css',
+                'resources/js/marketing.jsx',
+                'resources/js/downloads.jsx',
+                'resources/js/benchmarks.jsx',
+                'resources/css/portal.css',
+                'resources/js/portal.jsx',
+                'resources/js/analyticsChoiceEntry.js',
+            ],
+            refresh: true,
+        }),
+        tailwindcss(),
+    ],
+    server: {
+        watch: {
+            ignored: ['**/storage/framework/views/**'],
+        },
+    },
+});

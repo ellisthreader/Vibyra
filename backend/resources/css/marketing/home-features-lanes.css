@@ -1,0 +1,77 @@
+/* ── 03 · A lane for every agent (safe mode worktrees) ──────────────────────
+ * A 14s take on a 560×320 stage: main along the bottom, a lane per safe
+ * terminal in three shades of the one blue, and Claude Code's Review card in
+ * the top corner. Resting frame: Claude Code merged, Codex ready, Gemini
+ * still working. */
+.fx-stage-lanes { --cyc: 14s; width: 560px; height: 320px; font-family: var(--fx-ui); color: var(--fx-ink); }
+.ln-lane-c, .ln-label-c, .ln-chip-c { --lane: #8ba3ff; --lane-ink: #b3c4ff; }
+.ln-lane-b, .ln-label-b, .ln-chip-b { --lane: #6f8cf0; --lane-ink: #93a8ee; }
+.ln-lane-a, .ln-label-a, .ln-chip-a { --lane: #5268c4; --lane-ink: #7d92dd; }
+
+.ln-svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.ln-svg path { fill: none; stroke-linecap: round; }
+.ln-main { stroke: #333a4b; stroke-width: 3; }
+.ln-main-glow { stroke: var(--fx-blue-2); stroke-width: 3; stroke-dasharray: 1 2; stroke-dashoffset: 0; opacity: 0; filter: drop-shadow(0 0 4px #5b7cfa88); animation: ln-mainglow var(--cyc) var(--fx-ease) infinite both; }
+.ln-draw { stroke: var(--lane); stroke-width: 2.5; stroke-dasharray: 1 2; stroke-dashoffset: 0; animation: ln-draw var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-b .ln-draw { animation-delay: 0.18s; }
+.ln-lane-a .ln-draw { animation-delay: 0.36s; }
+.ln-pulse { stroke: #fff; stroke-width: 2; stroke-dasharray: 3 97; opacity: 0; filter: drop-shadow(0 0 3px var(--lane)); }
+.ln-lane-c .ln-pulse { animation: ln-run 2.1s linear infinite, ln-work-c var(--cyc) linear infinite both; }
+.ln-lane-b .ln-pulse { animation: ln-run 2.5s linear -0.7s infinite, ln-work-b var(--cyc) linear infinite both; }
+.ln-lane-a .ln-pulse { animation: ln-run 2.3s linear -1.4s infinite, ln-work-a var(--cyc) linear infinite both; }
+.ln-commit { fill: var(--fx-art); stroke: var(--lane); stroke-width: 2; transform-box: fill-box; transform-origin: center; }
+.ln-lane-c .ln-commit-0 { animation: ln-k16 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-c .ln-commit-1 { animation: ln-k24 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-c .ln-commit-2 { animation: ln-k32 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-b .ln-commit-0 { animation: ln-k20 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-b .ln-commit-1 { animation: ln-k30 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-b .ln-commit-2 { animation: ln-k40 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-a .ln-commit-0 { animation: ln-k26 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-a .ln-commit-1 { animation: ln-k38 var(--cyc) var(--fx-ease) infinite both; }
+.ln-lane-a .ln-commit-2 { animation: ln-k50 var(--cyc) var(--fx-ease) infinite both; }
+.ln-merge { stroke: var(--fx-blue); stroke-width: 2.5; stroke-dasharray: 1 2; stroke-dashoffset: 0; animation: ln-merge var(--cyc) var(--fx-ease) infinite both; }
+.ln-base { fill: var(--fx-art); stroke: #4a5266; stroke-width: 2; }
+.ln-landed { fill: var(--fx-blue); stroke: var(--fx-art); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: ln-k69 var(--cyc) var(--fx-ease) infinite both; }
+.ln-tick { stroke: #fff; stroke-width: 1.8; stroke-linejoin: round; animation: ln-k69 var(--cyc) var(--fx-ease) infinite both; }
+.ln-ring { fill: none; stroke: var(--fx-blue); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; animation: ln-ring var(--cyc) ease-out infinite both; }
+
+.ln-safe { position: absolute; left: 20px; top: 20px; display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 650; color: var(--fx-ink); }
+.ln-safe em { padding: 2px 7px; border-radius: 999px; font-style: normal; font-size: 9.5px; font-weight: 600; color: #a8bcff; background: var(--fx-tint); border: 1px solid var(--fx-blue-4); }
+.ln-toggle { position: relative; width: 28px; height: 16px; border-radius: 999px; background: var(--fx-blue); animation: ln-track var(--cyc) var(--fx-ease) infinite both; }
+.ln-toggle i { position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--fx-surface); transform: translateX(12px); box-shadow: 0 1px 3px #00000040; animation: ln-knob var(--cyc) var(--fx-ease) infinite both; }
+.ln-label { position: absolute; left: var(--x); top: var(--y); display: flex; align-items: center; gap: 6px; font-size: 11px; white-space: nowrap; animation: ln-label var(--cyc) var(--fx-ease) infinite both; }
+.ln-label .fx-mark { color: var(--lane-ink); }
+.ln-label strong { font-weight: 650; color: var(--fx-ink); }
+.ln-label span { font: 500 9.5px/1 var(--fx-mono); color: var(--lane-ink); }
+.ln-label-b { animation-delay: 0.18s; }
+.ln-label-a { animation-delay: 0.36s; }
+.ln-chip { position: absolute; left: var(--x); top: var(--y); display: inline-flex; gap: 6px; padding: 1px 7px; border-radius: 5px; background: var(--fx-surface); border: 1px solid var(--fx-line); font: 500 9.5px/15px var(--fx-mono); color: var(--fx-text); white-space: nowrap; transform-origin: 0 50%; }
+.ln-chip b { font-weight: 600; color: var(--lane-ink); }
+.ln-chip-c { animation: ln-k16 var(--cyc) var(--fx-ease) infinite both; }
+.ln-chip-b { animation: ln-k20 var(--cyc) var(--fx-ease) infinite both; }
+.ln-chip-a { animation: ln-k26 var(--cyc) var(--fx-ease) infinite both; }
+.ln-ready-tag { position: absolute; left: 438px; top: 168px; padding: 2px 7px; border-radius: 999px; background: var(--fx-tint); border: 1px solid var(--fx-blue-4); font-size: 9px; font-weight: 700; color: #a8bcff; transform-origin: 0 50%; animation: ln-tag var(--cyc) var(--fx-ease) infinite both; }
+.ln-working { position: absolute; left: 478px; top: 114px; display: flex; gap: 3px; animation: ln-label var(--cyc) var(--fx-ease) 0.36s infinite both; }
+.ln-working i { width: 4px; height: 4px; border-radius: 50%; background: #5268c4; animation: ln-dot 1.2s ease-in-out infinite; }
+.ln-working i:nth-child(2) { animation-delay: 0.15s; }
+.ln-working i:nth-child(3) { animation-delay: 0.3s; }
+.ln-mainlabel { position: absolute; left: 20px; top: 284px; font: 600 10px/16px var(--fx-mono); color: #8d96a8; }
+.ln-stays { position: absolute; left: 56px; top: 302px; font-size: 10px; color: var(--fx-muted); }
+
+/* Claude Code's workspace in Review. */
+.ln-toast { position: absolute; left: 284px; top: 14px; width: 260px; padding: 10px 12px; border-radius: 12px; background: var(--fx-surface); border: 1px solid var(--fx-line); box-shadow: 0 18px 36px -22px #00000070; opacity: 0; animation: ln-toast var(--cyc) var(--fx-ease) infinite both; }
+.ln-toast-head { display: flex; align-items: center; gap: 6px; font-size: 11px; white-space: nowrap; }
+.ln-toast-head .fx-mark { color: var(--fx-blue); }
+.ln-toast-head strong { font-weight: 650; }
+.ln-toast-head span { margin-left: auto; font: 500 9.5px/1 var(--fx-mono); color: var(--fx-muted); }
+.ln-toast-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.ln-toast-state { position: relative; flex: 1; height: 13px; font-size: 9.5px; font-weight: 650; color: #a8bcff; }
+.ln-toast-state i { position: absolute; inset: 0; display: flex; align-items: center; gap: 5px; font-style: normal; white-space: nowrap; }
+.ln-toast-state i::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--fx-blue); }
+.ln-toast-ready { animation: ln-ready var(--cyc) linear infinite both; }
+.ln-toast-done { opacity: 0; animation: ln-done var(--cyc) linear infinite both; }
+.ln-toast-row b { padding: 5px 9px; border-radius: 6px; font-size: 9.5px; font-weight: 650; white-space: nowrap; }
+.ln-reject { border: 1px solid var(--fx-line); color: var(--fx-text); }
+.ln-approve { background: var(--fx-blue); color: #fff; animation: ln-approve var(--cyc) var(--fx-ease) infinite both; }
+.ln-cursor { position: absolute; left: 0; top: 0; z-index: 4; opacity: 0; filter: drop-shadow(0 2px 3px #00000040); animation: ln-cursor var(--cyc) cubic-bezier(0.55, 0, 0.3, 1) infinite both; }
+.ln-cursor svg { position: absolute; left: -2px; top: -2px; }

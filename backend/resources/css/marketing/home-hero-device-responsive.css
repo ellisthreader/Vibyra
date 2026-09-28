@@ -1,0 +1,35 @@
+/* Preserve the Mac shell hierarchy as the marketing frame narrows. */
+@media (min-width: 1600px) {
+    .hero-showcase .vdev { height: 640px; }
+}
+
+@media (max-width: 1150px) {
+    .hero-showcase .vdev { height: 540px; }
+    .hero-showcase .vdev .vdev-dock { flex-basis: min(38%, 380px); width: min(38%, 380px); min-width: 280px; }
+}
+
+@media (max-width: 800px) {
+    .hero-showcase .vdev { height: 500px; --rail-w: 190px; }
+    .hero-showcase .vdev .vdev-dock { flex-basis: 42%; width: 42%; }
+}
+
+@media (max-width: 700px) {
+    .hero-showcase .vdev { height: 480px; }
+    .hero-showcase .vdev .vdev-rail { position: absolute; z-index: 6; top: var(--chrome-h); bottom: 0; left: 0; box-shadow: var(--e-panel); }
+    .hero-showcase .vdev .vdev-stage { min-width: 0; }
+    .hero-showcase .vdev .vdev-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .hero-showcase .vdev .vdev-pane:not(.vdev-pane-focused) { display: none; }
+    .hero-showcase .vdev .vdev-dock { flex-basis: 48%; width: 48%; }
+}
+
+@media (max-width: 580px) {
+    .hero-showcase .walkthrough { padding: 5px; border-radius: 12px; }
+    .hero-showcase .vdev { height: 460px; --chrome-h: 44px; }
+    .hero-showcase .vdev .vdev-right { gap: 2px; padding-right: 6px; }
+    .hero-showcase .vdev .vdev-dock { position: absolute; z-index: 5; top: var(--chrome-h); right: 0; bottom: 0; width: min(100%, 355px); min-width: 0; box-shadow: var(--e-panel); }
+    .hero-showcase .vdev .vdev-stage { width: 100%; }
+}
+
+@media (min-width: 801px) and (max-width: 959px) {
+    .hero-showcase .vdev { height: auto; aspect-ratio: 8 / 5; }
+}

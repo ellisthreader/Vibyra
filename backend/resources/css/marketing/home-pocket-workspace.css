@@ -1,0 +1,41 @@
+/* Read-only reproduction of the native Projects drawer with sample work. */
+.pocket-workspace { display: flex; flex-direction: column; flex: 1; min-height: 0; padding-bottom: calc(var(--pu) * .9); font-family: "Inter Device", Inter, -apple-system, sans-serif; }
+.pocket-workspace svg { width: calc(var(--pu) * 1.1); height: calc(var(--pu) * 1.1); flex: none; }
+.pocket-workspace .ph-icon { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pocket-workspace-header { display: flex; align-items: center; gap: calc(var(--pu) * .65); height: calc(var(--pu) * 2.7); margin-bottom: calc(var(--pu) * 1.2); color: #9599a3; }
+.pocket-workspace-header strong { flex: 1; font-size: calc(var(--pu) * 1.15); font-weight: 600; letter-spacing: -.04em; color: #f3f4f6; }
+.pocket-workspace-header .pocket-workspace-mark { color: #567fe5; width: calc(var(--pu) * 1.25); overflow: visible; }
+.pocket-projects-label { color: #8b909a; font-size: calc(var(--pu) * .78); margin: 0 calc(var(--pu) * .5) calc(var(--pu) * .65); }
+.pocket-project-row { display: flex; align-items: center; gap: calc(var(--pu) * .65); min-height: calc(var(--pu) * 2.6); padding: 0 calc(var(--pu) * .5); border-radius: calc(var(--pu) * .6); font-size: calc(var(--pu) * .9); color: #e2e4e9; }
+.pocket-project-row > span { flex: 1; }
+.pocket-project-row small { color: #818692; font-size: calc(var(--pu) * .7); }
+.pocket-project-row > svg { width: calc(var(--pu) * .85); color: #858b96; }
+.pocket-project-row.is-selected { background: #22252c; }
+.pocket-sessions { padding: calc(var(--pu) * .45) 0 calc(var(--pu) * 1) calc(var(--pu) * 1.3); }
+.pocket-session { display: flex; align-items: center; gap: calc(var(--pu) * .55); height: calc(var(--pu) * 2.5); padding: 0 calc(var(--pu) * .6); border-radius: calc(var(--pu) * .55); color: #b7bbc5; font-size: calc(var(--pu) * .78); white-space: nowrap; }
+.pocket-session.is-selected { background: #1d2026; color: #f2f3f6; }
+.pocket-session > i { width: calc(var(--pu) * .32); height: calc(var(--pu) * .32); flex: none; border-radius: 50%; background: #747b89; }
+.pocket-session > .is-working { background: #73ad99; }.pocket-session > .is-waiting { background: #c3a477; }
+.pocket-new-terminal { display: flex; align-items: center; gap: calc(var(--pu) * .5); height: calc(var(--pu) * 2.5); padding-inline: calc(var(--pu) * .5); color: #858c98; font-size: calc(var(--pu) * .78); }
+.pocket-new-terminal svg { width: calc(var(--pu) * .8); }
+.pocket-workspace-footer { margin-top: auto; padding-top: calc(var(--pu) * .8); border-top: 1px solid #252830; color: #b8bec9; }
+.pocket-computer { display: flex; align-items: center; gap: calc(var(--pu) * .45); min-height: calc(var(--pu) * 2.6); padding-inline: calc(var(--pu) * .5); background: #1a1d23; border-radius: calc(var(--pu) * .6); font-size: calc(var(--pu) * .69); white-space: nowrap; }
+.pocket-computer > span { flex: 1; }
+.pocket-computer > svg { width: calc(var(--pu) * 1); color: #878f9e; }
+.pocket-computer > svg:last-child { width: calc(var(--pu) * .6); }
+.pocket-computer small { display: flex; align-items: center; gap: calc(var(--pu) * .22); color: #878f9e; font-size: calc(var(--pu) * .51); }
+.pocket-computer small i { width: calc(var(--pu) * .25); height: calc(var(--pu) * .25); border-radius: 50%; background: #73ad99; }
+.pocket-footer-actions { display: flex; gap: calc(var(--pu) * .5); margin-top: calc(var(--pu) * .45); }
+.pocket-footer-actions > span { display: flex; flex: 1; align-items: center; justify-content: center; gap: calc(var(--pu) * .4); min-height: calc(var(--pu) * 2.5); border-radius: calc(var(--pu) * .6); background: #1a1d23; font-size: calc(var(--pu) * .73); }
+.pocket-footer-actions svg { width: calc(var(--pu) * .9); color: #878f9e; }
+.marketing-home .pocket-actions .pocket-apple { width: 14.9cqw; gap: .8cqw; }
+.pocket-apple > svg { flex: none; width: 1.5cqw; height: 1.5cqw; }
+@media (max-width: 900px) {
+  .marketing-home .pocket-actions .pocket-apple { width: auto; gap: 9px; padding-inline: 19px; }
+  .pocket-apple > svg { width: 20px; height: 20px; }
+}
+@media (max-width: 380px) {
+  .pocket-actions { gap: 8px; }
+  .marketing-home .pocket-actions .pocket-apple { gap: 7px; padding-inline: 12px; }
+  .marketing-home .pocket-actions .pocket-preview { padding-inline: 10px; gap: 7px; }
+}

@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Services;
+
+use App\Services\Concerns\AgentExecution;
+use App\Services\Concerns\AgentLocking;
+use App\Services\Concerns\CommandRunner;
+use App\Services\Concerns\DesktopHomeDirectory;
+use App\Services\Concerns\FileDiscovery;
+use App\Services\Concerns\GeneratedFileHandling;
+use App\Services\Concerns\OpenAiStreaming;
+use App\Services\Concerns\PairingState;
+use App\Services\Concerns\PendingAgentApproval;
+use App\Services\Concerns\ProjectDiscovery;
+use App\Services\Concerns\ProjectFileState;
+use App\Services\Concerns\ProjectPreview;
+use App\Services\Concerns\StatePersistence;
+
+class VibyraDesktopState
+{
+    use AgentExecution;
+    use AgentLocking;
+    use CommandRunner;
+    use DesktopHomeDirectory;
+    use FileDiscovery;
+    use GeneratedFileHandling;
+    use OpenAiStreaming;
+    use PairingState;
+    use PendingAgentApproval;
+    use ProjectDiscovery;
+    use ProjectFileState;
+    use ProjectPreview;
+    use StatePersistence;
+
+    private const AGENT_COOLDOWN_SECONDS = 8;
+    private const DUPLICATE_PROMPT_WINDOW_SECONDS = 120;
+    private const STALE_AGENT_RUN_SECONDS = 240;
+
+    private string $statePath;
+
+    public function __construct()
+    {
+        $this->statePath = storage_path('app/vibyra/state.json');
+        $this->ensureState();
+    }
+}

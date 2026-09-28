@@ -1,0 +1,27 @@
+/* ── 03 · The trust notes, the footnote, and narrow layouts ────────────────── */
+.fx-trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px; margin: 64px 0 0; padding: 36px 0 0; list-style: none; border-top: 1px solid #232733; }
+.fx-trust li { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 14px; }
+.fx-trust li + li::before { content: ""; position: absolute; top: 0; bottom: 0; left: -24px; width: 1px; background: #232733; }
+.fx-trust svg { margin-top: 1px; color: #6f8cff; }
+.fx-trust p { font-size: 14px; line-height: 1.75; color: #98a1b3; text-wrap: pretty; }
+.fx-trust strong { display: block; margin-bottom: 4px; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: #f3f5f9; }
+.fx-trust-link { display: table; margin-top: 10px; border-bottom: 1px solid #3a4150; font-size: 13px; font-weight: 700; color: #f3f5f9; }
+.fx-trust-link:hover { color: #8ba3ff; }
+.fx .fx-foot { margin-top: 36px; font-size: 12.5px; line-height: 1.7; color: #7d8594; text-wrap: pretty; }
+
+@media (max-width: 1000px) {
+    .fx-grid { gap: 18px; }
+    .fx-copy h3 { font-size: 18px; }
+    .fx-copy p { font-size: 14px; }
+    .fx-trust { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+    .fx-trust li + li::before { display: none; }
+}
+
+@media (max-width: 760px) {
+    .fx .section-heading { margin-bottom: 36px; }
+    .fx-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .fx-tile { padding: 10px; border-radius: 22px; }
+    .fx-art { border-radius: 14px; }
+    .fx-copy { padding: 18px 12px 10px; }
+    .fx-trust { margin-top: 44px; padding-top: 28px; }
+}

@@ -1,0 +1,1 @@
+web: VIBYRA_PROCESS_ROLE=all bash scripts/start-production.sh

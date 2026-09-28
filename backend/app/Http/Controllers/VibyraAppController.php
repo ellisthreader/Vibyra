@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Concerns\AccountEndpoints;
+use App\Http\Controllers\Concerns\AccountVerificationEndpoints;
+use App\Http\Controllers\Concerns\AutoModelRouteEndpoint;
+use App\Http\Controllers\Concerns\AvatarEndpoints;
+use App\Http\Controllers\Concerns\AuthEndpoints;
+use App\Http\Controllers\Concerns\AuthRecoveryEndpoints;
+use App\Http\Controllers\Concerns\ChatEndpoint;
+use App\Http\Controllers\Concerns\ChatLearningFeedback;
+use App\Http\Controllers\Concerns\ChatStreamEndpoint;
+use App\Http\Controllers\Concerns\ChatModelMap;
+use App\Http\Controllers\Concerns\ChatPrompting;
+use App\Http\Controllers\Concerns\ChatResearchPlan;
+use App\Http\Controllers\Concerns\CommunityAssetGeneration;
+use App\Http\Controllers\Concerns\CommunityPublishMedia;
+use App\Http\Controllers\Concerns\CommunityPublishing;
+use App\Http\Controllers\Concerns\CodexResponsesEndpoint;
+use App\Http\Controllers\Concerns\DesktopProviderAuthEndpoints;
+use App\Http\Controllers\Concerns\DesktopReportEndpoint;
+use App\Http\Controllers\Concerns\LevelEndpoints;
+use App\Http\Controllers\Concerns\NativeTerminalEndpoint;
+use App\Http\Controllers\Concerns\ProjectMemoryEndpoints;
+use App\Http\Controllers\Concerns\ReferralEndpoints;
+use App\Http\Controllers\Concerns\SpeechEndpoint;
+use App\Http\Controllers\Concerns\TeamPlanEndpoint;
+use App\Http\Controllers\Concerns\TwoFactorEndpoints;
+use App\Http\Controllers\Concerns\UserPayloads;
+use App\Services\Community\ProjectSafetyReview;
+use App\Services\ContentModeration;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class VibyraAppController extends Controller
+{
+    use AccountEndpoints;
+    use AccountVerificationEndpoints;
+    use AutoModelRouteEndpoint;
+    use AvatarEndpoints;
+    use AuthEndpoints;
+    use AuthRecoveryEndpoints;
+    use ChatEndpoint;
+    use ChatLearningFeedback;
+    use ChatStreamEndpoint;
+    use ChatModelMap;
+    use ChatPrompting;
+    use ChatResearchPlan;
+    use CommunityAssetGeneration;
+    use CommunityPublishMedia;
+    use CommunityPublishing;
+    use CodexResponsesEndpoint;
+    use DesktopProviderAuthEndpoints;
+    use DesktopReportEndpoint;
+    use LevelEndpoints;
+    use NativeTerminalEndpoint;
+    use ProjectMemoryEndpoints;
+    use ReferralEndpoints;
+    use SpeechEndpoint;
+    use TeamPlanEndpoint;
+    use TwoFactorEndpoints;
+    use UserPayloads;
+
+    private const FREE_CREDITS = 50;
+
+    public function __construct(
+        private readonly ContentModeration $moderation,
+        private readonly ProjectSafetyReview $projectSafetyReview,
+    )
+    {
+    }
+
+    public function moderate(Request $request): JsonResponse
+    {
+        $this->authenticatedUser($request);
+        $surface = (string) $request->input('surface', 'user upload');
+        $failClosed = ! str_contains($surface, 'community.comment');
+
+        $decision = $this->moderation->assertModerationInputAllowed([
+            'text' => (string) $request->input('text', ''),
+            'images' => (array) $request->input('images', []),
+        ], $surface, $failClosed);
+
+        return $this->json([
+            'ok' => true,
+            'moderation' => [
+                'blocked' => false,
+                'warning' => $decision['warning'] ?? null,
+            ],
+        ]);
+    }
+
+    public function options(): JsonResponse
+    {
+        return $this->json([]);
+    }
+
+    public function skills(): JsonResponse
+    {
+        $skills = collect(config('skills.list', []))
+            ->map(fn ($skill) => [
+                'id' => $skill['id'],
+                'slash' => $skill['slash'],
+                'label' => $skill['label'],
+                'description' => $skill['description'] ?? '',
+                'category' => $skill['category'] ?? 'general',
+                'mode' => $skill['mode'] ?? 'chat',
+            ])
+            ->values()
+            ->all();
+
+        return $this->json(['ok' => true, 'skills' => $skills]);
+    }
+}

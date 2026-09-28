@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Vibyra social preview</title>
+  <style>
+    @font-face { font-family: Manrope; src: url('/fonts/manrope-bold.ttf'); font-weight: 700; }
+    @font-face { font-family: Manrope; src: url('/fonts/manrope-regular.ttf'); font-weight: 400; }
+    * { box-sizing: border-box; }
+    body { margin: 0; width: 1200px; height: 630px; background: #f1f4fb; color: #171a21; font-family: Manrope, sans-serif; position: relative; overflow: hidden; padding: 60px 70px; }
+    .brand { display: flex; gap: 13px; align-items: center; font-size: 35px; font-weight: 700; letter-spacing: -2px; }
+    .brand img { width: 40px; height: 30px; object-fit: contain; }
+    .tag { color: #536b9e; font-size: 12px; letter-spacing: 2px; margin-top: 45px; }
+    h1 { font-size: 88px; line-height: 1.05; letter-spacing: -6px; margin: 24px 0; font-weight: 700; }
+    h1 span { color: #315bd8; }
+    p { font-size: 19px; color: #596a88; margin: 25px 0 0; }
+    .bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ccd5e9; padding-top: 23px; margin-top: 40px; color: #596a88; font-size: 12px; letter-spacing: .5px; }
+    .modes { display: flex; gap: 20px; color: #315bd8; }
+    .orbit { width: 650px; height: 650px; border: 1px solid #315bd81c; border-radius: 50%; position: absolute; right: -460px; top: -50px; }
+    .orbit.second { width: 850px; height: 850px; right: -560px; top: -150px; }
+  </style>
+</head>
+<body>
+  <div class="orbit"></div><div class="orbit second"></div>
+  <div class="brand"><img src="/vibyra-cobalt.png" alt="">vibyra.</div>
+  <div class="tag">THE AGENTIC CODING WORKSPACE</div>
+  <h1>Big ideas.<br><span>Building space.</span></h1>
+  <p>Your favorite coding agents. Your own computer. Your next big idea.</p>
+  <div class="bottom"><div class="modes"><span>Agent</span><span>Code</span><span>Chat</span></div><span>Desktop + the upcoming phone companion</span></div>
+</body>
+</html>

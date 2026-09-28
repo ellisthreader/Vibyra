@@ -1,0 +1,119 @@
+/* ── 03 · Ecosystem story parts (ecosystem/storyParts.jsx) ──────────────────
+ * Every story is a 480×320 stage drawn in pixels. `.t` fades in at `--in`
+ * (and out at `--out` with `.out`); `.type` types `--n` characters over
+ * `--dur`. Windows are Grok-quiet: near-black, one hairline, grey dots,
+ * placeholder bars for anything that is not the point. */
+.ecs {
+    --ink: #f3f4f6;
+    --text: #c4c8d0;
+    --mute: #878c97;
+    --faint: #5b6069;
+    --win: #121316;
+    --bar: #16171b;
+    --line: rgba(255, 255, 255, 0.07);
+    --skel: #2a2c32;
+    --blue: #6f8cff;
+    --blue-2: #a9b8ff;
+    --green: #4ade80;
+    --coral: #e8906c;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --ui: "Inter Device", Inter, ui-sans-serif, system-ui, sans-serif;
+    --mono: "JetBrains Device", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    position: absolute;
+    inset: 0;
+    font: 500 11px/1.4 var(--ui);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+}
+.ecs *, .ecs *::before, .ecs *::after { box-sizing: border-box; }
+.ecs p { margin: 0; }
+.ecs code { font: 500 10.5px/1 var(--mono); color: var(--ink); }
+
+/* Timing. */
+.ecs .t { animation: ecs-in 0.45s var(--ease) var(--in, 0s) both; }
+.ecs .t.out { animation: ecs-in 0.45s var(--ease) var(--in, 0s) both, ecs-out 0.3s ease var(--out) forwards; }
+.is-still .ecs .t.out { display: none; }
+@keyframes ecs-in { from { opacity: 0; transform: translateY(5px); } }
+@keyframes ecs-out { to { opacity: 0; visibility: hidden; } }
+@keyframes ecs-draw { from { stroke-dashoffset: 1; } }
+@keyframes ecs-pop { from { opacity: 0; transform: scale(0.3); } }
+.ecs .type { display: inline-block; overflow: hidden; white-space: nowrap; vertical-align: bottom; width: calc(var(--n) * 1ch); font-family: var(--mono); animation: ecs-type var(--dur) steps(var(--n)) var(--in) both; }
+@keyframes ecs-type { from { width: 0; } }
+.ecs-words .t { display: inline-block; margin-right: 0.55ch; animation-duration: 0.28s; }
+
+/* A window: near-black, one hairline, running off the stage's bottom edge. */
+.ecs-win {
+    position: absolute;
+    overflow: hidden;
+    background: var(--win);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 34px 70px -24px rgba(2, 4, 12, 0.8), 0 10px 24px -14px rgba(2, 4, 12, 0.6);
+}
+.ecs-bar { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; background: var(--bar); border-bottom: 1px solid var(--line); font: 600 11px/1 var(--ui); color: var(--ink); white-space: nowrap; }
+.ecs-bar em { margin-left: auto; font: 500 10px/1 var(--mono); font-style: normal; color: var(--mute); }
+.ecs-dots { display: flex; gap: 5px; margin-right: 2px; }
+.ecs-dots i { width: 8px; height: 8px; border-radius: 50%; background: #2c2e34; }
+.ecs-skel { display: inline-block; flex: none; height: 6px; border-radius: 3px; background: var(--skel); }
+.ecs-logo { display: block; flex: none; }
+.ecs-logo-invert { filter: invert(1); }
+
+/* A terminal's lines. */
+.ecs-term-body { display: grid; align-content: start; gap: 9px; padding: 12px 14px; }
+.ecs-prompt { display: flex; align-items: center; gap: 8px; min-height: 18px; font: 500 11.5px/1.55 var(--mono); color: var(--ink); white-space: nowrap; }
+.ecs-prompt > b { font-weight: 500; color: var(--mute); }
+.ecs-reply { display: flex; align-items: center; gap: 8px; font: 500 11px/1.5 var(--mono); color: var(--text); white-space: nowrap; }
+.ecs-reply > b { font-weight: 500; color: var(--coral); }
+.ecs-sent { color: var(--blue-2); }
+
+/* A keycap. */
+.ecs-key {
+    display: inline-grid;
+    place-items: center;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 9px;
+    border-radius: 8px;
+    font: 650 12px/1 var(--ui);
+    color: var(--ink);
+    background: linear-gradient(#2c2e35, #1c1d22);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 3px 0 #0a0b0d, 0 10px 20px -6px rgba(0, 0, 0, 0.6);
+    animation: ecs-press 0.55s var(--ease) var(--in, 0s) both;
+}
+@keyframes ecs-press {
+    0% { opacity: 0; transform: translateY(-3px); }
+    30% { opacity: 1; transform: none; }
+    55% { transform: translateY(3px); box-shadow: 0 0 0 #0a0b0d; color: var(--blue-2); border-color: rgba(169, 184, 255, 0.5); }
+    100% { transform: none; }
+}
+
+/* Pointer, check, toast. */
+.ecs-pointer { position: absolute; z-index: 6; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)); }
+.ecs-check { display: block; flex: none; width: 15px; height: 15px; }
+.ecs-check circle { fill: var(--green); }
+.ecs-check path { fill: none; stroke: #0b2414; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.ecs-toast {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    bottom: 16px;
+    width: max-content;
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 38px;
+    padding: 0 16px 0 11px;
+    border-radius: 999px;
+    background: rgba(26, 27, 32, 0.9);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.75);
+    font: 600 12px/1 var(--ui);
+    color: var(--ink);
+    white-space: nowrap;
+}

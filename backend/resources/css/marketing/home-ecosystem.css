@@ -1,0 +1,63 @@
+/* ── 03 · The Vibyra ecosystem ──────────────────────────────────────────────
+ * Four soft cards, two per row, after Grok Bot's feature cards: the title and
+ * one line up top, then a painted blue-hour backdrop (media/marketing/
+ * ecosystem/<id>.webp, film grain laid over it here) running off the card's
+ * bottom edge, with the story's windows standing on it. The stage is scaled
+ * to the panel (`--k`) and anchored to its bottom, so the windows run off the
+ * edge too. Every story's resting CSS is its finished frame; `.is-live` plays. */
+.eco { position: relative; background: var(--home-dark); color: #f4f5f7; }
+.eco.section-space { padding-block: var(--site-space, 112px); }
+.marketing-home-cinematic .eco-head { margin-bottom: 56px; }
+
+.eco-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.eco-cell { display: flex; flex-direction: column; min-width: 0; padding-top: 32px; overflow: hidden; background: #17181c; border-radius: 28px; }
+
+/* The words: Grok's pairing, one size, the title a step brighter. */
+.eco-copy { display: grid; gap: 4px; max-width: 520px; padding: 0 32px 28px; }
+.eco-copy h3, .eco-copy p { margin: 0; font-size: 17px; line-height: 1.55; letter-spacing: -0.012em; text-wrap: pretty; }
+.eco-copy h3 { font-weight: 650; color: #fff; }
+.eco-copy p { font-weight: 400; color: rgba(244, 245, 247, 0.62); }
+
+/* The painted panel. */
+.eco-art {
+    position: relative;
+    isolation: isolate;
+    height: clamp(264px, 25vw, 348px);
+    margin: auto 32px 0;
+    overflow: hidden;
+    border-radius: 18px 18px 0 0;
+    background: #1b2233;
+}
+.eco-paint { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.eco-art::before, .eco-art::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.eco-art::before {
+    z-index: -1;
+    opacity: 0.32;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+.eco-art::after { z-index: 2; border-radius: inherit; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.04); }
+.eco-stage { position: absolute; z-index: 1; left: 50%; bottom: 0; transform: translateX(-50%) scale(var(--k, 1)); transform-origin: 50% 100%; }
+
+.eco-cell:not(.is-live):not(.is-still) .ecs *,
+.eco-cell:not(.is-live):not(.is-still) .ecs *::before,
+.eco-cell:not(.is-live):not(.is-still) .ecs *::after { animation-play-state: paused !important; }
+
+/* The platform footnote. */
+.eco .fx-foot { max-width: 760px; margin: 32px auto 0; font-size: 12.5px; line-height: 1.7; color: #8f96a3; text-wrap: pretty; }
+.eco .fx-foot a { color: #b4bccb; border-bottom: 1px solid #3a4150; }
+.eco .fx-foot a:hover { color: #8ba3ff; }
+
+@media (max-width: 900px) {
+    .eco-grid { grid-template-columns: minmax(0, 1fr); }
+    .eco-copy { max-width: 600px; }
+    .eco-art { height: 340px; }
+}
+@media (max-width: 600px) {
+    .marketing-home-cinematic .eco-head { margin-bottom: 36px; }
+    .eco-grid { gap: 12px; }
+    .eco-cell { padding-top: 24px; border-radius: 22px; }
+    .eco-copy { padding: 0 22px 22px; }
+    .eco-copy h3, .eco-copy p { font-size: 15.5px; }
+    .eco-art { height: 250px; margin-inline: 14px; border-radius: 14px 14px 0 0; }
+}

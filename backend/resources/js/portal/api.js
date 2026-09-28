@@ -1,0 +1,83 @@
+import { decodeWallet } from "./wallet.js";
+const ENDPOINTS = {
+  session: "/web-api/session",
+  login: "/web-api/auth/login",
+  loginTwoFactor: "/web-api/auth/login/2fa",
+  signup: "/web-api/auth/signup",
+  logout: "/web-api/auth/logout",
+  plans: "/api/billing/plans",
+  checkout: "/web-api/billing/checkout",
+  portal: "/web-api/billing/portal",
+  releases: "/web-api/releases",
+  ownerAnalytics: "/web-api/owner/analytics",
+};
+
+export class ApiError extends Error {
+  constructor(message, status, payload = null) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.payload = payload;
+  }
+}
+
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content ?? "";
+}
+
+export async function apiRequest(path, options = {}) {
+  const method = options.method ?? (options.body ? "POST" : "GET");
+  const headers = { Accept: "application/json", ...(options.headers ?? {}) };
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  if (!["GET", "HEAD"].includes(method.toUpperCase())) headers["X-CSRF-TOKEN"] = csrfToken();
+
+  let response;
+  try {
+    response = await fetch(path, {
+      ...options,
+      method,
+      headers,
+      credentials: "same-origin",
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    });
+  } catch (error) {
+    if (error?.name !== "AbortError" && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("vibyra:network-error"));
+    }
+    throw error;
+  }
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.ok === false) {
+    throw new ApiError(payload?.error ?? "Vibyra could not complete that request.", response.status, payload);
+  }
+  return payload ?? { ok: true };
+}
+
+export const portalApi = {
+  session: () => apiRequest(ENDPOINTS.session),
+  login: (fields) => apiRequest(ENDPOINTS.login, { body: fields }),
+  loginTwoFactor: (challengeId, code) => apiRequest(ENDPOINTS.loginTwoFactor, { body: { challengeId, code } }),
+  signup: (fields) => apiRequest(ENDPOINTS.signup, { body: fields }),
+  logout: () => apiRequest(ENDPOINTS.logout, { method: "DELETE" }),
+  catalogue: () => apiRequest('/api/billing/catalogue?version=2'),
+  wallet: () => apiRequest('/web-api/billing/account?version=2').then(data => ({ wallet: decodeWallet(data.wallet) })),
+  activity: (before) => apiRequest('/web-api/billing/activity' + (before ? '?before=' + encodeURIComponent(before) : '')),
+  buyOffer: (offer, requestId, accountScope) => apiRequest(ENDPOINTS.checkout, { body: { offerKey: offer.offerKey, offerVersion: offer.offerVersion, requestId, accountScope } }),
+  plans: () => apiRequest(ENDPOINTS.plans),
+  checkout: (plan, cycle) => apiRequest(ENDPOINTS.checkout, {
+    body: { kind: "subscription", plan, cycle },
+  }),
+  billingPortal: () => apiRequest(ENDPOINTS.portal, { body: {} }),
+  releases: () => apiRequest(ENDPOINTS.releases),
+  ownerAnalytics: (days) => apiRequest(`${ENDPOINTS.ownerAnalytics}?days=${days}`),
+  startProvider: (provider) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: {} }),
+  providers: () => apiRequest('/web-api/auth/providers'),
+  resendVerification: (email) => apiRequest('/api/auth/email/resend', { body: { email } }),
+  providerStatus: (provider, flowId) => apiRequest(
+    `/web-api/auth/provider/${provider}/status/${encodeURIComponent(flowId)}`
+  ),
+};
+
+export function downloadPath(platform) {
+  return `/downloads/${encodeURIComponent(platform)}`;
+}

@@ -1,0 +1,25 @@
+/* Every score: a heat table that scrolls sideways under a sticky model column. */
+.benchmarks-page .bm-table-wrap { overflow-x: auto; }
+.benchmarks-page .bm-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.benchmarks-page .bm-table th, .benchmarks-page .bm-table td { padding: 6px 6px; border-bottom: 1px solid var(--bm-soft); white-space: nowrap; }
+.benchmarks-page .bm-table tbody tr:last-child > * { border-bottom: 0; }
+.benchmarks-page .bm-table thead th { position: sticky; top: 0; background: var(--bm-surface); font-weight: 700; font-size: 11px; color: var(--bm-ink-2); text-align: center; padding-block: 14px 10px; }
+.benchmarks-page .bm-table thead button { display: inline-flex; gap: 4px; align-items: center; border: 0; background: none; padding: 4px 6px; border-radius: 6px; font-weight: 700; }
+.benchmarks-page .bm-table thead button:hover { background: var(--bm-soft); }
+.benchmarks-page .bm-table thead th[aria-sort="ascending"] button, .benchmarks-page .bm-table thead th[aria-sort="descending"] button { color: var(--home-cobalt); }
+.benchmarks-page .bm-table .bm-sticky { position: sticky; left: 0; z-index: 1; background: var(--bm-surface); text-align: left; padding-left: 18px; padding-right: 18px; box-shadow: 1px 0 0 var(--bm-soft); }
+.benchmarks-page .bm-table thead .bm-sticky { z-index: 2; }
+.benchmarks-page .bm-table tbody tr { cursor: pointer; }
+.benchmarks-page .bm-table tbody tr:hover > * { background-color: var(--bm-soft); }
+.benchmarks-page .bm-table tbody tr.is-focused > * { background-color: var(--bm-selected); }
+.benchmarks-page .bm-table td { text-align: center; font-variant-numeric: tabular-nums; color: var(--bm-ink-2); }
+.benchmarks-page .bm-table td.is-heat > span { display: inline-block; min-width: 54px; padding: 7px 8px; border-radius: 6px; font-weight: 700; }
+.benchmarks-page .bm-table td.is-heat > span:not([style]) { color: #b3bac6; }
+
+/* A compact attribution below the comparison tools. */
+.benchmarks-page .bm-method-summary { padding-top: 28px; border-top: 1px solid var(--bm-line); }
+.benchmarks-page .bm-method-summary h2 { font-size: 18px; line-height: 1.4; letter-spacing: -.02em; font-weight: 600; }
+.benchmarks-page .bm-method-summary > p { max-width: 700px; margin-top: 10px; font-size: 13px; line-height: 1.8; color: var(--home-muted); }
+.benchmarks-page .bm-source-links { display: flex; flex-wrap: wrap; gap: 8px 22px; list-style: none; margin: 16px 0 0; padding: 0; font-size: 12px; color: var(--home-muted); }
+.benchmarks-page .bm-source-links a { border-bottom: 1px solid var(--bm-line); }
+.benchmarks-page .bm-source-links a:hover { color: var(--home-ink); }
