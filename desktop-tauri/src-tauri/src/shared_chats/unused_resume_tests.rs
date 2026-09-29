@@ -8,6 +8,29 @@ fn unused_missing_rollout_starts_in_place_but_used_history_never_forks() {
         if used {
             chats.local("turn.submit", json!({"sessionId":id,"submissionId":"55555555-5555-4555-a555-555555555555","text":"Keep this history"})).unwrap();
         }
+        // The fixture replies asynchronously. Wait for its completed turn so
+        // the baseline cannot race a legitimate result event after stop.
+        if used {
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+            loop {
+                let snapshot = chats
+                    .local("conversation.snapshot", json!({"sessionId":id}))
+                    .unwrap();
+                if snapshot["items"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|item| item["kind"] == "result")
+                {
+                    break;
+                }
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "fixture turn did not finish"
+                );
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+        }
         chats
             .local("session.stop", json!({"sessionId":id}))
             .unwrap();
