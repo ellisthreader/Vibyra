@@ -40,7 +40,7 @@ final class SpendGuard
                     'calls' => DB::raw('calls + 1'), 'reserved_micro_usd' => DB::raw('reserved_micro_usd + '.$reserve)]);
             }
             // Never refund uncertain/failed calls. Reservations survive worker death, retries and audit pruning.
-            DB::table('decision_spend_controls')->where('id', 1)->update(['owner' => $id, 'busy_until' => now()->addSeconds(10)]);
+            DB::table('decision_spend_controls')->where('id', 1)->update(['owner' => $id, 'busy_until' => now()->addSeconds($d->purpose === 'terminal' ? 20 : 10)]);
             return (bool) DB::table('ai_decisions')->where('id', $id)->where('state', 'pending')
                 ->update(['state' => 'classifying', 'claimed_at' => now()]);
         }, 3);

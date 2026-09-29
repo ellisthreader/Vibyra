@@ -3,7 +3,7 @@ namespace App\Services\Decisions;
 use Illuminate\Support\Facades\{Cache, Http};
 final class ProviderKeyPolicy
 {
-    public function assertSafe(): void
+    public function assertSafe(bool $interactive = false): void
     {
         $key = (string) config('intelligence.jev_key');
         if (!$key || (config('services.openrouter.key') && hash_equals((string) config('services.openrouter.key'), $key))) {
@@ -11,9 +11,9 @@ final class ProviderKeyPolicy
         }
         $cache = 'jev:key-policy:'.hash('sha256', $key);
         $ceiling = max(0, (int) config('intelligence.total_micro_usd')) / 1000000;
-        $safe = Cache::remember($cache.':'.$ceiling, 30, function () use ($key, $ceiling) {
+        $safe = Cache::remember($cache.':'.$ceiling, 30, function () use ($key, $ceiling, $interactive) {
             try {
-                $r = Http::withToken($key)->acceptJson()->withoutRedirecting()->connectTimeout(1)->timeout(1)
+                $r = Http::withToken($key)->acceptJson()->withoutRedirecting()->connectTimeout($interactive ? 3 : 1)->timeout($interactive ? 5 : 1)
                     ->get('https://openrouter.ai/api/v1/key');
                 $d = $r->json('data');
                 return $r->successful() && is_array($d) && is_numeric($d['limit'] ?? null)
