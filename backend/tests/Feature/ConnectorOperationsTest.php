@@ -123,6 +123,15 @@ class ConnectorOperationsTest extends TestCase
             ['google_drive', 'google_drive_read', ['id' => 'abcdefghijkl'], 'www.googleapis.com/drive/v3/files/*', [
                 ['id' => 'abcdefghijkl', 'name' => 'Notes', 'mimeType' => 'application/vnd.google-apps.document'],
                 ['text' => 'Meeting notes']], 'Read Google Drive file Notes'],
+            ['google_tasks', 'google_tasks_lists', [], 'tasks.googleapis.com/tasks/v1/users/@me/lists*', [[
+                'items' => [['id' => 'list123', 'title' => 'My Tasks']]]], 'Listed 1 Google Tasks lists'],
+            ['google_tasks', 'google_tasks_list', ['listId' => 'list123'],
+                'tasks.googleapis.com/tasks/v1/lists/list123/tasks*', [[
+                    'items' => [['id' => 'task123', 'title' => 'Review plan', 'status' => 'needsAction']]]],
+                'Read 1 Google Tasks'],
+            ['google_tasks', 'google_tasks_create', ['listId' => 'list123', 'title' => 'Review plan',
+                'due' => '2026-10-01'], 'tasks.googleapis.com/tasks/v1/lists/list123/tasks', [[
+                    'id' => 'task456', 'title' => 'Review plan']], 'Created Google Task Review plan'],
 
             // --- Microsoft Graph ----------------------------------------------
             ['outlook_mail', 'outlook_mail_search', ['query' => 'invoice'], 'graph.microsoft.com/v1.0/me/messages*', [
@@ -250,6 +259,10 @@ class ConnectorOperationsTest extends TestCase
                 'start' => '2026-10-01T09:00:00Z', 'end' => '2026-10-01T10:00:00Z'],
                 'www.googleapis.com/calendar/v3/calendars/primary/events', [['id' => 'event1']],
                 'POST', 'https://www.googleapis.com/calendar/v3/calendars/primary/events', ['summary' => 'Call']],
+            'google_tasks' => ['google_tasks_create', ['listId' => 'list123', 'title' => 'Review plan',
+                'due' => '2026-10-01'], 'tasks.googleapis.com/tasks/v1/lists/list123/tasks', [['id' => 'task456']],
+                'POST', 'https://tasks.googleapis.com/tasks/v1/lists/list123/tasks',
+                ['title' => 'Review plan', 'due' => '2026-10-01T00:00:00.000Z']],
             'outlook_mail' => ['outlook_mail_send', ['to' => 'a@example.com', 'subject' => 'Hello', 'body' => 'Hi'],
                 'graph.microsoft.com/v1.0/me/sendMail', [[]],
                 'POST', 'https://graph.microsoft.com/v1.0/me/sendMail', ['message' => null]],
@@ -291,7 +304,8 @@ class ConnectorOperationsTest extends TestCase
      */
     public function test_every_offered_operation_is_covered_here(): void
     {
-        $covered = array_keys(self::operations());
+        $covered = [...array_keys(self::operations()), ...array_keys(DeepWikiConnectorTest::operations()),
+            ...array_keys(HackerNewsConnectorTest::operations())];
         $registry = app(Registry::class);
         foreach ($registry->slugs() as $slug) {
             foreach ($registry->for($slug)->definitions() as $definition) {

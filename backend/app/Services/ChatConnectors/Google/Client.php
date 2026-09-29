@@ -32,6 +32,7 @@ final class Client
 
     private function body($response): array
     {
+        if ($response->status() === 401) throw new \App\Services\ChatConnectors\ReconnectRequired('Google access expired or was revoked. Tell the person to reconnect it in Settings → Integrations.');
         if (!$response->successful() || !is_array($response->json())) {
             throw new RuntimeException('Google refused this request. Check the connection and its access.');
         }

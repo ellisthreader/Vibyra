@@ -122,7 +122,8 @@ class ConnectorOAuth
 
     /**
      * A later access token for the same connection. Returns null when the provider
-     * refuses, which leaves the stored token in place to fail on its own terms
+     * cannot be asked or answers oddly, and throws ReconnectRequired when it refuses
+     * the refresh token itself (400/401); either way `Installs` leaves the stored token in place to fail on its own terms
      * rather than dropping a connection this code cannot prove is dead.
      */
     public function renew(string $slug, string $refresh): ?array
@@ -140,6 +141,8 @@ class ConnectorOAuth
         $wanted = (array) ($settings['refresh_fields'] ?? ['refresh_token']);
         try { $response = $request->post((string) $settings['refresh_url'], array_intersect_key($fields, array_flip($wanted))); }
         catch (ConnectionException $e) { return null; }
+        // The provider says this refresh token is dead: only a new sign-in helps.
+        if (in_array($response->status(), [400, 401], true)) throw ReconnectRequired::for($slug);
         $token = (string) ($response->json('access_token') ?? '');
         if (!$response->successful() || $token === '') return null;
         // Figma keeps one access token per user per app and returns no new refresh

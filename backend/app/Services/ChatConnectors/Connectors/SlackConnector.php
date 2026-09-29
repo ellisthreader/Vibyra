@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
+use App\Services\ChatConnectors\ReconnectRequired;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -97,6 +98,11 @@ final class SlackConnector implements Connector
     private function body($response): array
     {
         $body = $response->json();
+        // Slack answers a dead token with HTTP 200 and ok:false, so the reason is in the body.
+        if ($response->status() === 401 || (is_array($body) && in_array($body['error'] ?? null,
+            ['invalid_auth', 'token_revoked', 'token_expired', 'account_inactive', 'not_authed'], true))) {
+            throw ReconnectRequired::for('slack');
+        }
         if (!$response->successful() || !is_array($body) || ($body['ok'] ?? false) !== true) {
             throw new RuntimeException('Slack refused this request. Check the bot membership and scopes.');
         }

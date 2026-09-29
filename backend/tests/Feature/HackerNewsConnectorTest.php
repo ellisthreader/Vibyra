@@ -6,11 +6,44 @@ use App\Services\Agents\ToolPolicy;
 use App\Services\ChatConnectors\{Catalogue, Installs, Registry};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 final class HackerNewsConnectorTest extends TestCase
 {
     use RefreshDatabase;
+
+    public static function operations(): array
+    {
+        return [
+            'hackernews_top_stories' => [[], [], ['story_ids' => [1, 2]],
+                'HACKERNEWS_GET_TOP_STORIES', 'Read Hacker News top-story IDs'],
+            'hackernews_item' => [['id' => 42, 'extra' => 'drop'], ['id' => 42],
+                ['id' => 42, 'title' => 'Fixture story'], 'HACKERNEWS_GET_ITEM', 'Read Hacker News item 42'],
+            'hackernews_user' => [['username' => 'pg', 'extra' => 'drop'], ['username' => 'pg'],
+                ['username' => 'pg', 'karma' => 100], 'HACKERNEWS_GET_USER', 'Read Hacker News user pg'],
+        ];
+    }
+
+    #[DataProvider('operations')]
+    public function test_each_offered_operation_runs_only_its_reviewed_public_tool(
+        array $input, array $safe, array $data, string $tool, string $summary,
+    ): void {
+        config(['chat_connectors.composio_api_key' => 'test-key']);
+        Http::fake(function ($request) use ($data) {
+            if ($request->method() === 'DELETE') return Http::response([], 204);
+            if (str_ends_with($request->url(), '/execute')) return Http::response(['data' => $data, 'error' => null]);
+            return Http::response(['session_id' => 'trs_verified123'], 201);
+        });
+        $operation = $this->dataName();
+        $connector = app(Registry::class)->for('hackernews');
+        self::assertSame($safe, $connector->validate($operation, $input));
+        self::assertSame($summary, $connector->run($operation, $safe, '')['summary']);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/execute')
+            && $request['tool_slug'] === $tool && (array) $request['arguments'] === $safe);
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE'
+            && str_ends_with($request->url(), '/trs_verified123'));
+    }
 
     public function test_public_composio_bridge_is_disabled_without_its_key_and_flag(): void
     {

@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -43,6 +44,8 @@ class Installs
         abort_if(in_array($slug, ['deepwiki', 'hackernews'], true), 422,
             'This public integration needs no account connection.');
         try { $label = $this->registry->for($slug)->connect($credential); }
+        // A key refused on first use is a wrong key, not an expired sign-in to reconnect.
+        catch (ReconnectRequired $e) { abort(422, (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug).' refused that sign-in. Check it and try again.'); }
         catch (\Throwable $e) { abort(422, $e->getMessage()); }
         $where = ['user_id' => $userId, 'integration' => $slug];
         $values = ['credential' => Crypt::encryptString($credential), 'account_label' => $label,
@@ -51,6 +54,7 @@ class Installs
             'expires_at' => isset($grant['expires_in']) && is_int($grant['expires_in'])
                 ? now()->addSeconds($grant['expires_in']) : null,
             'connected_at' => now(), 'updated_at' => now()];
+        Cache::forget($this->reconnectKey($userId, $slug));
         if (DB::table('vibes_integration_installs')->where($where)->exists()) {
             DB::table('vibes_integration_installs')->where($where)->update($values);
             return;
@@ -62,7 +66,40 @@ class Installs
     {
         abort_if(in_array($slug, ['deepwiki', 'hackernews'], true), 422,
             'This public integration has no account to disconnect. Remove teammate access instead.');
-        DB::table('vibes_integration_installs')->where('user_id', $userId)->where('integration', $slug)->delete();
+        DB::transaction(function () use ($userId, $slug) {
+            DB::table('vibes_integration_installs')->where('user_id', $userId)->where('integration', $slug)->delete();
+            $this->revokeGrants($userId, $slug);
+        });
+        Cache::forget($this->reconnectKey($userId, $slug));
+    }
+
+    /**
+     * A teammate must never be granted a service its person no longer has. Each row that
+     * held the slug loses it and takes a new revision, so a turn or approval quoted
+     * before the disconnect fails `TaskContext::validate` instead of running on.
+     */
+    private function revokeGrants(int $userId, string $slug): void
+    {
+        $rows = DB::table('agent_teammates')->where('user_id', $userId)->where('integrations', 'like', '%'.$slug.'%')->get(['id', 'chat_id', 'integrations']);
+        foreach ($rows as $row) {
+            $held = (array) json_decode($row->integrations, true);
+            if (! in_array($slug, $held, true)) continue;
+            DB::table('agent_teammates')->where('id', $row->id)->update([
+                'integrations' => json_encode(array_values(array_diff($held, [$slug]))),
+                'revision' => DB::raw('revision + 1'), 'updated_at' => now()]);
+            DB::table('vibes_chats')->where('id', $row->chat_id)->increment('revision');
+        }
+    }
+
+    /** Whether the provider recently refused to renew this connection for good. */
+    public function needsReconnect(int $userId, string $slug): bool
+    {
+        return Cache::has($this->reconnectKey($userId, $slug));
+    }
+
+    private function reconnectKey(int $userId, string $slug): string
+    {
+        return 'chat-connectors:reconnect:'.$userId.':'.$slug;
     }
 
     /** The stored key for one call, decrypted only for as long as that call takes. */
@@ -76,7 +113,7 @@ class Installs
         $name = (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug);
         abort_unless($row, 422, 'Connect '.$name.' before using it.');
         DB::table('vibes_integration_installs')->where('id', $row->id)->update(['last_used_at' => now()]);
-        return $this->fresh($row, $slug) ?? Crypt::decryptString($row->credential);
+        return $this->fresh($row, $slug, $userId) ?? Crypt::decryptString($row->credential);
     }
 
     private function publicReady(string $slug): bool
@@ -95,13 +132,20 @@ class Installs
      * enough to expiry to be worthless. A provider that issues no refresh token,
      * and a token with no expiry recorded, both skip this entirely.
      */
-    private function fresh(object $row, string $slug): ?string
+    private function fresh(object $row, string $slug, int $userId): ?string
     {
         if (!$row->refresh_token || !$row->expires_at || !$this->oauth->renewable($slug)) return null;
         if (Carbon::parse($row->expires_at)->isAfter(now()->addMinutes(self::RENEW_MARGIN_MINUTES))) return null;
         try { $grant = $this->oauth->renew($slug, Crypt::decryptString($row->refresh_token)); }
+        catch (ReconnectRequired $e) {
+            // Kept for a day: a later failing call names the fix instead of an outage. The
+            // stored token is still handed back, to fail on the provider's own terms.
+            Cache::put($this->reconnectKey($userId, $slug), true, now()->addDay());
+            return null;
+        }
         catch (\Throwable $e) { return null; }
         if (!$grant) return null;
+        Cache::forget($this->reconnectKey($userId, $slug));
         DB::table('vibes_integration_installs')->where('id', $row->id)->update([
             'credential' => Crypt::encryptString($grant['access']),
             'refresh_token' => is_string($grant['refresh']) ? Crypt::encryptString($grant['refresh']) : $row->refresh_token,

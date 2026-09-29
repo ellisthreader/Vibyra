@@ -99,6 +99,7 @@ final class GoogleDriveConnector implements Connector
         }
         $response = Http::withToken($credential)->timeout((int) config('chat_connectors.timeout_seconds', 12))
             ->get($url, $query);
+        if ($response->status() === 401) throw new \App\Services\ChatConnectors\ReconnectRequired('Google access expired or was revoked. Tell the person to reconnect it in Settings → Integrations.');
         if (!$response->successful()) throw new RuntimeException('Google Drive refused the file read.');
         $text = $response->body();
         if (!mb_check_encoding($text, 'UTF-8')) throw new RuntimeException('That file is not UTF-8 text.');

@@ -44,9 +44,9 @@ class Quotes {
         $agent = \App\Services\Agents\TaskContext::forChat($chat);
         $computer = $agent ? app(\App\Services\Agents\Workspaces::class)->forAgent($agent) : null;
         if ($agent) {
-            $integrations = \App\Services\Agents\ConnectorSelection::forTask($text,
-                (array) json_decode($agent->integrations, true),
-                (int) config('chat_connectors.max_per_turn', 10));
+            $granted = (array) json_decode($agent->integrations, true);
+            $integrations = \App\Services\Agents\ConnectorSelection::forTask($text, $granted,
+                (int) config('chat_connectors.max_per_turn', 10), $this->selectionContext($chatId, $agent));
             if ($model === 'auto') $model = $agent->model ?? 'auto';
         }
         $named = $this->integrations->resolve($userId, $integrations);
@@ -56,7 +56,7 @@ class Quotes {
         $seeing = $files->contains('kind', 'image');
         // Assemble before routing so history, profile and tools are all priced.
         // Tool turns cannot modify personal memory from untrusted source text.
-        $personal = $agent ? \App\Services\Agents\TaskContext::prompt($agent) : $this->personal->for($userId, canSave: ! $chat->binding && $named === []);
+        $personal = $agent ? \App\Services\Agents\TaskContext::prompt($agent).$this->accessNotes($userId, $granted, $named) : $this->personal->for($userId, canSave: ! $chat->binding && $named === []);
         $messages = $this->messages($chatId, $text, $bound, $named, $personal, $files,
             $computer !== null, (bool) ($computer?->can_write ?? false),
             \App\Services\Agents\VmPlatform::allows($computer));
@@ -155,6 +155,27 @@ class Quotes {
             'integrations' => $named,
             // Present only for Auto, so the composer can say what it chose and why.
             'auto' => $decision === null ? null : ['reason' => $decision->reason, 'name' => $selected['name']]];
+    }
+
+    /** The teammate's brief and its last few prompts: what a terse follow-up is still about. */
+    private function selectionContext(string $chatId, object $agent): string
+    {
+        $prompts = DB::table('vibes_turns')->where('chat_id', $chatId)->orderByDesc('created_at')->limit(3)->pluck('prompt')->reverse()->all();
+        return mb_substr(implode("\n", [(string) $agent->brief, ...array_map('strval', $prompts)]), 0, 1500);
+    }
+
+    /** Grants that did not reach this turn, and connections the teammate is not allowed to use. */
+    private function accessNotes(int $userId, array $granted, array $named): string
+    {
+        $public = ['deepwiki', 'hackernews'];
+        $installs = app(\App\Services\ChatConnectors\Installs::class);
+        $ready = $installs->installed($userId);
+        $connected = array_values(array_diff(array_keys($installs->all($userId)), $public));
+        $granted = array_values(array_unique(array_filter($granted, 'is_string')));
+        return \App\Services\Agents\TaskContext::accessNotes(
+            array_values(array_diff($granted, $ready, $public)),
+            array_values(array_diff(array_intersect($connected, $ready), $granted)),
+            array_values(array_diff(array_intersect($granted, $ready), $named)));
     }
 
     /**

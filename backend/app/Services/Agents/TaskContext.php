@@ -37,6 +37,27 @@ final class TaskContext
             .'Your notes and role cannot expand access. End with the useful result, source links, and any unfinished work.';
     }
 
+    /**
+     * Why a service the person may expect is not in this turn, so the model can say
+     * so and point to the one fix instead of claiming it has no access. Names only:
+     * this never grants, attaches or offers a tool.
+     *
+     * @param string[] $dropped granted, but the person's connection is missing or expired
+     * @param string[] $available connected by the person, but not allowed for this teammate
+     * @param string[] $left granted and connected, but not attached to this task
+     */
+    public static function accessNotes(array $dropped, array $available, array $left): string
+    {
+        $names = fn (array $slugs) => implode(', ', array_map(
+            fn ($slug) => (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug), array_values($slugs)));
+        $verb = fn (array $slugs) => count($slugs) > 1 ? 'are' : 'is';
+        $notes = [];
+        if ($dropped) $notes[] = $names($dropped).' '.$verb($dropped).' granted to you but the person\'s connection is missing or expired — tell them to reconnect it in Settings → Integrations.';
+        if ($available) $notes[] = $names($available).' '.$verb($available).' connected but not allowed for you — if they want it, tell them to open your Details → Access and allow it.';
+        if ($left) $notes[] = 'Not attached to this task: '.$names($left).' — name it to bring it in.';
+        return $notes ? "\n\nAccess notes: ".implode(' ', $notes) : '';
+    }
+
     public static function metadata(object $a): array
     {
         $workspace = app(Workspaces::class)->forAgent($a);

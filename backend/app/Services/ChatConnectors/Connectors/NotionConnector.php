@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
+use App\Services\ChatConnectors\ReconnectRequired;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -102,6 +103,7 @@ final class NotionConnector implements Connector
 
     private function body($response): array
     {
+        if ($response->status() === 401) throw ReconnectRequired::for('notion');
         if (!$response->successful() || !is_array($response->json())) {
             throw new RuntimeException('Notion refused this request. Check which pages were shared with the connection.');
         }

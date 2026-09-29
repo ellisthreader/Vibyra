@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
+use App\Services\ChatConnectors\ReconnectRequired;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -111,6 +112,8 @@ final class LinearConnector implements Connector
             ->timeout((int) config('chat_connectors.timeout_seconds', 12))
             ->post('https://api.linear.app/graphql', ['query' => $query, 'variables' => $variables]);
         $body = $response->json();
+        $codes = is_array($body) ? array_map(fn ($e) => strtoupper((string) ($e['extensions']['code'] ?? '')), (array) ($body['errors'] ?? [])) : [];
+        if ($response->status() === 401 || in_array('AUTHENTICATION_ERROR', $codes, true)) throw ReconnectRequired::for('linear');
         if (!$response->successful() || !is_array($body) || !empty($body['errors']) || !is_array($body['data'] ?? null)) {
             throw new RuntimeException('Linear refused this request. Check the connection and team access.');
         }
