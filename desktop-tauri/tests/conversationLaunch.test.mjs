@@ -86,4 +86,14 @@ test('failed receipt lookup preserves the old receipt and never dispatches chang
   await assert.rejects(launch('another','work','Codex',options),/Storage unavailable/);
   assert.equal(calls.length,1);
 });
+test('phone receipt survives a lost reply without consuming a local launch receipt', async () => {
+  const {calls,saved,reveals,lookups} = setup();
+  saved.set('terminal.create.project.codex.work', 'local receipt');
+  ops.create = async (...args) => {calls.push(args);if(calls.length===1)throw Error('Lost reply');return {id:'phone-session'};};
+  await assert.rejects(launch('project','work','Phone',options,false,'phone-request'),/Lost reply/);
+  assert.equal(await launch('project','work','Phone',options,false,'phone-request'),'phone-session');
+  assert.deepEqual(calls.map(call=>call[2]),['phone-request','phone-request']);
+  assert.equal(saved.get('terminal.create.project.codex.work'),'local receipt');
+  assert.deepEqual(reveals,[]); assert.deepEqual(lookups,[]);
+});
 test.after(()=>{delete globalThis.localStorage;delete globalThis.__conversationLaunch;});

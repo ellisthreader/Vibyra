@@ -85,6 +85,8 @@ impl Session {
 }
 
 pub(crate) struct State {
+    pub preview_status: Option<crate::PreviewStatusProvider>,
+    pub preview_run: Option<crate::PreviewRunProvider>,
     pub projects: Vec<Project>,
     pub sessions: HashMap<String, Session>,
     pub native: HashMap<u64, String>,
@@ -103,6 +105,8 @@ impl State {
     ) -> Self {
         Self {
             projects,
+            preview_status: None,
+            preview_run: None,
             journal,
             sessions,
             native: HashMap::new(),
@@ -127,7 +131,7 @@ impl State {
         json!({"protocol":1,"host":{"id":"local","name":"Vibyra Host",
             "platform":std::env::consts::OS},"projects":self.projects,"sessions":history["sessions"],
             "sessionCount":history["sessionCount"],"nextCursor":history["nextCursor"],
-            "approvals":[],"devices":[],"capabilities":{"conversationV1":true,"vibesToolsV1":true,"scaffoldV1":true}})
+            "approvals":[],"devices":[],"capabilities":{"conversationV1":true,"vibesToolsV1":true,"fundedTerminalV1":true,"scaffoldV1":true}})
     }
 
     /// Shares a folder this computer just built (or was asked to build). The

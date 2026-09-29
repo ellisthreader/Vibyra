@@ -20,7 +20,8 @@ function deps(overrides = {}) {
   return {
     calls,
     agents: async () => agents,
-    launch: async (agent, projectId, title) => { calls.launched.push([agent.id, projectId, title]); return [{ paneId: 7 }]; },
+    models: async () => [],
+    launch: async (agent, projectId, title, safeMode, requestId) => { calls.launched.push([agent.id, projectId, title, safeMode, requestId]); return [{ paneId: 7 }]; },
     approvalPending: () => false,
     closePane: async (id) => { calls.closedPanes.push(id); },
     closeChat: async (id) => { calls.closedChats.push(id); },
@@ -33,12 +34,17 @@ function deps(overrides = {}) {
 
 test("a start runs the project's own launch and names what it opened", async () => {
   const d = deps();
-  const reply = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "From the phone", requestId: "q" }, d);
+  const reply = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "From the phone", requestId: "q", safeMode: false }, d);
   assert.deepEqual(reply, { result: { paneId: 7 } });
-  assert.deepEqual(d.calls.launched, [["shell", "p-1", "From the phone"]]);
+  assert.deepEqual(d.calls.launched, [["shell", "p-1", "From the phone", false, "q"]]);
+  await answerTerminalRequest({ id: "r2", action: "create", projectId: "p-1", kind: "codex", title: "Isolated", requestId: "q2", safeMode: true }, d);
+  assert.deepEqual(d.calls.launched[1], ["codex", "p-1", "Isolated", true, "q2"]);
   const chat = deps({ launch: async () => [{ conversationId: "c-1" }] });
   assert.deepEqual(await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "codex", title: "t", requestId: "q" }, chat),
     { result: { conversationId: "c-1" } });
+  const oldPhone = deps();
+  await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q" }, oldPhone);
+  assert.deepEqual(oldPhone.calls.launched[0], ["shell", "p-1", "t", false, "q"]);
 });
 
 test("an agent that is not installed is refused by name, not launched", async () => {
@@ -52,9 +58,12 @@ test("a launch that opened nothing says why, and a waiting checkpoint says where
   const refused = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q" },
     deps({ launch: async () => [] }));
   assert.equal(refused.error, `The terminal did not start. Check Vibyra on your ${computerName}.`);
-  const waiting = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q" },
+  const waiting = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q", safeMode: true },
     deps({ launch: async () => [], approvalPending: () => true }));
   assert.equal(waiting.error, APPROVAL_WAITING);
+  const unrelated = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "codex", title: "t", requestId: "q", safeMode: false },
+    deps({ launch: async () => [], approvalPending: () => true }));
+  assert.equal(unrelated.error, `The terminal did not start. Check Vibyra on your ${computerName}.`);
   const thrown = await answerTerminalRequest({ id: "r", action: "create", projectId: "p-1", kind: "shell", title: "t", requestId: "q" },
     deps({ launch: async () => { throw new Error("This project is no longer available"); } }));
   assert.equal(thrown.error, "This project is no longer available");
@@ -72,7 +81,7 @@ test("the window answers every request through the same chain the phone waits on
   const requests = await read("src/lib/phoneTerminalRequests.ts");
   assert.match(requests, /listen<PhoneTerminalRequest>\("phone:terminal-request"/, "a request is heard the moment Rust has it");
   assert.match(requests, /phoneTerminalRequests\(\)/, "and one asked before the listener existed is still found");
-  assert.match(requests, /launchConfigured\(agent, projectId, \{ title, view: "chat" \}\)/,
+  assert.match(requests, /launchConfigured\(agent, projectId, \{\s+title, view: "chat", safeMode, requestId,/,
     "a phone's request is a chat page, so Claude and Gemini launch as conversations whatever the Mac's Agent view is");
   assert.match(requests, /chatRequest\("session\.stop"/, "a shared chat is ended on the engine");
   assert.match(requests, /terminals\.dismiss\(id\)/, "and its card comes down");
@@ -126,4 +135,20 @@ test("forgetting drops it from the list and says so plainly", async () => {
     deps({ forget: async (projectId) => { dropped.push(projectId); } }));
   assert.deepEqual(reply, { result: { ok: true } });
   assert.deepEqual(dropped, ["p-1"]);
+});
+
+test("phone account defaults use the Mac window's current selection", async () => {
+  const defaults = { codex: "default" };
+  const chosen = [];
+  const d = deps({ accountDefaults: () => defaults,
+    accountDefault: (provider, account) => { chosen.push([provider, account]); defaults[provider] = account; } });
+  assert.deepEqual(await answerTerminalRequest({ id: "r", action: "accountDefaults" }, d),
+    { result: { codex: "default" } });
+  assert.deepEqual(await answerTerminalRequest({ id: "r", action: "accountDefault",
+    provider: "codex", account: "second" }, d), { result: { ok: true } });
+  assert.deepEqual(chosen, [["codex", "second"]]);
+  assert.deepEqual(await answerTerminalRequest({ id: "r", action: "accountDefaults" }, d),
+    { result: { codex: "second" } });
+  assert.match((await answerTerminalRequest({ id: "r", action: "accountDefault",
+    provider: "codex", account: "second" }, deps())).error, /Open Vibyra on your Mac/);
 });

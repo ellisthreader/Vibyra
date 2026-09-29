@@ -11,10 +11,15 @@ mod normalize;
 mod observed;
 mod permission_request;
 mod policy;
+mod preview_tool;
+mod provider_decision;
 mod provider_runtime;
 mod question_tool;
 mod requests;
 mod resume;
+mod resume_thread;
+mod run_card;
+mod run_tool;
 mod runtime;
 mod runtime_output;
 mod settings;
@@ -29,6 +34,8 @@ mod terminal_bridge_tests;
 mod terminal_events;
 #[cfg(unix)]
 mod terminal_socket;
+#[cfg(test)]
+mod tests_amendment;
 
 use crate::{
     state::{Session, State},
@@ -211,3 +218,7 @@ mod tests_storage_failure;
 
 #[cfg(test)]
 mod tests_policy;
+
+mod account_models;
+#[cfg(all(test, unix))]
+mod tests_failed_start;

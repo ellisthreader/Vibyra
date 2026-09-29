@@ -9,7 +9,6 @@ use super::run_blocking;
 #[tauri::command]
 pub fn preview_share_available(state: State<'_, AppState>) -> bool {
     state.preview_grants.is_ok()
-        && std::env::var("VIBYRA_PREVIEW_HTTP_PROOF").is_ok_and(|value| value == "1")
 }
 
 fn current_scope(project: &Path, requested: &Path) -> Result<PathBuf, String> {
@@ -39,11 +38,17 @@ fn paired_project(state: &AppState, device_id: &str, project_id: &str) -> Result
         .as_array()
         .is_some_and(|devices| devices.iter().any(|device| device["id"] == device_id));
     if !paired {
-        return Err("Pair this phone with the Mac first".into());
+        return Err(format!(
+            "Pair this phone with the {} first",
+            crate::window_preview::host_noun()
+        ));
     }
-    phone
-        .project_root(project_id)
-        .ok_or_else(|| "This project is no longer open on the Mac".into())
+    phone.project_root(project_id).ok_or_else(|| {
+        format!(
+            "This project is no longer open on the {}",
+            crate::window_preview::host_noun()
+        )
+    })
 }
 
 #[tauri::command]

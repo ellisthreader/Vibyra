@@ -13,6 +13,8 @@ import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 
 interface LaunchOptions {
+  safeMode?: boolean;
+  requestId?: string;
   model?: string | null;
   reasoningEffort?: LaunchEffort;
   reasoningEnabled?: boolean;
@@ -36,6 +38,7 @@ interface LaunchOptions {
 }
 
 interface PreparedLaunch {
+  requestId?: string;
   agent: ResolvedAgent;
   projectId: string;
   projectRoot: string;
@@ -82,7 +85,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
           permissionMode: launch.permissionMode,
           workspaceMode: launch.safeMode ? "safe" : "shared",
           safeSnapshotFingerprint: fingerprint,
-        }, launch.view === undefined);
+        }, launch.view === undefined, launch.requestId);
         started.push({ conversationId });
       } catch (error) {
         useWorkspaceStore.getState().setError(String(error));
@@ -154,7 +157,8 @@ export async function launchConfigured(
       ? null
       : options.reasoningEffort ?? preferences.effort,
     title: options.title,
-    safeMode: preferences.safeMode,
+    safeMode: options.safeMode ?? preferences.safeMode,
+    requestId: options.requestId,
     // Which login this terminal runs as. Only account-backed CLIs have one;
     // a shell or an OpenRouter runner has no provider folder to point at.
     accountId: resolveLaunchAccount(agent.id, preferences.accountByProvider[agent.id]),

@@ -8,15 +8,21 @@ use std::sync::Arc;
 use vibyra_core::preview::{PreviewManager, PreviewPhase};
 use vibyra_host::{PreviewFrame as Frame, PreviewHandler, StreamKey};
 
+#[cfg(target_os = "macos")]
+#[path = "preview_attached_listing_tests.rs"]
+mod listing;
+
 #[test]
 fn attached_server_survives_downtime_and_never_becomes_a_managed_process() {
     let temp = tempfile::tempdir().unwrap();
-    let root = temp.path().join("hke");
-    std::fs::create_dir(&root).unwrap();
+    // The fixture listener runs in this process, so advertise its actual cwd.
+    let root = std::env::current_dir().unwrap().canonicalize().unwrap();
     let site = Site::bind(0, "first");
     let target = format!("attached-port:{}", site.port);
     let grants = Arc::new(PreviewGrants::load(temp.path().join("grants")).unwrap());
     grants.set_account(Some("user:fixture-account")).unwrap();
+    grants.set_automatic("phone", false).unwrap();
+    grants.set_automatic("wrong", false).unwrap();
     grants
         .grant_at("phone", "project", &root, &target, "/menu?tag=soy")
         .unwrap();
@@ -38,7 +44,10 @@ fn attached_server_survives_downtime_and_never_becomes_a_managed_process() {
         service.list("wrong")["targets"].as_array().unwrap().len(),
         0
     );
-    assert_eq!(service.list("phone")["targets"][0]["running"], true);
+    assert_eq!(
+        service.list("phone")["targets"][0]["running"],
+        cfg!(target_os = "macos")
+    );
     assert!(service.start("wrong", &grant_id).is_err());
     assert!(service.open("wrong", &grant_id).is_err());
     assert_eq!(

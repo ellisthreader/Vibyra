@@ -8,6 +8,8 @@ import { STATIC_GROUPS } from "../lib/staticModels";
 
 interface ModelCatalogStore {
   groups: CompanyGroup[];
+  /** Complete supported roster, before display shortlists. Used by the phone. */
+  fullGroups: CompanyGroup[];
   source: "static" | "cache" | "live";
   loading: boolean;
   /** force bypasses the 15-min cache — used when a release is announced. */
@@ -18,6 +20,7 @@ let inflight: Promise<void> | null = null;
 
 export const useModelCatalogStore = create<ModelCatalogStore>((set) => ({
   groups: STATIC_GROUPS,
+  fullGroups: STATIC_GROUPS,
   source: "static",
   loading: false,
 
@@ -25,7 +28,7 @@ export const useModelCatalogStore = create<ModelCatalogStore>((set) => ({
     if (inflight && !force) return inflight;
     set({ loading: true });
     inflight = loadCatalog(force)
-      .then(({ groups, source }) => set({ groups, source, loading: false }))
+      .then(({ groups, fullGroups, source }) => set({ groups, fullGroups, source, loading: false }))
       .catch(() => set({ loading: false }))
       .finally(() => {
         inflight = null;

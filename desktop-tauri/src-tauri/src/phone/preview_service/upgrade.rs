@@ -34,10 +34,12 @@ impl PreviewService {
     ) {
         let sender = self.inner.subscribers.lock().get(&device).cloned();
         if let Some(sender) = sender {
-            if self
-                .tunnel_upgrade(&device, key, &stream, &sender, &request, receiver)
-                .is_err()
-            {
+            let result = self.tunnel_upgrade(&device, key, &stream, &sender, &request, receiver);
+            #[cfg(test)]
+            if let Err(error) = &result {
+                eprintln!("Preview WebSocket fixture canceled: {error}");
+            }
+            if result.is_err() {
                 self.mark_finished(&device, key);
                 self.send_cancel(&sender, key);
             }
@@ -58,6 +60,9 @@ impl PreviewService {
         receiver: Receiver<(Vec<u8>, Frame)>,
     ) -> Result<(), String> {
         let binding = self.binding(device, key.generation())?;
+        if binding.window.is_some() {
+            return Err("Window Preview does not expose network upgrades".into());
+        }
         if binding
             .automatic
             .as_ref()

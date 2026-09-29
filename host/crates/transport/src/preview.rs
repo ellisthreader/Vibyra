@@ -4,6 +4,6 @@ mod flow;
 mod frame;
 mod queue;
 
-pub use flow::{ReceiveWindow, SendWindow, WINDOW_BYTES};
+pub use flow::{ReceiveWindow, SendWindow, SEND_WINDOW_BYTES, WINDOW_BYTES};
 pub use frame::{Frame, Priority, StreamKey, MAX_CHUNK};
 pub use queue::FrameQueue;

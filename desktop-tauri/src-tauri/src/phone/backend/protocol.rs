@@ -23,27 +23,11 @@ impl Backend for DesktopBackend {
         if let Some(result) = self.railway_tools.dispatch(device, method, &params) {
             return result;
         }
+        if let Some(result) = self.ai_accounts(method, &params) {
+            return result;
+        }
         match method {
-            "host.state" => {
-                let (sessions, unfiled) = self.sessions();
-                let count = sessions.len();
-                let mut projects = self.workspace.read().folders(unfiled);
-                if let Some(project) = self.vault.project() {
-                    projects.push(project);
-                }
-                if let Some(project) = self.railway_tools.project(&self.railway.status()) {
-                    projects.push(project);
-                }
-                Ok(json!({"protocol":1,
-                    "capabilities":{"readOnly":true,"canInput":self.control.typing(),"canManage":self.can_manage(),
-                        "scaffoldV1":true,"vibesToolsV1":true,
-                        "previewHttpProofV1":self.preview.is_some()},
-                    "projects":projects,
-                    // The Mac's own Railway CLI, for the phone's Integrations page.
-                    "railway":self.railway.status(),
-                    "sessions":sessions,"sessionCount":count,
-                    "nextCursor":null,"approvals":[],"devices":[]}))
-            }
+            "host.state" => self.host_state(),
             "session.list" => {
                 let (sessions, _) = self.sessions();
                 let count = sessions.len();
@@ -51,6 +35,14 @@ impl Backend for DesktopBackend {
             }
             "session.snapshot" => self.snapshot(&params),
             "session.resize" => self.resize(&params),
+            "session.models" => {
+                let mut catalogue = self.requests.ask(json!({"action":"models"}))?;
+                catalogue["permissionsVersion"] = json!(1);
+                if catalogue["effortSelection"] == true { catalogue["effortVersion"] = json!(1); }
+                catalogue["runnerKinds"] =
+                    json!(["codex", "claude", "gemini", "qwen", "aider", "opencode"]);
+                Ok(catalogue)
+            }
             "session.create" => self.create_pane(&params),
             "session.stop" => self.close(&params),
             "session.claim" => self.claim(device, &params),
@@ -65,7 +57,22 @@ impl Backend for DesktopBackend {
             }
             "approval.list" => Ok(json!([])),
             "preview.list" if self.preview.is_some() => {
-                Ok(self.preview.as_ref().unwrap().list(device))
+                let preview = self.preview.as_ref().unwrap();
+                Ok(if params["windowHandoffV1"] == true {
+                    preview.handoff(device)
+                } else if params["windowV1"] == true {
+                    preview.list_windows(device)
+                } else {
+                    preview.list(device)
+                })
+            }
+            "preview.window.share" if self.preview.is_some() && params["viewOnly"] == true => {
+                self.preview.as_ref().unwrap().share_window(
+                    device,
+                    params["candidateId"]
+                        .as_str()
+                        .ok_or("Select a project window")?,
+                )
             }
             "preview.start" if self.preview.is_some() => self.preview.as_ref().unwrap().start(
                 device,
@@ -73,6 +80,25 @@ impl Backend for DesktopBackend {
                     .as_str()
                     .ok_or("Select an approved Preview")?,
             ),
+            "preview.close" if self.preview.is_some() => {
+                let generation = params["generation"]
+                    .as_str()
+                    .and_then(|s| s.parse().ok())
+                    .ok_or("Invalid Preview session")?;
+                self.preview.as_ref().unwrap().close(device, generation);
+                Ok(json!({"ok":true}))
+            }
+            // Starting a program is more than viewing: it needs the same
+            // permission as typing into a terminal from this phone.
+            "preview.run" | "preview.stop" if self.preview.is_some() && !self.control.typing() => {
+                Err("Turn on typing from your phone in Vibyra's settings on your computer to run apps.".into())
+            }
+            "preview.run" if self.preview.is_some() => {
+                self.preview.as_ref().unwrap().run(device, &params)
+            }
+            "preview.stop" if self.preview.is_some() => {
+                self.preview.as_ref().unwrap().stop_run(device, &params)
+            }
             "preview.open" if self.preview.is_some() => self.preview.as_ref().unwrap().open(
                 device,
                 params["grantId"]
@@ -115,9 +141,9 @@ impl Backend for DesktopBackend {
     }
     fn pairing_notice(&self) -> &'static str {
         if self.vault.project().is_some() {
-            crate::platform_text::for_computer("Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this Mac.", "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this computer.")
+            crate::platform_text::for_computer("Trust lets this phone view all desktop terminal output, type into terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this Mac.", "Trust lets this phone view all desktop terminal output, type into terminals while typing from your phone is on in Settings, read the vault folder you chose in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read anything else on this computer.")
         } else {
-            "Trust lets this phone view all desktop terminal output, type into those terminals while typing from your phone is on in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read your files."
+            "Trust lets this phone view all desktop terminal output, type into terminals while typing from your phone is on in Settings, and start a new project — creating its folder and running that stack's own setup. It cannot read your files."
         }
     }
 }

@@ -22,7 +22,7 @@ pub(super) fn capture(root: &Path, target: &PreviewTarget) -> Result<String, Str
     serde_json::to_string(&(target, sources)).map_err(|e| e.to_string())
 }
 
-fn read_source(path: &Path) -> Result<Option<String>, String> {
+pub(super) fn read_source(path: &Path) -> Result<Option<String>, String> {
     let file = match File::open(path) {
         Ok(file) => file,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),

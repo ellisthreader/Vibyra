@@ -3,6 +3,10 @@ use std::collections::VecDeque;
 
 /// A receiver never promises more than this many unread bytes for one stream.
 pub const WINDOW_BYTES: usize = 4 * MAX_CHUNK;
+/// How far ahead a sender accepts credit. A phone that advertises it may grant up
+/// to 1 MiB, so a large page streams without waiting on each credit round trip
+/// through the phone's JavaScript bridge; one granting 64 KiB still works.
+pub const SEND_WINDOW_BYTES: usize = 64 * MAX_CHUNK;
 
 /// One sending direction of a stream. Credit is cumulative, so a repeated
 /// control frame cannot grant the same bytes twice after a reconnect.
@@ -42,7 +46,7 @@ impl SendWindow {
             return Err("Preview stream is stale or closed");
         }
         if *total < self.allowed_total
-            || *total > self.sent_total.saturating_add(WINDOW_BYTES as u64)
+            || *total > self.sent_total.saturating_add(SEND_WINDOW_BYTES as u64)
         {
             return Err("Invalid Preview credit window");
         }

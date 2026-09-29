@@ -39,6 +39,7 @@ pub fn build(
         account_label: auth.account_label,
         detail,
         sign_in_page_available: attempt.sign_in_page_available,
+        device_code: attempt.device_code.clone(),
         // Only a sign-in ever has a question worth answering. npm prints
         // plenty of lines that end like one and none of them are.
         prompt: if attempt.installing {

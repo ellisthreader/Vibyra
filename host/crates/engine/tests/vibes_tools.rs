@@ -19,6 +19,40 @@ fn tool(scope: &Value, op: &str, path: &str) -> Value {
     p
 }
 #[test]
+fn funded_chat_only_receipts_cannot_change_account_model_or_gain_tools() {
+    let root = tempdir().unwrap();
+    let state = tempdir().unwrap();
+    let engine = Engine::new(
+        state.path().into(),
+        vec![("test".into(), root.path().into())],
+    )
+    .unwrap();
+    let host = engine.handle("phone", "host.state", json!({})).unwrap();
+    assert_eq!(host["capabilities"]["fundedTerminalV1"], true);
+    let mut scope = json!({"projectId":host["projects"][0]["id"], "chatId":uuid::Uuid::new_v4().to_string(),
+        "accountToken":uuid::Uuid::new_v4().to_string(),"source":"vibyra","model":"vendor/chat-only","tools":false});
+    let receipt = engine.handle("phone", "vibes.bind", scope.clone()).unwrap();
+    assert_eq!(
+        receipt,
+        engine.handle("phone", "vibes.bind", scope.clone()).unwrap()
+    );
+    scope["binding"] = receipt["binding"].clone();
+    assert!(engine
+        .handle("phone", "vibes.tool", tool(&scope, "list_files", "."))
+        .unwrap_err()
+        .contains("chat only"));
+    for (key, value) in [
+        ("model", json!("vendor/another")),
+        ("tools", json!(true)),
+        ("accountToken", json!(uuid::Uuid::new_v4().to_string())),
+    ] {
+        let mut changed = scope.clone();
+        changed[key] = value;
+        assert!(engine.handle("phone", "vibes.bind", changed).is_err());
+    }
+    assert!(engine.handle("other-phone", "vibes.bind", scope).is_err());
+}
+#[test]
 fn writes_require_exact_scope_and_replay_does_not_repeat_or_overwrite_external_edits() {
     let root = tempdir().unwrap();
     let state = tempdir().unwrap();

@@ -63,6 +63,15 @@ impl Engine {
         )?;
         drop(state);
         let mut inputs = vec![json!({"type":"text","text":input,"text_elements":[]})];
+        let preview = self.shared.lock().preview_status.clone();
+        if device != "desktop" {
+            if let Some(provider) = preview {
+                let project = text(params, "projectId")?;
+                let status = provider(device, project)
+                    .unwrap_or_else(|error| json!({"state":"unavailable","message":error}));
+                inputs.push(json!({"type":"text","text":format!("[Vibyra client context] This turn came from the paired phone. Software runs on the computer. To show a desktop app on the phone, start it with vibyra_run_app, never a shell command: the sandbox hides windows of apps it starts. Its window then opens on the phone. Process launch alone does not prove a usable window or decoded phone frame; use vibyra_preview_status after launch. Older saved chats may lack these tools; then ask the user to press Run in Live preview, without claiming it is displaying. Current status before this turn (may change during execution): {status}"),"text_elements":[]}));
+            }
+        }
         inputs.append(&mut attachments);
         let result = runtime.request(
             "turn/start",

@@ -46,6 +46,8 @@ mod openai_key;
 mod perf;
 mod phone;
 mod platform_text;
+mod preview_probe;
+mod process_table;
 mod provider_auth;
 mod provider_auth_attempt;
 mod provider_auth_claude;
@@ -89,6 +91,7 @@ pub mod shared_chats;
 mod sink;
 mod state;
 mod state_openai_key;
+mod window_preview;
 
 pub fn handle_cli() -> Option<Result<&'static str, String>> {
     discord_setup::handle_cli()

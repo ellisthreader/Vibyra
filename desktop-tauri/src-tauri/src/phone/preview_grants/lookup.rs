@@ -23,9 +23,12 @@ impl PreviewGrants {
             .cloned()
             .ok_or("Preview approval is unavailable")?;
         drop(active);
-        let project = workspace
-            .project_root(&grant.project_id)
-            .ok_or("This project is no longer open on the Mac")?;
+        let project = workspace.project_root(&grant.project_id).ok_or_else(|| {
+            format!(
+                "This project is no longer open on the {}",
+                crate::window_preview::host_noun()
+            )
+        })?;
         identity::current_scope(&project, &grant.source_root)?;
         self.authorize(
             device_id,

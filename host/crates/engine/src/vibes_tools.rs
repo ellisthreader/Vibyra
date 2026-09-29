@@ -22,13 +22,14 @@ impl Engine {
             id TEXT PRIMARY KEY, binding TEXT NOT NULL, digest TEXT NOT NULL, result TEXT);",
         )
         .map_err(|e| e.to_string())?;
+        crate::funded_bindings::prepare(db, device, &project.id, method, p)?;
         if method == "vibes.bind" {
             let account = text(p, "accountToken")?;
             identifier(account)?;
             let chat = text(p, "chatId")?;
             identifier(chat)?;
             let current: Option<String> = db.query_row(
-                "SELECT token FROM vibes_bindings WHERE device=?1 AND account=?2 AND chat=?3 AND project=?4 AND expires>?5 ORDER BY expires DESC LIMIT 1",
+                "SELECT token FROM vibes_bindings WHERE device=?1 AND account=?2 AND chat=?3 AND project=?4 AND (expires>?5 OR EXISTS(SELECT 1 FROM funded_bindings WHERE chat=?3)) ORDER BY expires DESC LIMIT 1",
                 params![device, account, chat, project.id, chrono::Utc::now().timestamp()],
                 |row| row.get(0),
             ).optional().map_err(|e| e.to_string())?;
@@ -54,7 +55,7 @@ impl Engine {
         let valid: bool = db
             .query_row(
                 "SELECT EXISTS(SELECT 1 FROM vibes_bindings
-            WHERE token=?1 AND device=?2 AND project=?3 AND chat=?4 AND account=?5 AND expires>?6)",
+            WHERE token=?1 AND device=?2 AND project=?3 AND chat=?4 AND account=?5 AND (expires>?6 OR EXISTS(SELECT 1 FROM funded_bindings WHERE chat=?4)))",
                 params![
                     binding,
                     device,
@@ -70,6 +71,16 @@ impl Engine {
             return Err(
                 "Project access expired or belongs to another account, chat or device".into(),
             );
+        }
+        let chat_only: bool = db
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM funded_bindings WHERE chat=?1 AND tools=0)",
+                params![text(p, "chatId")?],
+                |r| r.get(0),
+            )
+            .map_err(|e| e.to_string())?;
+        if chat_only {
+            return Err("This model is chat only and cannot use computer tools".into());
         }
         let id = text(p, "toolId")?;
         identifier(id)?;

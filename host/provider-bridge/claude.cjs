@@ -1,13 +1,13 @@
 class ClaudeProvider {
   constructor(program) {
     this.turn = null; this.tools = new Map(); this.permissions = new Map(); this.stopped = false;
-    this.wire = new ProviderWire(program, ['--print', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--permission-prompt-tool', 'stdio', '--permission-mode', 'default'], value => this.receive(value));
+    this.wire = new ProviderWire(program, ['--print', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--permission-prompt-tool', 'stdio', '--permission-mode', normalMode(program)], value => this.receive(value));
   }
   control(subtype, fields = {}) { const id = randomUUID(); return this.wire.request({ type: 'control_request', request_id: id, request: { subtype, ...fields } }, id); }
   async initialize() { this.capabilities = await this.control('initialize'); this.models = normalizedModels(this.capabilities.models ?? []); return {}; }
   async start(params) {
     this.thread = randomUUID(); this.model = params.model ?? this.models[0]?.model;
-    this.model = this.models.find(model => model.model === this.model || model.resolvedModel === this.model)?.model ?? this.model;
+    this.model = claudeModelFor(this.model, this.models)?.model ?? this.model;
     if (!this.models.some(model => model.model === this.model)) throw new Error('Choose a model advertised by this Claude account');
     this.effort = params.config?.model_reasoning_effort ?? this.models.find(model => model.model === this.model).defaultReasoningEffort;
     // Full access is only enabled from the locally approved launch option.
@@ -32,41 +32,54 @@ class ClaudeProvider {
   async interrupt() { this.stopped = true; await this.control('interrupt'); return {}; }
   resolve(value) {
     const pending = this.permissions.get(value.id); if (!pending) return;
-    const allow = !value.error && value.result?.decision === 'accept';
+    const answers = pending.questions && !value.error ? claudeAnswers(pending.input, value.result?.answers) : null;
+    const allow = pending.questions ? Boolean(answers) : !value.error && value.result?.decision === 'accept';
     this.wire.write({ type: 'control_response', response: { subtype: 'success', request_id: value.id,
-      response: allow ? { behavior: 'allow', updatedInput: pending.input } : { behavior: 'deny', message: 'The user declined this action.' } } });
+      response: allow ? { behavior: 'allow', updatedInput: answers ? { ...pending.input, answers } : pending.input }
+        : { behavior: 'deny', message: pending.questions ? 'The user did not answer.' : 'The user declined this action.' } } });
     pending.answered = true;
   }
+  textId(message) { return `${message}:${this.block ?? 0}`; }
   item(item, completed = false) { event(completed ? 'item/completed' : 'item/started', { threadId: this.thread, turnId: this.turn, item }); }
   receive(value) {
     if (value.type === 'control_response') { const response = value.response; this.wire.reply(response.request_id, response.response, response.subtype === 'error' ? response.error : null); return; }
     if (value.type === 'control_request') {
       const request = value.request;
       if (request.subtype !== 'can_use_tool' || !this.turn) { this.wire.write({ type: 'control_response', response: { subtype: 'error', request_id: value.request_id, error: 'Unsupported client request' } }); return; }
+      if (request.tool_name === 'AskUserQuestion' && Array.isArray(request.input?.questions)) {
+        this.permissions.set(value.request_id, { input: request.input, toolId: request.tool_use_id, questions: true });
+        output({ id: value.request_id, method: 'item/tool/requestUserInput', params: { threadId: this.thread, turnId: this.turn, itemId: request.tool_use_id,
+          questions: request.input.questions.map((q, index) => ({ id: String(index), header: q.header ?? '', question: q.question, isOther: true, isSecret: false,
+            options: (q.options ?? []).map(o => ({ label: o.label, description: o.description ?? '' })) })) } }); return;
+      }
       this.permissions.set(value.request_id, { input: request.input, toolId: request.tool_use_id });
       output({ id: value.request_id, method: 'vibyra/tool/requestApproval', params: { threadId: this.thread, turnId: this.turn,
-        itemId: request.tool_use_id, tool: request.tool_name, input: request.input, reason: `Allow Claude to use ${request.tool_name}?`, cwd: process.cwd(), availableDecisions: ['accept', 'decline'] } }); return;
+        itemId: request.tool_use_id, tool: request.tool_name, input: request.input, reason: request.input?.description ?? `Claude wants to use ${request.tool_name}.`, cwd: process.cwd(), availableDecisions: ['accept', 'decline'] } }); return;
     }
     if (!this.turn) return;
     if (value.type === 'assistant') {
       for (const block of value.message?.content ?? []) {
-        if (block.type === 'text') this.item({ type: 'agentMessage', id: `${value.message.id}:text`, text: block.text }, true);
+        // One event per content block, all sharing the message id: the block's stream index tells them apart.
+        if (block.type === 'text') this.item({ type: 'agentMessage', id: this.textId(value.message.id), text: block.text }, true);
         if (block.type === 'tool_use') {
           this.tools.set(block.id, block);
-          this.item({ type: 'mcpToolCall', id: block.id, server: 'Claude', tool: block.name, arguments: block.input });
+          const item = claudeTool(block, process.cwd());
+          if (item) this.item(item);
         }
       }
     }
     if (value.type === 'stream_event') {
       const e = value.event;
-      if (e.type === 'message_start') this.messageId = e.message.id;
-      if (e.type === 'content_block_start' && e.content_block.type === 'text') this.item({ type: 'agentMessage', id: `${this.messageId}:text`, text: '' });
-      if (e.type === 'content_block_delta' && e.delta.type === 'text_delta') event('item/agentMessage/delta', { threadId: this.thread, turnId: this.turn, itemId: `${this.messageId}:text`, delta: e.delta.text });
+      if (e.type === 'message_start') { this.messageId = e.message.id; this.block = 0; }
+      if (e.type === 'content_block_start') this.block = e.index;
+      if (e.type === 'content_block_start' && e.content_block.type === 'text') this.item({ type: 'agentMessage', id: this.textId(this.messageId), text: '' });
+      if (e.type === 'content_block_delta' && e.delta.type === 'text_delta') event('item/agentMessage/delta', { threadId: this.thread, turnId: this.turn, itemId: this.textId(this.messageId), delta: e.delta.text });
     }
     if (value.type === 'user') for (const block of value.message?.content ?? []) {
       if (block.type !== 'tool_result') continue;
       const tool = this.tools.get(block.tool_use_id);
-      if (tool) this.item({ type: 'mcpToolCall', id: tool.id, server: 'Claude', tool: tool.name, arguments: tool.input, result: block.content, status: block.is_error ? 'failed' : 'completed' }, true);
+      const item = tool && claudeTool(tool, process.cwd(), { output: block.content, error: block.is_error, meta: value.tool_use_result });
+      if (item) this.item(item, true);
       for (const [id, permission] of this.permissions) if (permission.toolId === block.tool_use_id && permission.answered) {
         event('serverRequest/resolved', { threadId: this.thread, requestId: id }); this.permissions.delete(id);
       }
@@ -77,4 +90,23 @@ class ClaudeProvider {
       this.turn = null; this.tools.clear(); this.permissions.clear();
     }
   }
+}
+// Claude renamed its normal interactive permission mode from "default" to "manual".
+function normalMode(program) {
+  const help = require('node:child_process').spawnSync(program, ['--help'], { encoding: 'utf8', timeout: 10000 }).stdout ?? '';
+  return help.includes('"manual"') ? 'manual' : 'default';
+}
+// Claude reads AskUserQuestion answers keyed by the question text; several choices join with commas.
+function claudeAnswers(input, answers) {
+  const picked = input.questions.map((q, index) => [q.question, (answers?.[String(index)]?.answers ?? []).join(', ')]);
+  return picked.every(([, answer]) => answer) ? Object.fromEntries(picked) : null;
+}
+
+function claudeModelFor(wanted, models) {
+  const normal = value => String(value).replace(/^anthropic\//, '').toLowerCase().replace(/\./g, '-');
+  const key = normal(wanted);
+  const exact = models.find(model => [model.model, model.resolvedModel].some(id => id && normal(id) === key));
+  if (exact) return exact;
+  const dated = models.filter(model => model.resolvedModel && normal(model.resolvedModel).replace(/-\d{8}$/, '') === key);
+  return new Set(dated.map(model => model.resolvedModel)).size === 1 ? dated[0] : undefined;
 }

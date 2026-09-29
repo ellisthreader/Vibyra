@@ -2344,6 +2344,8 @@ dependencies = [
  "num-traits",
  "png 0.18.1",
  "tiff",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -6010,6 +6012,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.20",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -6022,6 +6025,7 @@ dependencies = [
  "cpal",
  "dbus",
  "dirs",
+ "flate2",
  "futures-util",
  "getrandom 0.3.4",
  "hex",
@@ -6053,6 +6057,7 @@ dependencies = [
  "vibyra-host",
  "vibyra-host-engine",
  "vibyra-transport",
+ "windows 0.62.2",
  "x11rb",
 ]
 

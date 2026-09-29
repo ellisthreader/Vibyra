@@ -215,9 +215,16 @@ async fn serve(
                         Err(std::sync::mpsc::TryRecvError::Disconnected) => return Err("Host events require resynchronization".into()),
                     }
                 }
-                // Preview gets at most two small frames per 20 ms turn and
-                // only after terminal replies and events have had their turn.
-                for _ in 0..2 {
+                // Preview goes after terminal replies and events have had their
+                // turn, then fills the room they leave: two frames always, more
+                // while a quarter of the outgoing channel is still free for
+                // terminal traffic. Two a turn capped a site at 100 frames a
+                // second, so a script's reply queued ~400 ms behind the rest of
+                // the page. A paced Cloud relay fills the channel and so slows
+                // Preview there, never the terminal.
+                let reserve = output.max_capacity() / 4;
+                for sent in 0..64 {
+                    if sent >= 2 && output.capacity() <= reserve { break; }
                     let Some(frame) = preview.pop() else { break; };
                     let Ok(bytes) = frame.encode() else { preview.source_ended(); break; };
                     send_frame(output, channel.encrypt(&bytes)?).await?;

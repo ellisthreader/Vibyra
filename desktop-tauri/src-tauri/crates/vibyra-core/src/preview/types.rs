@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -10,6 +10,23 @@ pub enum PreviewDeviceHint {
     Laptop,
     Desktop,
     Tv,
+}
+
+/// What a target opens: a page in the Preview frame, or an application window.
+#[derive(Clone, Copy, Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PreviewTargetKind {
+    #[default]
+    Web,
+    Desktop,
+}
+
+impl PreviewTargetKind {
+    /// Web targets serialize exactly as before `kind` existed: their JSON is
+    /// part of every saved phone grant's fingerprint.
+    pub fn is_web(&self) -> bool {
+        *self == Self::Web
+    }
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -24,6 +41,8 @@ pub struct PreviewTarget {
     pub reason: Option<String>,
     pub device_hint: PreviewDeviceHint,
     pub landscape: bool,
+    #[serde(skip_serializing_if = "PreviewTargetKind::is_web")]
+    pub kind: PreviewTargetKind,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -43,6 +62,28 @@ pub enum PreviewPhase {
     Stopped,
 }
 
+/// Where a desktop run is. `PreviewPhase` stays coarse (Starting covers
+/// building and waiting for a window, Running means a window exists) so web
+/// callers keep working unchanged.
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DesktopStage {
+    Building,
+    WaitingForWindow,
+    Ready,
+    Exited,
+    TimedOut,
+}
+
+/// A window owned by a desktop run's own process tree.
+#[derive(Clone, Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewWindow {
+    pub pid: u32,
+    pub id: u32,
+    pub fingerprint: String,
+}
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewStatus {
@@ -52,6 +93,10 @@ pub struct PreviewStatus {
     pub command: Option<String>,
     pub logs: Vec<String>,
     pub error: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stage: Option<DesktopStage>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub windows: Vec<PreviewWindow>,
 }
 
 impl PreviewStatus {
@@ -63,6 +108,8 @@ impl PreviewStatus {
             command: None,
             logs: Vec::new(),
             error: None,
+            stage: None,
+            windows: Vec::new(),
         }
     }
 }
@@ -86,7 +133,20 @@ pub(crate) enum LaunchRecipe {
         processes: Vec<ProcessSpec>,
         primary_index: usize,
     },
+    /// One process with no port: it is ready once it opens a window.
+    Desktop {
+        process: ProcessSpec,
+    },
     Unsupported,
+}
+
+/// A command that detection did not offer but an owner approved for a
+/// project: argv only, run in `relative_root` inside the project.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct DesktopCommand {
+    pub relative_root: String,
+    pub argv: Vec<String>,
 }
 
 #[derive(Clone, Debug)]

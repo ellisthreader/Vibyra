@@ -8,13 +8,6 @@ use super::workspace::{SharedWorkspace, UNFILED};
 use serde_json::{json, Value};
 use std::sync::{atomic::AtomicBool, Arc};
 use vibyra_core::pty::PtyManager;
-use vibyra_host::PreviewHandler;
-
-pub(crate) trait PreviewControl: PreviewHandler {
-    fn list(&self, device: &str) -> Value;
-    fn start(&self, device: &str, grant_id: &str) -> Result<Value, String>;
-    fn open(&self, device: &str, grant_id: &str) -> Result<Value, String>;
-}
 
 pub struct DesktopBackend {
     pub(super) manager: Arc<PtyManager>,
@@ -26,6 +19,7 @@ pub struct DesktopBackend {
     railway: Arc<RailwayCli>,
     railway_tools: super::railway_tools::RailwayTools,
     pub(super) requests: Arc<TerminalRequests>,
+    pub(super) provider_auth: Option<Arc<crate::provider_auth::ProviderAuthManager>>,
     pub(super) scaffolds: SharedScaffolds,
     scaffolder: Scaffolder,
     pub(super) preview: Option<Arc<dyn PreviewControl>>,
@@ -69,10 +63,15 @@ impl DesktopBackend {
             railway,
             railway_tools,
             requests,
+            provider_auth: None,
             scaffolds,
             scaffolder,
             preview,
         })
+    }
+    pub fn with_provider_auth(mut self, provider_auth: Option<Arc<crate::provider_auth::ProviderAuthManager>>) -> Self {
+        self.provider_auth = provider_auth;
+        self
     }
     pub(super) fn id(&self, id: u64) -> String {
         format!("{}-{id}", self.generation)
@@ -92,7 +91,7 @@ impl DesktopBackend {
             unfiled |= project == UNFILED;
             json!({
                 "id":self.id(s.id), "projectId":project, "title":title,
-                "kind":match s.agent_id.as_str() { "codex" => "codex", "claude" => "claude", _ => "shell" },
+                "kind":match s.agent_id.as_str() { kind @ ("codex" | "claude" | "gemini" | "qwen" | "aider" | "opencode") => kind, _ => "shell" },
                 "status":if s.alive {"running"} else {"exited"}, "createdAt":"1970-01-01T00:00:00Z",
                 "readOnly":true, "canInput":typing
             })
@@ -184,5 +183,11 @@ impl DesktopBackend {
 /// The path is spelled out because `examples/phone_typing_probe.rs` pulls this
 /// file in with `#[path]`, and a module reached that way resolves its children
 /// against the including file's directory, not its own.
+#[path = "backend/preview_control.rs"]
+mod preview_control;
+#[path = "backend/host_state.rs"]
+mod host_state;
 #[path = "backend/protocol.rs"]
 mod protocol;
+
+pub(crate) use preview_control::PreviewControl;

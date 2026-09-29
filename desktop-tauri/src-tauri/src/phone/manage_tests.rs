@@ -1,23 +1,17 @@
-#[cfg(unix)]
-use super::requests::TerminalRequests;
 use super::{
     backend::DesktopBackend,
     manage::MANAGE_OFF,
+    requests::TerminalRequests,
     vault::Vault,
     workspace::{DesktopProject, SharedWorkspace},
 };
-use serde_json::json;
-#[cfg(unix)]
-use serde_json::Value;
-use std::sync::{atomic::AtomicBool, Arc};
-#[cfg(unix)]
+use serde_json::{json, Value};
 use std::{
+    sync::{atomic::AtomicBool, Arc},
     thread,
     time::{Duration, Instant},
 };
-#[cfg(unix)]
-use vibyra_core::pty::LaunchSpec;
-use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
+use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
 use vibyra_host::Backend;
 
 pub(super) struct Sink;
@@ -27,7 +21,7 @@ impl OutputSink for Sink {
     fn on_exit(&self, _: u64, _: Option<i32>) {}
 }
 
-fn published() -> SharedWorkspace {
+pub(super) fn published() -> SharedWorkspace {
     let workspace = SharedWorkspace::default();
     workspace.write().publish(
         vec![DesktopProject {
@@ -43,7 +37,6 @@ fn published() -> SharedWorkspace {
 
 /// Stands in for the window: answers every request the way the grid would,
 /// and counts how many it was asked so a retry can be seen not to start twice.
-#[cfg(unix)]
 pub(super) fn window(
     requests: Arc<TerminalRequests>,
     answer: impl Fn(&Value) -> Result<Value, String> + Send + 'static,
@@ -81,6 +74,47 @@ fn starting_and_closing_are_behind_the_typing_switch() {
     );
 }
 
+#[test]
+fn phone_models_are_readable_and_exact_selection_reaches_the_window() {
+    let requests = Arc::new(TerminalRequests::default());
+    let backend = DesktopBackend::new(
+        PtyManager::new(Arc::new(Sink), FlushConfig::default()),
+        published(),
+        Arc::new(AtomicBool::new(true)),
+        Vault::empty(),
+        requests.clone(),
+    )
+    .unwrap();
+    window(requests, |request| {
+        if request["action"] == "models" {
+            return Ok(json!({"models":[{"id":"openai/gpt-6-sol","kind":"codex"}]}));
+        }
+        assert_eq!(request["model"], "openai/gpt-6-sol");
+        Ok(json!({"paneId":42}))
+    });
+    assert_eq!(
+        backend.handle("phone", "host.state", json!({})).unwrap()["capabilities"]
+            ["terminalModelsV1"],
+        true
+    );
+    assert_eq!(
+        backend
+            .handle("phone", "session.models", json!({}))
+            .unwrap()["models"][0]["id"],
+        "openai/gpt-6-sol"
+    );
+    let create = json!({"projectId":"p-1","kind":"codex","title":"Sol","requestId":"model-choice","model":"openai/gpt-6-sol"});
+    assert!(backend
+        .handle("phone", "session.create", create.clone())
+        .is_ok());
+    let mut invalid = create;
+    invalid["kind"] = json!("shell");
+    assert!(backend
+        .handle("phone", "session.create", invalid)
+        .unwrap_err()
+        .contains("plain terminal"));
+}
+
 #[cfg(unix)]
 #[test]
 fn a_phone_starts_a_terminal_through_the_window_and_closes_it_the_same_way() {
@@ -108,6 +142,7 @@ fn a_phone_starts_a_terminal_through_the_window_and_closes_it_the_same_way() {
         }
         assert_eq!(request["projectId"], "p-1");
         assert_eq!(request["title"], "From the phone");
+        assert_eq!(request["safeMode"], false);
         let spec = LaunchSpec {
             program: "/bin/sh".into(),
             args: vec!["-c".into(), "read answer".into()],
@@ -122,8 +157,7 @@ fn a_phone_starts_a_terminal_through_the_window_and_closes_it_the_same_way() {
             .map_err(|e| e.to_string())?;
         Ok(json!({"paneId":info.id}))
     });
-    let create =
-        json!({"projectId":"p-1","kind":"shell","title":"From the phone","requestId":"r-1"});
+    let create = json!({"projectId":"p-1","kind":"shell","title":"From the phone","requestId":"r-1","safeMode":false});
     let session = backend
         .handle("phone", "session.create", create.clone())
         .unwrap();

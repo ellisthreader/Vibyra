@@ -8,6 +8,61 @@ use vibyra_host::{
 impl PreviewHandler for PreviewService {
     fn receive(&self, device: &str, frame: Frame) -> Result<(), String> {
         let key = frame.key();
+        let result = self.receive_frame(device, frame);
+        #[cfg(test)]
+        if let Err(error) = &result {
+            eprintln!(
+                "Preview fixture frame refused for stream {}: {error}",
+                key.id()
+            );
+        }
+        let _ = key;
+        result
+    }
+
+    fn subscribe(&self, device: &str) -> mpsc::Receiver<Frame> {
+        // A new authenticated session replaces every stream from the old one.
+        self.disconnected(device);
+        let (sender, receiver) = mpsc::sync_channel(32);
+        self.inner.subscribers.lock().insert(device.into(), sender);
+        receiver
+    }
+
+    fn disconnected(&self, device: &str) {
+        self.inner
+            .handoff
+            .lock()
+            .candidates
+            .retain(|(owner, _), _| owner != device);
+        self.inner
+            .automatic
+            .lock()
+            .retain(|(owner, _), _| owner != device);
+        self.inner
+            .bindings
+            .lock()
+            .retain(|(owner, _), _| owner != device);
+        self.inner.subscribers.lock().remove(device);
+        self.inner
+            .finished
+            .lock()
+            .retain(|(owner, _)| owner != device);
+        self.inner.streams.lock().retain(|(owner, _), stream| {
+            if owner != device {
+                return true;
+            }
+            stream.canceled.store(true, Ordering::SeqCst);
+            stream.outbound.lock().revoke();
+            stream.upgrade.lock().take();
+            stream.wake.notify_all();
+            false
+        });
+    }
+}
+
+impl PreviewService {
+    fn receive_frame(&self, device: &str, frame: Frame) -> Result<(), String> {
+        let key = frame.key();
         match frame {
             Frame::Open { .. } => self.receive_open(device, key),
             Frame::Data { .. } => self.receive_data(device, frame),
@@ -38,40 +93,6 @@ impl PreviewHandler for PreviewService {
                 Ok(())
             }
         }
-    }
-
-    fn subscribe(&self, device: &str) -> mpsc::Receiver<Frame> {
-        // A new authenticated session replaces every stream from the old one.
-        self.disconnected(device);
-        let (sender, receiver) = mpsc::sync_channel(32);
-        self.inner.subscribers.lock().insert(device.into(), sender);
-        receiver
-    }
-
-    fn disconnected(&self, device: &str) {
-        self.inner
-            .automatic
-            .lock()
-            .retain(|(owner, _), _| owner != device);
-        self.inner
-            .bindings
-            .lock()
-            .retain(|(owner, _), _| owner != device);
-        self.inner.subscribers.lock().remove(device);
-        self.inner
-            .finished
-            .lock()
-            .retain(|(owner, _)| owner != device);
-        self.inner.streams.lock().retain(|(owner, _), stream| {
-            if owner != device {
-                return true;
-            }
-            stream.canceled.store(true, Ordering::SeqCst);
-            stream.outbound.lock().revoke();
-            stream.upgrade.lock().take();
-            stream.wake.notify_all();
-            false
-        });
     }
 }
 

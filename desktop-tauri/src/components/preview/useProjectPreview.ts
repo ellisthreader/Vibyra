@@ -112,7 +112,7 @@ export function useProjectPreview(projectId: string, root: string, projectRoot =
       const saved = preferredTarget(projectId);
       const selected =
         next.targets.find((target) => target.id === saved) ??
-        next.targets.find((target) => target.runnable) ??
+        next.targets.find((target) => target.runnable && target.kind !== "desktop") ??
         next.targets[0];
       setInspecting(false);
       setTargetId(selected?.id ?? "");

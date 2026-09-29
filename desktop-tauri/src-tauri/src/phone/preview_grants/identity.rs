@@ -7,7 +7,44 @@ pub(super) fn same_slot(left: &Grant, right: &Grant) -> bool {
         && left.account_id == right.account_id
         && left.project_id == right.project_id
         && left.source_root == right.source_root
-        && left.target_id == right.target_id
+        && same_surface(&left.target_id, &right.target_id)
+}
+
+fn same_surface(left: &str, right: &str) -> bool {
+    if left == right {
+        return true;
+    }
+    match (
+        crate::window_preview::Target::parse(left),
+        crate::window_preview::Target::parse(right),
+    ) {
+        (Ok(Some(left)), Ok(Some(right))) => left.id == right.id && left.pid == right.pid,
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::same_surface;
+    #[test]
+    fn native_permission_changes_replace_only_the_same_window() {
+        assert!(same_surface(
+            "native-window:12:34:view",
+            "native-window:12:34:control"
+        ));
+        assert!(!same_surface(
+            "native-window:12:34:view",
+            "native-window:12:35:control"
+        ));
+        assert!(!same_surface(
+            "native-window:12:34:view",
+            "native-window:13:34:control"
+        ));
+        assert!(!same_surface(
+            "attached-port:3000",
+            "native-window:12:34:control"
+        ));
+    }
 }
 
 pub(super) fn validate_id(value: &str) -> Result<(), String> {

@@ -68,6 +68,20 @@ pub(super) fn request_headers(
     Ok(result)
 }
 
+/// A redirect to the site's own address, under any loopback name it uses for
+/// itself, becomes a path so the phone stays on its private origin.
+fn site_path<'a>(value: &'a str, origin: &reqwest::Url) -> Option<&'a str> {
+    let port = origin.port()?;
+    ["127.0.0.1", "localhost", "[::1]"].iter().find_map(|host| {
+        let rest = value.strip_prefix(&format!("http://{host}:{port}"))?;
+        if rest.is_empty() {
+            Some("/")
+        } else {
+            rest.starts_with(['/', '?']).then_some(rest)
+        }
+    })
+}
+
 pub(super) fn response_headers(
     source: &HeaderMap,
     origin: &reqwest::Url,
@@ -94,10 +108,8 @@ pub(super) fn response_headers(
         let Ok(value) = value.to_str() else {
             continue;
         };
-        let value = if (key == "location" || key == "x-inertia-location")
-            && value.starts_with(origin.as_str())
-        {
-            &value[origin.as_str().len() - 1..]
+        let value = if key == "location" || key == "x-inertia-location" {
+            site_path(value, origin).unwrap_or(value)
         } else {
             value
         };
@@ -170,8 +182,29 @@ mod tests {
         let mut response = reqwest::header::HeaderMap::new();
         response.insert("x-inertia", "true".parse().unwrap());
         response.insert("x-inertia-location", "/menu".parse().unwrap());
+        response.insert(
+            "location",
+            "http://localhost:5151/login?next=1".parse().unwrap(),
+        );
         let (returned, _) = response_headers(&response, &base);
         assert_eq!(returned["x-inertia"], "true");
         assert_eq!(returned["x-inertia-location"], "/menu");
+        assert_eq!(returned["location"], "/login?next=1");
+    }
+
+    #[test]
+    fn redirects_to_the_site_under_any_loopback_name_become_paths() {
+        let base = reqwest::Url::parse("http://127.0.0.1:5151/").unwrap();
+        for (location, expected) in [
+            ("http://127.0.0.1:5151", "/"),
+            ("http://127.0.0.1:5151/menu", "/menu"),
+            ("http://[::1]:5151/?a=1", "/?a=1"),
+            ("http://127.0.0.1:51510/menu", "http://127.0.0.1:51510/menu"),
+            ("https://example.com/", "https://example.com/"),
+        ] {
+            let mut response = reqwest::header::HeaderMap::new();
+            response.insert("location", location.parse().unwrap());
+            assert_eq!(response_headers(&response, &base).0["location"], expected);
+        }
     }
 }

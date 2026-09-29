@@ -11,7 +11,11 @@ for line in sys.stdin:
  if m in ['thread/start','thread/resume']:
   if m=='thread/resume' and os.path.exists(os.path.join(os.path.dirname(__file__),'fail-resume')):
    print(json.dumps({'id':v['id'],'error':{'message':'Saved thread unavailable'}}),flush=True); continue
-  result={'thread':{'id':'fixture-thread'}}
+  missing=os.path.exists(os.path.join(os.path.dirname(__file__),'missing-rollout'))
+  if m=='thread/resume' and missing and v['params']['threadId']=='fixture-thread':
+   print(json.dumps({'id':v['id'],'error':{'message':'no rollout found for thread id fixture-thread'}}),flush=True); continue
+  thread='new-unused-thread' if missing else 'fixture-thread'
+  result={'thread':{'id':thread},'model':'fixture-model','approvalPolicy':'on-request','sandbox':{'type':'workspaceWrite'},'reasoningEffort':'medium'}
   with open(os.path.join(os.path.dirname(__file__),'launches'),'a') as f: f.write(json.dumps(v['params'])+'\n')
  elif m=='turn/start':
   n+=1
@@ -51,6 +55,7 @@ for line in sys.stdin:
         error: None,
         local_action: Mutex::new(()),
         wake: Default::default(),
+        preview: Default::default(),
     });
     let session = engine
         .handle(

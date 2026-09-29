@@ -10,6 +10,11 @@ pub(crate) fn receive_generation(shared: &Shared, id: &str, generation: &str, va
     receive_guarded(shared, id, Some(generation), value);
 }
 fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: Value) {
+    if super::run_tool::receive(shared, id, generation, &value)
+        || super::preview_tool::receive(shared, id, generation, &value)
+    {
+        return;
+    }
     let mut state = shared.lock();
     if generation.is_some_and(|g| {
         state
@@ -52,11 +57,15 @@ fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: V
             }
             return;
         }
-        let detail = c
+        let observed = c
             .items
             .iter()
-            .find(|i| i["id"] == p["itemId"])
-            .filter(|i| i["truncated"] != true)
+            .find(|i| i["id"] == p["itemId"] && i["turnId"] == p["turnId"])
+            .filter(|i| i["truncated"] != true);
+        let observed_command = observed
+            .filter(|i| i["category"] == "commandExecution")
+            .and_then(|i| i["command"].as_str());
+        let detail = observed
             .and_then(|i| i["detail"].as_str())
             .unwrap_or("")
             .to_owned();
@@ -67,7 +76,7 @@ fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: V
             .filter(|i| matches!(i["status"].as_str(), Some("pending" | "responding")))
             .count();
         item = if pending_count < 2 {
-            requests::pending(method, &value["id"], p, &detail)
+            requests::pending_observed(method, &value["id"], p, &detail, observed_command)
         } else {
             None
         };
@@ -165,7 +174,8 @@ fn receive_guarded(shared: &Shared, id: &str, generation: Option<&str>, value: V
                     return;
                 }
                 if p["item"]["type"] == "dynamicToolCall"
-                    && p["item"]["tool"] == super::question_tool::NAME
+                    && (p["item"]["tool"] == super::question_tool::NAME
+                        || p["item"]["tool"] == super::run_tool::NAME)
                 {
                     if method == "item/completed" {
                         item = super::acknowledgement::resolved(c, &p["item"]["id"], true);

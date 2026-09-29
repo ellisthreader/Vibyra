@@ -50,6 +50,17 @@ impl Bridge {
         }
     }
     pub fn provider(&self, value: &Value) -> bool {
+        // Host-owned tools are answered by the engine, never the CLI peer.
+        // They are still recorded, or `claim_response` drops the engine's answer.
+        if value["method"] == "item/tool/call"
+            && (value["params"]["tool"] == super::preview_tool::NAME
+                || value["params"]["tool"] == super::run_tool::NAME)
+        {
+            self.pending
+                .lock()
+                .insert(value["id"].to_string(), value.clone());
+            return false;
+        }
         if value.get("method").is_none() {
             let key = value["id"].as_str().unwrap_or("");
             let route = self.routes.lock().remove(key);

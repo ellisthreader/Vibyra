@@ -1,4 +1,4 @@
-//! Mac-owned grants for remote website Preview.
+//! Mac-owned grants for remote website and native-window Preview.
 use current::current_identity;
 use identity::absolute_root;
 use parking_lot::Mutex;
@@ -22,6 +22,10 @@ pub(super) struct Grant {
     target_fingerprint: String,
     #[serde(default = "attached::root_path")]
     start_path: String,
+    /// Set on a window grant made for the phone that ran the app; it ends
+    /// with that run, and never outlives Vibyra.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    run: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,18 +59,23 @@ pub(crate) struct PreviewGrants {
     account: Mutex<Option<String>>,
     grants: Mutex<Vec<Grant>>,
     automatic: Mutex<Vec<AutomaticDevice>>,
+    runs: Mutex<Vec<runs::RunApproval>>,
     disabled: AtomicBool,
 }
 
 impl PreviewGrants {
     /// Corrupt or unreadable state fails closed.
     pub fn load(state_dir: PathBuf) -> Result<Self, String> {
-        let (grants, automatic) = store::load(&state_dir)?;
+        let (mut grants, automatic) = store::load(&state_dir)?;
+        // Their app died with the previous Vibyra.
+        grants.retain(|grant| grant.run.is_none());
+        let runs = runs_store::load(&state_dir)?;
         Ok(Self {
             state_dir,
             account: Mutex::new(None),
             grants: Mutex::new(grants),
             automatic: Mutex::new(automatic),
+            runs: Mutex::new(runs),
             disabled: AtomicBool::new(false),
         })
     }
@@ -106,7 +115,10 @@ impl PreviewGrants {
             current_identity(&source_root, target_id)?;
         let start_path = attached::start_path(&grant.start_path)?;
         if canonical_root != grant.canonical_root || fingerprint != grant.target_fingerprint {
-            return Err("Preview changed on the Mac; approve it again".into());
+            return Err(format!(
+                "Preview changed on the {}; approve it again",
+                crate::window_preview::host_noun()
+            ));
         }
         let active = self.account.lock();
         if self.disabled.load(Ordering::SeqCst)
@@ -135,4 +147,11 @@ mod identity;
 mod inventory;
 mod lookup;
 mod revoke;
+mod run_fingerprint;
+mod run_grants;
+pub(crate) mod runs;
+mod runs_store;
 mod store;
+
+pub(crate) use run_fingerprint::run_fingerprint;
+pub(crate) use run_grants::run_root;

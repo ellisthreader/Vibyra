@@ -14,6 +14,7 @@ import { PreviewAddress } from "./PreviewAddress";
 import { PreviewToolbar } from "./PreviewToolbar";
 import { useProjectPreview } from "./useProjectPreview";
 import { attachedPreviewPort } from "../../lib/previewAttached";
+import { NativeWindowShare } from './NativeWindowShare';
 
 interface Props {
   projectId: string;
@@ -41,6 +42,7 @@ export function PreviewWorkspace({ projectId, shareProjectId, root, projectRoot 
   return (
     <div className="preview-workspace">
       <PreviewAddress url={active.status.url} onOpen={setManualUrl} />
+      {shareProjectId && <NativeWindowShare key={`${shareProjectId}:${root}`} projectId={shareProjectId} root={root} />}
       <PreviewSurface
         key={surfaceKey}
         projectId={projectId}

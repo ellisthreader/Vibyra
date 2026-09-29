@@ -28,7 +28,7 @@ pub fn run_step(
     on_line: &dyn Fn(String),
     cancel: &AtomicBool,
 ) -> CoreResult<StepOutcome> {
-    let mut command = Command::new(resolve_program(&step.program));
+    let mut command = Command::new(crate::launch_env::resolve_program(&step.program));
     command
         .args(&step.args)
         .current_dir(&step.cwd)
@@ -107,24 +107,6 @@ fn pump(source: impl Read + Send + 'static, sender: Sender<String>) {
             }
         }
     });
-}
-
-/// Node ships its CLIs as `.cmd` shims on Windows, and `Command` without a
-/// shell will not find the extensionless name. The cfg-only import stays
-/// inside the function so a Linux build cannot hide a Windows break.
-#[cfg(windows)]
-fn resolve_program(program: &str) -> String {
-    const SHIMMED: [&str; 4] = ["npm", "npx", "yarn", "pnpm"];
-    if SHIMMED.contains(&program) {
-        format!("{program}.cmd")
-    } else {
-        program.to_owned()
-    }
-}
-
-#[cfg(not(windows))]
-fn resolve_program(program: &str) -> String {
-    program.to_owned()
 }
 
 #[cfg(unix)]

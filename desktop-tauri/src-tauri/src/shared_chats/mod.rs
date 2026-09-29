@@ -4,6 +4,7 @@ pub mod desktop_stream;
 mod launch_tests;
 mod lifecycle;
 mod registry;
+mod preview;
 mod routes;
 mod stream;
 #[cfg(test)]
@@ -27,6 +28,8 @@ pub struct SharedChats {
     cli: cli::CliTerminals,
     /// Wakes `subscribe` threads when a project is added.
     wake: stream::Wake,
+    /// Preview status and run for every engine, loaded or created later.
+    preview: Mutex<Option<preview::Providers>>,
 }
 
 impl SharedChats {
@@ -43,6 +46,7 @@ impl SharedChats {
             local_action: Mutex::new(()),
             cli: cli::CliTerminals::default(),
             wake: stream::Wake::default(),
+            preview: Mutex::new(None),
         })
     }
     fn check(&self) -> Result<(), String> {
@@ -101,6 +105,7 @@ impl SharedChats {
                 let mut project = Project::new(project_id.clone(), name, root, account_id)?;
                 project.provider = provider.clone();
                 let engine = registry::open(&self.path, &project)?;
+                self.apply_preview(&engine);
                 let mut projects: Vec<_> = slots.iter().map(|slot| slot.project.clone()).collect();
                 projects.push(project.clone());
                 registry::save(&self.path, &projects)?;
@@ -197,3 +202,7 @@ mod native_cli_tests;
 
 #[cfg(all(test, unix))]
 mod resume_tests;
+#[cfg(test)]
+mod phone_resume_tests;
+#[cfg(test)]
+mod unused_resume_tests;

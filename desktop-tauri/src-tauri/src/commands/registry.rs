@@ -11,7 +11,7 @@ use tauri::Wry;
 use super::{
     account, account_billing, account_security, agent_conversations, agent_install, agents, ai,
     ai_memory, ai_service, clipboard, fs, github_publish, memory, memory_browser, model_watch,
-    perf, phone, preview, preview_share, project_brief, provider_accounts, render, report,
+    perf, phone, preview, preview_share, preview_windows, project_brief, provider_accounts, render, report,
     scaffold, screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli,
     shortcuts, speech, speech_synthesis, teammate_upload, teammates, terminal, voice,
 };
@@ -31,6 +31,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         shared_cli::shared_cli_resize,
         shared_cli::shared_cli_visibility,
         shared_chats::shared_chat_list,
+        shared_chats::shared_chat_account_models,
         shared_chats::shared_chat_lookup_create,
         shared_chats::shared_chat_open_link,
         shared_chats::shared_chat_remove_project,
@@ -146,6 +147,9 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         session::ack_close_request,
         settings::get_settings,
         settings::save_settings,
+        preview_windows::preview_windows_available,
+        preview_windows::preview_windows_list,
+        preview_windows::preview_windows_permission,
         screenshot::capture_screen,
         screenshot::finish_screenshot_edit,
         screenshot::copy_screenshot,

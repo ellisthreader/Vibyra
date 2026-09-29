@@ -6,6 +6,13 @@ pub(super) fn current_identity(
     root: &Path,
     target_id: &str,
 ) -> Result<(PathBuf, String, Option<u16>), String> {
+    if let Some(target) = crate::window_preview::Target::parse(target_id)? {
+        let canonical = root.canonicalize().map_err(|e| e.to_string())?;
+        if !canonical.is_dir() {
+            return Err("Preview project folder is unavailable".into());
+        }
+        return Ok((canonical, target.info()?.fingerprint, None));
+    }
     if let Some(port) = attached::port(target_id)? {
         let (canonical, fingerprint) = attached::identity(root, port)?;
         return Ok((canonical, fingerprint, Some(port)));
@@ -28,6 +35,11 @@ fn current_target(root: &Path, target_id: &str) -> Result<(PathBuf, PreviewTarge
         .targets
         .into_iter()
         .find(|item| item.id == target_id)
-        .ok_or("Preview target changed on the Mac")?;
+        .ok_or_else(|| {
+            format!(
+                "Preview target changed on the {}",
+                crate::window_preview::host_noun()
+            )
+        })?;
     Ok((PathBuf::from(inspection.project_root), target))
 }

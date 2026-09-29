@@ -1,13 +1,25 @@
-use super::{runtime::Runtime, stream};
+use super::{resume_thread::resume_thread, runtime::Runtime, stream};
 use crate::Engine;
 use serde_json::{json, Value};
 use std::{path::PathBuf, sync::Arc};
 
 impl Engine {
-    /// Local Desktop action only. The caller serializes actions; no caller-supplied
+    pub fn can_resume_desktop_conversation(&self, id: &str) -> bool {
+        let state = self.shared.lock();
+        self.conversation_launch.account
+            && state
+                .session(id)
+                .is_ok_and(|session| session.meta.kind == "codex")
+            && state
+                .conversations
+                .get(id)
+                .is_some_and(|c| !c.thread_id.is_empty() && c.working_directory.is_some())
+    }
+
+    /// Desktop-managed action. The caller serializes actions; no caller-supplied
     /// account, folder, policy or thread ID can replace the saved identity.
     pub fn resume_desktop_conversation(&self, id: &str) -> Result<Value, String> {
-        let (cwd, thread, generation, params, old_runtime) = {
+        let (cwd, thread, generation, params, old_runtime, unused) = {
             let mut state = self.shared.lock();
             let session = state.session(id)?;
             if session.meta.kind != "codex" || !self.conversation_launch.account {
@@ -49,6 +61,14 @@ impl Engine {
             {
                 return Err("The saved working folder changed; restore it before resuming".into());
             }
+            let (history, more) = state.journal.history_page(id, None)?;
+            let unused = history.is_empty()
+                && !more
+                && c.items.is_empty()
+                && c.receipts.is_empty()
+                && c.turn_id.is_none()
+                && c.turn_started_at.is_none()
+                && c.active_submission.is_none();
             let thread = c.thread_id.clone();
             let mut params = json!({"threadId":thread,"cwd":cwd,"excludeTurns":true});
             // The provider's saved thread carries its policy; explicit effective
@@ -80,7 +100,7 @@ impl Engine {
             session.meta.status = "interrupted".into();
             session.generation = generation.clone();
             session.lease = None;
-            (cwd, thread, generation, params, old_runtime)
+            (cwd, thread, generation, params, old_runtime, unused)
         };
         if let Some(old) = old_runtime {
             old.stop();
@@ -92,8 +112,14 @@ impl Engine {
                 stream::receive_generation(&shared, &event_id, &generation, event);
             }
         })?;
-        let effective = resume_thread(&runtime, params)?;
-        if effective["thread"]["id"].as_str() != Some(&thread) || runtime.exited() {
+        let (effective, restarted_unused) = resume_thread(&runtime, params, unused)?;
+        let restored_thread = effective["thread"]["id"]
+            .as_str()
+            .filter(|id| !id.is_empty());
+        if restored_thread.is_none()
+            || (!restarted_unused && restored_thread != Some(&thread))
+            || runtime.exited()
+        {
             return Err(
                 "Codex did not restore the saved thread. Its saved history is unchanged.".into(),
             );
@@ -109,6 +135,7 @@ impl Engine {
             .conversations
             .get_mut(id)
             .ok_or("Conversation disappeared")?;
+        c.thread_id = restored_thread.unwrap().to_owned();
         c.runtime = Some(runtime);
         c.process_state = "running".into();
         c.turn_state = "idle".into();
@@ -135,23 +162,4 @@ impl Engine {
         state.emit("host.changed", json!({}));
         Ok(result)
     }
-}
-
-// A terminated provider may take a moment to release its OS writer lock.
-// Retry only a definitive lock refusal, never an unknown acknowledgement.
-fn resume_thread(runtime: &Runtime, params: Value) -> Result<Value, String> {
-    for attempt in 0..6 {
-        match runtime.request("thread/resume", params.clone()) {
-            Ok(value) => return Ok(value),
-            Err(error)
-                if !error.unknown
-                    && error.message.contains("already has an active writer")
-                    && attempt < 5 =>
-            {
-                std::thread::sleep(std::time::Duration::from_millis(100 << attempt));
-            }
-            Err(error) => return Err(error.into()),
-        }
-    }
-    unreachable!()
 }

@@ -41,6 +41,12 @@ impl PreviewGrants {
             }
             *active = Some(id.to_owned());
         }
-        Ok(())
+        drop((current, automatic, active));
+        // No account (a Keychain read that found nothing) hides approvals
+        // without deleting them; only a different account removes them.
+        match account_id {
+            Some(_) => self.keep_runs_for(account_id),
+            None => Ok(()),
+        }
     }
 }

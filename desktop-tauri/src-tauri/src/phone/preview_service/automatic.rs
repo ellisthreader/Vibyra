@@ -1,7 +1,6 @@
 use super::{discovery, Binding, PreviewService};
 use serde_json::{json, Value};
 use std::collections::HashSet;
-use std::sync::atomic::Ordering;
 use vibyra_core::preview::PreviewPhase;
 
 impl PreviewService {
@@ -10,7 +9,8 @@ impl PreviewService {
         device: &str,
         already_granted: &HashSet<(String, u16)>,
     ) -> Vec<Value> {
-        if !self.inner.grants.automatic(device) || !self.inner.typing.load(Ordering::SeqCst) {
+        // Seeing a site is not typing into the Mac: the typing switch does not gate it.
+        if !self.inner.grants.automatic(device) {
             self.inner
                 .automatic
                 .lock()
@@ -21,12 +21,9 @@ impl PreviewService {
         let mut servers = discovery::running(&projects);
         let mut known = self.inner.automatic.lock();
         let mut keep = HashSet::new();
-        let mut listed = HashSet::new();
         let mut results = Vec::new();
+        // Every site a project runs is listed: an app and its API docs, a worktree's copy.
         for server in servers.drain(..) {
-            if !listed.insert(server.project_id.clone()) {
-                continue;
-            }
             if already_granted.contains(&(server.project_id.clone(), server.port)) {
                 continue;
             }
@@ -51,7 +48,8 @@ impl PreviewService {
             results.push(json!({"grantId":id,"projectId":server.project_id,
                 "targetId":format!("auto-port:{}",server.port),
                 "running":true,
-                "name":format!("Current site on port {}",server.port)}));
+                "name":format!("Current site on port {}",server.port),
+                "worktree":server.root != server.project_root}));
             known.insert((device.into(), id), server);
         }
         known.retain(|(owner, id), _| owner != device || keep.contains(id));
@@ -72,7 +70,7 @@ impl PreviewService {
         else {
             return Ok(None);
         };
-        if !self.inner.typing.load(Ordering::SeqCst) || !self.inner.grants.automatic(device) {
+        if !self.inner.grants.automatic(device) {
             return Err("Automatic Preview is off for this phone".into());
         }
         let root = self
@@ -81,7 +79,7 @@ impl PreviewService {
             .read()
             .project_root(&server.project_id)
             .and_then(|path| path.canonicalize().ok());
-        if root.as_ref() != Some(&server.root) || !discovery::owns(&server) {
+        if root.as_ref() != Some(&server.project_root) || !discovery::owns_now(&server) {
             return Err("The running site changed. Tap Preview again.".into());
         }
         Ok(Some(server))
@@ -100,9 +98,11 @@ impl PreviewService {
         let mut bytes = [0u8; 8];
         getrandom::fill(&mut bytes).map_err(|error| error.to_string())?;
         let generation = u64::from_be_bytes(bytes).max(1);
-        let origin = reqwest::Url::parse(&format!("http://127.0.0.1:{}/", server.port))
+        let host = if server.ipv6 { "[::1]" } else { "127.0.0.1" };
+        let origin = reqwest::Url::parse(&format!("http://{host}:{}/", server.port))
             .map_err(|error| error.to_string())?;
         let binding = Binding {
+            window: None,
             grant_id: id.into(),
             canonical_root: server.root.clone(),
             root: server.root.clone(),

@@ -132,7 +132,8 @@ export function phonePublishWorkspace(
 /** What a phone asked this window to do: start a terminal in a project, or
  * close one — a pane by its number, a shared chat by its id. */
 export type PhoneTerminalRequest =
-  | { id: string; action: "create"; projectId: string; kind: "shell" | "codex" | "claude"; title: string; requestId: string }
+  | { id: string; action: "models" }
+  | { id: string; action: "create"; projectId: string; kind: "shell" | import("../lib/phoneTerminalModels").PhoneTerminalRunner; title: string; requestId: string; safeMode?: boolean; model?: string; effort?: string | null; permissionMode?: "standard" | "full" }
   | { id: string; action: "close"; paneId?: number; conversationId?: string }
   // A project the phone's wizard has just built on this Mac. Rust made the
   // folder; only this window can put it in the list it publishes.
@@ -140,7 +141,9 @@ export type PhoneTerminalRequest =
   // The list again: what a project is called here, and whether it is listed at
   // all. Neither touches the folder on disk.
   | { id: string; action: "rename"; projectId: string; name: string }
-  | { id: string; action: "forget"; projectId: string };
+  | { id: string; action: "forget"; projectId: string }
+  | { id: string; action: "accountDefaults" }
+  | { id: string; action: "accountDefault"; provider: string; account: string };
 
 /** The answer a start gives back — which pane or chat it became. */
 export type PhoneTerminalStarted = { paneId: number } | { conversationId: string };
@@ -154,7 +157,7 @@ export function phoneTerminalRequests(): Promise<PhoneTerminalRequest[]> {
 
 export function phoneTerminalReply(
   id: string,
-  answer: { result?: PhoneTerminalStarted | PhoneProjectOpened | { ok: true }; error?: string },
+  answer: { result?: PhoneTerminalStarted | PhoneProjectOpened | { ok: true } | Record<string, string> | { models: import("../lib/phoneTerminalModels").PhoneTerminalModel[] }; error?: string },
 ): Promise<boolean> {
   return invoke("phone_terminal_reply", { id, result: answer.result ?? null, error: answer.error ?? null });
 }

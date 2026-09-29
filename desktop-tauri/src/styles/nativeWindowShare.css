@@ -1,0 +1,16 @@
+.preview-native-share {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.preview-native-share > summary { cursor: pointer; font-weight: 600; }
+.preview-native-share > small { display: block; color: var(--dim); margin: 10px 0; }
+.preview-native-share > label { display: flex; flex-direction: column; gap: 5px; margin: 10px 0; }
+.preview-native-share select {
+  width: 100%; min-width: 0; height: 34px; padding: 0 8px;
+  border: 1px solid var(--line-soft); border-radius: 7px;
+  color: inherit; background: var(--workspace); font: inherit;
+}
+.preview-native-share > .btn { margin-bottom: 2px; }
+.preview-native-share > .preview-share-control { margin-top: 12px; }

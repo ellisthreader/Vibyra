@@ -3,7 +3,9 @@ use crate::{identifier, text, Engine};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
+#[cfg(test)]
 pub(crate) use super::permission_request::pending;
+pub(crate) use super::permission_request::pending_observed;
 pub(super) fn answers(item: &Value, params: &Value) -> Result<Value, String> {
     let supplied = params["answers"]
         .as_object()
@@ -76,7 +78,11 @@ impl Engine {
             let decision = text(params, "decision")?;
             if !matches!(
                 decision,
-                "accept" | "decline" | "acceptForSession" | "acceptForProject"
+                "accept"
+                    | "decline"
+                    | "acceptForSession"
+                    | "acceptForProject"
+                    | "acceptWithExecpolicyAmendment"
             ) {
                 return Err("Choose Allow once or Decline".into());
             }
@@ -84,6 +90,12 @@ impl Engine {
                 && (device != "desktop" || super::policy::rule_key(&item).is_none())
             {
                 return Err("Saved command trust must be approved on your Mac".into());
+            }
+            if decision == "acceptWithExecpolicyAmendment"
+                && (item["method"] != "item/commandExecution/requestApproval"
+                    || super::provider_decision::command_rule(&item["action"]).is_none())
+            {
+                return Err("This Codex rule is unavailable for this request".into());
             }
             if decision != "acceptForProject"
                 && !item["choices"]
@@ -96,7 +108,19 @@ impl Engine {
                 json!({"permissions":if decision == "decline" {json!({})} else {item["action"]["permissions"].clone()},
                     "scope":if decision == "acceptForSession" {"session"} else {"turn"}})
             } else {
-                json!({"decision":if decision == "acceptForProject" {"accept"} else {decision}})
+                let provider_decision = if decision == "acceptForProject" {
+                    json!("accept")
+                } else if decision == "acceptWithExecpolicyAmendment" {
+                    super::provider_decision::command_rule(&item["action"])
+                        .unwrap()
+                        .0
+                } else if decision == "decline" {
+                    super::provider_decision::decline(&item["action"])
+                        .ok_or("This provider no longer offers Decline")?
+                } else {
+                    json!(decision)
+                };
+                json!({"decision":provider_decision})
             }
         } else {
             return Err("Wrong response type for this request".into());
@@ -144,6 +168,11 @@ impl Engine {
         if params["decision"] == "acceptForProject" {
             let project = state.session(id)?.meta.project_id.clone();
             state.journal.save_trust(&project, &item)?;
+        }
+        if item["action"]["tool"] == super::run_tool::NAME {
+            drop(state);
+            super::run_tool::resolve(&self.shared, id, &item, device, runtime);
+            return Ok(json!({"decisionId":decision_id,"status":"responding"}));
         }
         let written = runtime.write(json!({"id":item["rpcId"],"result":result}));
         if written.is_err() {

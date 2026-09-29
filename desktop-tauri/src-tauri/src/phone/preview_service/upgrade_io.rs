@@ -15,7 +15,13 @@ pub(super) fn connect(
     request.validate()?;
     request_url(&binding.origin, &request.path)?;
     let port = binding.origin.port().ok_or("Preview port missing")?;
-    let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    // An IPv6-only site (`[::1]`) is dialled where it listens.
+    let ipv6 = binding.origin.host_str() == Some("[::1]");
+    let address = if ipv6 {
+        SocketAddr::from((std::net::Ipv6Addr::LOCALHOST, port))
+    } else {
+        SocketAddr::from((Ipv4Addr::LOCALHOST, port))
+    };
     let mut socket =
         TcpStream::connect_timeout(&address, Duration::from_secs(3)).map_err(|e| e.to_string())?;
     socket
@@ -25,7 +31,7 @@ pub(super) fn connect(
         .set_write_timeout(Some(Duration::from_secs(3)))
         .map_err(|e| e.to_string())?;
     let key = header(&request.headers, "sec-websocket-key").ok_or("Missing WebSocket key")?;
-    let host = format!("127.0.0.1:{port}");
+    let host = format!("{}:{port}", if ipv6 { "[::1]" } else { "127.0.0.1" });
     let mut wire = format!(
         "GET {} HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: {key}\r\n",
         request.path

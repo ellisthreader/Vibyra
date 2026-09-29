@@ -1,4 +1,4 @@
-use super::PreviewService;
+use super::{discovery, PreviewService};
 use crate::phone::preview_grants::attached;
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -6,6 +6,9 @@ use vibyra_core::preview::PreviewPhase;
 
 impl PreviewService {
     pub fn list(&self, device: &str) -> Value {
+        self.list_kinds(device, false)
+    }
+    pub(super) fn list_kinds(&self, device: &str, windows: bool) -> Value {
         let workspace = self.inner.workspace.read();
         let scopes = self
             .inner
@@ -13,13 +16,21 @@ impl PreviewService {
             .list_for_device(device)
             .into_iter()
             .filter_map(|scope| {
+                let native = crate::window_preview::Target::parse(&scope.target_id).ok()?;
+                if native.is_some() && !windows { return None; }
                 let approved = self
                     .inner
                     .grants
                     .authorize_id(device, &scope.id, &workspace)
                     .ok()?;
-                let live = if let Some(port) = approved.attached_port {
+                let info = native.and_then(|target| target.info().ok());
+                let live = if native.is_some() { info.is_some() } else if let Some(port) = approved.attached_port {
                     attached::origin(port).is_ok()
+                        && discovery::running_for_root(
+                            &workspace.preview_projects(),
+                            &approved.root,
+                            port,
+                        )
                 } else {
                     approved
                         .source_root
@@ -31,8 +42,9 @@ impl PreviewService {
                     json!({"grantId":scope.id,"projectId":scope.project_id,
                 "targetId":scope.target_id,
                 "running":live,
-                "name":scope.target_id.strip_prefix("attached-port:")
-                    .map(|port| format!("Local server on port {port}"))}),
+                "kind":if native.is_some() {"window"} else {"web"},
+                "name":info.map(|info| format!("{} · {}", info.name, info.title)).or_else(|| scope.target_id.strip_prefix("attached-port:")
+                    .map(|port| format!("Local server on port {port}")))}),
                     approved.attached_port,
                     live,
                 ))

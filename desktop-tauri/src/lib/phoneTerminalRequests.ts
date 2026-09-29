@@ -1,3 +1,12 @@
+import { invoke } from '@tauri-apps/api/core';
+import { resolveLaunchAccount } from './resolveLaunchAccount';
+import { useProviderAccountStore } from '../state/providerAccountStore';
+import type { AccountModel } from './phoneAccountModels';
+import { useProviderDefaultStore } from "../state/providerDefaultStore";
+import { useModelCatalogStore } from "../state/modelCatalogStore";
+import { useSettingsStore } from "../state/settingsStore";
+import { phoneTerminalModels } from "./phoneTerminalModels";
+import type { LaunchEffort } from "../state/launchSettingsStore";
 import { listen } from "@tauri-apps/api/event";
 
 import { chatRequest } from "../ipc/sharedChats";
@@ -9,6 +18,7 @@ import { useProjectStore } from "../state/projectStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { launchConfigured } from "./configuredLaunch";
 import { answerTerminalRequest, type RequestDeps } from "./phoneTerminalAnswer";
+import { useNotificationStore } from "../state/notificationStore";
 import type { ResolvedAgent } from "../types";
 
 // A phone paired to this Mac can ask for a terminal in a project, or for one
@@ -32,12 +42,48 @@ async function closeChat(id: string): Promise<void> {
   await terminals.refresh();
 }
 
+let launchProblem: string | null = null;
+
 const storeDeps: RequestDeps = {
+  accountDefaults: () => useProviderDefaultStore.getState().byRuntime,
+  accountDefault: (provider, account) => useProviderDefaultStore.getState().setDefault(provider, account),
   agents,
+  models: async () => {
+    // The Mac already has a usable live/cache/static catalogue. Network refresh
+    // must never hold the encrypted request open beyond its 15-second deadline.
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([useModelCatalogStore.getState().refresh(),
+        new Promise<void>(resolve => { timeout = setTimeout(resolve, 3000); })]);
+    } finally { clearTimeout(timeout); }
+    if (!useProviderAccountStore.getState().loaded) await useProviderAccountStore.getState().refresh();
+    const kinds = ['codex', 'claude', 'gemini'] as const;
+    const advertised = await Promise.all(kinds.map(async provider => {
+      const account = resolveLaunchAccount(provider);
+      const result = account ? await invoke<{ data: AccountModel[] }>('shared_chat_account_models', { provider, accountId: account }) : { data: [] };
+      if (resolveLaunchAccount(provider) !== account) throw new Error('Your AI account changed. Refresh models.');
+      return [provider, result.data] as const;
+    }));
+    return phoneTerminalModels(useModelCatalogStore.getState().fullGroups, await agents(),
+      useSettingsStore.getState().settings?.enabledAgentIds ?? [], Object.fromEntries(advertised));
+  },
   // The phone's page is the chat itself, so what it asks for is the Chat route:
   // Claude and Gemini go through the conversation engine like Codex, whatever
   // Agent view this Mac keeps for its own panes.
-  launch: (agent, projectId, title) => launchConfigured(agent, projectId, { title, view: "chat" }),
+  launch: async (agent, projectId, title, safeMode, requestId, selected, permissionMode) => {
+    // A failed launch reports on this Mac as a notification; keep its words for the phone.
+    const since = Math.max(0, ...useNotificationStore.getState().history.map(item => item.id));
+    const started = await launchConfigured(agent, projectId, {
+      title, view: "chat", safeMode, requestId,
+      ...(permissionMode ? { permissionMode } : {}),
+      ...(selected ? { model: selected.model, reasoningEnabled: selected.effort !== null,
+        reasoningEffort: selected.effort as LaunchEffort | undefined } : {}),
+    });
+    launchProblem = started.length ? null : useNotificationStore.getState().history
+      .find(item => item.id > since && item.category === "system" && item.severity === "danger")?.body ?? null;
+    return started;
+  },
+  lastError: () => launchProblem,
   approvalPending: () => useLaunchApprovalStore.getState().pending !== null,
   closePane: (id) => useTerminalStore.getState().close(id),
   closeChat,

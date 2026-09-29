@@ -134,3 +134,29 @@ pub fn shared_chat_open_link(url: String) -> Result<(), String> {
     crate::provider_auth_url::open(parsed.as_str())
         .map_err(|_| "Could not open this web link".into())
 }
+
+#[tauri::command]
+pub async fn shared_chat_account_models(
+    state: State<'_, AppState>,
+    provider: String,
+    account_id: String,
+) -> Result<Value, String> {
+    let accounts = state.provider_auth.clone();
+    super::run_blocking(move || {
+        if !accounts.signed_in(&provider, &account_id)? {
+            return Err("Connect this AI account first".into());
+        }
+        let home = crate::provider_auth_registry::Registry::load().home(&provider, &account_id)?;
+        let environment = if provider == "codex" {
+            vec![(
+                "CODEX_HOME".into(),
+                home.credentials_dir().to_string_lossy().into_owned(),
+            )]
+        } else {
+            home.env().into_iter().collect()
+        };
+        vibyra_engine::Engine::account_models(provider, environment)
+    })
+    .await
+}
+

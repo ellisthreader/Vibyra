@@ -1,4 +1,7 @@
 mod access;
+mod ai_accounts;
+#[cfg(test)]
+mod ai_accounts_tests;
 pub mod address;
 mod notifications;
 mod preferences;
@@ -18,6 +21,8 @@ mod manage;
 mod manage_chat_tests;
 #[cfg(test)]
 mod manage_tests;
+#[cfg(test)]
+mod manage_permission_tests;
 #[cfg(test)]
 mod preview_attached_fixture;
 #[cfg(test)]
@@ -45,6 +50,10 @@ mod preview_service_tests;
 mod preview_upgrade_handshake;
 #[cfg(test)]
 mod preview_upgrade_tests;
+#[cfg(all(test, target_os = "macos"))]
+mod preview_window_tests;
+#[cfg(all(test, target_os = "macos"))]
+mod preview_window_live;
 mod railway;
 mod railway_resources;
 mod railway_tools;
@@ -116,6 +125,7 @@ pub struct PhoneConnection {
     pub vault: Arc<vault::Vault>,
     /// Terminals a phone asked the window to start or close, awaiting it.
     pub requests: Arc<requests::TerminalRequests>,
+    provider_auth: Option<Arc<crate::provider_auth::ProviderAuthManager>>,
     preview_service: Option<Arc<preview_service::PreviewService>>,
 }
 impl PhoneConnection {
@@ -174,6 +184,7 @@ impl PhoneConnection {
             self.requests.clone(),
             self.preview_service.clone().map(|preview| preview as _),
         )?;
+        let terminal = terminal.with_provider_auth(self.provider_auth.clone());
         let backend: Arc<dyn vibyra_host::Backend> = match &self.chats {
             Some(chats) => Arc::new(shared_backend::SharedBackend {
                 terminal,

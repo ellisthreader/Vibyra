@@ -84,6 +84,27 @@ fn custom_questions_use_the_native_cli_question_ui_and_keep_phone_contract() {
         .contains("Blue"));
 }
 #[test]
+fn engine_answers_preview_status_while_a_terminal_is_attached() {
+    let (b, rx) = bridge();
+    let call = json!({"id":7,"method":"item/tool/call","params":{"threadId":"thread","turnId":"turn",
+        "callId":"call","tool":"vibyra_preview_status","arguments":{}}});
+    assert!(!b.provider(&call));
+    assert!(rx.try_recv().is_err());
+    let answer = json!({"id":7,"result":{"success":true,"contentItems":[]}});
+    assert!(b.claim_response(&answer).is_ok());
+    assert!(b.claim_response(&answer).is_err());
+}
+#[test]
+fn engine_answers_run_app_while_a_terminal_is_attached() {
+    let (b, rx) = bridge();
+    let call = json!({"id":8,"method":"item/tool/call","params":{"threadId":"thread","turnId":"turn",
+        "callId":"call","tool":"vibyra_run_app","arguments":{"command":"npm run tauri:dev"}}});
+    assert!(!b.provider(&call));
+    assert!(rx.try_recv().is_err(), "the CLI never answers the host's tool");
+    let answer = json!({"id":8,"result":{"success":true,"contentItems":[]}});
+    assert!(b.claim_response(&answer).is_ok());
+}
+#[test]
 fn output_overflow_detaches_the_view_instead_of_freezing_the_engine() {
     let (b, _) = bridge();
     for _ in 0..257 {

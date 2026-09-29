@@ -102,7 +102,7 @@ pub(crate) fn matches_framework_script(framework: &str, body: &str) -> bool {
     markers.iter().any(|marker| has_marker(&body, marker))
 }
 
-fn has_marker(body: &str, marker: &str) -> bool {
+pub(crate) fn has_marker(body: &str, marker: &str) -> bool {
     body.match_indices(marker).any(|(index, _)| {
         let before = body[..index].chars().next_back();
         let after = body[index + marker.len()..].chars().next();

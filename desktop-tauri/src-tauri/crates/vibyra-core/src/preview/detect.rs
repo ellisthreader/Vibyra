@@ -5,9 +5,13 @@ use std::path::{Path, PathBuf};
 use crate::{CoreError, CoreResult};
 
 use super::builtin::{detect_laravel, detect_static_or_php};
+use super::desktop_command::custom_target;
+use super::desktop_detect::detect_desktop;
 use super::package::detect_package;
 use super::target::{relative_label, unsupported_target};
-use super::types::{DetectedTarget, PreviewInspection};
+use super::types::{
+    DesktopCommand, DetectedTarget, LaunchRecipe, PreviewInspection, PreviewTarget,
+};
 
 const APP_ROOTS: [&str; 16] = [
     ".",
@@ -28,8 +32,17 @@ const APP_ROOTS: [&str; 16] = [
     "packages/mobile",
 ];
 pub fn inspect_project(root: &str) -> CoreResult<PreviewInspection> {
+    inspect_project_with(root, &[])
+}
+
+/// Detected targets plus the desktop commands an owner approved for this
+/// project that detection does not offer itself.
+pub fn inspect_project_with(
+    root: &str,
+    custom: &[DesktopCommand],
+) -> CoreResult<PreviewInspection> {
     let root = canonical_project_root(root)?;
-    let targets = detect_project(&root)?
+    let targets = detect_with(&root, custom)?
         .into_iter()
         .map(|item| item.target)
         .collect();
@@ -39,14 +52,54 @@ pub fn inspect_project(root: &str) -> CoreResult<PreviewInspection> {
     })
 }
 
-pub(crate) fn detect_target(root: &str, id: &str) -> CoreResult<DetectedTarget> {
+/// The target a proposed desktop command runs: a detected one when it is the
+/// same process, so an approval of one is an approval of the other.
+pub fn desktop_target_for(root: &str, command: &DesktopCommand) -> CoreResult<PreviewTarget> {
     let root = canonical_project_root(root)?;
-    detect_project(&root)?
+    let custom = custom_target(&root, command)?;
+    Ok(detect_project(&root)?
+        .into_iter()
+        .find(|item| same_process(item, &custom))
+        .unwrap_or(custom)
+        .target)
+}
+
+pub(crate) fn detect_target_with(
+    root: &str,
+    id: &str,
+    custom: &[DesktopCommand],
+) -> CoreResult<DetectedTarget> {
+    let root = canonical_project_root(root)?;
+    detect_with(&root, custom)?
         .into_iter()
         .find(|item| item.target.id == id)
         .ok_or_else(|| {
             CoreError::Preview("preview target changed; inspect the project again".into())
         })
+}
+
+fn detect_with(root: &Path, custom: &[DesktopCommand]) -> CoreResult<Vec<DetectedTarget>> {
+    let mut targets = detect_project(root)?;
+    for command in custom {
+        // A command that no longer validates (its script changed, its folder
+        // moved) is simply not offered; approval is asked for again.
+        let Ok(target) = custom_target(root, command) else {
+            continue;
+        };
+        if !targets.iter().any(|item| same_process(item, &target)) {
+            targets.push(target);
+        }
+    }
+    Ok(targets)
+}
+
+fn same_process(a: &DetectedTarget, b: &DetectedTarget) -> bool {
+    match (&a.recipe, &b.recipe) {
+        (LaunchRecipe::Desktop { process: a }, LaunchRecipe::Desktop { process: b }) => {
+            a.program == b.program && a.args == b.args && a.cwd == b.cwd
+        }
+        _ => false,
+    }
 }
 
 fn canonical_project_root(root: &str) -> CoreResult<PathBuf> {
@@ -77,8 +130,7 @@ fn detect_project(root: &Path) -> CoreResult<Vec<DetectedTarget>> {
             continue;
         }
         match detect_app_root(root, &candidate) {
-            Ok(Some(target)) => targets.push(target),
-            Ok(None) => {}
+            Ok(found) => targets.extend(found),
             Err(error) => targets.push(unsupported_target(
                 &relative_label(root, &candidate),
                 "Could not inspect app",
@@ -86,6 +138,7 @@ fn detect_project(root: &Path) -> CoreResult<Vec<DetectedTarget>> {
             )),
         }
         if targets.len() >= 12 {
+            targets.truncate(12);
             break;
         }
     }
@@ -99,13 +152,19 @@ fn detect_project(root: &Path) -> CoreResult<Vec<DetectedTarget>> {
     Ok(targets)
 }
 
-fn detect_app_root(project: &Path, app: &Path) -> CoreResult<Option<DetectedTarget>> {
+/// The site first, then any desktop app: a project can offer both.
+fn detect_app_root(project: &Path, app: &Path) -> CoreResult<Vec<DetectedTarget>> {
     let relative = relative_label(project, app);
-    if let Some(target) = detect_laravel(app, &relative)? {
-        return Ok(Some(target));
-    }
-    if let Some(target) = detect_package(app, &relative)? {
-        return Ok(Some(target));
-    }
-    Ok(detect_static_or_php(app, &relative))
+    let web = match detect_laravel(app, &relative)? {
+        Some(target) => Some(target),
+        None => match detect_package(app, &relative)? {
+            Some(target) => Some(target),
+            None => detect_static_or_php(app, &relative),
+        },
+    };
+    let desktop = detect_desktop(app, &relative)?;
+    // "Cannot run in a browser" says nothing useful once the app itself runs.
+    let web =
+        web.filter(|item| item.target.framework != "Native desktop app" || desktop.is_empty());
+    Ok(web.into_iter().chain(desktop).collect())
 }

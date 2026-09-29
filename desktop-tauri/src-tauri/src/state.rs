@@ -91,16 +91,19 @@ impl AppState {
             crate::phone::preview_grants::PreviewGrants::load(phone_state_dir.clone())
                 .map(Arc::new);
         let preview = PreviewManager::new();
+        preview.set_desktop_probe(Arc::new(crate::preview_probe::Probe));
         let phone_preview = preview_grants
             .as_ref()
             .ok()
             .map(|grants| (preview.clone(), grants.clone()));
-        let phone = Arc::new(crate::phone::PhoneConnection::with_chats_preview(
+        let provider_auth = Arc::new(ProviderAuthManager::default());
+        let phone = Arc::new(crate::phone::PhoneConnection::with_chats_preview_accounts(
             phone_state_dir,
             manager.clone(),
             Some(shared_chats.clone()),
             Some(account.clone()),
             phone_preview,
+            Some(provider_auth.clone()),
         ));
         crate::phone::watch(phone.clone(), manager.clone());
         Self {
@@ -118,7 +121,7 @@ impl AppState {
             openai_api_key,
             env_openai_key,
             usage: Arc::new(AiUsageGuard::new(usage_path)),
-            provider_auth: Arc::new(ProviderAuthManager::default()),
+            provider_auth,
             watcher: Mutex::new(None),
             voice: Mutex::new(None),
             scaffold_runs: Arc::new(Mutex::new(HashMap::new())),

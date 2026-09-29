@@ -10,6 +10,21 @@ the release is built. See [[Mac Setup]] for the publishing steps.
 
 ---
 
+## 0.8.13 — 27 September 2026 (local Mac preview update)
+
+Candidate build 17 adds generic owner-selected native Mac-window preview,
+separate view/control grants and the trusted iPhone viewer. Retains 0.8.12
+phone recovery and approval fixes. This is a local test installation, not
+an updater-feed publication. Art: `public/releases/0.8.13.svg`.
+
+## 0.8.12 — 27 September 2026 (local Mac update)
+
+Installed local build 16 adds phone recovery of saved Codex conversations and the full
+connected-runner model catalogue, explicit permissions and Safe mode. Retains
+the installed 0.8.10 approval amendment fixes. Unused missing-rollout terminals can start in place without replacing any used history. Local build only; no feed publication.
+Art: `public/releases/0.8.12.svg`. Installation acceptance is recorded in
+[[Mac Setup]] and [[App/Saved Terminal Recovery]].
+
 ## 0.8.8 — 24 September 2026 (Linux and Mac)
 
 Codex Terminal's private Unix socket completes its WebSocket handshake in

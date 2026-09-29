@@ -68,8 +68,10 @@ impl DesktopBackend {
             .into());
         }
         let kind = match params["kind"].as_str() {
-            Some(kind @ ("shell" | "codex" | "claude")) => kind,
-            _ => return Err("Choose Terminal, Codex or Claude Code".into()),
+            Some(
+                kind @ ("shell" | "codex" | "claude" | "gemini" | "qwen" | "aider" | "opencode"),
+            ) => kind,
+            _ => return Err("Choose an available terminal runner".into()),
         };
         let title = params["title"]
             .as_str()
@@ -80,13 +82,59 @@ impl DesktopBackend {
             .as_str()
             .filter(|id| !id.is_empty())
             .ok_or("Missing requestId")?;
+        let safe_mode = params
+            .get("safeMode")
+            .map(|value| value.as_bool().ok_or("Safe mode must be on or off"))
+            .transpose()?
+            .unwrap_or(false);
+        let model = params
+            .get("model")
+            .map(|value| {
+                value
+                    .as_str()
+                    .filter(|id| {
+                        !id.is_empty() && id.len() <= 160 && !id.chars().any(char::is_control)
+                    })
+                    .ok_or("Choose a valid model")
+            })
+            .transpose()?;
+        if kind == "shell" && model.is_some() {
+            return Err("A plain terminal does not use an AI model".into());
+        }
+        if !matches!(kind, "shell" | "codex" | "claude") && model.is_none() {
+            return Err("Choose an available model for this terminal runner".into());
+        }
+        let effort = params.get("effort");
+        if let Some(effort) = effort {
+            if kind == "shell" || model.is_none() || !(effort.is_null() || matches!(effort.as_str(),
+                Some("none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"))) {
+                return Err("Choose a supported effort for an AI model".into());
+            }
+        }
+        let permission = params
+            .get("permissionMode")
+            .map(|value| match value.as_str() {
+                Some(mode @ ("standard" | "full")) if kind != "shell" => Ok(mode),
+                _ => Err("Choose Standard or Full permissions for an AI terminal"),
+            })
+            .transpose()?;
+        if permission == Some("full") && !matches!(kind, "codex" | "claude" | "gemini") {
+            return Err("Full permissions are not supported by this AI runner".into());
+        }
         let answer = match self.requests.remembered(request_id) {
             Some(answer) => answer,
             None => {
-                let answer = self
-                    .requests
-                    .ask(json!({"action":"create","projectId":project,
-                    "kind":kind,"title":title,"requestId":request_id}))?;
+                let mut request = json!({"action":"create","projectId":project,
+                    "kind":kind,"title":title,"requestId":request_id});
+                request["safeMode"] = json!(safe_mode);
+                if let Some(model) = model {
+                    request["model"] = json!(model);
+                }
+                if let Some(effort) = effort { request["effort"] = effort.clone(); }
+                if let Some(permission) = permission {
+                    request["permissionMode"] = json!(permission);
+                }
+                let answer = self.requests.ask(request)?;
                 self.requests.remember(request_id, answer.clone());
                 answer
             }
@@ -140,11 +188,7 @@ impl DesktopBackend {
             .ask(json!({"action":"close","conversationId":id}))?;
         Ok(json!({"ok":true}))
     }
-    /// A phone never sets this Mac's grid. The pane on the Mac is what the
-    /// person is working in, and shrinking it to a phone's ~46 columns broke
-    /// their display; the phone draws this Mac's grid and zooms it instead.
-    /// Only a phone from before that change still asks, and the answer tells
-    /// it what to do.
+    /// The phone zooms the Mac grid; only legacy phones request a resize.
     pub(super) fn resize(&self, params: &Value) -> Result<Value, String> {
         self.native_id(params)?;
         Err(crate::platform_text::for_computer(

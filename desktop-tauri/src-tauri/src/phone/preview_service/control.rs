@@ -23,7 +23,9 @@ impl PreviewService {
             self.inner
                 .grants
                 .authorize_id(device, grant_id, &self.inner.workspace.read())?;
-        let phase = if let Some(port) = approved.attached_port {
+        let phase = if crate::window_preview::Target::parse(&approved.target_id)?.is_some() {
+            PreviewPhase::Running
+        } else if let Some(port) = approved.attached_port {
             attached::origin(port)?;
             PreviewPhase::Running
         } else {
@@ -55,7 +57,26 @@ impl PreviewService {
             self.inner
                 .grants
                 .authorize_id(device, grant_id, &self.inner.workspace.read())?;
-        let (origin, runtime_id) = if let Some(port) = approved.attached_port {
+        let native = crate::window_preview::Target::parse(&approved.target_id)?;
+        // End this device's older capture before opening its replacement.
+        self.inner.bindings.lock().retain(|(owner, _), previous| {
+            let same_window = native.is_some_and(|target| {
+                crate::window_preview::Target::parse(&previous.target_id)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|old| old.id == target.id && old.pid == target.pid)
+            });
+            owner != device || (previous.grant_id != grant_id && !same_window)
+        });
+        let window = native
+            .map(crate::window_preview::Session::start)
+            .transpose()?;
+        let (origin, runtime_id) = if native.is_some() {
+            (
+                reqwest::Url::parse("http://127.0.0.1:1/").map_err(|e| e.to_string())?,
+                0,
+            )
+        } else if let Some(port) = approved.attached_port {
             (attached::origin(port)?, 0)
         } else {
             let root = approved
@@ -82,6 +103,7 @@ impl PreviewService {
         bindings.insert(
             (device.into(), generation),
             Binding {
+                window,
                 grant_id: grant_id.into(),
                 canonical_root: approved.root,
                 root: approved.source_root,
@@ -93,7 +115,9 @@ impl PreviewService {
                 automatic: None,
             },
         );
-        Ok(json!({"generation":generation.to_string(), "startPath":approved.start_path}))
+        Ok(
+            json!({"generation":generation.to_string(), "startPath":approved.start_path, "kind":if native.is_some() {"window"} else {"web"}}),
+        )
     }
 
     pub(super) fn binding(&self, device: &str, generation: u64) -> Result<Binding, String> {
@@ -105,8 +129,7 @@ impl PreviewService {
             .cloned()
             .ok_or("Preview session expired")?;
         if let Some(server) = &binding.automatic {
-            if !self.inner.typing.load(std::sync::atomic::Ordering::SeqCst)
-                || !self.inner.grants.automatic(device)
+            if !self.inner.grants.automatic(device)
                 || self
                     .inner
                     .workspace
@@ -114,7 +137,7 @@ impl PreviewService {
                     .project_root(&server.project_id)
                     .and_then(|path| path.canonicalize().ok())
                     .as_ref()
-                    != Some(&server.root)
+                    != Some(&server.project_root)
             {
                 return Err("Automatic Preview permission changed".into());
             }
@@ -132,6 +155,9 @@ impl PreviewService {
             || approved.start_path != binding.start_path
         {
             return Err("Preview approval changed".into());
+        }
+        if binding.window.is_some() {
+            return Ok(binding);
         }
         if let Some(port) = binding.attached_port {
             if binding.runtime_id != 0

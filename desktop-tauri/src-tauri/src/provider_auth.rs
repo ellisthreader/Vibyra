@@ -18,6 +18,8 @@ use crate::provider_auth_url::open;
 /// splitting them keeps both files inside the 200-line limit.
 #[path = "provider_auth_actions.rs"]
 mod actions;
+#[path = "provider_auth_phone.rs"]
+mod phone;
 
 #[derive(Default)]
 pub struct ProviderAuthManager {
@@ -103,21 +105,6 @@ impl ProviderAuthManager {
             view.can_add_account = view.installed && view.accounts.len() < MAX_PER_PROVIDER;
         }
         views
-    }
-
-    /// Adds an empty account and starts its sign-in straight away.
-    ///
-    /// One step rather than two: an account with no login is not a thing the
-    /// user asked for, and leaving one behind if the sign-in is abandoned is
-    /// the sort of debris they would then have to clean up.
-    pub fn add_account(&self, provider_id: &str) -> Result<Vec<ProviderView>, String> {
-        let provider = definition(provider_id).ok_or_else(unknown_provider)?;
-        if !installed(provider) {
-            return Err(format!("Install {} before connecting.", provider.product));
-        }
-        let mut registry = Registry::load();
-        let account_id = registry.add(provider_id)?;
-        self.connect(provider_id, &account_id)
     }
 
     pub fn open_sign_in_page(&self, provider_id: &str, account_id: &str) -> Result<(), String> {

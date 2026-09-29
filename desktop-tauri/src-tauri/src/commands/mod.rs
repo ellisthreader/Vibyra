@@ -24,6 +24,7 @@ pub mod model_watch;
 pub mod perf;
 pub mod preview;
 pub mod preview_share;
+pub mod preview_windows;
 pub mod project_brief;
 pub mod provider_accounts;
 pub mod registry;

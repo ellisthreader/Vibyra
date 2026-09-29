@@ -32,6 +32,7 @@ pub struct AttemptView {
     /// are spawn-and-watch; only what the row says about them differs.
     pub installing: bool,
     pub sign_in_page_available: bool,
+    pub device_code: String,
     /// What the CLI is waiting to be told, empty when it is not waiting.
     pub prompt: String,
     /// Why it went wrong, so a failure can be quoted instead of guessed at.
@@ -159,6 +160,7 @@ impl LoginAttemptStore {
             },
             installing: attempt.installing,
             sign_in_page_available: !output.url().is_empty(),
+            device_code: output.device_code(),
             prompt: output.prompt(),
             failure_line: output.failure_line(),
         }

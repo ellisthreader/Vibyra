@@ -2,7 +2,10 @@ use vibyra_core::preview::{PreviewPhase, PreviewStatus};
 
 pub(super) fn loopback_origin(status: &PreviewStatus) -> Result<reqwest::Url, String> {
     if status.phase != PreviewPhase::Running {
-        return Err("Preview is not running on the Mac".into());
+        return Err(format!(
+            "Preview is not running on the {}",
+            crate::window_preview::host_noun()
+        ));
     }
     let url = reqwest::Url::parse(
         status

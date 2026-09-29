@@ -12,7 +12,7 @@ use vibyra_core::preview::PreviewManager;
 
 #[test]
 #[ignore = "Live macOS listener discovery shares the test process with parallel fixtures"]
-fn paired_phone_needs_separate_opt_in_and_typing_for_discovered_site() {
+fn paired_phone_sees_its_projects_discovered_site_without_typing() {
     let temp = tempfile::tempdir().unwrap();
     let grants = Arc::new(PreviewGrants::load(temp.path().join("grants")).unwrap());
     grants.set_account(Some("user:alice")).unwrap();
@@ -27,33 +27,38 @@ fn paired_phone_needs_separate_opt_in_and_typing_for_discovered_site() {
         Vec::new(),
         None,
     );
-    let typing = Arc::new(AtomicBool::new(true));
-    let service = PreviewService::new_with_typing(
-        PreviewManager::new(),
-        grants.clone(),
-        workspace,
-        typing.clone(),
-    );
+    let service = PreviewService::new(PreviewManager::new(), grants.clone(), workspace);
+    // A second site in the same project, answering on IPv6 loopback only, as
+    // Vite does on macOS by default.
+    let vite = TcpListener::bind("[::1]:0").unwrap();
+    let vite_port = vite.local_addr().unwrap().port();
+    vite.set_nonblocking(true).unwrap();
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     listener.set_nonblocking(true).unwrap();
     let live = Arc::new(AtomicBool::new(true));
     let running = live.clone();
-    let worker = std::thread::spawn(move || {
-        while running.load(Ordering::SeqCst) {
-            match listener.accept() {
-                Ok((mut socket, _)) => {
-                    let mut request = [0u8; 1024];
-                    let _ = socket.read(&mut request);
-                    let _ = socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 13\r\nConnection: close\r\n\r\n<h1>Site</h1>");
+    let serve = |listener: TcpListener, running: Arc<AtomicBool>| {
+        move || {
+            while running.load(Ordering::SeqCst) {
+                match listener.accept() {
+                    Ok((mut socket, _)) => {
+                        let mut request = [0u8; 1024];
+                        let _ = socket.read(&mut request);
+                        let _ = socket.write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 13\r\nConnection: close\r\n\r\n<h1>Site</h1>");
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        std::thread::sleep(std::time::Duration::from_millis(5))
+                    }
+                    Err(_) => break,
                 }
-                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                    std::thread::sleep(std::time::Duration::from_millis(5))
-                }
-                Err(_) => break,
             }
         }
-    });
+    };
+    let worker = std::thread::spawn(serve(listener, running));
+    let ipv6 = std::thread::spawn(serve(vite, live.clone()));
+    // Turned off for this phone: nothing is listed.
+    grants.set_automatic("phone", false).unwrap();
     assert!(service.list("phone")["targets"]
         .as_array()
         .unwrap()
@@ -77,6 +82,14 @@ fn paired_phone_needs_separate_opt_in_and_typing_for_discovered_site() {
         .iter()
         .find(|target| target["targetId"] == format!("auto-port:{port}"))
         .expect("project-owned local site should be discovered");
+    assert!(
+        list["targets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|target| target["targetId"] == format!("auto-port:{vite_port}")),
+        "the IPv6-only site in the same project should be listed too: {list}"
+    );
     assert_eq!(target["running"], true);
     let id = target["grantId"].as_str().unwrap();
     let repeated = service.list("phone");
@@ -90,13 +103,11 @@ fn paired_phone_needs_separate_opt_in_and_typing_for_discovered_site() {
     );
     assert_eq!(service.start("phone", id).unwrap()["phase"], "running");
     assert!(service.open("phone", id).unwrap()["generation"].is_string());
-    typing.store(false, Ordering::SeqCst);
-    assert!(service.start("phone", id).is_err());
-    typing.store(true, Ordering::SeqCst);
     grants.set_automatic("phone", false).unwrap();
     assert!(service.open("phone", id).is_err());
     grants.set_automatic("phone", true).unwrap();
     live.store(false, Ordering::SeqCst);
     worker.join().unwrap();
+    ipv6.join().unwrap();
     assert!(service.start("phone", id).is_err());
 }

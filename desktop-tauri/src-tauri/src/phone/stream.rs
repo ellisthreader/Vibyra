@@ -25,6 +25,8 @@ pub fn stream(
     let (send, receive) = mpsc::sync_channel(64);
     std::thread::spawn(move || {
         std::thread::spawn(move || {
+            let _sites = super::preview_service::watch::watch();
+            let mut sites = super::preview_service::watch::revision();
             let mut offsets = BTreeMap::new();
             let mut sizes = BTreeMap::new();
             let mut previous = (Vec::new(), u64::MAX, false);
@@ -53,6 +55,14 @@ pub fn stream(
                     break;
                 }
                 previous = state;
+                let now = super::preview_service::watch::revision();
+                if now != sites {
+                    sites = now;
+                    seq += 1;
+                    if send.send(json!({"event":"preview.changed","seq":seq,"data":{}})).is_err() {
+                        break;
+                    }
+                }
                 // A build's step, output and outcome, queued by the scaffold
                 // thread since the last tick. They ride this stream rather than
                 // one of their own so the phone keeps a single ordered feed.

@@ -7,6 +7,9 @@ use parking_lot::Mutex;
 
 use crate::provider_auth_url::find_https_url;
 
+#[path = "provider_auth_device_code.rs"]
+mod device_code;
+
 /// A trailing question only counts once the CLI has stopped typing. Without
 /// the pause, the "visit:" that introduces a sign-in URL reads as a question
 /// for the moment between the colon and the link.
@@ -44,6 +47,12 @@ impl Default for ProcessOutput {
 impl ProcessOutput {
     pub fn url(&self) -> String {
         self.url.clone()
+    }
+
+    /// Codex device authorization prints its one-time code after step 2.
+    /// Return only that bounded token, never the surrounding CLI output.
+    pub fn device_code(&self) -> String {
+        device_code::from_output(&self.tail)
     }
 
     /// The question the CLI is waiting on, or empty when it is not waiting.

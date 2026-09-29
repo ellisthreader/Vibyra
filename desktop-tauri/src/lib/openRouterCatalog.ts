@@ -46,10 +46,10 @@ interface RawModel {
 
 export async function loadCatalog(
   force = false,
-): Promise<{ groups: CompanyGroup[]; source: "live" | "cache" | "static" }> {
+): Promise<{ groups: CompanyGroup[]; fullGroups: CompanyGroup[]; source: "live" | "cache" | "static" }> {
   const cached = readCache();
-  if (!force && cached && Date.now() - cached.savedAt < CACHE_MS) {
-    return { groups: mergeNativeCatalog(cached.groups), source: "cache" };
+  if (!force && cached?.fullGroups && Date.now() - cached.savedAt < CACHE_MS) {
+    return { groups: mergeNativeCatalog(cached.groups), fullGroups: mergeNativeCatalog(cached.fullGroups ?? cached.groups), source: "cache" };
   }
   try {
     const response = await fetch(MODELS_URL, { headers: { Accept: "application/json" } });
@@ -57,22 +57,25 @@ export async function loadCatalog(
     const json = (await response.json()) as { data?: RawModel[] };
     const liveGroups = buildGroups(Array.isArray(json.data) ? json.data : []);
     if (liveGroups.length === 0) throw new Error("empty catalog");
-    const groups = mergeNativeCatalog(liveGroups);
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), groups }));
-    return { groups, source: "live" };
+    const fullGroups = mergeNativeCatalog(liveGroups);
+    const groups = mergeNativeCatalog(liveGroups.map(group => ({ ...group, models: displayOrder(group.company,
+      selectForCompany(group.models, LIMITS.get(group.company) ?? DEFAULT_LIMIT)) })));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), groups, fullGroups }));
+    return { groups, fullGroups, source: "live" };
   } catch {
-    if (cached) return { groups: mergeNativeCatalog(cached.groups), source: "cache" };
-    return { groups: STATIC_GROUPS, source: "static" };
+    if (cached) return { groups: mergeNativeCatalog(cached.groups), fullGroups: mergeNativeCatalog(cached.fullGroups ?? cached.groups), source: "cache" };
+    return { groups: STATIC_GROUPS, fullGroups: STATIC_GROUPS, source: "static" };
   }
 }
 
-function readCache(): { savedAt: number; groups: CompanyGroup[] } | null {
+function readCache(): { savedAt: number; groups: CompanyGroup[]; fullGroups?: CompanyGroup[] } | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { savedAt?: number; groups?: CompanyGroup[] };
+    const parsed = JSON.parse(raw) as { savedAt?: number; groups?: CompanyGroup[]; fullGroups?: CompanyGroup[] };
     if (!Array.isArray(parsed.groups) || typeof parsed.savedAt !== "number") return null;
-    return { savedAt: parsed.savedAt, groups: parsed.groups };
+    return { savedAt: parsed.savedAt, groups: parsed.groups,
+      fullGroups: Array.isArray(parsed.fullGroups) ? parsed.fullGroups : undefined };
   } catch {
     return null;
   }
@@ -92,7 +95,7 @@ function buildGroups(raw: RawModel[]): CompanyGroup[] {
       company,
       providerKey: COMPANY_META.get(company)?.providerKey ?? "openrouter",
       accent: COMPANY_META.get(company)?.accent ?? "#94a3b8",
-      models: displayOrder(company, selectForCompany(models, LIMITS.get(company) ?? DEFAULT_LIMIT)),
+      models: displayOrder(company, selectForCompany(models, models.length)),
     }))
     .sort(
       (a, b) =>

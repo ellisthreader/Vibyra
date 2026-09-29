@@ -21,6 +21,23 @@ impl ProviderAuthManager {
         provider_id: &str,
         account_id: &str,
     ) -> Result<Vec<ProviderView>, String> {
+        self.connect_with_mode(provider_id, account_id, false)
+    }
+
+    pub fn connect_from_phone(
+        &self,
+        provider_id: &str,
+        account_id: &str,
+    ) -> Result<Vec<ProviderView>, String> {
+        self.connect_with_mode(provider_id, account_id, true)
+    }
+
+    fn connect_with_mode(
+        &self,
+        provider_id: &str,
+        account_id: &str,
+        phone: bool,
+    ) -> Result<Vec<ProviderView>, String> {
         let provider = definition(provider_id).ok_or_else(unknown_provider)?;
         if !installed(provider) {
             return Err(format!("Install {} before connecting.", provider.product));
@@ -38,6 +55,7 @@ impl ProviderAuthManager {
         match provider_id {
             "codex" => {
                 command.arg("login");
+                if phone { command.arg("--device-auth"); }
             }
             "claude" => {
                 command.args(["auth", "login", "--claudeai"]);

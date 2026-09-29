@@ -5,8 +5,8 @@ import type { PreviewTarget } from '../../previewTypes';
 import type { PhoneDevice } from '../../ipc/phone';
 const NO_DEVICES: PhoneDevice[] = [];
 
-/** Visible only in the opt-in native Preview proof build. One explicit Mac
- * approval applies to one paired device, project/worktree, and target recipe. */
+/** One explicit Mac approval applies to one paired device, project/worktree,
+ * and target recipe or native window permission. */
 export function PreviewShareControl({ projectId, root, target, startPath }: {
   projectId: string; root: string; target: PreviewTarget; startPath?: string;
 }) {
@@ -38,6 +38,7 @@ export function PreviewShareControl({ projectId, root, target, startPath }: {
   }, [available, devices, projectId, root, target.id, startPath]);
   if (!available || !target.runnable) return null;
   const attached = target.id.startsWith('attached-port:');
+  const native = target.id.startsWith('native-window:');
   const toggle = async (deviceId: string) => {
     const enabled = !granted[deviceId];
     setBusy(deviceId); setError('');
@@ -49,12 +50,14 @@ export function PreviewShareControl({ projectId, root, target, startPath }: {
   };
   return <div className="preview-share-control">
     <strong>Live Preview on approved phones</strong>
-    <small>{attached
+    <small>{native
+      ? `Share only this running window with the chosen phone${target.id.endsWith(':control') ? ', including clicks and typing' : ', for viewing only'}. The grant ends when its process identity changes; stop sharing below to revoke it now.`
+      : attached
       ? 'This grants your phone access to any service using this exact Mac port, including backend routes and cookies, until you stop sharing. Start or restart the server from your phone terminal; Vibyra will not control that process.'
       : 'Approved phones can start this target and open the site it serves, including local backend routes, cookies, and source maps.'}</small>
     <small>Folder: <code>{root}</code><br />Target: <code>{attached ? `Existing local server on port ${target.id.split(':')[1]}` : target.name}</code>{attached
       ? <><br />Open: <code>{startPath ?? '/'}</code></>
-      : <><br />Run: <code>{target.command ?? 'Vibyra static server'}</code></>}</small>
+      : native ? null : <><br />Run: <code>{target.command ?? 'Vibyra static server'}</code></>}</small>
     {devices.length === 0 ? <small>Pair a phone in Settings first.</small> : orderedDevices.map(device =>
       <button className="btn" type="button" key={device.id}
         disabled={busy !== '' || granted[device.id] === undefined}

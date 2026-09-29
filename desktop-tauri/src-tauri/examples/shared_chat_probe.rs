@@ -26,6 +26,12 @@ mod frames;
 mod manage;
 #[path = "../src/platform_text.rs"]
 mod platform_text;
+#[allow(dead_code, unused_imports)]
+#[path = "support/phone_typing_preview.rs"]
+mod preview_service;
+#[allow(dead_code)]
+#[path = "../src/session_process_files.rs"]
+mod session_process_files;
 #[allow(dead_code)]
 #[path = "../src/phone/railway.rs"]
 mod railway;

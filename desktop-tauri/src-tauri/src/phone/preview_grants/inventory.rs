@@ -3,6 +3,17 @@ use std::path::Path;
 use std::sync::atomic::Ordering;
 
 impl PreviewGrants {
+    pub(crate) fn active_account(&self) -> Result<String, String> {
+        if self.disabled.load(Ordering::SeqCst) {
+            return Err("Preview sharing is unavailable after a storage error".into());
+        }
+        self.account.lock().clone().ok_or_else(|| {
+            format!(
+                "Sign in on your {} to share Preview",
+                crate::window_preview::host_noun()
+            )
+        })
+    }
     /// Suitable for a Mac sharing toggle; stale grants appear off.
     pub fn is_granted(
         &self,

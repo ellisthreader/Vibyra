@@ -36,6 +36,7 @@ impl Engine {
         let launch = self.conversation_launch.for_kind(text(params, "kind")?)?;
         let mut state = self.shared.lock();
         let project = state.resolve_project(text(params, "projectId")?)?.clone();
+        let mut retry_id = None;
         if let Some(s) = state
             .sessions
             .values()
@@ -51,7 +52,16 @@ impl Engine {
             {
                 return Err("request ID was already used for a different action".into());
             }
-            return Ok(json!(s.meta));
+            // A refused initialization has never accepted a thread or a user message.
+            // Reuse its session identity, rather than returning an unusable interrupted shell.
+            let failed_start = state.conversations.get(&s.meta.id).is_some_and(|c| {
+                c.thread_id.is_empty() && c.runtime.is_none() && c.process_state == "interrupted"
+            });
+            if failed_start {
+                retry_id = Some(s.meta.id.clone());
+            } else {
+                return Ok(json!(s.meta));
+            }
         }
         if state
             .sessions
@@ -66,7 +76,7 @@ impl Engine {
             return Err("project root changed; approve it locally again".into());
         }
         let (cwd, mut thread_params) = options.unwrap_or_default().prepare(&project.path)?;
-        let id = uuid::Uuid::new_v4().to_string();
+        let id = retry_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let meta = Metadata {
             id: id.clone(),
             project_id: project.id,
@@ -99,14 +109,16 @@ impl Engine {
             super::provider_runtime::spawn(&cwd, &launch.provider, &launch, receive)
         };
         let initialized = runtime.and_then(|runtime| {
-            if launch.provider == "codex" { thread_params.as_object_mut().unwrap().extend(json!({
-                "approvalsReviewer":"user","ephemeral":false,
-                "dynamicTools":[super::question_tool::spec()],
-                "developerInstructions":"Present concise useful updates. Use the vibyra_ask_user tool when user direction is required; it displays a native question card and waits for their answer. Do not use it for execution approval. Do not narrate routine commands."}).as_object().unwrap().clone()); }
+            if launch.provider == "codex" {
+                super::resume_thread::configure_start(&mut thread_params);
+            }
             let result = runtime.request("thread/start", thread_params)?;
             *runtime.started.lock() = result.clone();
-            let thread = result["thread"]["id"].as_str().ok_or("Codex did not create a thread")?.to_owned();
-            Ok((runtime,thread,result))
+            let thread = result["thread"]["id"]
+                .as_str()
+                .ok_or("Codex did not create a thread")?
+                .to_owned();
+            Ok((runtime, thread, result))
         });
         let mut state = self.shared.lock();
         match initialized {

@@ -37,6 +37,7 @@ impl PreviewGrants {
         let mut current = self.grants.lock();
         current.clear();
         self.automatic.lock().clear();
+        self.keep_runs_for(None)?;
         if let Err(error) = store::clear(&self.state_dir) {
             self.disabled.store(true, Ordering::SeqCst);
             return Err(error);
@@ -44,7 +45,7 @@ impl PreviewGrants {
         Ok(())
     }
 
-    fn persist_revocation(
+    pub(super) fn persist_revocation(
         &self,
         current: &mut Vec<super::Grant>,
         automatic: &mut Vec<super::AutomaticDevice>,

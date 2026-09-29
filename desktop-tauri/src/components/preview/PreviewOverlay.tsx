@@ -1,5 +1,6 @@
 import { previewRecovery } from "../../lib/previewUrl";
 import type { PreviewStatus, PreviewTarget } from "../../previewTypes";
+import { DesktopRunOverlay } from "./DesktopRunOverlay";
 
 interface Props {
   inspecting: boolean;
@@ -43,6 +44,9 @@ export function PreviewOverlay({
         <button className="btn" onClick={onRetryInspect}>Inspect again</button>
       </div>
     );
+  }
+  if (target.kind === "desktop") {
+    return <DesktopRunOverlay status={status} target={target} onRun={onRun} />;
   }
   if (status.phase === "starting") {
     return (

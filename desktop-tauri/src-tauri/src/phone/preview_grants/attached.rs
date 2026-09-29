@@ -45,8 +45,12 @@ pub(super) fn identity(root: &Path, port: u16) -> Result<(PathBuf, String), Stri
 
 pub(crate) fn origin(port: u16) -> Result<reqwest::Url, String> {
     let address = std::net::SocketAddr::from(([127, 0, 0, 1], port));
-    std::net::TcpStream::connect_timeout(&address, Duration::from_millis(300))
-        .map_err(|_| "The approved local server is not running on the Mac")?;
+    std::net::TcpStream::connect_timeout(&address, Duration::from_millis(300)).map_err(|_| {
+        format!(
+            "The approved local server is not running on the {}",
+            crate::window_preview::host_noun()
+        )
+    })?;
     reqwest::Url::parse(&format!("http://127.0.0.1:{port}/"))
         .map_err(|_| "Invalid attached Preview origin".into())
 }

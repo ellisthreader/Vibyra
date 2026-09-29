@@ -28,6 +28,22 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  { version: "0.8.14", date: "2026-09-27", image: "/releases/0.8.14.svg",
+    summary: "Open project application windows from your phone.",
+    sections: [{ heading: "Phone window sharing", body: "Live preview discovers project-owned Mac windows. Choose View this window on your phone to share it for viewing. Clicking and typing require a separate Mac permission." },
+      { heading: "Clear readiness", body: "Preview stays accessible while a project starts and shows permission or window errors. New Codex conversations can check window and first-frame readiness; saved conversations retain their history." }] },
+
+  { version: "0.8.13", date: "2026-09-27", image: "/releases/0.8.13.svg",
+    summary: "Preview an approved Mac application window on your iPhone.",
+    sections: [{ heading: "Desktop application preview", body: "Share a running Mac window from project Preview, with view-only or separately approved click and typing access. Screen Recording is required; control also needs Accessibility permission." },
+      { heading: "Your existing workspace", body: "Retains the phone terminal recovery and approval fixes from 0.8.12. This is a local test update; native window compatibility and network acceptance remain under validation." }] },
+  { version: "0.8.12", date: "2026-09-27", image: "/releases/0.8.12.svg",
+    summary: "Continue your terminals from your iPhone.",
+    sections: [
+      { heading: "Resume saved Codex terminals", body: "Continue a saved Codex conversation from your phone while keeping its history, account and project. An unused terminal with no saved Codex session can start in place. Reconnecting never repeats an earlier message." },
+      { heading: "More models and clear permissions", body: "The phone receives the complete supported model list for your connected computer runners, plus Standard and Full permission choices and Safe mode." },
+    ],
+  },
   RELEASE_088,
   RELEASE_087,
   RELEASE_086,

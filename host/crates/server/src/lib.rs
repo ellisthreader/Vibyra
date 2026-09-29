@@ -23,7 +23,7 @@ pub use embedded::EmbeddedHost;
 pub use preview_upgrade::{UpgradeRequest, UpgradeResponse};
 pub use relay::{CredentialSource, RelayCredentials, RelayHandle, RelayStatus};
 pub use vibyra_transport::preview::{
-    Frame as PreviewFrame, ReceiveWindow, SendWindow, StreamKey, MAX_CHUNK, WINDOW_BYTES,
+    Frame as PreviewFrame, ReceiveWindow, SendWindow, StreamKey, MAX_CHUNK, SEND_WINDOW_BYTES, WINDOW_BYTES,
 };
 /// The most one reply or event may hold. A backend must keep what it sends
 /// under this: an event that does not fit ends the phone's connection.

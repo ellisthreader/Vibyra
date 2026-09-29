@@ -42,6 +42,8 @@ pub struct ProviderAccountView {
     pub account_label: String,
     pub detail: String,
     pub sign_in_page_available: bool,
+    /// Codex device authorization code shown to the trusted phone.
+    pub device_code: String,
     /// What the CLI is asking for right now; empty when it is not waiting on
     /// anyone. The row turns this into a reply box — a sign-in that ends with
     /// "paste the code" cannot complete without one.

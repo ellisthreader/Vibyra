@@ -1,35 +1,33 @@
-//! Bounded Mac-only discovery of HTTP sites owned by an open project folder.
+//! Bounded discovery of HTTP sites owned by an open project folder.
 //! Inspect listener PIDs and their cwd, never process arguments or terminal text.
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-#[cfg(any(test, target_os = "macos"))]
+#[path = "discovery_attached.rs"]
+mod attached;
 #[path = "discovery_probe.rs"]
 mod probe;
-#[cfg(all(test, not(target_os = "macos")))]
-use probe::listener_port;
-#[cfg(target_os = "macos")]
-use probe::{listener_port, probe};
+use super::discovery_system as system;
+pub(super) use attached::running_for_root;
+pub(super) use probe::listener;
+use probe::probe;
+use std::time::Duration;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct DetectedServer {
     pub project_id: String,
+    /// The open project the site belongs to.
+    pub project_root: PathBuf,
+    /// The folder serving it: the project itself, or an agent's git worktree of it.
     pub root: PathBuf,
+    pub ipv6: bool,
     pub pid: u32,
     pub started_at: i64,
     pub port: u16,
     pub start_path: String,
 }
 
-#[cfg(target_os = "macos")]
 pub(super) fn running(projects: &[(String, PathBuf)]) -> Vec<DetectedServer> {
-    use crate::session_process_files::{capture_with_timeout as capture_bounded, open_files};
-    use chrono::NaiveDateTime;
-    use std::collections::{HashMap, HashSet};
-    use std::time::Duration;
-
-    let capture =
-        |program, args: &[&str]| capture_bounded(program, args, Duration::from_millis(500));
-
+    use std::collections::HashSet;
     let roots = projects
         .iter()
         .filter_map(|(id, root)| root.canonicalize().ok().map(|path| (id.clone(), path)))
@@ -37,71 +35,32 @@ pub(super) fn running(projects: &[(String, PathBuf)]) -> Vec<DetectedServer> {
     if roots.is_empty() {
         return Vec::new();
     }
-    let Ok(raw) = capture(
-        "/usr/sbin/lsof",
-        &["-n", "-P", "-iTCP", "-sTCP:LISTEN", "-Fpn"],
-    ) else {
+    let Some(listeners) = system::listeners(Duration::from_millis(2000)) else {
         return Vec::new();
     };
-    let listeners = open_files(&raw)
-        .into_iter()
-        .flat_map(|(pid, names)| {
-            names
-                .into_iter()
-                .filter_map(move |name| listener_port(&name).map(|port| (pid, port)))
-        })
-        .collect::<Vec<_>>();
-    let pids = listeners
-        .iter()
-        .map(|(pid, _)| *pid)
-        .collect::<HashSet<_>>();
-    if pids.is_empty() || pids.len() > 64 {
+    let pids = listeners.iter().map(|l| l.pid).collect::<HashSet<_>>();
+    // A busy computer lists hundreds of listeners; beyond this the lookups stop being cheap.
+    if pids.is_empty() || pids.len() > 256 {
         return Vec::new();
     }
-    let ids = pids
-        .iter()
-        .map(u32::to_string)
-        .collect::<Vec<_>>()
-        .join(",");
-    let Ok(cwd) = capture(
-        "/usr/sbin/lsof",
-        &["-n", "-P", "-a", "-p", &ids, "-d", "cwd", "-Fn"],
-    ) else {
-        return Vec::new();
-    };
-    let workdirs = open_files(&cwd);
-    let started = capture("/bin/ps", &["-p", &ids, "-o", "pid=,lstart="])
-        .ok()
-        .map(|raw| {
-            raw.lines()
-                .filter_map(|line| {
-                    let (pid, date) = line.trim().split_once(char::is_whitespace)?;
-                    let date =
-                        NaiveDateTime::parse_from_str(date.trim(), "%a %b %e %H:%M:%S %Y").ok()?;
-                    Some((pid.parse::<u32>().ok()?, date.and_utc().timestamp()))
-                })
-                .collect::<HashMap<_, _>>()
-        })
-        .unwrap_or_default();
+    let pids = pids.into_iter().collect::<Vec<_>>();
+    let (workdirs, started) = (system::cwds(&pids), system::started(&pids));
     let mut candidates = listeners
         .into_iter()
-        .filter_map(|(pid, port)| {
-            let cwd = PathBuf::from(workdirs.get(&pid)?.first()?)
-                .canonicalize()
-                .ok()?;
-            let (project_id, root) = roots
-                .iter()
-                .filter(|(_, root)| cwd.starts_with(root))
-                .max_by_key(|(_, root)| root.components().count())?;
-            let started_at = *started.get(&pid)?;
+        .filter_map(|listener| {
+            let cwd = workdirs.get(&listener.pid)?;
+            let (project_id, project_root, root) = owner(&roots, cwd)?;
+            let started_at = *started.get(&listener.pid)?;
             Some((
                 started_at,
                 DetectedServer {
-                    project_id: project_id.clone(),
-                    root: root.clone(),
-                    pid,
+                    project_id,
+                    project_root,
+                    root,
+                    ipv6: listener.ipv6,
+                    pid: listener.pid,
                     started_at,
-                    port,
+                    port: listener.port,
                     start_path: "/".into(),
                 },
             ))
@@ -122,8 +81,8 @@ pub(super) fn running(projects: &[(String, PathBuf)]) -> Vec<DetectedServer> {
         let probes = candidates
             .iter()
             .map(|candidate| {
-                let port = candidate.port;
-                scope.spawn(move || probe(port))
+                let (port, ipv6) = (candidate.port, candidate.ipv6);
+                scope.spawn(move || probe(port, ipv6))
             })
             .collect::<Vec<_>>();
         for (mut candidate, probe) in candidates.into_iter().zip(probes) {
@@ -136,61 +95,90 @@ pub(super) fn running(projects: &[(String, PathBuf)]) -> Vec<DetectedServer> {
     results
 }
 
-#[cfg(not(target_os = "macos"))]
-pub(super) fn running(_: &[(String, PathBuf)]) -> Vec<DetectedServer> {
-    Vec::new()
-}
-
-#[cfg(target_os = "macos")]
-pub(super) fn owns(server: &DetectedServer) -> bool {
-    use crate::session_process_files::{capture_with_timeout as capture_bounded, open_files};
-    use chrono::NaiveDateTime;
-    use std::time::Duration;
-    let capture =
-        |program, args: &[&str]| capture_bounded(program, args, Duration::from_millis(500));
-    let pid = server.pid.to_string();
-    let Ok(start) = capture("/bin/ps", &["-p", &pid, "-o", "lstart="]) else {
-        return false;
-    };
-    let started = NaiveDateTime::parse_from_str(start.trim(), "%a %b %e %H:%M:%S %Y")
-        .ok()
-        .map(|date| date.and_utc().timestamp());
-    if started != Some(server.started_at) {
-        return false;
-    }
-    let port = format!("-iTCP:{}", server.port);
-    let Ok(listeners) = capture(
-        "/usr/sbin/lsof",
-        &["-n", "-P", "-a", "-p", &pid, &port, "-sTCP:LISTEN", "-Fn"],
-    ) else {
-        return false;
-    };
-    if !open_files(&listeners)
-        .get(&server.pid)
-        .is_some_and(|names| {
-            names
-                .iter()
-                .any(|name| listener_port(name) == Some(server.port))
-        })
+/// The open project a process working in `cwd` belongs to: the deepest project
+/// folder containing it, or, for an agent's git worktree kept outside the project,
+/// the project whose checkout that worktree came from.
+pub(super) fn owner(roots: &[(String, PathBuf)], cwd: &Path) -> Option<(String, PathBuf, PathBuf)> {
+    if let Some((id, root)) = roots
+        .iter()
+        .filter(|(_, root)| cwd.starts_with(root))
+        .max_by_key(|(_, root)| root.components().count())
     {
-        return false;
+        return Some((id.clone(), root.clone(), root.clone()));
     }
-    let Ok(cwd) = capture(
-        "/usr/sbin/lsof",
-        &["-n", "-P", "-a", "-p", &pid, "-d", "cwd", "-Fn"],
-    ) else {
-        return false;
-    };
-    open_files(&cwd)
-        .get(&server.pid)
-        .and_then(|names| names.first())
-        .and_then(|name| PathBuf::from(name).canonicalize().ok())
-        .is_some_and(|path| path.starts_with(&server.root))
+    let (worktree, main) = worktree_of(cwd)?;
+    // The project's folder inside the checkout, found at the same place in the worktree.
+    roots
+        .iter()
+        .filter_map(|(id, root)| {
+            let serving = worktree.join(root.strip_prefix(&main).ok()?);
+            cwd.starts_with(&serving)
+                .then(|| (id.clone(), root.clone(), serving))
+        })
+        .max_by_key(|(_, root, _)| root.components().count())
 }
 
-#[cfg(not(target_os = "macos"))]
-pub(super) fn owns(_: &DetectedServer) -> bool {
-    false
+/// A git worktree folder holds a `.git` file, `gitdir: <checkout>/.git/worktrees/<name>`.
+/// Only files are read, a few levels up: no git process per listener.
+fn worktree_of(cwd: &Path) -> Option<(PathBuf, PathBuf)> {
+    for dir in cwd.ancestors().take(12) {
+        let marker = dir.join(".git");
+        if marker.is_dir() {
+            return None;
+        }
+        if !marker.is_file() {
+            continue;
+        }
+        let text = std::fs::read_to_string(&marker).ok()?;
+        let gitdir = PathBuf::from(text.strip_prefix("gitdir:")?.trim());
+        let worktrees = gitdir.parent()?;
+        if worktrees.file_name()? != "worktrees" || worktrees.parent()?.file_name()? != ".git" {
+            return None;
+        }
+        let main = worktrees.parent()?.parent()?.canonicalize().ok()?;
+        return Some((dir.to_path_buf(), main));
+    }
+    None
+}
+
+/// A page load makes dozens of requests, and each is checked against the process
+/// that serves it. One check runs at a time and a confirmed owner is trusted for
+/// ten seconds, so a burst of scripts neither spawns `ps` and `lsof` per file
+/// nor races a dozen of them at once; the next check after that still catches a
+/// stopped or replaced server, and opening Preview always checks afresh.
+pub(super) fn owns(server: &DetectedServer) -> bool {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+    use std::time::{Duration, Instant};
+    type ConfirmedListeners = Mutex<HashMap<(u32, u16, i64), Instant>>;
+    static CONFIRMED: OnceLock<ConfirmedListeners> = OnceLock::new();
+    let key = (server.pid, server.port, server.started_at);
+    let Ok(mut confirmed) = CONFIRMED.get_or_init(Default::default).lock() else {
+        return owns_now(server);
+    };
+    confirmed.retain(|_, at| at.elapsed() < Duration::from_secs(10));
+    if confirmed.contains_key(&key) {
+        return true;
+    }
+    let owned = owns_now(server);
+    if owned {
+        confirmed.insert(key, Instant::now());
+    }
+    owned
+}
+
+/// Always asks the system, for opening Preview.
+pub(super) fn owns_now(server: &DetectedServer) -> bool {
+    let pid = [server.pid];
+    system::started(&pid).get(&server.pid) == Some(&server.started_at)
+        && system::listeners(Duration::from_millis(2000)).is_some_and(|listeners| {
+            listeners
+                .iter()
+                .any(|l| l.pid == server.pid && l.port == server.port)
+        })
+        && system::cwds(&pid)
+            .get(&server.pid)
+            .is_some_and(|cwd| cwd.starts_with(&server.root))
 }
 
 #[cfg(test)]
