@@ -1,0 +1,129 @@
+{
+    "machineName": "Mac",
+    "pairCode": "3HX4FL",
+    "token": "vibyra-1unJ7TSMIsqqIsYJw5jO0W2ym6l8r2EuaOFDgnKa",
+    "startedAt": "2026-09-29T21:10:02.126701Z",
+    "pairedDevice": null,
+    "pendingPair": null,
+    "activeAgentRun": null,
+    "pendingAgentApplies": [],
+    "lastPromptStartedAt": null,
+    "lastPromptCompletedAt": null,
+    "recentPromptHashes": [],
+    "selectedProjectId": null,
+    "latestPreview": null,
+    "projects": [
+        {
+            "id": "L3ByaXZhdGUvdG1wL3ZpYnlyYS1yZW1vdGUtc2VjdXJpdHktcmVsZWFzZS0yMDI2MDkyOS9iYWNrZW5k",
+            "name": "backend",
+            "path": "\/private\/tmp\/vibyra-remote-security-release-20260929\/backend",
+            "stack": "Node \/ React",
+            "updated": "1 min ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvQmVhci1MYW5l",
+            "name": "Bear-Lane",
+            "path": "\/Users\/ellis\/Desktop\/Bear-Lane",
+            "stack": "Node \/ React",
+            "updated": "3d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvSEtF",
+            "name": "HKE",
+            "path": "\/Users\/ellis\/Desktop\/HKE",
+            "stack": "Expo React Native",
+            "updated": "13h ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvUG9ydGZvbGlvV2Vic2l0ZQ",
+            "name": "PortfolioWebsite",
+            "path": "\/Users\/ellis\/Desktop\/PortfolioWebsite",
+            "stack": "Node \/ React",
+            "updated": "7d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvUmVsYXlDbGFyaXR5",
+            "name": "RelayClarity",
+            "path": "\/Users\/ellis\/Desktop\/RelayClarity",
+            "stack": "Node \/ React",
+            "updated": "6h ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJh",
+            "name": "Vibyra",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra",
+            "stack": "Node \/ React",
+            "updated": "2d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJhLWFuYWx5dGljcy1iYWNrZW5kLXNpdGUtcmVhZGluZXNzLTIwMjYwOTI3",
+            "name": "Vibyra-analytics-backend-site-readiness-20260927",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra-analytics-backend-site-readiness-20260927",
+            "stack": "Node \/ React",
+            "updated": "2d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJhLWF0dGFjaG1lbnRz",
+            "name": "Vibyra-attachments",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra-attachments",
+            "stack": "Expo React Native",
+            "updated": "18d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJhLWxhdW5jaA",
+            "name": "Vibyra-launch",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra-launch",
+            "stack": "Expo React Native",
+            "updated": "19d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJhLXBob25l",
+            "name": "Vibyra-phone",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra-phone",
+            "stack": "Expo React Native",
+            "updated": "18d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJhLXByMzItbW9iaWxlLXNlY3VyaXR5LWZpeC0yMDI2MDkyNw",
+            "name": "Vibyra-pr32-mobile-security-fix-20260927",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra-pr32-mobile-security-fix-20260927",
+            "stack": "Node \/ React",
+            "updated": "2d ago",
+            "source": "pc"
+        },
+        {
+            "id": "L1VzZXJzL2VsbGlzL0Rlc2t0b3AvVmlieXJhLXRlcm1pbmFsLWZ1bGxzY3JlZW4",
+            "name": "Vibyra-terminal-fullscreen",
+            "path": "\/Users\/ellis\/Desktop\/Vibyra-terminal-fullscreen",
+            "stack": "Node \/ React",
+            "updated": "17d ago",
+            "source": "pc"
+        }
+    ],
+    "events": [
+        {
+            "id": "evt-1790716202-356",
+            "source": "Desktop",
+            "message": "Vibyra Desktop is ready",
+            "tone": "success",
+            "time": "Now"
+        },
+        {
+            "id": "evt-1790716202-338",
+            "source": "Pairing",
+            "message": "Pair code 3HX4FL is showing in Vibyra Desktop",
+            "tone": "info",
+            "time": "Now"
+        }
+    ]
+}

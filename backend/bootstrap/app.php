@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             Route::get('/ready', InfrastructureReadinessController::class);
             require __DIR__.'/../routes/remote.php';
+            require __DIR__.'/../routes/remote_security.php';
             require __DIR__.'/../routes/agents.php';
             require __DIR__.'/../routes/notifications.php';
         },
@@ -41,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->remove(HandleCors::class);
         $middleware->append(VibyraCors::class);
+        $middleware->prepend(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\VibesLegacyGuard::class);
         $middleware->validateCsrfTokens(except: [
             'pair',

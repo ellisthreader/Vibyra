@@ -3,7 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\{Cache, DB};
 use Illuminate\Support\Str;
 
 /**
@@ -24,7 +24,9 @@ class TwoFactorChallenge
     public function issue(User $user): array
     {
         $id = (string) Str::uuid();
-        Cache::put($this->key($id), ['user' => $user->id, 'left' => self::ATTEMPTS], now()->addMinutes(self::MINUTES));
+        $expires = now()->addMinutes(self::MINUTES);
+        Cache::put($this->key($id), ['user' => $user->id, 'left' => self::ATTEMPTS,
+            'expires' => $expires->timestamp, 'state' => $this->state($user)], $expires);
 
         return ['challengeId' => $id, 'expiresIn' => self::MINUTES * 60];
     }
@@ -36,24 +38,36 @@ class TwoFactorChallenge
      */
     public function claim(string $id, string $code): ?User
     {
-        $held = Cache::get($this->key($id));
-        if (! is_array($held)) {
-            return null;
-        }
-        $user = User::find($held['user'] ?? null);
-        if (! $user || ! app(TwoFactor::class)->check($user, $code)) {
-            $left = (int) ($held['left'] ?? 0) - 1;
-            if ($left > 0) {
-                Cache::put($this->key($id), ['user' => $held['user'] ?? null, 'left' => $left], now()->addMinutes(self::MINUTES));
-            } else {
-                Cache::forget($this->key($id));
+        $key = $this->key($id);
+        $held = Cache::get($key);
+        if (! is_array($held) || ! is_int($held['user'] ?? null)) return null;
+        // The database user lock serializes cache consumption across workers.
+        // Re-read inside it: a cache lock lease could expire while waiting on SQL.
+        return DB::transaction(function () use ($held, $key, $code): ?User {
+            $user = User::whereKey($held['user'])->lockForUpdate()->first();
+            $current = Cache::get($key);
+            if (! $user || ! is_array($current) || ($current['user'] ?? null) !== $user->id) return null;
+            if (! is_int($current['expires'] ?? null) || $current['expires'] <= now()->timestamp
+                || ! is_string($current['state'] ?? null) || ! hash_equals($this->state($user), $current['state'])) {
+                Cache::forget($key);
+                return null;
             }
+            if (! app(TwoFactor::class)->check($user, $code)) {
+                $left = (int) ($current['left'] ?? 0) - 1;
+                if ($left > 0) Cache::put($key, [...$current, 'left' => $left], now()->setTimestamp($current['expires']));
+                else Cache::forget($key);
+                return null;
+            }
+            Cache::forget($key);
+            return $user;
+        }, 3);
+    }
 
-            return null;
-        }
-        Cache::forget($this->key($id));
-
-        return $user;
+    /** A password-half proof must not survive password, setup or recovery changes. */
+    private function state(User $user): string
+    {
+        return hash('sha256', json_encode([$user->password, $user->two_factor_secret,
+            strtotime((string) $user->two_factor_confirmed_at), $user->two_factor_recovery_codes], JSON_THROW_ON_ERROR));
     }
 
     private function key(string $id): string

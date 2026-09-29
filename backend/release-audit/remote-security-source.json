@@ -1,0 +1,462 @@
+{
+  "baseCommit": "06012861b19acc75d27285d026420f187256f1d5",
+  "branch": "codex/remote-security-release-20260929",
+  "files": [
+    {
+      "path": "backend/app/Console/Commands/CheckReleaseCapacity.php",
+      "sha256": "a5111c8b2b5f5272e16b3d5bd2c8b4f1a830f50de2da8497a2617cf827891319"
+    },
+    {
+      "path": "backend/app/Console/Commands/MigrateReleaseStorage.php",
+      "sha256": "2ad22dded8e78f5e5d38f6b46062192cd3f6625fd112e28d647b9d665ee28401"
+    },
+    {
+      "path": "backend/app/Console/Commands/RemoteRevocationsDeliver.php",
+      "sha256": "d24419adb5485b1c5c5396ab898c12b8a0fb82e5a2b5feadf03885228e1c9a7b"
+    },
+    {
+      "path": "backend/app/Console/Commands/RetryRemoteSecurityNotifications.php",
+      "sha256": "9272f8cdcbe19bb68621a303748fd1e86ffd0852eeb379c3bcfdd4a6465a3b3c"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Concerns/AccountEndpoints.php",
+      "sha256": "a6c33f3c0d42aab6e61a0f2de949ba5f11a92016c3b04609187f5ead6bad28ed"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Concerns/AccountVerificationEndpoints.php",
+      "sha256": "03b30c129b204188fd6ad5e8d2eb60b5c1bcf89cb2816b5a6937dba0d570878e"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Concerns/AuthRecoveryEndpoints.php",
+      "sha256": "deaa9df815132cee7e4a50e466ac775a1feaee8e34fde6d7ef2e8b2db24898dc"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Concerns/DesktopProviderAuthEndpoints.php",
+      "sha256": "7e031f104c53e6b112c047817b84c5be988b952227a99d9c394ddde602f01a32"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Concerns/TwoFactorEndpoints.php",
+      "sha256": "1879e9a82f0662900556daa04df93c4b0143e42ae80c051805e34b22cb37f2d4"
+    },
+    {
+      "path": "backend/app/Http/Controllers/ReleaseDownloadController.php",
+      "sha256": "79f7c43e782c8df9f150718e0b31bc5d82e73801cb447fe29743a0277a119cfa"
+    },
+    {
+      "path": "backend/app/Http/Controllers/RemoteAccessController.php",
+      "sha256": "6d5b7e04920dc3f6b3e7f890153aea20c820fda90cfa55fcae9303e46641f5ee"
+    },
+    {
+      "path": "backend/app/Http/Controllers/RemotePasskeysController.php",
+      "sha256": "88a4ea95c0fa26ec94dcea17a94afb0b1caac8cef6029972ebb2fc7c0c5e19c6"
+    },
+    {
+      "path": "backend/app/Http/Controllers/RemoteSecurityController.php",
+      "sha256": "4e4f580118a2b9f3fed80900e7f3387baf2d16a7c355a4b605d682488a75d969"
+    },
+    {
+      "path": "backend/app/Http/Controllers/RemoteSecurityEventsController.php",
+      "sha256": "bc5ceb3d00128e01a91dbf81d8af56450117f56e4e598c92d17d01545b7e9fc9"
+    },
+    {
+      "path": "backend/app/Http/Controllers/RemoteSessionController.php",
+      "sha256": "fda5717ab520691fa9ae7cd4df863ea665f3d89ad9fbb0910e51660403236e11"
+    },
+    {
+      "path": "backend/app/Http/Controllers/TrustedRemoteDeviceController.php",
+      "sha256": "c286c5d0d08fda3f7b0d08859d8ce679b703fe50936df7530a68bad44b7f3993"
+    },
+    {
+      "path": "backend/app/Http/Middleware/SecurityHeaders.php",
+      "sha256": "7a2dc97c90e5aabd0e10efb07ce4f4c7d2d20abf7883d0f904dd1a777739afc3"
+    },
+    {
+      "path": "backend/app/Jobs/DeliverRemoteSecurityNotification.php",
+      "sha256": "700d542fea3f4d332c431565c7d971f1b7fce41a24f50f8c621789af1bb09de6"
+    },
+    {
+      "path": "backend/app/Models/RemoteHost.php",
+      "sha256": "4e9b6d39be6d2933ffe260e7c6c6dde6a5f49b7a4d23f9aefcdaab17ee4d8095"
+    },
+    {
+      "path": "backend/app/Models/RemoteSession.php",
+      "sha256": "dfb8b447add5eaf682805cd5a3909bb277531f176447f2c5291ce2d3c3d19697"
+    },
+    {
+      "path": "backend/app/Models/TrustedDevice.php",
+      "sha256": "1d7c4c7aa4d79130a4a3de8c4c6e3963a8e30816f28f07d020bafbdcdbb7ff07"
+    },
+    {
+      "path": "backend/app/Models/VibyraSession.php",
+      "sha256": "6da39e5956cd35b97d27f81786278cd68c08ccc76dbbe3157387fe7bbb514e61"
+    },
+    {
+      "path": "backend/app/Services/Auth/TwoFactor.php",
+      "sha256": "bb4a36b6ce4b4bd094b664ce3d59b1d5d980128793c3fc43c0ba9b89137ca276"
+    },
+    {
+      "path": "backend/app/Services/Auth/TwoFactorChallenge.php",
+      "sha256": "366ec3133ef826a0c82f69c8eef61dc6e3fa9d43f845286e838bc36c4020397b"
+    },
+    {
+      "path": "backend/app/Services/ReleaseArtifact.php",
+      "sha256": "acf737310f9bb1abfd57767d9e4593aa4074ded23791160d05695a9125016c54"
+    },
+    {
+      "path": "backend/app/Services/ReleaseArtifactChecksum.php",
+      "sha256": "19a5de1d86a7cef59c6e25aa7a994ed2c03926adb8f34d146246882da9f69d9a"
+    },
+    {
+      "path": "backend/app/Services/ReleaseCapacity.php",
+      "sha256": "9c06c9bf1d2b0ed563c9c5f30743ec25b88d0d8bbf75518e32bd1c2d05ac4fcd"
+    },
+    {
+      "path": "backend/app/Services/ReleaseStorage.php",
+      "sha256": "6d16abda9fdef9a55f5d2d747b8234444936ccd57b6db93d71178463e7216e5b"
+    },
+    {
+      "path": "backend/app/Services/ReleaseStream.php",
+      "sha256": "44a01ba4c82ca0540e5d7c69efae3916977c98cb91c3c893e98214fe1688fc69"
+    },
+    {
+      "path": "backend/app/Services/Remote/Passkeys/PasskeyCeremonies.php",
+      "sha256": "be6871721aad9540bd7dccc1237bc023b1702677f1b84f414356b9d973ef6c26"
+    },
+    {
+      "path": "backend/app/Services/Remote/Passkeys/PasskeyVerification.php",
+      "sha256": "14514c737b7696e4b12c44c2b1371d38685b69a5e6fa5d3b3d041459422c9ea4"
+    },
+    {
+      "path": "backend/app/Services/Remote/Passkeys/WebAuthnVerifier.php",
+      "sha256": "93e4cd929628d27ca8da11a3f88a08359b204d6aeb28b501a43e9f02f8c02e1c"
+    },
+    {
+      "path": "backend/app/Services/Remote/RelayAuthorization.php",
+      "sha256": "d7e171115aabb898041113396ac792f76ebb784b207cde5c239a1cc851f823c5"
+    },
+    {
+      "path": "backend/app/Services/Remote/RelayGateway.php",
+      "sha256": "ab995dc187e90cb1d36a9107a52631cf3f660defa1c1c4f062c6840ffd49f505"
+    },
+    {
+      "path": "backend/app/Services/Remote/RelayTokens.php",
+      "sha256": "fa218faa47105f35a88c35a224d5ec806f9cbab2e5087aae2de17cc5664b5ecf"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteAccess.php",
+      "sha256": "8464fe239cb81ecd0bd6da63162c7c4ac820a272215ca0f8328fc9105b9ba1f3"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteAccessException.php",
+      "sha256": "701258e5b6e3373c9a86b913f9ccfea5482b2106ac41f3090a49dd153b62f21d"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteAccountSecurity.php",
+      "sha256": "c6fba6e8b09c6adab9be2f9fb5ea58054647980ea00162ff816441dd9fbc7a94"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteAuthorizationLease.php",
+      "sha256": "427f75676c43ca1a5b8f520af1dad746e9cc725bdc635719f17873f4154f7e55"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteDeviceProof.php",
+      "sha256": "e98cab5ffa949b4ff4c57b43b444fd297458595ee11d0f2d64ee8ed63517967b"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteHostPolicy.php",
+      "sha256": "057b6237308994d4fd0f070e0befa416864e46507d045b53354d203248a37e5c"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteHostSecurityProof.php",
+      "sha256": "d4375b1bf626b93eba59b1ebc7484f5a8290ba196a9d6e12e492c8ec7a45c3a0"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteIdentityProof.php",
+      "sha256": "14a1f9d76be27ded39dfdf589272453b0bb853bec19d3b5874397f7693023e79"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemotePermissions.php",
+      "sha256": "9a9d34a768cfdf699dbade5ec082706ee1e803ea8e66ee2ec15b1a8e017431a2"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemotePresence.php",
+      "sha256": "31efa2b89c160b2b4a02da4aa185d89b709701b98f9affe7ed2934e382c8038e"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteRestrictions.php",
+      "sha256": "314a13fa019eddf24baf5eaa15263b733ab63fbd5299b670538495a4ac29bf6d"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteRevocations.php",
+      "sha256": "ebad6cda1512fcdff10eebee64138bf6ae6c6078361d45a5354c1cd862b1241d"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSecurityFailures.php",
+      "sha256": "fab7eea32fca32838fe4ab1fd8e8d8bdb1f1fdbe68510bb62a2f89f6341a96c1"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSecurityRateLimit.php",
+      "sha256": "84be4b8d00668c50ccc81bc3b4a67b06ebdee0c37ea4c2a78596202b73375534"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionActivity.php",
+      "sha256": "e802421e57e206063c6e0474efaf0e78cb07fb1352e12cddccd65abe83e877fc"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionApproval.php",
+      "sha256": "4c55ba179c040c09659e9153968d81a11eed4042e6c3159914d9954a292290c0"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionAuthorization.php",
+      "sha256": "b969483dd61b1b50c6b055713c829f9471637682e782af72de9252adb2d4902b"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionCreation.php",
+      "sha256": "5f7dcc9a73320ba549aafa6791c5c7e8c6a437ae5e2c0ca62d953e48e4f03405"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionGrants.php",
+      "sha256": "aeafd2243e08520cb76c98d7f403e7f3878e1677552232d1431e6941b111d364"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionManagement.php",
+      "sha256": "12bf74a39fa2e72f6c831f042e541043f5462ef8e6ffc91b6bcf2540876a9e27"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionRevocations.php",
+      "sha256": "0a2ab26bd4de24d167fca7eaba18798202651d6d67ce46d1facf9136b4e9d126"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteSessionTokens.php",
+      "sha256": "9f22120c5d3ab97be71ce35485e887e3b381158367df35bf18c7f09fa3a7cbe5"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteTrustedDevices.php",
+      "sha256": "d80afb615f77547310d5664c3dfc0243a75cbdc76d016a1460b993d213f7f3cc"
+    },
+    {
+      "path": "backend/app/Services/Remote/RemoteVerificationInvalidation.php",
+      "sha256": "51900deefed32918930eb093aa45acb80a08942948cddf8dbc49121555276f59"
+    },
+    {
+      "path": "backend/app/Services/Remote/RequireRemoteAccessAuthorization.php",
+      "sha256": "aaff07f330fbabb6291569701d4d7a9c22d1234d7c94a453fee2fb18493cf2be"
+    },
+    {
+      "path": "backend/app/Services/Remote/SecurityEvents.php",
+      "sha256": "f9f4ac9ceed19c1a3e91fa7040933bce9bd757e06bba15a498c08086802e5abd"
+    },
+    {
+      "path": "backend/app/Services/Remote/SecurityNotifications.php",
+      "sha256": "57115f476450f7576574e02d823a2268fdb875227f7b5f46a8cfcd8a4886d16f"
+    },
+    {
+      "path": "backend/app/Services/WebsiteContentSecurityPolicy.php",
+      "sha256": "082e9869885e85b7052f043a0beeef4f68124888c55194678a33074148489134"
+    },
+    {
+      "path": "backend/bootstrap/app.php",
+      "sha256": "ec35e21d6e6b7aaafc9c1013f871c5ca4628cd945add058289d15d7b81172251"
+    },
+    {
+      "path": "backend/composer.json",
+      "sha256": "7a2e629257d52ad141a963f6cb4fc9429c4753131d1b94621f181103a783383a"
+    },
+    {
+      "path": "backend/composer.lock",
+      "sha256": "c0c428aa4b6e66175f9bc27a7ed0648b6b20c71ee0ffebea6e273fac1efa13cc"
+    },
+    {
+      "path": "backend/config/filesystems.php",
+      "sha256": "70784bd297808e4cfd5e4954fd1ea3ce760635c2d0f565b4b0f611e90dc35d98"
+    },
+    {
+      "path": "backend/config/releases.php",
+      "sha256": "d62aac4ea871f7261ca9e92e4050a92b65a0eb2098d49b1734066b39f98d0bd1"
+    },
+    {
+      "path": "backend/config/remote.php",
+      "sha256": "4eae4a7b71e6d65bb1c855d7acec1042b3d4c6e842809e8342070c7be67d4bfd"
+    },
+    {
+      "path": "backend/config/remote_security.php",
+      "sha256": "d13f0ff30c879c9068ebddb9a9ac71b39bf68d1c0c11a5b56b6f910a942a2489"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_29_230000_add_remote_authorization_generations.php",
+      "sha256": "db9d2296146dbf2875df3cdfbe7c842a64157e1f7df0d7dd636e43bb654dd596"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_000001_harden_remote_sessions.php",
+      "sha256": "cc038d334523b3898434d74ee6bea6c0378ae74133f3b03927d8e7c828824435"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_005000_create_trusted_remote_devices.php",
+      "sha256": "f90b94b739717b181c9dc04232db7240312377f7017d4175d8b12ebdac82dbee"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_010000_create_remote_passkeys.php",
+      "sha256": "62978a04578d25405bbd56a902218d9f2514fde5fd84a4d4920bf1eca143f37c"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_020000_add_remote_policy_and_permissions.php",
+      "sha256": "1a4ccc9711f8aad9e7e47d3d7d441260d142bf6deef7ffc024f4d2ed13bb309c"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_020000_create_remote_security_events.php",
+      "sha256": "6fb07cf897fadb359f2b435ce554fe89108075a0a7424cc3dae5216a278f395b"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_030000_track_remote_session_activity.php",
+      "sha256": "9e7e5f32b32e248d0f757e13352cd94d1fdbc94f01a521d73f5b0401814fb19f"
+    },
+    {
+      "path": "backend/database/migrations/2026_09_30_040000_add_remote_restriction_revisions.php",
+      "sha256": "b87d7a1a8b8b6df56a84602b46c4838581628849c585438ec3b95f7b99647c75"
+    },
+    {
+      "path": "backend/public/security/passkey.css",
+      "sha256": "f12d8b40a44f23f9fb3c901d539ca6fb9e5820f05fb994f2da7c63ba3e2d30c2"
+    },
+    {
+      "path": "backend/public/security/passkey.js",
+      "sha256": "fa45e6cb37ad0a43a699a54474dd938e755d96dcd7e94fad97c36f0099dad241"
+    },
+    {
+      "path": "backend/resources/views/human-check.blade.php",
+      "sha256": "9decbdaba65d5b8290433b3e263bad997102991fc7193ba82da7d7e1b73028f1"
+    },
+    {
+      "path": "backend/resources/views/legal/layout.blade.php",
+      "sha256": "71e6c4287f15285e6d636a0c4513e6dbf6c3f65f4d94724daf4976a2ec6a5f0f"
+    },
+    {
+      "path": "backend/resources/views/remote/verify.blade.php",
+      "sha256": "a21677142586205fb38a969e14c332efddfc962524e64a0ff680a085b1d181ca"
+    },
+    {
+      "path": "backend/routes/console.php",
+      "sha256": "945946582c8a2e5369d6e38cdfba328190abf8c5f36b73f6116c20330c513263"
+    },
+    {
+      "path": "backend/routes/remote.php",
+      "sha256": "ff48da778f816340fe2e03ebc6e2293afbeeb712216f98704892b8b959f5f4b0"
+    },
+    {
+      "path": "backend/routes/remote_security.php",
+      "sha256": "0524e753a2baadca7083f71dfe8eba959cbad893aeea67cc32be49b6f85559fc"
+    },
+    {
+      "path": "backend/scripts/verify-website-csp.mjs",
+      "sha256": "be2fc1cbe0078a390c2f0f47d72da69abb8512730f7e439943367f889ed25bf0"
+    },
+    {
+      "path": "backend/scripts/website-csp-fixture.php",
+      "sha256": "cdd9d6d79a2a5ce71f5eeda3b30ea9152d3d1e86ca2e9c5b9c376757a475749d"
+    },
+    {
+      "path": "backend/storage/app/vibyra/agent.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/storage/app/vibyra/state.json",
+      "sha256": "207f75337cb8724dade94388febdf19c10172d8e638a68a9b5b3cad782afd75a"
+    },
+    {
+      "path": "backend/tests/Feature/CloudSecurityHeadersTest.php",
+      "sha256": "acbf517a02062498011e48a433ef703ff714f5ee994da88d5b7958977da19b80"
+    },
+    {
+      "path": "backend/tests/Feature/RelayKeyRotationTest.php",
+      "sha256": "f5808539466b48dbdd1877b78b292a5b36f043be92e3e8fd0dea2b6274f99b6d"
+    },
+    {
+      "path": "backend/tests/Feature/ReleaseStorageMigrationTest.php",
+      "sha256": "f72d4242d52347b11c6d39c0ee6a873bcf7310545678159fd2b5510015628948"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteAccessTest.php",
+      "sha256": "9faa236a26022b61f92433caaf903c219eb3216a557025e65f8885f833a078e4"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteAccountAtomicityTest.php",
+      "sha256": "8e2092f05b95f59c7ff463a8072a0c195af911c440c6bb973724616ae74818d5"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteAccountSecurityTest.php",
+      "sha256": "0e3f50604ac064ac99b5b7dfcb3b57b4942e3bddeb9492c42cb5b29d3a030c23"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteCloudAuthorizationTest.php",
+      "sha256": "bf882e905aba04089fcda41e8c6b341200b3e792896f35b2c8a2e9cf65f6946a"
+    },
+    {
+      "path": "backend/tests/Feature/RemotePasskeysTest.php",
+      "sha256": "1d6a8cb568c9ada73686766d54309fbb3502266c3d384a8a09b5f9de6f0edcc4"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteRestrictionsTest.php",
+      "sha256": "cd649e6717086b8d335eed7e0adcca532bcaefe5ba930ad7041b20c28a7101b9"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteSecurityConcurrencyTest.php",
+      "sha256": "6edade181c0cd63e187adf41fdbe0693d54415db9bb4cedde4567b845df9446a"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteSecurityEventsTest.php",
+      "sha256": "79420ceabf63e0bf04822bf882be62003324f91ed35c30a08a0f71eed49a58c9"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteSecurityFailuresTest.php",
+      "sha256": "d6dfdee19b1bd792ce457486cee5a3f551bf9c1524ce207a5947cf4de42b4294"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteSecurityPolicyTest.php",
+      "sha256": "d07ee1f66199f9b762ee8e04ddde16e0f308ee99ad018eb170fb8c43e01951b6"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteSessionSecurityTest.php",
+      "sha256": "33ff99733236cc4a365d9102becb18e891e7712b94ebb7b0b3ee25ccb8e31474"
+    },
+    {
+      "path": "backend/tests/Feature/TrustedRemoteDevicesTest.php",
+      "sha256": "d89b06543ab60a8d1876ed36dc410311415cdf9e1c945e9cc0ef9982933522e5"
+    },
+    {
+      "path": "backend/tests/Feature/TwoFactorAtomicityTest.php",
+      "sha256": "70b3d007607efdbcfa5bea0c6c8c8e84daf9e7df9f49dc5de441f4c452ddf9d3"
+    },
+    {
+      "path": "backend/tests/Feature/WebsiteContentSecurityPolicyTest.php",
+      "sha256": "72e213d9d85795eba6662a3fc28316a4a3f386d59c6d7083f89ac9bf08b06844"
+    },
+    {
+      "path": "backend/tests/Feature/WebsiteReleaseAccessTest.php",
+      "sha256": "bb50f5a51da472a8f8632e15126f48f1cf94dc62b7cc055cd2c4895a6a0422ea"
+    },
+    {
+      "path": "backend/tests/Support/RemotePasskeyFixture.php",
+      "sha256": "70705496d084f54037f178007e7b38c02db9fb779d7e2787020c82c93065fe18"
+    },
+    {
+      "path": "backend/tests/Support/RemotePostgresWorkers.php",
+      "sha256": "8b0a9fb5e39732ad0faccb7b9dc2e46cea331b854895ad3e5093c48311f72cb2"
+    },
+    {
+      "path": "backend/tests/Support/RemoteSecurityFixture.php",
+      "sha256": "d01cc0fd8e75ec31e75137786cce2ec5efe77d755f5156d9288e0145bc8223bb"
+    },
+    {
+      "path": "backend/tests/Support/TwoFactorFixture.php",
+      "sha256": "85c276f1c046425be14472a92c92186f612f07ba5908c48b1981d901aef6d990"
+    },
+    {
+      "path": "backend/tests/integration/RemotePostgresConcurrencyTest.php",
+      "sha256": "bd59ef414d1da1d3e1d07e82d434de1fa9ad8356ee466c00c17fab6d617194ce"
+    },
+    {
+      "path": "backend/tests/integration/TwoFactorPostgresConcurrencyTest.php",
+      "sha256": "8b2e8a6a1f62f9b47f8de812eef182cc5e10c7776b4dfd7f6980a0fab183733c"
+    }
+  ]
+}

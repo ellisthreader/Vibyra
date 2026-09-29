@@ -138,11 +138,16 @@ trait AuthRecoveryEndpoints
             if ($user->provider !== 'email') {
                 return;
             }
-            $user->forceFill([
-                'password' => Hash::make($newPassword),
-                'remember_token' => Str::random(60),
-            ])->save();
-            VibyraSession::where('user_id', $user->id)->delete();
+            $user = app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, function (User $user) use ($newPassword) {
+                $user->forceFill([
+                    'password' => Hash::make($newPassword),
+                    'remember_token' => Str::random(60),
+                ])->save();
+                app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'password_changed');
+                VibyraSession::where('user_id', $user->id)->delete();
+                app(\App\Services\Remote\SecurityEvents::class)->record((int) $user->id, 'PASSWORD_CHANGED');
+                return $user;
+            });
             event(new PasswordReset($user));
         });
 

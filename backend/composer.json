@@ -10,9 +10,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "ext-sodium": "*",
         "geoip2/geoip2": "^3.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
+        "lbuchs/webauthn": "^2.2",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "mcp/sdk": "^0.8.1",
         "stripe/stripe-php": "^20.1"
     },
@@ -84,6 +87,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.3.15"
         }
     },
     "minimum-stability": "stable",

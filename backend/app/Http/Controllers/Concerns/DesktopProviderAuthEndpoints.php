@@ -167,7 +167,7 @@ trait DesktopProviderAuthEndpoints
             throw new ProviderIdentityException('The Vibyra account is no longer valid for this deletion.');
         }
 
-        $user->delete();
+        app(\App\Services\Remote\RemoteAccountSecurity::class)->deleteUser((int) $user->id);
     }
 
     private function desktopProviderResultPage(

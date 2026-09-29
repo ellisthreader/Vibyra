@@ -30,45 +30,51 @@ trait TwoFactorEndpoints
     /** A new secret and the link that carries it. Nothing is gated until it is confirmed. */
     public function startTwoFactor(Request $request): JsonResponse
     {
-        $user = $this->authenticatedUser($request);
-        if (($user->provider ?: 'email') !== 'email') {
-            return $this->json(['ok' => false, 'error' => 'This account signs in with ' . ucfirst((string) $user->provider)
-                . '. Add a second step there and it protects your Vibyra account too.'], 422);
-        }
-        if (app(TwoFactor::class)->enabled($user)) {
-            return $this->json(['ok' => false, 'error' => 'Two-factor authentication is already on for this account.'], 409);
-        }
-        $secret = app(TwoFactor::class)->start($user);
+        return $this->changeSecondFactor($request, function (User $user) use ($request) {
+            if (($user->provider ?: 'email') !== 'email') {
+                return $this->json(['ok' => false, 'error' => 'This account signs in with ' . ucfirst((string) $user->provider)
+                    . '. Add a second step there and it protects your Vibyra account too.'], 422);
+            }
+            if (app(TwoFactor::class)->enabled($user)) {
+                return $this->json(['ok' => false, 'error' => 'Two-factor authentication is already on for this account.'], 409);
+            }
+            $secret = app(TwoFactor::class)->start($user);
 
-        return $this->json([
-            'ok' => true,
-            'secret' => $secret,
-            'uri' => app(TwoFactor::class)->setupUri($user, $secret),
-            'account' => $user->email,
-        ]);
+            return $this->json([
+                'ok' => true,
+                'secret' => $secret,
+                'uri' => app(TwoFactor::class)->setupUri($user, $secret),
+                'account' => $user->email,
+            ]);
+        });
     }
 
     /** The first code from the app, which is what proves the setup actually worked. */
     public function confirmTwoFactor(Request $request): JsonResponse
     {
-        $user = $this->authenticatedUser($request);
-        $codes = app(TwoFactor::class)->confirm($user, (string) $request->input('code', ''));
-        if ($codes === null) {
-            return $this->json(['ok' => false, 'error' => 'That code didn’t match. Check your authenticator app and try the current code.'], 422);
-        }
+        return $this->changeSecondFactor($request, function (User $user) use ($request) {
+            $codes = app(TwoFactor::class)->confirm($user, (string) $request->input('code', ''));
+            if ($codes === null) {
+                return $this->json(['ok' => false, 'error' => 'That code didn’t match. Check your authenticator app and try the current code.'], 422);
+            }
+            app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'two_factor_enabled');
 
-        return $this->json(['ok' => true, 'recoveryCodes' => $codes, 'user' => $this->userPayload($user->fresh() ?? $user)]);
+            return $this->json(['ok' => true, 'recoveryCodes' => $codes, 'user' => $this->userPayload($user->fresh() ?? $user)]);
+        });
     }
 
     /** A new set of recovery codes, proved by the app or by one of the old codes. */
     public function replaceTwoFactorRecoveryCodes(Request $request): JsonResponse
     {
-        $user = $this->authenticatedUser($request);
-        if (! $this->provedSecondFactor($user, $request)) {
-            return $this->json(['ok' => false, 'error' => 'Enter the current code from your authenticator app.'], 422);
-        }
+        return $this->changeSecondFactor($request, function (User $user) use ($request) {
+            if (! $this->provedSecondFactor($user, $request)) {
+                return $this->json(['ok' => false, 'error' => 'Enter the current code from your authenticator app.'], 422);
+            }
 
-        return $this->json(['ok' => true, 'recoveryCodes' => app(TwoFactor::class)->replaceRecoveryCodes($user)]);
+            $codes = app(TwoFactor::class)->replaceRecoveryCodes($user);
+            app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'recovery_codes_changed');
+            return $this->json(['ok' => true, 'recoveryCodes' => $codes]);
+        });
     }
 
     /**
@@ -78,18 +84,21 @@ trait TwoFactorEndpoints
      */
     public function disableTwoFactor(Request $request): JsonResponse
     {
-        $user = $this->authenticatedUser($request);
-        if (! app(TwoFactor::class)->enabled($user)) {
+        return $this->changeSecondFactor($request, function (User $user) use ($request) {
+            if (! app(TwoFactor::class)->enabled($user)) {
+                app(TwoFactor::class)->disable($user);
+
+                return $this->json(['ok' => true, 'user' => $this->userPayload($user->fresh() ?? $user)]);
+            }
+            if (! $this->provedSecondFactor($user, $request)) {
+                return $this->json(['ok' => false, 'error' => 'Enter a code from your authenticator app, or one of your recovery codes.'], 422);
+            }
             app(TwoFactor::class)->disable($user);
 
-            return $this->json(['ok' => true, 'user' => $this->userPayload($user->fresh() ?? $user)]);
-        }
-        if (! $this->provedSecondFactor($user, $request)) {
-            return $this->json(['ok' => false, 'error' => 'Enter a code from your authenticator app, or one of your recovery codes.'], 422);
-        }
-        app(TwoFactor::class)->disable($user);
+            app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'two_factor_disabled');
 
-        return $this->json(['ok' => true, 'user' => $this->userPayload($user->fresh() ?? $user)]);
+            return $this->json(['ok' => true, 'user' => $this->userPayload($user->fresh() ?? $user)]);
+        });
     }
 
     /** The second half of a login: the challenge from `/api/auth/login`, and a code. */
@@ -120,6 +129,12 @@ trait TwoFactorEndpoints
             'confirmedAt' => $on ? optional($user->two_factor_confirmed_at)->toIso8601String() : null,
             'recoveryCodesLeft' => $on ? count(app(TwoFactor::class)->recoveryCodes($user)) : 0,
         ];
+    }
+
+    private function changeSecondFactor(Request $request, callable $change): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+        return app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, $change);
     }
 
     /** A code from the app or a recovery code; a password is never a substitute. */

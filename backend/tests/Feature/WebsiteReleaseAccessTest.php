@@ -87,6 +87,30 @@ class WebsiteReleaseAccessTest extends TestCase
         $this->assertStringNotContainsString('private/windows', $response->getContent());
     }
 
+    public function test_release_download_supports_bounded_and_suffix_ranges(): void
+    {
+        Storage::disk('releases')->put('private/windows/Vibyra.exe', 'windows-binary');
+        $response = $this->withHeader('Range', 'bytes=1-4')->get('/downloads/windows');
+        $response->assertStatus(206)->assertHeader('Content-Range', 'bytes 1-4/14')
+            ->assertHeader('Content-Length', '4');
+        $this->assertSame('indo', $response->streamedContent());
+        $suffix = $this->withHeader('Range', 'bytes=-6')->get('/downloads/windows');
+        $suffix->assertStatus(206);
+        $this->assertSame('binary', $suffix->streamedContent());
+        $this->withHeader('Range', 'bytes=99-100')->get('/downloads/windows')
+            ->assertStatus(416)->assertHeader('Content-Range', 'bytes */14');
+    }
+
+    public function test_download_uses_the_same_disk_that_was_verified(): void
+    {
+        Storage::disk('releases')->put('private/windows/Vibyra.exe', 'windows-binary');
+        $this->mock(\App\Services\ReleaseStorage::class, function ($mock): void {
+            $mock->shouldReceive('diskFor')->once()->with('private/windows/Vibyra.exe')->andReturn('releases');
+        });
+        $response = $this->get('/downloads/windows')->assertOk();
+        $this->assertSame('windows-binary', $response->streamedContent());
+    }
+
     public function test_download_page_and_files_are_public(): void
     {
         Storage::disk('releases')->put('private/windows/Vibyra.exe', 'windows-binary');

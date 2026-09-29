@@ -2,6 +2,8 @@
 
 return [
     'disk' => env('VIBYRA_RELEASE_DISK', 'local'),
+    'fallback_disk' => env('VIBYRA_RELEASE_FALLBACK_DISK'),
+    'capacity_path' => env('VIBYRA_RELEASE_CAPACITY_PATH', storage_path('app/private/releases')),
     'platforms' => [
         'windows' => [
             'label' => 'Vibyra for Windows',

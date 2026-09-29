@@ -8,9 +8,9 @@ use RuntimeException;
 
 class ReleaseArtifactChecksum
 {
-    public function matches(string $path, string $expected, int $bytes): bool
+    public function matches(string $path, string $expected, int $bytes, ?string $diskName = null): bool
     {
-        $diskName = (string) config('releases.disk', 'local');
+        $diskName ??= (string) config('releases.disk', 'local');
         $disk = Storage::disk($diskName);
         $modified = $disk->lastModified($path);
         $key = 'release-sha256:'.hash('sha256', implode('|', [
