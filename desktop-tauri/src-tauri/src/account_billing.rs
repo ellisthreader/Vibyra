@@ -109,7 +109,7 @@ async fn call(
     match request(endpoint, Some(&token), body).await {
         Ok(value) => Ok(value),
         Err(ApiError::Unauthorized(message)) => {
-            state.account.clear_session(&SecretStore);
+            crate::account_auth::reject_session(state);
             Err(message)
         }
         Err(error) => Err(error.message().to_owned()),

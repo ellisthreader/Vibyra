@@ -5,6 +5,7 @@ export type SettingsSectionId =
   | "iphone"
   | "shortcuts"
   | "account"
+  | "security"
   | "advanced";
 
 /** A group inside a section that a deep link can open and scroll to. */

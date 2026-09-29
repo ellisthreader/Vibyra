@@ -11,7 +11,6 @@ import {
 import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
-
 interface LaunchOptions {
   safeMode?: boolean;
   requestId?: string;
@@ -36,7 +35,6 @@ interface LaunchOptions {
    */
   view?: AgentView;
 }
-
 interface PreparedLaunch {
   requestId?: string;
   agent: ResolvedAgent;
@@ -51,7 +49,6 @@ interface PreparedLaunch {
   accountId: string | null;
   view?: AgentView;
 }
-
 /** What one launch opened: a pane of this window's, or a shared chat. */
 export type LaunchedSession = { paneId: number } | { conversationId: string };
 

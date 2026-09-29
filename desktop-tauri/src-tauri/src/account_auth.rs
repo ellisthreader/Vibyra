@@ -29,6 +29,7 @@ pub async fn restore(state: &AppState) -> AccountSnapshot {
             Some(profile) => {
                 bind_preview_account(state, body.get("user"));
                 account.adopt_session(&store, token, profile);
+                state.phone.lock().account_signed_in();
                 rotate_session(state).await;
             }
             None => account.set_status(
@@ -66,6 +67,7 @@ async fn rotate_session(state: &AppState) {
 /// Logs out: revokes the backend session when reachable, then tears this
 /// machine's session down.
 pub async fn logout(state: &AppState) -> AccountSnapshot {
+    state.phone.lock().account_signed_out();
     let account = &state.account;
     account.cancel_oauth();
     if let Some(token) = account.token() {
@@ -83,6 +85,7 @@ pub async fn logout(state: &AppState) -> AccountSnapshot {
 /// than repeating it. A path that only cleared the credential left every
 /// terminal running for the page that reloads next to never see again.
 pub fn teardown(state: &AppState) {
+    state.phone.lock().account_signed_out();
     clear_preview_grants(state);
     for id in state.manager.close_all() {
         state.sink.detach(id);
@@ -105,4 +108,11 @@ fn clear_preview_grants(state: &AppState) {
             eprintln!("Vibyra Preview grants could not be persisted as revoked: {error}");
         }
     }
+}
+
+/// Reject remote authority while retaining local terminal work.
+pub(crate) fn reject_session(state: &AppState) {
+    state.phone.lock().account_signed_out();
+    clear_preview_grants(state);
+    state.account.clear_session(&SecretStore);
 }

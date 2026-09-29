@@ -31,6 +31,7 @@ pub(super) fn open_websocket(
         method: "GET".into(),
         path: "/ws".into(),
         headers,
+        browser_origin: Some("http://127.0.0.1:40000".into()),
     }
     .encode()
     .unwrap();

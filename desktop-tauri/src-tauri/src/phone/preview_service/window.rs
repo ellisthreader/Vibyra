@@ -16,6 +16,7 @@ impl PreviewService {
         metadata: RequestMetadata,
         body: Vec<u8>,
     ) -> Result<(), String> {
+        stream.require_remote("screen:view")?;
         let path = metadata.path.split('?').next().unwrap_or("");
         let mut focus = None;
         let (status, mime, bytes) = match (metadata.method.as_str(), path) {
@@ -29,7 +30,10 @@ impl PreviewService {
                     )
                     .replace(
                         "data-control=\"false\"",
-                        if window.can_control() {
+                        if window.can_control()
+                            && stream.permits_remote("mouse:control")
+                            && stream.permits_remote("keyboard:control")
+                        {
                             "data-control=\"true\""
                         } else {
                             "data-control=\"false\""
@@ -69,7 +73,9 @@ impl PreviewService {
                         key.eq_ignore_ascii_case("x-vibyra-window") && value == "1"
                     }) =>
             {
-                let event = serde_json::from_slice(&body).map_err(|_| "Invalid window input")?;
+                let event: serde_json::Value =
+                    serde_json::from_slice(&body).map_err(|_| "Invalid window input")?;
+                stream.require_window_input(&event)?;
                 // Tapping and typing into a window follow the same computer
                 // switch as typing into its terminals from this phone.
                 if !self.typing_allowed() {

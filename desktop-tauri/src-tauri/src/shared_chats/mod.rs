@@ -3,19 +3,17 @@ pub mod desktop_stream;
 #[cfg(all(test, unix))]
 mod launch_tests;
 mod lifecycle;
-mod registry;
 mod preview;
+mod registry;
 mod routes;
 mod stream;
 #[cfg(test)]
 mod tests;
-
 use parking_lot::Mutex;
 use registry::Project;
 use serde_json::{json, Value};
 use std::{path::PathBuf, sync::Arc};
 use vibyra_engine::Engine;
-
 struct Slot {
     pub project: Project,
     pub engine: Arc<Engine>,
@@ -26,12 +24,9 @@ pub struct SharedChats {
     error: Option<String>,
     local_action: Mutex<()>,
     cli: cli::CliTerminals,
-    /// Wakes `subscribe` threads when a project is added.
     wake: stream::Wake,
-    /// Preview status and run for every engine, loaded or created later.
     preview: Mutex<Option<preview::Providers>>,
 }
-
 impl SharedChats {
     pub fn new(path: PathBuf) -> Arc<Self> {
         let loaded = registry::load(&path);
@@ -63,7 +58,6 @@ impl SharedChats {
     ) -> Result<Value, String> {
         self.create_configured(project_id, name, root, account_id, request_id, title, None)
     }
-    // Explicit identity and launch settings are retained together at this IPC boundary.
     #[allow(clippy::too_many_arguments)]
     pub fn create_configured(
         &self,
@@ -190,19 +184,16 @@ impl SharedChats {
         }
     }
 }
-
-mod lookup;
-
 #[cfg(all(test, unix))]
 mod cli_tests;
 #[cfg(all(test, unix))]
 pub(crate) mod fixture;
+mod lookup;
 #[cfg(all(test, unix))]
 mod native_cli_tests;
-
-#[cfg(all(test, unix))]
-mod resume_tests;
 #[cfg(test)]
 mod phone_resume_tests;
+#[cfg(all(test, unix))]
+mod resume_tests;
 #[cfg(test)]
 mod unused_resume_tests;

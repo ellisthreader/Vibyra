@@ -42,6 +42,7 @@ mod model_watch;
 mod model_watch_store;
 #[cfg(test)]
 mod model_watch_tests;
+mod native_logging;
 mod openai_key;
 mod perf;
 mod phone;
@@ -69,6 +70,7 @@ mod provider_auth_round;
 mod provider_auth_state;
 mod provider_auth_url;
 mod provider_auth_view;
+mod remote_indicator;
 mod renderer;
 mod report;
 mod report_format;
@@ -78,6 +80,7 @@ mod report_relay;
 #[cfg(test)]
 mod report_tests;
 mod report_text;
+mod restriction_monitor;
 mod secret_store;
 mod session_identity;
 #[cfg(any(target_os = "macos", target_os = "linux", test))]
@@ -98,6 +101,7 @@ pub fn handle_cli() -> Option<Result<&'static str, String>> {
 }
 
 pub fn run() {
+    native_logging::install();
     // First, before anything asks whether an AI CLI is installed. A desktop
     // launch inherits the session manager's PATH, which has none of the
     // directories the user's shell rc adds — so `claude`, `codex` and `gemini`
@@ -133,6 +137,8 @@ pub fn run() {
             model_watch::spawn(app.handle().clone());
             shared_chats::desktop_stream::spawn(app.handle().clone());
             phone::notify_window(app.handle().clone());
+            remote_indicator::register(app.handle().clone())?;
+            restriction_monitor::start(app.handle().clone());
             agent_computer_runner::spawn(app.handle().clone());
             Ok(())
         })

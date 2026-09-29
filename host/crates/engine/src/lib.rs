@@ -13,6 +13,7 @@ mod launch;
 mod preview;
 mod preview_status;
 pub use preview_status::{PreviewRunProvider, PreviewStatusProvider, RunOutcome, RunRequest};
+mod funded_bindings;
 mod projects;
 mod scaffold;
 mod scaffold_run;
@@ -22,7 +23,6 @@ mod search;
 mod sessions;
 mod state;
 mod vibes_tools;
-mod funded_bindings;
 mod vibes_write;
 
 use parking_lot::Mutex;

@@ -38,7 +38,9 @@ tauri-build = { version = "2", features = [] }
 sha1 = "0.10"
 sha2 = "0.10"
 flate2 = "1"
-tauri = { version = "2", features = [] }
+tauri = { version = "2.11.5", features = ["tray-icon", "tracing"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-process = "2"

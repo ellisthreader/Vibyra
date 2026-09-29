@@ -18,11 +18,13 @@ impl PreviewService {
         let mut offset = 0;
         let mut deadline = Instant::now() + Duration::from_secs(30);
         while offset < bytes.len() {
+            stream.require_remote("preview:access")?;
             // Revocation, project switches, target edits, and Preview stop take
             // effect even on a response that was already flowing.
             self.binding(device, key.generation())?;
             let mut window = stream.outbound.lock();
             while window.available() == 0 && !stream.canceled.load(Ordering::SeqCst) {
+                stream.require_remote("preview:access")?;
                 if Instant::now() >= deadline {
                     return Err("Preview phone stopped reading".into());
                 }
@@ -61,6 +63,7 @@ impl PreviewService {
     ) -> Result<(), String> {
         let deadline = Instant::now() + Duration::from_secs(30);
         loop {
+            stream.require_remote("preview:access")?;
             if stream.canceled.load(Ordering::SeqCst) {
                 return Err("Preview canceled".into());
             }

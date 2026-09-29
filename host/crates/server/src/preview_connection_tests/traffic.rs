@@ -55,6 +55,15 @@ async fn old_preview_cleanup_cannot_erase_the_new_same_device_session() {
     ));
     first_input.send(first.start(hello).unwrap()).await.unwrap();
     first.finish(&first_output.recv().await.unwrap()).unwrap();
+    first_input
+        .send(
+            first
+                .encrypt(br#"{"id":"confirm","method":"host.state"}"#)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    first.decrypt(&first_output.recv().await.unwrap()).unwrap();
 
     let mut second = Client::new(&phone[..32], &host).unwrap();
     let (second_input, second_receiver) = async_mpsc::channel(32);
@@ -69,6 +78,17 @@ async fn old_preview_cleanup_cannot_erase_the_new_same_device_session() {
         .await
         .unwrap();
     second.finish(&second_output.recv().await.unwrap()).unwrap();
+    second_input
+        .send(
+            second
+                .encrypt(br#"{"id":"confirm","method":"host.state"}"#)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    second
+        .decrypt(&second_output.recv().await.unwrap())
+        .unwrap();
     assert!(tokio::time::timeout(Duration::from_secs(2), old)
         .await
         .unwrap()

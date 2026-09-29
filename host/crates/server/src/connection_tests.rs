@@ -86,7 +86,8 @@ async fn replayed_transport_frame_closes_connection_without_second_dispatch() {
 /// told the device is already connected — nothing else could clear it.
 #[tokio::test]
 async fn a_returning_device_replaces_the_connection_it_left_behind() {
-    let (_dir, shared) = state();
+    let probe = std::sync::Arc::new(ConnectionProbe::default());
+    let (_dir, shared) = crate::test_support::state_with_backend(probe.clone());
     let key = generate_keypair().unwrap();
     let device = hex::encode(&key[32..]);
     shared.trust(&device, "Trusted test phone").unwrap();
@@ -102,6 +103,15 @@ async fn a_returning_device_replaces_the_connection_it_left_behind() {
         serde_json::from_slice(&stale.finish(&stale_output.recv().await.unwrap()).unwrap())
             .unwrap();
     assert_eq!(opened["ok"], true);
+    stale_input
+        .send(
+            stale
+                .encrypt(br#"{"id":"old","method":"host.state","params":{}}"#)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    stale.decrypt(&stale_output.recv().await.unwrap()).unwrap();
 
     let mut returning = Client::new(&key[..32], &host).unwrap();
     let (input, receiver) = mpsc::channel(32);
@@ -112,6 +122,24 @@ async fn a_returning_device_replaces_the_connection_it_left_behind() {
         serde_json::from_slice(&returning.finish(&output.recv().await.unwrap()).unwrap()).unwrap();
     assert_eq!(reply["ok"], true, "the phone that came back was refused");
     assert_eq!(reply["deviceId"], device);
+    // A handshake alone cannot displace the old socket: the returning phone
+    // first proves it received this responder's fresh ephemeral contribution.
+    assert_eq!(probe.opened.lock().unwrap().len(), 1);
+    input
+        .send(
+            returning
+                .encrypt(br#"{"id":"new","method":"host.state","params":{}}"#)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    returning.decrypt(&output.recv().await.unwrap()).unwrap();
+    let opened = probe.opened.lock().unwrap().clone();
+    assert_eq!(opened.len(), 2);
+    assert_ne!(
+        opened[0], opened[1],
+        "a replacement socket must have a new identity"
+    );
 
     let ended = tokio::time::timeout(std::time::Duration::from_secs(2), abandoned)
         .await
@@ -132,5 +160,44 @@ async fn a_returning_device_replaces_the_connection_it_left_behind() {
         serde_json::from_slice(&returning.decrypt(&output.recv().await.unwrap()).unwrap()).unwrap();
     assert_eq!(state["result"]["host"]["name"], "Test computer");
     assert!(shared.active.lock().unwrap().contains_key(&device));
-    drop(task);
+    assert_eq!(
+        probe.handled.lock().unwrap().as_slice(),
+        &[opened[0], opened[1], opened[1]]
+    );
+    task.abort();
+}
+
+#[derive(Default)]
+struct ConnectionProbe {
+    opened: std::sync::Mutex<Vec<u64>>,
+    handled: std::sync::Mutex<Vec<u64>>,
+    events: std::sync::Mutex<Vec<std::sync::mpsc::Sender<Value>>>,
+}
+impl crate::backend::Backend for ConnectionProbe {
+    fn connected(&self, _: &str, connection: u64) {
+        self.opened.lock().unwrap().push(connection);
+    }
+    fn handle_on_connection(
+        &self,
+        _: &str,
+        connection: u64,
+        _: &str,
+        _: Value,
+    ) -> Result<Value, String> {
+        assert_eq!(self.opened.lock().unwrap().last(), Some(&connection));
+        self.handled.lock().unwrap().push(connection);
+        Ok(json!({"sessions":[],"projects":[],"capabilities":{}}))
+    }
+    fn handle(&self, _: &str, _: &str, _: Value) -> Result<Value, String> {
+        panic!("Connection identity was lost")
+    }
+    fn subscribe(&self) -> std::sync::mpsc::Receiver<Value> {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        self.events.lock().unwrap().push(sender);
+        receiver
+    }
+    fn disconnected(&self, _: &str) {}
+    fn pairing_notice(&self) -> &'static str {
+        "Test connection identity"
+    }
 }

@@ -2,9 +2,8 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 // Relay credentials are short-lived tokens the Vibyra API signs with the secret
 // it shares with this relay: `v1.<claims>.<signature>`, both parts base64url.
-// The relay keeps no session table and asks the API nothing at connect time; a
-// token proves that the API let this account reach this computer a few minutes
-// ago, and nothing more. The claims are the whole contract:
+// Tokens authenticate signed claims; admission and renewable leases additionally
+// check current authorization through the API. The claims are the whole contract:
 //   role    'host' (a computer registering) or 'client' (a phone connecting)
 //   hostId  the computer's Noise public key, which is also its identity
 //   userId  the account both sides must share
@@ -21,16 +20,20 @@ export function signToken(secret, claims) {
 /** The claims of a token this relay's secret signed, or null for anything else. */
 export function verifyToken(secret, token, now = Date.now()) {
   if (typeof token !== 'string' || token.length > 4096) return null;
-  const [version, body, signature] = token.split('.');
-  if (version !== 'v1' || !body || !signature) return null;
+  const parts = token.split('.');
+  const [version, body, signature] = parts;
+  if (parts.length !== 3 || version !== 'v1' || !/^[A-Za-z0-9_-]+$/.test(body ?? '') || !/^[A-Za-z0-9_-]{43}$/.test(signature ?? '')) return null;
   const expected = createHmac('sha256', secret).update(body).digest();
   const given = Buffer.from(signature, 'base64url');
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  if (given.toString('base64url') !== signature || given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
   let claims;
   try { claims = JSON.parse(Buffer.from(body, 'base64url').toString()); } catch { return null; }
   if (!claims || claims.v !== 1 || !['host', 'client'].includes(claims.role)) return null;
   if (!ID.test(String(claims.hostId)) || !ID.test(String(claims.userId))) return null;
-  if (typeof claims.exp !== 'number' || claims.exp * 1000 <= now) return null;
+  if (!Number.isSafeInteger(claims.exp) || claims.exp * 1000 <= now) return null;
+  if (claims.accessUntil != null && (!Number.isSafeInteger(claims.accessUntil) || claims.accessUntil * 1000 <= now)) return null;
+  if (claims.sessionExpiresAt != null && (!Number.isSafeInteger(claims.sessionExpiresAt) || claims.sessionExpiresAt * 1000 <= now)) return null;
+  if (claims.jti != null && (typeof claims.jti !== 'string' || !ID.test(claims.jti))) return null;
   return claims;
 }
 
@@ -41,8 +44,12 @@ export function verifyToken(secret, token, now = Date.now()) {
  * by hand with `--relay-token-file`; it grants a host registration under a
  * synthetic account, so no phone token can ever match it.
  */
-export function createVerifier({ secret, staticHosts = {} } = {}) {
+export function createVerifier({ secret, staticHosts = {}, signingKeyId = 'current',
+  signingPreviousSecret, signingPreviousUntil, signingPreviousKeyId, now = Date.now } = {}) {
   const statics = Object.entries(staticHosts);
+  if (signingPreviousSecret && (signingPreviousSecret.length < 32 || !Number.isSafeInteger(signingPreviousUntil))) {
+    throw new Error('Previous signing secret requires a valid bounded overlap expiry');
+  }
   if (!secret && !statics.length) {
     throw new Error('Configure VIBYRA_RELAY_SECRET (shared with the Vibyra API) or VIBYRA_RELAY_HOST_TOKENS.');
   }
@@ -52,8 +59,12 @@ export function createVerifier({ secret, staticHosts = {} } = {}) {
   }
   return (role, hostId, token) => {
     if (secret) {
-      const claims = verifyToken(secret, token);
-      if (claims && claims.role === role && claims.hostId === hostId) return claims;
+      const current = verifyToken(secret, token, now());
+      if (current && (current.kid == null || current.kid === signingKeyId) && current.role === role && current.hostId === hostId) return current;
+      if (signingPreviousSecret && now() < signingPreviousUntil * 1000) {
+        const previous = verifyToken(signingPreviousSecret, token, now());
+        if (previous && (previous.kid == null || previous.kid === signingPreviousKeyId) && previous.role === role && previous.hostId === hostId) return previous;
+      }
     }
     if (role !== 'host' || typeof token !== 'string' || token.length < 32 || token.length > 256) return null;
     const expected = staticHosts[hostId];

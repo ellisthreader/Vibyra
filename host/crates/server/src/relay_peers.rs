@@ -1,6 +1,10 @@
 //! The phones a relay connection is carrying: one `connection::run` per relay
 //! client id, fed by `frame` envelopes and answered through the shared sender.
-use crate::{connection, state::Shared};
+use crate::{
+    connection,
+    remote_authorization::{Access, Authorization, AuthorizationContext},
+    state::Shared,
+};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::{json, Value};
 use std::{collections::HashMap, sync::Arc};
@@ -9,6 +13,7 @@ use tokio::sync::mpsc;
 struct Peer {
     input: connection::FrameSender,
     task: tokio::task::JoinHandle<()>,
+    authorization: Access,
 }
 impl Drop for Peer {
     fn drop(&mut self) {
@@ -26,17 +31,38 @@ pub struct Peers {
     shared: Arc<Shared>,
     outgoing: mpsc::Sender<Value>,
     peers: HashMap<String, Peer>,
+    authorization_key: Option<String>,
+    allow_unsigned_loopback: bool,
+    authorization_context: Option<AuthorizationContext>,
 }
 impl Peers {
-    pub fn new(shared: Arc<Shared>, outgoing: mpsc::Sender<Value>) -> Self {
+    pub fn new(
+        shared: Arc<Shared>,
+        outgoing: mpsc::Sender<Value>,
+        authorization_key: Option<String>,
+        authorization_context: Option<AuthorizationContext>,
+    ) -> Self {
         Self {
             shared,
             outgoing,
             peers: HashMap::new(),
+            authorization_key,
+            allow_unsigned_loopback: false,
+            authorization_context,
         }
+    }
+    pub fn enable_loopback_diagnostics(&mut self, address: &str) -> Result<(), String> {
+        if !crate::relay_address::is_loopback_diagnostic(address) {
+            return Err("Unsigned diagnostics require a loopback relay".into());
+        }
+        self.allow_unsigned_loopback = true;
+        Ok(())
     }
     pub fn len(&self) -> usize {
         self.peers.len()
+    }
+    pub fn contains(&self, id: &str) -> bool {
+        self.peers.contains_key(id)
     }
     pub fn remove(&mut self, id: &str) {
         self.peers.remove(id);
@@ -67,7 +93,19 @@ impl Peers {
             .filter(|id| !id.is_empty() && id.len() <= 80)
             .ok_or("Invalid relay client ID")?;
         match kind {
-            "client.open" => self.open(id)?,
+            "client.open" => self.open(id, value["authorization"].as_str())?,
+            "client.authorize" => {
+                let peer = self.peers.get(id).ok_or("Unknown remote session")?;
+                let grant = peer
+                    .authorization
+                    .as_ref()
+                    .ok_or("Remote authorization unavailable")?;
+                grant.renew(
+                    value["authorization"]
+                        .as_str()
+                        .ok_or("Remote authorization missing")?,
+                )?;
+            }
             "frame" => {
                 let data = value["data"].as_str().ok_or("Missing relay frame")?;
                 let frame = STANDARD
@@ -89,7 +127,7 @@ impl Peers {
         }
         Ok(true)
     }
-    fn open(&mut self, id: &str) -> Result<(), String> {
+    fn open(&mut self, id: &str, token: Option<&str>) -> Result<(), String> {
         if self.peers.len() >= 32 || self.peers.contains_key(id) {
             return Err("Relay client limit or duplicate ID".into());
         }
@@ -98,12 +136,37 @@ impl Peers {
         let state = self.shared.clone();
         let outgoing = self.outgoing.clone();
         let client_id = id.to_string();
+        let authorization = match &self.authorization_key {
+            Some(key) => {
+                let host = self
+                    .shared
+                    .identity
+                    .lock()
+                    .map_err(|_| "Host identity unavailable")?
+                    .id();
+                Some(Authorization::new(
+                    key,
+                    token.ok_or("Remote authorization missing")?,
+                    &host,
+                    self.authorization_context
+                        .as_ref()
+                        .ok_or("Remote account binding missing")?,
+                )?)
+            }
+            None if self.allow_unsigned_loopback && self.authorization_context.is_none() => None,
+            None => return Err("Remote authorization verification key missing".into()),
+        };
+        if let Some(grant) = &authorization {
+            self.shared.register_authorization(grant)?;
+        }
+        let access = authorization.clone();
         let task = tokio::spawn(async move {
-            let worker = Worker(tokio::spawn(connection::run_from(
+            let worker = Worker(tokio::spawn(connection::run_authorized(
                 state,
                 input_receive,
                 output_send,
                 crate::state::Origin::Cloud,
+                access,
             )));
             while let Some(frame) = output_receive.recv().await {
                 if outgoing
@@ -126,6 +189,7 @@ impl Peers {
             Peer {
                 input: input_send,
                 task,
+                authorization,
             },
         );
         Ok(())

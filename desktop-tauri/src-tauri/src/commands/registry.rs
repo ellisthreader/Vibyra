@@ -1,23 +1,26 @@
-//! The single list of commands the webview is allowed to call.
-//!
-//! Kept out of `lib.rs` because that file is the application wiring —
-//! plugins, managed state, window events — which is stable, while this list
-//! grows with every feature. Together they crossed the 200-line limit; apart,
-//! each file reads as one thing.
-
+//! Explicit native command registry, also used to generate application ACL permissions.
 use tauri::ipc::Invoke;
 use tauri::Wry;
 
 use super::{
     account, account_billing, account_security, agent_conversations, agent_install, agents, ai,
     ai_memory, ai_service, clipboard, fs, github_publish, memory, memory_browser, model_watch,
-    perf, phone, preview, preview_share, preview_windows, project_brief, provider_accounts, render, report,
-    scaffold, screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli,
-    shortcuts, speech, speech_synthesis, teammate_upload, teammates, terminal, voice,
+    perf, phone, phone_remote, preview, preview_share, preview_windows, project_brief,
+    provider_accounts, remote_security, remote_security_actions, render, report, scaffold,
+    screenshot, screenshot_reveal, session, settings, shared_chats, shared_cli, shortcuts, speech,
+    speech_synthesis, teammate_upload, teammates, terminal, voice,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
+        phone_remote::phone_remote_transfer_context,
+        phone_remote::phone_remote_transfer,
+        remote_security::remote_security_snapshot,
+        remote_security::remote_security_decide_device,
+        remote_security::remote_security_revoke,
+        remote_security_actions::remote_security_decide_session,
+        remote_security_actions::remote_security_set_mode,
+        remote_security_actions::remote_security_disable_all,
         crate::agent_computer::agent_computer_choose,
         crate::agent_computer::agent_computer_grants,
         crate::agent_computer_reveal::agent_computer_reveal_worktree,

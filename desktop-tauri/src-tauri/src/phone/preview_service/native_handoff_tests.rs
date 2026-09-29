@@ -138,7 +138,10 @@ fn window_input_follows_the_computers_typing_switch() {
     let (_dir, service) = fixture();
     let typing = Arc::new(AtomicBool::new(false));
     service.set_typing(typing.clone());
-    assert!(!service.typing_allowed(), "no taps while typing from the phone is off");
+    assert!(
+        !service.typing_allowed(),
+        "no taps while typing from the phone is off"
+    );
     typing.store(true, Ordering::SeqCst);
     assert!(service.typing_allowed());
 }

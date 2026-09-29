@@ -37,6 +37,7 @@ export interface PhoneStatus {
   typing?: boolean;
   previewAutoAvailable?: boolean;
   notifications?: boolean;
+  securitySyncPending?: boolean;
   discoverable: boolean;
   listening?: boolean;
   discoveryError?: string | null;
@@ -78,6 +79,14 @@ export function phoneSetRemote(enabled: boolean): Promise<PhoneStatus> {
 
 export function phoneRemoteDisconnectAll(): Promise<PhoneStatus> {
   return invoke("phone_remote_disconnect_all");
+}
+
+export interface RemoteTransferContext { accountScope: string; email: string; hostId: string }
+export function phoneRemoteTransferContext(): Promise<RemoteTransferContext> {
+  return invoke("phone_remote_transfer_context");
+}
+export function phoneRemoteTransfer(context: RemoteTransferContext): Promise<PhoneStatus> {
+  return invoke("phone_remote_transfer", { expectedAccount: context.accountScope, expectedHost: context.hostId });
 }
 
 export function phoneInvite(): Promise<string> {

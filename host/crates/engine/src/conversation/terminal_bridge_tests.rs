@@ -100,7 +100,10 @@ fn engine_answers_run_app_while_a_terminal_is_attached() {
     let call = json!({"id":8,"method":"item/tool/call","params":{"threadId":"thread","turnId":"turn",
         "callId":"call","tool":"vibyra_run_app","arguments":{"command":"npm run tauri:dev"}}});
     assert!(!b.provider(&call));
-    assert!(rx.try_recv().is_err(), "the CLI never answers the host's tool");
+    assert!(
+        rx.try_recv().is_err(),
+        "the CLI never answers the host's tool"
+    );
     let answer = json!({"id":8,"result":{"success":true,"contentItems":[]}});
     assert!(b.claim_response(&answer).is_ok());
 }

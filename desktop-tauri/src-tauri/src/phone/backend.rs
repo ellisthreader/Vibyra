@@ -69,7 +69,10 @@ impl DesktopBackend {
             preview,
         })
     }
-    pub fn with_provider_auth(mut self, provider_auth: Option<Arc<crate::provider_auth::ProviderAuthManager>>) -> Self {
+    pub fn with_provider_auth(
+        mut self,
+        provider_auth: Option<Arc<crate::provider_auth::ProviderAuthManager>>,
+    ) -> Self {
         self.provider_auth = provider_auth;
         self
     }
@@ -177,6 +180,8 @@ impl DesktopBackend {
         )
     }
 }
+#[path = "backend/host_state.rs"]
+mod host_state;
 /// The wire protocol — every method the phone can call — lives next door, so
 /// both halves stay inside the 200-line standard.
 ///
@@ -185,8 +190,6 @@ impl DesktopBackend {
 /// against the including file's directory, not its own.
 #[path = "backend/preview_control.rs"]
 mod preview_control;
-#[path = "backend/host_state.rs"]
-mod host_state;
 #[path = "backend/protocol.rs"]
 mod protocol;
 

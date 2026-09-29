@@ -12,6 +12,11 @@ use std::{
 use tokio::sync::{mpsc as async_mpsc, Notify};
 use vibyra_transport::preview::{Frame, FrameQueue, StreamKey};
 
+#[path = "preview_access.rs"]
+mod authorization;
+#[path = "preview_receive.rs"]
+mod receive;
+
 const INBOUND: usize = 32;
 const OUTBOUND: usize = 8;
 
@@ -29,8 +34,23 @@ pub struct PreviewSession {
     canceled: Arc<Mutex<HashSet<StreamKey>>>,
 }
 impl PreviewSession {
-    pub fn new(owner: &Arc<Shared>, device: &str, slot: &Arc<Notify>) -> Self {
-        let handler = owner.engine.preview(device);
+    pub fn new(
+        owner: &Arc<Shared>,
+        device: &str,
+        slot: &Arc<Notify>,
+        access: crate::remote_authorization::Access,
+    ) -> Self {
+        let handler = crate::remote_permissions::permits(&access, "preview:access")
+            .then(|| owner.engine.preview(device))
+            .flatten();
+        let access = access.map(|grant| {
+            Arc::new(authorization::ScopedPreview {
+                grant,
+                owner: Arc::downgrade(owner),
+                device: device.into(),
+                slot: Arc::downgrade(slot),
+            }) as Arc<dyn crate::backend::PreviewAccess>
+        });
         let (out_tx, outgoing) = async_mpsc::channel(OUTBOUND);
         let stop = Arc::new(AtomicBool::new(false));
         let canceled = Arc::new(Mutex::new(HashSet::new()));
@@ -62,8 +82,11 @@ impl PreviewSession {
                     }
                     let handler = worker.clone();
                     let device = worker_device.clone();
-                    let result =
-                        tokio::task::spawn_blocking(move || handler.receive(&device, frame)).await;
+                    let access = access.clone();
+                    let result = tokio::task::spawn_blocking(move || {
+                        handler.receive_authorized(&device, frame, access)
+                    })
+                    .await;
                     if !matches!(result, Ok(Ok(()))) {
                         if let Ok(mut keys) = worker_canceled.lock() {
                             keys.insert(key);
@@ -108,47 +131,6 @@ impl PreviewSession {
         }
     }
 
-    /// Called only with a decrypted Preview discriminator. Malformed frames
-    /// close this device's transport; a disabled or overloaded Preview instead
-    /// receives a bounded cancellation and leaves terminal RPC available.
-    pub fn receive(&mut self, bytes: &[u8]) -> Result<(), String> {
-        let frame = Frame::decode(bytes).map_err(str::to_string)?;
-        let key = frame.key();
-        let is_cancel = matches!(frame, Frame::Cancel { .. });
-        let state = {
-            match self.canceled.lock() {
-                Ok(keys) if is_cancel && keys.len() >= 256 && !keys.contains(&key) => Err(()),
-                Ok(mut keys) if is_cancel => {
-                    keys.insert(key);
-                    Ok(false)
-                }
-                Ok(keys) => Ok(keys.contains(&key)),
-                Err(_) => Err(()),
-            }
-        };
-        if state.is_err() {
-            self.disable();
-            return Ok(());
-        }
-        if state == Ok(true) {
-            return Ok(());
-        }
-        let sender = if is_cancel {
-            self.control.as_ref()
-        } else {
-            self.data.as_ref()
-        };
-        if let Some(sender) = sender {
-            if sender.try_send(frame).is_ok() {
-                return Ok(());
-            }
-            self.disable();
-        }
-        if !is_cancel {
-            let _ = self.queue.push(Frame::Cancel { key });
-        }
-        Ok(())
-    }
     pub fn collectable(&self) -> bool {
         self.handler.is_some() && self.pending.is_none()
     }

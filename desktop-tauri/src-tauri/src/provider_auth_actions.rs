@@ -55,7 +55,9 @@ impl ProviderAuthManager {
         match provider_id {
             "codex" => {
                 command.arg("login");
-                if phone { command.arg("--device-auth"); }
+                if phone {
+                    command.arg("--device-auth");
+                }
             }
             "claude" => {
                 command.args(["auth", "login", "--claudeai"]);

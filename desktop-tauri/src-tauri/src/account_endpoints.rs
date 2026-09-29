@@ -34,6 +34,7 @@ pub enum Endpoint<'a> {
     VibesWallet,
     /// Registers this computer for remote access and takes a relay token.
     RemoteRegister,
+    RemoteChallenge,
     HostNotificationCredential,
     HostNotificationEvents,
     ReportReady,
@@ -72,6 +73,7 @@ impl Endpoint<'_> {
             Endpoint::HostNotificationEvents => Ok("/api/notifications/v1/host-events".into()),
             Endpoint::ReportReady => Ok("/api/reports/ready".into()),
             Endpoint::RemoteRegister => Ok("/api/remote/hosts".into()),
+            Endpoint::RemoteChallenge => Ok("/api/remote/hosts/challenge".into()),
             Endpoint::RevokeDevice(device) => {
                 // The backend's device id is a SHA-256 hex digest. Checking the
                 // shape here is what stops any other string reaching a path.

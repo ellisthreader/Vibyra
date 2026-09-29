@@ -1,7 +1,4 @@
-use crate::{
-    identity::{clean_name, Device, Identity},
-    invitation::Invitation,
-};
+use crate::{identity::Identity, invitation::Invitation};
 use serde_json::{json, Value};
 use std::{
     collections::{BTreeMap, HashMap},
@@ -36,6 +33,13 @@ pub struct Shared {
     /// rather than being refused, because a Wi-Fi that dropped can leave the
     /// socket it left behind looking alive here for a long time.
     pub active: Mutex<HashMap<String, Arc<Notify>>>,
+    /// Session grants consumed by a confirmed Noise peer, kept until hard expiry.
+    pub used_remote_grants: Mutex<HashMap<String, u64>>,
+    pub remote_authorizations:
+        Mutex<Vec<std::sync::Weak<crate::remote_authorization::Authorization>>>,
+    pub policy_epoch: std::sync::atomic::AtomicU64,
+    pub policy_pending: std::sync::atomic::AtomicBool,
+    pub lan_generation: std::sync::atomic::AtomicU64,
     pub pairing_url: String,
     pub relay: bool,
     /// Nearby phones that found this Host over Bonjour may ask to pair without
@@ -72,25 +76,6 @@ impl Shared {
         } else {
             false
         }
-    }
-
-    pub fn trust(&self, id: &str, name: &str) -> Result<(), String> {
-        let _writes = self.writes.lock().map_err(|_| "Identity unavailable")?;
-        let mut identity = self.identity.lock().map_err(|_| "Identity unavailable")?;
-        let device = Device {
-            id: id.into(),
-            name: clean_name(name),
-            created_at: chrono::Utc::now().to_rfc3339(),
-            last_seen: None,
-            last_from: None,
-            last_route: None,
-        };
-        identity.devices.insert(id.into(), device);
-        if let Err(error) = identity.save() {
-            identity.devices.remove(id);
-            return Err(error);
-        }
-        Ok(())
     }
 
     /// Records that a trusted phone just authenticated, and from where. Best
@@ -136,15 +121,24 @@ impl Shared {
     }
 
     pub fn revoke(&self, id: &str) -> Result<(), String> {
-        let _writes = self.writes.lock().map_err(|_| "Identity unavailable")?;
-        let mut identity = self.identity.lock().map_err(|_| "Identity unavailable")?;
-        let device = identity.devices.remove(id).ok_or("Unknown device")?;
-        if let Err(error) = identity.save() {
-            identity.devices.insert(id.into(), device);
-            return Err(error);
+        self.policy_epoch
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        self.lan_generation
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        if let Ok(mut pending) = self.pending.lock() {
+            pending.remove(id);
         }
+        let _writes = self.writes.lock().map_err(|_| "Identity unavailable")?;
+        let contents = {
+            let mut identity = self.identity.lock().map_err(|_| "Identity unavailable")?;
+            identity.devices.remove(id).ok_or("Unknown device")?;
+            identity.contents()
+        };
+        // Revocation holds in memory even if the disk is full. Never restore
+        // access merely because persisting the owner's decision failed.
+        let _ = self.disconnect(id);
         self.engine.disconnected(id);
-        Ok(())
+        contents?.write()
     }
 
     pub fn answer(&self, id: &str, approve: bool) -> Result<(), String> {

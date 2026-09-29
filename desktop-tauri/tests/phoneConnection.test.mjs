@@ -41,7 +41,7 @@ test("a pairing request reaches the workspace, not just Settings", async () => {
 });
 
 test("the listener follows this Mac's network on its own", async () => {
-  const phone = await read("src-tauri/src/phone/mod.rs");
+  const phone = await read("src-tauri/src/phone/connection_lifecycle.rs");
   assert.match(phone, /pub fn refresh\(&mut self, manager: Arc<PtyManager>\)/);
   assert.match(await read("src-tauri/src/phone/preferences.rs"), /json!\(\{ "enabled": enabled, "typing": typing, "remote": remote \}\)/,
     "three switches and no address are persisted, so nothing goes stale");
@@ -117,7 +117,7 @@ test("the desktop republishes its workspace whenever the window changes it", asy
   assert.match(command, /state\.phone\.lock\(\)\.publish\(projects, panes, chats\)/);
   const registry = await read("src-tauri/src/commands/registry.rs");
   assert.match(registry, /phone::phone_publish_workspace/, "the webview is allowed to call it");
-  const backend = await read("src-tauri/src/phone/backend.rs") + await read("src-tauri/src/phone/backend/protocol.rs");
+  const backend = await read("src-tauri/src/phone/backend.rs") + await read("src-tauri/src/phone/backend/protocol.rs") + await read("src-tauri/src/phone/backend/host_state.rs");
   assert.doesNotMatch(backend, /Mac desktop terminals/, "the invented single folder is gone");
   assert.match(backend, /folders\(unfiled\)/, "the served folders come from what the window published");
   const shared = await read("src-tauri/src/phone/shared_backend.rs");
@@ -156,7 +156,7 @@ test("remote access follows the one phone switch: on when signed in, off with it
   assert.match(ipc, /invoke\("phone_remote_disconnect_all"\)/);
   const registry = await read("src-tauri/src/commands/registry.rs");
   for (const command of [/phone::phone_set_remote/, /phone::phone_remote_disconnect_all/]) assert.match(registry, command);
-  const remote = await read("src-tauri/src/phone/remote.rs");
+  const remote = await read("src-tauri/src/phone/remote.rs") + await read("src-tauri/src/phone/remote_registration.rs");
   assert.match(remote, /Endpoint::RemoteRegister/, "the Mac registers itself with the account before every relay connection");
   assert.match(remote, /starts_with\("wss:\/\/"\)/, "and only follows a secure relay address");
 });

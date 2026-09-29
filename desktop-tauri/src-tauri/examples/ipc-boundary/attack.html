@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><script>
+(async () => {
+  const report = { type: 'ipc-probe', childInvokePresent: typeof window.__TAURI_INTERNALS__ !== 'undefined', parentReadable: false, guessedMessageSent: false };
+  try { report.parentReadable = typeof parent.__TAURI_INTERNALS__ !== 'undefined'; } catch (_) {}
+  // Attack both the regular API and the raw native bridge with a guessed key.
+  if (window.__TAURI_INTERNALS__) {
+    try { await window.__TAURI_INTERNALS__.invoke('remote_security_decide_device'); report.childInvokeSucceeded = true; } catch (_) {}
+  }
+  const forged = JSON.stringify({ cmd: 'remote_security_decide_device', callback: 1, error: 2, payload: {}, __TAURI_INVOKE_KEY__: 'guessed-child-key' });
+  try {
+    if (window.ipc?.postMessage) { window.ipc.postMessage(forged); report.guessedMessageSent = true; }
+    else if (window.webkit?.messageHandlers?.ipc) { window.webkit.messageHandlers.ipc.postMessage(forged); report.guessedMessageSent = true; }
+    else if (window.chrome?.webview?.postMessage) { window.chrome.webview.postMessage(forged); report.guessedMessageSent = true; }
+  } catch (_) {}
+  parent.postMessage(report, '*');
+})();
+</script>

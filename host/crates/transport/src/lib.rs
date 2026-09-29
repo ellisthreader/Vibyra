@@ -1,6 +1,8 @@
 //! Ordered, authenticated Noise transport shared by the host and bundled phone WASM.
 mod client;
 pub use client::Client;
+mod device_proof;
+pub use device_proof::{answer_challenge, device_public_key};
 pub mod preview;
 
 pub const PATTERN: &str = "Noise_IK_25519_ChaChaPoly_BLAKE2s";

@@ -32,6 +32,9 @@ async fn the_leg_waits_for_credentials_and_reports_a_refusal_in_the_relays_words
                 return Err("Sign in to Vibyra on this Mac to reach it from anywhere.".into());
             }
             Ok(RelayCredentials {
+                authorization_key: None,
+                allow_unsigned_loopback: true,
+                authorization_context: None,
                 url,
                 token: "t".repeat(40),
                 name: "Mac".into(),

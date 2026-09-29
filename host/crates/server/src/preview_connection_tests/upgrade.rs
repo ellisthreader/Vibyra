@@ -21,6 +21,7 @@ async fn authenticated_upgrade_carries_opaque_bytes_in_both_directions_without_r
                 "dGhlIHNhbXBsZSBub25jZQ==".into(),
             ),
         ]),
+        browser_origin: None,
     };
     let response = UpgradeResponse {
         v: 1,

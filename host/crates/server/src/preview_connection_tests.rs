@@ -122,6 +122,17 @@ async fn connect(backend: Arc<TestBackend>) -> Connected {
     let reply: Value =
         serde_json::from_slice(&client.finish(&output.recv().await.unwrap()).unwrap()).unwrap();
     assert_eq!(reply["ok"], true);
+    input
+        .send(
+            client
+                .encrypt(br#"{"id":"confirm","method":"host.state"}"#)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let reply: Value =
+        serde_json::from_slice(&client.decrypt(&output.recv().await.unwrap()).unwrap()).unwrap();
+    assert_eq!(reply["id"], "confirm");
     Connected {
         _dir: dir,
         shared,

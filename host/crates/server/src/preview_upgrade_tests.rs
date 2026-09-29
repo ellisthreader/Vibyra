@@ -15,6 +15,7 @@ fn request() -> UpgradeRequest {
                 "dGhlIHNhbXBsZSBub25jZQ==".into(),
             ),
         ]),
+        browser_origin: None,
     }
 }
 

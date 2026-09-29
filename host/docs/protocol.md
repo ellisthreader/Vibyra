@@ -36,6 +36,16 @@ own grid (its Launch setup applies, and a Safe mode checkpoint still has to be
 approved on the Mac) or closes the pane/shared chat on both screens, and the
 reply is the Session it became. `requestId` deduplicates a retry. Clients test
 `canManage === true`; a Mac that omits it, or has typing off, refuses both.
+The Mac's optional `capabilities.aiAccountsV1` adds `aiAccounts.list` for safe
+OpenAI/Codex, Anthropic/Claude and Google/Gemini account status and Mac default
+account IDs. Other `aiAccounts.*` methods (connect, add, install, cancel,
+disconnect, remove, submit, setDefault, signInUrl, openOnMac) require that same
+Mac typing switch; pairing alone only permits the read. Credentials stay in
+provider-owned folders on the Mac; a view-only read omits pending device codes
+and CLI prompts. Codex phone authorization starts device auth
+and returns a one-time code in its status row and an HTTPS sign-in URL; other
+provider browser callbacks finish on the Mac. The response is scoped to the
+currently selected connected Mac, never the phone's cloud chat connectors.
 Only shared chats the Mac's grid is showing are listed as sessions; a chat
 closed on the Mac is history, not a terminal. See the Desktop iPhone
 Connection memory note for enable, approval, revoke and private-network
@@ -66,6 +76,77 @@ Wire envelopes are JSON inside Noise_IK_25519_ChaChaPoly_BLAKE2s transport
 messages (maintained snow implementation on native host and bundled WASM client).
 Maximum plaintext frame is 60 KiB. WebSocket binary messages retain Noise order;
 reconnect creates a fresh Noise handshake with fresh ephemeral keys.
+The Host sends only its bounded authentication result in the responder handshake.
+Before subscribing to output, publishing an active device, or replacing that
+device's previous socket, it requires a valid first initiator transport message
+within ten seconds. The usual first `host.state` request supplies this confirmation;
+there is no additional protocol round trip. A replayed IK opener cannot authorize
+content or displace an active phone ([Noise Framework section 7.7](https://noiseprotocol.org/noise.html#payload-security-properties)).
+
+## Signed Cloud authorization
+
+HTTPS Host registration must include `authorizationKey` (base64 Ed25519 key)
+and `authorizationContext:{userId,generation}`;
+every relay `client.open` requires `authorization` in `ra1.body.signature` form.
+Body and signature use unpadded base64url; the signature covers ASCII `ra1.` plus
+the encoded body. Claims are `{v:1,sub,generation,sessionId,hostId,deviceId,permissions,iat,exp,
+sessionExpiresAt,jti}`. `hostId` and `deviceId` are lowercase Noise public keys;
+signed sub/generation must match the HTTPS account context, and the encrypted
+Hello must also carry matching `remoteSessionId` and
+`remoteAuthorizationId` (jti). A relay cannot substitute another same-device grant.
+
+Signed leases last at most 120 seconds and renew through `client.authorize`.
+Renewal must preserve identity, permissions, jti and the hard session deadline;
+iat/exp may only advance. Expired leases cannot revive. The Host independently
+ends a session when its lease expires, after 30 minutes without client requests,
+or at the signed hard deadline (eight hours by default, capped at twelve hours).
+It consumes jti after confirmed Noise transport; reusing it requires a new grant
+and connection. Missing key or account context fails closed. Only standalone
+explicit token-file diagnostics and test fixtures permit unsigned ws:// loopback
+IP relays; product Desktop never enables that diagnostic path. Native per-session
+disconnect invalidates the exact live signed authorization before contacting
+Cloud and consumes its session/jti ID through the maximum signed lifetime.
+Renewal cannot revive a locally revoked lease; unrelated LAN authority is not
+part of that Cloud session revocation.
+
+`remote_permissions.rs` checks every RPC before backend dispatch, filters events,
+and removes unauthorized state from `host.state`. `terminal:access` is separate
+from `screen:view`, file capabilities and focused-text `keyboard:control`.
+Website Preview uses explicit `preview:access`, including its binary frames;
+starting a project app also requires terminal authority. Native-window Preview
+also requires `screen:view`; `/input` click/scroll additionally require
+`mouse:control`, and text/key/keys require `keyboard:control`. These checks run
+inside the desktop stream handler against the live lease, trusted device and
+exact connection slot, before frame release or input. Local typing permission is also
+required. Clipboard operations remain unavailable. Unknown methods fail closed.
+
+Nearby Noise connections default to local approval every time, including saved
+trusted devices. `identity.json` public metadata stores `lan_mode` as `ask`,
+`trusted` or `disabled`. Trusted mode must be explicitly selected on Desktop;
+disabled closes connections and denies new ones while retaining the listener
+for local settings. Cloud approval remains backend-controlled. LAN uses local
+owner approval and private-key proof rather than cloud WebAuthn verification.
+Account adoption, logout and rejected account credentials reset saved LAN mode
+to Ask and terminate current connections, so old unattended trust cannot cross
+account boundaries. A monotonic local consent generation is captured before
+approval, checked after Noise confirmation and before queued RPC effects, and
+advanced on account reset even when the mode remains Ask. Device revocation
+also invalidates prior LAN consent, preventing late approval from restoring trust.
+
+Account-managed desktop installations reconcile restrictive state through native
+HTTP polling, independently of the renderer. Public identity metadata pins account,
+Host generation and the last completely applied security revision. Explicit disable
+is applied before paginated tombstones finish; the acknowledgement advances only
+for a complete, consistent snapshot. Reset/per-key revocations remove local trust;
+approved keys only preserve existing trust after a newer reset. Startup or API
+failure downgrades saved unattended LAN to local approval. Stale local-consent,
+account and Host-instance responses cannot apply. Offline machines receive remote
+restrictions when connected again; this cannot instantly reach an offline listener.
+
+Desktop stores its Host private key through its OS credential store. The JSON
+file retains public identity/trust metadata and a `credentialStore` marker.
+Missing or locked OS credentials fail closed; they never regenerate the Host.
+Standalone callers without a store use an explicit protected-file fallback.
 
 Request: `{id: string, method: string, params: object}`.
 Reply: `{id: string, ok: true, result: any}` or

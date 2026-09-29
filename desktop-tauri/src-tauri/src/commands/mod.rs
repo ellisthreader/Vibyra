@@ -91,6 +91,10 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
 }
 
 pub mod phone;
+pub mod phone_remote;
+pub mod remote_security;
+pub mod remote_security_actions;
+mod remote_security_scope;
 
 pub mod shared_chats;
 pub mod shared_cli;

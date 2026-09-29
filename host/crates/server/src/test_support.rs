@@ -43,11 +43,16 @@ fn shared(
 ) -> Arc<Shared> {
     Arc::new(Shared {
         engine,
+        policy_pending: std::sync::atomic::AtomicBool::new(identity.restrictions.is_some()),
         identity: Mutex::new(identity),
         writes: Mutex::new(()),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
         active: Mutex::new(HashMap::new()),
+        used_remote_grants: Mutex::new(HashMap::new()),
+        remote_authorizations: std::sync::Mutex::default(),
+        lan_generation: std::sync::atomic::AtomicU64::new(1),
+        policy_epoch: std::sync::atomic::AtomicU64::new(1),
         pairing_url: "ws://127.0.0.1:4318".into(),
         relay: false,
         nearby,

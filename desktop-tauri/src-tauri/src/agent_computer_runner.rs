@@ -55,7 +55,10 @@ async fn tick(app: &AppHandle, engines: &mut HashMap<String, Arc<vibyra_engine::
     let engine_dir = parent.join("agent-computer-engine");
     let Ok(ready) = tauri::async_runtime::spawn_blocking(move || {
         let grants = agent_computer_store::load(&store)?;
-        let host = vibyra_host::host_identity_id(&identity_dir)?;
+        let host = vibyra_host::host_identity_id_with_key_store(
+            &identity_dir,
+            &crate::secret_store::SecretStore,
+        )?;
         Ok::<_, String>((grants, host))
     })
     .await

@@ -1,0 +1,5 @@
+.remote-active { position: fixed; top: 44px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); box-shadow: 0 4px 20px #0004; max-width: calc(100vw - 32px); }
+.remote-active .btn { white-space: nowrap; font-size: 12px; }
+.remote-active .btn--ghost { overflow: hidden; text-overflow: ellipsis; }
+.remote-security-approval .phone-approval__body { display: block; }
+.remote-security-approval .phone-approval__body .remote-pair-code { font-size: 28px; font-variant-numeric: tabular-nums; letter-spacing: .12em; color: var(--text); }

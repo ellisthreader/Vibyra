@@ -21,6 +21,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { id: "iphone", label: "Phone", icon: PhoneIcon, tile: "#2f9e6b" },
   { id: "shortcuts", label: "Shortcuts", icon: CommandIcon, tile: "#8b5cf6" },
   { id: "account", label: "Account", icon: UserIcon, tile: "#2a8bd6" },
+  { id: "security", label: "Security", icon: UserIcon, tile: "#4e688d" },
   { id: "advanced", label: "Advanced", icon: SlidersIcon, tile: "#3f4756", secondary: true },
 ];
 
@@ -69,6 +70,7 @@ const SETTINGS_INDEX: SettingsIndexEntry[] = [
   { label: "Password", keywords: "reset forgot", section: "account", panel: "security" },
   { label: "Two-factor authentication", keywords: "2fa code authenticator security recovery codes", section: "account", panel: "security" },
   { label: "Devices", keywords: "sessions signed in everywhere phone computer sign out", section: "account", panel: "devices" },
+  { label: "Remote access security", keywords: "passkey trusted devices revoke disconnect computer permissions activity", section: "security" },
   { label: "Log out", keywords: "sign out session", section: "account" },
   { label: "Delete account", keywords: "close remove erase leave danger", section: "account", panel: "danger" },
   { label: "Font family", keywords: "monospace typeface jetbrains menlo", section: "advanced", panel: "terminal" },

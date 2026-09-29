@@ -7,27 +7,19 @@ import { LINUX_RELEASE_080 } from "./changelogRelease080.ts";
 import { LINUX_RELEASE_081 } from "./changelogRelease081.ts";
 import { LINUX_RELEASE_082 } from "./changelogRelease082.ts";
 
-export interface ChangelogSection {
-  heading: string;
-  body: string;
-}
-
-export interface ChangelogEntry {
-  version: string;
-  /** ISO date; rendered as the dateline under the title. */
-  date: string;
-  /** One line under the heading, before the sections. Optional. */
-  summary?: string;
-  /**
-   * Release artwork for the hero band, as a path under `public/`. Optional:
-   * without one the band falls back to the version set in type, which is
-   * deliberately not the brand mark — the logo is not release art.
-   */
-  image?: string;
-  sections: ChangelogSection[];
-}
+import type { ChangelogEntry } from "./changelogTypes.ts";
+export type { ChangelogEntry, ChangelogSection } from "./changelogTypes.ts";
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "0.8.16", date: "2026-09-29", image: "/releases/0.8.16.svg",
+    summary: "Approve your devices and stay in control of remote access.",
+    sections: [
+      { heading: "Stronger remote sign-in", body: "Cloud connections require an approved device, a recent passkey verification and a short-lived session for this computer." },
+      { heading: "See and stop access", body: "Security settings show devices, active sessions and recent activity. A persistent Mac indicator stays visible during remote access, with a disconnect action." },
+      { heading: "Permissions you choose", body: "Screen viewing, mouse, keyboard, terminal and file access are checked separately. Disable access or revoke a device whenever you need to." },
+    ],
+  },
   { version: "0.8.14", date: "2026-09-27", image: "/releases/0.8.14.svg",
     summary: "Open project application windows from your phone.",
     sections: [{ heading: "Phone window sharing", body: "Live preview discovers project-owned Mac windows. Choose View this window on your phone to share it for viewing. Clicking and typing require a separate Mac permission." },
@@ -176,14 +168,7 @@ export function entryFor(version: string): ChangelogEntry | undefined {
   return CHANGELOG.find((entry) => entry.version === version);
 }
 
-/**
- * Whether this launch should open the window.
- *
- * Only after an actual upgrade: a first-ever launch has nothing to be new
- * relative to, and greeting a brand-new user with a changelog for software
- * they have never seen is noise. An unknown `seen` value is therefore treated
- * as "show nothing, remember this version".
- */
+/** Open after a known upgrade; the saved marker alone does not prove prior use. */
 export function shouldOpen(
   current: string,
   seen: string | null,

@@ -38,9 +38,6 @@ mod platform_text;
 #[path = "support/phone_typing_preview.rs"]
 mod preview_service;
 #[allow(dead_code)]
-#[path = "../src/session_process_files.rs"]
-mod session_process_files;
-#[allow(dead_code)]
 #[path = "../src/phone/railway.rs"]
 mod railway;
 #[allow(dead_code)]
@@ -55,6 +52,9 @@ mod requests;
 #[allow(dead_code)]
 #[path = "../src/phone/scaffold.rs"]
 mod scaffold;
+#[allow(dead_code)]
+#[path = "../src/session_process_files.rs"]
+mod session_process_files;
 #[allow(dead_code)]
 #[path = "../src/phone/stream.rs"]
 mod stream;

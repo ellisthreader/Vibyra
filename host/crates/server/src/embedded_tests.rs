@@ -10,7 +10,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 use vibyra_transport::{generate_keypair, Client};
 
 #[derive(Default)]
-struct ViewBackend(Mutex<Vec<mpsc::Sender<Value>>>);
+pub(super) struct ViewBackend(Mutex<Vec<mpsc::Sender<Value>>>);
 impl Backend for ViewBackend {
     fn handle(&self, _: &str, method: &str, _: Value) -> Result<Value, String> {
         if method == "host.state" {
@@ -80,16 +80,15 @@ async fn verify_socket(bind: &str) {
             ))
             .await
             .unwrap();
-        if round == 0 {
-            for _ in 0..100 {
-                if !host.status()["pending"].as_array().unwrap().is_empty() {
-                    break;
-                }
-                tokio::time::sleep(Duration::from_millis(10)).await;
+        for _ in 0..100 {
+            if !host.status()["pending"].as_array().unwrap().is_empty() {
+                break;
             }
-            assert!(host.status()["devices"].as_array().unwrap().is_empty());
-            host.answer(&id, true).unwrap();
+            tokio::time::sleep(Duration::from_millis(10)).await;
         }
+        assert_eq!(host.lan_approval_mode(), "ask");
+        assert_eq!(host.status()["devices"].as_array().unwrap().len(), round);
+        host.answer(&id, true).unwrap();
         let reply = loop {
             let frame = tokio::time::timeout(Duration::from_secs(3), socket.next())
                 .await

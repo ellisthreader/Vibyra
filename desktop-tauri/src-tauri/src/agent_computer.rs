@@ -1,14 +1,12 @@
-use crate::account_api;
 use crate::agent_computer_access::{account_scope, looks_uuid, revoke_cloud};
 use crate::agent_computer_store::{self, Grant};
 use crate::commands::run_blocking;
 use crate::secret_store::SecretStore;
-use crate::state::AppState;
+use crate::{account_api, state::AppState};
 use serde_json::{json, Value};
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
-
 #[tauri::command]
 pub async fn agent_computer_grants(state: State<'_, AppState>) -> Result<Vec<Value>, String> {
     let scope = account_scope(&state)?;
@@ -26,7 +24,6 @@ pub async fn agent_computer_grants(state: State<'_, AppState>) -> Result<Vec<Val
         })
         .collect())
 }
-
 #[tauri::command]
 pub async fn agent_computer_choose(
     app: AppHandle,
@@ -85,7 +82,13 @@ pub async fn agent_computer_choose(
         .parent()
         .ok_or("No Vibyra settings directory")?
         .join("phone");
-    let host_id = run_blocking(move || vibyra_host::host_identity_id(&identity_dir)).await?;
+    let host_id = run_blocking(move || {
+        vibyra_host::host_identity_id_with_key_store(
+            &identity_dir,
+            &crate::secret_store::SecretStore,
+        )
+    })
+    .await?;
     let response = crate::http_client::shared()
         .post(format!(
             "{}/api/agents/v1/workspaces",

@@ -18,6 +18,7 @@ impl PreviewService {
         metadata: RequestMetadata,
         body: Vec<u8>,
     ) -> Result<(), String> {
+        stream.require_remote("preview:access")?;
         let binding = self.binding(device, key.generation())?;
         if let Some(window) = &binding.window {
             return self.window_http(device, key, stream, sender, window, metadata, body);

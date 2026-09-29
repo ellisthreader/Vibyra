@@ -102,7 +102,7 @@ async fn call(
         // A rejected code is a 422, not a 401: only an authoritative refusal
         // of the session itself may end it.
         Err(ApiError::Unauthorized(message)) => {
-            state.account.clear_session(&SecretStore);
+            crate::account_auth::reject_session(state);
             Err(message)
         }
         Err(error) => Err(error.message().to_owned()),

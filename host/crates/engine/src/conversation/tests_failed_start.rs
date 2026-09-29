@@ -29,8 +29,7 @@ for line in sys.stdin:
         vec![],
     )
     .unwrap();
-    let params =
-        json!({"projectId":"project","kind":"codex","title":"Auto","requestId":"11111111-1111-4111-8111-111111111111"});
+    let params = json!({"projectId":"project","kind":"codex","title":"Auto","requestId":"11111111-1111-4111-8111-111111111111"});
     let error = engine.create_conversation("phone", &params).unwrap_err();
     assert!(error.contains("advertised"), "{error}");
     let original = engine

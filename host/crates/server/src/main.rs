@@ -5,16 +5,26 @@ mod backend;
 mod config;
 mod connection;
 #[cfg(test)]
+mod connection_confirmation_tests;
+#[cfg(test)]
 mod connection_queue_tests;
 #[cfg(test)]
 mod connection_tests;
 mod console;
+mod device_trust;
 mod direct;
 mod discovery;
 mod discovery_watch;
 mod identity;
+mod identity_contents;
+mod identity_permissions;
+mod identity_policy;
+mod identity_store;
 mod instance;
 mod invitation;
+mod lan_authorization;
+#[cfg(test)]
+mod lan_connection_tests;
 mod peer_policy;
 mod presence;
 #[cfg(test)]
@@ -24,7 +34,19 @@ mod preview_connection;
 mod preview_connection_tests;
 mod preview_upgrade;
 mod relay;
+mod relay_address;
+mod relay_connection;
 mod relay_peers;
+mod relay_writer;
+mod remote_authorization;
+#[cfg(test)]
+mod remote_connection_tests;
+mod remote_permissions;
+mod remote_restrictions;
+mod remote_revocation;
+#[cfg(test)]
+mod remote_test_support;
+mod restriction_apply;
 mod state;
 #[cfg(test)]
 mod test_support;
@@ -72,11 +94,16 @@ async fn start(config: Config) -> Result<(), String> {
     }
     let shared = Arc::new(state::Shared {
         engine,
+        policy_pending: std::sync::atomic::AtomicBool::new(identity.restrictions.is_some()),
         identity: Mutex::new(identity),
         writes: Mutex::new(()),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
         active: Mutex::new(HashMap::new()),
+        used_remote_grants: Mutex::new(HashMap::new()),
+        remote_authorizations: std::sync::Mutex::default(),
+        lan_generation: std::sync::atomic::AtomicU64::new(1),
+        policy_epoch: std::sync::atomic::AtomicU64::new(1),
         pairing_url: config.pairing_url(),
         relay: config.relay.is_some(),
         nearby: config.discover,
@@ -131,6 +158,9 @@ async fn start(config: Config) -> Result<(), String> {
             return Err("Relay token must have between 32 and 4096 characters".into());
         }
         let credentials = relay::RelayCredentials {
+            authorization_key: None,
+            allow_unsigned_loopback: true,
+            authorization_context: None,
             url,
             token,
             name: relay_name,

@@ -11,6 +11,7 @@ import { SettingsIntegrationsPane } from "./SettingsIntegrationsPane";
 import { SettingsNav } from "./SettingsNav";
 import { SettingsNotificationsPane } from "./SettingsNotificationsPane";
 import { SettingsPhonePane } from "./SettingsPhonePane";
+import { SettingsRemoteSecurity } from "./SettingsRemoteSecurity";
 import { SettingsSaveState } from "./SettingsSaveState";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
 import { SETTINGS_SECTIONS } from "./settingsSections";
@@ -62,6 +63,7 @@ export function SettingsModal() {
     iphone: <SettingsPhonePane />,
     shortcuts: <SettingsShortcutsPane settings={settings} update={update} />,
     account: <SettingsAccountPane />,
+    security: <SettingsRemoteSecurity />,
     advanced: <SettingsAdvancedPane settings={settings} update={update} />,
   }[section.id];
 

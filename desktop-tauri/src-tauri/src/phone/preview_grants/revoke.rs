@@ -31,6 +31,18 @@ impl PreviewGrants {
         self.persist_revocation(&mut current, &mut automatic)
     }
 
+    /// Remove every device approval while retaining the current account scope.
+    pub fn revoke_all_devices(&self) -> Result<(), String> {
+        let mut current = self.grants.lock();
+        let mut automatic = self.automatic.lock();
+        current.clear();
+        automatic.clear();
+        let persisted = self.persist_revocation(&mut current, &mut automatic);
+        drop((current, automatic));
+        let runs = self.keep_runs_for(None);
+        persisted.and(runs)
+    }
+
     /// Account sign-out or account move removes every Preview grant.
     pub fn revoke_all(&self) -> Result<(), String> {
         *self.account.lock() = None;

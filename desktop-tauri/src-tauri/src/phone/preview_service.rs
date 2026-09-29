@@ -17,19 +17,20 @@ mod http_frames;
 mod native_discovery;
 mod native_handoff;
 mod origin_rewrite;
+mod remote_access;
 mod run_agent;
 mod run_control;
 mod run_events;
 mod run_list;
 mod run_stop;
 mod sandbox_probe;
+mod stream_open;
 mod upgrade;
 mod upgrade_io;
 pub mod watch;
 mod window;
 
-use super::preview_grants::PreviewGrants;
-use super::workspace::SharedWorkspace;
+use super::{preview_grants::PreviewGrants, workspace::SharedWorkspace};
 use parking_lot::{Condvar, Mutex};
 use serde::Deserialize;
 use std::collections::{HashMap, VecDeque};
@@ -37,8 +38,7 @@ use std::sync::{atomic::AtomicBool, mpsc, Arc};
 use vibyra_core::preview::PreviewManager;
 use vibyra_host::{PreviewFrame, ReceiveWindow, SendWindow, StreamKey};
 
-// The phone admits eight live sockets; a completed stream can still be crossing
-// the bridge when its successor opens, so leave bounded cleanup headroom.
+// Eight live sockets plus bounded headroom for streams finishing cleanup.
 const MAX_STREAMS: usize = 16;
 const MAX_REQUEST_BODY: usize = 2 * 1024 * 1024;
 const MAX_RESPONSE_BODY: usize = 16 * 1024 * 1024;
@@ -123,6 +123,7 @@ struct Binding {
 }
 
 struct Stream {
+    remote_access: Option<Arc<dyn vibyra_host::PreviewAccess>>,
     inbound: Mutex<Inbound>,
     outbound: Mutex<SendWindow>,
     wake: Condvar,
@@ -150,7 +151,6 @@ struct RequestMetadata {
 }
 
 impl PreviewService {
-    /// Window control has its own explicit grant; terminal typing is independent.
     pub fn new(
         manager: Arc<PreviewManager>,
         grants: Arc<PreviewGrants>,

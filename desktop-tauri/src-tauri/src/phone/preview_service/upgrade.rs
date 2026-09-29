@@ -59,6 +59,7 @@ impl PreviewService {
         request: &UpgradeRequest,
         receiver: Receiver<(Vec<u8>, Frame)>,
     ) -> Result<(), String> {
+        stream.require_remote("preview:access")?;
         let binding = self.binding(device, key.generation())?;
         if binding.window.is_some() {
             return Err("Window Preview does not expose network upgrades".into());
@@ -83,7 +84,8 @@ impl PreviewService {
                     Err(mpsc::RecvTimeoutError::Timeout) => continue,
                     Err(mpsc::RecvTimeoutError::Disconnected) => break,
                 };
-                if service.binding(&writer_device, key.generation()).is_err()
+                if writer_stream.require_remote("preview:access").is_err()
+                    || service.binding(&writer_device, key.generation()).is_err()
                     || writer.write_all(&bytes).is_err()
                     || service
                         .queue_frame(&writer_device, &writer_stream, &writer_sender, key, credit)

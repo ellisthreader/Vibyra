@@ -25,6 +25,9 @@ async fn cloud_leg_forwards_full_preview_chunk_and_terminal_rpc_on_one_noise_ses
         let url = url.clone();
         Box::pin(async move {
             Ok(RelayCredentials {
+                authorization_key: None,
+                allow_unsigned_loopback: true,
+                authorization_context: None,
                 url,
                 token: "test-token".into(),
                 name: "Mac".into(),

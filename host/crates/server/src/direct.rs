@@ -15,7 +15,7 @@ use tokio_tungstenite::{
 
 #[cfg(feature = "standalone")]
 pub async fn serve(listener: TcpListener, shared: Arc<Shared>) -> Result<(), String> {
-    serve_with_policy(listener, shared, false).await
+    serve_with_policy(listener, shared, true).await
 }
 
 pub async fn serve_with_policy(
@@ -24,6 +24,9 @@ pub async fn serve_with_policy(
     lan_only: bool,
 ) -> Result<(), String> {
     let address = listener.local_addr().map_err(|e| e.to_string())?;
+    if lan_only && !peer_policy::allowed(address, address) {
+        return Err("Nearby listening requires a specific loopback or LAN address".into());
+    }
     let permits = Arc::new(Semaphore::new(32));
     loop {
         let (mut stream, peer) = listener.accept().await.map_err(|e| e.to_string())?;

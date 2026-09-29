@@ -1,17 +1,7 @@
-//! Starting and closing this Mac's terminals from a phone.
-//!
-//! Both are behind the same switch as typing — a shell started from a phone
-//! is any command the Mac's user can run, and closing one ends work in front
-//! of the person — and both go through the window (`requests.rs`), which is
-//! what knows how a terminal in a project is launched and drawn.
 use super::backend::DesktopBackend;
 use super::workspace::UNFILED;
 use serde_json::{json, Value};
-
 pub const MANAGE_OFF: &str = crate::platform_text::for_computer("Typing from your phone is off. Turn it on in Vibyra on your Mac (Settings > iPhone connection) to start or close terminals from your phone.", "Typing from your phone is off. Turn it on in Vibyra on your computer (Settings > iPhone connection) to start or close terminals from your phone.");
-
-/// What the window started: a pane of its own, or a shared chat that the
-/// combined backend names from the chat list.
 pub enum Created {
     Pane(Value),
     Conversation(String),
@@ -106,8 +96,14 @@ impl DesktopBackend {
         }
         let effort = params.get("effort");
         if let Some(effort) = effort {
-            if kind == "shell" || model.is_none() || !(effort.is_null() || matches!(effort.as_str(),
-                Some("none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max"))) {
+            if kind == "shell"
+                || model.is_none()
+                || !(effort.is_null()
+                    || matches!(
+                        effort.as_str(),
+                        Some("none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max")
+                    ))
+            {
                 return Err("Choose a supported effort for an AI model".into());
             }
         }
@@ -130,7 +126,9 @@ impl DesktopBackend {
                 if let Some(model) = model {
                     request["model"] = json!(model);
                 }
-                if let Some(effort) = effort { request["effort"] = effort.clone(); }
+                if let Some(effort) = effort {
+                    request["effort"] = effort.clone();
+                }
                 if let Some(permission) = permission {
                     request["permissionMode"] = json!(permission);
                 }

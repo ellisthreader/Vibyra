@@ -14,18 +14,21 @@ export function createReporter({ apiUrl, secret, relayId, fetch: fetchImpl = glo
   let timer = null;
   let sending = false;
   let heartbeat = null;
+  let stopped = false;
+  let failures = 0;
+  let lastSuccessAt = null;
   const enabled = Boolean(apiUrl && secret);
   const endpoint = enabled ? `${apiUrl.replace(/\/+$/, '')}/api/remote/relay/events` : null;
 
   function push(event) {
-    if (!enabled) return;
+    if (!enabled || stopped) return;
     queue.push({ ...event, at: new Date().toISOString() });
     if (queue.length > 2000) queue.splice(0, queue.length - 2000);
     if (!timer) timer = setTimeout(flush, flushMs);
   }
   async function flush() {
     timer = null;
-    if (sending || !queue.length) return;
+    if (stopped || sending || !queue.length) return;
     sending = true;
     const batch = queue.splice(0, 200);
     try {
@@ -33,34 +36,39 @@ export function createReporter({ apiUrl, secret, relayId, fetch: fetchImpl = glo
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${secret}` },
         body: JSON.stringify({ relayId, events: batch }) });
       if (!response.ok) throw new Error(`API answered ${response.status}`);
+      lastSuccessAt = Date.now();
     } catch (error) {
       // Put the batch back in front; the next flush or heartbeat retries it.
+      failures++;
       queue.unshift(...batch);
+      if (queue.length > 2000) queue.splice(0, queue.length - 2000);
       log.warn?.(`Relay could not report presence: ${error.message}`);
     } finally {
       sending = false;
-      if (queue.length && !timer) timer = setTimeout(flush, Math.min(flushMs * 20, 10000));
+      if (!stopped && queue.length && !timer) timer = setTimeout(flush, Math.min(flushMs * 20, 10000));
     }
   }
   return {
     enabled,
-    hostOnline(hostId, userId) { hosts.set(hostId, { userId, clients: 0 }); push({ event: 'host.online', hostId, userId }); },
-    hostOffline(hostId, userId) { hosts.delete(hostId); push({ event: 'host.offline', hostId, userId }); },
-    sessionStarted(hostId, userId, clientId, jti) {
-      const host = hosts.get(hostId); if (host) host.clients += 1;
-      push({ event: 'session.started', hostId, userId, clientId, jti });
+    diagnostics() { return { enabled, queued: queue.length, failures, lastSuccessAt }; },
+    hostOnline(hostId, userId, generation = 0) { hosts.set(hostId, { userId, generation, clients: 0 }); push({ event: 'host.online', hostId, userId, generation }); },
+    hostOffline(hostId, userId, generation = 0) { if (hosts.get(hostId)?.userId === userId && hosts.get(hostId)?.generation === generation) hosts.delete(hostId); push({ event: 'host.offline', hostId, userId, generation }); },
+    sessionStarted(hostId, userId, clientId, jti, generation = 0) {
+      const host = hosts.get(hostId); if (host?.userId === userId && host.generation === generation) host.clients += 1;
+      push({ event: 'session.started', hostId, userId, clientId, jti, generation });
     },
-    sessionEnded(hostId, userId, clientId, jti) {
-      const host = hosts.get(hostId); if (host) host.clients = Math.max(0, host.clients - 1);
-      push({ event: 'session.ended', hostId, userId, clientId, jti });
+    sessionEnded(hostId, userId, clientId, jti, generation = 0) {
+      const host = hosts.get(hostId); if (host?.userId === userId && host.generation === generation) host.clients = Math.max(0, host.clients - 1);
+      push({ event: 'session.ended', hostId, userId, clientId, jti, generation });
     },
-    presence() { return [...hosts].map(([hostId, host]) => ({ hostId, userId: host.userId, clients: host.clients })); },
+    presence() { return [...hosts].map(([hostId, host]) => ({ hostId, userId: host.userId, generation: host.generation, clients: host.clients })); },
     start() {
+      stopped = false;
       if (!enabled || heartbeat) return;
       heartbeat = setInterval(() => push({ event: 'presence', hosts: this.presence() }), heartbeatMs);
       heartbeat.unref?.();
     },
-    stop() { if (heartbeat) clearInterval(heartbeat); heartbeat = null; if (timer) clearTimeout(timer); timer = null; },
+    stop() { stopped = true; if (heartbeat) clearInterval(heartbeat); heartbeat = null; if (timer) clearTimeout(timer); timer = null; },
     flush,
   };
 }

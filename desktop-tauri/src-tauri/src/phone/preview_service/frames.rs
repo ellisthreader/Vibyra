@@ -1,14 +1,26 @@
-use super::{Inbound, PreviewService, Stream, MAX_REQUEST_BODY, MAX_STREAMS};
-use parking_lot::Mutex;
+use super::{PreviewService, Stream, MAX_REQUEST_BODY};
 use std::sync::{atomic::Ordering, mpsc, Arc};
-use vibyra_host::{
-    PreviewFrame as Frame, PreviewHandler, ReceiveWindow, SendWindow, UpgradeRequest,
-};
+use vibyra_host::{PreviewFrame as Frame, PreviewHandler, UpgradeRequest};
 
 impl PreviewHandler for PreviewService {
     fn receive(&self, device: &str, frame: Frame) -> Result<(), String> {
+        self.receive_authorized(device, frame, None)
+    }
+
+    fn receive_authorized(
+        &self,
+        device: &str,
+        frame: Frame,
+        access: Option<Arc<dyn vibyra_host::PreviewAccess>>,
+    ) -> Result<(), String> {
+        if access
+            .as_ref()
+            .is_some_and(|grant| !grant.permits("preview:access"))
+        {
+            return Err("Remote Preview authorization expired".into());
+        }
         let key = frame.key();
-        let result = self.receive_frame(device, frame);
+        let result = self.receive_frame(device, frame, access);
         #[cfg(test)]
         if let Err(error) = &result {
             eprintln!(
@@ -61,10 +73,15 @@ impl PreviewHandler for PreviewService {
 }
 
 impl PreviewService {
-    fn receive_frame(&self, device: &str, frame: Frame) -> Result<(), String> {
+    fn receive_frame(
+        &self,
+        device: &str,
+        frame: Frame,
+        access: Option<Arc<dyn vibyra_host::PreviewAccess>>,
+    ) -> Result<(), String> {
         let key = frame.key();
         match frame {
-            Frame::Open { .. } => self.receive_open(device, key),
+            Frame::Open { .. } => self.receive_open(device, key, access),
             Frame::Data { .. } => self.receive_data(device, frame),
             Frame::End { .. } => self.receive_end(device, frame),
             Frame::Credit { .. } => {
@@ -97,37 +114,6 @@ impl PreviewService {
 }
 
 impl PreviewService {
-    fn receive_open(&self, device: &str, key: vibyra_host::StreamKey) -> Result<(), String> {
-        self.binding(device, key.generation())?;
-        if self.finished(device, key) {
-            return Err("Preview stream already finished".into());
-        }
-        let mut streams = self.inner.streams.lock();
-        if streams.len() >= MAX_STREAMS || streams.contains_key(&(device.into(), key)) {
-            return Err("Too many active Preview requests".into());
-        }
-        let window = ReceiveWindow::new(key);
-        let credit = window.initial_credit();
-        streams.insert(
-            (device.into(), key),
-            Arc::new(Stream {
-                inbound: Mutex::new(Inbound {
-                    window,
-                    chunks: 0,
-                    metadata: None,
-                    upgraded: false,
-                    body: Vec::new(),
-                }),
-                outbound: Mutex::new(SendWindow::new(key)),
-                wake: parking_lot::Condvar::new(),
-                canceled: std::sync::atomic::AtomicBool::new(false),
-                upgrade: Mutex::new(None),
-            }),
-        );
-        drop(streams);
-        self.try_send(device, credit)
-    }
-
     fn receive_data(&self, device: &str, frame: Frame) -> Result<(), String> {
         let key = frame.key();
         let stream = self.stream(device, key)?;
@@ -200,7 +186,7 @@ impl PreviewService {
             .ok_or("Preview request is no longer active".into())
     }
 
-    fn try_send(&self, device: &str, frame: Frame) -> Result<(), String> {
+    pub(super) fn try_send(&self, device: &str, frame: Frame) -> Result<(), String> {
         self.inner
             .subscribers
             .lock()

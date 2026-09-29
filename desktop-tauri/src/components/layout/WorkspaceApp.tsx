@@ -12,6 +12,7 @@ import { TitleBar } from "./TitleBar";
 import { UpdateBanner } from "./UpdateBanner";
 import { WhatsNew } from "./WhatsNew";
 import { VoiceHud } from "./VoiceHud";
+import { RemoteSecurityMonitor } from "../phone/RemoteSecurityMonitor";
 import { PhoneApprovalModal } from "../phone/PhoneApprovalModal";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
@@ -146,6 +147,7 @@ export function WorkspaceApp() {
       <VoiceHud />
       <CloseConfirmModal />
       <PhoneApprovalModal />
+      <RemoteSecurityMonitor />
       <ScreenshotTray />
       <Suspense fallback={null}>
         {screenshotEditorOpen ? <ScreenshotEditor /> : null}

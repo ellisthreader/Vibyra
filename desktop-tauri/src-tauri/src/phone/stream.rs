@@ -59,7 +59,10 @@ pub fn stream(
                 if now != sites {
                     sites = now;
                     seq += 1;
-                    if send.send(json!({"event":"preview.changed","seq":seq,"data":{}})).is_err() {
+                    if send
+                        .send(json!({"event":"preview.changed","seq":seq,"data":{}}))
+                        .is_err()
+                    {
                         break;
                     }
                 }

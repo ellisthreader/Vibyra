@@ -1,15 +1,20 @@
 mod access;
+pub mod address;
 mod ai_accounts;
 #[cfg(test)]
 mod ai_accounts_tests;
-pub mod address;
 mod notifications;
 mod preferences;
 mod remote;
-use preferences::save;
+#[cfg(test)]
+mod remote_lifecycle_tests;
+pub(crate) mod remote_registration;
+mod remote_revocation;
+pub(crate) mod remote_transfer_scope;
 // Prepared Mac-side permission boundary. Deliberately disconnected from RPC.
 mod backend;
 mod connection_init;
+mod connection_lifecycle;
 mod control;
 #[cfg(test)]
 mod control_tests;
@@ -20,9 +25,9 @@ mod manage;
 #[cfg(all(test, unix))]
 mod manage_chat_tests;
 #[cfg(test)]
-mod manage_tests;
-#[cfg(test)]
 mod manage_permission_tests;
+#[cfg(test)]
+mod manage_tests;
 #[cfg(test)]
 mod preview_attached_fixture;
 #[cfg(test)]
@@ -51,9 +56,9 @@ mod preview_upgrade_handshake;
 #[cfg(test)]
 mod preview_upgrade_tests;
 #[cfg(all(test, target_os = "macos"))]
-mod preview_window_tests;
-#[cfg(all(test, target_os = "macos"))]
 mod preview_window_live;
+#[cfg(all(test, target_os = "macos"))]
+mod preview_window_tests;
 mod railway;
 mod railway_resources;
 mod railway_tools;
@@ -65,7 +70,7 @@ pub(crate) mod shared_backend;
 mod stream;
 #[cfg(test)]
 mod tests;
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod typing_tests;
 pub mod vault;
 #[cfg(test)]
@@ -76,17 +81,13 @@ pub mod workspace;
 mod workspace_tests;
 
 use crate::account_session::AccountSessionManager;
-use address::{connection_address, default_address};
-use backend::DesktopBackend;
 #[cfg(test)]
-#[cfg(all(test, unix))]
 use parking_lot::Mutex;
-use preferences::computer_name;
 use std::{
-    net::SocketAddr,
     path::PathBuf,
     sync::{atomic::AtomicBool, Arc},
 };
+#[cfg(test)]
 use vibyra_core::pty::PtyManager;
 use vibyra_host::{EmbeddedHost, RelayHandle};
 pub use watch::{notify_window, watch};
@@ -106,6 +107,7 @@ pub struct PhoneConnection {
     path: PathBuf,
     enabled: bool,
     address: String,
+    pending_address: Option<String>,
     /// The desktop's own projects and panes. Kept on the connection rather
     /// than the listener so it survives the connection being switched off, a
     /// network change or a rebind, and is already right when a phone arrives.
@@ -129,81 +131,8 @@ pub struct PhoneConnection {
     preview_service: Option<Arc<preview_service::PreviewService>>,
 }
 impl PhoneConnection {
-    #[cfg(all(test, unix))]
+    #[cfg(test)]
     pub fn new(path: PathBuf, manager: Arc<PtyManager>) -> Mutex<Self> {
         Self::with_chats(path, manager, None, None)
-    }
-    pub fn enable(&mut self, manager: Arc<PtyManager>) -> Result<(), String> {
-        self.enabled = true;
-        save(&self.path, true, self.typing(), self.remote_enabled)?;
-        if self.host.is_some() {
-            return Ok(());
-        }
-        let started = self.start(manager);
-        self.error = started.clone().err();
-        started
-    }
-    pub fn disable(&mut self) -> Result<(), String> {
-        // Stop network access even if writing the preference fails.
-        self.enabled = false;
-        self.notifications = None;
-        self.remote = None;
-        self.host = None;
-        self.address = String::new();
-        self.error = None;
-        save(&self.path, false, self.typing(), self.remote_enabled)
-    }
-    /// Keeps the listener on this Mac's current address: it starts a connection
-    /// that could not bind earlier and rebinds after a Wi-Fi or VPN change, so
-    /// the phone keeps finding the Mac without anyone opening Settings.
-    pub fn refresh(&mut self, manager: Arc<PtyManager>) {
-        if !self.enabled {
-            return;
-        }
-        let current = default_address();
-        if self.host.is_some() && (current.is_empty() || current == self.address) {
-            return;
-        }
-        self.notifications = None;
-        self.remote = None;
-        self.host = None;
-        self.address = String::new();
-        self.error = self.start(manager).err();
-    }
-    fn start(&mut self, manager: Arc<PtyManager>) -> Result<(), String> {
-        let detected = default_address();
-        if detected.is_empty() {
-            return Err(NO_NETWORK.into());
-        }
-        let address = connection_address(&detected)?;
-        let terminal = DesktopBackend::new_with_preview(
-            manager,
-            self.workspace.clone(),
-            self.typing.clone(),
-            self.vault.clone(),
-            self.requests.clone(),
-            self.preview_service.clone().map(|preview| preview as _),
-        )?;
-        let terminal = terminal.with_provider_auth(self.provider_auth.clone());
-        let backend: Arc<dyn vibyra_host::Backend> = match &self.chats {
-            Some(chats) => Arc::new(shared_backend::SharedBackend {
-                terminal,
-                chats: chats.clone(),
-                typing: self.typing.clone(),
-            }),
-            None => Arc::new(terminal),
-        };
-        let host = EmbeddedHost::start(
-            self.path.clone(),
-            SocketAddr::from((address, 4319)),
-            backend,
-            &computer_name(),
-        )?;
-        self.address = address.to_string();
-        self.host = Some(host);
-        if self.remote_enabled {
-            self.start_remote();
-        }
-        Ok(())
     }
 }

@@ -32,6 +32,9 @@ async fn the_embedded_host_registers_with_the_relay_and_serves_a_phone_through_i
         Box::pin(async move {
             *counted.lock().unwrap() += 1;
             Ok(RelayCredentials {
+                authorization_key: None,
+                allow_unsigned_loopback: true,
+                authorization_context: None,
                 url,
                 token: "test-token".into(),
                 name: "Ellis MacBook".into(),

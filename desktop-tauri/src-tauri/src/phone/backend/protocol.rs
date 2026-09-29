@@ -17,6 +17,13 @@ use super::DesktopBackend;
 
 impl Backend for DesktopBackend {
     fn handle(&self, device: &str, method: &str, params: Value) -> Result<Value, String> {
+        if matches!(
+            method,
+            "scaffold.start" | "scaffold.cancel" | "scaffold.adopt"
+        ) && !self.control.typing()
+        {
+            return Err(super::super::control::TYPING_OFF.into());
+        }
         if let Some(result) = self.vault.dispatch(device, method, &params) {
             return result;
         }

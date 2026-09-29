@@ -16,6 +16,15 @@ pub struct UpgradeRequest {
     pub method: String,
     pub path: String,
     pub headers: HashMap<String, String>,
+    /// The phone sends its private loopback origin with every request, for text
+    /// origin rewriting. A WebSocket has no text to rewrite, but refusing the
+    /// field rejected every upgrade, so live reload never connected.
+    #[serde(
+        default,
+        rename = "browserOrigin",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub browser_origin: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]

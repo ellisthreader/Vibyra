@@ -1,3 +1,7 @@
+## 0.8.16 — Remote access security (candidate, 2026-09-29)
+
+Build 29 preserves installed 0.8.15 build 26 features and adds approved device trust, passkey-protected Cloud sessions, scoped signed leases, independent permissions, active-session warnings, revocation and native restrictive synchronization. Nearby access requires local approval while security state is unavailable. Candidate publication and installation are recorded separately after verification.
+
 # Desktop - Release Changelog
 
 Every desktop release that reached users, newest first. This is the durable record:
@@ -159,3 +163,8 @@ conversations.
 
 Published before this log existed. 0.1.10 (9 September) added IPv6-only network
 support for the iPhone connection; 0.1.9 introduced it. All ad-hoc signed.
+
+## 0.8.14 — 27 September 2026 (local Mac update)
+
+The installed Mac source carries phone project-window viewing and readiness improvements. This local version was not verified as published to the updater feed.
+

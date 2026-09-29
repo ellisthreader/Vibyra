@@ -1,5 +1,10 @@
 use crate::{
-    backend::Backend, direct, discovery_watch, identity::Identity, instance, state::Shared,
+    backend::Backend,
+    discovery_watch,
+    embedded_runtime::{self, Rebind},
+    identity::Identity,
+    instance,
+    state::Shared,
 };
 use std::{
     collections::{BTreeMap, HashMap},
@@ -7,7 +12,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 
 /// The longest stopping waits for work already handed to the blocking pool.
 const SHUTDOWN: std::time::Duration = std::time::Duration::from_millis(1000);
@@ -22,6 +27,7 @@ pub struct EmbeddedHost {
     /// The listener's own runtime, so the cloud leg runs beside it and ends
     /// with it.
     pub(crate) runtime: tokio::runtime::Handle,
+    rebind: mpsc::UnboundedSender<Rebind>,
 }
 impl EmbeddedHost {
     /// `name` is what a nearby phone lists this computer as, so it should be
@@ -32,8 +38,30 @@ impl EmbeddedHost {
         backend: Arc<dyn Backend>,
         name: &str,
     ) -> Result<Self, String> {
+        Self::start_with_key_store(path, address, backend, name, None)
+    }
+
+    pub fn start_with_key_store(
+        path: PathBuf,
+        address: SocketAddr,
+        backend: Arc<dyn Backend>,
+        name: &str,
+        store: Option<&dyn crate::identity_store::IdentityKeyStore>,
+    ) -> Result<Self, String> {
+        Self::start_managed_with_key_store(path, address, backend, name, store, false)
+    }
+    /// Managed installations require a current restriction snapshot before
+    /// accepting saved unattended LAN consent, including the first migration.
+    pub fn start_managed_with_key_store(
+        path: PathBuf,
+        address: SocketAddr,
+        backend: Arc<dyn Backend>,
+        name: &str,
+        store: Option<&dyn crate::identity_store::IdentityKeyStore>,
+        managed: bool,
+    ) -> Result<Self, String> {
         let lock = instance::lock(&path)?;
-        let identity = Identity::load(&path, Some(name))?;
+        let identity = Identity::load_with_store(&path, Some(name), store)?;
         let socket = std::net::TcpListener::bind(address)
             .map_err(|e| format!("Cannot start phone connection: {e}"))?;
         socket.set_nonblocking(true).map_err(|e| e.to_string())?;
@@ -50,11 +78,18 @@ impl EmbeddedHost {
         });
         let shared = Arc::new(Shared {
             engine: backend,
+            policy_pending: std::sync::atomic::AtomicBool::new(
+                managed || identity.restrictions.is_some(),
+            ),
             identity: Mutex::new(identity),
             writes: Mutex::new(()),
             invitation: Mutex::new(None),
             pending: Mutex::new(BTreeMap::new()),
             active: Mutex::new(HashMap::new()),
+            used_remote_grants: Mutex::new(HashMap::new()),
+            remote_authorizations: std::sync::Mutex::default(),
+            lan_generation: std::sync::atomic::AtomicU64::new(1),
+            policy_epoch: std::sync::atomic::AtomicU64::new(1),
             pairing_url: format!("ws://{address}"),
             relay: false,
             // This listener exists only for phone connections and already
@@ -69,40 +104,22 @@ impl EmbeddedHost {
             .map_err(|e| e.to_string())?;
         let handle = runtime.handle().clone();
         let (stop, receiver) = oneshot::channel();
+        let (rebind, updates) = mpsc::unbounded_channel();
         let discovery = Arc::new(Mutex::new(discovery_watch::Status::default()));
         let discovery_state = discovery.clone();
         let state = shared.clone();
-        let extra = shared.clone();
         let thread = std::thread::Builder::new()
             .name("vibyra-phone".into())
             .spawn(move || {
                 let _lock = lock;
-                runtime.block_on(async move {
-                    let listener = tokio::net::TcpListener::from_std(socket)
-                        .expect("validated nonblocking listener");
-                    let loopback =
-                        local.and_then(|socket| tokio::net::TcpListener::from_std(socket).ok());
-                    let also = async {
-                        match loopback {
-                            Some(listener) => {
-                                direct::serve_with_policy(listener, extra, true).await
-                            }
-                            // Nothing to serve: never resolve, so `select!`
-                            // keeps waiting on the real listener and the stop.
-                            None => std::future::pending().await,
-                        }
-                    };
-                    let (name, id) = {
-                        let identity = state.identity.lock().expect("identity");
-                        (identity.name.clone(), identity.id())
-                    };
-                    tokio::select! {
-                        _ = receiver => {},
-                        _ = discovery_watch::maintain(name, id, address, discovery_state) => {},
-                        _ = direct::serve_with_policy(listener, state, true) => {},
-                        _ = also => {},
-                    }
-                });
+                runtime.block_on(embedded_runtime::serve(
+                    socket,
+                    local,
+                    state,
+                    discovery_state,
+                    receiver,
+                    updates,
+                ));
                 // A plain drop waits for every request still in the blocking
                 // pool, and one phone request can take many seconds while the
                 // desktop waits on this thread to start the next host. Those
@@ -120,7 +137,28 @@ impl EmbeddedHost {
             address,
             discovery,
             runtime: handle,
+            rebind,
         })
+    }
+    /// Changes the listening interface without replacing the Host's identity,
+    /// active encrypted connections, approval queue, relay, or notifications.
+    pub fn rebind(&mut self, address: SocketAddr) -> Result<(), String> {
+        if address == self.address {
+            return Ok(());
+        }
+        let socket = std::net::TcpListener::bind(address)
+            .map_err(|e| format!("Cannot move phone connection: {e}"))?;
+        socket.set_nonblocking(true).map_err(|e| e.to_string())?;
+        let address = socket.local_addr().map_err(|e| e.to_string())?;
+        let listener = {
+            let _runtime = self.runtime.enter();
+            tokio::net::TcpListener::from_std(socket).map_err(|e| e.to_string())?
+        };
+        self.rebind
+            .send(Rebind { listener, address })
+            .map_err(|_| "Phone connection stopped".to_string())?;
+        self.address = address;
+        Ok(())
     }
     /// Connects this computer outward to Vibyra Cloud so phones of the same
     /// account reach these very terminals from any network. The same trust

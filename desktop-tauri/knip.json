@@ -9,6 +9,9 @@
     "tests/*Fixture.tsx",
     "scripts/frontend-artifact.mjs",
     "tests/assistantLiveFixture.ts",
-    "tests/installedReferenceBootstrap.ts"
+    "tests/installedReferenceBootstrap.ts",
+    "scripts/verify-remote-security.mjs",
+    "src-tauri/examples/ipc-boundary/assets/*.js",
+    "src-tauri/src/window_preview/viewer*.js"
   ]
 }

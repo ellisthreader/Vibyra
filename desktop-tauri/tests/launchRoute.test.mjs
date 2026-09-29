@@ -44,7 +44,7 @@ test("the launch path decides by the saved Agent view, not by provider alone", (
   assert.match(launch, /launch\.view \?\? useSettingsStore\.getState\(\)\.settings\?\.agentView/);
   assert.match(launch, /view: options\.view,/);
   assert.match(launch, /launchRoute\(launch\.agent\.id, view\)/);
-  assert.match(launch, /\}, launch\.view === undefined\)/,
+  assert.match(launch, /\}, launch\.view === undefined, launch\.requestId\)/,
     "a phone launch must not focus or change the Mac workspace");
   assert.doesNotMatch(
     launch,

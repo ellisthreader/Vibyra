@@ -155,6 +155,7 @@ async fn verify_completed(
                 state
                     .account
                     .adopt_session(&SecretStore, token.to_owned(), profile);
+                state.phone.lock().account_signed_in();
                 return Ok(());
             }
             Err(ApiError::Unauthorized(message)) => return Err(message),

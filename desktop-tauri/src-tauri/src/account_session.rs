@@ -7,6 +7,9 @@ use crate::account_cancel::CancelFlag;
 use crate::account_types::{AccountProfile, AccountSnapshot, AccountStatus};
 use crate::secret_store::SecretStore;
 
+#[path = "account_session_rejection.rs"]
+mod rejection;
+
 struct SessionState {
     status: AccountStatus,
     token: Option<String>,
@@ -87,6 +90,7 @@ impl AccountSessionManager {
     /// store first, then swaps it into memory. When the store is unavailable
     /// the session continues for this process only and the snapshot says so.
     pub fn adopt_session(&self, store: &SecretStore, token: String, profile: AccountProfile) {
+        let mut state = self.inner.lock();
         let persisted = match store.write_account_session(Some(&token)) {
             Ok(()) => true,
             Err(error) => {
@@ -94,7 +98,6 @@ impl AccountSessionManager {
                 false
             }
         };
-        let mut state = self.inner.lock();
         state.token = Some(token);
         state.profile = Some(profile);
         state.status = AccountStatus::SignedIn;
@@ -107,8 +110,8 @@ impl AccountSessionManager {
     /// Replaces the token after a rotation. The new token is written to the
     /// credential store before memory so a crash never strands a stale entry.
     pub fn replace_token(&self, store: &SecretStore, token: String) {
-        let persisted = store.write_account_session(Some(&token)).is_ok();
         let mut state = self.inner.lock();
+        let persisted = store.write_account_session(Some(&token)).is_ok();
         state.token = Some(token);
         if !persisted {
             state.secure_storage = false;

@@ -50,6 +50,7 @@ async fn submit_credentials(
                 (Some(token), Some(profile)) => {
                     bind_preview_account(state, response.get("user"));
                     account.adopt_session(&SecretStore, token.to_owned(), profile);
+                    state.phone.lock().account_signed_in();
                 }
                 // A password alone is not the whole login for an account with a
                 // second factor: the backend answers with a challenge and no
@@ -109,6 +110,7 @@ pub async fn submit_two_factor(state: &AppState, code: String) -> AccountSnapsho
                 (Some(token), Some(profile)) => {
                     bind_preview_account(state, response.get("user"));
                     account.adopt_session(&SecretStore, token.to_owned(), profile);
+                    state.phone.lock().account_signed_in();
                 }
                 _ => account.set_status(
                     AccountStatus::TwoFactor,

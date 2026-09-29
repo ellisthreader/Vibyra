@@ -27,6 +27,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }
 base64 = "0.22"
+crypto_box = { version = "0.9.1", features = ["seal"] }
+ring = "0.17"
 hex = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "6"
@@ -35,3 +37,6 @@ url = "2"
 tempfile = "3"
 fs2 = "0.4"
 mdns-sd = "0.21.3"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization"] }

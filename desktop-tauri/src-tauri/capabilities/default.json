@@ -2,10 +2,8 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capabilities for the main Vibyra Desktop window",
-  "windows": [
-    "main"
-  ],
   "permissions": [
+    "default",
     "core:default",
     "dialog:default",
     "global-shortcut:allow-register",
@@ -29,5 +27,9 @@
     "notification:allow-notify",
     "updater:default",
     "process:default"
-  ]
+  ],
+  "webviews": [
+    "main"
+  ],
+  "local": true
 }

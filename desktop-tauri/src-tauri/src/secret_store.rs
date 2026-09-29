@@ -15,6 +15,32 @@ pub struct SecretStore;
 /// access prompt whenever the item's ACL does not yet include this build.
 static SESSION_JUST_READ: Mutex<Option<String>> = Mutex::new(None);
 
+impl vibyra_host::IdentityKeyStore for SecretStore {
+    fn read(&self, public_key: &str) -> Result<Option<String>, String> {
+        #[cfg(test)]
+        return host_identity_test_store::read(public_key);
+        #[cfg(not(test))]
+        read_secret(&format!("host-identity-{public_key}"))
+    }
+
+    fn write(&self, public_key: &str, private_key: &str) -> Result<(), String> {
+        #[cfg(test)]
+        return host_identity_test_store::write(public_key, private_key);
+        #[cfg(not(test))]
+        write_secret(&format!("host-identity-{public_key}"), Some(private_key))
+    }
+}
+
+#[cfg(test)]
+#[path = "host_identity_test_store.rs"]
+mod host_identity_test_store;
+
+/// The session token as last read from the store, until the next session
+/// write. Launch reads the token, verifies it, and adopts it — which wrote the
+/// same bytes straight back: a Keychain write on every launch, and a second
+/// access prompt whenever the item's ACL does not yet include this build.
+static SESSION_JUST_READ: Mutex<Option<String>> = Mutex::new(None);
+
 impl SecretStore {
     pub fn read_openai_key(&self) -> Result<Option<String>, String> {
         read_secret(OPENAI_ACCOUNT)

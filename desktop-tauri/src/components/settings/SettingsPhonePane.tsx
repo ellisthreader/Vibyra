@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { PhoneDevice } from "../../ipc/phone";
 import { usePhoneStore } from "../../state/phoneStore";
 import { PhoneDeviceIcon, deviceKind } from "./PhoneDeviceIcon";
+import { SettingsPhoneTransfer } from "./SettingsPhoneTransfer";
 import { PhoneFallback } from "./PhoneFallback";
 import { SettingRow, SettingsBlock, Switch } from "./SettingsShared";
 
@@ -115,6 +116,7 @@ export function SettingsPhonePane() {
           {enabled && status?.remote?.signedIn && <SettingRow label="Computer updates on your phone" hint="Share task status with Vibyra Cloud for private alerts. No prompts or terminal text. Enable again after restarting or signing in.">
             <Switch checked={status.notifications ?? false} disabled={busy} label="Computer updates on your phone" onChange={(next) => void usePhoneStore.getState().setNotifications(next)} />
           </SettingRow>}
+          {enabled && status?.remote?.signedIn && <SettingsPhoneTransfer error={status.remote.leg?.error} />}
           {enabled && (
             <SettingRow label="Typing from your phone" hint="Type into terminals and answer agent requests from your phone.">
               <Switch checked={typing} disabled={busy || !status} label="Typing from your phone" onChange={(next) => void setTyping(next)} />

@@ -9,7 +9,7 @@ use std::{
 use vibyra_core::pty::PtyManager;
 
 impl PhoneConnection {
-    #[cfg(all(test, unix))]
+    #[cfg(test)]
     pub fn with_chats(
         path: PathBuf,
         manager: Arc<PtyManager>,
@@ -30,10 +30,16 @@ impl PhoneConnection {
     ) -> Mutex<Self> {
         Self::with_chats_preview_accounts(path, manager, chats, account, preview, None)
     }
+
     pub fn with_chats_preview_accounts(
-        path: PathBuf, manager: Arc<PtyManager>, chats: Option<Arc<crate::shared_chats::SharedChats>>,
+        path: PathBuf,
+        manager: Arc<PtyManager>,
+        chats: Option<Arc<crate::shared_chats::SharedChats>>,
         account: Option<Arc<AccountSessionManager>>,
-        preview: Option<(Arc<vibyra_core::preview::PreviewManager>, Arc<preview_grants::PreviewGrants>)>,
+        preview: Option<(
+            Arc<vibyra_core::preview::PreviewManager>,
+            Arc<preview_grants::PreviewGrants>,
+        )>,
         provider_auth: Option<Arc<crate::provider_auth::ProviderAuthManager>>,
     ) -> Mutex<Self> {
         let workspace = SharedWorkspace::default();
@@ -43,7 +49,11 @@ impl PhoneConnection {
             .unwrap_or(Value::Null);
         let typing = Arc::new(AtomicBool::new(saved["typing"].as_bool() == Some(true)));
         let preview_service = preview.map(|(preview, grants)| {
-            Arc::new(preview_service::PreviewService::new(preview, grants, workspace.clone()))
+            Arc::new(preview_service::PreviewService::new(
+                preview,
+                grants,
+                workspace.clone(),
+            ))
         });
         if let Some(preview) = &preview_service {
             preview.set_typing(typing.clone());
@@ -63,6 +73,7 @@ impl PhoneConnection {
             path,
             enabled: saved["enabled"].as_bool() == Some(true),
             address: String::new(),
+            pending_address: None,
             workspace,
             typing,
             remote_enabled: saved["remote"].as_bool() == Some(true),
