@@ -19,6 +19,7 @@ mod account_tests;
 mod account_types;
 mod agent_computer;
 mod agent_computer_access;
+mod agent_computer_grants;
 mod agent_computer_reveal;
 mod agent_computer_review;
 mod agent_computer_runner;

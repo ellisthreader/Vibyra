@@ -167,4 +167,3 @@ support for the iPhone connection; 0.1.9 introduced it. All ad-hoc signed.
 ## 0.8.14 — 27 September 2026 (local Mac update)
 
 The installed Mac source carries phone project-window viewing and readiness improvements. This local version was not verified as published to the updater feed.
-
