@@ -10,6 +10,8 @@ import { modelArtworkKey } from './modelArtworkKey';
 const artwork: Record<string, ImageSourcePropType> = {
   'claude-fable-5': require('../../assets/model-icons/claude-fable-5.png'),
   'claude-haiku-4.5': require('../../assets/model-icons/claude-haiku-4.5.png'),
+  'claude-opus-5.5': require('../../assets/model-icons/claude-opus-5.5.png'),
+  'claude-sonnet-5.5': require('../../assets/model-icons/claude-sonnet-5.5.png'),
   'claude-opus-4.1': require('../../assets/model-icons/claude-opus-4.1.png'),
   'claude-opus-4.5': require('../../assets/model-icons/claude-opus-4.5.png'),
   'claude-opus-4.6': require('../../assets/model-icons/claude-opus-4.6.png'),
@@ -42,10 +44,12 @@ const artwork: Record<string, ImageSourcePropType> = {
   'gpt-5.6-sol': require('../../assets/model-icons/gpt-5.6-sol.png'),
   'gpt-5.6-terra': require('../../assets/model-icons/gpt-5.6-terra.png'),
   'gpt-6-astra': require('../../assets/model-icons/gpt-6-astra.png'),
+  'gpt-6-sol': require('../../assets/model-icons/gpt-6-sol.png'),
+  'gpt-6-luna': require('../../assets/model-icons/gpt-6-luna.png'),
 };
 
 /** The model's own artwork, or null when only a company mark exists. */
 export function modelArtwork(id: string): ImageSourcePropType | null {
   const key = modelArtworkKey(id);
-  return key ? artwork[key] ?? null : null;
+  return key ? (artwork[key] ?? null) : null;
 }

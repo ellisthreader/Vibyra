@@ -45,11 +45,32 @@ try {
       const page = await browser.newPage({ viewport: { width, height }, reducedMotion: 'reduce' });
       const errors = [];
       page.on('pageerror', error => { errors.push(error.message); console.error(error.message); });
-      for (const state of ['idle', 'working', 'permission', 'question', 'denied', 'completed', 'error', 'offline', 'observer']) {
+      for (const state of ['idle', 'working', 'permission', 'approval-dock', 'question', 'denied', 'completed', 'error', 'offline', 'observer', 'typing-off', 'mac', 'mac-answered', 'plan', 'long']) {
         await page.goto(`${url}/?state=${state}&theme=${theme}`);
         await page.getByText('Conversation design fixture', { exact: true }).waitFor();
         await page.evaluate(() => document.fonts.ready);
-        if (state === 'permission') {
+        if (state === 'approval-dock') {
+          await page.getByText(/\$ .*npm run test -- welcome/).waitFor();
+          assert.equal(await page.getByTestId('approval-dock').evaluate(el => getComputedStyle(el).backgroundColor),
+            theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(26, 29, 36)',
+            'The approval surface follows the conversation theme');
+          assert.equal(await page.getByText('Environment: local').count(), 0);
+          assert.equal(await page.getByText('This command only · /projects/pocket').count(), 0);
+          const composer = await page.getByText('Message…', { exact: true }).boundingBox();
+          for (const label of ['Allow once', 'Always allow matching commands', 'Decline']) {
+            const bounds = await page.getByRole('button', { name: label, exact: true }).boundingBox();
+            assert.ok(bounds && composer && bounds.height >= 44 && bounds.y + bounds.height <= composer.y,
+              `${label} stays above the composer`);
+          }
+          assert.equal(await page.evaluate(() => window.conversationCalls.length), 0);
+          await capture(page, `${out}/${size}-${theme}-${state}.png`);
+          for (const [label, response] of [['Allow once', 'accept'], ['Always allow matching commands', 'acceptWithExecpolicyAmendment'], ['Decline', 'decline']]) {
+            await page.getByRole('button', { name: label, exact: true }).click();
+            assert.deepEqual(await page.evaluate(() => window.conversationCalls), [{ id: 'permission', response }]);
+            await page.goto(`${url}/?state=${state}&theme=${theme}`);
+            await page.getByText(/\$ .*npm run test -- welcome/).waitFor();
+          }
+        } else if (state === 'permission') {
           const allow = page.getByRole('button', { name: 'Allow once', exact: true });
           const decline = page.getByRole('button', { name: 'Decline', exact: true });
           await allow.scrollIntoViewIfNeeded();
@@ -58,11 +79,9 @@ try {
             assert.ok(bounds && bounds.height >= 44 && bounds.width >= 44, 'Permission touch targets meet 44pt minimum');
           }
           assert.equal(await page.evaluate(() => window.conversationCalls.length), 0);
-          const details = page.getByRole('button', { name: 'Action details', exact: true });
-          await details.click();
+          // What is being allowed is on the card itself, before any decision.
           await page.getByText('npm run test -- welcome', { exact: true }).waitFor();
-          assert.equal(await page.evaluate(() => window.conversationCalls.length), 0, 'Inspecting an action must not approve it');
-          await details.click();
+          assert.equal(await page.evaluate(() => window.conversationCalls.length), 0, 'Showing an action must not approve it');
           await allow.scrollIntoViewIfNeeded();
           await capture(page, `${out}/${size}-${theme}-${state}.png`);
           await allow.click();
@@ -76,7 +95,17 @@ try {
           assert.deepEqual(await page.evaluate(() => window.conversationCalls), [{ id: 'question', response: { style: ['calm'] } }]);
         } else {
           await capture(page, `${out}/${size}-${theme}-${state}.png`);
-          if (state === 'offline' || state === 'observer') {
+          if (state === 'mac' || state === 'mac-answered') {
+            await page.getByText(state === 'mac' ? 'Answer this on your Mac' : 'Answered on your Mac').first().waitFor();
+            for (const name of ['Allow once', 'Decline']) assert.equal(await page.getByRole('button', { name, exact: true }).count(), 0);
+          }
+          if (state === 'typing-off') await page.getByText('Typing from your phone is off').first().waitFor();
+          if (state === 'observer') {
+            await page.getByRole('button', { name: 'Take control to answer' }).click();
+            assert.deepEqual(await page.evaluate(() => window.conversationCalls), [{ takeControl: true }]);
+            await page.evaluate(() => { window.conversationCalls.length = 0; });
+          }
+          if (state === 'offline' || state === 'observer' || state === 'typing-off') {
             for (const name of ['Allow once', 'Decline']) {
               const button = page.getByRole('button', { name, exact: true });
               if (await button.count()) assert.equal(await button.getAttribute('aria-disabled'), 'true');

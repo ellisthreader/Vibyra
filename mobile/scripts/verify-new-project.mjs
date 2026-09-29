@@ -24,14 +24,14 @@ try {
     const stack = name => page.getByRole('checkbox', { name, exact: true });
     const heading = name => page.getByRole('heading', { name, exact: true });
     await page.goto(`${url}/?theme=${theme}`);
-    // The entry sits in the list of projects, first, shaped like a folder row.
+    // The entry is the rail's pinned action, under the list of projects.
     await button('New project').waitFor();
     await capture(page, `${out}/new-project-row-${theme}.png`);
     await button('New project').click();
     await heading('What are you making?').waitFor();
     await button('Website').waitFor(); await button('Empty project').waitFor();
     await capture(page, `${out}/new-project-kind-${theme}.png`);
-    // All nine kinds at once, on one screen. The step is a glance and a tap; the
+    // All eight kinds at once, on one screen. The step is a glance and a tap; the
     // moment it scrolls, the question has turned into a list to work through.
     assert.equal(await page.evaluate(() => [...document.querySelectorAll('*')].filter(el =>
       el.scrollHeight > el.clientHeight + 2 && el.clientHeight > 200
@@ -105,12 +105,12 @@ try {
     await until(() => page.evaluate(() => window.done), 'the build finishes');
     assert.deepEqual(await page.evaluate(() => window.done), ['demo-my-site', 'my-site', true], 'the project is handed over with the terminal option');
     await button('my-site, no terminals').waitFor();
-    await page.getByRole('dialog').waitFor({ state: 'detached' });
+    await page.getByRole('dialog', { name: 'New project' }).waitFor({ state: 'detached' });
     await capture(page, `${out}/new-project-done-${theme}.png`);
     // Skipping the first question goes straight to naming, and sets up as an empty folder.
     await button('New project').click();
     await heading('What are you making?').waitFor();
-    await button('Skip — just make a folder').click();
+    await button('Empty project').click();
     await heading('Name your project').waitFor();
     await button('Continue').click();
     await heading('How should it be set up?').waitFor();

@@ -22,7 +22,8 @@ export function plannedProject(
   state: Pick<WizardState, 'templateId' | 'extraIds' | 'parent' | 'name' | 'home' | 'options'>,
 ): PlannedProject {
   const entry = templateById(state.templateId) ?? EMPTY_TEMPLATE;
-  const extras = (state.extraIds ?? []).map(templateById)
+  const extras = (state.extraIds ?? [])
+    .map(templateById)
     .filter((pick): pick is ProjectTemplate => pick !== null && pick.id !== entry.id);
   const destination = resolveDestination(state.parent, state.name, state.home);
   const request = buildScaffoldRequest(entry, destination.path, state.options, extras);

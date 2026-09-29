@@ -1,79 +1,200 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme';
-import { Button, EmptyState, Hint, Icon } from './primitives';
-import { Sheet } from './Sheet';
+import { useVibesStore } from '../vibes/VibesProvider';
+import { AgentMark, AgentRow } from './AgentRow';
+import { agentName, computerAgents } from './agents';
+import { PhoneAgents } from './PhoneAgents';
+import { EmptyState, Hint, Icon } from './primitives';
+import { PickerSheet } from './ModelPickerSheet';
+import { TerminalOptions } from './TerminalOptions';
+import { TerminalModelList } from './TerminalModelList';
+import { useTerminalModels } from './useTerminalModels';
 import { useAction } from './useAction';
-import { computerAgents as kinds } from './agents';
-import type { SessionKind, WorkspaceModel } from './types';
+import { styles as s } from './NewSessionSheetStyles';
+import type { SessionKind, TerminalModel, WorkspaceModel } from './types';
 
-// Reached only from the Projects list, where picking the folder is the point.
-// The home composer sends without ever opening this sheet.
-export function NewSessionSheet({ visible, workspace, initialProjectId, initialKind = 'claude', onClose }: {
-  visible: boolean; workspace: WorkspaceModel; initialProjectId?: string; initialKind?: SessionKind; onClose: () => void;
+export function NewSessionSheet({
+  visible, workspace, initialProjectId, onClose, onOpenChat,
+}: {
+  visible: boolean;
+  workspace: WorkspaceModel;
+  initialProjectId?: string;
+  onClose(): void;
+  onOpenChat?: () => void;
 }) {
   const { colors } = useTheme();
-  const [projectId, setProjectId] = useState(initialProjectId ?? '');
-  const [kind, setKind] = useState<SessionKind>(initialKind);
+  const vibes = useVibesStore();
   const [title, setTitle] = useState('');
-  const { busy, error, run } = useAction();
-  const wasVisible = useRef(false);
+  const [safeMode, setSafeMode] = useState(false);
+  const [provider, setProvider] = useState<'codex' | 'claude' | null>(null);
+  const [starting, setStarting] = useState<string | null>(null);
+  const [phoneBusy, setPhoneBusy] = useState(false);
+  const startingRef = useRef(false);
+  const { busy, error, run, clearError } = useAction();
+  const catalogue = useTerminalModels(visible, workspace);
   useEffect(() => {
-    if (visible && !wasVisible.current) {
-      setProjectId(initialProjectId ?? (workspace.projects.length === 1 ? workspace.projects[0]!.id : ''));
-      setKind(initialKind);
+    if (visible) {
+      setTitle(''); setSafeMode(false); setProvider(null);
+      clearError();
     }
-    wasVisible.current = visible;
-  }, [visible, initialProjectId, initialKind, workspace.projects]);
-  const create = async () => {
-    const name = title.trim() || `${kinds.find(item => item.kind === kind)!.name} ${kind === 'shell' ? 'terminal' : 'chat'}`;
-    if (await run(() => workspace.actions.createSession(projectId, kind, name))) { setTitle(''); onClose(); }
+  }, [visible, workspace.host?.id, initialProjectId, clearError]);
+  const project =
+    workspace.projects.find((item) => item.id === initialProjectId) ??
+    (workspace.projects.length === 1 ? workspace.projects[0] : undefined);
+  const connected = workspace.status === 'connected';
+  const disabled =
+    busy ||
+    phoneBusy ||
+    !connected ||
+    (workspace.viewOnly === true && workspace.canManage !== true);
+  const create = async (kind: SessionKind, model?: TerminalModel) => {
+    if (!project || disabled || startingRef.current) return;
+    startingRef.current = true;
+    Keyboard.dismiss();
+    setStarting(model?.id ?? kind);
+    const name =
+      title.trim() || model?.name || (kind === 'shell' ? 'Terminal' : `${agentName(kind)} chat`);
+    const ok = await run(() =>
+      workspace.actions.createSession(project.id, kind, name, {
+        safeMode,
+        ...(model ? { model: model.id } : {}),
+      }),
+    );
+    startingRef.current = false;
+    setStarting(null);
+    if (ok) {
+      setTitle(''); onClose();
+    }
   };
-  return <Sheet visible={visible} title="New chat" onClose={onClose}>
-    {workspace.projects.length === 0 ? <EmptyState icon="folder-outline" title="No shared projects"
-      detail="Add a project folder in Vibyra Host on your computer, then refresh Projects." /> : <>
-      <View style={s.host}><Icon name="desktop-outline" size={15} color={colors.muted} />
-        <Text numberOfLines={1} style={[s.hostText, { color: colors.muted }]}>{workspace.host?.name ?? 'Your computer'}</Text></View>
-      <Text style={[s.section, { color: colors.text }]}>Project</Text>
-      <View style={[s.projects, { borderColor: colors.border }]}>{workspace.projects.map((project, index) =>
-        <Pressable key={project.id} accessibilityRole="radio" accessibilityLabel={project.name}
-          aria-checked={projectId === project.id} aria-disabled={busy} accessibilityState={{ checked: projectId === project.id, disabled: busy }} disabled={busy}
-          onPress={() => setProjectId(project.id)} style={[s.project, { borderTopColor: colors.border,
-            borderTopWidth: index ? StyleSheet.hairlineWidth : 0 }]}>
-          <Icon name="folder-outline" size={20} color={colors.muted} /><View style={s.projectText}>
-            <Text style={[s.projectName, { color: colors.text }]}>{project.name}</Text>
-            <Text numberOfLines={1} style={[s.path, { color: colors.muted }]}>{project.path}</Text>
-          </View><Icon name={projectId === project.id ? 'checkmark-circle' : 'ellipse-outline'} size={21}
-            color={projectId === project.id ? colors.accent : colors.border} />
-        </Pressable>)}</View>
-      <Text style={[s.section, { color: colors.text }]}>Open with</Text>
-      <View style={s.kinds}>{kinds.map(item => <Pressable key={item.kind} accessibilityRole="radio"
-        accessibilityLabel={item.name} aria-checked={kind === item.kind} aria-disabled={busy} accessibilityState={{ checked: kind === item.kind, disabled: busy }}
-        disabled={busy} onPress={() => setKind(item.kind)} style={[s.kind, { borderColor: kind === item.kind ? colors.text : colors.border,
-          backgroundColor: kind === item.kind ? colors.elevated : 'transparent' }]}>
-        <Icon name={item.icon} size={22} color={kind === item.kind ? colors.text : colors.muted} />
-        <Text style={[s.kindText, { color: colors.text }]}>{item.short}</Text>
-      </Pressable>)}</View>
-      <TextInput value={title} onChangeText={setTitle} placeholder={kind === 'shell' ? 'Terminal name (optional)' : 'Chat name (optional)'}
-        placeholderTextColor={colors.muted} accessibilityLabel="Session name" maxLength={120} editable={!busy}
-        style={[s.input, { color: colors.text, borderColor: colors.border }]} />
-      {error && <Hint error>{error}</Hint>}
-      <Button title={kind === 'shell' ? 'Open terminal' : 'Create chat'} icon="arrow-forward" busy={busy}
-        disabled={!workspace.projects.some(project => project.id === projectId) || workspace.status !== 'connected'} onPress={() => void create()} />
-      <Text style={[s.note, { color: colors.muted }]}>{workspace.demo ? 'Sample workspace. No commands are sent.'
-        : kind === 'shell' ? 'Uses the shell and permissions on your computer.' : 'Uses the tools and provider account on your computer.'}</Text>
-    </>}
-  </Sheet>;
+  return (
+    <PickerSheet
+      title="New terminal"
+      visible={visible}
+      onClose={() => {
+        if (!busy && !phoneBusy) onClose();
+      }}
+    >
+      {!project ? (
+        <EmptyState
+          icon="folder-outline"
+          title="No shared projects"
+          detail="Add a project folder in Vibyra Desktop on your computer, then refresh Projects."
+        />
+      ) : (
+        <View style={s.content}>
+          <View style={s.context}>
+            <Icon name="folder-outline" size={16} color={colors.muted} />
+            <Text numberOfLines={1} style={[s.project, { color: colors.muted }]}>
+              {project.name}
+            </Text>
+            <View style={[s.dot, { backgroundColor: connected ? colors.success : colors.muted }]} />
+          </View>
+          {provider ? (
+            <View style={s.hero}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Back to terminal choices"
+                disabled={busy}
+                onPress={() => {
+                  setProvider(null);
+                  clearError();
+                }}
+                style={s.back}
+              >
+                <Icon name="chevron-back" size={18} color={colors.accent} />
+                <Text style={[s.backText, { color: colors.accent }]}>{agentName(provider)}</Text>
+              </Pressable>
+              <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>
+                Choose a model.
+              </Text>
+              <Text style={[s.subtitle, { color: colors.muted }]}>
+                Tap a model to start on {workspace.host?.name ?? 'your computer'}.
+              </Text>
+            </View>
+          ) : (
+            <View style={s.hero}>
+              <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>
+                Start something.
+              </Text>
+              <Text
+                style={[s.subtitle, { color: colors.muted }]}
+              >{`${workspace.host?.name ?? 'Your computer'}${connected ? ' · Your AI accounts' : ' · Offline'}`}</Text>
+            </View>
+          )}
+          {provider ? (
+            <TerminalModelList
+              key={provider}
+              models={catalogue.models.filter((model) => model.kind === provider)}
+              loading={catalogue.loading}
+              error={catalogue.error}
+              busy={disabled}
+              starting={starting}
+              refresh={catalogue.refresh}
+              choose={(model) => void create(model.kind, model)}
+            />
+          ) : (
+            <View style={s.choices}>
+              {computerAgents.map((agent) => (
+                <View key={agent.kind} style={[s.choice, { borderColor: colors.border }]}>
+                  <AgentRow
+                    mark={<AgentMark kind={agent.kind} size={34} />}
+                    name={agent.name}
+                    detail={
+                      starting === agent.kind
+                        ? 'Starting terminal…'
+                        : agent.kind === 'shell'
+                          ? 'A plain command line'
+                          : catalogue.supported
+                            ? 'Choose a model'
+                            : 'Use your computer’s default model'
+                    }
+                    busy={starting === agent.kind}
+                    disabled={disabled}
+                    onPress={() => {
+                      if (agent.kind !== 'shell' && catalogue.supported) setProvider(agent.kind);
+                      else void create(agent.kind);
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+          {error && <Hint error>{error}</Hint>}
+          {!connected && <Hint>Connect your computer to start one.</Hint>}
+          {connected && workspace.viewOnly && !workspace.canManage && (
+            <Hint>Turn on Typing from your phone in Vibyra on your computer.</Hint>
+          )}
+          <TerminalOptions
+            key={`${visible}:${project.id}`}
+            title={title}
+            setTitle={setTitle}
+            safeMode={safeMode}
+            setSafeMode={setSafeMode}
+            disabled={busy || phoneBusy}
+          />
+          {!provider && vibes && onOpenChat && (
+            <PhoneAgents
+              key={project.id}
+              visible={visible}
+              workspace={workspace}
+              project={project}
+              title={title.trim()}
+              disabled={busy}
+              onBusyChange={setPhoneBusy}
+              onOpen={() => {
+                onClose();
+                onOpenChat();
+              }}
+            />
+          )}
+          {workspace.demo && (
+            <Text style={[s.note, { color: colors.muted }]}>
+              Sample workspace. No commands are sent.
+            </Text>
+          )}
+        </View>
+      )}
+    </PickerSheet>
+  );
 }
-const s = StyleSheet.create({
-  host: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 2 }, hostText: { flex: 1, fontSize: 12 },
-  section: { fontSize: 14, fontWeight: '500', marginTop: 4, marginBottom: -6 },
-  projects: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, overflow: 'hidden' },
-  project: { minHeight: 66, paddingVertical: 13, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  projectText: { flex: 1, gap: 5 }, projectName: { fontSize: 15, fontWeight: '500' }, path: { fontSize: 12 },
-  kinds: { flexDirection: 'row', gap: 10 }, kind: { flex: 1, minHeight: 83, paddingHorizontal: 8, paddingVertical: 15,
-    alignItems: 'center', justifyContent: 'center', gap: 11, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth },
-  kindText: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
-  input: { minHeight: 53, fontSize: 15, borderRadius: 14, padding: 16, borderWidth: StyleSheet.hairlineWidth },
-  note: { fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: -3 },
-});

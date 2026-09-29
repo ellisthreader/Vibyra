@@ -16,9 +16,12 @@ final class ServiceResolver {
   }
 
   private var attempts: [String: NWConnection] = [:]
+  private var attemptEndpoints: [String: NWEndpoint] = [:]
   private var deadlines: [String: DispatchWorkItem] = [:]
   private var addresses: [String: Address] = [:]
-  private var endpoints: [String: NWEndpoint] = [:]
+  private var resolvedEndpoints: [String: NWEndpoint] = [:]
+  private var endpoints: [String: [NWEndpoint]] = [:]
+  private var nextEndpoint: [String: Int] = [:]
   private var lastAttempts: [String: Date] = [:]
   var onChange: (() -> Void)?
   var onDenied: (() -> Void)?
@@ -28,17 +31,33 @@ final class ServiceResolver {
   /// Called on Bonjour updates and once per second during the search. Failed
   /// resolutions retry even when the service list never changes. Oldest-first
   /// scheduling lets all 16 candidates use the eight available slots.
-  func update(_ current: [String: NWEndpoint]) {
-    for (id, endpoint) in endpoints where current[id] != endpoint {
-      finish(id)
-      addresses.removeValue(forKey: id)
-      lastAttempts.removeValue(forKey: id)
+  func update(_ current: [String: [NWEndpoint]]) {
+    for id in endpoints.keys {
+      let available = current[id] ?? []
+      if available.isEmpty {
+        finish(id)
+        addresses.removeValue(forKey: id)
+        resolvedEndpoints.removeValue(forKey: id)
+        lastAttempts.removeValue(forKey: id)
+        nextEndpoint.removeValue(forKey: id)
+      } else {
+        if let resolved = resolvedEndpoints[id], !available.contains(resolved) {
+          addresses.removeValue(forKey: id)
+          resolvedEndpoints.removeValue(forKey: id)
+          onChange?()
+        }
+        if let attempted = attemptEndpoints[id], !available.contains(attempted) {
+          finish(id)
+          lastAttempts.removeValue(forKey: id)
+        }
+      }
     }
     endpoints = current
     let oldest = Date.distantPast
     for id in current.keys.sorted(by: { (lastAttempts[$0] ?? oldest) < (lastAttempts[$1] ?? oldest) }) {
       guard Date().timeIntervalSince(lastAttempts[id] ?? oldest) >= 2,
-            let endpoint = current[id] else { continue }
+            let choices = current[id], !choices.isEmpty else { continue }
+      let endpoint = choices[(nextEndpoint[id] ?? 0) % choices.count]
       resolve(id: id, endpoint: endpoint)
     }
   }
@@ -48,7 +67,8 @@ final class ServiceResolver {
     lastAttempts[id] = Date()
     let connection = NWConnection(to: endpoint, using: Self.parameters())
     attempts[id] = connection
-    let timeout = DispatchWorkItem { [weak self] in self?.finish(id) }
+    attemptEndpoints[id] = endpoint
+    let timeout = DispatchWorkItem { [weak self] in self?.fail(id) }
     deadlines[id] = timeout
     DispatchQueue.main.asyncAfter(deadline: .now() + 6, execute: timeout)
     connection.stateUpdateHandler = { [weak self, weak connection] state in
@@ -56,9 +76,14 @@ final class ServiceResolver {
       switch state {
       case .ready:
         let resolved = Self.address(of: connection.currentPath?.remoteEndpoint)
+        let source = self.attemptEndpoints[id]
         self.finish(id)
-        guard let resolved else { return }
+        guard let resolved, let source else {
+          self.advance(id)
+          return
+        }
         self.addresses[id] = resolved
+        self.resolvedEndpoints[id] = source
         self.onChange?()
       case .waiting:
         // Apple's authoritative Local Network verdict for this activity.
@@ -71,10 +96,10 @@ final class ServiceResolver {
           self.finish(id)
           self.onDenied?()
         } else {
-          self.finish(id)
+          self.fail(id)
         }
       case .cancelled:
-        self.finish(id)
+        self.fail(id)
       default:
         break
       }
@@ -90,20 +115,33 @@ final class ServiceResolver {
       connection.cancel()
     }
     attempts.removeAll()
+    attemptEndpoints.removeAll()
   }
 
   func reset() {
     stop()
     addresses.removeAll()
+    resolvedEndpoints.removeAll()
     endpoints.removeAll()
+    nextEndpoint.removeAll()
     lastAttempts.removeAll()
   }
 
   private func finish(_ id: String) {
     deadlines.removeValue(forKey: id)?.cancel()
+    attemptEndpoints.removeValue(forKey: id)
     guard let connection = attempts.removeValue(forKey: id) else { return }
     connection.stateUpdateHandler = nil
     connection.cancel()
+  }
+
+  private func fail(_ id: String) {
+    finish(id)
+    advance(id)
+  }
+
+  private func advance(_ id: String) {
+    nextEndpoint[id, default: 0] += 1
   }
 
   private static func parameters() -> NWParameters {

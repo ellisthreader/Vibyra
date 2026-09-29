@@ -5,15 +5,48 @@ mod backend;
 mod config;
 mod connection;
 #[cfg(test)]
+mod connection_confirmation_tests;
+#[cfg(test)]
+mod connection_queue_tests;
+#[cfg(test)]
 mod connection_tests;
 mod console;
+mod device_trust;
 mod direct;
 mod discovery;
+mod discovery_watch;
 mod identity;
+mod identity_contents;
+mod identity_permissions;
+mod identity_policy;
+mod identity_store;
 mod instance;
 mod invitation;
+mod lan_authorization;
+#[cfg(test)]
+mod lan_connection_tests;
 mod peer_policy;
+mod presence;
+#[cfg(test)]
+mod presence_tests;
+mod preview_connection;
+#[cfg(test)]
+mod preview_connection_tests;
+mod preview_upgrade;
 mod relay;
+mod relay_address;
+mod relay_connection;
+mod relay_peers;
+mod relay_writer;
+mod remote_authorization;
+#[cfg(test)]
+mod remote_connection_tests;
+mod remote_permissions;
+mod remote_revocation;
+mod remote_restrictions;
+mod restriction_apply;
+#[cfg(test)]
+mod remote_test_support;
 mod state;
 #[cfg(test)]
 mod test_support;
@@ -21,7 +54,7 @@ mod test_support;
 use clap::Parser;
 use config::Config;
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap},
     sync::{Arc, Mutex},
 };
 
@@ -61,10 +94,16 @@ async fn start(config: Config) -> Result<(), String> {
     }
     let shared = Arc::new(state::Shared {
         engine,
-        identity: Mutex::new(identity),
+        policy_pending: std::sync::atomic::AtomicBool::new(identity.restrictions.is_some()),
+            identity: Mutex::new(identity),
+        writes: Mutex::new(()),
         invitation: Mutex::new(None),
         pending: Mutex::new(BTreeMap::new()),
-        active: Mutex::new(HashSet::new()),
+        active: Mutex::new(HashMap::new()),
+        used_remote_grants: Mutex::new(HashMap::new()),
+        remote_authorizations: std::sync::Mutex::default(),
+        lan_generation: std::sync::atomic::AtomicU64::new(1),
+            policy_epoch: std::sync::atomic::AtomicU64::new(1),
         pairing_url: config.pairing_url(),
         relay: config.relay.is_some(),
         nearby: config.discover,
@@ -76,15 +115,22 @@ async fn start(config: Config) -> Result<(), String> {
         "Vibyra Host listening on {}",
         listener.local_addr().map_err(|e| e.to_string())?
     );
-    let _discovery = if config.discover {
+    let address = listener.local_addr().map_err(|e| e.to_string())?;
+    let (name, id) = {
         let identity = shared.identity.lock().map_err(|_| "Identity unavailable")?;
-        Some(discovery::Advertisement::start(
-            &identity.name,
-            &identity.id(),
-            listener.local_addr().map_err(|e| e.to_string())?,
-        )?)
-    } else {
-        None
+        (identity.name.clone(), identity.id())
+    };
+    if config.discover && address.ip().is_loopback() {
+        println!("Not advertising over Bonjour: loopback listener.");
+        println!("Phones that can reach {address} directly can still find this Host.");
+    }
+    let relay_name = name.clone();
+    let announcement = async {
+        if !config.discover {
+            std::future::pending::<()>().await;
+        }
+        discovery_watch::maintain(name, id, address, Arc::new(Mutex::new(Default::default())))
+            .await;
     };
     println!(
         "Host public key: {}",
@@ -111,9 +157,23 @@ async fn start(config: Config) -> Result<(), String> {
         if token.len() < 32 || token.len() > 4096 {
             return Err("Relay token must have between 32 and 4096 characters".into());
         }
-        tokio::spawn(relay::maintain(shared.clone(), url, token));
+        let credentials = relay::RelayCredentials {
+            authorization_key: None,
+            allow_unsigned_loopback: true,
+            authorization_context: None,
+            url,
+            token,
+            name: relay_name,
+        };
+        let source: relay::CredentialSource = Arc::new(move || {
+            let credentials = credentials.clone();
+            Box::pin(async move { Ok(credentials) })
+        });
+        // Held for the life of the process; dropping it would end the leg.
+        std::mem::forget(relay::start(shared.clone(), source));
     }
     tokio::select! {
+        _ = announcement => Ok(()),
         result = direct::serve(listener, shared) => result,
         result = tokio::signal::ctrl_c() => result.map_err(|e| e.to_string()),
     }

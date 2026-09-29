@@ -83,3 +83,23 @@ test('dismissal during plan resolution sends no probes or updates', async () => 
   assert.equal(probes, 0);
   assert.equal(updates, 0);
 });
+
+
+test('desktop discovery reaches the last host before legacy ports exhaust the search budget', async () => {
+  const hosts = Array.from({ length: 254 }, (_, n) => `192.168.1.${n + 1}`);
+  const calls: string[] = [];
+  let finish!: () => void;
+  const found = new Promise<void>(resolve => { finish = resolve; });
+  const stop = startProbeSearch(async () => ({ hosts, scope: 'local network' }),
+    async (host, port) => {
+      calls.push(`${host}:${port}`);
+      return host === hosts[253] && port === 4319 ? computer : undefined;
+    }, update => { if (update.computers.length) finish(); },
+    { window: 1000, gap: 100, parallel: 1 });
+  try {
+    await found;
+    assert.equal(calls[0], `${hosts[0]}:4319`);
+    assert.equal(calls.indexOf(`${hosts[253]}:4319`), 273);
+    assert.equal(calls.slice(0, 274).includes(`${hosts[20]}:4318`), false);
+  } finally { stop(); }
+});

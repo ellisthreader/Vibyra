@@ -1,20 +1,33 @@
-use crate::{backend::Backend, direct, discovery, identity::Identity, instance, state::Shared};
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use serde_json::{json, Value};
+use crate::{
+    backend::Backend,
+    discovery_watch,
+    embedded_runtime::{self, Rebind},
+    identity::Identity,
+    instance,
+    state::Shared,
+};
 use std::{
-    collections::{BTreeMap, HashSet},
+    collections::{BTreeMap, HashMap},
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
+
+/// The longest stopping waits for work already handed to the blocking pool.
+const SHUTDOWN: std::time::Duration = std::time::Duration::from_millis(1000);
 
 /// A dedicated runtime makes stop/drop close all active sockets as well as the listener.
 pub struct EmbeddedHost {
-    shared: Arc<Shared>,
+    pub(crate) shared: Arc<Shared>,
     stop: Option<oneshot::Sender<()>>,
     thread: Option<std::thread::JoinHandle<()>>,
-    address: SocketAddr,
+    pub(crate) address: SocketAddr,
+    pub(crate) discovery: Arc<Mutex<discovery_watch::Status>>,
+    /// The listener's own runtime, so the cloud leg runs beside it and ends
+    /// with it.
+    pub(crate) runtime: tokio::runtime::Handle,
+    rebind: mpsc::UnboundedSender<Rebind>,
 }
 impl EmbeddedHost {
     /// `name` is what a nearby phone lists this computer as, so it should be
@@ -25,50 +38,96 @@ impl EmbeddedHost {
         backend: Arc<dyn Backend>,
         name: &str,
     ) -> Result<Self, String> {
+        Self::start_with_key_store(path, address, backend, name, None)
+    }
+
+    pub fn start_with_key_store(
+        path: PathBuf,
+        address: SocketAddr,
+        backend: Arc<dyn Backend>,
+        name: &str,
+        store: Option<&dyn crate::identity_store::IdentityKeyStore>,
+    ) -> Result<Self, String> {
+        Self::start_managed_with_key_store(path, address, backend, name, store, false)
+    }
+    /// Managed installations require a current restriction snapshot before
+    /// accepting saved unattended LAN consent, including the first migration.
+    pub fn start_managed_with_key_store(
+        path: PathBuf,
+        address: SocketAddr,
+        backend: Arc<dyn Backend>,
+        name: &str,
+        store: Option<&dyn crate::identity_store::IdentityKeyStore>,
+        managed: bool,
+    ) -> Result<Self, String> {
         let lock = instance::lock(&path)?;
-        let identity = Identity::load(&path, Some(name))?;
+        let identity = Identity::load_with_store(&path, Some(name), store)?;
         let socket = std::net::TcpListener::bind(address)
             .map_err(|e| format!("Cannot start phone connection: {e}"))?;
         socket.set_nonblocking(true).map_err(|e| e.to_string())?;
         let address = socket.local_addr().map_err(|e| e.to_string())?;
+        // A phone on this very machine — an iOS Simulator, which shares the
+        // Mac's network stack — reaches it as 127.0.0.1 and would otherwise
+        // never see a listener pinned to one LAN address. Loopback adds no
+        // network exposure: nothing off this machine can reach it. Best
+        // effort, because the port may already be taken.
+        let local = companion_loopback(address).and_then(|extra| {
+            let socket = std::net::TcpListener::bind(extra).ok()?;
+            socket.set_nonblocking(true).ok()?;
+            Some(socket)
+        });
         let shared = Arc::new(Shared {
             engine: backend,
+            policy_pending: std::sync::atomic::AtomicBool::new(
+                managed || identity.restrictions.is_some(),
+            ),
             identity: Mutex::new(identity),
+            writes: Mutex::new(()),
             invitation: Mutex::new(None),
             pending: Mutex::new(BTreeMap::new()),
-            active: Mutex::new(HashSet::new()),
+            active: Mutex::new(HashMap::new()),
+            used_remote_grants: Mutex::new(HashMap::new()),
+            remote_authorizations: std::sync::Mutex::default(),
+            lan_generation: std::sync::atomic::AtomicU64::new(1),
+            policy_epoch: std::sync::atomic::AtomicU64::new(1),
             pairing_url: format!("ws://{address}"),
             relay: false,
-            // Matches the Bonjour advertisement started below: a phone can only
-            // ask without a code where it could have discovered this Mac.
-            nearby: !address.ip().is_loopback(),
+            // This listener exists only for phone connections and already
+            // restricts peers, so a phone that reaches it may ask without a
+            // code even where Bonjour cannot advertise a loopback address.
+            nearby: true,
         });
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
             .enable_all()
             .build()
             .map_err(|e| e.to_string())?;
+        let handle = runtime.handle().clone();
         let (stop, receiver) = oneshot::channel();
+        let (rebind, updates) = mpsc::unbounded_channel();
+        let discovery = Arc::new(Mutex::new(discovery_watch::Status::default()));
+        let discovery_state = discovery.clone();
         let state = shared.clone();
         let thread = std::thread::Builder::new()
             .name("vibyra-phone".into())
             .spawn(move || {
                 let _lock = lock;
-                runtime.block_on(async move {
-                    let listener = tokio::net::TcpListener::from_std(socket)
-                        .expect("validated nonblocking listener");
-                    let _discovery = if address.ip().is_loopback() {
-                        None
-                    } else {
-                        let identity = state.identity.lock().expect("identity");
-                        discovery::Advertisement::start(&identity.name, &identity.id(), address)
-                            .ok()
-                    };
-                    tokio::select! {
-                        _ = receiver => {},
-                        _ = direct::serve_with_policy(listener, state, true) => {},
-                    }
-                });
+                runtime.block_on(embedded_runtime::serve(
+                    socket,
+                    local,
+                    state,
+                    discovery_state,
+                    receiver,
+                    updates,
+                ));
+                // A plain drop waits for every request still in the blocking
+                // pool, and one phone request can take many seconds while the
+                // desktop waits on this thread to start the next host. Those
+                // requests hold only `Shared`, and their replies have nowhere
+                // left to go, so they are left to finish on their own. The
+                // sockets and tasks are gone once this returns, before `_lock`
+                // is released for the host that replaces this one.
+                runtime.shutdown_timeout(SHUTDOWN);
             })
             .map_err(|e| e.to_string())?;
         Ok(Self {
@@ -76,58 +135,55 @@ impl EmbeddedHost {
             stop: Some(stop),
             thread: Some(thread),
             address,
+            discovery,
+            runtime: handle,
+            rebind,
         })
     }
-    pub fn invite(&self, url: &str) -> Result<String, String> {
-        let uri = self.shared.invite(Some(url))?;
-        if self.address.is_ipv4() {
-            return Ok(uri);
+    /// Changes the listening interface without replacing the Host's identity,
+    /// active encrypted connections, approval queue, relay, or notifications.
+    pub fn rebind(&mut self, address: SocketAddr) -> Result<(), String> {
+        if address == self.address {
+            return Ok(());
         }
-        // The phone keeps public ws endpoints blocked. This explicit marker is
-        // only emitted by the embedded listener with its IPv6 LAN peer filter.
-        let encoded = uri
-            .strip_prefix("vibyra://pair?data=")
-            .ok_or("Invalid invitation")?;
-        let bytes = URL_SAFE_NO_PAD.decode(encoded).map_err(|e| e.to_string())?;
-        let mut payload: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
-        payload["network"] = json!("lan");
-        Ok(format!(
-            "vibyra://pair?data={}",
-            URL_SAFE_NO_PAD.encode(payload.to_string())
-        ))
+        let socket = std::net::TcpListener::bind(address)
+            .map_err(|e| format!("Cannot move phone connection: {e}"))?;
+        socket.set_nonblocking(true).map_err(|e| e.to_string())?;
+        let address = socket.local_addr().map_err(|e| e.to_string())?;
+        let listener = {
+            let _runtime = self.runtime.enter();
+            tokio::net::TcpListener::from_std(socket).map_err(|e| e.to_string())?
+        };
+        self.rebind
+            .send(Rebind { listener, address })
+            .map_err(|_| "Phone connection stopped".to_string())?;
+        self.address = address;
+        Ok(())
     }
-    pub fn answer(&self, id: &str, approve: bool) -> Result<(), String> {
-        self.shared.answer(id, approve)
-    }
-    pub fn revoke(&self, id: &str) -> Result<(), String> {
-        self.shared.revoke(id)
-    }
-    pub fn status(&self) -> Value {
-        let pending = self
-            .shared
-            .pending
-            .lock()
-            .map(|p| {
-                p.iter()
-                    .map(|(id, (name, _))| json!({"id":id,"name":name}))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        let active = self
-            .shared
-            .active
-            .lock()
-            .map(|p| p.iter().cloned().collect::<Vec<_>>())
-            .unwrap_or_default();
-        let devices = self
-            .shared
-            .identity
-            .lock()
-            .map(|p| p.devices.values().cloned().collect::<Vec<_>>())
-            .unwrap_or_default();
-        json!({"enabled":true,"port":self.address.port(),"pending":pending,"devices":devices,"active":active})
+    /// Connects this computer outward to Vibyra Cloud so phones of the same
+    /// account reach these very terminals from any network. The same trust
+    /// list and approval queue apply; see `relay.rs`.
+    pub fn relay(&self, source: crate::CredentialSource) -> crate::RelayHandle {
+        let _runtime = self.runtime.enter();
+        crate::relay::start(self.shared.clone(), source)
     }
 }
+/// The loopback address to also accept on, when the real listener is pinned to
+/// some other address. Loopback listeners need no companion of their own.
+pub(crate) fn companion_loopback(address: SocketAddr) -> Option<SocketAddr> {
+    if address.ip().is_loopback() || address.port() == 0 {
+        return None;
+    }
+    Some(SocketAddr::from((
+        if address.is_ipv6() {
+            std::net::IpAddr::V6(std::net::Ipv6Addr::LOCALHOST)
+        } else {
+            std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)
+        },
+        address.port(),
+    )))
+}
+
 impl Drop for EmbeddedHost {
     fn drop(&mut self) {
         if let Some(stop) = self.stop.take() {

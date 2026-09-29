@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;font:16px -apple-system,Helvetica,Arial;background:#eef1f6;color:#1b1f29}
+.card{position:absolute;left:40px;top:24px;width:520px;padding:22px 26px;border-radius:14px;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+h2{margin:0 0 14px}label{display:block;margin:10px 0 4px;font-size:14px;color:#566}
+input,textarea{width:100%;box-sizing:border-box;padding:9px 11px;font:16px -apple-system,Helvetica;border:1px solid #c5ccd8;border-radius:8px}
+textarea{height:70px}button{margin-top:14px;padding:10px 16px;font:600 15px -apple-system;border:0;border-radius:8px;background:#2f6fed;color:#fff}
+#later{background:#6b7280}#out{margin-top:10px;font-weight:600;color:#0a7a32;min-height:20px}
+.side{position:absolute;left:600px;top:24px;width:260px;padding:18px;border-radius:14px;background:#fff}
+#rich{min-height:60px;border:1px solid #c5ccd8;border-radius:8px;padding:8px}
+</style></head><body>
+<form class="card" id="form" novalidate onsubmit="event.preventDefault();out.textContent='Submitted '+email.value+' / '+password.value.length+' chars'">
+<h2>Staff sign in</h2>
+<label for="email">Email</label><input id="email" type="email" placeholder="you@company.com" autocomplete="off">
+<label for="password">Password</label><input id="password" type="password">
+<label for="notes">Notes</label><textarea id="notes"></textarea>
+<button type="submit" id="signin">Sign in</button> <button type="button" id="later" onclick="setTimeout(()=>email.focus(),400)">Focus email later</button>
+<div id="out"></div></form>
+<div class="side"><label for="search">Search orders</label><input id="search" type="search">
+<label for="prefilled">Reference</label><input id="prefilled" value="REF-2026">
+<label>Rich note</label><div id="rich" contenteditable="true"></div>
+<label for="ro">Read only</label><input id="ro" readonly value="locked"></div>
+</body></html>

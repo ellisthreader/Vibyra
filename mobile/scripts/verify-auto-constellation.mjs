@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { chromium, webkit } from 'playwright-core';
+import { serveFixture } from './fixture-server.mjs';
+const fixture = await serveFixture('tests/projectLauncherFixture.tsx');
+const safari = process.env.VIBYRA_TEST_WEBKIT === '1';
+const browser = safari ? await webkit.launch() : await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
+await mkdir('../output/auto-constellation', { recursive: true });
+const errors = [];
+try {
+  for (const theme of ['dark', 'light']) for (const reduced of [false, true]) {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(`${fixture.url}/?funded=1&theme=${theme}&decision-slow=1&slow=1`);
+    await page.getByRole('button', { name: 'Open navigation menu' }).click();
+    await page.getByRole('button', { name: 'Pocket', exact: true }).click();
+    await page.getByRole('button', { name: 'Launch terminal', exact: true }).click();
+    await page.getByTestId('auto-constellation').waitFor();
+    const file = `${theme}-${reduced ? 'still' : 'motion'}${safari ? '-webkit' : ''}`;
+    await page.screenshot({ path: `../output/auto-constellation/${file}-idle.png` });
+    await page.getByRole('textbox', { name: 'Message Vibyra AI' }).fill('Review and audit the entire codebase');
+    await page.getByRole('button', { name: 'Send message', exact: true }).click();
+    await page.getByText('Finding the right model…', { exact: true }).waitFor();
+    await page.getByTestId('auto-orbit-tile').first().waitFor();
+    const candidateIds = await page.locator('[data-testid^="auto-candidate-"]').evaluateAll(nodes => nodes.map(n => n.dataset.testid.slice(15)));
+    const submitted = await page.evaluate(() => window.launcherEvents.decisions[0].models.map(m => m.id));
+    assert.ok(candidateIds.length > 1 && candidateIds.length <= 6);
+    assert.ok(candidateIds.every(id => submitted.includes(id)), 'pictured models are actually submitted');
+    const orbit = page.getByTestId('auto-orbit-motion');
+    await page.waitForTimeout(800);
+    const before = await orbit.evaluate(node => getComputedStyle(node).transform);
+    await page.waitForTimeout(350);
+    const after = await orbit.evaluate(node => getComputedStyle(node).transform);
+    assert.equal(before === after, reduced, 'motion obeys Reduce Motion');
+    await page.screenshot({ path: `../output/auto-constellation/${file}-selecting.png` });
+    await page.evaluate(() => window.launcherEvents.finish());
+    await page.getByText('Starting your terminal…', { exact: true }).waitFor();
+    await page.getByTestId('auto-chosen-effort').getByText('High effort', { exact: true }).waitFor();
+    await page.waitForTimeout(450);
+    await page.screenshot({ path: `../output/auto-constellation/${file}-chosen.png` });
+    await page.setViewportSize({ width: 375, height: 430 });
+    await page.waitForTimeout(100);
+    const hero = await page.getByTestId('auto-constellation').boundingBox();
+    const input = await page.getByRole('textbox', { name: 'Message Vibyra AI' }).boundingBox();
+    assert.ok(hero.y + hero.height <= input.y + 2, 'hero stays above composer');
+    await page.screenshot({ path: `../output/auto-constellation/${file}-compact.png` });
+    await page.evaluate(() => window.launcherEvents.finish());
+    await page.getByTestId('auto-selection').waitFor();
+    assert.equal(await page.evaluate(() => window.launcherEvents.decisions.length), 1);
+    assert.equal(await page.evaluate(() => window.launcherEvents.messages.length), 1);
+    await page.close();
+  }
+  assert.deepEqual(errors, []);
+  console.log('Constellation: real stages, eligible artwork, motion/reduced motion, selection, compact layout and single send passed.');
+} finally { await browser.close(); fixture.close(); }

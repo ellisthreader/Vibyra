@@ -1,89 +1,197 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, LayoutAnimation, StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '../theme';
+import { MentionInput } from '../integrations/MentionInput';
 import { MentionBar } from '../integrations/MentionBar';
 import { activeMention, applyMention } from '../integrations/mentions';
-import type { Integration } from '../integrations/types';
-import { Icon } from '../ui/primitives';
-import { vibeWord, vibes } from './count';
+import { useBreath } from '../ui/motion';
+import { useReducedMotion } from '../ui/useReducedMotion';
+import { AttachmentTray } from './AttachmentTray';
+import type { ComposerProps } from './composerContracts';
+import { EffortSlider } from './EffortSlider';
+import { useGlass } from './glass';
+import { ComposerSurface } from './ComposerSurface';
+import { ComposerToolbar } from './ComposerToolbar';
+import { ComposerCaption } from './ComposerCaption';
+import { composerStyles as s } from './composerStyles';
+import { useComposerPanelFocus } from './useComposerPanelFocus';
 
-export function VibesComposer({ text, onChange, model, modelHint, onModel, effort, onEffort, mentions, trialRemaining, maximum, busy, disabled, onSend, onStop }: {
-  text: string; onChange(value: string): void; model: string; onModel(): void;
-  // The integrations this account has connected. Typing `@` offers them; an account
-  // with none never sees the affordance, because there is nothing to point at.
-  mentions?: Integration[];
-  // Why Auto chose what it chose. It is spoken rather than drawn: the toolbar has
-  // no room for a sentence beside the model name, the effort chip and send.
-  modelHint?: string;
-  // No effort means this model's thinking cannot be steered, so nothing is shown
-  // rather than a control that would send a level the provider rejects. An effort
-  // without `onEffort` is Auto's own choice: worth showing, not a control, because
-  // the way to change it is to pick a model rather than to tap it.
-  effort?: string | null; onEffort?(): void;
-  trialRemaining?: number; maximum?: number;
-  busy: boolean; disabled: boolean; onSend(): void; onStop(): void;
-}) {
+/** Shared message box with separate contracts for text, model, files and sending. */
+export function VibesComposer({
+  input: draft,
+  model: choice,
+  attachments: files,
+  submission,
+  teammate = false,
+  accessory,
+}: ComposerProps) {
+  const {
+    text,
+    onChange,
+    placeholder,
+    label: inputLabel,
+    maxLength = 4000,
+    mentions,
+    knownMentions,
+  } = draft;
+  const { onOpen: onModel, effort, picker: modelPicker } = choice;
+  const { items: attachments, onRemove: onRemoveAttachment, notice } = files;
+  const { busy, quietGeneration = false } = submission;
   const { colors, dark } = useTheme();
-  // The caret is only known once the field reports it, and a plain keystroke does
-  // not report one in every runtime, so the end of the text is the fallback. That
-  // is the right answer for typing at the end, which is how a mention is written.
+  const glass = useGlass();
+  const reduced = useReducedMotion();
+  const breath = useBreath(busy && !reduced && !quietGeneration, 2200);
+  // The caret is only known once the field reports it; the end of the text is the
+  // fallback, which is right for typing at the end, where a mention is written.
   const [caret, setCaret] = useState<number | null>(null);
-  // Where the caret is put back to after an insertion, and only then: holding the
-  // selection permanently would fight the person as they type.
+  // Where the caret is put back to after an insertion, and only then.
   const [placed, setPlaced] = useState<number | null>(null);
+  // The effort panel takes the whole box while it is being set, at no less than the
+  // box's own height, so opening it does not make the chat above it jump.
+  const [tuning, setTuning] = useState(false);
+  useEffect(() => {
+    if (effort?.open) setTuning(true);
+  }, [effort?.open]);
+  const [height, setHeight] = useState(0);
+  // Something voice input needs to say: why it cannot start, or why it stopped.
+  const [note, setNote] = useState<string | null>(null);
+  const input = useRef<TextInput>(null);
+  const panelOpen = Boolean(modelPicker) || tuning;
+  const { capture: capturePanelFocus, prepare: preparePanel } = useComposerPanelFocus(
+    input,
+    panelOpen,
+  );
+  const openModel = () => {
+    preparePanel();
+    animate();
+    setTuning(false);
+    onModel();
+  };
   const at = caret !== null && caret <= text.length ? caret : text.length;
   const partial = mentions?.length ? activeMention(text, at) : null;
-  const suggestions = partial ? mentions!.filter(integration => integration.id.startsWith(partial.query)) : [];
+  const suggestions = partial
+    ? mentions!.filter((integration) => integration.id.startsWith(partial.query))
+    : [];
   const choose = (id: string) => {
     if (!partial) return;
     const next = applyMention(text, partial.start, at, id);
-    onChange(next.text); setCaret(next.caret); setPlaced(next.caret);
+    onChange(next.text);
+    setCaret(next.caret);
+    setPlaced(next.caret);
+    input.current?.focus();
   };
-  return <View style={[s.wrap, { backgroundColor: colors.background }]}>
-    <MentionBar integrations={suggestions} onChoose={choose} />
-    <View style={[s.box, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <TextInput accessibilityLabel="Message Vibyra AI" multiline value={text} maxLength={4000}
-        onChangeText={next => { onChange(next); setCaret(null); setPlaced(null); }}
-        placeholder="What would you like to build?" placeholderTextColor={colors.muted} keyboardAppearance={dark ? 'dark' : 'light'}
-        onSelectionChange={event => { setCaret(event.nativeEvent.selection.end); setPlaced(null); }}
-        selection={placed === null ? undefined : { start: placed, end: placed }}
-        style={[s.input, { color: colors.text }]} textAlignVertical="top" />
-      <View style={s.toolbar}>
-        <Pressable accessibilityRole="button" accessibilityLabel={modelHint ? `Choose AI model, currently ${model}. ${modelHint}` : 'Choose AI model'}
-          onPress={onModel} style={s.model}>
-          <Icon name="sparkles-outline" size={15} color={colors.accent} /><Text numberOfLines={1} style={[s.modelName, { color: colors.text }]}>{model}</Text>
-          <Icon name="chevron-down" size={12} color={colors.muted} />
-        </Pressable>
-        {effort && (onEffort
-          ? <Pressable accessibilityRole="button" accessibilityLabel={`Thinking effort, ${effort}`}
-            onPress={onEffort} style={[s.effort, { borderColor: colors.border }]}>
-            <Icon name="pulse-outline" size={13} color={colors.muted} />
-            <Text numberOfLines={1} style={[s.effortName, { color: colors.muted }]}>{effort}</Text>
-          </Pressable>
-          : <View accessibilityLabel={`Thinking effort, ${effort}, chosen automatically`}
-            style={[s.effort, { borderColor: colors.border }]}>
-            <Icon name="pulse-outline" size={13} color={colors.muted} />
-            <Text numberOfLines={1} style={[s.effortName, { color: colors.muted }]}>{effort}</Text>
-          </View>)}
-        <View style={s.spacer} />
-        <Pressable accessibilityRole="button" accessibilityLabel={busy ? 'Stop AI reply' : 'Send message'} disabled={!busy && disabled}
-          accessibilityState={{ disabled: !busy && disabled }} onPress={busy ? onStop : onSend}
-          style={[s.send, { backgroundColor: !busy && disabled ? colors.elevated : colors.action }]}>
-          <Icon name={busy ? 'stop' : 'arrow-up'} size={22} color={!busy && disabled ? colors.muted : colors.onAction} />
-        </Pressable>
-      </View>
+  const animate = () => {
+    if (!reduced)
+      LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
+  };
+  return (
+    <View style={[s.wrap, { backgroundColor: colors.background }]}>
+      {accessory}
+      {!panelOpen && <MentionBar integrations={suggestions} onChoose={choose} />}
+      <ComposerSurface
+        matte={teammate}
+        onLayout={(event) => {
+          if (!panelOpen) setHeight(event.nativeEvent.layout.height);
+        }}
+        style={[
+          s.box,
+          teammate && {
+            borderRadius: 14,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            backgroundColor: colors.rail,
+            paddingVertical: 6,
+          },
+          tuning && !modelPicker && { minHeight: Math.max(height, 156) },
+        ]}
+      >
+        {/* The rim, lit from above; and the accent it takes on while a reply is being written. */}
+        {!teammate && (
+          <View pointerEvents="none" style={[s.shine, { backgroundColor: glass.shine }]} />
+        )}
+        {busy && !quietGeneration && !teammate && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              s.glow,
+              {
+                borderColor: colors.accent,
+                shadowColor: colors.accent,
+                opacity: reduced
+                  ? 0.45
+                  : breath.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0.6] }),
+              },
+            ]}
+          />
+        )}
+        {modelPicker ??
+          (tuning && effort ? (
+            <EffortSlider
+              ladder={effort.ladder}
+              value={effort.value}
+              onChange={effort.onChange}
+              automatic={effort.automatic}
+              onClose={() => {
+                effort.onCommit?.();
+                effort.onClose?.();
+                animate();
+                setTuning(false);
+              }}
+              onChooseModel={openModel}
+            />
+          ) : null)}
+        <View
+          style={panelOpen && { display: 'none' }}
+          accessibilityElementsHidden={panelOpen}
+          importantForAccessibility={panelOpen ? 'no-hide-descendants' : 'auto'}
+        >
+          <AttachmentTray items={attachments} onRemove={onRemoveAttachment} />
+          <MentionInput
+            ref={input}
+            known={knownMentions ?? mentions?.map((x) => x.id) ?? []}
+            accessibilityLabel={inputLabel ?? 'Message Vibyra AI'}
+            multiline
+            value={text}
+            maxLength={maxLength}
+            onChangeText={(next) => {
+              onChange(next);
+              setCaret(null);
+              setPlaced(null);
+              setNote(null);
+            }}
+            placeholder={placeholder ?? 'What would you like to build?'}
+            placeholderTextColor={colors.muted}
+            keyboardAppearance={dark ? 'dark' : 'light'}
+            onSelectionChange={(event) => {
+              setCaret(event.nativeEvent.selection.end);
+              setPlaced(null);
+            }}
+            selection={placed === null ? undefined : { start: placed, end: placed }}
+            style={[
+              s.input,
+              teammate && { minHeight: 34, fontSize: 15, lineHeight: 21 },
+              { color: colors.text },
+            ]}
+            textAlignVertical="top"
+          />
+          <ComposerToolbar
+            input={draft}
+            model={choice}
+            attachments={files}
+            submission={submission}
+            tuning={tuning}
+            capturePanelFocus={capturePanelFocus}
+            openModel={openModel}
+            openEffort={() => {
+              preparePanel();
+              animate();
+              setTuning(true);
+            }}
+            onNote={setNote}
+          />
+        </View>
+      </ComposerSurface>
+      <ComposerCaption note={note} notice={notice} submission={submission} />
     </View>
-    <View style={s.estimate}>
-      <Text style={[s.caption, { color: colors.muted }]}>{busy ? 'Your next draft can wait here.' : maximum !== undefined
-        ? 'This reply uses up to ' + vibes(maximum) : trialRemaining !== undefined
-          ? `${trialRemaining} trial ${vibeWord(trialRemaining)} left in this chat` : 'Vibes power your AI. You stay in control.'}</Text></View>
-  </View>;
+  );
 }
-const s = StyleSheet.create({ wrap: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5 }, box: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 24, padding: 13 },
-  input: { fontSize: 16, lineHeight: 24, padding: 4, minHeight: 66, maxHeight: 150, outlineWidth: 0 }, toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  model: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 6, flexShrink: 1 }, modelName: { fontSize: 13, flexShrink: 1 },
-  effort: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 32, paddingHorizontal: 9, borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth, flexShrink: 0 }, effortName: { fontSize: 12 }, spacer: { flex: 1, minWidth: 4 },
-  send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, estimate: { minHeight: 30, flexDirection: 'row', gap: 7, justifyContent: 'center', alignItems: 'center' },
-  caption: { fontSize: 11, lineHeight: 16, textAlign: 'center' },
-});

@@ -1,6 +1,7 @@
 use std::net::{SocketAddr, TcpStream};
 use std::time::{Duration, Instant};
 
+use super::desktop_run::DesktopRun;
 use super::process::{push_log, snapshot_logs, terminate, LogBuffer, ManagedChild};
 use super::static_server::StaticServer;
 use super::types::{PreviewPhase, PreviewStatus};
@@ -8,6 +9,8 @@ use super::types::{PreviewPhase, PreviewStatus};
 const START_TIMEOUT: Duration = Duration::from_secs(75);
 
 pub(crate) struct PreviewService {
+    /// Assigned by PreviewManager when this launch becomes its managed runtime.
+    pub runtime_id: u64,
     pub target_id: String,
     pub phase: PreviewPhase,
     pub url: String,
@@ -21,6 +24,7 @@ pub(crate) struct PreviewService {
 pub(crate) enum PreviewRuntime {
     Static(StaticServer),
     Processes(Vec<ManagedChild>),
+    Desktop(DesktopRun),
 }
 
 impl PreviewService {
@@ -28,6 +32,7 @@ impl PreviewService {
         if !matches!(self.phase, PreviewPhase::Starting | PreviewPhase::Running) {
             return;
         }
+        self.refresh_desktop_exit();
         let PreviewRuntime::Processes(children) = &mut self.runtime else {
             return;
         };
@@ -59,6 +64,7 @@ impl PreviewService {
         match &mut self.runtime {
             PreviewRuntime::Static(server) => server.stop(),
             PreviewRuntime::Processes(children) => terminate_all(children),
+            PreviewRuntime::Desktop(run) => run.stop(),
         }
     }
 
@@ -71,6 +77,10 @@ impl PreviewService {
     }
 
     pub fn status(&self) -> PreviewStatus {
+        let (stage, windows) = match &self.runtime {
+            PreviewRuntime::Desktop(run) => (Some(run.stage), run.windows.clone()),
+            _ => (None, Vec::new()),
+        };
         PreviewStatus {
             phase: self.phase.clone(),
             target_id: self.target_id.clone(),
@@ -78,6 +88,8 @@ impl PreviewService {
             command: Some(self.command.clone()),
             logs: snapshot_logs(&self.logs),
             error: self.error.clone(),
+            stage,
+            windows,
         }
     }
 }
@@ -112,10 +124,12 @@ mod tests {
         child.wait().unwrap();
         let managed = ManagedChild {
             label: "test server".into(),
+            tree: crate::preview::process::TreeGuard::adopt(&child),
             child,
             port: 1,
         };
         let mut service = PreviewService {
+            runtime_id: 0,
             target_id: "test".into(),
             phase: PreviewPhase::Starting,
             url: "http://127.0.0.1:1/".into(),

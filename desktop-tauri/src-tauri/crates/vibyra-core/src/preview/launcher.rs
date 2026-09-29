@@ -1,15 +1,25 @@
+use std::sync::Arc;
 use std::time::Instant;
 
 use crate::{CoreError, CoreResult};
 
-use super::detect::detect_target;
+use super::desktop_run::DesktopRun;
+use super::detect::detect_target_with;
+use super::launch_plan::{desktop_env, HostOs};
 use super::process::{new_logs, push_log, reserve_port, spawn_process, terminate};
+use super::process_spawn::spawn_desktop;
+use super::refresher::DesktopProbe;
 use super::service::{PreviewRuntime, PreviewService};
 use super::static_server::StaticServer;
-use super::types::{LaunchRecipe, PreviewPhase};
+use super::types::{DesktopCommand, LaunchRecipe, PreviewPhase};
 
-pub fn launch(root: &str, target_id: &str) -> CoreResult<PreviewService> {
-    let detected = detect_target(root, target_id)?;
+pub fn launch(
+    root: &str,
+    target_id: &str,
+    custom: &[DesktopCommand],
+    probe: Option<Arc<dyn DesktopProbe>>,
+) -> CoreResult<PreviewService> {
+    let detected = detect_target_with(root, target_id, custom)?;
     if !detected.target.runnable {
         return Err(CoreError::Preview(
             detected
@@ -59,11 +69,23 @@ pub fn launch(root: &str, target_id: &str) -> CoreResult<PreviewService> {
                 PreviewPhase::Starting,
             )
         }
+        LaunchRecipe::Desktop { process } => {
+            let plan = desktop_env(HostOs::current(), &|key| std::env::var(key).ok())
+                .map_err(CoreError::Preview)?;
+            let (child, command) = spawn_desktop(&process, &logs, &plan)?;
+            (
+                PreviewRuntime::Desktop(DesktopRun::new(child, probe)),
+                String::new(),
+                command,
+                PreviewPhase::Starting,
+            )
+        }
         LaunchRecipe::Unsupported => {
             return Err(CoreError::Preview("target is not runnable".into()));
         }
     };
     Ok(PreviewService {
+        runtime_id: 0,
         target_id: target_id.into(),
         phase,
         url,

@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AccountError } from '../src/account/accountApi';
 import { delay, runtimeHarness } from './runtimeHarness';
+import { pairedHere } from '../src/onboarding/welcomeOutcome';
+import { UK_SIGNUP_ACCEPTANCE } from '../src/account/legalAcceptance';
 
 test('a cold start is unknown until storage answers, then pending on a fresh phone', async () => {
   const h = runtimeHarness();
@@ -13,6 +15,7 @@ test('a cold start is unknown until storage answers, then pending on a fresh pho
 });
 test('completing the welcome flow persists a non-secret flag that survives a relaunch', async () => {
   const h = runtimeHarness(); await h.store.initialize();
+  await h.store.actions.signUp!('ellis@example.com', 'longenough', UK_SIGNUP_ACCEPTANCE);
   await h.store.actions.completeOnboarding!('computer');
   assert.deepEqual(h.store.state.onboarding, { status: 'complete', mode: 'computer' });
   const saved = JSON.parse(h.flags.get('onboarding')!);
@@ -27,8 +30,11 @@ test('completing the welcome flow persists a non-secret flag that survives a rel
   assert.equal(again.flags.has('onboarding'), false);
   again.store.dispose();
 });
-test('skipping records no mode and a broken flag store never traps anyone on the gate', async () => {
+test('an account is required before skipping path choice, even if onboarding flags fail', async () => {
   const h = runtimeHarness(); await h.store.initialize();
+  await assert.rejects(h.store.actions.completeOnboarding!(null), /Sign in or create an account first/);
+  assert.deepEqual(h.store.state.onboarding, { status: 'pending', mode: null });
+  await h.store.actions.signUp!('ellis@example.com', 'longenough', UK_SIGNUP_ACCEPTANCE);
   await h.store.actions.completeOnboarding!(null);
   assert.deepEqual(h.store.state.onboarding, { status: 'complete', mode: null });
   h.store.dispose();
@@ -39,6 +45,8 @@ test('skipping records no mode and a broken flag store never traps anyone on the
   assert.equal(broken.store.state.onboarding.status, 'complete');
   assert.match(broken.store.state.error!, /Keychain unavailable/);
   broken.store.update({ onboarding: { status: 'pending', mode: null }, error: null });
+  await assert.rejects(broken.store.actions.completeOnboarding!('phone'), /Sign in or create an account first/);
+  await broken.store.actions.signUp!('ellis@example.com', 'longenough', UK_SIGNUP_ACCEPTANCE);
   await broken.store.actions.completeOnboarding!('phone');
   assert.equal(broken.store.state.onboarding.status, 'complete');
   assert.match(broken.store.state.error!, /Keychain unavailable/);
@@ -46,10 +54,12 @@ test('skipping records no mode and a broken flag store never traps anyone on the
 });
 test('sign-up validates locally, keeps the token only in secure storage and exposes the account', async () => {
   const h = runtimeHarness(); await h.store.initialize();
-  await assert.rejects(h.store.actions.signUp!('not-an-email', 'longenough'), /valid email/);
-  await assert.rejects(h.store.actions.signUp!('ellis@example.com', 'short'), /8 characters/);
+  await assert.rejects(h.store.actions.signUp!('ellis@example.com', 'longenough', undefined as never), /Agree to the Terms/);
+  assert.equal(h.calls.length, 0, 'unchecked legal attestations never reach the network');
+  await assert.rejects(h.store.actions.signUp!('not-an-email', 'longenough', UK_SIGNUP_ACCEPTANCE), /valid email/);
+  await assert.rejects(h.store.actions.signUp!('ellis@example.com', 'short', UK_SIGNUP_ACCEPTANCE), /8 characters/);
   assert.equal(h.calls.length, 0, 'invalid input never reaches the network');
-  await h.store.actions.signUp!('  Ellis@Example.com ', 'longenough');
+  await h.store.actions.signUp!('  Ellis@Example.com ', 'longenough', UK_SIGNUP_ACCEPTANCE);
   assert.deepEqual(h.calls.at(-1), ['signup', 'ellis@example.com', 'longenough']);
   assert.deepEqual(h.store.state.account, { email: 'ellis@example.com', name: 'Ellis', plan: 'free' });
   const saved = JSON.parse(h.memory.get('account')!);
@@ -58,6 +68,15 @@ test('sign-up validates locally, keeps the token only in secure storage and expo
   await h.store.actions.logOut!();
   assert.equal(h.store.state.account, null); assert.equal(h.memory.has('account'), false);
   assert.deepEqual(h.calls.at(-1), ['logout', 'tok-1']);
+  h.store.dispose();
+});
+test('sign-up converts the current guest and removes its secret only after success', async () => {
+  const h = runtimeHarness(); await h.store.initialize();
+  h.memory.set('vibes-guest-token', 'guest-token');
+  await h.store.actions.signUp!('ellis@example.com', 'longenough', UK_SIGNUP_ACCEPTANCE);
+  assert.deepEqual(h.calls.at(-1), ['signup', 'ellis@example.com', 'longenough', 'guest-token']);
+  assert.equal(h.memory.has('vibes-guest-token'), false);
+  assert.equal(JSON.parse(h.memory.get('account')!).token, 'tok-1');
   h.store.dispose();
 });
 test('a saved account restores offline, refreshes quietly and is cleared only by an explicit rejection', async () => {
@@ -90,11 +109,28 @@ test('the host download link takes a guest address, and a signed-in phone its ow
   await assert.rejects(() => h.store.actions.sendHostLink!(), /Enter the email address/);
   assert.equal(await h.store.actions.sendHostLink!('guest@example.com'), 'guest@example.com');
   assert.deepEqual(h.calls.at(-1), ['host-link', null, 'guest@example.com']);
-  await h.store.actions.signUp!('ellis@example.com', 'longenough');
+  await h.store.actions.signUp!('ellis@example.com', 'longenough', UK_SIGNUP_ACCEPTANCE);
   assert.equal(await h.store.actions.sendHostLink!(), 'ellis@example.com');
   // Signed in, the token decides the address and nothing typed can override it.
   assert.deepEqual(h.calls.at(-1), ['host-link', 'tok-1', undefined]);
   assert.equal(await h.store.actions.sendHostLink!('stranger@example.com'), 'ellis@example.com');
   assert.deepEqual(h.calls.at(-1), ['host-link', 'tok-1', undefined]);
   h.store.dispose();
+});
+
+// Reopening the welcome from Settings leaves the computer connected, and the app
+// reconnects the saved one on launch anyway. Judging the computer path by what
+// was connected when the flow started therefore stranded people on "How do you
+// want to code?": the sheet connected, said so, closed -- and that page came back.
+test('the connect sheet finishes the welcome even when the computer was already connected', () => {
+  const fresh = { connected: true, connectedAtStart: false, sheetConnected: true };
+  assert.equal(pairedHere(fresh), true, 'the ordinary first run still finishes on the computer path');
+  assert.equal(pairedHere({ ...fresh, connectedAtStart: true }), true,
+    'a computer connected before the welcome began does not disown the sheet that just connected it');
+  assert.equal(pairedHere({ connected: true, connectedAtStart: false, sheetConnected: false }), true,
+    'a vibyra://pair link followed while the flow is open still finishes it');
+  assert.equal(pairedHere({ connected: true, connectedAtStart: true, sheetConnected: false }), false,
+    'a connection standing there from before, and nothing done about it, is not an answer');
+  assert.equal(pairedHere({ connected: false, connectedAtStart: false, sheetConnected: true }), false,
+    'a connection that dropped again before the flow ended is not a finished computer path');
 });

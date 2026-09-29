@@ -1,16 +1,18 @@
 // Checks the shape of a terminal session in the whole app shell: the chat title
-// in the middle of the top bar, no view tabs, and one line to type into beside
-// its send button. The sample workspace is used because it renders the real
-// shell without pairing, which the connect flow no longer offers by code.
+// in the middle of the top bar, no view tabs, no project row, no box and no
+// key strip — the terminal itself is typed into and fills the screen down to
+// the bottom. The sample workspace is used because it renders the real shell
+// without pairing, which the connect flow no longer offers by code.
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
+import { chromePath } from './chrome-path.mjs';
 
 const shots = process.env.SHOT_DIR ?? '/tmp/vibyra-terminal-layout';
 mkdirSync(shots, { recursive: true });
 const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH ?? '/usr/bin/google-chrome',
+  executablePath: chromePath(),
   headless: true, args: ['--no-sandbox'],
 });
 try {
@@ -22,12 +24,16 @@ try {
   await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor({ timeout: 60000 });
 
   // Open a sample Terminal session, which renders the same screen a live one does.
+  // The rail has two faces: the home face lists the projects, and a project's row
+  // swaps it to that project's face, where its terminals are rows labelled
+  // "<title>, Terminal, <state>" (src/ui/ProjectTerminalRow.tsx).
   await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
   await page.waitForTimeout(600);
   await page.screenshot({ path: join(shots, 'web-drawer.png') });
-  const terminal = page.getByRole('button', { name: /, Terminal$/ }).first();
+  await page.getByRole('button', { name: /^Studio/ }).first().click();
+  const terminal = page.getByRole('button', { name: /, Terminal, / }).first();
   await terminal.waitFor({ timeout: 20000 });
-  const title = (await terminal.getAttribute('aria-label') ?? '').replace(/, Terminal$/, '');
+  const title = (await terminal.getAttribute('aria-label') ?? '').replace(/, Terminal, .*$/, '');
   await terminal.click();
   await page.waitForTimeout(1400);
   await page.screenshot({ path: join(shots, 'web-terminal-session.png') });
@@ -46,17 +52,18 @@ try {
   const tabs = await page.getByRole('tab').allInnerTexts();
   assert.deepEqual(tabs, [], `a terminal session shows no view tabs, found ${JSON.stringify(tabs)}`);
 
-  // A single-row box to type into, with its send button beside it.
-  const input = page.getByRole('textbox', { name: 'Command for computer terminal' });
-  const send = page.getByRole('button', { name: 'Send command and Enter', exact: true });
-  const inputBox = await input.boundingBox();
-  const sendBox = await send.boundingBox();
-  assert.ok(Math.abs((inputBox.y + inputBox.height / 2) - (sendBox.y + sendBox.height / 2)) < 20,
-    'the send button sits on the same row as the box');
-  assert.ok(inputBox.height < 50, `the terminal box is one line, not ${inputBox.height}px tall`);
-  assert.equal(await page.getByText('Runs on your computer').count(), 0, 'no caption under the box');
+  // Nothing between the header and the output, and no box under it: the terminal is what you type into.
+  assert.equal(await page.getByRole('button', { name: 'Open session project', exact: true }).count(), 0, 'no project row');
+  assert.equal(await page.getByRole('textbox', { name: 'Command for computer terminal' }).count(), 0, 'no box under the terminal');
+  const surface = page.locator('iframe[title="Interactive terminal"]');
+  await surface.waitFor();
+  const output = await surface.boundingBox();
+  assert.ok(output.y < 130, `the output starts right under the header, at ${output.y.toFixed(0)}px`);
+  assert.equal(await page.getByRole('toolbar', { name: 'Terminal keys' }).count(), 0, 'no key strip under the output');
+  assert.equal(await page.getByRole('button', { name: 'Send Escape', exact: true }).count(), 0, 'no key strip under the output');
+  assert.ok(output.y + output.height >= 844 - 8, `the output reaches the bottom of the screen, ends at ${(output.y + output.height).toFixed(0)}px`);
 
   assert.deepEqual(errors, []);
-  console.log(`PASS header/layout: title "${title}" centred at the top, no view tabs, ${inputBox.height}px input beside its send button.`);
+  console.log(`PASS header/layout: title "${title}" centred at the top, no view tabs, no project row, no box, no key strip; the output fills the screen.`);
   console.log(`Screenshots: ${shots}`);
 } finally { await browser.close(); }

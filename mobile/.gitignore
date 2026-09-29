@@ -1,4 +1,5 @@
 /src/generated/
+/public/__vibyra/
 /dist/
 /.expo/
 /node_modules/

@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
-import { capture, fullyVisible, until } from './ui-test-helpers.mjs';
+import { capture } from './ui-test-helpers.mjs';
 import { check } from './verify-discovery-states.mjs';
 
 const root = new URL('..', import.meta.url);
@@ -41,8 +41,8 @@ const server = createServer((req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const url = `http://127.0.0.1:${server.address().port}`;
-const states = ['searching', 'sweep', 'simulator', 'retry', 'swept', 'cellular', 'one', 'many', 'empty', 'denied',
-  'failed', 'unavailable', 'handshake', 'approval', 'connected', 'refused'];
+const states = ['searching', 'sweep', 'simulator', 'retry', 'swept', 'cellular', 'one', 'windows', 'linux', 'notmine',
+  'many', 'empty', 'denied', 'failed', 'unavailable', 'handshake', 'approval', 'connected', 'refused'];
 // The search screen offers no code route at all; a code is reachable only from
 // the setup page before it. Every state is checked for that.
 const CODE_ROUTES = ['Use pairing code', 'Connect with a code instead', 'I have a pairing code'];
@@ -77,7 +77,7 @@ try {
       }
       assert.deepEqual(errors, []);
       await page.close();
-      console.log(`PASS ${size}/${theme}: auto search, handoff, choice, blocked access and live connection stages.`);
+      console.log(`PASS ${size}/${theme}: auto search, confirmation, choice, blocked access and live connection stages.`);
     }
   }
   console.log(`Screenshots: ${out}`);

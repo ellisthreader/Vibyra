@@ -4,11 +4,12 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 impl Engine {
-    pub(crate) fn vibes_tool(
+    pub(crate) fn vibes_tool_with(
         &self,
         device: &str,
         method: &str,
         p: &Value,
+        reader: Option<&crate::external_read::Reader<'_>>,
     ) -> Result<Value, String> {
         let project = self.project(p)?;
         let state = self.shared.lock();
@@ -21,11 +22,20 @@ impl Engine {
             id TEXT PRIMARY KEY, binding TEXT NOT NULL, digest TEXT NOT NULL, result TEXT);",
         )
         .map_err(|e| e.to_string())?;
+        crate::funded_bindings::prepare(db, device, &project.id, method, p)?;
         if method == "vibes.bind" {
             let account = text(p, "accountToken")?;
             identifier(account)?;
             let chat = text(p, "chatId")?;
             identifier(chat)?;
+            let current: Option<String> = db.query_row(
+                "SELECT token FROM vibes_bindings WHERE device=?1 AND account=?2 AND chat=?3 AND project=?4 AND (expires>?5 OR EXISTS(SELECT 1 FROM funded_bindings WHERE chat=?3)) ORDER BY expires DESC LIMIT 1",
+                params![device, account, chat, project.id, chrono::Utc::now().timestamp()],
+                |row| row.get(0),
+            ).optional().map_err(|e| e.to_string())?;
+            if let Some(binding) = current {
+                return Ok(json!({"binding":binding,"projectId":project.id,"chatId":chat}));
+            }
             let token = uuid::Uuid::new_v4().to_string();
             db.execute(
                 "INSERT INTO vibes_bindings VALUES (?1,?2,?3,?4,?5,?6)",
@@ -45,7 +55,7 @@ impl Engine {
         let valid: bool = db
             .query_row(
                 "SELECT EXISTS(SELECT 1 FROM vibes_bindings
-            WHERE token=?1 AND device=?2 AND project=?3 AND chat=?4 AND account=?5 AND expires>?6)",
+            WHERE token=?1 AND device=?2 AND project=?3 AND chat=?4 AND account=?5 AND (expires>?6 OR EXISTS(SELECT 1 FROM funded_bindings WHERE chat=?4)))",
                 params![
                     binding,
                     device,
@@ -61,6 +71,16 @@ impl Engine {
             return Err(
                 "Project access expired or belongs to another account, chat or device".into(),
             );
+        }
+        let chat_only: bool = db
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM funded_bindings WHERE chat=?1 AND tools=0)",
+                params![text(p, "chatId")?],
+                |r| r.get(0),
+            )
+            .map_err(|e| e.to_string())?;
+        if chat_only {
+            return Err("This model is chat only and cannot use computer tools".into());
         }
         let id = text(p, "toolId")?;
         identifier(id)?;
@@ -126,6 +146,11 @@ impl Engine {
             } else {
                 drop(state);
                 let result = match operation {
+                    "write_file" if project.read_only => {
+                        Err("This project is read-only; nothing here can be changed.".into())
+                    }
+                    "list_files" | "read_file" if reader.is_some() => reader.unwrap()(operation, p),
+                    _ if reader.is_some() => Err("This integration only supports approved reads.".into()),
                     "list_files" => self.files(p).map(|mut value| {
                         if let Some(entries) = value["entries"].as_array_mut() {
                             entries.retain(|e| e["name"].as_str().is_some_and(|n| n != ".git" && n != "node_modules" && n != ".env" && !n.starts_with(".env.")));
@@ -145,6 +170,7 @@ impl Engine {
                         value
                     }),
                     "write_file" => crate::vibes_write::write(&project, p),
+                    "search_files" => crate::search::search(&project, p),
                     _ => Err("This AI tool is unavailable".into()),
                 };
                 let state = self.shared.lock();

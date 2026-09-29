@@ -5,7 +5,18 @@ import { loadConversation } from '../src/state/conversationSession';
 import { selectSession } from '../src/state/session';
 import { delay, pairing, runtimeHarness } from './runtimeHarness';
 
-test('selected conversation persistence serializes writes and a later terminal selection clears it', async () => {
+test('a failed last-chat flag read does not disconnect an authenticated computer', async () => {
+  const h = runtimeHarness();
+  h.store.deps.iosConversations = true;
+  h.store.deps.flags.read = async () => { throw new Error('Local flag storage failed'); };
+  await h.store.actions.connect(JSON.stringify(pairing));
+  assert.equal(h.store.state.status, 'connected');
+  assert.equal(h.store.state.host?.name, 'Test computer');
+  assert.match(h.store.state.error ?? '', /last chat could not be restored/);
+  h.store.dispose();
+});
+
+test('selection persistence serializes writes and remembers raw terminals too', async () => {
   const h = runtimeHarness(); h.store.deps.iosConversations = true;
   await h.store.actions.connect(JSON.stringify(pairing));
   let release!: () => void;
@@ -21,6 +32,8 @@ test('selected conversation persistence serializes writes and a later terminal s
   release(); await delay();
   assert.deepEqual(started, ['first', 'second']); assert.equal(h.flags.get('selected.host1'), 'second');
   await selectSession(h.store, 'one'); await delay();
+  assert.equal(h.flags.get('selected.host1'), 'one');
+  await selectSession(h.store, null); await delay();
   assert.equal(h.flags.has('selected.host1'), false); h.store.dispose();
 });
 

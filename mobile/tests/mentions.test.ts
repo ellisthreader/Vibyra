@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { activeMention, applyMention, mentionedIds } from '../src/integrations/mentions';
 
-const known = ['github', 'stripe', 'gmail'];
+const known = ['github', 'stripe', 'gmail', 'google_calendar', 'google_drive', 'figma', 'obsidian', 'railway'];
 
 test('the bare @ opens the picker on everything', () => {
   // An empty query is not "no mention": it is the moment the list should appear.
@@ -18,7 +18,7 @@ test('an @ only starts a mention at the start of the text or after whitespace', 
   assert.equal(activeMention('a@git', 5), null, 'an @ glued to a word belongs to that word');
   assert.deepEqual(activeMention('line\n@git', 9), { start: 5, query: 'git' }, 'a newline is whitespace');
 });
-test('anything but a letter or digit ends the token', () => {
+test('punctuation other than underscores ends the token', () => {
   assert.equal(activeMention('@git-hub', 8), null);
   assert.equal(activeMention('@github done', 12), null, 'the caret has left the token');
   assert.equal(activeMention('no mention here', 15), null);
@@ -76,4 +76,22 @@ test('the empty cases stay empty', () => {
 test('completing a mention before existing text does not double the space', () => {
   assert.deepEqual(applyMention('hi @gi there', 3, 6, 'gmail'), { text: 'hi @gmail there', caret: 9 });
   assert.deepEqual(applyMention('hi @gi', 3, 6, 'gmail'), { text: 'hi @gmail ', caret: 10 });
+});
+
+test('spaced mentions route identically and editing the middle replaces the entire token', () => {
+  assert.deepEqual(activeMention('@ ', 2), { start: 0, query: '' });
+  assert.deepEqual(activeMention('ask @ git', 9), { start: 4, query: 'git' });
+  assert.deepEqual(mentionedIds('@ github review this', known), ['github']);
+  assert.deepEqual(applyMention('@github review', 0, 3, 'github'), { text: '@github review', caret: 7 });
+  assert.deepEqual(mentionedIds('mail@gitHub @githubbing', known), []);
+});
+
+test('all maintained references survive punctuation, spacing and repeated use', () => {
+  assert.deepEqual(mentionedIds('(@FIGMA), [@ obsidian] {@railway} @github @stripe @figma', known),
+    ['figma', 'obsidian', 'railway', 'github', 'stripe']);
+  assert.deepEqual(mentionedIds('@github_private @stripe-test @figma2 test@railway.app', known), []);
+  assert.deepEqual(activeMention('(@fig', 5), { start: 1, query: 'fig' });
+  assert.deepEqual(activeMention('@google_cal', 11), { start: 0, query: 'google_cal' });
+  assert.deepEqual(mentionedIds('Check @google_calendar then @gmail', known), ['google_calendar', 'gmail']);
+  assert.deepEqual(mentionedIds('@google_calendar_extra', known), []);
 });

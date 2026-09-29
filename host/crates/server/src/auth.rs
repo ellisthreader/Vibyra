@@ -9,6 +9,11 @@ pub struct Hello {
     pub protocol: u32,
     pub device_name: String,
     pub invite: Option<String>,
+    // Bound to the server-signed Cloud authorization by connection admission.
+    #[serde(default)]
+    pub remote_session_id: Option<String>,
+    #[serde(default)]
+    pub remote_authorization_id: Option<String>,
 }
 
 struct Pending {
@@ -23,7 +28,25 @@ impl Drop for Pending {
     }
 }
 
+#[cfg(test)]
 pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Result<(), String> {
+    authenticate_with_approval(shared, id, bytes, false, None).await
+}
+
+pub async fn authenticate_with_approval(
+    shared: &Arc<Shared>,
+    id: &str,
+    bytes: &[u8],
+    every_time: bool,
+    generation: Option<u64>,
+) -> Result<(), String> {
+    // Cloud may also await a local trust decision. Every pending approval is
+    // invalidated by a concurrent revoke or account reset.
+    let generation = Some(generation.unwrap_or_else(|| {
+        shared
+            .lan_generation
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }));
     if bytes.len() > 2048 {
         return Err("Authentication payload too large".into());
     }
@@ -32,7 +55,19 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
     if hello.protocol != 1 {
         return Err("Unsupported protocol version".into());
     }
-    if shared.trusted(id) {
+    if hello
+        .remote_session_id
+        .as_ref()
+        .is_some_and(|id| id.len() > 128)
+        || hello
+            .remote_authorization_id
+            .as_ref()
+            .is_some_and(|id| id.len() > 128)
+    {
+        return Err("Invalid remote authorization binding".into());
+    }
+    let trusted = shared.trusted(id);
+    if trusted && !every_time {
         return Ok(());
     }
     // A phone that found this Host over Bonjour has no code to present, so it
@@ -40,7 +75,7 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
     // only from the local Approve below; an invitation is required whenever
     // discovery is off, and any supplied invitation must still be valid.
     let nearby = shared.nearby && hello.invite.as_deref().unwrap_or("").is_empty();
-    if !nearby && !shared.consume_invite(hello.invite.as_deref().unwrap_or("")) {
+    if !trusted && !nearby && !shared.consume_invite(hello.invite.as_deref().unwrap_or("")) {
         return Err("Pairing invitation invalid, used, or expired".into());
     }
     let (send, receive) = oneshot::channel();
@@ -57,7 +92,13 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
     };
     println!(
         "{} request from {}. {} Approve or deny device {} locally.",
-        if nearby { "Nearby pairing" } else { "Pair" },
+        if trusted {
+            "Nearby connection"
+        } else if nearby {
+            "Nearby pairing"
+        } else {
+            "Pair"
+        },
         clean_name(&hello.device_name),
         shared.engine.pairing_notice(),
         id
@@ -67,7 +108,7 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
         pending.remove(id);
     }
     match approved {
-        Ok(Ok(true)) => shared.trust(id, &hello.device_name),
+        Ok(Ok(true)) => shared.trust_with_generation(id, &hello.device_name, generation),
         _ => Err("Pairing denied or expired".into()),
     }
 }

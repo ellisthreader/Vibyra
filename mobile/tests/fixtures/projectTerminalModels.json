@@ -1,0 +1,402 @@
+[
+  {
+    "id": "openai/gpt-6-astra",
+    "name": "GPT-6 Astra",
+    "kind": "codex",
+    "model": "gpt-6-astra",
+    "isNew": true,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-6-sol",
+    "name": "GPT-6 Sol",
+    "kind": "codex",
+    "model": "gpt-6-sol",
+    "isNew": true,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-6-luna",
+    "name": "GPT-6 Luna",
+    "kind": "codex",
+    "model": "gpt-6-luna",
+    "isNew": true,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.6-sol",
+    "name": "GPT-5.6 Sol",
+    "kind": "codex",
+    "model": "gpt-5.6-sol",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.6-luna",
+    "name": "GPT-5.6 Luna",
+    "kind": "codex",
+    "model": "gpt-5.6-luna",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.6-terra",
+    "name": "GPT-5.6 Terra",
+    "kind": "codex",
+    "model": "gpt-5.6-terra",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.5",
+    "name": "GPT-5.5",
+    "kind": "codex",
+    "model": "gpt-5.5",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.4",
+    "name": "GPT-5.4",
+    "kind": "codex",
+    "model": "gpt-5.4",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.4-mini",
+    "name": "GPT-5.4 Mini",
+    "kind": "codex",
+    "model": "gpt-5.4-mini",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5.3-codex-spark",
+    "name": "GPT-5.3 Codex Spark",
+    "kind": "codex",
+    "model": "gpt-5.3-codex-spark",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "openai/gpt-5-codex",
+    "name": "GPT-5 Codex",
+    "kind": "codex",
+    "model": "gpt-5-codex",
+    "isNew": false,
+    "effort": "medium"
+  },
+  {
+    "id": "anthropic/claude-opus-5.5",
+    "name": "Claude Opus 5.5",
+    "kind": "claude",
+    "model": "claude-opus-5-5",
+    "isNew": true,
+    "effort": "medium"
+  },
+  {
+    "id": "anthropic/claude-fable-5.1",
+    "name": "Claude Fable 5.1",
+    "kind": "claude",
+    "model": "claude-fable-5-1",
+    "isNew": true,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-opus-5",
+    "name": "Claude Opus 5",
+    "kind": "claude",
+    "model": "claude-opus-5",
+    "isNew": false,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-fable-5",
+    "name": "Claude Fable 5",
+    "kind": "claude",
+    "model": "claude-fable-5",
+    "isNew": false,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-sonnet-5",
+    "name": "Claude Sonnet 5",
+    "kind": "claude",
+    "model": "claude-sonnet-5",
+    "isNew": false,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-opus-4.8",
+    "name": "Claude Opus 4.8",
+    "kind": "claude",
+    "model": "claude-opus-4-8",
+    "isNew": false,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-opus-4.7",
+    "name": "Claude Opus 4.7",
+    "kind": "claude",
+    "model": "claude-opus-4-7",
+    "isNew": false,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-sonnet-4.6",
+    "name": "Claude Sonnet 4.6",
+    "kind": "claude",
+    "model": "claude-sonnet-4-6",
+    "isNew": false,
+    "effort": "high"
+  },
+  {
+    "id": "anthropic/claude-haiku-4.5",
+    "name": "Claude Haiku 4.5",
+    "kind": "claude",
+    "model": "claude-haiku-4-5",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "google/gemini-3.5-flash",
+    "name": "Gemini 3.5 Flash",
+    "kind": "gemini",
+    "model": "gemini-3.5-flash",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "google/gemini-3.1-pro",
+    "name": "Gemini 3.1 Pro",
+    "kind": "gemini",
+    "model": "gemini-3.1-pro",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "google/gemini-3.1-flash-lite",
+    "name": "Gemini 3.1 Flash Lite",
+    "kind": "gemini",
+    "model": "gemini-3.1-flash-lite",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "google/gemini-2.5-pro",
+    "name": "Gemini 2.5 Pro",
+    "kind": "gemini",
+    "model": "gemini-2.5-pro",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "google/gemini-2.5-flash",
+    "name": "Gemini 2.5 Flash",
+    "kind": "gemini",
+    "model": "gemini-2.5-flash",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "x-ai/grok-4",
+    "name": "Grok 4",
+    "kind": "opencode",
+    "model": "openrouter/x-ai/grok-4",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "deepseek/deepseek-chat",
+    "name": "DeepSeek Chat",
+    "kind": "opencode",
+    "model": "openrouter/deepseek/deepseek-chat",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "qwen/qwen3-coder",
+    "name": "Qwen3 Coder",
+    "kind": "qwen",
+    "model": "qwen3-coder",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "mistralai/mistral-large",
+    "name": "Mistral Large",
+    "kind": "opencode",
+    "model": "openrouter/mistralai/mistral-large",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "meta-llama/llama-4-maverick",
+    "name": "Llama 4 Maverick",
+    "kind": "opencode",
+    "model": "openrouter/meta-llama/llama-4-maverick",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "microsoft/phi-4",
+    "name": "Phi 4",
+    "kind": "opencode",
+    "model": "openrouter/microsoft/phi-4",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "cohere/command-a",
+    "name": "Command A",
+    "kind": "opencode",
+    "model": "openrouter/cohere/command-a",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "perplexity/sonar-pro",
+    "name": "Sonar Pro",
+    "kind": "opencode",
+    "model": "openrouter/perplexity/sonar-pro",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "moonshotai/kimi-k2",
+    "name": "Kimi K2",
+    "kind": "opencode",
+    "model": "openrouter/moonshotai/kimi-k2",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "z-ai/glm-4.6",
+    "name": "GLM 4.6",
+    "kind": "opencode",
+    "model": "openrouter/z-ai/glm-4.6",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "amazon/nova-pro-v1",
+    "name": "Nova Pro",
+    "kind": "opencode",
+    "model": "openrouter/amazon/nova-pro-v1",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "ai21/jamba-large",
+    "name": "Jamba Large",
+    "kind": "opencode",
+    "model": "openrouter/ai21/jamba-large",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "ibm-granite/granite-4-h-small",
+    "name": "Granite 4 Small",
+    "kind": "opencode",
+    "model": "openrouter/ibm-granite/granite-4-h-small",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "nvidia/llama-3.3-nemotron-super-49b-v1",
+    "name": "Nemotron Super 49B",
+    "kind": "opencode",
+    "model": "openrouter/nvidia/llama-3.3-nemotron-super-49b-v1",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "minimax/minimax-m2",
+    "name": "MiniMax M2",
+    "kind": "opencode",
+    "model": "openrouter/minimax/minimax-m2",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "tencent/hunyuan-a13b-instruct",
+    "name": "Hunyuan A13B",
+    "kind": "opencode",
+    "model": "openrouter/tencent/hunyuan-a13b-instruct",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "baidu/ernie-4.5-300b-a47b",
+    "name": "ERNIE 4.5",
+    "kind": "opencode",
+    "model": "openrouter/baidu/ernie-4.5-300b-a47b",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "bytedance/seed-oss-36b-instruct",
+    "name": "Seed OSS 36B",
+    "kind": "opencode",
+    "model": "openrouter/bytedance/seed-oss-36b-instruct",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "xiaomi/mimo-7b-rl",
+    "name": "MiMo 7B",
+    "kind": "opencode",
+    "model": "openrouter/xiaomi/mimo-7b-rl",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "groq/compound",
+    "name": "Compound",
+    "kind": "opencode",
+    "model": "openrouter/groq/compound",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "together/deepseek-r1-distill",
+    "name": "DeepSeek R1 Distill",
+    "kind": "opencode",
+    "model": "openrouter/together/deepseek-r1-distill",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "fireworks/firefunction-v2",
+    "name": "FireFunction V2",
+    "kind": "opencode",
+    "model": "openrouter/fireworks/firefunction-v2",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "liquid/lfm-40b",
+    "name": "LFM 40B",
+    "kind": "opencode",
+    "model": "openrouter/liquid/lfm-40b",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "nousresearch/hermes-4-405b",
+    "name": "Hermes 4 405B",
+    "kind": "opencode",
+    "model": "openrouter/nousresearch/hermes-4-405b",
+    "isNew": false,
+    "effort": null
+  },
+  {
+    "id": "openrouter/auto",
+    "name": "Auto Router",
+    "kind": "opencode",
+    "model": "openrouter/openrouter/auto",
+    "isNew": false,
+    "effort": null
+  }
+]

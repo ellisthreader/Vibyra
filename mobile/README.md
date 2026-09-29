@@ -85,5 +85,31 @@ Run the UI verification script against an already-running web preview. See
 
 Generated transport/terminal assets are rebuilt by start/export hooks. They are
 bundled locally, with no remote JavaScript or credentials in preview content.
+
+## Remote access security
+
+Cloud connections require an approved device key, a fresh system-browser passkey
+verification and a scoped session grant. Preview and Terminal permissions are
+selected explicitly before connecting. Keys stay in device credential storage;
+browser keys are kept only in memory. Settings → Security → Remote access lists
+devices, passkeys, sessions and security events, with revoke and emergency controls.
+
+`EXPO_PUBLIC_PASSKEY_ORIGIN` defaults to the configured API origin (currently
+`https://vibyra-production.up.railway.app`) and must match the backend WebAuthn
+origin. Override it explicitly when a separate verification website is deployed.
+Only the configured passkey origin or exact API origin can open a verification
+page; a normal account bearer is never included in that browser URL.
+
+`npm run assets` also generates `public/__vibyra/transport.html` for web export.
+Serve it on the app origin (including `VIBYRA_WEB_BASE_PATH` when configured),
+and allow that exact origin in `VIBYRA_RELAY_ALLOWED_ORIGINS`. It has a bundled
+script hash CSP and pins both source window and origin for parent messages.
+The current browser client does not need a `null` relay origin exception.
+
+Validate with `node scripts/verify-runtime-origin.mjs`,
+`node scripts/verify-remote-security.mjs` and
+`node scripts/verify-remote-dashboard.mjs` after building assets. These use
+isolated fixtures; production passkey and native-device acceptance remain
+separate deployment checks.
 Composer paste framing follows the active [xterm terminal mode](https://xtermjs.org/docs/api/terminal/interfaces/imodes/); multiline input is rejected when the current program does not enable bracketed paste.
 Full native keyboard/IME qualification remains open.

@@ -85,6 +85,8 @@ impl Session {
 }
 
 pub(crate) struct State {
+    pub preview_status: Option<crate::PreviewStatusProvider>,
+    pub preview_run: Option<crate::PreviewRunProvider>,
     pub projects: Vec<Project>,
     pub sessions: HashMap<String, Session>,
     pub native: HashMap<u64, String>,
@@ -103,6 +105,8 @@ impl State {
     ) -> Self {
         Self {
             projects,
+            preview_status: None,
+            preview_run: None,
             journal,
             sessions,
             native: HashMap::new(),
@@ -127,7 +131,7 @@ impl State {
         json!({"protocol":1,"host":{"id":"local","name":"Vibyra Host",
             "platform":std::env::consts::OS},"projects":self.projects,"sessions":history["sessions"],
             "sessionCount":history["sessionCount"],"nextCursor":history["nextCursor"],
-            "approvals":[],"devices":[],"capabilities":{"conversationV1":true,"vibesToolsV1":true,"scaffoldV1":true}})
+            "approvals":[],"devices":[],"capabilities":{"conversationV1":true,"vibesToolsV1":true,"fundedTerminalV1":true,"scaffoldV1":true}})
     }
 
     /// Shares a folder this computer just built (or was asked to build). The
@@ -171,11 +175,7 @@ impl State {
         if name.is_empty() || name.chars().count() > 64 || name.chars().any(char::is_control) {
             return Err("a project name is 1-64 characters".into());
         }
-        if self
-            .projects
-            .iter()
-            .any(|p| p.id != id && p.name == name)
-        {
+        if self.projects.iter().any(|p| p.id != id && p.name == name) {
             return Err("this computer already shares a project by that name".into());
         }
         let index = self
@@ -199,7 +199,11 @@ impl State {
             .iter()
             .position(|p| p.id == id || p.name == id)
             .ok_or("project is not approved on this computer")?;
-        if self.sessions.values().any(|s| s.meta.project_id == self.projects[index].id) {
+        if self
+            .sessions
+            .values()
+            .any(|s| s.meta.project_id == self.projects[index].id)
+        {
             return Err("close this project's terminals on the computer first".into());
         }
         let project = self.projects.remove(index);

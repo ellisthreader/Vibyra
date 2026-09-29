@@ -2,10 +2,13 @@ use parking_lot::Mutex;
 use serde_json::{json, Value};
 use std::{
     collections::HashMap,
-    io::{BufRead, BufReader, Read, Write},
+    io::Write,
     path::Path,
     process::{Child, ChildStdin, Command, Stdio},
-    sync::{mpsc, Arc},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        mpsc, Arc,
+    },
     time::Duration,
 };
 
@@ -15,7 +18,7 @@ pub(crate) struct RpcError {
     pub message: String,
 }
 impl RpcError {
-    fn unknown(message: impl Into<String>) -> Self {
+    pub(super) fn unknown(message: impl Into<String>) -> Self {
         Self {
             unknown: true,
             message: message.into(),
@@ -27,21 +30,30 @@ impl From<RpcError> for String {
         error.message
     }
 }
-type Replies = Arc<Mutex<HashMap<String, mpsc::SyncSender<Result<Value, RpcError>>>>>;
+pub(super) type Replies = Arc<Mutex<HashMap<String, mpsc::SyncSender<Result<Value, RpcError>>>>>;
 pub(crate) struct Runtime {
     input: Mutex<ChildStdin>,
     child: Mutex<Child>,
     replies: Replies,
+    pub(super) bridge: Arc<Mutex<Option<Arc<super::terminal_bridge::Bridge>>>>,
+    initialized: Mutex<Value>,
+    pub(super) started: Mutex<Value>,
+    closed: Arc<AtomicBool>,
 }
 impl Runtime {
-    pub fn spawn(root: &Path, event: impl Fn(Value) + Send + 'static) -> Result<Arc<Self>, String> {
-        let mut command = Command::new("codex");
+    pub fn spawn(
+        root: &Path,
+        launch: &crate::embedded::ConversationLaunch,
+        event: impl Fn(Value) + Send + 'static,
+    ) -> Result<Arc<Self>, String> {
+        let mut command = Command::new(&launch.program);
         command
             .args(["app-server", "--listen", "stdio://"])
             .current_dir(root)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null());
+        command.envs(launch.environment.iter().cloned());
         for key in [
             "OPENAI_API_KEY",
             "CODEX_API_KEY",
@@ -70,61 +82,36 @@ impl Runtime {
             input: Mutex::new(child.stdin.take().ok_or("missing Codex input")?),
             child: Mutex::new(child),
             replies: Arc::new(Mutex::new(HashMap::new())),
+            bridge: Arc::new(Mutex::new(None)),
+            initialized: Mutex::new(Value::Null),
+            started: Mutex::new(Value::Null),
+            closed: Arc::new(AtomicBool::new(false)),
         });
-        let replies = runtime.replies.clone();
-        let events = super::batching::dispatch(event);
-        std::thread::spawn(move || {
-            let mut reader = BufReader::new(output);
-            loop {
-                // Provider output is untrusted and bounded before allocating a complete line.
-                let mut line = Vec::new();
-                let read = reader
-                    .by_ref()
-                    .take(1024 * 1024)
-                    .read_until(b'\n', &mut line);
-                if !matches!(read, Ok(n) if n > 0) || line.last() != Some(&b'\n') {
-                    break;
-                }
-                let Ok(value) = serde_json::from_slice::<Value>(&line) else {
-                    break;
-                };
-                if value.get("method").is_none() {
-                    if let Some(id) = value["id"].as_str() {
-                        if let Some(tx) = replies.lock().remove(id) {
-                            let result = if value.get("error").is_some() {
-                                Err(RpcError {
-                                    unknown: false,
-                                    message: value["error"]["message"]
-                                        .as_str()
-                                        .unwrap_or("Codex request failed")
-                                        .to_owned(),
-                                })
-                            } else {
-                                Ok(value["result"].clone())
-                            };
-                            let _ = tx.send(result);
-                        }
-                    }
-                } else {
-                    if events.send(value).is_err() {
-                        break;
-                    }
-                }
-            }
-            for (_, tx) in replies.lock().drain() {
-                let _ = tx.send(Err(RpcError::unknown("Codex connection ended")));
-            }
-            let _ = events.send(json!({"method":"vibyra/processExited"}));
-        });
-        runtime.request(
+        super::runtime_output::start(
+            output,
+            runtime.replies.clone(),
+            runtime.bridge.clone(),
+            runtime.closed.clone(),
+            event,
+        );
+        let initialized = runtime.request(
             "initialize",
             json!({"clientInfo":{"name":"vibyra_ios","version":"0.1.0"},
             "capabilities":{"experimentalApi":true}}),
         )?;
+        *runtime.initialized.lock() = initialized;
         runtime.write(json!({"method":"initialized"}))?;
         Ok(runtime)
     }
     pub fn request(&self, method: &str, params: Value) -> Result<Value, RpcError> {
+        self.request_timeout(method, params, Duration::from_secs(25))
+    }
+    fn request_timeout(
+        &self,
+        method: &str,
+        params: Value,
+        timeout: Duration,
+    ) -> Result<Value, RpcError> {
         let id = uuid::Uuid::new_v4().to_string();
         let (tx, rx) = mpsc::sync_channel(1);
         self.replies.lock().insert(id.clone(), tx);
@@ -132,13 +119,16 @@ impl Runtime {
             self.replies.lock().remove(&id);
             return Err(RpcError::unknown(error));
         }
-        let result = rx.recv_timeout(Duration::from_secs(25)).map_err(|_| {
+        let result = rx.recv_timeout(timeout).map_err(|_| {
             RpcError::unknown("Codex acknowledgement is unknown; do not repeat the action")
         });
         self.replies.lock().remove(&id);
         result?
     }
     pub fn write(&self, value: Value) -> Result<(), String> {
+        if let Some(bridge) = self.bridge.lock().as_ref() {
+            bridge.claim_response(&value)?;
+        }
         let mut input = self.input.lock();
         serde_json::to_writer(&mut *input, &value).map_err(|e| e.to_string())?;
         input
@@ -146,13 +136,60 @@ impl Runtime {
             .and_then(|_| input.flush())
             .map_err(|e| e.to_string())
     }
+    pub fn exited(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
+    }
+    pub fn attach(
+        self: &Arc<Self>,
+        thread: String,
+        before: Arc<super::terminal_bridge::BeforeRequest>,
+    ) -> Result<String, String> {
+        if self.exited() {
+            return Err("Codex has stopped; its saved chat is still available".into());
+        }
+        let mut bridge = self.bridge.lock();
+        if let Some(bridge) = bridge.as_ref() {
+            return Ok(bridge.endpoint.clone());
+        }
+        #[cfg(unix)]
+        {
+            let attachment = super::terminal_socket::start(
+                self,
+                thread,
+                self.initialized.lock().clone(),
+                before,
+            )?;
+            let endpoint = attachment.endpoint.clone();
+            *bridge = Some(attachment);
+            Ok(endpoint)
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = (thread, before, &mut bridge);
+            Err("Native shared Codex terminals currently require macOS or Linux. Use Chat view on this computer.".into())
+        }
+    }
+    pub fn stop_thread(&self, thread: &str) {
+        if !self.exited() {
+            // Let Codex release its persistent writer lease before terminating.
+            let _ = self.request_timeout(
+                "thread/unsubscribe",
+                json!({"threadId":thread}),
+                Duration::from_secs(2),
+            );
+        }
+        self.stop();
+    }
     pub fn stop(&self) {
+        self.closed.store(true, Ordering::Release);
+        self.bridge.lock().take();
         let mut child = self.child.lock();
         #[cfg(unix)]
         unsafe {
             libc::kill(-(child.id() as i32), libc::SIGTERM);
         }
         let _ = child.kill();
+        let _ = child.wait();
     }
 }
 impl Drop for Runtime {

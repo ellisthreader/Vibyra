@@ -1,15 +1,77 @@
 export interface AgentItem {
-  id: string; turnId: string; cursor?: number; order?: number;
+  id: string;
+  turnId: string;
+  cursor?: number;
+  order?: number;
   kind: 'message' | 'activity' | 'permission' | 'question' | 'result';
-  role?: 'user' | 'assistant'; text?: string; title?: string; detail?: string; scope?: string; truncated?: boolean;
-  status: string; requestId?: string; actionVersion?: string;
-  questions?: { id: string; header?: string; question: string;
-    options?: { label: string; description?: string }[]; isOther?: boolean; isSecret?: boolean }[];
+  role?: 'user' | 'assistant';
+  text?: string;
+  title?: string;
+  detail?: string;
+  scope?: string;
+  truncated?: boolean;
+  attachments?: { id: string; name: string; mime: string; hash: string }[];
+  category?: string;
+  durationMs?: number | null;
+  command?: string;
+  cwd?: string;
+  startedAt?: string;
+  updatedAt?: string;
+  provenance?: string;
+  exitCode?: number | null;
+  actions?: { type: string; path?: string; query?: string }[];
+  artifact?: { id: string; hash: string; bytes: number; truncated: boolean };
+  hasDetail?: boolean;
+  changes?: {
+    path: string;
+    kind: { type: 'add' | 'delete' | 'update'; move_path?: string | null };
+    added: number;
+    removed: number;
+  }[];
+  allowLabel?: string;
+  choices?: string[];
+  persistentAvailable?: boolean;
+  ruleSummary?: string;
+  /** A request to run a project's desktop app on the computer, outside the sandbox. */
+  runApp?: RunAppRequest;
+  decisionScope?: string;
+  status: string;
+  requestId?: string;
+  actionVersion?: string;
+  questions?: {
+    id: string;
+    header?: string;
+    question: string;
+    options?: { label: string; description?: string }[];
+    isOther?: boolean;
+    isSecret?: boolean;
+  }[];
 }
+export interface RunAppRequest { name: string; command: string; cwd: string; body?: string | null }
 export interface ConversationSnapshot {
-  sessionId: string; projectId: string; generation: string; cursor: number;
+  sessionId: string;
+  projectId: string;
+  generation: string;
+  cursor: number;
+  canResume?: boolean;
   processState: 'running' | 'exited' | 'interrupted';
   turnState: 'idle' | 'running' | 'waiting' | 'completed' | 'interrupted' | 'failed';
-  turnId?: string | null; items: AgentItem[]; pending?: AgentItem[]; hasMore: boolean;
+  turnId?: string | null;
+  items: AgentItem[];
+  pending?: AgentItem[];
+  hasMore: boolean;
+  workingDirectory?: string | null;
+  settings?: {
+    provider?: string;
+    model: string;
+    effort: string | null;
+    approvalPolicy: unknown;
+    sandbox?: unknown;
+    revision: number;
+    appliesTo: string;
+  };
+  usage?: Record<string, unknown>;
 }
-export type ConversationEvent = Omit<ConversationSnapshot, 'items' | 'pending' | 'hasMore'> & { item?: AgentItem };
+export type ConversationEvent = Omit<ConversationSnapshot, 'items' | 'pending' | 'hasMore'> & {
+  item?: AgentItem;
+};

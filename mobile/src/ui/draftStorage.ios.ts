@@ -7,6 +7,15 @@ function file(scope: string) {
   directory.create({ intermediates: true, idempotent: true });
   return new File(directory, `${encodeURIComponent(scope)}.json`);
 }
+export async function deleteDrafts(prefix: string): Promise<void> {
+  const directory = new Directory(Paths.document, 'conversation-drafts');
+  if (!directory.exists) return;
+  const encoded = encodeURIComponent(prefix);
+  for (const entry of directory.list()) {
+    if (entry instanceof File && entry.name.startsWith(encoded) && entry.name.endsWith('.json'))
+      entry.delete();
+  }
+}
 export async function readDraft(scope: string): Promise<string | null> {
   const draft = file(scope);
   if (!draft.exists) return null;
@@ -15,6 +24,9 @@ export async function readDraft(scope: string): Promise<string | null> {
 }
 export async function writeDraft(scope: string, value: string): Promise<void> {
   const draft = file(scope);
-  if (!value) { if (draft.exists) draft.delete(); return; }
+  if (!value) {
+    if (draft.exists) draft.delete();
+    return;
+  }
   draft.write(JSON.stringify(value));
 }

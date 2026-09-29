@@ -26,8 +26,15 @@ pub enum CoreError {
     #[error("preview error: {0}")]
     Preview(String),
 
+    #[error("scaffold error: {0}")]
+    Scaffold(String),
+
     #[error("background task failed: {0}")]
     Task(String),
+
+    /// A plan limit, already worded for people and marked for an upgrade prompt.
+    #[error("{0}")]
+    PlanLimit(String),
 }
 
 impl serde::Serialize for CoreError {

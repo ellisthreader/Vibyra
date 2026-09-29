@@ -1,10 +1,14 @@
+import { fundedApi } from './fundedApi';
+import { tokensFromUnits } from './tokenUnits';
 import { normalizeReasoning } from '../ui/effort';
-import type { VibesApi, VibesEntitlements, VibesLimits, VibesModel, VibesWallet, VibesWindow } from './types';
+import { identified, objectValue, requiredList, requiredObject } from '../transport/responseShape';
+import { apiUrl, requestJson } from '../transport/requestJson';
+import type { VibesApi, VibesAttachment, VibesChat, VibesEntitlements, VibesLimits, VibesModel, VibesQuote, VibesTurn, VibesWallet, VibesWindow } from './types';
 
 export class VibesError extends Error { constructor(message: string, readonly status: number) { super(message); } }
 /** Smallest entitlement set. A backend that omits limits must never widen them here. */
 const FLOOR: VibesEntitlements = { maxProjects: 1, concurrentReplies: 1, fullCatalogue: false, remoteAccess: false,
-  sessionCredits: 60, weekCredits: 150 };
+  sessionCredits: 60, weekCredits: 150, maxTerminals: null, safeWorktrees: true, agents: true, preview: true, review: true };
 /** One window allowance. Zero is a plan that can never send, so it is not "off". */
 const rate = (value: unknown, floor: number): number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : floor;
@@ -14,11 +18,20 @@ export function normalizeEntitlements(value: unknown): VibesEntitlements {
   return {
     maxProjects: projects === null ? null : typeof projects === 'number' && Number.isSafeInteger(projects) && projects > 0 ? projects : FLOOR.maxProjects,
     concurrentReplies: typeof e.concurrentReplies === 'number' && e.concurrentReplies >= 1 ? Math.floor(e.concurrentReplies) : FLOOR.concurrentReplies,
+    fundedTerminals: e.fundedTerminals === true,
     fullCatalogue: e.fullCatalogue === true, remoteAccess: e.remoteAccess === true,
     // A window the backend did not publish falls to the floor rather than to
     // "unlimited": the phone only ever reports a rate the server will enforce.
     sessionCredits: rate(e.sessionCredits, FLOOR.sessionCredits),
     weekCredits: rate(e.weekCredits, FLOOR.weekCredits),
+    // Workspace limits are shown here, never enforced, so a backend that sends
+    // none reads as open rather than inventing a limit the Mac does not apply.
+    maxTerminals: e.maxTerminals === undefined || e.maxTerminals === null ? null
+      : typeof e.maxTerminals === 'number' && Number.isSafeInteger(e.maxTerminals) && e.maxTerminals > 0 ? e.maxTerminals : 2,
+    safeWorktrees: e.safeWorktrees !== false,
+    agents: e.agents !== false,
+    preview: e.preview !== false,
+    review: e.review !== false,
   };
 }
 /**
@@ -57,14 +70,22 @@ export function normalizeLimits(value: unknown): VibesLimits | null {
 }
 
 export function validateWallet(value: unknown): VibesWallet {
-  const w = value as VibesWallet;
-  if (!w || w.version !== 1 || !['available', 'held', 'total', 'paidAvailable', 'trialChatsRemaining'].every(key => {
-    const n = w[key as keyof VibesWallet]; return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  let w = value as VibesWallet;
+  if (w?.version === 2) {
+    try {
+      if (!/^(0|[1-9][0-9]*)$/.test(w.revision ?? '') || typeof w.accountScope !== 'string') throw new Error('Invalid account revision.');
+      w = { ...w, available: tokensFromUnits(w.availableUnits, w.unitScale), held: tokensFromUnits(w.heldUnits, w.unitScale),
+        total: tokensFromUnits(w.totalUnits, w.unitScale), paidAvailable: tokensFromUnits(w.paidAvailableUnits, w.unitScale) };
+      if (Math.abs(w.total - w.available - w.held) > 0.00001 || w.paidAvailable > w.available) throw new Error('Inconsistent balance.');
+    } catch { throw new VibesError('Your token balance could not be verified. Please refresh.', 502); }
+  }
+  if (!w || ![1, 2].includes(w.version) || !['available', 'held', 'total', 'paidAvailable', 'trialChatsRemaining'].every(key => {
+    const n = w[key as keyof VibesWallet]; return typeof n === 'number' && Number.isFinite(n) && n >= 0 && (w.version === 2 || Number.isSafeInteger(n));
   }) || typeof w.accountToken !== 'string' || !Array.isArray(w.products)) throw new VibesError('Your balance could not be verified. Please refresh.', 502);
   // Entitlements describe an offer, not a balance, so an older backend that omits
   // them falls back to the floor instead of blocking the wallet entirely.
   const plans = (w.planEntitlements ?? {}) as Record<string, unknown>;
-  return { ...w, entitlements: normalizeEntitlements(w.entitlements),
+  return { ...w, guest: w.guest === true, entitlements: normalizeEntitlements(w.entitlements),
     trialCredits: count(w.trialCredits), trialChats: count(w.trialChats), trialChatCredits: count(w.trialChatCredits),
     planEntitlements: Object.fromEntries(Object.keys(plans).map(plan => [plan, normalizeEntitlements(plans[plan])])),
     remoteAccessLive: w.remoteAccessLive === true, limits: normalizeLimits(w.limits),
@@ -81,25 +102,17 @@ export function normalizeModel(value: unknown): VibesModel {
   const model = (value ?? {}) as VibesModel & { reasoning?: unknown };
   const raw = model.reasoning as { efforts?: unknown } | undefined;
   const reasoning = raw && Array.isArray(raw.efforts) ? raw as VibesModel['reasoning'] : normalizeReasoning(raw);
-  return { ...model, reasoning, created: typeof model.created === 'number' ? model.created : null };
+  return { ...model, reasoning, created: typeof model.created === 'number' ? model.created : null, vision: model.vision === true };
 }
 export const normalizeModels = (value: unknown): VibesModel[] =>
   (Array.isArray(value) ? value : []).filter(model => model && typeof (model as VibesModel).id === 'string').map(normalizeModel);
+const chat = (value: unknown) => objectValue(value) && typeof value.id === 'string' && typeof value.title === 'string';
+const turn = (value: unknown) => objectValue(value) && typeof value.id === 'string'
+  && typeof value.chatId === 'string' && typeof value.status === 'string';
+const quote = (value: unknown) => requiredObject<VibesQuote>(value, 'AI quote', item =>
+  typeof item.quote === 'string' && typeof item.model === 'string'
+  && typeof item.maxCredits === 'number' && typeof item.expiresAt === 'number');
 
-/**
- * The body, whatever the server actually sent. A failure does not always arrive
- * as JSON - a missing route, a proxy error page and a gateway timeout are all
- * HTML - and parsing before the status was read threw, so every one of them
- * reached the store as `status: 0`, the code that means "we never heard back".
- * A rejection it should have settled looked retryable, and the 404 that releases
- * a lost send was never recognised. The shape stays the endpoint's own, checked
- * where it is read exactly as it was when this call was `r.json()`.
- */
-async function parse(r: Response): Promise<any> {
-  const text = await r.text().catch(() => '');
-  try { const value: unknown = text ? JSON.parse(text) : null; return value && typeof value === 'object' ? value : {}; }
-  catch { return {}; }
-}
 /** What to say when the server answered but its body explained nothing. */
 function unexplained(status: number): string {
   if (status === 404 || status === 405) return 'Vibyra AI is not available on this server yet.';
@@ -108,36 +121,76 @@ function unexplained(status: number): string {
   return 'Vibes is temporarily unavailable.';
 }
 export function createVibesApi(baseUrl: string, token: () => string | null, fetcher: typeof fetch = fetch): VibesApi {
-  // `anonymous` calls are the public catalogue only: no account data is read or
-  // written, so they must still answer before sign-in.
+  let guestToken: string | null = null;
+  // Anonymous calls are the public catalogue and the one-time guest bootstrap;
+  // neither may require a session that does not exist yet.
   const call = async (path: string, body?: unknown, anonymous = false) => {
-    const identity = token();
+    const identity = token() ?? guestToken;
     if (!identity && !anonymous) throw new VibesError('Sign in to use your Vibes.', 401);
-    const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 25000);
+    // An upload is a form, sets its own boundary and is given longer on mobile data.
+    const form = typeof FormData !== 'undefined' && body instanceof FormData ? body : null;
     try {
-      const r = await fetcher(`${baseUrl.replace(/\/$/, '')}/api/vibes/${path}`, { method: body === undefined ? 'GET' : 'POST',
-        headers: { ...(identity ? { Authorization: `Bearer ${identity}` } : {}), Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
-      const data = await parse(r);
-      if (!anonymous && identity !== token()) throw new VibesError('Your account changed. Please try again.', 401);
-      if (!r.ok) throw new VibesError(data.error ?? data.message ?? unexplained(r.status), r.status);
+      const { response: r, data } = await requestJson(fetcher, apiUrl(baseUrl, `vibes/${path}`), { method: body === undefined ? 'GET' : 'POST',
+        headers: { ...(identity ? { Authorization: `Bearer ${identity}` } : {}), Accept: 'application/json',
+          ...(form ? {} : { 'Content-Type': 'application/json' }) },
+        body: body === undefined ? undefined : form ?? JSON.stringify(body) }, form ? 60000 : 25000);
+      if (!anonymous && identity !== (token() ?? guestToken)) throw new VibesError('Your account changed. Please try again.', 401);
+      // A server without the Vibes routes still answers in JSON, with Laravel's own
+      // sentence for developers ("The POST method is not supported for route…") in
+      // `message`. The Vibes endpoints write theirs in `error`, so for a missing route
+      // only that is shown; anything else falls back to saying what actually happened.
+      const missing = r.status === 404 || r.status === 405;
+      if (!r.ok) throw new VibesError(data.error ?? (missing ? undefined : data.message) ?? unexplained(r.status), r.status);
       return data;
     } catch (error) {
       if (error instanceof VibesError) throw error;
       throw new VibesError('Connection interrupted. Your draft is safe. Refresh to check your request.', 0);
-    } finally { clearTimeout(timeout); }
+    }
   };
   return {
+    ...fundedApi(call),
+    terminalDecision: async request => (await call('terminal-decisions', request)).selection as import('./terminalDecision').TerminalDecision,
+    guest: {
+      restore: value => { guestToken = value; },
+      create: async (installId, deviceToken) => {
+        const data = await call('guest', { installId, ...(deviceToken ? { deviceToken } : {}) }, true);
+        if (typeof data.token !== 'string' || !data.token) throw new VibesError('Vibyra returned an unexpected guest session.', 502);
+        const wallet = validateWallet(data.wallet); guestToken = data.token;
+        return { token: data.token, wallet };
+      },
+    },
+    prepareAuto: async (id, text) => requiredObject(await call('auto-preparations', { id, quote: text }), 'Auto preparation',
+      item => typeof item.id === 'string' && typeof item.state === 'string'),
+    autoPreparation: async id => requiredObject(await call(`auto-preparations/${encodeURIComponent(id)}`), 'Auto preparation',
+      item => typeof item.id === 'string' && typeof item.state === 'string'),
     wallet: async () => validateWallet((await call('wallet')).wallet), consent: async () => { await call('consent', { accepted: true }); },
-    models: async () => normalizeModels((await call('models', undefined, true)).models), chats: async () => (await call('chats')).chats,
-    createChat: async (id, title) => (await call('chats', { id, title })).chats,
-    quote: (chatId, text, model, effort, integrations) => call('quote', { chatId, text, model,
-      ...(effort ? { effort } : {}), ...(integrations?.length ? { integrations } : {}) }),
-    submit: async (id, quote) => (await call('turns', { id, quote })).turn,
-    turn: async id => (await call(`turns/${encodeURIComponent(id)}`)).turn,
-    turns: async id => (await call(`chats/${encodeURIComponent(id)}/turns`)).turns,
+    models: async () => normalizeModels(requiredList((await call('models', undefined, true)).models, 'AI models', identified)),
+    chats: async () => requiredList<VibesChat>((await call('chats')).chats, 'AI chats', chat),
+    createChat: async (id, title) => requiredList<VibesChat>((await call('chats', { id, title })).chats, 'AI chats', chat),
+    quote: async (chatId, text, model, effort, integrations, attachments) => quote(await call('quote', { chatId, text, model,
+      ...(effort ? { effort } : {}), ...(integrations?.length ? { integrations } : {}), ...(attachments?.length ? { attachments } : {}) })),
+    upload: async source => {
+      const form = new FormData();
+      // The browser sends the File itself; React Native reads the file at `uri`.
+      form.append('file', (source.file ?? { uri: source.uri, name: source.name, type: source.mimeType }) as Blob, source.name);
+      return requiredObject<VibesAttachment>((await call('attachments', form)).attachment, 'AI attachment',
+        item => typeof item.id === 'string' && typeof item.kind === 'string');
+    },
+    submit: async (id, token) => requiredObject<VibesTurn>((await call('turns', { id, quote: token })).turn, 'AI turn', turn),
+    turn: async id => requiredObject<VibesTurn>((await call(`turns/${encodeURIComponent(id)}`)).turn, 'AI turn', turn),
+    turns: async id => requiredList<VibesTurn>((await call(`chats/${encodeURIComponent(id)}/turns`)).turns, 'AI turns', turn),
     cancel: async id => { await call(`turns/${encodeURIComponent(id)}/cancel`, {}); },
+    purchasePreflight: async (productId) => { await call('purchases/preflight', { productId }); },
     purchase: async (transactionId, productId) => validateWallet((await call('purchases', { transactionId, productId })).wallet),
+    activity: async before => {
+      const page = await call('wallet/activity' + (before ? '?before=' + encodeURIComponent(before) : ''));
+      if (!Array.isArray(page.items) || !page.items.every((item: Record<string, unknown>) => typeof item.id === 'string'
+        && typeof item.deltaUnits === 'string' && /^-?\d+$/.test(item.deltaUnits) && Number.isSafeInteger(Number(item.deltaUnits))
+        && [1, 10000].includes(Number(item.unitScale)) && typeof item.kind === 'string' && typeof item.createdAt === 'string')
+        || (page.next !== null && (typeof page.next !== 'string' || !/^\d+$/.test(page.next)))) throw new VibesError('Token activity could not be verified.', 502);
+      return { items: page.items, next: page.next };
+    },
+    detach: async chatId => { await call('chats/' + chatId + '/project/unlink', {}); },
     attach: async (chatId, hostId, projectId, binding) => { await call('chats/' + chatId + '/project', { hostId, projectId, binding, shareProject: true }); },
     toolResult: async (toolId, decision, result) => { await call('tools/' + toolId + '/result', { decision, result }); },
   };

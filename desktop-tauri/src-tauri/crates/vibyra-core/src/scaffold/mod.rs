@@ -16,6 +16,9 @@ mod run;
 #[cfg(test)]
 mod tests;
 
-pub use plan::{prepare, ScaffoldPlan, ScaffoldSeed, ScaffoldStep};
+pub use plan::{
+    destination_state, free_name, prepare, DestinationState, ScaffoldPlan, ScaffoldSeed,
+    ScaffoldStep,
+};
 pub use preflight::installed_tools;
 pub use run::{git_init, run_step, StepOutcome};

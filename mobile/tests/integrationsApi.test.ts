@@ -90,25 +90,75 @@ test('a sign-in is started with the app\'s return link, and its outcome is read 
   assert.deepEqual(state.catalogue, { enabled: true, integrations: [{ id: 'github' }, { id: 'stripe' }] });
 });
 
-test('signed out, a sign-in starts with no token and brings back the Vibyra session it made', async () => {
-  const seen: { url: string; auth?: string }[] = [];
+test('guest OAuth uses the same bearer and never adopts a Vibyra login', async () => {
+  let guest: string | null = null;
+  const seen: (string | undefined)[] = [];
   const impl = (async (input: string | URL | Request, init?: RequestInit) => {
-    seen.push({ url: String(input), auth: (init?.headers as Record<string, string>)?.Authorization });
-    if (String(input).endsWith('/start')) return new Response(JSON.stringify({ flowId: 'f-2', url: 'https://github.com/login/oauth/authorize?x=2' }), { status: 200 });
-    return new Response(JSON.stringify({ status: 'connected', catalogue,
-      session: { ok: true, token: 'tok-new', user: { email: 'octo@example.com', name: 'Octo', plan: 'free' } } }), { status: 200 });
+    seen.push((init?.headers as Record<string, string>)?.Authorization);
+    const body = String(input).endsWith('/start') ? { flowId: 'f-2', url: 'https://github.com/login/oauth/authorize' }
+      : { status: 'connected', catalogue, session: { token: 'unexpected', user: { email: 'different@example.com' } } };
+    return new Response(JSON.stringify(body));
   }) as typeof fetch;
-  const api = createIntegrationsApi('https://api.example.test', () => null, impl);
+  const api = createIntegrationsApi('https://api.example.test', async prepare => {
+    if (prepare && !guest) guest = 'guest-token';
+    return guest;
+  }, impl);
   await api.start!('github', 'vibyra://integrations/connected');
-  const state = await api.flow!('f-2');
-  assert.deepEqual(seen.map(call => call.auth), [undefined, undefined], 'No token is invented for a signed-out phone');
-  assert.deepEqual(state.session, { token: 'tok-new', user: { email: 'octo@example.com', name: 'Octo', plan: 'free' } });
-  assert.deepEqual(state.catalogue, { enabled: true, integrations: [{ id: 'github' }, { id: 'stripe' }] });
+  const result = await api.flow!('f-2');
+  assert.deepEqual(seen, ['Bearer guest-token', 'Bearer guest-token']);
+  assert.equal('session' in result, false);
+  assert.equal(result.status, 'connected');
 });
 
-test('a flow whose session is malformed connects without signing anyone in', async () => {
-  const impl = (async () => new Response(JSON.stringify({ status: 'connected', catalogue, session: { token: '' } }), { status: 200 })) as typeof fetch;
-  const state = await createIntegrationsApi('https://api.example.test', () => null, impl).flow!('f-3');
-  assert.equal(state.status, 'connected');
-  assert.equal('session' in state, false);
+test('a changed session cannot receive an in-flight catalogue or connect result', async () => {
+  for (const operation of ['start', 'flow'] as const) {
+    let token = 'guest';
+    const api = createIntegrationsApi('https://api.example.test', () => token, (async () => {
+      token = 'another-account';
+      return new Response(JSON.stringify(catalogue));
+    }) as typeof fetch);
+    await assert.rejects(() => operation === 'start' ? api.start!('github', 'vibyra://integrations/connected') : api.flow!('flow'), /account changed/);
+  }
+});
+
+test('a failed guest bootstrap never sends an anonymous connect request', async () => {
+  let called = false;
+  const api = createIntegrationsApi('https://api.example.test', async () => null, (async () => {
+    called = true; return new Response('{}');
+  }) as typeof fetch);
+  await assert.rejects(() => api.start!('stripe', 'vibyra://integrations/connected'), /guest session/);
+  assert.equal(called, false);
+});
+
+test('an older server rejecting guests never asks them to create a Vibyra account', async () => {
+  const api = fakeFetch(() => ({ status: 403, body: JSON.stringify({ error: 'Create your free account to use this.' }) }));
+  const error = await failure(() => api.start!('github', 'vibyra://integrations/connected'));
+  assert.equal(error.status, 403);
+  assert.equal(error.message, 'Connecting is temporarily unavailable. Please try again later.');
+});
+
+test('legacy provider setup errors do not expose server configuration instructions', async () => {
+  for (const message of ['Signing in to GitHub is not set up on this server yet.', 'GitHub sign-in is not available right now. Please try again later.']) {
+    const api = fakeFetch(() => ({ status: 422, body: JSON.stringify({ message }) }));
+    const error = await failure(() => api.start!('github', 'vibyra://integrations/connected'));
+    assert.equal(error.status, 422);
+    assert.equal(error.message, 'Could not connect. Please try again later.');
+  }
+});
+
+test('legacy OAuth account gating never redirects guests to Vibyra sign-in', async () => {
+  const api = fakeFetch(() => ({ status: 401, body: JSON.stringify({ message: 'Sign in to Vibyra to connect GitHub.' }) }));
+  const error = await failure(() => api.start!('github', 'vibyra://integrations/connected'));
+  assert.equal(error.status, 401);
+  assert.equal(error.message, 'Connecting is temporarily unavailable. Please try again later.');
+});
+
+test('the initial public catalogue retries if guest bootstrap completes while it is loading', async () => {
+  let token: string | null = null; const seen: (string | undefined)[] = [];
+  const api = createIntegrationsApi('https://api.example.test', () => token, (async (_input, init) => {
+    seen.push((init?.headers as Record<string, string>).Authorization);
+    token = 'guest'; return new Response(JSON.stringify(catalogue));
+  }) as typeof fetch);
+  assert.deepEqual(await api.catalogue(), catalogue);
+  assert.deepEqual(seen, [undefined, 'Bearer guest']);
 });

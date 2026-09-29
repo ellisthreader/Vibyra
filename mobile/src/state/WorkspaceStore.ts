@@ -1,4 +1,6 @@
-import { hostSnapshot } from './hostSnapshot';
+import { refreshWorkspace } from './refreshWorkspace';
+import { focusedTextActions } from './focusedTextActions';
+import { acceptHost } from './acceptHost';
 import { vibesActions } from './vibesActions';
 import { makeAccountActions } from '../account/accountActions';
 import { conversationActions } from './conversationActions';
@@ -6,12 +8,14 @@ import { ConversationLedger } from './conversationLedger';
 import { receiveConversation, loadConversation } from './conversationSession';
 import { cachedConversation } from './conversationContinuity';
 import type { Notice } from '../transport/RpcClient';
-import type { RailwayStatus, WorkspaceActions, ThemePreference } from '../ui/types';
+import type { WorkspaceActions, ThemePreference } from '../ui/types';
 import { restoreAccent, restoreTerminalFontSize, setAccent } from './preferences';
 import { CreateRequests } from './createRequest';
 import { AutoConnect } from './autoConnect';
 import { connect, initialize, forget, putAway, reconnect } from './connection';
 import { makeActions } from './workspaceActions'; import { remoteActions } from './remoteActions';
+import { previewActions } from './previewActions'; import { previewRunActions } from './previewRunActions';
+import { remoteSecurityDashboard, type CloudSecurityScope } from './remoteSecurityActions';
 import { OutputLedger } from './output';
 import { claimControl, hostResized, resnapshotSession, selectSession } from './session';
 import { initialState, type HostState, type RuntimeDependencies, type RuntimeState, type SavedConnection } from './types';
@@ -20,6 +24,9 @@ export class WorkspaceStore {
   state: RuntimeState = { ...initialState };
   saved: SavedConnection | null = null;
   token: string | null = null;
+  cloudSecurityScope: CloudSecurityScope | null = null;
+  ownedRemoteHosts: { owner: string; epoch: number; ids: string[] } | null = null;
+  readonly remoteDashboard: ReturnType<typeof remoteSecurityDashboard>;
   epoch = 0;
   selectionEpoch = 0;
   ledger: OutputLedger | null = null;
@@ -34,25 +41,44 @@ export class WorkspaceStore {
   readonly auto: AutoConnect;
   readonly actions: WorkspaceActions;
   private subscribers = new Set<() => void>();
+  private viewSubscribers = new Set<() => void>();
+  private outputSubscribers = new Set<() => void>();
+  private viewState: RuntimeState = this.state;
+  private outputState = this.state.output;
+  readonly terminalOutput = {
+    subscribe: (callback: () => void) => { this.outputSubscribers.add(callback);
+      return () => { this.outputSubscribers.delete(callback); }; },
+    snapshot: () => this.outputState,
+  };
   private unsubscribe: () => void;
-  private refreshPending: Promise<void> | null = null;
   private createPersistence = Promise.resolve();
   /** True only while this store is closing the socket itself, so its own
    *  teardown is never mistaken for a computer that went away. */
   private deliberate = false;
   constructor(readonly deps: RuntimeDependencies) {
+    this.remoteDashboard = remoteSecurityDashboard(this, deps.remote?.dashboard);
     this.creates = new CreateRequests(deps.uuid);
     this.auto = new AutoConnect(this, deps.retryDelays);
     this.unsubscribe = deps.rpc.listen(this.receive);
-    this.actions = { ...makeActions(this), ...vibesActions(this), ...conversationActions(this), ...makeAccountActions(this), ...remoteActions(this), connect: link => connect(this, link), reconnect: () => this.reconnectByHand(),
+    this.actions = { ...makeActions(this), ...previewActions(this), ...previewRunActions(this), ...vibesActions(this), ...conversationActions(this), ...makeAccountActions(this), ...remoteActions(this), connect: link => connect(this, link), reconnect: () => this.reconnectByHand(),
       disconnect: () => putAway(this), refresh: () => this.refresh(true), selectSession: id => { void selectSession(this, id); },
-      claimControl: () => claimControl(this), setTheme: this.setTheme, setAccent: accent => setAccent(this, accent), forgetDevice: () => forget(this),
+      focusedText: focusedTextActions(this), claimControl: () => claimControl(this), setTheme: this.setTheme, setAccent: accent => setAccent(this, accent), forgetDevice: () => forget(this),
       setTerminalFontSize: this.setTerminalFontSize };
   }
   subscribe = (callback: () => void) => { this.subscribers.add(callback); return () => { this.subscribers.delete(callback); }; };
+  subscribeView = (callback: () => void) => { this.viewSubscribers.add(callback); return () => { this.viewSubscribers.delete(callback); }; };
   snapshot = () => this.state;
+  viewSnapshot = () => this.viewState;
   update(patch: Partial<RuntimeState>) {
     this.state = { ...this.state, ...patch }; for (const callback of this.subscribers) callback();
+    if (patch.output !== undefined && patch.output !== this.outputState) {
+      this.outputState = patch.output;
+      this.outputSubscribers.forEach(callback => callback());
+    }
+    if (Object.keys(patch).some(key => key !== 'output')) {
+      this.viewState = this.state;
+      this.viewSubscribers.forEach(callback => callback());
+    }
   }
   current(epoch: number) { return this.epoch === epoch; }
   /** The saved computer as the app shows it: only one that has answered
@@ -72,7 +98,7 @@ export class WorkspaceStore {
     // store's own teardown, and nothing was ever retried again.
     this.deliberate = true;
     try { this.epoch++; this.clearSession(); this.deps.rpc.close(); } finally { this.deliberate = false; }
-    this.update({ status: 'offline', error: null, projects: [], sessions: [], devices: [], approvals: [], syncing: false, ...cached });
+    this.update({ status: 'offline', error: null, remoteSecurity: undefined, projects: [], sessions: [], devices: [], approvals: [], syncing: false, ...cached });
   };
   /** The app left the screen. Let go of the socket and stop trying; the
    *  computer is picked up again the moment the app is back in front. */
@@ -83,56 +109,18 @@ export class WorkspaceStore {
   };
   /** The app is in front again, or a network came back. */
   resume = () => this.auto.resume();
-  clearSession() {
+  clearSession(nextSessionId: string | null = null) {
     // Not `dimensions`: that is the size of this phone's screen, not anything
     // the session owns. Clearing it here meant the grid was forgotten on every
     // switch, so the computer only ever heard a width when xterm happened to
     // change one — never for a terminal opened at the size the last one used.
     this.selectionEpoch++; this.ledger = null; this.lease = null;
     this.conversationLedger = null;
-    this.update({ selectedSessionId: null, output: '', conversation: null, control: 'none', syncing: false,
+    this.update({ selectedSessionId: nextSessionId, output: '', conversation: null, control: 'none', syncing: false,
       hostGrid: null });
   }
-  acceptHost(result: HostState) {
-    if (result.protocol !== 1 || result.host?.id !== this.saved?.pairing.hostId || !Array.isArray(result.sessions) ||
-        !Array.isArray(result.projects) || !Array.isArray(result.devices) || !Array.isArray(result.approvals)) {
-      throw new Error('The computer returned an unsupported workspace. Pair it again.');
-    }
-    const sessions = result.sessions.map(item => item.status === 'exited' ? { ...item,
-      exitCode: item.exitCode ?? this.state.sessions.find(previous => previous.id === item.id)?.exitCode } : item);
-    this.update({ host: result.host, projects: result.projects, sessions,
-      railway: railwayStatus(result.railway),
-      vibesToolsAvailable: result.capabilities?.vibesToolsV1 === true, scaffoldAvailable: result.capabilities?.scaffoldV1 === true,
-      remembered: result.projects.length > 0 ? { projects: result.projects, seenAt: new Date().toISOString() } : this.state.remembered,
-      // A Vibyra Desktop says so up front. Without keeping it, every screen
-      // outside a session offers work this connection will refuse to start.
-      viewOnly: result.capabilities?.readOnly === true,
-      // Separate from viewOnly: a desktop that still refuses to start or stop
-      // work can nonetheless let a phone type into the terminals it shares.
-      canType: result.capabilities?.canInput === true, canManage: result.capabilities?.canManage === true,
-      conversationAvailable: this.deps.iosConversations === true && result.capabilities?.conversationV1 === true,
-      devices: result.devices.map(item => ({ id: item.id, name: item.name, current: item.id === this.saved?.deviceId })),
-      approvals: result.approvals.filter(item => item.deviceId === this.saved?.deviceId)
-        .map(item => ({ id: item.id, title: item.title, detail: item.description, expiresAt: item.expiresAt })) });
-    if (this.state.selectedSessionId && !result.sessions.some(item => item.id === this.state.selectedSessionId)) this.clearSession();
-  }
-  refresh = async (terminal = false) => {
-    if (this.state.status !== 'connected') throw new Error('Reconnect to refresh your workspace.');
-    if (this.refreshPending) return this.refreshPending;
-    const epoch = this.epoch;
-    const work = async () => {
-      this.update({ syncing: true });
-      try {
-        const result = await hostSnapshot(this, epoch);
-        this.assertCurrent(epoch); this.acceptHost(result);
-        if (terminal && this.state.selectedSessionId) await selectSession(this, this.state.selectedSessionId);
-        this.assertCurrent(epoch); this.update({ error: null });
-      } catch (error) { if (this.current(epoch)) this.report(error); throw error; }
-      finally { if (this.current(epoch)) this.update({ syncing: false }); }
-    };
-    this.refreshPending = work();
-    try { await this.refreshPending; } finally { this.refreshPending = null; }
-  };
+  acceptHost(result: HostState) { acceptHost(this, result); }
+  refresh = (terminal = false) => refreshWorkspace(this, terminal);
   report(error: unknown) { this.update({ error: error instanceof Error ? error.message : 'The computer could not complete this request.' }); }
   /** The size a person pinched the terminal to. A preference, like the theme. */
   setTerminalFontSize = (terminalFontSize: number) => {
@@ -152,10 +140,12 @@ export class WorkspaceStore {
    *  failure the ladder has taken over is not the press's to report: showing
    *  it made every press that missed read as an error the instant it was made. */
   private reconnectByHand = async () => {
+    if (this.saved?.pairing.route === 'relay' && this.deps.remote?.security)
+      return this.actions.connectComputer!(this.saved.pairing.publicKey);
     this.auto.renew();
     try { await reconnect(this); } catch (error) { if (!this.state.reconnecting) throw error; }
   };
-  dispose() { this.auto.stop(); this.unsubscribe(); this.disconnect(); this.subscribers.clear(); }
+  dispose() { this.auto.stop(); this.unsubscribe(); this.disconnect(); this.subscribers.clear(); this.viewSubscribers.clear(); this.outputSubscribers.clear(); }
   private receive = (notice: Notice) => {
     if (notice.type === 'error' || notice.type === 'closed') {
       // open() owns failures until host.state completes, including a cloud
@@ -182,6 +172,7 @@ export class WorkspaceStore {
       void loadConversation(this, this.state.conversation.sessionId).catch(error => this.report(error));
     }
     if (event?.event === 'host.changed') void this.refresh().catch(() => {});
+    if (event?.event === 'preview.changed') this.update({ previewRevision: (this.state.previewRevision ?? 0) + 1 });
     if (event?.event === 'terminal.resync' && event.data?.sessionId === this.state.selectedSessionId) {
       void resnapshotSession(this);
     }
@@ -198,12 +189,4 @@ export class WorkspaceStore {
       if (event.data?.sessionId === this.state.selectedSessionId) { this.lease = null; this.update({ control: 'none' }); }
     }
   };
-}
-
-/** Only the three states the Mac can actually be in; anything else reads as "said nothing". */
-function railwayStatus(value: HostState['railway']): RailwayStatus | null {
-  if (!value || typeof value !== 'object') return null;
-  const status = value.status;
-  if (status !== 'ready' && status !== 'signedOut' && status !== 'missing') return null;
-  return { status, account: typeof value.account === 'string' && value.account ? value.account : null };
 }

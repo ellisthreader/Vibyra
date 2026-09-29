@@ -16,25 +16,40 @@ import { useTheme } from '../theme';
  * stay under the opacity the single field used, and nothing below the figure is
  * tinted. It is hidden from assistive technology.
  */
-export function Wash({ id, height, corner = 'right' }: { id: string; height: number; corner?: 'right' | 'left' }) {
+export function Wash({
+  id,
+  height,
+  corner = 'right',
+}: {
+  id: string;
+  height: number;
+  corner?: 'right' | 'left';
+}) {
   const { colors, dark } = useTheme();
   const cx = corner === 'right' ? '84%' : '16%';
-  return <View pointerEvents="none" aria-hidden accessibilityElementsHidden
-    importantForAccessibility="no-hide-descendants" style={[s.wash, { height }]}>
-    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-      <Defs>
-        <RadialGradient id={`${id}-field`} cx={cx} cy="-6%" r="82%">
-          <Stop offset="0" stopColor={colors.accent} stopOpacity={dark ? 0.22 : 0.12} />
-          <Stop offset="1" stopColor={colors.accent} stopOpacity={0} />
-        </RadialGradient>
-        <RadialGradient id={`${id}-core`} cx={cx} cy="-4%" r="38%">
-          <Stop offset="0" stopColor={colors.accent} stopOpacity={dark ? 0.20 : 0.10} />
-          <Stop offset="1" stopColor={colors.accent} stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill={`url(#${id}-field)`} />
-      <Rect width="100%" height="100%" fill={`url(#${id}-core)`} />
-    </Svg>
-  </View>;
+  return (
+    <View
+      pointerEvents="none"
+      aria-hidden
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[s.wash, { height }]}
+    >
+      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+        <Defs>
+          <RadialGradient id={`${id}-field`} cx={cx} cy="-6%" r="82%">
+            <Stop offset="0" stopColor={colors.accent} stopOpacity={dark ? 0.22 : 0.12} />
+            <Stop offset="1" stopColor={colors.accent} stopOpacity={0} />
+          </RadialGradient>
+          <RadialGradient id={`${id}-core`} cx={cx} cy="-4%" r="38%">
+            <Stop offset="0" stopColor={colors.accent} stopOpacity={dark ? 0.2 : 0.1} />
+            <Stop offset="1" stopColor={colors.accent} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#${id}-field)`} />
+        <Rect width="100%" height="100%" fill={`url(#${id}-core)`} />
+      </Svg>
+    </View>
+  );
 }
 const s = StyleSheet.create({ wash: { position: 'absolute', top: 0, left: 0, right: 0 } });

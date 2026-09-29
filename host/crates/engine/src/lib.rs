@@ -4,11 +4,24 @@ mod desktop_launch;
 mod embedded;
 pub use desktop_launch::DesktopConversationOptions;
 mod events;
+mod external_read;
 mod git;
 mod history;
 mod journal;
+pub use journal::remove_unowned_state;
 mod launch;
 mod preview;
+mod preview_status;
+pub use preview_status::{PreviewRunProvider, PreviewStatusProvider, RunOutcome, RunRequest};
+mod project_identity;
+#[cfg(windows)]
+pub use project_identity::windows_directory_identity;
+#[cfg(unix)]
+mod project_snapshot;
+#[cfg(unix)]
+pub use project_snapshot::{ProjectSnapshot, SnapshotFile};
+#[cfg(all(test, unix))]
+mod project_snapshot_tests;
 mod projects;
 mod scaffold;
 mod scaffold_run;
@@ -18,6 +31,7 @@ mod search;
 mod sessions;
 mod state;
 mod vibes_tools;
+mod funded_bindings;
 mod vibes_write;
 
 use parking_lot::Mutex;
@@ -84,9 +98,14 @@ impl Engine {
             return Err("invalid authenticated request".into());
         }
         match method {
-            "vibes.bind" | "vibes.tool" => self.vibes_tool(device, method, &params),
+            "vibes.bind" | "vibes.tool" => self.vibes_tool_with(device, method, &params, None),
             method if method.starts_with("scaffold.") => self.scaffold_handle(method, &params),
-            "host.state" => Ok(self.shared.lock().snapshot()),
+            "host.state" => {
+                let mut state = self.shared.lock().snapshot();
+                state["capabilities"]["conversationProviders"] =
+                    serde_json::json!(self.conversation_launch.providers());
+                Ok(state)
+            }
             "session.create" if params["runner"] == "conversation" => {
                 self.create_conversation(device, &params)
             }
@@ -148,6 +167,17 @@ impl Engine {
                 session.lease = None;
             }
         }
+    }
+
+    /// Running sessions of every kind this engine owns, terminal or
+    /// conversation, so an embedding app can apply a plan's terminal limit.
+    pub fn running_sessions(&self) -> usize {
+        self.shared
+            .lock()
+            .sessions
+            .values()
+            .filter(|session| session.meta.status == "running")
+            .count()
     }
 
     /// This is intentionally unavailable over the remote protocol.

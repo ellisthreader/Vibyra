@@ -42,12 +42,12 @@ impl Default for FlushConfig {
 }
 
 pub struct PtyManager {
-    sessions: Arc<RwLock<HashMap<SessionId, Arc<Session>>>>,
-    sink: Arc<dyn OutputSink>,
+    pub(super) sessions: Arc<RwLock<HashMap<SessionId, Arc<Session>>>>,
+    pub(super) sink: Arc<dyn OutputSink>,
     config: FlushConfig,
     next_id: AtomicU64,
-    shutdown: Arc<AtomicBool>,
-    flush_tx: SyncSender<()>,
+    pub(super) shutdown: Arc<AtomicBool>,
+    pub(super) flush_tx: SyncSender<()>,
 }
 
 impl PtyManager {
@@ -108,7 +108,7 @@ impl PtyManager {
         Ok(info)
     }
 
-    fn session(&self, id: SessionId) -> CoreResult<Arc<Session>> {
+    pub(super) fn session_ref(&self, id: SessionId) -> CoreResult<Arc<Session>> {
         self.sessions
             .read()
             .get(&id)
@@ -117,15 +117,15 @@ impl PtyManager {
     }
 
     pub fn write_input(&self, id: SessionId, data: &[u8]) -> CoreResult<()> {
-        self.session(id)?.write_input(data)
+        self.session_ref(id)?.write_input(data)
     }
 
     pub fn resize(&self, id: SessionId, rows: u16, cols: u16) -> CoreResult<()> {
-        self.session(id)?.resize(rows, cols)
+        self.session_ref(id)?.resize(rows, cols)
     }
 
     pub fn set_visibility(&self, id: SessionId, visibility: Visibility) -> CoreResult<()> {
-        let session = self.session(id)?;
+        let session = self.session_ref(id)?;
         let was = session.output.lock().visibility;
         session.set_visibility(visibility);
         if was == Visibility::Hibernated && visibility != Visibility::Hibernated {
@@ -137,24 +137,27 @@ impl PtyManager {
     }
 
     pub fn snapshot(&self, id: SessionId) -> CoreResult<String> {
-        Ok(self.session(id)?.output.lock().snapshot())
+        Ok(self.session_ref(id)?.output.lock().snapshot())
     }
 
-    pub fn remote_snapshot(&self, id: SessionId) -> CoreResult<(String, u64, bool)> {
-        Ok(self.session(id)?.output.lock().remote.snapshot())
+    /// At most the last `max` bytes of scrollback. Callers that keep only the
+    /// tail — a saved session keeps 256 KiB — used to copy the whole 4 MiB
+    /// ring under the session lock just to throw most of it away.
+    pub fn snapshot_tail(&self, id: SessionId, max: usize) -> CoreResult<String> {
+        Ok(self.session_ref(id)?.output.lock().snapshot_tail(max))
     }
 
     pub fn process_id(&self, id: SessionId) -> CoreResult<Option<u32>> {
-        Ok(self.session(id)?.process_id())
+        Ok(self.session_ref(id)?.process_id())
     }
 
     pub fn kill(&self, id: SessionId) -> CoreResult<()> {
-        self.session(id)?.kill();
+        self.session_ref(id)?.kill();
         Ok(())
     }
 
     pub fn remove(&self, id: SessionId) -> CoreResult<()> {
-        let session = self.session(id)?;
+        let session = self.session_ref(id)?;
         if session.is_alive() {
             session.kill();
         }
@@ -167,14 +170,6 @@ impl PtyManager {
             self.sessions.read().values().map(|s| describe(s)).collect();
         infos.sort_by_key(|info| info.id);
         infos
-    }
-
-    pub fn shutdown(&self) {
-        self.shutdown.store(true, Ordering::SeqCst);
-        let _ = self.flush_tx.try_send(());
-        for session in self.sessions.read().values() {
-            session.kill();
-        }
     }
 }
 
@@ -194,5 +189,7 @@ fn describe(session: &Session) -> SessionInfo {
         visibility: session.output.lock().visibility,
         alive: session.is_alive(),
         exit_code: *session.exit_code.lock(),
+        cols: session.size().0,
+        rows: session.size().1,
     }
 }

@@ -1,31 +1,73 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '../theme';
-import { Icon } from '../ui/primitives';
+import { chatsInProject, isIdeas } from '../ui/ideas';
+import { RailNote, RailRow } from '../ui/RailRow';
+import { TreeRow } from '../ui/TreeRow';
+import type { WorkspaceModel } from '../ui/types';
 import { useVibes } from './VibesProvider';
 
-// AI chats sit in the rail's one Recents list. Starting a new one is the pinned
-// action in the corner, so this list is only ever titles.
-export function VibesDrawer({ onOpen, query = '' }: { onOpen(): void; query?: string }) {
-  const { store, chats, selected } = useVibes(); const { colors } = useTheme();
-  const select = (id: string) => { void store.select(id).catch(e => store.error(e)); onOpen(); };
-  const matches = chats.filter(chat => chat.title.toLowerCase().includes(query));
+// The phone's chats, as rows in a project's face of the rail: the ones bound to
+// that folder, or in Ideas everything that is not. With no project named — the
+// home face's search — every chat is offered, since a chat remembered by title is
+// worth finding wherever it lives. Starting a new chat is the pinned action in
+// the corner, so this list is only ever titles.
+export function VibesDrawer({
+  onOpen,
+  compact = false,
+  query = '',
+  projectId,
+  workspace,
+}: {
+  onOpen(): void;
+  compact?: boolean;
+  query?: string;
+  projectId?: string;
+  workspace: Pick<WorkspaceModel, 'status' | 'projects' | 'remembered' | 'host'>;
+}) {
+  const { store, chats, selected } = useVibes();
+  const select = (id: string) => {
+    void store.select(id).catch((e) => store.error(e));
+    onOpen();
+  };
+  const inProject = projectId ? chatsInProject(chats, projectId, workspace) : chats;
+  const matches = inProject.filter(chat => !chat.terminal_model).filter((chat) => chat.title.toLowerCase().includes(query));
+  if (!matches.length && compact) return null;
   if (!matches.length) {
-    return query
-      ? <Text style={[s.empty, { color: colors.muted }]}>No chats match “{query}”.</Text>
-      : <Text style={[s.empty, { color: colors.muted }]}>Your chats appear here.</Text>;
+    return (
+      <RailNote>
+        {query
+          ? `No chats match “${query}”.`
+          : projectId && !isIdeas(projectId)
+            ? 'No chats in this project yet.'
+            : 'Your chats appear here.'}
+      </RailNote>
+    );
   }
-  return <View>
-    {matches.slice(0, 20).map(chat => <Pressable key={chat.id} accessibilityRole="button"
-      accessibilityLabel={'Open AI chat ' + chat.title} accessibilityState={{ selected: chat.id === selected }}
-      onPress={() => select(chat.id)} style={({ pressed }) => [s.row,
-        { backgroundColor: chat.id === selected || pressed ? colors.elevated : 'transparent' }]}>
-      <Icon name="chatbubble-outline" size={17} color={chat.id === selected ? colors.accent : colors.muted} />
-      <Text numberOfLines={1} style={[s.label, { color: colors.text }]}>{chat.title}</Text>
-    </Pressable>)}
-  </View>;
+  if (compact)
+    return (
+      <>
+        {matches.map((chat) => (
+          <TreeRow
+            key={chat.id}
+            icon="chatbubble-outline"
+            label={chat.title}
+            accessibilityLabel={'Open AI chat ' + chat.title}
+            selected={chat.id === selected}
+            onPress={() => select(chat.id)}
+          />
+        ))}
+      </>
+    );
+  return (
+    <>
+      {matches.slice(0, 20).map((chat) => (
+        <RailRow
+          key={chat.id}
+          icon="chatbubble-outline"
+          label={chat.title}
+          selected={chat.id === selected}
+          accessibilityLabel={'Open AI chat ' + chat.title}
+          onPress={() => select(chat.id)}
+        />
+      ))}
+    </>
+  );
 }
-const s = StyleSheet.create({
-  row: { minHeight: 48, paddingHorizontal: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  label: { flex: 1, fontSize: 14.5, fontWeight: '500', letterSpacing: -0.2 },
-  empty: { fontSize: 13, lineHeight: 19, paddingHorizontal: 12, paddingVertical: 8 },
-});

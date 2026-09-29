@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
 
 /**
- * Shared interface motion, and the only place a driver belongs.
- * `connection/radarMotion.ts` held duplicate breath and entrance drivers for the
- * pairing radar; both went with the radar when the connect flow was stripped to
- * plain text.
+ * Shared interface motion, and the only place a native-driven driver belongs.
+ * `connection/signalMotion.ts` keeps only what SVG geometry needs: JS-driven
+ * ripples and one-shots, which the native driver cannot reach.
  */
 
 /** A looping 0 → 1 → 0 breath, for something that is idling rather than working. */
@@ -14,13 +13,22 @@ export function useBreath(active: boolean, duration = 2800) {
   useEffect(() => {
     value.setValue(0);
     if (!active) return;
-    const half = { duration: duration / 2, easing: Easing.inOut(Easing.quad), useNativeDriver: true };
-    const animation = Animated.loop(Animated.sequence([
-      Animated.timing(value, { toValue: 1, ...half }),
-      Animated.timing(value, { toValue: 0, ...half }),
-    ]));
+    const half = {
+      duration: duration / 2,
+      easing: Easing.inOut(Easing.quad),
+      useNativeDriver: true,
+    };
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, { toValue: 1, ...half }),
+        Animated.timing(value, { toValue: 0, ...half }),
+      ]),
+    );
     animation.start();
-    return () => { animation.stop(); value.setValue(0); };
+    return () => {
+      animation.stop();
+      value.setValue(0);
+    };
   }, [active, duration, value]);
   return value;
 }
@@ -29,11 +37,22 @@ export function useBreath(active: boolean, duration = 2800) {
 export function useAppear(instant: boolean, delay = 0) {
   const value = useRef(new Animated.Value(instant ? 1 : 0)).current;
   useEffect(() => {
-    if (instant) { value.setValue(1); return; }
-    const animation = Animated.spring(value, { toValue: 1, delay, damping: 15, stiffness: 180,
-      mass: 0.9, useNativeDriver: true });
+    if (instant) {
+      value.setValue(1);
+      return;
+    }
+    const animation = Animated.spring(value, {
+      toValue: 1,
+      delay,
+      damping: 15,
+      stiffness: 180,
+      mass: 0.9,
+      useNativeDriver: true,
+    });
     animation.start();
-    return () => { animation.stop(); };
+    return () => {
+      animation.stop();
+    };
   }, [delay, instant, value]);
   return value;
 }
@@ -48,12 +67,52 @@ export function useCountUp(value: number, instant: boolean) {
   const [shown, setShown] = useState(value);
   const driver = useRef(new Animated.Value(value)).current;
   useEffect(() => {
-    if (instant) { driver.setValue(value); setShown(value); return; }
-    const listener = driver.addListener(frame => setShown(Math.round(frame.value)));
-    const animation = Animated.timing(driver, { toValue: value, duration: 750,
-      easing: Easing.out(Easing.cubic), useNativeDriver: false });
+    if (instant) {
+      driver.setValue(value);
+      setShown(value);
+      return;
+    }
+    const listener = driver.addListener((frame) => setShown(Math.round(frame.value)));
+    const animation = Animated.timing(driver, {
+      toValue: value,
+      duration: 750,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    });
     animation.start(() => setShown(value));
-    return () => { animation.stop(); driver.removeListener(listener); };
+    return () => {
+      animation.stop();
+      driver.removeListener(listener);
+    };
   }, [driver, instant, value]);
   return shown;
+}
+
+/** A continuous native-driven orbit; no React state or JS work per frame. */
+export function useCycle(active: boolean, duration = 14000) {
+  const value = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    value.setValue(0);
+    if (!active) return;
+    const animation = Animated.loop(Animated.timing(value, {
+      toValue: 1, duration, easing: Easing.linear, useNativeDriver: true, isInteraction: false,
+    }));
+    animation.start();
+    return () => animation.stop();
+  }, [active, duration, value]);
+  return value;
+}
+
+/** A state change animates visually, never postpones the action it represents. */
+export function useMotionTarget(target: number, instant: boolean, duration = 450) {
+  const value = useRef(new Animated.Value(target)).current;
+  useEffect(() => {
+    if (instant) { value.setValue(target); return; }
+    const animation = Animated.timing(value, {
+      toValue: target, duration, easing: Easing.out(Easing.cubic), useNativeDriver: true, isInteraction: false,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [target, instant, duration, value]);
+  return value;
 }

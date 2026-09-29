@@ -8,17 +8,27 @@ impl Engine {
         let submission = text(params, "submissionId")?;
         identifier(submission)?;
         let input = text(params, "text")?.trim();
+        if input.starts_with('/') && params["sendAsText"] != true {
+            return Err("Use the command menu, or explicitly send this as text".into());
+        }
         if input.is_empty() || input.len() > 8192 {
             return Err("Message must contain 1–8192 bytes".into());
         }
         let mut state = self.shared.lock();
         authorize(state.session(id)?, device, params)?;
+        let (mut attachments, manifest) =
+            state
+                .journal
+                .attachment_inputs(id, device, &params["attachments"])?;
         let c = state
             .conversations
             .get_mut(id)
             .ok_or("Conversation not found")?;
         if let Some(receipt) = c.receipts.get(submission) {
-            if receipt["device"] != device || receipt["text"] != input {
+            if receipt["device"] != device
+                || receipt["text"] != input
+                || receipt["attachments"] != params["attachments"]
+            {
                 return Err("Submission ID was reused for a different message".into());
             }
             return Ok(
@@ -36,9 +46,11 @@ impl Engine {
             .clone()
             .ok_or("Conversation process is unavailable")?;
         let thread = c.thread_id.clone();
+        let settings = c.settings.clone();
+        c.active_settings = settings.clone();
         c.receipts.insert(
             submission.into(),
-            json!({"device":device,"text":input,"status":"dispatching"}),
+            json!({"device":device,"text":input,"attachments":params["attachments"],"status":"dispatching"}),
         );
         c.turn_state = "running".into();
         c.turn_id = None;
@@ -47,13 +59,25 @@ impl Engine {
             &mut state,
             id,
             Some(json!({"id":submission,"turnId":null,"kind":"message",
-            "role":"user","text":input,"status":"completed"})),
+            "role":"user","text":input,"attachments":manifest,"status":"completed"})),
         )?;
         drop(state);
+        let mut inputs = vec![json!({"type":"text","text":input,"text_elements":[]})];
+        let preview = self.shared.lock().preview_status.clone();
+        if device != "desktop" {
+            if let Some(provider) = preview {
+                let project = text(params, "projectId")?;
+                let status = provider(device, project)
+                    .unwrap_or_else(|error| json!({"state":"unavailable","message":error}));
+                inputs.push(json!({"type":"text","text":format!("[Vibyra client context] This turn came from the paired phone. Software runs on the computer. To show a desktop app on the phone, start it with vibyra_run_app, never a shell command: the sandbox hides windows of apps it starts. Its window then opens on the phone. Process launch alone does not prove a usable window or decoded phone frame; use vibyra_preview_status after launch. Older saved chats may lack these tools; then ask the user to press Run in Live preview, without claiming it is displaying. Current status before this turn (may change during execution): {status}"),"text_elements":[]}));
+            }
+        }
+        inputs.append(&mut attachments);
         let result = runtime.request(
             "turn/start",
             json!({"threadId":thread,
-            "clientUserMessageId":submission,"input":[{"type":"text","text":input,"text_elements":[]}]}),
+            "model":settings["model"],"effort":settings["effort"],"summary":"auto",
+            "clientUserMessageId":submission,"input":inputs}),
         );
         let mut state = self.shared.lock();
         let c = state

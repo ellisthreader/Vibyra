@@ -16,8 +16,7 @@ try {
       const shot = name => page.screenshot({ path: `${out}/${size}-${colorScheme}-${name}.png` });
       await page.route('**/identity', route => route.fulfill({ status: 404, body: '' }));
       await page.goto(process.env.VIBYRA_URL ?? 'http://127.0.0.1:8081');
-      await button('Get started').click();
-      await button('Skip for now').click();
+      await button('Continue without an account').click();
       await fullyVisible(button('Connect computer'), page, 'Selected path action');
       const computer = page.getByRole('radio', { name: 'Connect your computer', exact: true });
       const phone = page.getByRole('radio', { name: 'Code on this phone', exact: true });

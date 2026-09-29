@@ -14,27 +14,58 @@ export function sampleScaffold(addProject: (project: Project) => void): Scaffold
   const listeners = new Set<(event: ScaffoldEvent) => void>();
   const timers: ReturnType<typeof setTimeout>[] = [];
   let status: ScaffoldStatus | null = null;
-  const emit = (event: ScaffoldEvent) => { for (const listener of listeners) listener(event); };
-  const later = (delay: number, work: () => void) => { timers.push(setTimeout(work, delay)); };
-  const stop = () => { for (const timer of timers.splice(0)) clearTimeout(timer); };
+  const emit = (event: ScaffoldEvent) => {
+    for (const listener of listeners) listener(event);
+  };
+  const later = (delay: number, work: () => void) => {
+    timers.push(setTimeout(work, delay));
+  };
+  const stop = () => {
+    for (const timer of timers.splice(0)) clearTimeout(timer);
+  };
   const projectFor = (dir: string): Project => {
-    const leaf = dir.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? 'project';
-    return { id: `demo-${leaf}`, name: leaf, path: dir.startsWith(HOME) ? `~${dir.slice(HOME.length)}` : dir };
+    const leaf =
+      dir
+        .replace(/[\\/]+$/, '')
+        .split(/[\\/]/)
+        .pop() ?? 'project';
+    return {
+      id: `demo-${leaf}`,
+      name: leaf,
+      path: dir.startsWith(HOME) ? `~${dir.slice(HOME.length)}` : dir,
+    };
   };
   const finish = (ok: boolean, message: string | null, project: Project | null) => {
     if (!status) return;
-    status = { ...status, phase: ok ? 'done' : message === 'Cancelled.' ? 'cancelled' : 'failed', progress: null, error: message, project };
+    status = {
+      ...status,
+      phase: ok ? 'done' : message === 'Cancelled.' ? 'cancelled' : 'failed',
+      progress: null,
+      error: message,
+      project,
+    };
     if (project) addProject(project);
     emit({ type: 'done', runId: status.runId, ok, message, stalled: false, project });
   };
   return {
-    preflight: async tools => ({
-      tools: Object.fromEntries(tools.map(tool => [tool, tool !== 'flutter' && tool !== 'rails'])),
-      home: HOME, parent: `${HOME}/Projects`,
+    preflight: async (tools) => ({
+      tools: Object.fromEntries(
+        tools.map((tool) => [tool, tool !== 'flutter' && tool !== 'rails']),
+      ),
+      home: HOME,
+      parent: `${HOME}/Projects`,
     }),
     start: async (runId, plan) => {
       stop();
-      status = { runId, dir: plan.dir, phase: 'running', progress: null, lines: [], error: null, project: null };
+      status = {
+        runId,
+        dir: plan.dir,
+        phase: 'running',
+        progress: null,
+        lines: [],
+        error: null,
+        project: null,
+      };
       let at = 300;
       plan.steps.forEach((step, index) => {
         later(at, () => {
@@ -42,7 +73,11 @@ export function sampleScaffold(addProject: (project: Project) => void): Scaffold
           status = { ...status, progress: { index, total: plan.steps.length, label: step.label } };
           emit({ type: 'step', runId, index, total: plan.steps.length, label: step.label });
         });
-        const lines = [`$ ${[step.program, ...step.args].join(' ')}`, 'Sample workspace: nothing is run.', `${step.label} · done`];
+        const lines = [
+          `$ ${[step.program, ...step.args].join(' ')}`,
+          'Sample workspace: nothing is run.',
+          `${step.label} · done`,
+        ];
         later(at + STEP_PAUSE / 2, () => {
           if (status?.runId !== runId) return;
           status = { ...status, lines: [...status.lines, ...lines] };
@@ -50,18 +85,29 @@ export function sampleScaffold(addProject: (project: Project) => void): Scaffold
         });
         at += STEP_PAUSE;
       });
-      later(at + 200, () => { if (status?.runId === runId) finish(true, null, projectFor(plan.dir)); });
+      later(at + 200, () => {
+        if (status?.runId === runId) finish(true, null, projectFor(plan.dir));
+      });
     },
-    cancel: async runId => {
+    cancel: async (runId) => {
       if (status?.runId !== runId || status.phase !== 'running') return;
       stop();
       finish(false, 'Cancelled.', null);
     },
-    status: async runId => {
+    status: async (runId) => {
       if (status?.runId !== runId) throw new Error('That build is not known to this computer.');
       return status;
     },
-    adopt: async dir => { const project = projectFor(dir); addProject(project); return project; },
-    follow: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    adopt: async (dir) => {
+      const project = projectFor(dir);
+      addProject(project);
+      return project;
+    },
+    follow: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
 }

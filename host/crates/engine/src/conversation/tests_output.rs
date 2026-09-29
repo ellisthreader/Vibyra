@@ -34,7 +34,20 @@ fn running_command_output_is_live_bounded_and_authoritatively_replaced() {
     let item = &snapshot["items"][0];
     assert!(item["detail"].as_str().unwrap().len() <= 8192);
     assert!(item["detail"].as_str().unwrap().starts_with("npm test\n"));
-    assert_eq!(item["truncated"], true);
+    assert_eq!(item["truncated"], false);
+    assert_eq!(item["hasDetail"], true);
+    let retained = engine
+        .handle(
+            "phone",
+            "conversation.artifact",
+            json!({"sessionId":"session",
+        "artifactId":item["artifact"]["id"],"hash":item["artifact"]["hash"]}),
+        )
+        .unwrap();
+    assert!(retained["content"]
+        .as_str()
+        .unwrap()
+        .contains(&"😀".repeat(2500)));
     let mut completed = raw;
     completed["status"] = json!("completed");
     completed["aggregatedOutput"] = json!("2 tests passed\n");

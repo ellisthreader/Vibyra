@@ -28,6 +28,9 @@ pub(crate) fn dispatch(event: impl Fn(Value) + Send + 'static) -> SyncSender<Val
                             && p["params"]["threadId"] == value["params"]["threadId"]
                             && p["params"]["itemId"] == value["params"]["itemId"]
                             && p["params"]["turnId"] == value["params"]["turnId"]
+                            && p["params"]["delta"].as_str().map_or(0, str::len)
+                                + value["params"]["delta"].as_str().map_or(0, str::len)
+                                <= 16 * 1024
                     });
                     if !same {
                         if let Some(previous) = pending.take() {

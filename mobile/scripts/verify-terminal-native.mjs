@@ -83,5 +83,5 @@ try {
   child.kill('SIGINT');
   await until(() => child.exitCode !== null || child.signalCode !== null, 'fixture Host shutdown', 5000).catch(() => child.kill('SIGKILL'));
   await new Promise(done => server ? server.close(done) : done());
-  execFileSync('xcrun', ['simctl', 'openurl', 'booted', 'exp://127.0.0.1:8081']);
+  execFileSync('xcrun', ['simctl', 'openurl', 'booted', metro.replace(/^http/, 'exp')]);
 }

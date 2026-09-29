@@ -19,6 +19,10 @@ const m = (id: string, name: string, efforts: Effort[], defaultEffort: Effort | 
     reasoning: { efforts, defaultEffort, mandatory } });
 
 export const snapshotModels: VibesModel[] = [
+  m('anthropic/claude-sonnet-5.5', "Claude Sonnet 5.5", ['low', 'medium', 'high', 'xhigh', 'max'], 'high', true, 1790618686),
+  m('openai/gpt-6-sol', "GPT-6 Sol", ['none', 'low', 'medium', 'high', 'xhigh', 'max'], 'medium', false, 1790100775),
+  m('openai/gpt-6-luna', "GPT-6 Luna", ['none', 'low', 'medium', 'high', 'xhigh', 'max'], 'medium', false, 1790100786),
+  m('anthropic/claude-opus-5.5', "Claude Opus 5.5", ['low', 'medium', 'high', 'xhigh', 'max'], 'high', true, 1790094732),
   m('openai/gpt-6-astra', "GPT-6 Astra", ['low', 'medium', 'high', 'xhigh', 'max'], 'medium', true, 1788552838),
   m('openai/gpt-5.6-luna', "GPT-5.6 Luna", ['none', 'low', 'medium', 'high', 'xhigh', 'max'], 'medium', false, 1783590864),
   m('openai/gpt-5.6-terra', "GPT-5.6 Terra", ['none', 'low', 'medium', 'high', 'xhigh', 'max'], 'medium', false, 1783590857),

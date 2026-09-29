@@ -1,6 +1,8 @@
 use std::path::Path;
 
-use super::types::{DetectedTarget, LaunchRecipe, PreviewDeviceHint, PreviewTarget};
+use super::types::{
+    DetectedTarget, LaunchRecipe, PreviewDeviceHint, PreviewTarget, PreviewTargetKind,
+};
 
 pub(crate) fn runnable_target(
     relative: &str,
@@ -22,6 +24,7 @@ pub(crate) fn runnable_target(
             reason: None,
             device_hint,
             landscape,
+            kind: PreviewTargetKind::Web,
         },
         recipe,
     }
@@ -39,8 +42,35 @@ pub(crate) fn unsupported_target(relative: &str, name: &str, reason: &str) -> De
             reason: Some(reason.into()),
             device_hint: PreviewDeviceHint::Desktop,
             landscape: true,
+            kind: PreviewTargetKind::Web,
         },
         recipe: LaunchRecipe::Unsupported,
+    }
+}
+
+/// An application that runs as a window on the computer, shown on the phone
+/// through window Preview rather than the browser frame.
+pub(crate) fn desktop_target(
+    relative: &str,
+    profile: &str,
+    framework: &str,
+    command: String,
+    recipe: LaunchRecipe,
+) -> DetectedTarget {
+    DetectedTarget {
+        target: PreviewTarget {
+            id: target_id(relative, profile),
+            name: target_name(relative, framework),
+            framework: framework.into(),
+            relative_root: relative.into(),
+            command: Some(command),
+            runnable: true,
+            reason: None,
+            device_hint: PreviewDeviceHint::Desktop,
+            landscape: true,
+            kind: PreviewTargetKind::Desktop,
+        },
+        recipe,
     }
 }
 

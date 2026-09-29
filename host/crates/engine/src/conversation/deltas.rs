@@ -3,13 +3,14 @@ use serde_json::{json, Value};
 
 pub(crate) fn apply(c: &Conversation, method: &str, params: &Value) -> Option<Value> {
     let id = params["itemId"].as_str()?;
-    let command = method == "item/commandExecution/outputDelta";
+    let reasoning = method == "item/reasoning/summaryTextDelta";
+    let command = method == "item/commandExecution/outputDelta" || reasoning;
     let existing = c.items.iter().find(|i| i["id"] == id);
     let mut item = if command {
         // Output can only extend an observed running command, never invent its purpose.
         existing
             .filter(|i| {
-                i["category"] == "commandExecution"
+                (i["category"] == "commandExecution" || (reasoning && i["category"] == "reasoning"))
                     && i["status"] == "running"
                     && i["turnId"] == params["turnId"]
             })?
@@ -29,7 +30,8 @@ pub(crate) fn apply(c: &Conversation, method: &str, params: &Value) -> Option<Va
         item[field].as_str().unwrap_or(""),
         params["delta"].as_str().unwrap_or("")
     );
-    let truncated = item["truncated"] == true || content.len() > 8192;
+    let truncated = item["truncated"] == true;
+    item["_delta"] = params["delta"].clone();
     item[field] = json!(bounded(&content, 8192));
     item["truncated"] = json!(truncated);
     Some(item)

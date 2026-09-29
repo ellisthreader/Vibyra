@@ -1,8 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PhoneKeyboard } from '../phoneKeyboard/PhoneKeyboard';
+import type { ReactNode } from 'react';
 import { useTheme } from '../theme';
 import { Icon, IconButton } from './primitives';
+import { isIdeas } from './ideas';
 import { APP_HEADER_HEIGHT } from './keyboardOffset';
-import type { Destination, Session, WorkspaceModel } from './types';
+import { font } from './font';
+import { useTourTarget } from '../tour/tourTargets';
+import type { Destination, Project, Session, WorkspaceModel } from './types';
 
 /**
  * The one header the whole app sits under. Its middle always answers "where am
@@ -10,31 +15,45 @@ import type { Destination, Session, WorkspaceModel } from './types';
  * chat, the computer, or, with neither yet, the app. No screen below draws a
  * title of its own, so a place is named exactly once and always in one spot.
  *
- * The right slot carries whatever that page can do and nothing else. Where a
- * page has no action the slot still holds its width, because a title that
+ * The right slot carries actions for the current page. Where a page has no
+ * action the slot still holds its width, because a title that
  * shifts sideways between pages reads as a different bar rather than the same
  * one with a different name.
  */
 const titles: Record<Destination, string> = {
-  work: 'Vibyra', projects: 'Projects', integrations: 'Integrations',
-  computers: 'Remote', settings: 'Settings',
+  work: 'Vibyra', integrations: 'Integrations',
+  computers: 'Remote',
   // The wallet takes the whole screen and closes with its own X, so it never
   // renders under this header. Named anyway to keep the map total.
   vibes: 'Vibyra tokens',
 };
 
-export function AppHeader({ destination, workspace, session, connected, compact, onMenu, onNewChat, onSwitchChat, onComputers }: {
+export function AppHeader({ destination, workspace, session, project, connected, compact, onMenu, onNewChat, onSwitchChat, onComputers,
+  onSessionOptions, onPreview, modeSwitch, onBack, terminalLauncher }: {
+  modeSwitch?: ReactNode;
+  terminalLauncher?: boolean;
   destination: Destination; workspace: WorkspaceModel; session: Session | undefined;
-  connected: boolean; compact: boolean; onMenu: () => void; onNewChat: () => void;
+  /** The project you are in, named here while no terminal of its own is open. */
+  project?: Project;
+  connected: boolean; compact: boolean; onMenu: () => void; onNewChat?: () => void;
   onSwitchChat: () => void; onComputers: () => void;
+  /** Given while a terminal session is open: its ⋯ takes the action slot, so nothing else needs a row of its own. */
+  onSessionOptions?: () => void;
+  onPreview?: () => void;
+  /** The leading button returns to the previous screen instead of opening the menu. */
+  onBack?: () => void;
 }) {
+  const menuTarget = useTourTarget('menu'); const modeTarget = useTourTarget('mode');
   return <View style={[s.header, compact && { minHeight: 44, paddingVertical: 0 }]}>
-    <IconButton icon="menu-outline" label="Open navigation menu" onPress={onMenu} />
-    {destination === 'work'
-      ? <WorkTitle workspace={workspace} session={session} connected={connected} compact={compact}
+    {onBack ? <IconButton icon="chevron-back" label={terminalLauncher ? 'Back from New terminal' : 'Back to Settings'} onPress={onBack} />
+      : <View ref={menuTarget} collapsable={false}><IconButton icon="menu-outline" label="Open navigation menu" onPress={onMenu} /></View>}
+    {terminalLauncher ? <PageTitle title="New terminal" /> : modeSwitch ? <View style={s.heading}><View ref={modeTarget} collapsable={false}>{modeSwitch}</View></View> : destination === 'work'
+      ? <WorkTitle workspace={workspace} session={session} project={project} connected={connected} compact={compact}
         onSwitchChat={onSwitchChat} onComputers={onComputers} />
       : <PageTitle title={titles[destination]} />}
-    <Action destination={destination} workspace={workspace} connected={connected} onNewChat={onNewChat} />
+    <View style={[s.slot, workspace.focusedTextAvailable && workspace.canType && workspace.status === 'connected' && !terminalLauncher
+      ? { width: 88 + (onPreview && onSessionOptions ? 44 : 0) } : undefined]} />
+    {!terminalLauncher && <View style={s.trailing}><PhoneKeyboard workspace={workspace} /><Action destination={destination} onNewChat={onNewChat} onSessionOptions={onSessionOptions} onPreview={onPreview} /></View>}
   </View>;
 }
 
@@ -47,25 +66,30 @@ function PageTitle({ title }: { title: string }) {
 }
 
 /**
- * The chat surface. Phone only, the title is just the app's name: a computer is
- * not mentioned until one is actually connected, and then the header is where
- * you see it — tappable, because the thing it names is also the thing you switch.
+ * The work surface, which is always inside a project. Chats has no computer
+ * line — a computer is not mentioned until one is actually
+ * connected, and then a folder's title carries it. The title is tappable,
+ * because the thing it names is also the thing you switch: the rail opens on
+ * that project's chats and terminals.
  */
-function WorkTitle({ workspace, session, connected, compact, onSwitchChat, onComputers }: {
-  workspace: WorkspaceModel; session: Session | undefined; connected: boolean; compact: boolean;
+function WorkTitle({ workspace, session, project, connected, compact, onSwitchChat, onComputers }: {
+  workspace: WorkspaceModel; session: Session | undefined; project?: Project; connected: boolean; compact: boolean;
   onSwitchChat: () => void; onComputers: () => void;
 }) {
   const { colors } = useTheme();
-  if (!connected && !session) return <View style={s.heading}>
+  const ideas = !session && isIdeas(project);
+  if (!connected && !session && !project) return <View style={s.heading}>
     <Text accessibilityRole="header" numberOfLines={1} style={[s.brand, { color: colors.text }]}>{titles.work}</Text>
   </View>;
-  return <Pressable accessibilityRole="button" accessibilityLabel={session ? 'Switch chat' : 'Choose computer'}
-    onPress={() => session ? onSwitchChat() : onComputers()} style={s.heading}>
+  const inside = session || project;
+  return <Pressable accessibilityRole="button" accessibilityLabel={session || ideas ? 'Switch chat' : project ? 'Switch terminal' : 'Choose computer'}
+    onPress={() => inside ? onSwitchChat() : onComputers()} style={s.heading}>
     <View style={s.headingRow}>
-      <Text numberOfLines={1} style={[s.brand, { color: colors.text }, session && s.sessionTitle]}>{session?.title ?? titles.work}</Text>
+      {!session && project && <Icon name={ideas ? 'chatbubbles-outline' : 'folder'} size={15} color={colors.accent} />}
+      <Text numberOfLines={1} style={[s.brand, { color: colors.text }, session && s.sessionTitle]}>{session?.title ?? project?.name ?? titles.work}</Text>
       <Icon name="chevron-down" size={12} color={colors.muted} />
     </View>
-    {!compact && <View style={s.connection}>
+    {!compact && connected && !ideas && <View style={s.connection}>
       <View style={[s.dot, { backgroundColor: workspace.demo ? colors.muted : colors.success }]} />
       <Text numberOfLines={1} style={[s.computer, { color: colors.muted }]}>{workspace.demo ? 'Sample workspace' : workspace.host?.name}</Text>
     </View>}
@@ -73,30 +97,37 @@ function WorkTitle({ workspace, session, connected, compact, onSwitchChat, onCom
 }
 
 /**
- * One action per page, or none. Refresh belongs to Projects because the list is
- * the computer's answer and can go stale; the pages that only show what the
- * account already holds have nothing here to press.
+ * Keep actions outside the centered title/Code–Agents layout. A new chat stays
+ * in the menu while a terminal is open.
  */
-function Action({ destination, workspace, connected, onNewChat }: {
-  destination: Destination; workspace: WorkspaceModel; connected: boolean; onNewChat: () => void;
+function Action({ destination, onNewChat, onSessionOptions, onPreview }: {
+  destination: Destination; onNewChat?: () => void; onSessionOptions?: () => void; onPreview?: () => void;
 }) {
-  if (destination === 'work') return <IconButton icon="create-outline" label="New chat" onPress={onNewChat} />;
-  if (destination === 'projects') return <IconButton icon="refresh-outline" label="Refresh projects"
-    disabled={!connected || !!workspace.syncing}
-    onPress={() => void workspace.actions.refresh().catch(() => {})} />;
+  const { colors } = useTheme();
+  if (destination === 'work' && onPreview) return <View style={s.actions}>
+    <Pressable accessibilityRole="button" accessibilityLabel="Live Preview" onPress={onPreview} style={s.preview}>
+      <Icon name="globe-outline" size={22} color={colors.accent} />
+    </Pressable>
+    {onSessionOptions && <IconButton icon="ellipsis-horizontal" label="Session options" onPress={onSessionOptions} />}
+  </View>;
+  if (destination === 'work' && onSessionOptions) return <IconButton icon="ellipsis-horizontal" label="Session options" onPress={onSessionOptions} />;
+  if (destination === 'work' && onNewChat) return <IconButton icon="create-outline" label="New chat" onPress={onNewChat} />;
   return <View style={s.slot} />;
 }
 
 const s = StyleSheet.create({
-  header: { minHeight: APP_HEADER_HEIGHT, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 12, paddingVertical: 7 },
-  heading: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 5 },
+  header: { minHeight: APP_HEADER_HEIGHT, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, gap: 8, paddingVertical: 6 },
+  heading: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', gap: 3 },
   headingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: '100%' },
-  brand: { fontSize: 20, fontWeight: '600', letterSpacing: -0.6, flexShrink: 1 },
-  sessionTitle: { fontSize: 15, letterSpacing: -0.2 },
-  page: { fontSize: 17, fontWeight: '600', letterSpacing: -0.3, flexShrink: 1 },
+  brand: { ...font.headline, flexShrink: 1 },
+  sessionTitle: { fontSize: 16, letterSpacing: -0.3 },
+  page: { ...font.headline, flexShrink: 1 },
   connection: { flexDirection: 'row', alignItems: 'center', gap: 5, maxWidth: '100%' },
   dot: { width: 5, height: 5, borderRadius: 3 },
-  computer: { fontSize: 10, flexShrink: 1 },
+  computer: { fontSize: 11, fontWeight: '500', flexShrink: 1 },
   // Matches the icon button's width so the title stays centred on pages with no action.
   slot: { width: 44 },
+  trailing: { position: 'absolute', right: 8, top: 6, flexDirection: 'row' },
+  actions: { flexDirection: 'row', alignItems: 'center' },
+  preview: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
 });

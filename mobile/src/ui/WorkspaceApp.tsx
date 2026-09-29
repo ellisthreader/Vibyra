@@ -1,3 +1,7 @@
+import { useFundedWorkspace } from '../vibes/useFundedWorkspace';
+import { useNotificationNavigation } from '../notifications/useNotificationNavigation';
+import { useNotificationResponses } from '../notifications/useNotificationResponses';
+import { workspacePalette } from './workspacePalette';
 import { AgentsScreen } from '../agents/AgentsScreen';
 import { ProductModeSwitch, useProductMode } from '../agents/ProductMode';
 import type { AgentsApi } from '../agents/types';
@@ -7,119 +11,110 @@ import { createSampleAgents } from '../demo/sampleAgents';
 import { demoAccount } from '../demo/data';
 import { IntegrationsProvider } from '../integrations/IntegrationsProvider';
 import { StatusBar, StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { workspaceStyles as s } from './workspaceStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OnboardingFlow } from '../onboarding/OnboardingFlow';
 import { AppHeader } from './AppHeader';
-import { paletteFor, ThemeContext } from '../theme';
-import { computerHome, computerMode, computerRemembered } from './mode';
+import { ThemeContext } from '../theme';
+import { computerMode } from './mode';
 import { ComputersScreen } from './ComputersScreen';
 import { ConnectScreen } from './ConnectScreen';
 import { NavigationDrawer } from './NavigationDrawer';
-import { NewSessionSheet } from './NewSessionSheet';
 import { NewProjectSheet } from './newProject/NewProjectSheet';
 import { IntegrationsScreen } from './IntegrationsScreen';
-import { ProjectsScreen } from './ProjectsScreen';
 import { SessionScreen } from './SessionScreen';
 import { SettingsSheet } from '../settings/SettingsSheet';
 import type { SettingsPageId } from '../settings/pages';
-import { AccountPanel, AccountSheet } from './AccountSheet';
+import { AccountSheet } from './AccountSheet';
 import { WorkScreen } from './WorkScreen';
+import { ProjectTerminalLauncher } from './ProjectTerminalLauncher';
 import { VibesScreen } from '../vibes/VibesScreen';
 import { VibesDrawer } from '../vibes/VibesDrawer';
 import { WalletScreen } from '../vibes/WalletScreen';
-import { useVibesStore } from '../vibes/VibesProvider';
+import { useVibesChats, useVibesStore } from '../vibes/VibesProvider';
 import { useVaultChat } from '../vibes/useVaultChat';
 import { vibesDraftKey } from '../vibes/draftScope';
-import { openPhoneChat } from '../vibes/openPhoneChat';
 import { setDraftForScope } from './useDraft';
+import { PreviewSessionSheet } from '../preview/PreviewSessionSheet';
+import { useLivePreviewTarget } from '../preview/useLivePreviewTarget';
+import { chatProjectId, isIdeas } from './ideas';
+import { useProjectNavigation } from './useProjectNavigation';
+import { projectSession } from './projectSession';
+import { useWorkspacePanels } from './useWorkspacePanels';
 import type { Destination, WorkspaceModel } from './types';
-
-export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEnabled = false, agentsApi, agentChatApi }: {
+import { useMobileAnalytics, useMobileScreenAnalytics } from '../analytics/mobileAnalytics';
+import { FirstRunTour } from '../tour/FirstRunTour';
+export function WorkspaceApp({ workspace: computerWorkspace, accountWorkspace = computerWorkspace, vibesEnabled = false, agentsApi, agentChatApi, onPlayLaunchVideo }: {
   agentsApi?: AgentsApi; agentChatApi?: VibesApi;
   workspace: WorkspaceModel;
   /** The real account, which Integrations uses even while the sample workspace is on screen. */
   accountWorkspace?: WorkspaceModel;
   vibesEnabled?: boolean;
+  onPlayLaunchVideo?: () => void;
 }) {
+  const workspace = useFundedWorkspace(computerWorkspace);
   const sampleAgents = useMemo(() => workspace.demo ? createSampleAgents() : null, [workspace.demo]);
   const agentWorkspace = sampleAgents ? { ...workspace, account: workspace.account ?? demoAccount } : accountWorkspace;
   const [productMode, setProductMode] = useProductMode(sampleAgents ? `sample:${agentWorkspace.account!.email}` : accountWorkspace.account?.email ?? null);
-  // Product navigation is visible in samples and on every platform, independently of phone-chat availability.
   const agentsAvailable = Boolean(sampleAgents || agentsApi && agentChatApi);
   const agentMode = agentsAvailable && productMode === 'agent';
-  const systemScheme = useColorScheme();
-  const { width, height } = useWindowDimensions();
+  const systemScheme = useColorScheme(); const { width, height } = useWindowDimensions();
   const compact = width > height && height < 500;
   const dark = workspace.themePreference === 'dark' || (workspace.themePreference === 'system' && systemScheme !== 'light');
-  const colors = paletteFor(dark, workspace.accent);
-  // One object per theme: a fresh one re-renders every screen reading it, which
-  // hands any animation running there back to its drivers mid-flight.
+  const colors = workspacePalette(dark, workspace.accent);
   const theme = useMemo(() => ({ colors, dark }), [colors, dark]);
   const connected = computerMode(workspace);
-  const computerIsHome = computerHome(workspace);
-  const vibes = useVibesStore();
-  const [aiHome, setAiHome] = useState(true);
-  const [destination, setDestination] = useState<Destination>('work');
-  const [drawer, setDrawer] = useState(false);
-  const [connect, setConnect] = useState(false);
-  const [newSession, setNewSession] = useState(false);
-  const [newProject, setNewProject] = useState(false);
-  const [sessionOptions, setSessionOptions] = useState(false);
+  const vibes = useVibesStore(); const analytics = useMobileAnalytics();
+  const { chats, selected } = useVibesChats();
+  const nav = useProjectNavigation(workspace, vibes);
+  const { destination, setDestination, projectId, drawer, setDrawer } = nav;
+  const { connect, setConnect, newProject, setNewProject,
+    sessionOptions, setSessionOptions, livePreview, setLivePreview,
+    openLivePreview } = useWorkspacePanels(workspace.demo,
+    workspace.onboarding.status, workspace.selectedSessionId, projectId);
+  useNotificationResponses(workspace.demo ? undefined : accountWorkspace.notifications, accountWorkspace.account?.email ?? null, accountWorkspace.remoteAccess);
   const [settings, setSettings] = useState<{ page?: SettingsPageId } | null>(null);
   const [walletSignIn, setWalletSignIn] = useState(false);
-  const [initialProjectId, setInitialProjectId] = useState<string>();
-  const [projectId, setProjectId] = useState<string | null>(null);
   const [returnTo, setReturnTo] = useState<Destination>('work');
-  const openWallet = () => { setReturnTo(destination); setDrawer(false); setDestination('vibes'); };
+  const [walletFrom, setWalletFrom] = useState<SettingsPageId | null>(null);
+  const [settingsLed, setSettingsLed] = useState<Destination | null>(null);
+  useEffect(() => { if (settingsLed && settingsLed !== destination) setSettingsLed(null); }, [destination, settingsLed]);
+  const openWallet = (from?: SettingsPageId) => { setWalletFrom(from ?? null); setReturnTo(destination); setDrawer(false); setDestination('vibes'); };
   const openSettings = (page?: SettingsPageId) => {
     setDrawer(false);
     if (destination === 'vibes') setDestination(returnTo);
     setSettings({ page });
   };
-  const session = destination === 'work' ? workspace.sessions.find(item => item.id === workspace.selectedSessionId) : undefined;
-  const project = destination === 'work' && connected ? workspace.projects.find(item => item.id === projectId) : undefined;
-  useEffect(() => { setDestination('work'); setDrawer(false); setConnect(false); setNewSession(false); setSettings(null); },
-    [workspace.demo, workspace.onboarding.status]);
-  useEffect(() => { setSessionOptions(false); if (workspace.selectedSessionId) setDestination('work'); }, [workspace.selectedSessionId]);
-  useEffect(() => {
-    const open = workspace.sessions.find(item => item.id === workspace.selectedSessionId);
-    if (open) setProjectId(open.projectId);
-  }, [workspace.selectedSessionId, workspace.sessions]);
-  useEffect(() => { if (!connected) setProjectId(null); }, [connected]);
-  // A reconnect behind Agent keeps the existing Work route and its mounted composer.
-  useEffect(() => { if (!agentMode) setAiHome(!computerIsHome); }, [computerIsHome]);
-  // Losing the computer no longer takes you off its Projects page: the page
-  // reads from what that computer was last seen sharing, and refuses the rest.
-  // A phone that has never paired one has nothing to read, so it still leaves.
-  const remembered = computerRemembered(workspace);
-  useEffect(() => {
-    if (destination === 'projects' && !connected && !remembered) setDestination('work');
-  }, [connected, remembered, destination]);
-  const home = () => {
-    workspace.actions.selectSession(null);
-    if (vibesEnabled && aiHome && vibes) void vibes.select(null).catch(error => vibes.error(error));
-    setDestination('work');
-  };
-  const openAI = () => { setProductMode('work'); setAiHome(true); setProjectId(null); workspace.actions.selectSession(null); setDestination('work'); setDrawer(false); };
-  const enterProject = (id: string) => {
-    setProjectId(id); setAiHome(false); workspace.actions.selectSession(null); setDestination('work'); setDrawer(true);
-  };
-  const projectBuilt = (built: { id: string }, openTerminal: boolean) => {
-    setNewProject(false); setProjectId(built.id); setAiHome(false); setDestination('work');
-    if (openTerminal) void workspace.actions.createSession(built.id, 'shell', 'Terminal').catch(() => {}); else setDrawer(true);
-  };
-  const leaveProject = () => { setProjectId(null); workspace.actions.selectSession(null); setDestination('work'); };
-  const vaultChat = useVaultChat(workspace, openAI);
+  const requestedAgent = useNotificationNavigation(workspace, accountWorkspace.account?.email ?? null, {
+    close: () => { setSettings(null); setDrawer(false); }, mode: setProductMode, chat: nav.enterIdeas,
+    work: () => setDestination('work'), computers: () => setDestination('computers'),
+    security: () => openSettings('remoteAccess'),
+  });
+  const lead = (to: Destination) => { setProductMode('work'); setSettingsLed(to); setDestination(to); };
+  const project = destination === 'work' ? (connected ? workspace.projects : workspace.remembered?.projects ?? []).find(item => item.id === projectId) : undefined;
+  const session = project && !nav.launcherOpen ? projectSession(workspace.sessions, project.id, nav.focusedSessionId, workspace.selectedSessionId) : undefined;
+  const chat = chats.find(item => item.id === selected);
+  // A computer project shows one of its own chats while that chat is open.
+  const phoneChat = Boolean(nav.projectChatOpen && project && chat && chatProjectId(chat, workspace) === project.id);
+  const terminalLauncher = destination === 'work' && Boolean(project && !session && !phoneChat);
+  useMobileScreenAnalytics({ enabled: workspace.onboarding.status === 'complete', settings: Boolean(settings),
+    destination, agentMode, phoneChat, inProject: Boolean(session || project) });
+  useEffect(() => { setSettings(null); }, [workspace.demo, workspace.onboarding.status]);
+  const showChat = () => { setProductMode('work'); nav.showSelectedChat(); };
+  const vaultChat = useVaultChat(workspace, showChat);
   const useIntegrationInChat = (mention: string) => {
     if (vibesEnabled && vibes) void vibes.select(null).catch(error => vibes.error(error));
     setDraftForScope(vibesDraftKey(workspace.account?.email, 'new'), mention + ' ');
-    openAI();
+    setProductMode('work'); nav.enterIdeas(null);
   };
-  const start = (projectId?: string) => {
-    setInitialProjectId(projectId);
-    if (connected) setNewSession(true); else setConnect(true);
-  };
-  if (workspace.onboarding.status !== 'complete') return <ThemeContext.Provider value={theme}>
+  const start = (id: string) => { setProductMode('work'); nav.newTerminal(id); };
+  const covered = drawer || connect || newProject || settings !== null;
+  const previewProjectId = connected && workspace.previewAvailable && project && !isIdeas(project)
+    && project.kind !== 'vault' && project.kind !== 'railway' ? project.id : undefined;
+  const previewTarget = useLivePreviewTarget(workspace, previewProjectId, !agentMode && destination === 'work');
+  const openPreview = () => { openLivePreview(); void analytics?.track({ event: 'mobile_preview_opened', properties: {} }); };
+  if (workspace.onboarding.status !== 'complete' || (!workspace.account && !accountWorkspace.account))
+    return <ThemeContext.Provider value={theme}>
     <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
     <OnboardingFlow workspace={workspace} />
   </ThemeContext.Provider>;
@@ -130,12 +125,14 @@ export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEna
         importantForAccessibility={walletSignIn ? 'no-hide-descendants' : 'auto'}
         style={[s.frame, width > 700 && { maxWidth: 820 }]}>
         <WalletScreen signedIn={Boolean(workspace.account)} onSignIn={() => setWalletSignIn(true)}
-          onBack={() => { setDestination(returnTo); openSettings('vibes'); }} onClose={() => setDestination(returnTo)} />
+          onBack={() => { setDestination(returnTo); openSettings('vibes'); }}
+          onClose={() => { setDestination(returnTo); if (walletFrom) openSettings(walletFrom); }} />
       </View>
       <AccountSheet visible={walletSignIn} workspace={workspace} onClose={() => setWalletSignIn(false)} />
     </SafeAreaView>
   </ThemeContext.Provider>;
-  const covered = drawer || connect || newSession || newProject || settings !== null;
+  // The Work/Agent switch sits where the home is: Ideas, the chat the app opens into.
+  const modeSwitch = agentsAvailable && destination === 'work' && !terminalLauncher;
   return <ThemeContext.Provider value={theme}>
     <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
     {/* The Settings sheet covers the whole screen, status bar included, so the safe
@@ -146,53 +143,58 @@ export function WorkspaceApp({ workspace, accountWorkspace = workspace, vibesEna
         importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
         style={[s.frame, width > 700 && { maxWidth: 820 }]}>
         <View style={[s.body, agentMode && { display: 'none' }]} accessibilityElementsHidden={agentMode} importantForAccessibility={agentMode ? 'no-hide-descendants' : 'auto'}>
-        <AppHeader modeSwitch={agentsAvailable && destination === 'work' && !session && !project ? <ProductModeSwitch mode="work" onChange={setProductMode} /> : undefined} destination={destination} workspace={workspace} session={session} project={project} connected={connected}
-          compact={compact} onMenu={() => setDrawer(true)} onNewChat={home}
+        <AppHeader modeSwitch={modeSwitch ? <ProductModeSwitch mode="work" onChange={setProductMode} /> : undefined} terminalLauncher={terminalLauncher}
+          destination={destination} workspace={workspace} session={session} project={project} connected={connected}
+          compact={compact} onMenu={() => setDrawer(true)} onNewChat={project ? nav.newChat : undefined}
+          onBack={terminalLauncher ? nav.backFromTerminalLauncher : settingsLed === destination ? () => { setSettingsLed(null); openSettings(); } : undefined}
           onSwitchChat={() => setDrawer(true)} onComputers={() => setDestination('computers')}
-          onSessionOptions={session && session.runner !== 'conversation' ? () => setSessionOptions(true) : undefined} />
+          onSessionOptions={session ? () => setSessionOptions(true) : undefined}
+          onPreview={previewProjectId && !terminalLauncher ? openPreview : undefined} />
         <View style={s.body}>
-          {destination === 'work' && (session ? <SessionScreen key={session.id} session={session} workspace={workspace}
-            onPhoneChat={vibesEnabled && vibes ? model => openPhoneChat(vibes, model, openAI) : undefined} onUpgrade={() => openSettings('vibes')}
-            options={sessionOptions} onCloseOptions={() => setSessionOptions(false)} /> :
-            vibesEnabled && aiHome ? <VibesScreen active={!agentMode && !covered} workspace={workspace} onComputer={connected ? () => setAiHome(false) : undefined}
+          {destination === 'work' && (session ? <SessionScreen key={`${workspace.host?.id}:${session.id}`} session={session} workspace={workspace} active={!agentMode && !covered}
+            onWallet={() => openSettings('vibes')} options={sessionOptions} onCloseOptions={() => setSessionOptions(false)}
+            previewProjectId={previewProjectId} onPreview={previewProjectId ? openPreview : undefined} /> :
+            vibesEnabled && phoneChat ? <VibesScreen active={!agentMode && !covered} workspace={workspace} computer={connected && !workspace.viewOnly}
               onWallet={() => openSettings('vibes')} onIntegrations={() => setDestination('integrations')}
-              onMemory={() => openSettings('memory')} /> :
-              <WorkScreen workspace={workspace} project={project} cloud={vibesEnabled} connected={connected} onWallet={() => openSettings('vibes')}
-                onConnect={() => setConnect(true)}
-                onProjects={() => setDestination('projects')} onAi={() => setAiHome(true)} />)}
-          {destination === 'projects' && <ProjectsScreen workspace={workspace} onConnect={() => setConnect(true)} onOpen={enterProject}
-            onNew={() => setNewProject(true)} />}
+              onMemory={() => openSettings('memory')} previewProjectId={previewProjectId}
+              onPreview={previewProjectId ? openPreview : undefined} /> :
+              project ? <ProjectTerminalLauncher key={`${workspace.host?.id}:${project.id}`} workspace={workspace} project={project}
+                onIntegrations={() => openSettings('accounts')} onWallet={() => openSettings('vibes')} onOpenSession={nav.openSession} onConnect={() => setConnect(true)} /> :
+              <WorkScreen workspace={workspace} connected={connected}
+                onProjects={() => setDrawer(true)}
+                onNewProject={() => connected ? setNewProject(true) : setConnect(true)} onConnect={() => setConnect(true)}
+                onAgents={agentsAvailable ? () => setProductMode('agent') : undefined} />)}
           {destination === 'computers' && <ComputersScreen workspace={workspace} />}
           {destination === 'integrations' && <IntegrationsScreen onUse={useIntegrationInChat}
             signedIn={Boolean(accountWorkspace.account)} workspace={workspace} vault={vaultChat}
             onConnectComputer={() => setConnect(true)} />}
         </View>
         </View>
-
       </View>
-      <NavigationDrawer visible={drawer} destination={destination} workspace={workspace} project={project}
-        onClose={() => setDrawer(false)} onNew={home} onSettings={() => openSettings()}
-        onBalance={() => openSettings('vibes')} onLeaveProject={leaveProject} onNewTerminal={start}
+      <NavigationDrawer visible={drawer} destination={destination} workspace={workspace} project={project} currentProjectId={projectId}
+        onClose={() => setDrawer(false)} onNew={() => nav.enterIdeas(null)} onSettings={() => openSettings()} onReport={() => openSettings('report')}
+        onBalance={() => openSettings('vibes')} onLeaveProject={nav.leaveProject} onNewTerminal={start}
+        onNewProject={() => { if (connected) setNewProject(true); else setConnect(true); }}
+        onEnterProject={id => { setProductMode('work'); nav.enterProject(id); }}
+        onOpenSession={id => { setProductMode('work'); nav.openSession(id); }}
         onNavigate={to => { setProductMode('work'); if (to === 'vibes') openWallet(); else setDestination(to); }}
-        extraChats={vibesEnabled ? (query: string) => <VibesDrawer query={query} onOpen={openAI} /> : undefined} />
-      <ConnectScreen visible={connect} workspace={workspace} onClose={() => setConnect(false)} />
-      <NewSessionSheet visible={newSession} workspace={workspace} initialProjectId={initialProjectId}
-        onClose={() => setNewSession(false)} onOpenChat={vibesEnabled ? openAI : undefined} />
-    </SafeAreaView>
+        chats={vibesEnabled ? (query, projectId) => <VibesDrawer compact query={query} projectId={projectId} workspace={workspace} onOpen={showChat} /> : undefined} />
+      <ConnectScreen visible={connect} workspace={workspace} onClose={() => setConnect(false)} /></SafeAreaView>
         {agentsAvailable && <View style={[StyleSheet.absoluteFill, !agentMode && { display: 'none' }]} accessibilityElementsHidden={!agentMode || covered} importantForAccessibility={agentMode && !covered ? 'auto' : 'no-hide-descendants'}>
           {sampleAgents ? <IntegrationsProvider api={null} identity="sample-agents">
             <AgentsScreen key="sample" api={sampleAgents.agentsApi} chatApi={sampleAgents.chatApi} workspace={agentWorkspace}
-              active={agentMode && !covered} onMode={setProductMode} onMenu={() => setDrawer(true)} onWallet={() => openSettings('vibes')} />
-          </IntegrationsProvider> : <AgentsScreen key={accountWorkspace.account?.email ?? 'guest'} api={agentsApi!} chatApi={agentChatApi!} workspace={agentWorkspace}
-            active={agentMode && !covered} onMode={setProductMode} onMenu={() => setDrawer(true)} onWallet={() => openSettings('vibes')} />}
+              active={agentMode && !covered} onMode={setProductMode} onMenu={() => openSettings()} onReport={() => openSettings('report')} onWallet={() => openSettings('vibes')} />
+          </IntegrationsProvider> : <AgentsScreen key={accountWorkspace.account?.email ?? 'guest'} api={agentsApi!} chatApi={agentChatApi!} workspace={agentWorkspace} requestedAgent={requestedAgent}
+            active={agentMode && !covered} onMode={setProductMode} onMenu={() => openSettings()} onReport={() => openSettings('report')} onWallet={() => openSettings('vibes')} />}
         </View>}
-    <NewProjectSheet visible={newProject} workspace={workspace} onClose={() => setNewProject(false)} onDone={projectBuilt} />
+      <NewProjectSheet visible={newProject} workspace={workspace} onClose={() => setNewProject(false)} onDone={nav.projectBuilt} />
+      {previewProjectId && <PreviewSessionSheet key={`${workspace.host?.id}:${previewProjectId}`} visible={livePreview} onClose={() => setLivePreview(false)}
+          projectId={previewProjectId} workspace={workspace} known={previewTarget} />}
     <SettingsSheet visible={settings !== null} initialPage={settings?.page} workspace={workspace} onClose={() => setSettings(null)}
-      routes={{ plugins: () => setDestination('integrations'), wallet: openWallet,
-        remote: () => setDestination('computers'), connect: () => setConnect(true) }} />
-    </View>
-  </ThemeContext.Provider>;
+      routes={{ agents: (sampleAgents?.agentsApi ?? agentsApi) ? { api: (sampleAgents?.agentsApi ?? agentsApi)!, identity: `${workspace.demo ? 'sample:' : ''}${workspace.account?.email ?? 'guest'}` } : undefined, plugins: () => lead('integrations'), wallet: openWallet, playLaunchVideo: onPlayLaunchVideo,
+        remote: () => lead('computers'), connect: () => setConnect(true) }} />
+    <FirstRunTour workspace={workspace} connected={connected} agentsAvailable={agentsAvailable}
+      blocked={covered || agentMode} home={destination === 'work' && !project && !session && !phoneChat}
+      onPrepare={() => { setProductMode('work'); nav.leaveProject(); }} />
+    </View></ThemeContext.Provider>;
 }
-const s = StyleSheet.create({
-  safe: { flex: 1 }, frame: { flex: 1, width: '100%', alignSelf: 'center' }, body: { flex: 1 },
-});

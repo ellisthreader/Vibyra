@@ -62,8 +62,11 @@ export function useDemoWorkspace({ account, themePreference, setTheme, accent, s
       },
       peekSession: async id => samplePeek(items.find(item => item.id === id), outputs[id] ?? terminalIntro, threads[id] ?? []),
       stopSession: async id => {
-        setItems(current => current.map(item => item.id === id ? { ...item, status: 'interrupted' } : item));
-        push(id, [{ id: `stop-${++serial.current}`, role: 'assistant', text: 'Session stopped. Conversation retained.' }]);
+        setItems(current => current.filter(item => item.id !== id));
+        select(current => current === id ? null : current);
+        setThreads(current => { const next = { ...current }; delete next[id]; return next; });
+        setOutputs(current => { const next = { ...current }; delete next[id]; return next; });
+        delete shells.current[id];
       },
       listFiles: async (_id, path) => ({ entries: path === '' ? [
         { path: 'src', name: 'src', kind: 'directory', size: 0 },

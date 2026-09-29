@@ -20,8 +20,12 @@ export function usePresence(visible: boolean, instant: boolean) {
       easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
     });
-    animation.start(({ finished }) => { if (finished && !visible) setMounted(false); });
-    return () => { animation.stop(); };
+    animation.start(({ finished }) => {
+      if (finished && !visible) setMounted(false);
+    });
+    return () => {
+      animation.stop();
+    };
   }, [instant, value, visible]);
   return { mounted: mounted || visible, value };
 }

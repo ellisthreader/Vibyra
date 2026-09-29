@@ -8,24 +8,44 @@ import { fallbackModels } from './catalogue';
 export interface VibesState {
   wallet: VibesWallet | null; models: VibesModel[]; chats: VibesChat[]; turns: VibesTurn[];
   selected: string | null; draftScope: string; model: string; effort: Effort | null;
-  ready: boolean; error: string | null; pending: string | null;
+  ready: boolean; error: string | null; errorStatus: number | null; pending: string | null;
+  revision: number; selectionVersion: number;
 }
 export class VibesStore {
   // The catalogue ships with the app so the picker always offers every family;
   // the server's list replaces it as soon as one arrives.
   state: VibesState = { wallet: null, models: fallbackModels, chats: [], turns: [], selected: null,
-    draftScope: 'new', model: 'auto', effort: null, ready: false, error: null, pending: null };
+    draftScope: 'new', model: 'auto', effort: null, ready: false, error: null, errorStatus: null, pending: null,
+    revision: 0, selectionVersion: 0 };
   private listeners = new Set<() => void>();
+  private chatListeners = new Set<() => void>();
+  private chatState = { chats: this.state.chats, selected: this.state.selected };
   private generation = 0;
   private refreshPromise: Promise<void> | null = null;
   private chatPromise: Promise<string> | null = null;
   private modelsPromise: Promise<void> | null = null;
+  private savePending: Promise<void> = Promise.resolve();
   constructor(readonly api: VibesApi, readonly uuid: () => string,
-    readonly persistence: { read(): Promise<string | null>; write(value: string): Promise<void> }, readonly purchases: PurchaseBridge | null = null) {}
+    readonly persistence: { read(): Promise<string | null>; write(value: string): Promise<void> },
+    readonly purchases: PurchaseBridge | null = null, readonly prepare?: () => Promise<void>) {}
   snapshot = () => this.state;
+  chatsSnapshot = () => this.chatState;
+  get needsPolling() { return Boolean(this.state.pending || this.state.turns.some(activeTurn)); }
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
-  update(patch: Partial<VibesState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(fn => fn()); }
-  error(e: unknown) { this.update({ error: e instanceof Error ? e.message : 'Something went wrong. Please try again.' }); }
+  subscribeChats = (fn: () => void) => { this.chatListeners.add(fn); return () => { this.chatListeners.delete(fn); }; };
+  update(patch: Partial<VibesState>) {
+    const current = this.state.wallet;
+    if (patch.wallet?.version === 2 && current?.version === 2 && patch.wallet.accountScope === current.accountScope
+      && BigInt(patch.wallet.revision ?? '0') < BigInt(current.revision ?? '0')) patch = { ...patch, wallet: current };
+    this.state = { ...this.state, ...patch };
+    if (this.chatState.chats !== this.state.chats || this.chatState.selected !== this.state.selected) {
+      this.chatState = { chats: this.state.chats, selected: this.state.selected };
+      this.chatListeners.forEach(fn => fn());
+    }
+    this.listeners.forEach(fn => fn());
+  }
+  error(e: unknown) { this.update({ error: e instanceof Error ? e.message : 'Something went wrong. Please try again.',
+    errorStatus: e instanceof VibesError ? e.status : null }); }
   async initialize() {
     try {
       const saved = await this.persistence.read();
@@ -36,13 +56,19 @@ export class VibesStore {
           model: typeof p.model === 'string' && p.model ? p.model : this.state.model, effort: asEffort(p.effort) });
       }
     } catch { /* A damaged cache cannot grant credits or start execution. */ }
+    this.reconcileEffort();
     void this.loadModels();
     await this.refresh();
   }
   private save() {
-    return this.persistence.write(JSON.stringify({ pending: this.state.pending, selected: this.state.selected,
-      model: this.state.model, effort: this.state.effort }));
+    const value = JSON.stringify({ pending: this.state.pending, selected: this.state.selected,
+      model: this.state.model, effort: this.state.effort });
+    const write = () => this.persistence.write(value);
+    this.savePending = this.savePending.then(write, write);
+    return this.savePending;
   }
+  /** Wait for every state snapshot queued before this call to reach device storage. */
+  flushPersistence() { return this.savePending; }
   /**
    * Keeps the chosen effort legal for the chosen model. An unknown model is not
    * proof that it has no levels - before the catalogue answers, every model is
@@ -63,9 +89,11 @@ export class VibesStore {
   setModel(model: string) {
     this.update({ model });
     this.reconcileEffort(model);
-    void this.save();
+    void this.save().catch(error => this.error(error));
   }
-  setEffort(effort: Effort | null) { this.update({ effort }); void this.save(); }
+  setEffort(effort: Effort | null) {
+    this.update({ effort }); this.reconcileEffort(); void this.save().catch(error => this.error(error));
+  }
   // Models are a menu, not account state: they load on their own so a failed
   // wallet call, a signed-out phone or a backend without the route still offers
   // the full list rather than Auto alone.
@@ -79,13 +107,15 @@ export class VibesStore {
   };
   refresh = () => {
     if (this.refreshPromise) return this.refreshPromise;
-    this.refreshPromise = this.load().finally(() => { this.refreshPromise = null; });
+    this.refreshPromise = Promise.resolve(this.prepare?.()).then(() => this.load()).catch(error => {
+      this.update({ ready: false }); this.error(error);
+    }).finally(() => { this.refreshPromise = null; });
     return this.refreshPromise;
   };
   private async load() {
     try {
       const [wallet, chats] = await Promise.all([this.api.wallet(), this.api.chats()]);
-      this.update({ wallet, chats, ready: true, error: null });
+      this.update({ wallet, chats, ready: true, error: null, errorStatus: null, revision: this.state.revision + 1 });
       if (this.state.pending) {
         try {
           const turn = await this.api.turn(this.state.pending);
@@ -105,11 +135,19 @@ export class VibesStore {
   }
   async select(id: string | null) {
     const epoch = ++this.generation;
-    this.update({ selected: id, draftScope: id ?? 'new', turns: id === this.state.selected ? this.state.turns : [] });
+    this.update({ selected: id, draftScope: id ?? 'new', turns: id === this.state.selected ? this.state.turns : [], selectionVersion: epoch });
     await this.save();
     if (!id) return;
+    const terminal = this.state.chats.find(c => c.id === id)?.terminal_model;
+    if (terminal) this.setModel(terminal);
     const turns = await this.api.turns(id);
     if (epoch === this.generation) this.update({ turns });
+  }
+  /** The open chat and any turn waited on belong to an identity this store no longer speaks for. */
+  async forgetChat() {
+    ++this.generation;
+    this.update({ selected: null, draftScope: 'new', turns: [], pending: null });
+    await this.save().catch(error => this.error(error));
   }
   chat(text: string) {
     if (this.state.selected) return Promise.resolve(this.state.selected);
@@ -126,12 +164,19 @@ export class VibesStore {
   }
   async send(quote: string): Promise<boolean> {
     if (this.state.pending || !this.state.ready) return false;
-    const id = this.uuid(); this.update({ pending: id, error: null });
+    const id = this.uuid(); this.update({ pending: id, error: null, errorStatus: null });
+    let dispatched = false;
     try {
       // Persist identity before the network write. Ambiguous sends are reconciled, never repeated.
       await this.save();
+      dispatched = true;
       const turn = await this.api.submit(id, quote);
-      if (this.state.selected === turn.chatId) this.update({ turns: [...this.state.turns, turn] });
+      if (this.state.selected === turn.chatId) {
+        ++this.generation;
+        this.update({ turns: [...this.state.turns.filter(t => t.id !== turn.id), turn] });
+      }
+      // A poll already in flight predates this acceptance and cannot verify its balance.
+      await this.refreshPromise;
       await this.refresh(); return true;
     } catch (e) {
       // Every status here is proof the submission was refused before a turn row
@@ -139,8 +184,8 @@ export class VibesStore {
       // is never coming. 429 is on the list for both of its senders: the route's
       // own throttle rejects ahead of the controller, and a usage window rejects
       // inside `Turns::submit` before anything is written.
-      if (e instanceof VibesError && [400, 401, 402, 403, 409, 422, 429].includes(e.status)) {
-        this.update({ pending: null }); await this.save();
+      if (!dispatched || e instanceof VibesError && [400, 401, 402, 403, 404, 405, 409, 422, 429].includes(e.status)) {
+        this.update({ pending: null }); await this.save().catch(() => {});
       }
       this.error(e); return false;
     }

@@ -6,7 +6,7 @@ import { probePlan } from './probeTargets';
 
 import { startProbeSearch } from './probeSearch';
 
-/** Expo Go fallback. Native builds use Bonjour's live service list. */
+/** Bounded LAN probe for Expo Go and native Bonjour recovery. */
 export function startProbe(onUpdate: (update: DiscoveryUpdate) => void) {
   return startProbeSearch(resolvePlan, probeIdentity, onUpdate);
 }
@@ -18,7 +18,10 @@ async function resolvePlan() {
   // construction, since the app itself arrived over it. The device's own
   // address supplements it, and can name the wrong interface on a Mac with
   // several, so it does not lead.
-  return probePlan([expo?.hostUri, Constants.expoGoConfig?.debuggerHost,
-    await deviceAddress(), page]);
+  return probePlan([
+    expo?.hostUri,
+    Constants.expoGoConfig?.debuggerHost,
+    await deviceAddress(),
+    page,
+  ]);
 }
-

@@ -1,66 +1,143 @@
-import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Linking, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { TextLink } from '../onboarding/OnboardingScaffold';
 import { useTheme } from '../theme';
+import { useAppear } from '../ui/motion';
 import { Button, Hint } from '../ui/primitives';
 import { useAction } from '../ui/useAction';
+import { useReducedMotion } from '../ui/useReducedMotion';
+import type { MachineFrame } from './ComputerHandoff';
+import { confirmedComputer, sameComputer } from './confirmation';
 import { ComputerRow } from './ComputerRow';
+import { CloudComputers } from './CloudComputers';
 import { describeSearch } from './describeSearch';
 import type { NearbyComputer, SearchNetwork } from './discoveryTypes';
+import type { CloudComputer } from '../remote/remoteApi';
+import type { WorkspaceModel } from '../ui/types';
+import { FoundComputer } from './FoundComputer';
 import { isConnectable } from './nearbyPairing';
+import { SearchSignal, type SignalMode } from './SearchSignal';
 import { useComputerDiscovery } from './useComputerDiscovery';
+import { font, GUTTER } from '../ui/font';
 
-// The beat between a computer landing on the list and the connection starting.
-// Long enough to read what was found, short enough to feel automatic.
-const HANDOFF = 1300;
+// Every search is seen to happen: its answer, found or not, waits this long, so
+// a computer that replies at once still reads as "looked, then found".
+const MIN_SEARCH = 2500;
 
 /** Searches every link this phone has, the moment the screen appears — which is
  *  also what makes iOS present its Local Network alert. There is no code to
- *  enter: one resolved computer hands itself off to the connection screen, and
- *  several are offered as a list. The words carry the state; the only moving
- *  part is the system spinner that says a search is still running. */
-export function DiscoveryStep({ onSelect, onBack }: {
-  onSelect: (computer: NearbyComputer) => void; onBack: () => void;
+ *  enter. The search shows for at least MIN_SEARCH; then one resolved computer
+ *  is put to the person to confirm and several are offered as a list. Nothing
+ *  connects until someone picks. The words carry the state, and the signal art
+ *  under them is its live face: rings leave the phone only while a search is
+ *  genuinely running, a found computer lands on the ring and answers, and the
+ *  art rests still when there is nothing to look for. One computer to confirm
+ *  takes the stage over (`FoundComputer`): the laptop from the ring, up close
+ *  and opening, so finding is seen as well as read. */
+export function DiscoveryStep({ workspace, onCloud, onSelect, onBack }: {
+  workspace?: WorkspaceModel;
+  onCloud?: (computer: CloudComputer) => void;
+  onSelect: (computer: NearbyComputer, frame?: MachineFrame) => void;
+  onBack: () => void;
 }) {
   const { colors } = useTheme();
-  const { status, computers, networks, elapsed, start, stop, available } = useComputerDiscovery({ auto: true });
-  const looking = status === 'searching';
+  const { height } = useWindowDimensions();
+  const compact = height < 780;
+  const still = useReducedMotion();
+  const departure = useRef(new Animated.Value(1)).current;
+  const stageRef = useRef<View>(null);
+  const choosing = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; departure.stopAnimation(); }; }, [departure]);
+  const discovery = useComputerDiscovery({ auto: true });
+  const { networks, elapsed, start, stop, available } = discovery;
   const { error, run } = useAction();
-  const denied = status === 'denied';
-  const quiet = status === 'finished' || status === 'failed';
-  const unavailable = !available || status === 'unavailable';
-  const ready = computers.filter(isConnectable);
-  const only = computers.length === 1 && ready.length === 1 ? ready[0] : null;
-  const handoff = useRef(() => {});
-  handoff.current = () => { if (only) { stop(); onSelect(only); } };
+  const [round, setRound] = useState(0);
+  const [held, setHeld] = useState(true);
+  // "Not my computer" hides it for as long as this screen is open, later searches included.
+  const [rejected, setRejected] = useState<string[]>([]);
+  const [confirmed, setConfirmed] = useState<NearbyComputer | null>(null);
   useEffect(() => {
-    if (!only) return;
-    const timer = setTimeout(() => handoff.current(), HANDOFF);
+    setHeld(true);
+    const timer = setTimeout(() => setHeld(false), MIN_SEARCH);
     return () => clearTimeout(timer);
-  }, [only?.id]);
+  }, [round]);
+  const denied = discovery.status === 'denied';
+  const unavailable = !available || discovery.status === 'unavailable';
+  // Being blocked is said at once; only the answer to a search waits.
+  const holding = held && !denied && !unavailable;
+  const status = holding ? 'searching' : discovery.status;
+  const computers = holding ? [] : discovery.computers.filter(computer => !rejected.includes(computer.id));
+  const quiet = status === 'finished' || status === 'failed';
+  const ready = computers.filter(isConnectable);
+  const single = computers.length === 1 && ready.length === 1 ? ready[0] : null;
+  const latest = confirmedComputer(confirmed, computers, single);
+  useEffect(() => {
+    if (latest) setConfirmed(previous => previous && sameComputer(previous, latest) ? previous : latest);
+  }, [latest]);
+  const only = denied || unavailable ? null : latest;
+  const again = () => { setConfirmed(null); setRound(value => value + 1); start(); };
+  const choose = (computer: NearbyComputer) => {
+    if (choosing.current) return;
+    choosing.current = true;
+    stop();
+    const selected = (frame?: MachineFrame) => {
+      if (!mounted.current) return;
+      if (still) { onSelect(computer, frame); return; }
+      Animated.timing(departure, { toValue: 0, duration: 140, useNativeDriver: true, isInteraction: false })
+        .start(({ finished }) => { if (finished && mounted.current) onSelect(computer, frame); });
+    };
+    if (only?.id === computer.id && stageRef.current) {
+      stageRef.current.measureInWindow((x, y, width, height) => selected(width > 0 ? { x, y, width, height } : undefined));
+    } else selected();
+  };
+  // Found means connectable: a computer still being resolved keeps the phone calling.
+  const mode: SignalMode = unavailable || quiet ? 'quiet' : denied ? 'blocked'
+    : ready.length ? 'found' : 'searching';
   const copy = describeSearch({ unavailable, denied, status, computers, only, elapsed });
   return <View style={s.body}>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
-      <View style={s.heading} accessibilityLiveRegion="polite">
-        <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>{copy.title}</Text>
-        <Text style={[s.detail, { color: colors.muted }]}>{copy.detail}</Text>
-      </View>
-      {looking && <ActivityIndicator color={colors.muted} style={s.spinner} />}
-      {!unavailable && <Networks networks={networks} />}
-      {!only && computers.length > 0 && <View style={[s.results, { borderTopColor: colors.border }]}>
-        {computers.map(computer => <ComputerRow key={computer.id} computer={computer}
-          onPress={() => { stop(); onSelect(computer); }} />)}
-      </View>}
+      <Animated.View style={{ opacity: departure }}><Heading key={copy.title} title={copy.title} detail={copy.detail} /></Animated.View>
+      {only ? <FoundComputer key={only.id} computer={only} compact={compact} stageRef={stageRef} labelOpacity={departure} /> : <>
+        <View style={s.stage}>
+          <SearchSignal mode={mode} computers={computers} size={compact ? 172 : 224} />
+        </View>
+        {!unavailable && <Networks networks={networks} />}
+        {!ready.length && workspace && onCloud &&
+          <CloudComputers workspace={workspace} onSelect={onCloud} connectableOnly />}
+        {computers.length > 0 && <View style={[s.results, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {computers.map((computer, index) => <ComputerRow key={computer.id} computer={computer} first={index === 0}
+            onPress={() => choose(computer)} />)}
+        </View>}
+      </>}
     </ScrollView>
-    <View style={s.actions}>
+    <Animated.View style={[s.actions, { opacity: departure }]}>
       {error && <Hint error>{error}</Hint>}
-      {denied ? <><Button title="Open Settings" onPress={() => { void run(() => Linking.openSettings()); }} />
-        <TextLink title="Search again" onPress={start} /></>
-        // Joining a network makes an unavailable search work, so offer the retry.
-        : quiet || unavailable ? <Button title="Search again" onPress={start} /> : null}
-      <TextLink title="Back to setup" onPress={() => { stop(); onBack(); }} />
-    </View>
+      {only ? <><Button title="Yes, connect" onPress={() => choose(only)} />
+        <TextLink title="Not my computer"
+          onPress={() => { setConfirmed(null); setRejected(ids => [...ids, only.id]); }} /></>
+        : denied ? <><Button title="Open Settings" onPress={() => { void run(() => Linking.openSettings()); }} />
+          <TextLink title="Search again" onPress={again} /></>
+          // Joining a network makes an unavailable search work, so offer the retry.
+          : quiet || unavailable ? <Button title="Search again" onPress={again} /> : null}
+      {/* Confirming is a yes or no; setup is back in reach the moment it is a no. */}
+      {!only && <TextLink title="Back to setup" onPress={() => { stop(); onBack(); }} />}
+    </Animated.View>
   </View>;
+}
+
+/** The title and its line. Keyed on the title by the caller, so a change of
+ *  state — looking, then found — is a change someone sees: the new words rise
+ *  into place as the picture under them changes. */
+function Heading({ title, detail }: { title: string; detail: string }) {
+  const { colors } = useTheme();
+  const appear = useAppear(useReducedMotion());
+  return <Animated.View style={[s.heading, { opacity: appear,
+    transform: [{ translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}
+    accessibilityLiveRegion="polite">
+    <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>{title}</Text>
+    <Text style={[s.detail, { color: colors.muted }]}>{detail}</Text>
+  </Animated.View>;
 }
 
 /** The links the search is covering, named the way someone would name them.
@@ -84,13 +161,13 @@ const s = StyleSheet.create({
   body: { flex: 1 },
   // Top-aligned, never centred: centring a scroll container that overflows
   // pushes the title out of reach once several computers are listed.
-  content: { flexGrow: 1, paddingHorizontal: 26, paddingTop: 8, paddingBottom: 12, gap: 20 },
-  heading: { gap: 10 },
-  title: { fontSize: 28, lineHeight: 34, fontWeight: '600', letterSpacing: -0.8 },
-  detail: { fontSize: 15, lineHeight: 22, maxWidth: 340 },
-  spinner: { alignSelf: 'flex-start' },
-  networks: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  network: { fontSize: 13 },
-  results: { borderTopWidth: StyleSheet.hairlineWidth },
-  actions: { paddingHorizontal: 26, paddingTop: 10, paddingBottom: 8, gap: 6 },
+  content: { flexGrow: 1, paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 12, gap: 20 },
+  heading: { gap: 8 },
+  title: { ...font.title, fontSize: 28, lineHeight: 34, letterSpacing: -0.8 },
+  detail: { ...font.subhead, fontSize: 15, lineHeight: 21, maxWidth: 340 },
+  stage: { alignItems: 'center', paddingVertical: 4 },
+  networks: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14 },
+  network: { ...font.footnote, fontWeight: '500' },
+  results: { borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  actions: { paddingHorizontal: GUTTER, paddingTop: 10, paddingBottom: 8, gap: 6 },
 });

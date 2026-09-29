@@ -21,8 +21,9 @@ final class ComputerBrowser {
     let id: String
     let name: String
     let hostId: String?
+    let platform: String?
     let via: String?
-    let endpoint: NWEndpoint
+    let endpoints: [NWEndpoint]
   }
 
   init() {
@@ -97,23 +98,31 @@ final class ComputerBrowser {
   }
 
   private func accept(_ results: Set<NWBrowser.Result>) {
-    var candidates: [String: Candidate] = [:]
+    var grouped: [String: [NWBrowser.Result]] = [:]
     for result in results {
       guard case let .service(name, type, domain, _) = result.endpoint else { continue }
       let hostId = Self.hostId(from: result.metadata)
       let id = hostId ?? "\(name).\(type).\(domain)"
-      // The same identity advertised on two links is one computer. Prefer the
-      // existing endpoint so repeated updates cannot move a pending tap.
-      if let existing = found[id], results.contains(where: { $0.endpoint == existing.endpoint }) {
-        candidates[id] = existing
-        continue
+      grouped[id, default: []].append(result)
+    }
+    var candidates: [String: Candidate] = [:]
+    for (id, matches) in grouped {
+      // Keep one visible computer per key, but let resolution try every link.
+      // An unreachable VPN or peer-to-peer service must not mask Wi-Fi.
+      let ordered = matches.sorted { String(describing: $0.endpoint) < String(describing: $1.endpoint) }
+      guard let first = ordered.first,
+            case let .service(name, _, _, _) = first.endpoint else { continue }
+      var endpoints: [NWEndpoint] = []
+      for match in ordered where !endpoints.contains(match.endpoint) {
+        endpoints.append(match.endpoint)
       }
       candidates[id] = Candidate(
         id: id,
         name: String(name.prefix(128)),
-        hostId: hostId,
-        via: NetworkScope.kind(of: result.interfaces),
-        endpoint: result.endpoint
+        hostId: Self.hostId(from: first.metadata),
+        platform: Self.platform(from: first.metadata),
+        via: NetworkScope.kind(of: first.interfaces),
+        endpoints: endpoints
       )
     }
     // Keep the browse bounded and stable for the list the person is tapping.
@@ -125,7 +134,7 @@ final class ComputerBrowser {
   }
 
   private func resolveFound() {
-    resolver.update(Dictionary(uniqueKeysWithValues: found.values.map { ($0.id, $0.endpoint) }))
+    resolver.update(Dictionary(uniqueKeysWithValues: found.values.map { ($0.id, $0.endpoints) }))
   }
 
   /// The Host advertises its static public key, which is also its `hostId`.
@@ -136,6 +145,18 @@ final class ComputerBrowser {
           case let .string(value) = record.getEntry(for: "id"),
           value.count == 64,
           value.allSatisfy({ $0.isHexDigit && ($0.isNumber || $0.isLowercase) })
+    else { return nil }
+    return value
+  }
+
+  /// The Host's OS family (`macos`, `windows`, `linux`), which only decides
+  /// which computer the phone draws. Anything but a short lowercase word is
+  /// dropped, so a record cannot put arbitrary text on the screen.
+  private static func platform(from metadata: NWBrowser.Result.Metadata) -> String? {
+    guard case let .bonjour(record) = metadata,
+          case let .string(value) = record.getEntry(for: "os"),
+          !value.isEmpty, value.count <= 16,
+          value.allSatisfy({ $0.isLetter && $0.isLowercase && $0.isASCII })
     else { return nil }
     return value
   }
@@ -152,6 +173,7 @@ final class ComputerBrowser {
       .map { candidate in
         var value: [String: Any] = ["id": candidate.id, "name": candidate.name]
         if let hostId = candidate.hostId { value["hostId"] = hostId }
+        if let platform = candidate.platform { value["platform"] = platform }
         if let via = candidate.via { value["via"] = via }
         if let address = resolver.address(for: candidate.id) {
           value["host"] = address.host

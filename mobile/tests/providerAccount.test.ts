@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 import { createAccountApi, type ProviderApi, type AccountSession } from '../src/account/accountApi';
 import { browserProvider } from '../src/account/browserProvider';
 import { runtimeHarness } from './runtimeHarness';
+import { UK_SIGNUP_ACCEPTANCE } from '../src/account/legalAcceptance';
 
 const session: AccountSession = { token: 'provider-token', user: { email: 'test@example.com', name: 'Test', plan: 'free' } };
+const flowSecret = 'a'.repeat(64);
 function apiHarness(payloads: unknown[]) {
   const calls: { url: string; init?: RequestInit }[] = [];
   const api = createAccountApi({ baseUrl: 'https://example.test', deviceName: 'iPhone',
+    newFlowSecret: async () => flowSecret,
     fetch: (async (url, init) => { calls.push({ url: String(url), init });
       return new Response(JSON.stringify(payloads.shift()), { status: 200 }); }) as typeof fetch });
   return { api, calls };
@@ -20,18 +23,32 @@ test('Apple exchanges its single-use challenge and identity token, never a devic
     provider: 'apple', identityToken: 'signed-identity', challengeId: 'challenge', name: 'Test', deviceName: 'iPhone',
   });
 });
+test('new Apple and browser accounts carry explicit legal and adult attestations', async () => {
+  const apple = apiHarness([{ ok: true, ...session }]);
+  await apple.api.providerToken('signed-identity', 'challenge', 'Test', undefined, UK_SIGNUP_ACCEPTANCE);
+  assert.deepEqual(JSON.parse(String(apple.calls[0].init?.body)), {
+    provider: 'apple', identityToken: 'signed-identity', challengeId: 'challenge', name: 'Test',
+    deviceName: 'iPhone', ...UK_SIGNUP_ACCEPTANCE,
+  });
+  const google = apiHarness([{ ok: true, flowId: 'secret', authUrl: 'https://accounts.google.com/o/oauth2/v2/auth' }]);
+  await google.api.startProvider('google', undefined, UK_SIGNUP_ACCEPTANCE);
+  assert.deepEqual(JSON.parse(String(google.calls[0].init?.body)),
+    { deviceName: 'iPhone', ...UK_SIGNUP_ACCEPTANCE, flowSecret });
+});
 test('browser flow accepts only the selected provider HTTPS origin and requires a complete session', async () => {
   const { api, calls } = apiHarness([{ ok: true, flowId: 'secret', authUrl: 'https://accounts.google.com/o/oauth2/v2/auth' },
     { ok: true, status: 'pending' }, { ok: true, status: 'complete', ...session }]);
   assert.equal((await api.startProvider('google')).flowId, 'secret');
-  assert.deepEqual(JSON.parse(String(calls[0].init?.body)), { deviceName: 'iPhone' });
-  assert.equal(await api.pollProvider('google', 'secret'), null);
-  assert.deepEqual(await api.pollProvider('google', 'secret'), session);
+  assert.deepEqual(JSON.parse(String(calls[0].init?.body)), { deviceName: 'iPhone', flowSecret });
+  assert.equal(await api.pollProvider('google', 'secret', flowSecret), null);
+  assert.deepEqual(await api.pollProvider('google', 'secret', flowSecret), session);
+  assert.equal((calls[1].init?.headers as Record<string, string>)['X-Vibyra-Flow-Secret'], flowSecret);
+  assert.equal((calls[2].init?.headers as Record<string, string>)['X-Vibyra-Flow-Secret'], flowSecret);
   for (const url of ['http://accounts.google.com/auth', 'https://evil.test/auth', 'https://appleid.apple.com/auth',
     'https://accounts.google.com@evil.test/auth', 'https://user:password@accounts.google.com/auth']) {
     await assert.rejects(apiHarness([{ ok: true, flowId: 'secret', authUrl: url }]).api.startProvider('google'), /unexpected sign-in address/);
   }
-  await assert.rejects(apiHarness([{ ok: true, status: 'complete' }]).api.pollProvider('google', 'secret'), /unexpected session/);
+  await assert.rejects(apiHarness([{ ok: true, status: 'complete' }]).api.pollProvider('google', 'secret', flowSecret), /unexpected session/);
   await assert.rejects(apiHarness([{ ok: true, challengeId: '', nonce: '' }]).api.appleChallenge(), /could not start/);
 });
 function browserHarness() {
@@ -40,7 +57,7 @@ function browserHarness() {
   let dismissed = false;
   const browser = { open: (url: string) => { calls.push(url); }, closed: () => dismissed, close: () => { calls.push('close'); } };
   const api: ProviderApi = { appleChallenge: async () => ({ nonce: '', challengeId: '' }), providerToken: async () => session,
-    startProvider: async () => ({ flowId: 'secret', authUrl: 'https://accounts.google.com/auth' }), pollProvider: async () => session };
+    startProvider: async () => ({ flowId: 'secret', authUrl: 'https://accounts.google.com/auth', flowSecret }), pollProvider: async () => session };
   return { api, browser, calls, controller, dismiss: () => { dismissed = true; } };
 }
 test('provider polling closes the browser on success, cancellation, expiry and errors', async () => {
@@ -81,7 +98,7 @@ test('cancelling an in-flight provider request returns without a session and clo
   const h = browserHarness();
   let ready!: () => void;
   const started = new Promise<void>(resolve => { ready = resolve; });
-  h.api.pollProvider = async (_provider, _flow, signal) => new Promise((_resolve, reject) => {
+  h.api.pollProvider = async (_provider, _flow, _secret, signal) => new Promise((_resolve, reject) => {
     signal!.addEventListener('abort', () => reject(new Error('Request aborted')), { once: true });
     ready();
   });

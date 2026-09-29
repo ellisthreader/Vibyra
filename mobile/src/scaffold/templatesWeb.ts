@@ -39,7 +39,7 @@ export const WEB_TEMPLATES: ProjectTemplate[] = [
     blurb: 'Three files and no build step', seeds: PLAIN_HTML_SEEDS }),
   template({ id: 'laravel', kinds: ['webapp', 'backend'], name: 'Laravel',
     blurb: 'PHP with routing, an ORM and a full toolkit', requires: ['composer'], docs: 'https://getcomposer.org/download/',
-    steps: [create('Creating the Laravel app', 'composer', ['create-project', 'laravel/laravel', '{{name}}'])] }),
+    steps: [create('Creating the Laravel app', 'composer', ['create-project', '--no-interaction', 'laravel/laravel', '{{name}}'])] }),
   template({ id: 'django', kinds: ['webapp', 'backend'], name: 'Django',
     blurb: 'Python with an admin, an ORM and batteries included', requires: ['python3'], docs: 'https://www.python.org/downloads/',
     steps: [create('Creating a virtual environment', 'python3', ['-m', 'venv', '.venv'], 'project'),

@@ -1,0 +1,464 @@
+[
+  {
+    "vendor": "aion-labs",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/aionlabs-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "aion-labs-light.png"
+  },
+  {
+    "vendor": "aion-labs",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/aionlabs-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "aion-labs-dark.png"
+  },
+  {
+    "vendor": "anthracite-org",
+    "theme": "light",
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/658a46cbfb9c2bdfae75b3a6/HDYkduzAwQRNHuRl5eYdP.png",
+    "source": "Creator’s public Hugging Face profile",
+    "file": "anthracite-org-light.png"
+  },
+  {
+    "vendor": "arcee-ai",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/arcee-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "arcee-ai-light.png"
+  },
+  {
+    "vendor": "arcee-ai",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/arcee-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "arcee-ai-dark.png"
+  },
+  {
+    "vendor": "baidu",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/baidu-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "baidu-light.png"
+  },
+  {
+    "vendor": "baidu",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/baidu-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "baidu-dark.png"
+  },
+  {
+    "vendor": "bytedance",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/bytedance-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "bytedance-light.png"
+  },
+  {
+    "vendor": "bytedance",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/bytedance-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "bytedance-dark.png"
+  },
+  {
+    "vendor": "cohere",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/cohere-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "cohere-light.png"
+  },
+  {
+    "vendor": "cohere",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/cohere-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "cohere-dark.png"
+  },
+  {
+    "vendor": "dots-studio",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/dotsstudio.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "dots-studio-light.png"
+  },
+  {
+    "vendor": "dots-studio",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/dotsstudio.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "dots-studio-dark.png"
+  },
+  {
+    "vendor": "fireworks",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/fireworks-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "fireworks-light.png"
+  },
+  {
+    "vendor": "fireworks",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/fireworks-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "fireworks-dark.png"
+  },
+  {
+    "vendor": "gryphe",
+    "theme": "light",
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/64ae4107ad6218d51a2a7d0c/3dcor68aYBKEcTlOUHJpK.png",
+    "source": "Creator’s public Hugging Face profile",
+    "file": "gryphe-light.png"
+  },
+  {
+    "vendor": "ibm-granite",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/ibm.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "ibm-granite-light.png"
+  },
+  {
+    "vendor": "ibm-granite",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/ibm.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "ibm-granite-dark.png"
+  },
+  {
+    "vendor": "inception",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/inception.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "inception-light.png"
+  },
+  {
+    "vendor": "inception",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/inception.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "inception-dark.png"
+  },
+  {
+    "vendor": "inclusionai",
+    "theme": "light",
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.inclusion-ai.org/&size=256",
+    "source": "OpenRouter company icon",
+    "file": "inclusionai-light.png"
+  },
+  {
+    "vendor": "inference-net",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/inference.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "inference-net-light.png"
+  },
+  {
+    "vendor": "inference-net",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/inference.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "inference-net-dark.png"
+  },
+  {
+    "vendor": "kwaipilot",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/kwaipilot-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "kwaipilot-light.png"
+  },
+  {
+    "vendor": "kwaipilot",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/kwaipilot-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "kwaipilot-dark.png"
+  },
+  {
+    "vendor": "liquid",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/liquid.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "liquid-light.png"
+  },
+  {
+    "vendor": "liquid",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/liquid.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "liquid-dark.png"
+  },
+  {
+    "vendor": "meituan",
+    "theme": "light",
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/68a2a29ab9d4c5698e02c747/CDCAx7X7rXDt7xjI-DoxG.png",
+    "source": "Creator’s public Hugging Face profile",
+    "file": "meituan-light.png"
+  },
+  {
+    "vendor": "morph",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/morph-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "morph-light.png"
+  },
+  {
+    "vendor": "morph",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/morph-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "morph-dark.png"
+  },
+  {
+    "vendor": "nousresearch",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/nousresearch.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "nousresearch-light.png"
+  },
+  {
+    "vendor": "nousresearch",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/nousresearch.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "nousresearch-dark.png"
+  },
+  {
+    "vendor": "openrouter",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/openrouter.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "openrouter-light.png"
+  },
+  {
+    "vendor": "openrouter",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/openrouter.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "openrouter-dark.png"
+  },
+  {
+    "vendor": "perceptron",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/perceptron.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "perceptron-light.png"
+  },
+  {
+    "vendor": "perceptron",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/perceptron.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "perceptron-dark.png"
+  },
+  {
+    "vendor": "poolside",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/poolside-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "poolside-light.png"
+  },
+  {
+    "vendor": "poolside",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/poolside-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "poolside-dark.png"
+  },
+  {
+    "vendor": "prism-ml",
+    "theme": "light",
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/6920b71747acb07530915d41/mEaEo0tgAYZn-NB6S-nuP.png",
+    "source": "Creator’s public Hugging Face profile",
+    "file": "prism-ml-light.png"
+  },
+  {
+    "vendor": "rekaai",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/reka.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "rekaai-light.png"
+  },
+  {
+    "vendor": "rekaai",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/reka.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "rekaai-dark.png"
+  },
+  {
+    "vendor": "relace",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/relace.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "relace-light.png"
+  },
+  {
+    "vendor": "relace",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/relace.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "relace-dark.png"
+  },
+  {
+    "vendor": "sakana",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/sakana-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "sakana-light.png"
+  },
+  {
+    "vendor": "sakana",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/sakana-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "sakana-dark.png"
+  },
+  {
+    "vendor": "sao10k",
+    "theme": "light",
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/64be6a5376a6e2efccc638c1/gvRRLHsicTCxpURJeQDv3.jpeg",
+    "source": "Creator’s public Hugging Face profile",
+    "file": "sao10k-light.png"
+  },
+  {
+    "vendor": "stealth",
+    "theme": "light",
+    "url": "https://openrouter.ai/images/icons/Stealth.svg",
+    "source": "OpenRouter company icon",
+    "file": "stealth-light.png"
+  },
+  {
+    "vendor": "stepfun",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/stepfun-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "stepfun-light.png"
+  },
+  {
+    "vendor": "stepfun",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/stepfun-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "stepfun-dark.png"
+  },
+  {
+    "vendor": "tencent",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/tencent-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "tencent-light.png"
+  },
+  {
+    "vendor": "tencent",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/tencent-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "tencent-dark.png"
+  },
+  {
+    "vendor": "thedrummer",
+    "theme": "light",
+    "url": "https://openrouter.ai/images/icons/TheDrummer.png",
+    "source": "OpenRouter company icon",
+    "file": "thedrummer-light.png"
+  },
+  {
+    "vendor": "thinkingmachines",
+    "theme": "light",
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://thinkingmachines.ai/&size=256",
+    "source": "OpenRouter company icon",
+    "file": "thinkingmachines-light.png"
+  },
+  {
+    "vendor": "typesafe",
+    "theme": "light",
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://typesafe.ai&size=256",
+    "source": "OpenRouter company icon",
+    "file": "typesafe-light.png"
+  },
+  {
+    "vendor": "unbiased",
+    "theme": "light",
+    "url": "https://openrouter.ai/images/icons/Unbiased.png",
+    "source": "OpenRouter company icon",
+    "file": "unbiased-light.png"
+  },
+  {
+    "vendor": "undi95",
+    "theme": "light",
+    "url": "https://cdn-avatars.huggingface.co/v1/production/uploads/63ab1241ad514ca8d1430003/9UwuBl5D-GuIJKIOVHm3Z.png",
+    "source": "Creator’s public Hugging Face profile",
+    "file": "undi95-light.png"
+  },
+  {
+    "vendor": "upstage",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/upstage-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "upstage-light.png"
+  },
+  {
+    "vendor": "upstage",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/upstage-color.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "upstage-dark.png"
+  },
+  {
+    "vendor": "writer",
+    "theme": "light",
+    "url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://writer.com/&size=256",
+    "source": "OpenRouter company icon",
+    "file": "writer-light.png"
+  },
+  {
+    "vendor": "xiaomi",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/xiaomimimo.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "xiaomi-light.png"
+  },
+  {
+    "vendor": "xiaomi",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/xiaomimimo.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "xiaomi-dark.png"
+  },
+  {
+    "vendor": "z-ai",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/zai.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "z-ai-light.png"
+  },
+  {
+    "vendor": "z-ai",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/zai.png",
+    "source": "Lobe Icons (MIT)",
+    "file": "z-ai-dark.png"
+  },
+  {
+    "vendor": "mancer",
+    "theme": "light",
+    "url": "https://mancer.tech/resources/Phantom%20Favicon.svg",
+    "source": "Mancer website favicon",
+    "file": "mancer-light.png"
+  },
+  {
+    "vendor": "cognitivecomputations",
+    "theme": "light",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/light/dolphin.png",
+    "source": "Lobe Icons (MIT), Dolphin model family",
+    "file": "cognitivecomputations-light.png"
+  },
+  {
+    "vendor": "cognitivecomputations",
+    "theme": "dark",
+    "url": "https://raw.githubusercontent.com/lobehub/lobe-icons/329f378cbd1a88f45b60cd096b9111ce16f3ea39/packages/static-png/dark/dolphin.png",
+    "source": "Lobe Icons (MIT), Dolphin model family",
+    "file": "cognitivecomputations-dark.png"
+  }
+]

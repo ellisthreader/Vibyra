@@ -11,7 +11,8 @@ const out = '/tmp/vibyra-vibes-screenshots'; await mkdir(out, { recursive: true 
 const bundle = await build({ absWorkingDir: fileURLToPath(new URL('..', import.meta.url)),
   entryPoints: ['tests/vibesBrowserFixture.tsx'], bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
   resolveExtensions: ['.web.tsx', '.web.ts', '.web.jsx', '.web.js', '.tsx', '.ts', '.jsx', '.js', '.json'],
-  alias: { 'react-native': 'react-native-web' }, define: { 'process.env.NODE_ENV': '"development"', 'process.env': '{}', __DEV__: 'true' },
+  // `expo` itself starts Metro's hot-reload client; the pickers only need the core.
+  alias: { 'react-native': 'react-native-web', expo: 'expo-modules-core' }, define: { 'process.env.NODE_ENV': '"development"', 'process.env': '{}', __DEV__: 'true', global: 'globalThis' },
   loader: { '.js': 'jsx', '.ttf': 'dataurl', '.png': 'dataurl' },
   plugins: [{ name: 'font-server-context', setup(b) {
     b.onResolve({ filter: /^node:async_hooks$/ }, () => ({ path: 'async-hooks', namespace: 'fixture' }));
@@ -31,14 +32,11 @@ try {
       const page = await browser.newPage({ viewport: { width, height }, reducedMotion: 'reduce' });
       const errors = []; page.on('pageerror', e => errors.push(e.message));
       await page.goto(`${url}/?theme=${theme}`);
-      await page.getByText('3 Vibes', { exact: true }).waitFor();
+      await page.getByRole('textbox', { name: 'Message Vibyra AI' }).waitFor();
+      // The chat shows no balance: it lives in the rail and in Settings, which
+      // `verify-wallet-ui.mjs` covers, so the chat and the wallet cannot break together.
+      assert.equal(await page.getByText(/\bVibes?\b/).count(), 0, 'No Vibes on the chat page before anything is typed');
       await capture(page, `${out}/${size}-${theme}-home.png`);
-      // The chip has to land on the balance page. What the page itself then says is
-      // `verify-wallet-ui.mjs`, so the AI home and the wallet cannot break together.
-      await page.getByRole('button', { name: 'Open Vibes balance' }).click();
-      await page.getByRole('heading', { name: 'Your Vibes', exact: true }).waitFor();
-      await capture(page, `${out}/${size}-${theme}-wallet.png`);
-      await page.getByRole('button', { name: 'Back to chat' }).click();
       await checkPicker(page, capture, out, `${size}-${theme}`);
       await page.getByRole('textbox', { name: 'Message Vibyra AI' }).fill('Help me design a simple welcome screen.');
       await page.getByText('This reply uses up to 2 Vibes', { exact: true }).waitFor();
@@ -65,10 +63,12 @@ try {
   }
   for (const state of ['consent', 'failure']) {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 } });
-    await page.goto(`${url}/?state=${state}&purchase=${state}`); await page.getByText('3 Vibes', { exact: true }).waitFor();
+    await page.goto(`${url}/?state=${state}&purchase=${state}`); await page.getByRole('textbox', { name: 'Message Vibyra AI' }).waitFor();
     if (state === 'consent') {
       assert.deepEqual(await page.evaluate(() => window.vibesCalls), []);
       await capture(page, `${out}/consent.png`); await page.getByRole('button', { name: 'Allow AI processing' }).click();
+      // A project is one of the things the composer's + adds.
+      await page.getByRole('button', { name: 'Add to chat' }).click();
       await page.getByRole('button', { name: 'Attach a project' }).waitFor();
       assert.deepEqual(await page.evaluate(() => window.vibesCalls), ['consent']);
     } else {
@@ -81,10 +81,51 @@ try {
     }
     await page.close(); console.log(`PASS ${state}`);
   }
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 } });
+    await page.goto(`${url}/?account=guest&state=consent`);
+    await page.getByRole('textbox', { name: 'Message Vibyra AI' }).waitFor();
+    const input = page.getByRole('textbox', { name: 'Message Vibyra AI' });
+    await input.fill('Build a timer as a guest.');
+    assert.equal(await input.inputValue(), 'Build a timer as a guest.');
+    assert.equal(await page.getByText(/Verify your email/).count(), 0, 'a guest is not email-gated');
+    await page.getByRole('button', { name: 'Allow AI processing' }).click();
+    await page.getByText('This reply uses up to 2 Vibes', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await page.getByText('1 Vibe used', { exact: true }).waitFor();
+    assert.deepEqual(await page.evaluate(() => window.vibesCalls), ['guest', 'consent', 'submit']);
+    await page.close(); console.log('PASS guest chat');
+  }
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 } });
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    await page.goto(`${url}/?account=guest&state=route-missing`);
+    await page.getByText('Vibyra AI is not available on this server yet.', { exact: true }).waitFor();
+    const input = page.getByRole('textbox', { name: 'Message Vibyra AI' });
+    await input.fill('Keep this draft until the route is ready.');
+    assert.equal(await input.inputValue(), 'Keep this draft until the route is ready.');
+    assert.equal(await page.getByRole('button', { name: 'Send message' }).getAttribute('aria-disabled'), 'true');
+    await page.getByText('Refresh', { exact: true }).click();
+    assert.deepEqual(errors, [], 'retrying an unavailable guest route must not reject outside the store');
+    await capture(page, `${out}/guest-route-missing.png`);
+    await page.close(); console.log('PASS missing route keeps guest draft editable');
+  }
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 667 } });
+    await page.goto(`${url}/?account=guest&state=route-retry`);
+    await page.getByText('Vibyra AI is not available on this server yet.', { exact: true }).waitFor();
+    const input = page.getByRole('textbox', { name: 'Message Vibyra AI' });
+    await input.fill('Retry without losing me.');
+    await page.getByText('Refresh', { exact: true }).click();
+    await page.getByText('This reply uses up to 2 Vibes', { exact: true }).waitFor();
+    assert.equal(await input.inputValue(), 'Retry without losing me.');
+    assert.deepEqual(await page.evaluate(() => window.vibesCalls), ['guest', 'guest']);
+    await page.close(); console.log('PASS guest route retry preserves draft');
+  }
   for (const decision of ['allow', 'decline', 'offline']) {
     const page = await browser.newPage({ viewport: { width: 375, height: 667 }, reducedMotion: 'reduce' });
     await page.goto(`${url}/?state=${decision === 'offline' ? 'offline' : 'edit'}`);
-    await page.getByText('3 Vibes', { exact: true }).waitFor();
+    await page.getByRole('textbox', { name: 'Message Vibyra AI' }).waitFor();
     await page.getByRole('textbox', { name: 'Message Vibyra AI' }).fill('Create a welcome message.');
     await page.getByText('This reply uses up to 2 Vibes', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Send message' }).click();

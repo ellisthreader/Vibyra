@@ -123,8 +123,11 @@ impl Engine {
             return Err("claim control before stopping another device's session".into());
         }
         if let Some(conversation) = state.conversations.get(&session.meta.id) {
-            if let Some(runtime) = &conversation.runtime {
-                runtime.stop();
+            let runtime = conversation.runtime.clone();
+            let thread = conversation.thread_id.clone();
+            drop(state);
+            if let Some(runtime) = runtime {
+                runtime.stop_thread(&thread);
             }
             return Ok(json!({"ok":true}));
         }

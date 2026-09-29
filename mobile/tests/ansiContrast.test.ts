@@ -48,7 +48,7 @@ test('the colours that actually disappeared are the ones now pinned', () => {
 
 test('the theme sent to the terminal carries all sixteen colours, not four', () => {
   for (const [mode, dark] of [['dark', true], ['light', false]] as const) {
-    const { theme } = terminalState('output', true, palettes[mode], dark);
+    const { theme } = terminalState(true, palettes[mode], dark);
     assert.equal(theme.background, palettes[mode].workspace);
     assert.equal(theme.foreground, palettes[mode].text);
     for (const [name, hex] of Object.entries(ansi[mode])) {

@@ -1,7 +1,13 @@
 import type { AccountProvider, ProviderApi } from './accountApi';
 import { browserProvider } from './browserProvider';
+import type { SignupLegalAcceptance } from './legalAcceptance';
 
-export async function signInWithProvider(api: ProviderApi, provider: AccountProvider, signal: AbortSignal) {
+export async function signInWithProvider(
+  api: ProviderApi,
+  provider: AccountProvider,
+  signal: AbortSignal,
+  acceptance?: SignupLegalAcceptance,
+) {
   if (signal.aborted) return null;
   // Reserve the window during the tap so browsers do not block it after the API request.
   const popup = window.open('about:blank', '_blank', 'popup,width=500,height=700');
@@ -11,7 +17,13 @@ export async function signInWithProvider(api: ProviderApi, provider: AccountProv
   signal.addEventListener('abort', close);
   try {
     return await browserProvider(api, provider, signal, {
-      open: url => { popup.location.href = url; }, closed: () => popup.closed, close,
-    });
-  } finally { signal.removeEventListener('abort', close); }
+      open: (url) => {
+        popup.location.href = url;
+      },
+      closed: () => popup.closed,
+      close,
+    }, undefined, undefined, acceptance);
+  } finally {
+    signal.removeEventListener('abort', close);
+  }
 }

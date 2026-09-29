@@ -6,9 +6,12 @@ import type { IntegrationCatalogue, IntegrationsApi } from '../integrations/type
  * but it has no account to connect one to. `enabled: false` is what the page reads to
  * say so, and every write rejects rather than pretending to have succeeded.
  */
-const refuse = async (): Promise<never> => { throw new Error('Sign in to connect an integration.'); };
+const refuse = async (): Promise<never> => {
+  throw new Error('Sign in to connect an integration.');
+};
 const catalogue: IntegrationCatalogue = { enabled: false, integrations: fallbackIntegrations };
 export const sampleIntegrationsApi: IntegrationsApi = {
   catalogue: async () => catalogue,
-  connect: refuse, disconnect: refuse,
+  connect: refuse,
+  disconnect: refuse,
 };

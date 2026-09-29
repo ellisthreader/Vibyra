@@ -10,6 +10,10 @@ test('a model resolves to its own generated artwork', () => {
   assert.equal(modelArtworkKey('openai/gpt-5.6-luna'), 'gpt-5.6-luna');
   assert.equal(modelArtworkKey('google/gemini-3.8-pro'), 'gemini-3.8-pro');
   assert.equal(modelArtworkKey('openai/gpt-6-astra'), 'gpt-6-astra');
+  assert.equal(modelArtworkKey('openai/gpt-6-sol'), 'gpt-6-sol');
+  assert.equal(modelArtworkKey('openai/gpt-6-luna'), 'gpt-6-luna');
+  assert.equal(modelArtworkKey('anthropic/claude-opus-5.5'), 'claude-opus-5.5');
+  assert.equal(modelArtworkKey('anthropic/claude-sonnet-5.5'), 'claude-sonnet-5.5');
 });
 test('a model never wears a sibling’s version number', () => {
   // The match is exact, so none of these can borrow the shorter name's tile.

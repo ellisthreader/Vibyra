@@ -19,7 +19,7 @@ pub(crate) fn spec() -> Value {
 pub(crate) fn valid(questions: &Value) -> bool {
     let Some(questions) = questions
         .as_array()
-        .filter(|q| !q.is_empty() && q.len() <= 3)
+        .filter(|q| !q.is_empty() && q.len() <= 4)
     else {
         return false;
     };

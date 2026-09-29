@@ -1,19 +1,24 @@
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use serde::Serialize;
 
-use crate::parallel::map_parallel;
+use crate::workspace_fingerprint::fingerprint;
 use crate::{CoreError, CoreResult};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SafeWorkspacePreflight {
+    /// False when the folder is not inside a Git work tree. Safe mode branches
+    /// from Git, so a plain folder has nothing to branch from — a fact about
+    /// the folder, not a failure to report.
+    pub repository: bool,
     pub changed_files: usize,
     pub fingerprint: String,
 }
+
+pub(crate) const NOT_A_REPOSITORY: &str =
+    "Safe mode needs a Git repository, and this folder is not one";
 
 pub(crate) struct SafeWorkspaceState {
     pub project: PathBuf,
@@ -41,7 +46,7 @@ pub(crate) fn git_result(output: Output, action: String) -> CoreResult<String> {
     )))
 }
 
-fn command_bytes(repo: &Path, args: &[&str]) -> CoreResult<Vec<u8>> {
+pub(crate) fn command_bytes(repo: &Path, args: &[&str]) -> CoreResult<Vec<u8>> {
     let output = Command::new("git")
         .arg("-C")
         .arg(repo)
@@ -53,38 +58,32 @@ fn command_bytes(repo: &Path, args: &[&str]) -> CoreResult<Vec<u8>> {
     git_result(output, args.join(" ")).map(|_| Vec::new())
 }
 
-fn fingerprint(repo: &Path, status: &[u8]) -> CoreResult<String> {
-    let mut hasher = DefaultHasher::new();
-    command_bytes(repo, &["rev-parse", "HEAD"])?.hash(&mut hasher);
-    status.hash(&mut hasher);
-    command_bytes(repo, &["diff", "--binary", "HEAD", "--", "."])?.hash(&mut hasher);
-    let untracked = command_bytes(repo, &["ls-files", "--others", "--exclude-standard", "-z"])?;
-    let paths: Vec<&[u8]> = untracked
-        .split(|byte| *byte == 0)
-        .filter(|path| !path.is_empty())
-        .collect();
-
-    // Safe mode blocks the terminal launch until this returns, and an
-    // untracked tree can be thousands of files, so read and digest them in
-    // parallel. `map_parallel` preserves order, which keeps the combined
-    // fingerprint deterministic for a given working tree.
-    let digests = map_parallel(&paths, |relative| {
-        let path = repo.join(String::from_utf8_lossy(relative).as_ref());
-        std::fs::read(path).ok().map(|content| {
-            let mut file = DefaultHasher::new();
-            content.hash(&mut file);
-            file.finish()
+/// Whether Safe mode has a repository to branch from. A plain folder answers
+/// `false` rather than erroring: `git` calls it fatal, the launcher does not.
+pub fn is_git_work_tree(project_root: &Path) -> bool {
+    let Ok(project) = project_root.canonicalize() else {
+        return false;
+    };
+    Command::new("git")
+        .arg("-C")
+        .arg(&project)
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .output()
+        .is_ok_and(|output| {
+            output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "true"
         })
-    });
-    for (relative, digest) in paths.iter().zip(digests) {
-        relative.hash(&mut hasher);
-        digest.hash(&mut hasher);
-    }
-    Ok(format!("{:016x}", hasher.finish()))
 }
 
 pub(crate) fn safe_workspace_state(project_root: &Path) -> CoreResult<SafeWorkspaceState> {
     let project = project_root.canonicalize()?;
+    if !is_git_work_tree(&project) {
+        return Err(CoreError::Settings(NOT_A_REPOSITORY.to_string()));
+    }
+    work_tree_state(project)
+}
+
+/// The state of a folder already known to be inside a Git work tree.
+fn work_tree_state(project: PathBuf) -> CoreResult<SafeWorkspaceState> {
     let repo = PathBuf::from(git(&project, &["rev-parse", "--show-toplevel"])?).canonicalize()?;
     let relative = project
         .strip_prefix(&repo)
@@ -99,6 +98,7 @@ pub(crate) fn safe_workspace_state(project_root: &Path) -> CoreResult<SafeWorksp
         .filter(|entry| !entry.is_empty())
         .count();
     let preflight = SafeWorkspacePreflight {
+        repository: true,
         changed_files,
         fingerprint: fingerprint(&repo, &status)?,
     };
@@ -111,5 +111,16 @@ pub(crate) fn safe_workspace_state(project_root: &Path) -> CoreResult<SafeWorksp
 }
 
 pub fn safe_workspace_preflight(project_root: &Path) -> CoreResult<SafeWorkspacePreflight> {
-    Ok(safe_workspace_state(project_root)?.preflight)
+    // Answer for a plain folder instead of failing: the launcher asks this to
+    // decide whether Safe mode applies at all, and "no repository here" is an
+    // answer it can act on.
+    if !is_git_work_tree(project_root) {
+        return Ok(SafeWorkspacePreflight {
+            repository: false,
+            changed_files: 0,
+            fingerprint: String::new(),
+        });
+    }
+    // Already known to be a work tree: asking Git a second time was a spawn.
+    Ok(work_tree_state(project_root.canonicalize()?)?.preflight)
 }

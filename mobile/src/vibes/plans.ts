@@ -1,18 +1,28 @@
 import type { IconName } from '../ui/primitives';
 import type { VibesEntitlements, VibesProduct, VibesWallet, VibesWindow } from './types';
 
-/** Presentation only. Every number below comes from the wallet, never from here. */
-export const planNames: Record<string, string> = { free: 'Free', starter: 'Starter', builder: 'Builder', pro: 'Pro' };
-const order = ['free', 'starter', 'builder', 'pro'];
+/**
+ * Presentation only. Every number below comes from the wallet, never from here.
+ *
+ * Builder and Pro are sold as two sizes of Pro, "Pro 10×" and "Pro 20×", a naming
+ * the user chose on 2026-09-11. The multiples are names, not measurements: they
+ * read as tenfold and twentyfold 100 Vibes a month, and nothing in the wallet is
+ * 100 Vibes, so they are not computed from it. Change an allowance and rename here
+ * on purpose. App Store Connect keeps its own product names for Apple's sheet.
+ */
+export const planNames: Record<string, string> = { free: 'Free', pro_v2: 'Pro', starter: 'Starter', builder: 'Pro 10×', pro: 'Pro 20×' };
+/** The tab each size of Pro is chosen by on the upgrade page. */
+export const planSizes: Record<string, string> = { builder: '10×', pro: '20×' };
+const order = ['free', 'pro_v2', 'starter', 'builder', 'pro'];
 export const planRank = (plan: string) => Math.max(0, order.indexOf(plan));
 
 /** One entitlement, said once, with the glyph it is recognised by elsewhere in
- *  the app. `status` is the only thing that ever qualifies it. */
-export interface Benefit { icon: IconName; label: string; status?: string }
+ *  the app. `status` is the only thing that ever qualifies it. `id` names the row
+ *  across plans, and a figure of Vibes also carries `amount` and `unit`, so a page
+ *  switching plans can roll the figure instead of replacing the line. */
+export interface Benefit { id: string; icon: IconName; label: string; status?: string; amount?: number; unit?: string }
 
 const count = (value: number) => value.toLocaleString();
-const projects = (limit: number | null) =>
-  limit === null ? 'Unlimited projects' : `${limit} ${limit === 1 ? 'project' : 'projects'} at a time`;
 /**
  * "5 hours". A window's own length is read from the wallet, never written here:
  * the backend owns how long it looks back, and a client that keeps its own copy
@@ -37,20 +47,36 @@ export function benefitsFor(product: VibesProduct, wallet: VibesWallet): Benefit
   // some plan is actually without it, which keeps this honest by itself if the
   // entitlement ever narrows again.
   const catalogueSells = Object.values(wallet.planEntitlements ?? {}).some(plan => !plan.fullCatalogue);
+  const vibes = (id: string, icon: IconName, amount: number, unit: string): Benefit =>
+    ({ id, icon, label: `${count(amount)}${unit}`, amount, unit });
+  // The workspace rows name only what the account does not have today, so a
+  // backend that has not switched limits on sells nothing Free already has.
+  const now = wallet.entitlements;
   const list: Benefit[] = [
-    { icon: 'sparkles-outline', label: `${count(product.credits)} Vibes every month` },
-    ...(catalogueSells ? [{ icon: (e.fullCatalogue ? 'layers-outline' : 'color-wand-outline') as IconName,
-      label: e.fullCatalogue ? 'Every model on OpenRouter' : 'Every Vibyra model' }] : []),
-    { icon: 'folder-open-outline', label: projects(e.maxProjects) },
+    vibes('monthly', 'sparkles-outline', product.credits, ' Vibyra tokens every month'),
+    ...(catalogueSells ? [{ id: 'catalogue', icon: (e.fullCatalogue ? 'layers-outline' : 'color-wand-outline') as IconName,
+      label: e.fullCatalogue ? 'Choose from more AI models' : 'Choose your Vibyra AI model' }] : []),
   ];
-  if (e.concurrentReplies > 1) list.push({ icon: 'flash-outline', label: `${e.concurrentReplies} replies at once` });
+  if (e.maxProjects === null && now.maxProjects !== null)
+    list.push({ id: 'projects', icon: 'folder-open-outline', label: 'Unlimited projects' });
+  if (e.maxTerminals === null && now.maxTerminals !== null)
+    list.push({ id: 'terminals', icon: 'terminal-outline', label: 'Unlimited terminals at once' });
+  if (e.preview && !now.preview)
+    list.push({ id: 'preview', icon: 'globe-outline', label: 'Live website Preview' });
+  if (e.review && !now.review)
+    list.push({ id: 'review', icon: 'git-compare-outline', label: 'Review every change' });
+  if (e.safeWorktrees && !now.safeWorktrees)
+    list.push({ id: 'worktrees', icon: 'git-branch-outline', label: 'Safe mode worktrees' });
+  if (e.agents && !now.agents)
+    list.push({ id: 'agents', icon: 'people-outline', label: 'Agents that keep working while you’re away' });
+  if (e.remoteAccess && wallet.remoteAccessLive) list.push({ id: 'remote', icon: 'cloud-outline',
+    label: 'Vibyra Cloud: your computer, from anywhere' });
+  if (planSizes[plan]) list.push({ id: 'features', icon: 'apps-outline', label: 'All Pro features included' });
+  list.push({ id: 'rollover', icon: 'refresh-outline', label: 'Tokens that never expire, even if you cancel' });
   // How fast the plan may spend, which is the entitlement a heavy week actually
   // meets. The window's length comes from the wallet, so a backend that publishes
   // none leaves the row off rather than inviting a guessed "5 hours" in here.
-  if (wallet.limits) list.push({ icon: 'speedometer-outline',
-    label: `${count(e.sessionCredits)} Vibes every ${spanOf(wallet.limits.session)}` });
-  if (e.remoteAccess) list.push({ icon: 'desktop-outline', label: 'Remote access to your computer',
-    status: wallet.remoteAccessLive ? undefined : 'Coming soon' });
+  if (wallet.limits) list.push(vibes('rate', 'speedometer-outline', e.sessionCredits, ` Vibes per ${spanOf(wallet.limits.session)}`));
   return list;
 }
 
@@ -60,17 +86,22 @@ export function benefitsFor(product: VibesProduct, wallet: VibesWallet): Benefit
  * - which only reads as a number while the grant is large enough to be a unit of
  * work. Against a trial of a few Vibes the same arithmetic prints "117×", which
  * says nothing about what a plan buys and quietly advertises that the free tier is
- * worthless. `UsageOptions` headlines the allowance itself instead, which is the
+ * worthless. The first bullet states the allowance itself instead, which is the
  * figure the wallet publishes and the backend grants.
  */
 
 /** Subscriptions worth offering, cheapest first, with the current plan removed. */
 export function offers(wallet: VibesWallet | null): VibesProduct[] {
-  return (wallet?.products ?? []).filter(p => p.kind === 'subscription' && planRank(p.plan ?? 'free') > planRank(wallet?.plan ?? 'free'))
+  return (wallet?.products ?? []).filter(p => p.kind === 'subscription' && (wallet?.version === 2 ? wallet.plan === 'free' : planRank(p.plan ?? 'free') > planRank(wallet?.plan ?? 'free')))
     .sort((a, b) => planRank(a.plan ?? 'free') - planRank(b.plan ?? 'free'));
 }
 
-/** The page leads with the top plan, so the picker opens on it. */
+/** The sizes of Pro an account can still move up to, smallest first. Starter is not one. */
+export function sizesOf(available: VibesProduct[]): VibesProduct[] {
+  return available.filter(p => planSizes[p.plan ?? '']);
+}
+
+/** The size the upgrade page opens on: the top one. */
 export function defaultOffer(available: VibesProduct[]): string | null {
   return available.at(-1)?.plan ?? null;
 }
@@ -96,12 +127,20 @@ export function changesFor(product: VibesProduct, wallet: VibesWallet): PlanChan
   const next = wallet.planEntitlements[product.plan ?? ''] ?? now;
   const held = allowance(wallet);
   const changes: PlanChange[] = [];
-  if (product.credits !== held) changes.push({ label: 'Vibes each month',
+  if (product.credits !== held) changes.push({ label: wallet.version === 2 ? 'Vibyra tokens each month' : 'Vibes each month',
     from: held ? count(held) : 'None', to: count(product.credits) });
   if (next.maxProjects !== now.maxProjects)
-    changes.push({ label: 'Projects at once', from: limit(now.maxProjects), to: limit(next.maxProjects) });
-  if (next.concurrentReplies !== now.concurrentReplies)
-    changes.push({ label: 'Replies at once', from: String(now.concurrentReplies), to: String(next.concurrentReplies) });
+    changes.push({ label: 'Projects', from: limit(now.maxProjects), to: limit(next.maxProjects) });
+  if (next.maxTerminals !== now.maxTerminals)
+    changes.push({ label: 'Terminals at once', from: limit(now.maxTerminals), to: limit(next.maxTerminals) });
+  if (next.preview && !now.preview)
+    changes.push({ label: 'Preview', from: 'Not included', to: 'Included' });
+  if (next.review && !now.review)
+    changes.push({ label: 'Review', from: 'Not included', to: 'Included' });
+  if (next.safeWorktrees && !now.safeWorktrees)
+    changes.push({ label: 'Safe mode worktrees', from: 'Not included', to: 'Included' });
+  if (next.agents && !now.agents)
+    changes.push({ label: 'Agents', from: 'Not included', to: 'Included' });
   // The windows are the reason a busy week upgrades, so they earn a row whenever
   // they move - and prune themselves like every other line when they do not.
   if (wallet.limits && next.sessionCredits !== now.sessionCredits)
@@ -113,6 +152,6 @@ export function changesFor(product: VibesProduct, wallet: VibesWallet): PlanChan
   if (next.fullCatalogue && !now.fullCatalogue)
     changes.push({ label: 'Models', from: 'Curated', to: 'All of OpenRouter' });
   if (next.remoteAccess && !now.remoteAccess) changes.push({ label: 'Your computer',
-    from: 'Same network', to: 'From anywhere', pending: !wallet.remoteAccessLive });
+    from: 'Same Wi-Fi', to: 'From anywhere', pending: !wallet.remoteAccessLive });
   return changes;
 }

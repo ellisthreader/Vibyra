@@ -31,6 +31,9 @@ test('only a real private range is widened to a whole /24', () => {
   assert.equal(plan.scope, '192.168.1.×');
   assert.deepEqual(plan.hosts.slice(0, 2), ['192.168.1.10', '192.168.1.24'],
     'the known hosts lead, because they are the likeliest computer');
+  assert.deepEqual(plan.hosts.slice(4, 8),
+    ['192.168.1.9', '192.168.1.11', '192.168.1.8', '192.168.1.12'],
+    'nearby DHCP leases are checked before the rest of the subnet');
   assert.ok(plan.hosts.includes(LOOPBACK), 'loopback is always asked');
   assert.equal(new Set(plan.hosts).size, plan.hosts.length, 'no address is asked twice');
   assert.deepEqual(probePlan(['192.168.1.10']), probePlan(['192.168.1.10']), 'a repeat search is identical');
@@ -55,7 +58,7 @@ test('the internet is never swept, and only documented ports are asked', () => {
   const plan = probePlan(['192.168.1.10', '10.0.0.4']);
   assert.ok(plan);
   assert.equal(plan.hosts.filter(host => host.startsWith('10.')).length, 1, 'one subnet is swept');
-  assert.deepEqual(PROBE_PORTS, [4318, 4319]);
+  assert.deepEqual(PROBE_PORTS, [4319, 4318]);
 });
 
 

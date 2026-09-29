@@ -33,6 +33,13 @@ test('presentation never invents completed results or freeform answer support', 
   assert.equal(question?.kind, 'question');
   if (question?.kind === 'question') assert.equal(question.questions[0]?.allowFreeform, false);
 });
+test('Codex saved rule review remains visible on the phone card', () => {
+  const [item] = presentConversation([{ id: 'approval', turnId: 'turn', kind: 'permission', status: 'pending',
+    title: 'Allow this command?', detail: 'npm run build', choices: ['decline', 'accept', 'acceptWithExecpolicyAmendment'],
+    ruleSummary: 'Codex will remember this command prefix: npm run. Future matching commands may run without asking.' }]);
+  assert.equal(item?.kind, 'permission');
+  if (item?.kind === 'permission') assert.match(item.ruleSummary ?? '', /Future matching commands/);
+});
 async function structured() {
   const h = runtimeHarness(); h.store.deps.iosConversations = true;
   let turnRequests = 0; let submitStatus = 'accepted';
@@ -80,4 +87,29 @@ test('a provider-accepted prompt stays accepted when local receipt cleanup fails
   await h.store.actions.submitTurn!('Hello');
   assert.equal(h.count(), 1); assert.equal(h.memory.has('turn.host1.one'), true);
   h.store.dispose();
+});
+
+test('Desktop handoff drops the phone lease and resync reloads conversation without terminal RPC', async () => {
+  const h = await structured();
+  h.event('conversation.controlChanged', { sessionId: 'two' });
+  assert.equal(h.store.state.control, 'ready');
+  h.event('conversation.controlChanged', { sessionId: 'one' });
+  assert.equal(h.store.state.control, 'readonly'); assert.equal(h.store.lease, null);
+  await assert.rejects(() => h.store.actions.submitTurn!('Stale controller'), /control/i);
+  await h.store.actions.claimControl!();
+  h.event('conversation.resync', {}); await delay();
+  assert.equal(h.store.state.control, 'readonly'); assert.equal(h.store.state.conversation?.items[0]?.text, 'Hello');
+  assert.equal(h.sent.some(item => item.payload?.method === 'session.snapshot'), false);
+  h.store.dispose();
+});
+
+test('deferred Auto sends only to its resolved conversation identity', async () => {
+  const h = await structured();
+  try {
+    await h.store.actions.submitTurn!('First Auto message', true, [], 'one');
+    const sent = h.sent.find(item => item.payload?.method === 'turn.submit').payload.params;
+    assert.equal(sent.sessionId, 'one');
+    await assert.rejects(h.store.actions.submitTurn!('Never send elsewhere', true, [], 'missing'));
+    assert.equal(h.count(), 1);
+  } finally { h.store.dispose(); }
 });

@@ -7,8 +7,21 @@ import { until } from './ui-test-helpers.mjs';
 
 // Read-only acceptance against the running Desktop. No fixture identity is
 // approved or persisted, and Metro's entry stays intact.
-const expected = await fetch('http://[::1]:4319/identity').then(r => r.json());
+const identities = await Promise.allSettled(['127.0.0.1', '[::1]'].map(async host => {
+  const response = await fetch(`http://${host}:4319/identity`, { signal: AbortSignal.timeout(3000) });
+  if (!response.ok) throw new Error(`Desktop presence returned ${response.status}`);
+  return response.json();
+}));
+const presence = identities.find(result => result.status === 'fulfilled');
+assert.ok(presence?.status === 'fulfilled', 'Enable iPhone connection on the running Desktop');
+const expected = presence.value;
 const metro = process.env.VIBYRA_METRO ?? 'http://127.0.0.1:8081';
+const fixturePort = Number(process.env.VIBYRA_DISCOVERY_FIXTURE_PORT ?? 8097);
+const simulator = process.env.VIBYRA_SIMULATOR ?? 'booted';
+const nativeClient = process.env.VIBYRA_NATIVE_CLIENT === '1';
+const launch = url => nativeClient
+  ? `vibyra://expo-development-client/?url=${encodeURIComponent(url)}`
+  : url.replace(/^http/, 'exp');
 const manifest = await fetch(metro, {
   headers: { 'expo-platform': 'ios' },
 }).then(r => r.json());
@@ -20,6 +33,10 @@ manifest.launchAsset.url = bundle.toString();
 manifest.extra.expoGo.mainModuleName = entry;
 manifest.extra.scopeKey = '@anonymous/vibyra-native-discovery-fixture';
 manifest.extra.expoClient.name = 'Vibyra native discovery fixture';
+manifest.extra.expoClient.extra = {
+  ...manifest.extra.expoClient.extra,
+  discoveryFixturePort: fixturePort,
+};
 const warm = await fetch(bundle);
 if (!warm.ok) throw new Error(await warm.text());
 await warm.arrayBuffer();
@@ -36,18 +53,19 @@ const server = createServer(async (request, response) => {
   }
 });
 try {
-  await new Promise(resolve => server.listen(8097, '127.0.0.1', resolve));
-  execFileSync('xcrun', ['simctl', 'openurl', 'booted', 'exp://127.0.0.1:8097']);
-  await until(() => result, 'native phone discovers the running IPv6 Desktop', 55000);
+  await new Promise(resolve => server.listen(fixturePort, '127.0.0.1', resolve));
+  execFileSync('xcrun', ['simctl', 'openurl', simulator, launch(`http://127.0.0.1:${fixturePort}`)]);
+  await until(() => result, 'native phone discovers the running Desktop', 55000);
   assert.equal(result.computer.hostId, expected.id);
   assert.equal(result.computer.name, expected.name);
   assert.equal(result.pairing.publicKey, expected.id);
   assert.equal(result.pairing.network, 'lan');
   assert.equal(result.pairing.nearby, true);
+  if (nativeClient) assert.equal(result.nativeBonjour, true, 'Development build must load the native Bonjour module');
   await writeFile('/tmp/vibyra-native-discovery.json', JSON.stringify(result, null, 2));
-  execFileSync('xcrun', ['simctl', 'io', 'booted', 'screenshot', '/tmp/vibyra-native-discovery.png']);
+  execFileSync('xcrun', ['simctl', 'io', simulator, 'screenshot', '/tmp/vibyra-native-discovery.png']);
   console.log(`PASS native phone found ${result.computer.name}; real identity and usable LAN pairing.`);
 } finally {
   await new Promise(resolve => server.close(resolve));
-  execFileSync('xcrun', ['simctl', 'openurl', 'booted', metro.replace(/^http/, 'exp')]);
+  execFileSync('xcrun', ['simctl', 'openurl', simulator, launch(metro)]);
 }

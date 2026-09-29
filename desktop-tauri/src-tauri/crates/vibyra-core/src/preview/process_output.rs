@@ -38,13 +38,36 @@ fn drain_output(mut reader: impl Read, prefix: &str, logs: &LogBuffer) {
 }
 
 fn emit_line(prefix: &str, bytes: &[u8], truncated: bool, logs: &LogBuffer) {
-    let text = String::from_utf8_lossy(bytes);
+    let text = strip_ansi(&String::from_utf8_lossy(bytes));
     let text = text.trim();
     if text.is_empty() && !truncated {
         return;
     }
     let suffix = if truncated { "…" } else { "" };
     push_log(logs, format!("{prefix} {text}{suffix}"));
+}
+
+/// Drops terminal colour and cursor sequences, which cargo and bundlers print
+/// even into a pipe, so the phone shows the words and not the escapes.
+fn strip_ansi(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(character) = chars.next() {
+        if character != '\u{1b}' {
+            out.push(character);
+            continue;
+        }
+        if chars.next_if_eq(&'[').is_some() {
+            for code in chars.by_ref() {
+                if ('@'..='~').contains(&code) {
+                    break;
+                }
+            }
+        } else {
+            chars.next();
+        }
+    }
+    out
 }
 
 #[cfg(test)]
@@ -64,6 +87,17 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert!(entries[0].chars().count() <= 1001);
         assert!(entries[0].ends_with('…'));
+    }
+
+    #[test]
+    fn strips_terminal_colours() {
+        let logs = new_logs();
+        drain_output(
+            Cursor::new(b"\x1b[1m\x1b[32m   Compiling\x1b[0m hke v0.1.0\n"),
+            "[app]",
+            &logs,
+        );
+        assert_eq!(snapshot_logs(&logs), vec!["[app] Compiling hke v0.1.0"]);
     }
 
     #[test]

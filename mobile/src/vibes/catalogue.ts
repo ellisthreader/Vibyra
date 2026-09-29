@@ -8,8 +8,7 @@ import type { Effort, VibesModel } from './types';
 // means "offered", and the quote is still what decides whether a model can run.
 // `trial` is what a free account may spend its trial credit on, and it follows the
 // same price ceiling the backend applies (`vibes.free_tier`): at or under
-// $1.00/M in and $5.00/M out, which admits every curated model but the four
-// flagships. `FREE_EXTRA` below mirrors `vibes.free_extra`, the models included by
+// $1.00/M in and $5.00/M out. `FREE_EXTRA` below mirrors `vibes.free_extra`, the models included by
 // decision rather than by price; it is empty on both sides now, because a trial of
 // a few Vibes cannot fund a flagship turn anyway and showing one as included only
 // to refuse it at send is worse than drawing the lock. Keep both in step with the
@@ -28,7 +27,11 @@ const FULL: Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 const BASIC: Effort[] = ['low', 'medium', 'high'];
 
 const curated: VibesModel[] = [
-  model('openai/gpt-6-astra', 'OpenAI', 'GPT-6 Astra', 'best', '2026-07-14', 'Deepest reasoning for hard, multi-file work.', false, FULL, 'medium', true),
+  model('openai/gpt-6-sol', 'OpenAI', 'GPT-6 Sol', 'best', '2026-09-22', 'Coding and reasoning for complex projects.', false, ['none', ...FULL], 'medium', false),
+  model('openai/gpt-6-luna', 'OpenAI', 'GPT-6 Luna', 'fast', '2026-09-22', 'Fast, focused coding and everyday tasks.', true, ['none', ...FULL], 'medium', false),
+  model('anthropic/claude-opus-5.5', 'Claude', 'Claude Opus 5.5', 'best', '2026-09-22', 'Long-running coding and careful project changes.', false, FULL, 'high', true),
+  model('anthropic/claude-sonnet-5.5', 'Claude', 'Claude Sonnet 5.5', 'best', '2026-09-28', 'Focused coding and fast iteration.', false, FULL, 'high', true),
+  model('openai/gpt-6-astra', 'OpenAI', 'GPT-6 Astra', 'best', '2026-09-03', 'Deepest reasoning for hard, multi-file work.', false, FULL, 'medium', true),
   model('anthropic/claude-opus-5', 'Claude', 'Opus 5', 'best', '2026-05-20', 'Long, careful refactors and large codebases.', false, FULL, 'high', false),
   model('anthropic/claude-sonnet-5', 'Claude', 'Sonnet 5', 'best', '2026-02-11', 'Strong everyday coding with quick replies.', false, FULL, 'high', false),
   model('google/gemini-3.8-pro', 'Gemini', 'Gemini 3.8 Pro', 'best', '2026-04-02', 'Huge context for whole-project questions.'),

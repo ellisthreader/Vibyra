@@ -13,9 +13,11 @@
 pub mod appimage;
 #[cfg(unix)]
 mod probe;
+mod program;
 pub mod user_path;
 
 pub use appimage::EnvFix;
+pub use program::resolve_program;
 
 /// Markers wrapping the probed PATH, shared by the prober and the parser.
 const START: &str = "__VIBYRA_PATH_START__";

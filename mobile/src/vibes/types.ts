@@ -1,12 +1,16 @@
-export interface VibesProduct { id: string; plan: string | null; credits: number; pence: number; kind: 'subscription' | 'topup' }
+import type { TokenActivityPage } from './WalletActivity';
+export interface VibesProduct { offerKey?: string; offerVersion?: string; stripeEnabled?: boolean; appleEnabled?: boolean; id: string; plan: string | null; credits: number; pence: number; kind: 'subscription' | 'topup' }
 /** OpenRouter's reasoning vocabulary, exactly as the provider accepts it. */
 export type Effort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 /** One model's normalized reasoning ladder; `efforts` is ascending. */
 export interface Reasoning { efforts: Effort[]; defaultEffort: Effort | null; mandatory: boolean }
 /** Backend-owned plan limits. `maxProjects: null` means no limit. */
-export interface VibesEntitlements { maxProjects: number | null; concurrentReplies: number; fullCatalogue: boolean; remoteAccess: boolean;
+export interface VibesEntitlements { fundedTerminals?: boolean; maxProjects: number | null; concurrentReplies: number; fullCatalogue: boolean; remoteAccess: boolean;
   // How fast the plan may spend, as the two rolling windows `UsageWindows` enforces.
-  sessionCredits: number; weekCredits: number }
+  sessionCredits: number; weekCredits: number;
+  // The workspace limits. The Mac enforces terminals and Safe mode; the server
+  // enforces Agents. `maxTerminals: null` is unlimited.
+  maxTerminals: number | null; safeWorktrees: boolean; agents: boolean; preview: boolean; review: boolean }
 /**
  * One rolling usage window as the backend measures it. `span` and `unit` are the
  * window's own length, published rather than assumed, so "5 hours" becoming "6"
@@ -19,7 +23,13 @@ export interface VibesWindow { unit: 'hours' | 'days'; span: number; used: numbe
 export interface VibesLimits { session: VibesWindow; week: VibesWindow }
 export interface VibesWallet {
   chatEnabled?: boolean;
-  version: 1; available: number; held: number; total: number; paidAvailable: number;
+  /** Guests prove trial eligibility at creation instead of by verifying email. */
+  guest?: boolean;
+  version: 1 | 2; unitScale?: 10000; availableUnits?: string; heldUnits?: string; totalUnits?: string; paidAvailableUnits?: string;
+  accountScope?: string; revision?: string; spendPolicy?: 'balance';
+  membership?: { provider: string | null; cancelAtEnd?: boolean; conflict?: boolean; trial?: boolean; paidUntil?: string | null };
+  freeAllowance?: { eligible: boolean; tokens: number; nextAt: string | null; expiresAt: string | null };
+  salesCapabilities?: { apple: boolean; stripe: boolean }; available: number; held: number; total: number; paidAvailable: number;
   plan: string; paidUntil: string | null; trialChatsRemaining: number;
   // The trial as the backend defines it, so nothing on the phone keeps its own
   // copy of a number the server enforces. `null` means an older backend did not
@@ -41,11 +51,18 @@ export interface VibesModel {
   // The reasoning ladder this model publishes on OpenRouter. Absent, or empty,
   // means its thinking cannot be steered and no effort is sent for it.
   reasoning?: Reasoning; created?: number | null;
+  /** Whether it can see a photo. The server refuses a photo for a model that cannot. */
+  vision?: boolean;
 }
-export interface VibesChat { id: string; title: string; trial_slot: number | null; trial_used: number; host_id?: string | null; project_id?: string | null; binding?: string | null }
-export const PROJECT_OPERATIONS = ['read_file', 'list_files', 'write_file'] as const;
+/** A photo or file uploaded for a message; `kind` is how the model receives it. */
+export interface VibesAttachment { id: string; kind: 'image' | 'pdf' | 'text'; name: string; bytes: number }
+/** A local file about to be uploaded. `file` is the browser's own File; the phone sends by `uri`. */
+export interface AttachmentSource { uri: string; name: string; mimeType: string; file?: Blob }
+export interface VibesChat { terminal_effort?: Effort | null; terminal_model?: string | null; terminal_model_name?: string | null; terminal_tools?: boolean; terminal_budget_micro?: number; terminal_charged_micro?: number; terminal_closed_at?: string | null; created_at?: string; id: string; title: string; trial_slot: number | null; trial_used: number; host_id?: string | null; project_id?: string | null; binding?: string | null }
+export const PROJECT_OPERATIONS = ['read_file', 'list_files', 'write_file', 'search_files'] as const;
 export type ProjectOperation = (typeof PROJECT_OPERATIONS)[number];
-export interface ProjectToolArguments { path: string; content?: string; expectedSha256?: string }
+/** `path` names a file or folder; `search_files` names a query instead and carries no path. */
+export interface ProjectToolArguments { path?: string; content?: string; expectedSha256?: string; query?: string }
 /**
  * One tool call inside a turn. A project call names a file and is answered by this
  * phone. An integration call carries `integration` and was answered by the
@@ -54,6 +71,7 @@ export interface ProjectToolArguments { path: string; content?: string; expected
  */
 export interface VibesTool {
   id: string; expiresAt: number; operation: string; decision: string | null;
+  approval?: { state: string; fingerprint: string; arguments: Record<string, unknown>; answer: 'allow' | 'decline' | null } | null;
   integration?: string | null; summary?: string | null;
   arguments?: ProjectToolArguments; result?: Record<string, unknown> | null;
 }
@@ -63,9 +81,15 @@ export const isProjectTool = (tool: VibesTool): tool is ProjectTool =>
   !tool.integration && (PROJECT_OPERATIONS as readonly string[]).includes(tool.operation) && Boolean(tool.arguments);
 export interface VibesTurn {
   id: string; chatId: string; model: string; status: 'queued' | 'running' | 'waiting' | 'reconciling' | 'completed' | 'failed' | 'cancelled';
+  finishReason?: string | null;
+  progress?: { phase: string; sequence: number; observedAt: string; assessment: { label: string } | null } | null;
   tools?: VibesTool[];
+  attachments?: VibesAttachment[];
+  /** What this reply saved to or removed from Settings > Memory; null when it changed nothing. */
+  memory?: VibesTurnMemory | null;
   prompt: string; response: string | null; error: string | null; reserved: number; charged: number; createdAt: string;
 }
+export interface VibesTurnMemory { saved?: { id: string; text: string }[]; forgotten?: string[]; full?: boolean }
 /**
  * `auto` is present only when the model sent was 'auto': it names the model the
  * router chose and why, so the composer can show a decision the person did not
@@ -73,21 +97,38 @@ export interface VibesTurn {
  * worded rather than inferred from an id.
  */
 export interface VibesAutoChoice { reason: string; name: string }
-export interface VibesQuote { quote: string; maxCredits: number; estimatedCredits: number; model: string; expiresAt: number;
+export interface VibesQuote { smartAuto?: boolean; quote: string; maxCredits: number; estimatedCredits: number; model: string; expiresAt: number;
   effort?: Effort | null; auto?: VibesAutoChoice | null;
   /** The integrations actually attached and priced, which is not always the ones asked for. */
   integrations?: string[] }
+export interface FundedModel extends VibesModel { tools: boolean; unavailableReason?: string | null; source: 'vibyra' }
+export interface FundedLaunch { effort?: Effort | null; tools: boolean; id: string; title: string; model: string; hostId: string; projectId: string; binding: string; budget: number; source: 'vibyra' }
 export interface VibesApi {
+  terminalDecision?(request: import('./terminalDecision').TerminalDecisionRequest): Promise<import('./terminalDecision').TerminalDecision>;
+  terminalModels?(): Promise<FundedModel[]>;
+  createTerminal?(launch: FundedLaunch): Promise<VibesChat>;
+  closeTerminal?(chatId: string): Promise<void>;
+  prepareAuto?(id: string, quote: string): Promise<{ id: string; state: string }>;
+  autoPreparation?(id: string): Promise<{ id: string; state: string; quote?: VibesQuote }>;
+  guest?: {
+    restore(token: string | null): void;
+    create(installId: string, deviceToken?: string): Promise<{ token: string; wallet: VibesWallet }>;
+  };
   wallet(): Promise<VibesWallet>; consent(): Promise<void>; models(): Promise<VibesModel[]>;
   chats(): Promise<VibesChat[]>; createChat(id: string, title: string): Promise<VibesChat[]>;
   // The effort is a request, not a promise: the server validates it against the
   // model's own ladder and the quote reports back the effort it actually priced.
   // `integrations` are the connectors named in the message. The server keeps only the
   // ones this account has really connected and reports back which it attached.
-  quote(chatId: string, text: string, model: string, effort?: Effort | null, integrations?: string[]): Promise<VibesQuote>;
+  // `attachments` are uploaded first; the quote prices them and the turn carries them.
+  quote(chatId: string, text: string, model: string, effort?: Effort | null, integrations?: string[], attachments?: string[]): Promise<VibesQuote>;
+  upload?(source: AttachmentSource): Promise<VibesAttachment>;
   submit(id: string, quote: string): Promise<VibesTurn>; turn(id: string): Promise<VibesTurn>;
   turns(chatId: string): Promise<VibesTurn[]>; cancel(id: string): Promise<void>;
+  purchasePreflight?(productId: string): Promise<void>;
   purchase(transactionId: string, productId: string): Promise<VibesWallet>;
+  activity?(before?: string): Promise<TokenActivityPage>;
+  detach?(chatId: string): Promise<void>;
   attach?(chatId: string, hostId: string, projectId: string, binding: string): Promise<void>;
   toolResult?(toolId: string, decision: 'allow' | 'decline', result: Record<string, unknown>): Promise<void>;
 }

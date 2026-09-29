@@ -1,65 +1,53 @@
 import type { ProjectKind } from '../../scaffold/types';
 
 /**
- * The nine kinds, drawn as one family rather than picked from a stock set.
- *
- * Each is stroke geometry on a 24x24 grid, rendered at 26px with a 1.75 stroke
- * and round joins, so every mark carries the same weight in the grid. They were
- * drawn to a brief — geometric, built from the thing's own structure, and no
- * globe for "website" or gamepad silhouette for "game" — then reviewed at size
- * and reworked where they failed: the first "game" read as a photo placeholder,
- * and the first "web app" was a near-twin of "website".
+ * The nine kinds, drawn as one family: outline marks in the SF Symbols and
+ * Lucide manner, generated with the Codex CLI to a brief and checked at size
+ * on the card. Each is stroke geometry on a 24x24 grid with a 1.75 stroke and
+ * round joins, two to four strokes, so the set reads as simple and even at 20px.
  *
  * Outlines only. A filled shape would break the family the moment a mark is
- * drawn in white on a filled tile, which is what selection does.
+ * drawn in white on a filled tile.
  */
 export const KIND_ART: Record<ProjectKind, string[]> = {
   website: [
-    'M5 3.5H19Q20.5 3.5 20.5 5V19Q20.5 20.5 19 20.5H5Q3.5 20.5 3.5 19V5Q3.5 3.5 5 3.5Z',
-    'M3.5 7.5H20.5',
-    'M7 11H17V14.5H7Z',
-    'M7 17.5H10M13 17.5H17',
-  ], // a page: masthead, and the columns under it
+    'M5 3.5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2ZM3 8h18',
+    'M16.5 14.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 1 1 9 0Z',
+    'M12 10c-2 2.5-2 6.5 0 9 2-2.5 2-6.5 0-9Z',
+    'M7.5 14.5h9',
+  ], // a browser with the web in it
   webapp: [
-    'M5 3H19Q21 3 21 5V19Q21 21 19 21H5Q3 21 3 19V5Q3 3 5 3Z M3 6.5H21',
-    'M17 10.5a5 2 0 1 1-10 0 5 2 0 1 1 10 0Z',
-    'M7 10.5V17Q7 19 12 19Q17 19 17 17V10.5',
-    'M7 14Q7 16 12 16Q17 16 17 14',
-  ], // a window with records kept inside it, which is what makes it an app
+    'M5 3.5h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2ZM3 8h18',
+    'M6 11h4v6.5H6Z',
+    'M13 11h5v2.5h-5ZM13 17.5h5',
+  ], // a browser with a dashboard in it
   mobile: [
-    'M8 2.5H16Q18 2.5 18 4.5V19.5Q18 21.5 16 21.5H8Q6 21.5 6 19.5V4.5Q6 2.5 8 2.5Z',
-    'M9 7.5H15 M9 11H13.5',
-    'M10 18.5H14',
-  ], // a phone with something on it, weighted like the monitor beside it
+    'M7.5 2.5h9a2 2 0 0 1 2 2v15a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2Z',
+    'M10 5.5h4M10.5 18.5h3',
+  ], // a phone
   desktop: [
-    'M4 3.5H20Q21.5 3.5 21.5 5V15Q21.5 16.5 20 16.5H4Q2.5 16.5 2.5 15V5Q2.5 3.5 4 3.5Z',
-    'M2.5 7.5H21.5M17.5 5.5H18.5',
-    'M12 16.5V20.5M8 20.5H16',
-  ], // a window on a stand
+    'M4.5 3.5h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2Z',
+    'M12 16.5v4M8 20.5h8',
+  ], // a monitor on a stand
   game: [
-    'M6 5.5H10V10H14V13.5H10V18H6V13.5H2V10H6Z',
-    'M15.799999999999999 9.5a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0 -3.8 0',
-    'M17.900000000000002 15a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0 -3.8 0',
-  ], // a d-pad and two buttons, the one metaphor nobody misreads
+    'M8 6.5h8c2 0 3 1.5 3.5 3.5l2 7c.5 2-1.5 3-3 1.5L15 15H9l-3.5 3.5C4 20 2 19 2.5 17l2-7C5 8 6 6.5 8 6.5Z',
+    'M6 11h4M8 9v4',
+    'M15.5 10a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0Z',
+    'M18.5 12.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0Z',
+  ], // a controller
   backend: [
-    'M4 9H7Q8.5 9 8.5 10.5V13.5Q8.5 15 7 15H4Q2.5 15 2.5 13.5V10.5Q2.5 9 4 9Z',
-    'M17 3.5H20Q21.5 3.5 21.5 5V8Q21.5 9.5 20 9.5H17Q15.5 9.5 15.5 8V5Q15.5 3.5 17 3.5Z',
-    'M17 14.5H20Q21.5 14.5 21.5 16V19Q21.5 20.5 20 20.5H17Q15.5 20.5 15.5 19V16Q15.5 14.5 17 14.5Z',
-    'M8.5 12H12M15.5 6.5H13.5Q12 6.5 12 8V16Q12 17.5 13.5 17.5H15.5',
-  ], // one call branching to the things that answer it
-  library: [
-    'M4 7L12 3L20 7V17L12 21L4 17Z',
-    'M4 7L12 11L20 7M12 11V21',
-    'M8 5L16 9V13',
-  ], // a package — the thing you publish rather than run
+    'M5 3.5h14a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2Z',
+    'M5 13.5h14a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2Z',
+    'M7.5 7a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0ZM7.5 17a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0Z',
+    'M12 7h5M12 17h5',
+  ], // a server stack
+  library: ['M12 2.5 21 7.5v9l-9 5-9-5v-9Z', 'M3 7.5 12 12.5 21 7.5M12 12.5v9', 'M7.5 5 16.5 10'], // a package — the thing you publish rather than run
   ai: [
-    'M7.5 5.5H16.5Q18.5 5.5 18.5 7.5V16.5Q18.5 18.5 16.5 18.5H7.5Q5.5 18.5 5.5 16.5V7.5Q5.5 5.5 7.5 5.5Z',
-    'M9 2.5V5.5M15 2.5V5.5M9 18.5V21.5M15 18.5V21.5',
-    'M2.5 9H5.5M2.5 15H5.5M18.5 9H21.5M18.5 15H21.5',
-    'M12 8.5L15.5 12L12 15.5L8.5 12Z',
-  ], // a chip with a core, not another wand of sparkles
+    'M10 4.5 12.5 10.5 18 13 12.5 15.5 10 21 7.5 15.5 2 13 7.5 10.5Z',
+    'M18.5 2.5 19.5 5 22 6 19.5 7 18.5 9.5 17.5 7 15 6 17.5 5Z',
+  ], // sparkles
   empty: [
-    'M3.5 8H20.5V18Q20.5 19.5 19 19.5H5Q3.5 19.5 3.5 18V8Z',
-    'M3.5 8V6Q3.5 4.5 5 4.5H9L12.5 8',
-  ], // a plain folder, quieter than the eight answers above it
+    'M2.5 8.5V6a2 2 0 0 1 2-2H9l2 2.5h8.5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-10Z',
+    'M2.5 8.5h19',
+  ], // a plain folder, quieter than the eight answers
 };
