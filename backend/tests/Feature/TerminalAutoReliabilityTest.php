@@ -142,4 +142,23 @@ final class TerminalAutoReliabilityTest extends TestCase
             $this->assertSame('invalid_answer', $error->reason);
         }
     }
+    public function test_funded_selection_uses_server_catalogue_instead_of_client_effort_claims(): void
+    {
+        config(['vibes.enabled' => true, 'vibes.funded_terminals_enabled' => true]);
+        $user = User::firstOrFail();
+        app(\App\Services\Vibes\Wallet::class)->ensure($user);
+        DB::table('vibes_wallets')->where('user_id', $user->id)
+            ->update(['plan' => 'pro', 'paid_until' => now()->addMonth()]);
+        Cache::put(config('billing.openrouter_pricing.cache_key'), [
+            'synced_at' => now()->toIso8601String(), 'models' => ['openai/code' => [
+                'name' => 'Authoritative Code', 'output_modalities' => ['text'],
+                'pricing' => ['prompt' => '0.000001', 'completion' => '0.000002'],
+                'reasoning' => ['supported_efforts' => ['low', 'medium']],
+            ]],
+        ]);
+        $this->fake(fn ($request) => Http::response($this->response($request['questions'])));
+        $this->postJson('/api/vibes/terminal-decisions', [...$this->request(), 'source' => 'vibyra'])
+            ->assertOk()->assertJsonPath('selection.name', 'Authoritative Code')->assertJsonPath('selection.effort', 'medium');
+        $this->assertDatabaseCount('vibes_turns', 0);
+    }
 }

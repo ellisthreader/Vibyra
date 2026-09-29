@@ -2,9 +2,8 @@
 
 namespace App\Services\Decisions;
 
-use App\Services\Vibes\{Catalog, FundedTerminals, TerminalCatalog, Wallet};
+use App\Services\Vibes\{FundedTerminals, TerminalCatalog};
 use App\Services\Vibes\Auto\Ladder;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /** Native launch and funded quotes revalidate the chosen executable model. */
 final class TerminalChoices
@@ -74,20 +73,6 @@ final class TerminalChoices
     private function funded(int $user, array $rows): array
     {
         app(FundedTerminals::class)->authorize($user);
-        $plan = app(Wallet::class)->planFor($user);
-        $catalog = app(Catalog::class);
-        $terminals = app(TerminalCatalog::class);
-        $eligible = [];
-        foreach ($rows as $row) {
-            try {
-                $model = $catalog->resolve($row['id'], $plan);
-                $terminals->resolve($row['id']);
-                $eligible[] = ['id' => $model['id'], 'name' => $model['name'], 'efforts' => $model['efforts']];
-            } catch (HttpException) {
-                // A stale client row must never authorize an unavailable or unpriced model.
-            }
-        }
-
-        return $eligible;
+        return app(TerminalCatalog::class)->candidates(array_column($rows, 'id'));
     }
 }
