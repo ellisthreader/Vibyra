@@ -4,6 +4,7 @@ use App\Http\Controllers\RemotePasskeysController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('web')->group(function (): void {
+    Route::get('/app/{path?}', \App\Http\Controllers\RemoteWebClientController::class)->where('path', '.*');
     Route::get('/api/security/events', [\App\Http\Controllers\RemoteSecurityEventsController::class, 'index'])->middleware('throttle:60,1,security-events');
     Route::post('/api/security/events/{id}/read', [\App\Http\Controllers\RemoteSecurityEventsController::class, 'read'])->whereUuid('id');
     Route::get('/remote/verify', fn () => response()->view('remote.verify')

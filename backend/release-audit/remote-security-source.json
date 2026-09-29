@@ -344,7 +344,7 @@
     },
     {
       "path": "backend/routes/remote_security.php",
-      "sha256": "0524e753a2baadca7083f71dfe8eba959cbad893aeea67cc32be49b6f85559fc"
+      "sha256": "69cd9d803201dcbc0196bd22a5b9ed4690efda6997646773678954032d3f086a"
     },
     {
       "path": "backend/scripts/verify-website-csp.mjs",

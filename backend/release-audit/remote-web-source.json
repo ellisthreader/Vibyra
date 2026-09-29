@@ -1,0 +1,518 @@
+{
+  "baseCommit": "5653c49cdfb8528c37407aa77eee3d699280dc44",
+  "sourceExport": "/private/tmp/vibyra-remote-client-candidate-cpaszgti/mobile/web-dist",
+  "files": [
+    {
+      "path": "backend/app/Http/Controllers/RemoteWebClientController.php",
+      "sha256": "315a91f5c020a7b7ae99f8bad2b37920ff8cf677001f19ac18919ab24676f398"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets.json",
+      "sha256": "045005235781c4477a94e1b0809dff4e06d178a6726cd785d6edd2b93a204f36"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/__vibyra/transport.html",
+      "sha256": "079ee6b05bd50c849a7434f74bf020180688461a13d90feecae05523dfe77341"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/_expo/static/js/web/index-dae570433d287c4fdc3410195b045827.js",
+      "sha256": "6a2080245104a83ddb24c369825c2114b9f9d54e3d5a2b284d7f84933defdb3e"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/aion-labs-dark.70d4ef9976759207eb5a1884b9f389ab.png",
+      "sha256": "3fff75ae993b431dec61fceba52b1e4513b50fcfe231042bff383c3e0836769c"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/aion-labs-light.70d4ef9976759207eb5a1884b9f389ab.png",
+      "sha256": "3fff75ae993b431dec61fceba52b1e4513b50fcfe231042bff383c3e0836769c"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/anthracite-org-light.fd50cabd87bad2dbf3fb03c716703771.png",
+      "sha256": "b931ed844618ed37af8f6a7e08816ad2101557a7465ad2392ac15f6bad917787"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/arcee-ai-dark.c49ca4820dad80673993b78b5b2cc57f.png",
+      "sha256": "e81bc3a0c8c9f82475c63b54540ce2ff1015b5b1e0010c6f37c4a7ad7ee2365a"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/arcee-ai-light.c49ca4820dad80673993b78b5b2cc57f.png",
+      "sha256": "e81bc3a0c8c9f82475c63b54540ce2ff1015b5b1e0010c6f37c4a7ad7ee2365a"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/baidu-dark.966c6a93af8ceb5ae3ca791d58a016fe.png",
+      "sha256": "614bfb32f798a8ac6edd63a3f956fa6f65d209b0523a626e7f8bcc2ea45865d4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/baidu-light.966c6a93af8ceb5ae3ca791d58a016fe.png",
+      "sha256": "614bfb32f798a8ac6edd63a3f956fa6f65d209b0523a626e7f8bcc2ea45865d4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/bytedance-dark.c75f7705cfe833c44e9f9c2f837d3280.png",
+      "sha256": "ab75ae358258a3306d9ca024cf420abd00c9dee8c6e5b2aea82bac6a3139edc3"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/bytedance-light.c75f7705cfe833c44e9f9c2f837d3280.png",
+      "sha256": "ab75ae358258a3306d9ca024cf420abd00c9dee8c6e5b2aea82bac6a3139edc3"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/cognitivecomputations-dark.29c1693d2b10a489a3a184c7322f8c2f.png",
+      "sha256": "d20950c11362b8f320eb3778edc2b9f9d1d6fdce9db069fa2001c92e56606ffc"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/cognitivecomputations-light.38894154cf51eb4ed7b6a20b2b3f0a79.png",
+      "sha256": "a9564316e1cfe57f7ebb264b0c0e265c4b65cbddffb69de5f836aedb613ba35f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/cohere-dark.f1759b0f27abf212db1c82334f987af2.png",
+      "sha256": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/cohere-light.f1759b0f27abf212db1c82334f987af2.png",
+      "sha256": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/dots-studio-dark.d39508c25cd8bcd769e1cfd15195448d.png",
+      "sha256": "377efefa15dfaca0a0b1ea963f587f6f913d2c86adefbaa967225bf48a2d8696"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/dots-studio-light.4c0983bbb8182d8f1030a7ee0ad48f9c.png",
+      "sha256": "d853e8197af604ce7bb8fd64484032c229253f418ca5373ed3464cbdf0eece11"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/fireworks-dark.457a1bc79715d159fe233f67b6b55da3.png",
+      "sha256": "b7a8de8c15fd13d7eb91620e4c426a3180421747f0efc928aa79603093aecf6a"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/fireworks-light.457a1bc79715d159fe233f67b6b55da3.png",
+      "sha256": "b7a8de8c15fd13d7eb91620e4c426a3180421747f0efc928aa79603093aecf6a"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/gryphe-light.1d945f7b9a8bb0fea94757f2c527cc7b.png",
+      "sha256": "bd0fbd462c6ece8e16a705ebcc79016a8b235ea28ae795a2e3b350c211120849"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/ibm-granite-dark.18cc01193bb5136a284348a090de13e2.png",
+      "sha256": "4b9e3fa236ebf6ed97e8da80ec99ce78483249123a04c819265787e6e788b9c5"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/ibm-granite-light.6101938d0adba362e838ebccfad8b3de.png",
+      "sha256": "015c16ef3f0a30a4b50fd10bac4c73f544d48c35025d9048706d14df1ac0241b"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/inception-dark.cf0775878a8494f995d9d44e5d56cd39.png",
+      "sha256": "3a7d4aacdf0970285b7b3aaa95940b7bc754c0909be11245654518c9b07181b0"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/inception-light.543078cdab34da0dfe38bb7206d94099.png",
+      "sha256": "ab449dad148f79a5ca53facd7af9fcc5b8a6c5b80a657d9a0ab9f3aa08337da4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/inclusionai-light.d988ff01e5119a68e453ebf97e394a6c.png",
+      "sha256": "ec5a076970a6d263487cd262020e9317da7cec3bcd4cd76654bb71cdf1f55b26"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/inference-net-dark.22259b7315daa13ef8168e61340a9234.png",
+      "sha256": "f08f39223436a165b9c2cef8d73306c68b9359fa05972dbad87e15ae3ee8ed4d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/inference-net-light.f3bcfc15ccd0d8c4595d562c2839bcab.png",
+      "sha256": "11c4bd736f6637f11a717364e211453d5e8bb9d1e2b257a73f8448fedfeee2a4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/kwaipilot-dark.47c02bff3b6c3ad382b382aa7241a565.png",
+      "sha256": "a8f8c4b2b6b515050cbf7dd6dc8ba049975110629fac3c2b6158d20c5a1540b8"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/kwaipilot-light.47c02bff3b6c3ad382b382aa7241a565.png",
+      "sha256": "a8f8c4b2b6b515050cbf7dd6dc8ba049975110629fac3c2b6158d20c5a1540b8"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/liquid-dark.a9daaaf79ed10fefe1c74e271d4d9bf3.png",
+      "sha256": "67a68dfc04a4efcae3adc6f303e53e74b16432678fd1108d14193158660e49b4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/liquid-light.921544ed0dccf56c172b65e633e8d712.png",
+      "sha256": "87db16ec89ab0c87d4e9c64fcf100572096594d1bdc9dca98fa844e8757b7c22"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/mancer-light.772cb7e5fa2bf918871c4aa0245d34ca.png",
+      "sha256": "3a0faaebde0cc4b76983d999acf7ef4f7dac1d4bc439b0dd498d75cc0243fc5f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/meituan-light.30534d924656981ece36467ba2ffb73f.png",
+      "sha256": "25c14ccca93c0d90dc2e3bc921f25977c765f07d3640f512705ea03a2183170c"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/morph-dark.93b09ca153d7144cdfe74ba2062d5463.png",
+      "sha256": "58e7903d9e904adf732e65f1aaf58707cd497eb6ee99bfed9071f03581dd72c4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/morph-light.93b09ca153d7144cdfe74ba2062d5463.png",
+      "sha256": "58e7903d9e904adf732e65f1aaf58707cd497eb6ee99bfed9071f03581dd72c4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/nousresearch-dark.5e330686e67383c491d4b7ad627b0096.png",
+      "sha256": "c4e083a6ddda25f3ffbc74a4754cef020677f73ed324ec46a4c801e1f472767d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/nousresearch-light.376577adce7e9792e54be58bd556457e.png",
+      "sha256": "a4eacd7022af9551688a573cb2cccc5baa3ceb5fcb22728658ce444ef7449567"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/openrouter-dark.9aff1a4f67e5ff30c2913c2b6bbefe46.png",
+      "sha256": "de7c51476f81c54f0caa5f872d94bbf4f670084363dac70572a87fc60625b096"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/openrouter-light.51b010eaf6534249cd3ff1dbd15aa8ee.png",
+      "sha256": "8baea3b5b20c253dc52c7d2b98b3fb6616190d845d02a500d85304e3b87c3adc"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/perceptron-dark.ee79bcf92e6d1bc74324557844f651ad.png",
+      "sha256": "846ff14af197469c54f5019318a2732f81e800575de4cedde1c8d53c181f85a9"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/perceptron-light.d083a1ad4c27e3eb321a3402c31c6a78.png",
+      "sha256": "dbcfdaf01e50e13f933d5f334b876a7f6571060edbdbfd932981b1f86e56cc2d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/poolside-dark.653951e512eda7af739b4f225b3d6df6.png",
+      "sha256": "ca8a5458014444c36d522d5a8d26bc4728eb9c37d82494abc2887cf368d30540"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/poolside-light.653951e512eda7af739b4f225b3d6df6.png",
+      "sha256": "ca8a5458014444c36d522d5a8d26bc4728eb9c37d82494abc2887cf368d30540"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/prism-ml-light.43cff0cd0c8d6b8e9b1ec585d26f5af4.png",
+      "sha256": "6cdfbb68cfde631ad58dad4f4b7de72430a293806b19ac7c99d1151feea87951"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/rekaai-dark.d6ea942e5a5d497f5c67edbdae91ccf0.png",
+      "sha256": "9ca92f56078cd8362bc8568db9c5ef4217ad5ceb034d3fbd90eff6854cdd5abe"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/rekaai-light.76769b9bf832d7214b628f70e6d6d77a.png",
+      "sha256": "8253751292bb152c2fbd01195cb8d1909b7131782d4d6ed2674eb71368e1a72c"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/relace-dark.30b4c4cab318e3dc4fa31d54ad8182f6.png",
+      "sha256": "d7d4addb46f1e7c3c1a4ab4292a6512419f97e4707cc018fd06e955ad3b458b4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/relace-light.8063793b3a0ac5220e9d725b7f1b1aad.png",
+      "sha256": "b22841968b66ba58456cb35fce817d376a8d11423b5fa25ef6cebcf10e93ce1e"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/sakana-dark.f5f5433192733f9ca04964a44cb6a96d.png",
+      "sha256": "4adefe6bd119290a30a72b1e1273efebeb56cea10ab07ad802bcc5eecab918a4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/sakana-light.f5f5433192733f9ca04964a44cb6a96d.png",
+      "sha256": "4adefe6bd119290a30a72b1e1273efebeb56cea10ab07ad802bcc5eecab918a4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/sao10k-light.4e16af0f8785d44d0dc7c55af72f9088.png",
+      "sha256": "f60a11c2447072971be68b483e8e09c52456a24480798815fbe18da6951a5c5f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/stealth-light.b49580293e8802cb0b0f5f7ec3b51f9d.png",
+      "sha256": "6cb0d7d0ddff3d608b9d0b3b73832ae1e77fdec4f5c62888f5b68b2d9596fb34"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/stepfun-dark.310808cde1bd8c0930ad4566c14898d5.png",
+      "sha256": "49e54bcda77c23f9a8ceacc0d3c1c07da09be4c2534d453ebcad7da201b25b96"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/stepfun-light.310808cde1bd8c0930ad4566c14898d5.png",
+      "sha256": "49e54bcda77c23f9a8ceacc0d3c1c07da09be4c2534d453ebcad7da201b25b96"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/tencent-dark.dbc3e29500a67ea079c84f1585ff6280.png",
+      "sha256": "dc11c354f1d7c55df90318d435916b0dacf3b2a435bb36563c8d793c42287a87"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/tencent-light.dbc3e29500a67ea079c84f1585ff6280.png",
+      "sha256": "dc11c354f1d7c55df90318d435916b0dacf3b2a435bb36563c8d793c42287a87"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/thedrummer-light.e83dac3a8fb62aad166e424c09211e7e.png",
+      "sha256": "0acfa4c7ddaf4552f96a0879533e135db0defddb753fcb204b6545d190761ba0"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/thinkingmachines-light.0bb149a74aeaeade19923d1c861187a4.png",
+      "sha256": "8bddaca08009df60601e992a4f7dce88332ca512d2983614dd955c6f7c01d9fc"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/typesafe-light.4ea24bf03710c60eff2b31757f9a9fa8.png",
+      "sha256": "15f5124c7dc01d5c673dbd3f67b153d50e5989a140ca23a07b3fc7bdece80968"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/unbiased-light.95c26ec20cc35dcef16eac8048d881bc.png",
+      "sha256": "b4c442620230fcc8b487131252c4a32cc1a25a4dccc89150d3837d7d09df80c8"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/undi95-light.3de8c35eed1fa6d58055070519c2c4ae.png",
+      "sha256": "93aa59383a1d25114280cfae44d6ff1976250f54517b7dfaea9f94af5693f8d3"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/upstage-dark.52c06310189937cb0f835bdae9c29f83.png",
+      "sha256": "7e744094ee7c6f7c4f6a9237fac2d333dd98be804bcbc2ccf261d3d25ad51d6d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/upstage-light.52c06310189937cb0f835bdae9c29f83.png",
+      "sha256": "7e744094ee7c6f7c4f6a9237fac2d333dd98be804bcbc2ccf261d3d25ad51d6d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/writer-light.e0f130419f9d6368a16069b57d84eaf3.png",
+      "sha256": "57fa212ac05b5bf7b49142507f28ff2e4ceac438f9186d342bcf08bd1e1ca492"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/xiaomi-dark.5cfd8a6899475ec4e859e3d9521ef968.png",
+      "sha256": "060e7cb51b2524e1efca8bcdc9f71cd3dbed556820dd98bc44363a0304282fd7"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/xiaomi-light.028d64d8c6675d1430f7e7c3702c7842.png",
+      "sha256": "04f78ad5b2ebd628ddaa59261c3696971dc54799c1ae3401454977810ca1f63b"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/z-ai-dark.35dfb4fa98184dc5fc200af8e4afd762.png",
+      "sha256": "3c66d1980cac2edddb594f0c52cb0a4601127aaedb94fc9cb2cbdb5d9d469db9"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/company-logos/z-ai-light.0e7e96995b0ccf529b37ebd9b2e24ace.png",
+      "sha256": "e53c9c5bfac0971024d08ab812ec13682f22f12247fcc4f134b6a0f2c988fee7"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/glow-cobalt.0cfe8b7e62d65a4822e164cbf0b06678.png",
+      "sha256": "ef45cbdbc39c205772924317224d3103fb589a4634ce360bb30c4690adb6043b"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/glow-sky.9b18de2a1f01975a75c9f5074db7e829.png",
+      "sha256": "2465c4c987bda745fc483e319275a28ff2a92648e3d9d1e329d22bdcea137319"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/google-g.2bbfebc5c3db0d7a97b8cf8fe25cc8c8.png",
+      "sha256": "d1ce9c2af0b10a7333abc99bc706f9a6a199e5b65bf3e3009624f076b8638e6a"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/launch-intro.f377ac4a361d6a38dbc2e62c36a88e62.mp4",
+      "sha256": "646f6004c0edfbfd804a2dc52c3c8d3a7c9e923f398fc59444756a8331866170"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-fable-5.ca4d1a4a5b317389a91d951a67e3e7d1.png",
+      "sha256": "f0f93957187dfa1c19931c87a037a5476942750f0f15c10563717d7d4f900415"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-haiku-4.5.300bc7f50ae43a085120eec16dd64cc1.png",
+      "sha256": "0186211382fd93fd72d73d731b747a6bd24b7ccc32d3be05c2da9467028fbe1f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.1.ba676cc2f80377a31e3fa2bdfdddb7e4.png",
+      "sha256": "0f4e08c833ef2c10d60f1a3d5de6945e5a9da2855d89957135deda7a8f95d0e2"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.5.e5068f5c29c758815f21be09f625b5d5.png",
+      "sha256": "5034ac7301073683aa97cec2013615a2adad66873f171aa1fbbaab2ac10ee5bc"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.6.25843bf92f6074f23b89efbe94a72e96.png",
+      "sha256": "065434376259b0c80cb6f153ac692ac5fdbeee4aaa3d0de6a5112346bebfce5e"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.7-fast.0818bcc103bbd423d768042616a33e9a.png",
+      "sha256": "c5823970658f0faead246c028d3935e411cd3fc84aa7b32a97f817b77307b042"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.7.7b3d816abe122ba146ad4f4ded340898.png",
+      "sha256": "5ee2c60104ebd215d6a958a48f778324fe96d05a993718fed619c44e84cab731"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.8-fast.699381973bbeca353eb50b8d33b0ce8d.png",
+      "sha256": "d98a2abf8bba7db8b6f326b20667f7d34cc195e679e9f4007288133f22099cc1"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.8.087fffdfdff7eb055d765cd984fe1a9e.png",
+      "sha256": "c93880e7eb2488accc8ad9c8025f7c25c6b072c5278ec42b0b663521a3a998f7"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-4.c1437c3319d0e6c843f62fdda5786288.png",
+      "sha256": "2373af73d11781115a8165fac565d018852732e894ed3d0b6422a6e76402188d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-5-fast.26306fa7ffa0327d506f14e649805059.png",
+      "sha256": "27c65eac3f67759f193a19eaaa4c943b14607bf06f3d49c25f17a5ca0b1eb20d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-5.01b45ee80bc06733e60abc70af2890c2.png",
+      "sha256": "343a6f793e2f4203515d3f94c0d944c8a5a9fae1630fad79cc57908c6d28462c"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-opus-5.5.82922a028acc446bac593512cddd2872.png",
+      "sha256": "7b202066ab0d7e3b991e5c7d2ea70a23b4d91bb06abeaf59fbfaef466926cf57"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-sonnet-4.5.7d4004b9f74b86cd77b30a42f6c5efcb.png",
+      "sha256": "0f935048b3a312e2e0c231b293a2a1b2c95e0f0cfcc17316bea0b6eaf7d77731"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-sonnet-4.6.dca4cedbd750f38ab5cb9ebd64ae1cc0.png",
+      "sha256": "2d832f39efa1dd164a092e91f2e8dd9f5f02b32eba314ea023046edc65b0ffe7"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-sonnet-5.5.9d8540e52f0a457d10b4f9ccfeebacc8.png",
+      "sha256": "8721c5cfad43a898ea92d8d4fb8bd5e34d7cdc2af33f7e528cf2d0acd1f7a912"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/claude-sonnet-5.647f205a10090b6c9e865e1eac166889.png",
+      "sha256": "681b185ece8ab51b86c1570b845a67d1d281290c9569b052e788c92c24449f2f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-2.5-flash-lite.c5cb98b7d46a42667e504508c90845d9.png",
+      "sha256": "ca23248770296feb6e71e7a8fae0ed553bc1fe13e43f86a5f59b28b3081201a9"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-2.5-flash.48af5c3373988b2a01e339612e7a408f.png",
+      "sha256": "21bc4a8fb82f48964c3f905b11b218463315407382018f9729cc32a01aa6dcf4"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-2.5-pro.4f119ae399c46eabce8f5dc07d0ac7d4.png",
+      "sha256": "2bab1f3723e63100b640a1449d5d437e0a0cc0ecbb9de4fabfe71ce2ae960c1d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.1-flash-lite.f9836798eef824c1cff29490d6c6f2bb.png",
+      "sha256": "a1e442bd7443078e8c0c7eb27cbe1c5bab4c73263f559d7ca40f07d5c3952f34"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.1-pro.ca580b5a4a73f33053e807cdf3d69f09.png",
+      "sha256": "d893a655cc79d075fe8f0fb854c34130a8db6e2ab2184a75d428f1878ecd6e02"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.5-flash-lite.a7aae4ed8b32adf0c49b87195fb0048c.png",
+      "sha256": "5def02b6bd8a5f5acbdff71553fd49678df5a7de1687d28594d3d6770d8920f7"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.5-flash.ba60ed0668c806b42f9b6e61280200d1.png",
+      "sha256": "2dbacc1e56d95317d9a847d3d119b62347d2f10530cbd9934fbba148d691b0aa"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.6-flash.304b493d6313b03c6e36e32c72d06711.png",
+      "sha256": "6b21967e236e66f20770cbb0606948bed413bdaedfc4c6dc72310265e700c906"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.7-flash.030861524bf47424a099e4cf7c08a6be.png",
+      "sha256": "c11b7440d23f22200e1f65c3c6c85e6f13d43d859e6bca96c47b5636cd27a59f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.8-flash.3a76b6fc9ec3d4b58c1cbc29b224e290.png",
+      "sha256": "251a8faf39ce51404eaec2c0ad84a8398fd28316d13c320d25c137b74bf62dc2"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gemini-3.8-pro.2e0c866b9e6c45e4922f64f49129e61f.png",
+      "sha256": "0837a7f4db44107892c720a23048ed2dae691c90a6c72092cdc5b3ae92ec89aa"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5-codex.08e29587cd5a201a08a4872e5b41623d.png",
+      "sha256": "6c4943200791aea85e5ad673b830fbe5dd5ab0162ac81edb4faebd4810e971d1"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5.4-mini.6cee894b5fee19955f90c63c4edab8f1.png",
+      "sha256": "5814ac5a19ce3f62453445b26a66e4b285643396ae4b6d697e4ae51d24d9c8fd"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5.4.2d0b4cda199be890f9e68b7e2dd2d079.png",
+      "sha256": "91cc36ffc0ca43d21b34950a333449ad90ec77e5bcdc877e001eb542238ca1fe"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5.5.3fee5e46a1da78e5d62adfe907887ed6.png",
+      "sha256": "0144417104540644887be2182b75f3d678d6e33fe8ea240c4e87b0bedc045515"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5.6-luna.8d5a7963003ab3476e2262823c74b19a.png",
+      "sha256": "40d6d5b6ecfa54120b4e5e931b6b456fdbf9ab91e2ebaa1bc7637c5b08aa6645"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5.6-sol.b563816225349a6dfa62b24f6a441b01.png",
+      "sha256": "b6dca76263c707359def3f1ad07b6221544e192d1347af9409b877366045ea90"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-5.6-terra.2de96818357db954b76bd9aecc68eba4.png",
+      "sha256": "2fde271f5ababa7e7ea87a996ed221ec41fb8c036446336829ad6d8b993700f6"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-6-astra.3991dc38ba5720f4ef0e5a88563e0f9a.png",
+      "sha256": "89e2588bd1a34d901bbf8269351af21ba849ffe3b3c2dfa3e888f1f83c483d87"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-6-luna.c67e7babf4adcfeed9d4928b396c3c9d.png",
+      "sha256": "5edc875068a6053458094833863506d401cf4b4e51ebd3c952438d2be4adfe48"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/model-icons/gpt-6-sol.ca65ab441543fe6e213469a31f2587a2.png",
+      "sha256": "bfa1183af3786bddb4fe5926c29d2a7a85b2f2d20a6ccbebd0eb5a466fd88d91"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/assistant.74ee0db9b42879b0a7e80bc81388990a.webp",
+      "sha256": "46fdf4cc2674997fc5bef5852b766b870015e09c1c2489114fbab9b7717ccd1f"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/bugs.808ae6034b1d0ea066aede6363e85ce8.webp",
+      "sha256": "dade36057433691d2db1190b62e2ad6b20d1eb3777190f64bc8d7e026633f534"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/db.43f0d0b79042fcd9ce8cf860faa4e904.webp",
+      "sha256": "4f1a5107cc68d66abc3dd5961d79ed8a2048df366fed6ec7b8a459fe7aa9bf2d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/lead.9cd2bad65dfe110ed147adea1f11ace5.webp",
+      "sha256": "a8a50f5b5123cb4989e1808e04d4a1bb40462a8823da0e77d7d8190773472d53"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/oncall.6db93846159e1d3e4c0b5c0b883a5a46.webp",
+      "sha256": "7dc8aa150cac5678443e3e3d395e56dd8a6291414eeaeea0f2a1d8ca0e6818c2"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/qa.e3c31b339230f0e671bd87608270c5f2.webp",
+      "sha256": "a16156192d49f9aed993195c9548d59c98d179a68738a1bae740dfd9f7369097"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/review.a6942f1c509255cf83f2656e4aaf16cc.webp",
+      "sha256": "1916c45f2ceaddfa9ba45a2d03568978c89e6d5b1a014dbcd7a9b090dff78c3d"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/site.2c21ee9626e86da99bccb1823e76287e.webp",
+      "sha256": "c06b2b79dd15cb8eb3b47bd253d541d9bfa7c967a11ea86142e95deee1c5f57e"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/teammates/sprout.dc9a7bba46c55806b3db9063e930e797.webp",
+      "sha256": "3327afa225bbb0bdb9cd4dce0c1a91d61d64b4f45364025cfe6dca8d91855764"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/vibyra-cobalt.228e5c91b8842442995ee60651f5af49.png",
+      "sha256": "3b42e62dfc3c49c584763f1e62491925b7fcc8ff535a0ecddbe8b70026ec26c5"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/assets/vibyra-pro.59c8be1b83e0f20de03a027f14a9516f.png",
+      "sha256": "ccb0312697d59d875c071b889c59e4715be9104d067e40a4d5650b1f28aef737"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/assets/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.b4eb097d35f44ed943676fd56f6bdc51.ttf",
+      "sha256": "fa2ab7d2557819b2bfe5009e46844efa7170cf177be7735d43aa2ac1295f1d54"
+    },
+    {
+      "path": "backend/resources/mobile-web/assets/metadata.json",
+      "sha256": "aa5f19cc84d41c0f8c70ececb2bc82e863227ea1e121632aca879eb616056991"
+    },
+    {
+      "path": "backend/resources/mobile-web/index.html",
+      "sha256": "5c82630d00a7133ca802c03c198e52e03cd5453606c8dc4d688cf439e1eb7b37"
+    },
+    {
+      "path": "backend/routes/remote_security.php",
+      "sha256": "69cd9d803201dcbc0196bd22a5b9ed4690efda6997646773678954032d3f086a"
+    },
+    {
+      "path": "backend/tests/Feature/RemoteWebClientTest.php",
+      "sha256": "671c7acf83b6c60c9eef906ffcee2e1e1f2aba38fae8c0c6e67ae89ea09e9dd9"
+    }
+  ]
+}

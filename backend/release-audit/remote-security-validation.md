@@ -41,3 +41,21 @@ manifest; the isolated retest and subsequent full run passed LocalOwnerAccess.
   fallback applies to missing objects, never a corrupt/broken primary.
 - Do not deploy proof enforcement without compatible Host/native/web clients,
   stable signing secrets, exact passkey RP/origin, migrations and queue/scheduler.
+
+## Mobile web artifact and actual server acceptance
+
+The coordinated Expo export is mounted at `/app`, with its exact file/hash list
+in `remote-web-source.json`. Its build-owned assets stay outside `public/` and
+are served only by manifest entries. This avoids PHP's static-directory handling
+intercepting `/app` before Laravel can supply its policy. The entry and
+`/app/index.html` have the explicit mobile CSP/no-store; the Noise iframe keeps
+its compiled hash policy and same-origin framing. Unknown and traversal paths
+return404. Assets have safe MIME types and conditional ETag responses.
+
+- Final backend with mobile web: **186 files, 181 passed**, same five baseline
+  failures and counts; `web-candidate-final.txt`/`.failures.txt` retain results.
+- Web-specific API boundary: **2 tests, 45 assertions**, `remote-web-api.txt`.
+- Actual Laravel HTTP server + Chromium: exported welcome loads with no JS/CSP
+  violations; the real Noise iframe initializes WASM and posts its source/origin
+  verified `ready` event. All external network requests were blocked during this
+  check (`laravel-app-browser.txt`). This does not claim a live account connection.
