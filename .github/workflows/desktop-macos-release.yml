@@ -32,6 +32,8 @@ jobs:
     timeout-minutes: 60
     env:
       MACOSX_DEPLOYMENT_TARGET: "12.0"
+      # Keep fake-window latency assertions meaningful on small hosted runners.
+      RUST_TEST_THREADS: "2"
     defaults:
       run:
         working-directory: desktop-tauri
