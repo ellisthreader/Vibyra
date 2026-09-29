@@ -23,7 +23,7 @@ for (const role of ['web', 'all']) {
         env: { ...process.env, PATH: `${cwd}:${process.env.PATH}`, VIBYRA_PROCESS_ROLE: role,
           VIBYRA_RUN_MIGRATIONS: '0', VIBYRA_WEB_WORKERS: '8', PORT: '8000' } });
       assert.equal(result.error, undefined);
-      assert.match(result.stdout, /8\|-d upload_max_filesize=8M -d post_max_size=32M -S 0\.0\.0\.0:8000 \.\.\/vendor\/laravel\/framework\/src\/Illuminate\/Foundation\/resources\/server\.php/);
+      assert.match(result.stdout, /8\|-d expose_php=0 -d upload_max_filesize=8M -d post_max_size=32M -S 0\.0\.0\.0:8000 \.\.\/vendor\/laravel\/framework\/src\/Illuminate\/Foundation\/resources\/server\.php/);
       assert.equal(result.status, role === 'web' ? 0 : 1, result.stderr);
     } finally { rmSync(cwd, { recursive: true, force: true }); }
   });

@@ -30,6 +30,18 @@ return [
 
     'disks' => [
 
+        'release-object' => [
+            'driver' => 's3',
+            'key' => env('VIBYRA_RELEASE_ACCESS_KEY_ID'),
+            'secret' => env('VIBYRA_RELEASE_SECRET_ACCESS_KEY'),
+            'region' => env('VIBYRA_RELEASE_REGION', 'auto'),
+            'bucket' => env('VIBYRA_RELEASE_BUCKET'),
+            'endpoint' => env('VIBYRA_RELEASE_ENDPOINT'),
+            'use_path_style_endpoint' => env('VIBYRA_RELEASE_PATH_STYLE', true),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         'vibes-attachments' => [
             'driver' => 'local',
             'root' => env('VIBES_ATTACHMENTS_ROOT', storage_path('app/private')),

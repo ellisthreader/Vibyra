@@ -1,0 +1,137 @@
+[
+  {
+    "path": "host/Cargo.lock",
+    "sha256": "0e538ab563841aa794a1009b0d854f721298f3c3dafa11d6d04e17819993eda0",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/Cargo.toml",
+    "sha256": "ed89125899e24aa2420ae87d9a9fd04347041a8dec75857e84afc78cb9f7aac5",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/lib.rs",
+    "sha256": "7d88a4dc608545a9ee4dab48bcfe3fd4dc5c2376e316221293b480a6aed4c6f6",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/relay.rs",
+    "sha256": "80017b6e8c4385aa135e9d1f02e242e532f6403a52aca70a63f0962b0f38ad87",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/relay_connection.rs",
+    "sha256": "ded611b140d3da5411a8ca635172385e17f5e39973e6313f54eb97d22582344e",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/relay_writer.rs",
+    "sha256": "b215b4d2252540727d787c454945476556ade3a1a56a18bc255be3d885c7d70d",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/relay_writer_tests.rs",
+    "sha256": "bc6a9afb36f3cadfd3af41747a71c3f8fb3d275e5deecf83ffe56311a2e8bf5c",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/relay_peers.rs",
+    "sha256": "f439f3428cd33ab0e3ee7ec7e13b1db8d2a239ecee28147e16cad2dba007d9da",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/registration_proof.rs",
+    "sha256": "c449e4f24dd8af7ec68ed2fb32d677ec6c4ab1b830b342d1a3682ea543b63208",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src-tauri/Cargo.lock",
+    "sha256": "6b332b11430d1619352f35f1b19224780fc95bc875c16bc957b3072ff5f232e5",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/account_endpoints.rs",
+    "sha256": "e4a43859f553130afa2ce1bf81fa22d5edf894abc188dc283e8ecfca4b73d9bf",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/phone/mod.rs",
+    "sha256": "ea54481ee352861b8776feac190edbcadff22ecbeed99f0ca08600eaff6630c0",
+    "beforeUiSha256": "142b998cc621fdfb7a2633074d0107c5ad207df046a51d215ab2b4f18ab76a15"
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/phone/remote.rs",
+    "sha256": "26ce5f3ab2a5b8d2d7cbbf46a24752565985ec5e87f9f2c929621553fd8021bf",
+    "beforeUiSha256": "98cd3988b90741e66215d97183711e4b90d703840a7ba93e022e5b6f7361a567"
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/phone/remote_registration.rs",
+    "sha256": "816d4134eb5094111f37e4b5974595d9ae2bad3511f57e6655d6b5120077b9e8",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/phone/remote_transfer_scope.rs",
+    "sha256": "6ec800f1e5573adca7fd44b5624e31b518d358ccc50eea0755ca33ad4f5eb1b4",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/commands/mod.rs",
+    "sha256": "f8ddf6386ecef6a6b82cd69194ad6bfba456efa985862baa9ff879ba7980aae2",
+    "beforeUiSha256": "872e82eeaf3054b213e2f6b1230672035ab3ae1481e193370311eca19b0f7b1d"
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/commands/registry.rs",
+    "sha256": "9c00beeeb8eddefe79593613aa55352548bdc29f1b89935a43ddd68b43090036",
+    "beforeUiSha256": "9f15fe1c302515557c104c545e5d5f7acae81c1781b835c0994148fe5b643568"
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/commands/phone_remote.rs",
+    "sha256": "048ba5a83d4789f25c129897c8b4bf0b63c51fc6c4d7a78dc064b1904e73f7f8",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src/components/settings/SettingsPhonePane.tsx",
+    "sha256": "a9ed59bcfe97011c35fd2644d9180991539e7e62f0720639e286e4af2fce18fb",
+    "beforeUiSha256": "864d5a81952103114d696fcd103b88644d9510ea95e6655a6cb7e78b1c339ea1"
+  },
+  {
+    "path": "desktop-tauri/src/components/settings/SettingsPhoneTransfer.tsx",
+    "sha256": "00d54a996efdf1d44ffbc508bc5c27d9eef3bbc97f1bcbe988da138e875c4205",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/src/ipc/phone.ts",
+    "sha256": "4ec90384c36fd9b4a527a9481fe860a3934ec5718689d2b8d75c2d14ea837d80",
+    "beforeUiSha256": "a96c6371a42772b0ce2ad85a491f976995f2efe90fe8f9d7a693cf327572d7bd"
+  },
+  {
+    "path": "desktop-tauri/tests/phoneConnection.test.mjs",
+    "sha256": "1049249c4e40960b3948827b4453538524e8176e70cff9fc543e21aca2999d85",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "desktop-tauri/scripts/verify-cloud-transfer.mjs",
+    "sha256": "dbb6a2b4763d2397bc39cbc261adc60f5fef46b82dc9018b7f9d2f4777b9b92d",
+    "beforeUiSha256": null
+  },
+  {
+    "path": "host/crates/server/src/main.rs",
+    "beforeTaskSha256": "eb60c5a3a3c14f0ac3ac2cec8acff8685c3b6ef1b9a1ab3fcccbc4e5390a084e",
+    "sha256": "320b8a2e860cd27edc3307ddb6be067708a3750eee3bce3581722ae16f60c4c4"
+  },
+  {
+    "path": "desktop-tauri/scripts/publish-macos-update.mjs",
+    "beforeTaskSha256": "5aacba000fd3dcd99ba631e9148ad90f4baeb57eeae7b9c649e31ab012f7d46a",
+    "sha256": "10af5c5ff99c2a584093eaec34386f625a8ed32a5d6ae5e4d6bd4cf2c8ce4dc7"
+  },
+  {
+    "path": "desktop-tauri/scripts/macos-release-capacity.mjs",
+    "beforeTaskSha256": null,
+    "sha256": "4647da7fe3cd4d3afadf57ceae5c20d15191ba8589b65b4d2bac2a85dacc60ea"
+  },
+  {
+    "path": "desktop-tauri/tests/releaseCapacity.test.mjs",
+    "beforeTaskSha256": null,
+    "sha256": "521a6f87f7d3f72279889663293d15b083a5aab71678f5c895f32575d4792bc1"
+  }
+]

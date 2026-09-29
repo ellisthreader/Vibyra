@@ -6,6 +6,7 @@ use App\Models\RemoteAuditEvent;
 use App\Models\RemoteHost;
 use App\Models\RemoteSession;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 /**
  * What the relay tells this API, applied to the registry: computers coming and
@@ -22,14 +23,14 @@ class RemotePresence
             if (! is_array($event) || ! is_string($event['event'] ?? null)) {
                 continue;
             }
-            $applied += match ($event['event']) {
+            $applied += DB::transaction(fn () => match ($event['event']) {
                 'host.online' => $this->online($relayId, $event, true),
                 'host.offline' => $this->offline($event),
                 'presence' => $this->heartbeat($relayId, $event),
                 'session.started' => $this->session($event, true),
                 'session.ended' => $this->session($event, false),
                 default => 0,
-            };
+            });
         }
 
         return $applied;
@@ -37,7 +38,7 @@ class RemotePresence
 
     private function online(string $relayId, array $event, bool $record): int
     {
-        $host = $this->host($event['hostId'] ?? null, $event['userId'] ?? null);
+        $host = $this->host($event['hostId'] ?? null, $event['userId'] ?? null, $event['generation'] ?? null);
         if ($host === null) {
             return 0;
         }
@@ -53,7 +54,7 @@ class RemotePresence
 
     private function offline(array $event): int
     {
-        $host = $this->host($event['hostId'] ?? null, $event['userId'] ?? null);
+        $host = $this->host($event['hostId'] ?? null, $event['userId'] ?? null, $event['generation'] ?? null);
         if ($host === null) {
             return 0;
         }
@@ -77,13 +78,13 @@ class RemotePresence
 
     private function session(array $event, bool $started): int
     {
-        $host = $this->host($event['hostId'] ?? null, $event['userId'] ?? null);
+        $host = $this->host($event['hostId'] ?? null, $event['userId'] ?? null, $event['generation'] ?? null);
         $grant = is_string($event['jti'] ?? null) ? $event['jti'] : null;
         if ($host === null || $grant === null) {
             return 0;
         }
         $session = RemoteSession::query()->where('remote_host_id', $host->id)->where('grant_id', $grant)->first();
-        if ($session === null) {
+        if ($session === null || ($started && $session->ended_at !== null) || (int) $session->authorization_generation !== $host->authorization_generation) {
             return 0;
         }
         $clientId = is_string($event['clientId'] ?? null) ? mb_substr($event['clientId'], 0, 40) : null;
@@ -95,15 +96,15 @@ class RemotePresence
         return 1;
     }
 
-    private function host(mixed $hostId, mixed $userId): ?RemoteHost
+    private function host(mixed $hostId, mixed $userId, mixed $generation): ?RemoteHost
     {
         if (! is_string($hostId) || ! preg_match('/^[a-f0-9]{64}$/', $hostId) || ! is_string($userId)) {
             return null;
         }
 
-        $host = RemoteHost::query()->where('host_id', $hostId)->whereNull('revoked_at')->first();
+        $host = RemoteHost::query()->where('host_id', $hostId)->whereNull('revoked_at')->lockForUpdate()->first();
 
-        return $host !== null && (string) $host->user_id === $userId ? $host : null;
+        return $host !== null && (string) $host->user_id === $userId && is_int($generation) && $host->authorization_generation === $generation ? $host : null;
     }
 
     public function audit(RemoteHost $host, string $event, array $detail = []): void

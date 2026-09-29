@@ -41,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->remove(HandleCors::class);
         $middleware->append(VibyraCors::class);
+        $middleware->prepend(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\VibesLegacyGuard::class);
         $middleware->validateCsrfTokens(except: [
             'pair',

@@ -40,8 +40,11 @@ fi
 # whole backend for as long as it runs, and everything queued behind it, a
 # sign-up included, waits until Railway's proxy gives up with a 502.
 start_web() {
+  if [[ "${VIBYRA_WEB_SERVER:-builtin}" == "fpm" ]]; then
+    exec node scripts/start-web.mjs
+  fi
   cd public
-  exec php -d upload_max_filesize=8M -d post_max_size=32M \
+  exec php -d expose_php=0 -d upload_max_filesize=8M -d post_max_size=32M \
     -S "0.0.0.0:$port" \
     ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
 }

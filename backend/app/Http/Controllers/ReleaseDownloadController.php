@@ -76,7 +76,11 @@ class ReleaseDownloadController extends Controller
 
         $path = trim((string) ($release['path'] ?? ''));
         try {
-            if ($this->artifacts->size($platform, $release) === null) {
+            // Pin the selected disk through checksum validation and streaming.
+            $disk = app(\App\Services\ReleaseStorage::class)->diskFor($path);
+            if ($disk === null) return $this->unavailable();
+            $size = $this->artifacts->size($platform, $release, $disk);
+            if ($size === null) {
                 return $this->unavailable();
             }
 
@@ -87,13 +91,14 @@ class ReleaseDownloadController extends Controller
                 'X-Checksum-SHA256' => (string) ($release['sha256'] ?? ''),
             ];
 
-            $response = Storage::disk((string) config('releases.disk', 'local'))
-                ->download($path, $filename, $headers);
+            $response = app(\App\Services\ReleaseStream::class)->download($disk, $path, $filename, $size, $headers);
             if ($countWebsiteDownload) {
                 app(Recorder::class)->website(request(), 'website_download', $platform);
             }
 
             return $response;
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $error) {
+            throw $error;
         } catch (Throwable) {
             return $this->unavailable();
         }

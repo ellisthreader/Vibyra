@@ -52,17 +52,18 @@ class ReleaseArtifact
     }
 
     /** Byte size of the stored artifact, or null when it fails any check. */
-    public function size(string $platform, array $release): ?int
+    public function size(string $platform, array $release, ?string $diskName = null): ?int
     {
         if (! $this->ready($platform, $release)) {
             return null;
         }
 
-        $disk = Storage::disk((string) config('releases.disk', 'local'));
         $path = trim((string) ($release['path'] ?? ''));
-        if ($path === '' || ! $disk->exists($path)) {
+        $diskName ??= app(ReleaseStorage::class)->diskFor($path);
+        if ($diskName === null) {
             return null;
         }
+        $disk = Storage::disk($diskName);
 
         $actualSize = (int) $disk->size($path);
         $expectedSize = (int) ($release['size_bytes'] ?? 0);
@@ -75,6 +76,7 @@ class ReleaseArtifact
             $path,
             (string) $release['sha256'],
             $actualSize,
+            $diskName,
         )) {
             return null;
         }

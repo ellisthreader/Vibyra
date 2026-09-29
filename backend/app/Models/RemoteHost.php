@@ -11,12 +11,13 @@ class RemoteHost extends Model
 {
     protected $fillable = [
         'user_id', 'host_id', 'name', 'platform', 'app_version', 'registered_at',
-        'last_seen_at', 'online_until', 'relay_id', 'revoked_at',
+        'last_seen_at', 'online_until', 'relay_id', 'revoked_at', 'authorization_generation',
     ];
 
     protected function casts(): array
     {
         return [
+            'authorization_generation' => 'integer',
             'registered_at' => 'datetime',
             'last_seen_at' => 'datetime',
             'online_until' => 'datetime',

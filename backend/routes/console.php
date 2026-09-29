@@ -34,3 +34,6 @@ Schedule::call(function () {
 Schedule::command('vibyra:membership-remote-leases')->everyMinute()->withoutOverlapping();
 
 Schedule::command('vibyra:membership-replay')->everyTenMinutes()->withoutOverlapping();
+
+Schedule::command('vibyra:remote-revocations')->everyMinute()->withoutOverlapping();
+Schedule::command('vibyra:release-capacity')->hourly()->withoutOverlapping()->onOneServer();

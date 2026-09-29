@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Route;
 // routes/web.php; the same `web` group and bearer-session auth as the rest of
 // /api, with CSRF already exempt for api/*.
 Route::middleware('web')->group(function (): void {
+    Route::post('/api/remote/relay/authorize', [RemoteAccessController::class, 'authorizeRelay']);
     Route::post('/api/remote/relay/events', [RemoteAccessController::class, 'relayEvents']);
+    Route::post('/api/remote/hosts/challenge', [RemoteAccessController::class, 'challenge'])->middleware('throttle:30,1,remote-challenge');
     Route::get('/api/remote/hosts', [RemoteAccessController::class, 'hosts']);
     Route::post('/api/remote/hosts', [RemoteAccessController::class, 'registerHost'])->middleware('throttle:30,1,remote-register');
     Route::post('/api/remote/hosts/{hostId}/connect', [RemoteAccessController::class, 'connect'])->middleware('throttle:30,1,remote-connect');

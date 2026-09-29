@@ -10,7 +10,7 @@ class RemoteSession extends Model
 {
     protected $fillable = [
         'user_id', 'remote_host_id', 'grant_id', 'client_name', 'relay_client_id',
-        'issued_at', 'started_at', 'ended_at',
+        'issued_at', 'started_at', 'ended_at', 'authorization_generation',
     ];
 
     protected function casts(): array

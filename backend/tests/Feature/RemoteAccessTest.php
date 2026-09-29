@@ -19,13 +19,13 @@ class RemoteAccessTest extends TestCase
     use RefreshDatabase;
 
     private const SECRET = 'relay-test-secret-that-is-long-enough-0123456789';
-    private const HOST = 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90';
+    private const HOST = '1b7fcb001edc76ad88f31a3c64ca5b13a6cab636c528c95049ce0ce83e61d36a';
 
     protected function setUp(): void
     {
         parent::setUp();
-        config(['remote.relay_url' => 'wss://relay.vibyra.test', 'remote.relay_secret' => self::SECRET, 'vibes.remote_access_live' => true]);
-        Http::fake(['https://relay.vibyra.test/*' => Http::response(['ok' => true, 'disconnected' => true])]);
+        config(['remote.relay_url' => 'wss://relay.vibyra.test', 'remote.relay_secret' => self::SECRET, 'vibes.remote_access_live' => true, 'remote.relay_report_secret' => self::SECRET, 'remote.relay_admin_secret' => self::SECRET]);
+        Http::fake(fn ($request) => Http::response(['ok' => true, 'disconnected' => true, 'generation' => $request['generation']]));
     }
 
     /** @return array{0: User, 1: string} */
@@ -34,7 +34,7 @@ class RemoteAccessTest extends TestCase
         $token = $this->postJson('/api/auth/signup', ['name' => 'Ellis', 'email' => $email, 'password' => 'secret123', 'deviceName' => 'iPhone'])
             ->assertSuccessful()->json('token');
         $user = User::where('email', $email)->firstOrFail();
-        $user->forceFill(['plan' => $plan])->save();
+        $user->forceFill(['plan' => $plan, 'billing_provider' => 'manual', 'membership_ends_at' => now()->addMonth()])->save();
 
         return [$user, $token];
     }
@@ -44,14 +44,27 @@ class RemoteAccessTest extends TestCase
         return ['Authorization' => "Bearer {$token}"];
     }
 
-    private function register(string $token, string $hostId = self::HOST, string $name = 'Ellis MacBook'): array
+    private function register(string $token, string $hostId = self::HOST, string $name = 'Ellis MacBook', string $action = 'register'): array
     {
-        return $this->postJson('/api/remote/hosts', ['hostId' => $hostId, 'name' => $name, 'platform' => 'macos', 'version' => '0.1.13'],
+        $challenge = $this->postJson('/api/remote/hosts/challenge', ['hostId' => $hostId, 'action' => $action], $this->auth($token))->assertOk()->json();
+        $proof = sodium_crypto_box_seal_open(base64_decode($challenge['ciphertext']), sodium_crypto_box_seed_keypair(str_repeat('a', 32)));
+        return $this->postJson('/api/remote/hosts', ['challengeId' => $challenge['challengeId'], 'proof' => base64_encode($proof), 'hostId' => $hostId, 'name' => $name, 'platform' => 'macos', 'version' => '0.1.13'],
             $this->auth($token))->assertOk()->json();
     }
 
     private function relay(array $events, string $secret = self::SECRET): \Illuminate\Testing\TestResponse
     {
+        foreach ($events as &$event) {
+            if (isset($event['hostId'])) {
+                $host = \App\Models\RemoteHost::where('host_id', $event['hostId'])->first();
+                $event += ['userId' => (string) $host->user_id, 'generation' => $host->authorization_generation];
+            }
+            if (isset($event['hosts'])) foreach ($event['hosts'] as &$entry) {
+                $host = \App\Models\RemoteHost::where('host_id', $entry['hostId'])->first();
+                $entry += ['userId' => (string) $host->user_id, 'generation' => $host->authorization_generation];
+            }
+        }
+        unset($event, $entry);
         return $this->postJson('/api/remote/relay/events', ['relayId' => 'relay-1', 'events' => $events], $this->auth($secret));
     }
 
@@ -119,7 +132,7 @@ class RemoteAccessTest extends TestCase
         $this->assertFalse($this->getJson('/api/remote/hosts', $this->auth($token))->json('live'));
         $this->postJson('/api/remote/hosts', ['hostId' => self::HOST, 'name' => 'Mac'], $this->auth($token))->assertStatus(503);
 
-        config(['vibes.remote_access_live' => true]);
+        config(['vibes.remote_access_live' => true, 'remote.relay_report_secret' => self::SECRET, 'remote.relay_admin_secret' => self::SECRET]);
         [, $other] = $this->account('someone@example.com');
         $this->postJson('/api/remote/hosts/'.self::HOST.'/connect', [], $this->auth($other))->assertStatus(404);
         $this->assertSame([], $this->getJson('/api/remote/hosts', $this->auth($other))->json('computers'));
@@ -141,11 +154,40 @@ class RemoteAccessTest extends TestCase
         $this->register($token, self::HOST, 'Ellis MacBook Air');
         $this->assertSame('Ellis MacBook Air', $this->getJson('/api/remote/hosts', $this->auth($token))->json('computers.0.name'));
 
-        // Signing in on that computer with another account moves it there.
+        // A public host ID cannot move the computer to another account.
         [, $other] = $this->account('someone@example.com');
-        $this->register($other);
-        $this->assertSame([], $this->getJson('/api/remote/hosts', $this->auth($token))->json('computers'));
-        $this->assertSame(self::HOST, $this->getJson('/api/remote/hosts', $this->auth($other))->json('computers.0.id'));
+        $this->postJson('/api/remote/hosts', ['hostId' => self::HOST, 'name' => 'Attacker'], $this->auth($other))->assertStatus(409);
+        $this->assertSame(self::HOST, $this->getJson('/api/remote/hosts', $this->auth($token))->json('computers.0.id'));
+        $this->assertSame([], $this->getJson('/api/remote/hosts', $this->auth($other))->json('computers'));
         $this->assertSame(0, RemoteAuditEvent::query()->where('user_id', $user->id)->where('event', 'session.started')->count());
+    }
+
+    public function test_account_move_disconnects_the_old_socket_and_waits_for_fresh_presence(): void
+    {
+        [$firstUser, $first] = $this->account('first@example.com');
+        $this->register($first);
+        $this->relay([['event' => 'host.online', 'hostId' => self::HOST, 'userId' => (string) $firstUser->id, 'generation' => 1]])->assertOk();
+        $this->assertTrue($this->getJson('/api/remote/hosts', $this->auth($first))->json('computers.0.online'));
+
+        [$secondUser, $second] = $this->account('second@example.com');
+        $this->postJson('/api/remote/hosts/challenge', ['hostId' => self::HOST, 'action' => 'register'], $this->auth($second))->assertStatus(409);
+        $moved = $this->register($second, action: 'transfer');
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request) => $request->url() === 'https://relay.vibyra.test/admin/disconnect'
+            && $request->hasHeader('Authorization', 'Bearer '.self::SECRET) && $request['hostId'] === self::HOST && $request['generation'] === 2);
+        $this->assertFalse($moved['host']['online']);
+        $this->assertNull($moved['host']['lastSeenAt']);
+        $this->assertSame([], $this->getJson('/api/remote/hosts', $this->auth($first))->json('computers'));
+        $this->postJson('/api/remote/hosts/'.self::HOST.'/connect', [], $this->auth($second))->assertStatus(409);
+
+        $this->relay([['event' => 'host.online', 'hostId' => self::HOST, 'userId' => (string) $firstUser->id, 'generation' => 1],
+            ['event' => 'presence', 'hosts' => [['hostId' => self::HOST, 'userId' => (string) $firstUser->id, 'generation' => 1]]]])
+            ->assertOk()->assertJson(['applied' => 0]);
+        $this->postJson('/api/remote/hosts/'.self::HOST.'/connect', [], $this->auth($second))->assertStatus(409);
+
+        $this->relay([['event' => 'host.online', 'hostId' => self::HOST, 'userId' => (string) $secondUser->id, 'generation' => 2]])->assertOk();
+        $this->relay([['event' => 'host.offline', 'hostId' => self::HOST, 'userId' => (string) $firstUser->id, 'generation' => 1]])
+            ->assertOk()->assertJson(['applied' => 0]);
+        $this->postJson('/api/remote/hosts/'.self::HOST.'/connect', [], $this->auth($second))->assertOk();
     }
 }
