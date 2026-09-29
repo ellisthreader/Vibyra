@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-preview-windows-permission"
+description = "Enables the preview_windows_permission command without any pre-configured scope."
+commands.allow = ["preview_windows_permission"]
+
+[[permission]]
+identifier = "deny-preview-windows-permission"
+description = "Denies the preview_windows_permission command without any pre-configured scope."
+commands.deny = ["preview_windows_permission"]

@@ -39,8 +39,6 @@ pub fn pairing_url(address: &str) -> Result<String, String> {
 pub fn default_address() -> String {
     // UDP connect selects a source address without sending a packet. Try both
     // families: IPv6-only Macs can report 192.0.0.2 for the IPv4 CLAT shim.
-    let interfaces = if_addrs::get_if_addrs().unwrap_or_default();
-    let mut routed = None;
     for (bind, target) in [
         ("0.0.0.0:0", "192.0.2.1:9"),
         ("[::]:0", "[2001:4860:4860::8888]:9"),
@@ -55,48 +53,10 @@ pub fn default_address() -> String {
             .ok()
             .map(|a| a.ip().to_string());
         if let Some(address) = selected.filter(|a| connection_address(a).is_ok()) {
-            routed = Some(address);
-            break;
+            return address;
         }
     }
-    // A default VPN route may be point-to-point and unreachable from the
-    // phone's Wi-Fi. Conversely, a local network can have no default route at
-    // all. Prefer the route only when it belongs to an ordinary interface.
-    if let Some(address) = &routed {
-        if interfaces
-            .iter()
-            .any(|interface| interface.ip().to_string() == *address && !interface.is_p2p())
-        {
-            return address.clone();
-        }
-    }
-    let mut candidates: Vec<_> = interfaces
-        .iter()
-        .filter(|interface| {
-            !interface.is_loopback()
-                && !interface.is_p2p()
-                && connection_address(&interface.ip().to_string()).is_ok()
-        })
-        .collect();
-    candidates.sort_by_key(|interface| {
-        let name = interface.name.to_ascii_lowercase();
-        let physical = name.starts_with("en")
-            || name.starts_with("eth")
-            || name.starts_with("wlan")
-            || name.starts_with("wi-fi")
-            || name.starts_with("ethernet");
-        (
-            !interface.is_oper_up(),
-            !physical,
-            !interface.ip().is_ipv4(),
-            name,
-        )
-    });
-    candidates
-        .first()
-        .map(|interface| interface.ip().to_string())
-        .or(routed)
-        .unwrap_or_default()
+    String::new()
 }
 
 /// Left alone, macOS picks the *temporary* IPv6 address — the privacy one it

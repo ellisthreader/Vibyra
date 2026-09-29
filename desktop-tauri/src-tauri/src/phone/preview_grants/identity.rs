@@ -23,30 +23,6 @@ fn same_surface(left: &str, right: &str) -> bool {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::same_surface;
-    #[test]
-    fn native_permission_changes_replace_only_the_same_window() {
-        assert!(same_surface(
-            "native-window:12:34:view",
-            "native-window:12:34:control"
-        ));
-        assert!(!same_surface(
-            "native-window:12:34:view",
-            "native-window:12:35:control"
-        ));
-        assert!(!same_surface(
-            "native-window:12:34:view",
-            "native-window:13:34:control"
-        ));
-        assert!(!same_surface(
-            "attached-port:3000",
-            "native-window:12:34:control"
-        ));
-    }
-}
-
 pub(super) fn validate_id(value: &str) -> Result<(), String> {
     if value.is_empty() || value.len() > 256 || value.chars().any(char::is_control) {
         return Err("Invalid preview device or project ID".into());
@@ -82,5 +58,29 @@ pub(super) fn current_scope(project: &Path, requested: &Path) -> Result<(), Stri
         Ok(())
     } else {
         Err("This folder is not a current project worktree".into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::same_surface;
+    #[test]
+    fn native_permission_changes_replace_only_the_same_window() {
+        assert!(same_surface(
+            "native-window:12:34:view",
+            "native-window:12:34:control"
+        ));
+        assert!(!same_surface(
+            "native-window:12:34:view",
+            "native-window:12:35:control"
+        ));
+        assert!(!same_surface(
+            "native-window:12:34:view",
+            "native-window:13:34:control"
+        ));
+        assert!(!same_surface(
+            "attached-port:3000",
+            "native-window:12:34:control"
+        ));
     }
 }

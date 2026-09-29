@@ -22,7 +22,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         remote_security_actions::remote_security_set_mode,
         remote_security_actions::remote_security_disable_all,
         crate::agent_computer::agent_computer_choose,
-        crate::agent_computer::agent_computer_grants,
+        crate::agent_computer_grants::agent_computer_grants,
         crate::agent_computer_reveal::agent_computer_reveal_worktree,
         crate::agent_computer_review::agent_computer_worktree_status,
         crate::agent_computer_review::agent_computer_worktree_diff,

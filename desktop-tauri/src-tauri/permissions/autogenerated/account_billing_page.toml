@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-billing-page"
+description = "Enables the account_billing_page command without any pre-configured scope."
+commands.allow = ["account_billing_page"]
+
+[[permission]]
+identifier = "deny-account-billing-page"
+description = "Denies the account_billing_page command without any pre-configured scope."
+commands.deny = ["account_billing_page"]

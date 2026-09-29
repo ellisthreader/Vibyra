@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-open-openai-key-page"
+description = "Enables the open_openai_key_page command without any pre-configured scope."
+commands.allow = ["open_openai_key_page"]
+
+[[permission]]
+identifier = "deny-open-openai-key-page"
+description = "Denies the open_openai_key_page command without any pre-configured scope."
+commands.deny = ["open_openai_key_page"]

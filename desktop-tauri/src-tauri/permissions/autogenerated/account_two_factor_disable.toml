@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-two-factor-disable"
+description = "Enables the account_two_factor_disable command without any pre-configured scope."
+commands.allow = ["account_two_factor_disable"]
+
+[[permission]]
+identifier = "deny-account-two-factor-disable"
+description = "Denies the account_two_factor_disable command without any pre-configured scope."
+commands.deny = ["account_two_factor_disable"]

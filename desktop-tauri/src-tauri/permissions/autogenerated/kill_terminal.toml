@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-kill-terminal"
+description = "Enables the kill_terminal command without any pre-configured scope."
+commands.allow = ["kill_terminal"]
+
+[[permission]]
+identifier = "deny-kill-terminal"
+description = "Denies the kill_terminal command without any pre-configured scope."
+commands.deny = ["kill_terminal"]

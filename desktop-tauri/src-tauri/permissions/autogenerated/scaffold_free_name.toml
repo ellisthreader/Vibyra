@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-scaffold-free-name"
+description = "Enables the scaffold_free_name command without any pre-configured scope."
+commands.allow = ["scaffold_free_name"]
+
+[[permission]]
+identifier = "deny-scaffold-free-name"
+description = "Denies the scaffold_free_name command without any pre-configured scope."
+commands.deny = ["scaffold_free_name"]

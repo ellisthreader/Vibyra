@@ -35,6 +35,7 @@ hex = "0.4"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+uuid = { version = "1", features = ["v4"] }
 sha1 = "0.10"
 sha2 = "0.10"
 flate2 = "1"

@@ -1,7 +1,6 @@
 use serde::Serialize;
 
 use crate::account_api::{request, ApiError, Endpoint};
-use crate::secret_store::SecretStore;
 use crate::state::AppState;
 
 /// The website pages billing sends people to. The renderer names a page and

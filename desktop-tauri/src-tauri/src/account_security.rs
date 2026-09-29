@@ -2,7 +2,6 @@ use serde::Serialize;
 
 use crate::account_api::{request, ApiError, Endpoint};
 use crate::account_types::profile_from_user;
-use crate::secret_store::SecretStore;
 use crate::state::AppState;
 
 /// What Settings says about the second factor. The secret is never part of

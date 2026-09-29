@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-preview-windows-available"
+description = "Enables the preview_windows_available command without any pre-configured scope."
+commands.allow = ["preview_windows_available"]
+
+[[permission]]
+identifier = "deny-preview-windows-available"
+description = "Denies the preview_windows_available command without any pre-configured scope."
+commands.deny = ["preview_windows_available"]

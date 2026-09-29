@@ -9,12 +9,7 @@ const DISCORD_REPORT_WEBHOOK_ACCOUNT: &str = "discord-report-webhook";
 
 pub struct SecretStore;
 
-/// The session token as last read from the store, until the next session
-/// write. Launch reads the token, verifies it, and adopts it — which wrote the
-/// same bytes straight back: a Keychain write on every launch, and a second
-/// access prompt whenever the item's ACL does not yet include this build.
-static SESSION_JUST_READ: Mutex<Option<String>> = Mutex::new(None);
-
+// Host keys use the native credential store; public metadata stays on disk.
 impl vibyra_host::IdentityKeyStore for SecretStore {
     fn read(&self, public_key: &str) -> Result<Option<String>, String> {
         #[cfg(test)]

@@ -29,6 +29,8 @@ mod platform_text;
 #[allow(dead_code, unused_imports)]
 #[path = "support/phone_typing_preview.rs"]
 mod preview_service;
+#[path = "support/phone_probe_accounts.rs"]
+mod provider_auth;
 #[allow(dead_code)]
 #[path = "../src/phone/railway.rs"]
 mod railway;

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-computer-revoke"
+description = "Enables the agent_computer_revoke command without any pre-configured scope."
+commands.allow = ["agent_computer_revoke"]
+
+[[permission]]
+identifier = "deny-agent-computer-revoke"
+description = "Denies the agent_computer_revoke command without any pre-configured scope."
+commands.deny = ["agent_computer_revoke"]

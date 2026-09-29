@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-computer-reveal-worktree"
+description = "Enables the agent_computer_reveal_worktree command without any pre-configured scope."
+commands.allow = ["agent_computer_reveal_worktree"]
+
+[[permission]]
+identifier = "deny-agent-computer-reveal-worktree"
+description = "Denies the agent_computer_reveal_worktree command without any pre-configured scope."
+commands.deny = ["agent_computer_reveal_worktree"]

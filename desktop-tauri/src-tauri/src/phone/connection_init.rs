@@ -18,6 +18,7 @@ impl PhoneConnection {
     ) -> Mutex<Self> {
         Self::with_chats_preview(path, manager, chats, account, None)
     }
+    #[cfg(test)]
     pub fn with_chats_preview(
         path: PathBuf,
         manager: Arc<PtyManager>,

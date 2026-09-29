@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-speech-active"
+description = "Enables the speech_active command without any pre-configured scope."
+commands.allow = ["speech_active"]
+
+[[permission]]
+identifier = "deny-speech-active"
+description = "Denies the speech_active command without any pre-configured scope."
+commands.deny = ["speech_active"]

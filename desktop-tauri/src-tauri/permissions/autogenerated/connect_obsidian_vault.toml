@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-connect-obsidian-vault"
+description = "Enables the connect_obsidian_vault command without any pre-configured scope."
+commands.allow = ["connect_obsidian_vault"]
+
+[[permission]]
+identifier = "deny-connect-obsidian-vault"
+description = "Denies the connect_obsidian_vault command without any pre-configured scope."
+commands.deny = ["connect_obsidian_vault"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-clear-terminal-session"
+description = "Enables the clear_terminal_session command without any pre-configured scope."
+commands.allow = ["clear_terminal_session"]
+
+[[permission]]
+identifier = "deny-clear-terminal-session"
+description = "Denies the clear_terminal_session command without any pre-configured scope."
+commands.deny = ["clear_terminal_session"]

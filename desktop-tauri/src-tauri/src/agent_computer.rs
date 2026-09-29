@@ -1,5 +1,4 @@
 use crate::agent_computer_access::{account_scope, looks_uuid, revoke_cloud};
-pub use crate::agent_computer_grants::agent_computer_grants;
 use crate::agent_computer_store::{self, Grant};
 use crate::commands::run_blocking;
 use crate::secret_store::SecretStore;

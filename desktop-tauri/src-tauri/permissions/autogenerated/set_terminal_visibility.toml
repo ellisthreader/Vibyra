@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-terminal-visibility"
+description = "Enables the set_terminal_visibility command without any pre-configured scope."
+commands.allow = ["set_terminal_visibility"]
+
+[[permission]]
+identifier = "deny-set-terminal-visibility"
+description = "Denies the set_terminal_visibility command without any pre-configured scope."
+commands.deny = ["set_terminal_visibility"]

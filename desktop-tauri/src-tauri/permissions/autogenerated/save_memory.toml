@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-save-memory"
+description = "Enables the save_memory command without any pre-configured scope."
+commands.allow = ["save_memory"]
+
+[[permission]]
+identifier = "deny-save-memory"
+description = "Denies the save_memory command without any pre-configured scope."
+commands.deny = ["save_memory"]

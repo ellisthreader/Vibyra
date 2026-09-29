@@ -2,7 +2,6 @@ use serde::Serialize;
 
 use crate::account_api::{request, ApiError, Endpoint};
 use crate::account_auth;
-use crate::secret_store::SecretStore;
 use crate::state::AppState;
 
 /// One place this account is signed in. The raw address and user agent stay

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-preview-start"
+description = "Enables the preview_start command without any pre-configured scope."
+commands.allow = ["preview_start"]
+
+[[permission]]
+identifier = "deny-preview-start"
+description = "Denies the preview_start command without any pre-configured scope."
+commands.deny = ["preview_start"]
