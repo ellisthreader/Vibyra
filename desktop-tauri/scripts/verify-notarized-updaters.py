@@ -58,6 +58,8 @@ def safe_members(archive):
         raise ValueError("Oversized archive")
     for member in members:
         path = PurePosixPath(member.name)
+        if member.size < 0:
+            raise ValueError("Invalid archive member size")
         if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] != "Vibyra.app":
             raise ValueError("Archive path escapes app")
         if not (member.isfile() or member.isdir() or member.issym()):
