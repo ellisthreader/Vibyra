@@ -9,6 +9,7 @@ mod focus;
 mod front;
 mod input;
 mod inventory;
+mod keys;
 mod lock;
 mod pixels;
 #[cfg(test)]
@@ -41,6 +42,15 @@ impl Backend for LinuxBackend {
     fn input(&self, window: &Geometry, event: &InputEvent) -> Result<(), String> {
         lock::unlocked()?;
         conn::with(|x| input::send(x, window, event))
+    }
+    fn input_checked(
+        &self,
+        window: &Geometry,
+        event: &InputEvent,
+        check: &crate::window_preview::InputCheck<'_>,
+    ) -> Result<(), String> {
+        lock::unlocked()?;
+        conn::with(|x| input::send_checked(x, window, event, check))
     }
     fn focus(&self, window: &Geometry) -> Result<Focused, String> {
         lock::unlocked()?;

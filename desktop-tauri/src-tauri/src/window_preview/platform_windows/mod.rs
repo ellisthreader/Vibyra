@@ -3,6 +3,7 @@
 //! integrity checks. Loaded by `native` as its `os` backend.
 mod automation;
 mod desktop;
+mod effects;
 mod focus;
 mod identity;
 mod input;
@@ -46,6 +47,14 @@ impl Backend for WindowsBackend {
     }
     fn input(&self, window: &Geometry, event: &InputEvent) -> Result<(), String> {
         input::send(window, event)
+    }
+    fn input_checked(
+        &self,
+        window: &Geometry,
+        event: &InputEvent,
+        check: &crate::window_preview::InputCheck<'_>,
+    ) -> Result<(), String> {
+        input::send_checked(window, event, check)
     }
     fn focus(&self, window: &Geometry) -> Result<Focused, String> {
         focus::focused(window)

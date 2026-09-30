@@ -6,7 +6,7 @@ private var pending = 0
 @available(macOS 12.3, *) private var sessions: [String: WindowCapture] = [:]
 
 @available(macOS 12.3, *)
-func dispatch(_ request: [String: Any]) throws -> Data {
+func dispatch(_ request: [String: Any], authority: InputAuthority) throws -> Data {
     switch request["op"] as? String {
     case "available": return try jsonBytes(["available": true])
     case "permission":
@@ -41,7 +41,8 @@ func dispatch(_ request: [String: Any]) throws -> Data {
             // A tap may move keyboard focus: note where it was, then wait briefly for it to move.
             let click = request["kind"] as? String == "click"
             let before = click ? focusState(capture, settleAfter: nil, now: true)["serial"] as? Int : nil
-            try windowInput(capture, request)
+            try authority.require()
+            try windowInput(capture, request, authority: authority)
             return try jsonBytes(["ok": true, "focus": focusState(capture, settleAfter: before)])
         }
         if request["op"] as? String == "focus" { return try jsonBytes(focusState(capture, settleAfter: nil)) }
@@ -64,13 +65,16 @@ private func focusState(_ capture: WindowCapture, settleAfter serial: Int?, now:
 
 @_cdecl("vibyra_window_request")
 public func windowRequest(_ bytes: UnsafePointer<UInt8>, _ count: Int,
-                          _ length: UnsafeMutablePointer<Int>, _ status: UnsafeMutablePointer<Int32>) -> UnsafeMutablePointer<UInt8>? {
+                          _ length: UnsafeMutablePointer<Int>, _ status: UnsafeMutablePointer<Int32>,
+                          _ check: (@convention(c) (UnsafeRawPointer?) -> Int32)?, _ context: UnsafeRawPointer?) -> UnsafeMutablePointer<UInt8>? {
     var output: Data
     do {
         guard count <= 16384,
               let request = try JSONSerialization.jsonObject(with: Data(bytes: bytes, count: count)) as? [String: Any]
         else { throw fail("Invalid window Preview request.") }
-        if #available(macOS 12.3, *) { output = try dispatch(request) }
+        if #available(macOS 12.3, *) { output = try dispatch(request, authority: InputAuthority(valid: {
+            guard let check, let context else { return false }; return check(context) == 1
+        })) }
         else { throw fail("Native window Preview requires macOS 12.3 or newer.") }
         status.pointee = 0
     } catch {

@@ -39,6 +39,15 @@ pub(crate) trait Backend: Send + Sync {
     fn info(&self, id: u32) -> Result<Geometry, String>;
     fn open(&self, window: &Geometry) -> Result<Box<dyn Source>, String>;
     fn input(&self, window: &Geometry, event: &InputEvent) -> Result<(), String>;
+    fn input_checked(
+        &self,
+        window: &Geometry,
+        event: &InputEvent,
+        check: &crate::window_preview::InputCheck<'_>,
+    ) -> Result<(), String> {
+        check()?;
+        self.input(window, event)
+    }
     /// What has keyboard focus in the window, for the phone's own keyboard.
     /// Platforms that cannot tell report no field; the phone keeps its
     /// keyboard button either way.

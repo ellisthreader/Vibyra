@@ -95,7 +95,7 @@ fn real_native_handoff_discovers_approves_and_decodes_only_its_project_window() 
         false
     );
     assert!(window
-        .input(json!({"sequence":1,"kind":"key","key":"enter"}))
+        .input(json!({"sequence":1,"kind":"key","key":"enter"}), &|| Ok(()))
         .is_err());
     service
         .inner

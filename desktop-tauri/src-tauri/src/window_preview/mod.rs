@@ -1,7 +1,9 @@
 //! Framework-independent window Preview of an application on the computer.
 mod focus_header;
+mod input_guard;
 mod session;
 pub(crate) use focus_header::{focus_header, FOCUS_HEADER};
+pub(crate) use input_guard::InputCheck;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 pub(crate) use session::Session;
@@ -92,9 +94,9 @@ mod platform;
 #[path = "platform_unsupported.rs"]
 mod platform;
 #[cfg(any(windows, target_os = "linux"))]
-use native::request;
+use native::{request, request_input};
 #[cfg(not(any(windows, target_os = "linux")))]
-use platform::request;
+use platform::{request, request_input};
 
 #[cfg(test)]
 mod tests {

@@ -18,6 +18,8 @@ mod tests_focus_fresh;
 #[cfg(test)]
 mod tests_focus_reader;
 #[cfg(test)]
+mod tests_input_guard;
+#[cfg(test)]
 mod tests_keys;
 
 #[cfg(windows)]
@@ -38,5 +40,17 @@ pub(crate) use input::{Action, InputEvent, Key};
 
 #[cfg(any(windows, target_os = "linux"))]
 pub(super) fn request(value: serde_json::Value) -> Result<Vec<u8>, String> {
-    dispatch::dispatch(os::backend(), &value)
+    dispatch::dispatch_checked(
+        os::backend(),
+        &value,
+        &crate::window_preview::input_guard::denied,
+    )
+}
+
+#[cfg(any(windows, target_os = "linux"))]
+pub(super) fn request_input(
+    value: serde_json::Value,
+    check: &crate::window_preview::InputCheck<'_>,
+) -> Result<Vec<u8>, String> {
+    dispatch::dispatch_checked(os::backend(), &value, check)
 }

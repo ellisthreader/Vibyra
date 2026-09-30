@@ -118,7 +118,17 @@ impl Capture {
 
     /// Input only against the geometry the phone is looking at. Returns the
     /// keyboard focus afterwards; after a tap, once focus has had a moment to move.
+    #[cfg(test)]
     pub fn input(&self, request: &Value) -> Result<Value, String> {
+        self.input_checked(request, &|| Ok(()))
+    }
+
+    pub fn input_checked(
+        &self,
+        request: &Value,
+        check: &crate::window_preview::InputCheck<'_>,
+    ) -> Result<Value, String> {
+        check()?;
         let tap_deadline = Instant::now() + super::focus::TAP_WAIT;
         self.frame()?;
         let event = InputEvent::parse(request)?;
@@ -131,18 +141,21 @@ impl Capture {
             InputEvent::Keys(actions) => {
                 for action in actions {
                     match action {
-                        Action::Text(units) => {
-                            self.backend.input(&now, &InputEvent::Text(units.clone()))?
-                        }
+                        Action::Text(units) => self.backend.input_checked(
+                            &now,
+                            &InputEvent::Text(units.clone()),
+                            check,
+                        )?,
                         Action::Key(key, times) => {
                             for _ in 0..*times {
-                                self.backend.input(&now, &InputEvent::Key(*key))?;
+                                self.backend
+                                    .input_checked(&now, &InputEvent::Key(*key), check)?;
                             }
                         }
                     }
                 }
             }
-            other => self.backend.input(&now, other)?,
+            other => self.backend.input_checked(&now, other, check)?,
         }
         let now = self.backend.info(self.window.info.id)?;
         Ok(match before.flatten() {

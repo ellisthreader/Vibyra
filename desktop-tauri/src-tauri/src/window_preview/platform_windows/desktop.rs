@@ -63,7 +63,10 @@ pub(super) fn input_desktop_is_default() -> bool {
 /// A tap from the phone is meant for the shared window even while the owner
 /// uses another one: bring it forward (joining the foreground thread's input
 /// so Windows allows it), then let the usual checks confirm before any input.
-pub(super) fn bring_to_front(handle: windows::Win32::Foundation::HWND) {
+pub(super) fn bring_to_front(
+    handle: windows::Win32::Foundation::HWND,
+    check: &crate::window_preview::InputCheck<'_>,
+) -> Result<(), String> {
     use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
     use windows::Win32::UI::WindowsAndMessaging::{
         BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow,
@@ -72,22 +75,30 @@ pub(super) fn bring_to_front(handle: windows::Win32::Foundation::HWND) {
     unsafe {
         let foreground = GetForegroundWindow();
         if foreground == handle {
-            return;
+            return Ok(());
         }
         let theirs = GetWindowThreadProcessId(foreground, None);
         let ours = GetCurrentThreadId();
+        check()?;
         let attached =
             theirs != 0 && theirs != ours && AttachThreadInput(ours, theirs, true).as_bool();
-        let _ = BringWindowToTop(handle);
-        let _ = SetForegroundWindow(handle);
+        let result: Result<(), String> = (|| {
+            check()?;
+            let _ = BringWindowToTop(handle);
+            check()?;
+            let _ = SetForegroundWindow(handle);
+            Ok(())
+        })();
         if attached {
             let _ = AttachThreadInput(ours, theirs, false);
         }
+        result?;
         for _ in 0..10 {
             if GetForegroundWindow() == handle {
-                return;
+                return Ok(());
             }
             std::thread::sleep(std::time::Duration::from_millis(30));
         }
     }
+    Ok(())
 }

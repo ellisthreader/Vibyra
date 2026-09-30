@@ -42,24 +42,21 @@ func keyActions(_ request: [String: Any]) throws -> [KeyAction] {
 
 /// Sends the actions in order, confirming before each one that the shared
 /// window still has keyboard focus: keys never land in another application.
-func send(_ actions: [KeyAction], focused: () -> Bool) throws {
+func send(_ actions: [KeyAction], authority: InputAuthority, focused: () -> Bool) throws {
     for action in actions {
+        try authority.require()
         guard focused() else { throw fail("The shared window lost keyboard focus on your Mac. Tap into it, then type again.") }
         switch action {
-        case .text(let text): try type(text)
-        case .key(let name, let times): for _ in 0..<times { try press(name) }
+        case .text(let text): try type(text, authority: authority, focused: focused)
+        case .key(let name, let times): for _ in 0..<times { try authority.require(); guard focused() else { throw fail("The shared window lost keyboard focus on your Mac.") }
+            try press(name, authority: authority) }
         }
     }
 }
 
-private func post(_ event: CGEvent?) throws {
-    guard let event else { throw fail("macOS refused to create the input event.") }
-    event.post(tap: .cghidEventTap)
-}
-
 /// One character per event where that is short (some text fields read only
 /// the first character of an event), otherwise runs of whole characters.
-private func type(_ text: String) throws {
+private func type(_ text: String, authority: InputAuthority, focused: () -> Bool) throws {
     // An empty piece stands for a line break, which is pressed as Return.
     var pieces: [[UniChar]] = []
     var run: [UniChar] = []
@@ -73,7 +70,9 @@ private func type(_ text: String) throws {
     if !run.isEmpty { pieces.append(run) }
     let source = CGEventSource(stateID: .hidSystemState)
     for piece in pieces {
-        if piece.isEmpty { try press("enter"); continue }
+        try authority.require()
+        guard focused() else { throw fail("The shared window lost keyboard focus on your Mac.") }
+        if piece.isEmpty { try press("enter", authority: authority); continue }
         let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true)
         let up = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false)
         piece.withUnsafeBufferPointer { buffer in
@@ -83,20 +82,20 @@ private func type(_ text: String) throws {
         // Held modifiers on the Mac must not turn typing into shortcuts.
         down?.flags = []
         up?.flags = []
-        try post(down)
-        try post(up)
+        guard let down, let up else { throw fail("macOS refused to create the input event.") }
+        try authority.pair(down, up)
         usleep(piece.count > 2 ? 6_000 : 2_000)
     }
 }
 
-private func press(_ name: String) throws {
+private func press(_ name: String, authority: InputAuthority) throws {
     guard let (key, flags) = namedKeys[name] else { throw fail("Unsupported key.") }
     let source = CGEventSource(stateID: .hidSystemState)
     let down = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true)
     let up = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: false)
     down?.flags = flags
     up?.flags = flags
-    try post(down)
-    try post(up)
+    guard let down, let up else { throw fail("macOS refused to create the input event.") }
+    try authority.pair(down, up)
     usleep(2_000)
 }

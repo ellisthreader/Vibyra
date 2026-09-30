@@ -85,7 +85,7 @@ func visibleAreas() -> [CGRect] {
 /// window just far enough onto the display it mostly occupies (never resizing
 /// it) so the point at (`nx`, `ny`) of it is visible, and return its new frame.
 @available(macOS 12.3, *)
-func revealPoint(pid: Int32, frame: CGRect, nx: Double, ny: Double) -> CGRect? {
+func revealPoint(pid: Int32, frame: CGRect, nx: Double, ny: Double, authority: InputAuthority) throws -> CGRect? {
     let areas = visibleAreas()
     let point = CGPoint(x: frame.minX + nx * frame.width, y: frame.minY + ny * frame.height)
     if areas.contains(where: { $0.insetBy(dx: 2, dy: 2).contains(point) }) { return frame }
@@ -99,6 +99,7 @@ func revealPoint(pid: Int32, frame: CGRect, nx: Double, ny: Double) -> CGRect? {
     }
     var origin = CGPoint(x: place(frame.minX, frame.width, area.minX, area.maxX, nx),
                          y: place(frame.minY, frame.height, area.minY, area.maxY, ny))
+    try authority.require()
     guard let value = AXValueCreate(.cgPoint, &origin),
           AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, value) == .success else { return nil }
     for _ in 0..<20 {
@@ -121,16 +122,23 @@ private func overlap(_ area: CGRect, _ frame: CGRect) -> CGFloat {
 /// uses something else on the Mac: raise exactly that window and make its app
 /// frontmost, then wait (briefly) until `ready` confirms it before any event.
 @available(macOS 12.3, *)
-func bringToFront(pid: Int32, frame: CGRect, until ready: () -> Bool) -> Bool {
+func bringToFront(pid: Int32, frame: CGRect, authority: InputAuthority, until ready: () -> Bool) throws -> Bool {
+    try authority.require()
     if ready() { return true }
     let app = AXUIElementCreateApplication(pid)
     if let window = sharedWindowElement(pid: pid, frame: frame) {
+        try authority.require()
         AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+        try authority.require()
         AXUIElementSetAttributeValue(app, kAXMainWindowAttribute as CFString, window)
+        try authority.require()
         AXUIElementSetAttributeValue(app, kAXFocusedWindowAttribute as CFString, window)
     }
+    try authority.require()
     AXUIElementSetAttributeValue(app, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
-    NSRunningApplication(processIdentifier: pid)?.activate(options: [])
+    let running = NSRunningApplication(processIdentifier: pid)
+    try authority.require()
+    running?.activate(options: [])
     for _ in 0..<20 {
         usleep(25_000)
         if ready() { return true }

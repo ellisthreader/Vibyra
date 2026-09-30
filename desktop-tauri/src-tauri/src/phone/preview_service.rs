@@ -38,6 +38,7 @@ mod upgrade;
 mod upgrade_io;
 pub mod watch;
 mod window;
+mod window_input;
 
 use super::{preview_grants::PreviewGrants, workspace::SharedWorkspace};
 use parking_lot::{Condvar, Mutex};

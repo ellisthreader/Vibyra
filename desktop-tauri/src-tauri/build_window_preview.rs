@@ -15,6 +15,7 @@ pub fn build() {
         "Inventory.swift",
         "Capture.swift",
         "Input.swift",
+        "InputAuthority.swift",
         "Front.swift",
         "FocusFields.swift",
         "FocusScan.swift",

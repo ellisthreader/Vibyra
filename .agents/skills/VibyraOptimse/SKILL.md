@@ -16,6 +16,13 @@ Find the sweet spot:
 - Do require approval for actions that write files, execute generated code, apply agent edits, connect/control another device, spend credits, expose private local paths, or persist trust decisions.
 - Do not require approval for read-only previews, local draft text, obvious navigation, reversible UI state, or low-risk status refreshes.
 - Prefer project/session-scoped trust over global trust. “Always allow” should be narrow and visible.
+- For remote native input, carry the exact Stream/window consent predicate to
+  every OS effect, recheck after sequence waits, and deny unscoped dispatch.
+  Event-time consent checks must avoid native inventory recursion and fail closed
+  on busy state. Mac callbacks are borrowed/Sync/synchronous with panic/null denial;
+  only paired releases and borrowed mapping restoration survive revocation.
+  Run the queue/revoke, Swift sink and consent tests described in
+  `Vibyra/_ai/Desktop/Native Remote Input Authorization.md`.
 - Keep every source code file under the project’s limit, commonly 200 lines. Exclude generated folders and temporary tool artifacts.
 
 ## Workflow

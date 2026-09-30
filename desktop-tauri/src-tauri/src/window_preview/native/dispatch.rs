@@ -23,7 +23,16 @@ fn bytes(value: Value) -> Result<Vec<u8>, String> {
     serde_json::to_vec(&value).map_err(|e| e.to_string())
 }
 
+#[cfg(test)]
 pub(super) fn dispatch(backend: &'static dyn Backend, request: &Value) -> Result<Vec<u8>, String> {
+    dispatch_checked(backend, request, &|| Ok(()))
+}
+
+pub(super) fn dispatch_checked(
+    backend: &'static dyn Backend,
+    request: &Value,
+    check: &crate::window_preview::InputCheck<'_>,
+) -> Result<Vec<u8>, String> {
     if request.to_string().len() > MAX_REQUEST {
         return Err("Invalid window Preview request.".into());
     }
@@ -59,7 +68,7 @@ pub(super) fn dispatch(backend: &'static dyn Backend, request: &Value) -> Result
                     Ok(Vec::new())
                 }
                 "input" => capture
-                    .input(request)
+                    .input_checked(request, check)
                     .and_then(|focus| bytes(json!({"ok":true,"focus":focus}))),
                 "focus" => bytes(capture.focus()?),
                 _ => capture.frame(),

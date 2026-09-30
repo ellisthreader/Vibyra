@@ -86,7 +86,29 @@ impl PreviewService {
                         refused.as_bytes().to_vec(),
                     )
                 } else {
-                    match window.input(event) {
+                    let requested = event.clone();
+                    let current = self
+                        .inner
+                        .bindings
+                        .lock()
+                        .get(&(device.into(), key.generation()))
+                        .cloned()
+                        .ok_or("Window Preview approval ended")?;
+                    let consent = self.inner.grants.window_consent(
+                        device,
+                        &current.grant_id,
+                        &self.inner.workspace.read(),
+                    )?;
+                    let input = super::window_input::WindowInput {
+                        device,
+                        key,
+                        stream,
+                        window,
+                        event: &requested,
+                        consent: &consent,
+                    };
+                    let check = || self.require_live_window_input(&input);
+                    match window.input(event, &check) {
                         Ok(focus) => (
                             200,
                             "application/json",

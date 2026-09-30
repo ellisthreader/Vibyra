@@ -2,15 +2,15 @@
 //! at on the PC: foreground, focused, unmoved and on top where the tap lands.
 
 use super::desktop::input_desktop_is_default;
+use super::effects::{key, mouse, send_checked as effects};
 use super::inventory::{bounds, dpi_aware, hwnd};
 use super::{Geometry, InputEvent};
 use crate::window_preview::native::Key;
 use windows::Win32::Foundation::POINT;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYBD_EVENT_FLAGS,
-    KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, MOUSEEVENTF_LEFTDOWN,
-    MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP, MOUSEEVENTF_WHEEL, MOUSEINPUT,
-    MOUSE_EVENT_FLAGS, VIRTUAL_KEY, VK_BACK, VK_DELETE, VK_DOWN, VK_ESCAPE, VK_LEFT, VK_NEXT,
+    KEYBD_EVENT_FLAGS, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE,
+    MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP,
+    MOUSEEVENTF_WHEEL, VIRTUAL_KEY, VK_BACK, VK_DELETE, VK_DOWN, VK_ESCAPE, VK_LEFT, VK_NEXT,
     VK_PRIOR, VK_RETURN, VK_RIGHT, VK_SHIFT, VK_TAB, VK_UP,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -19,6 +19,15 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 pub(super) fn send(window: &Geometry, event: &InputEvent) -> Result<(), String> {
+    send_checked(window, event, &crate::window_preview::input_guard::denied)
+}
+
+pub(super) fn send_checked(
+    window: &Geometry,
+    event: &InputEvent,
+    check: &crate::window_preview::InputCheck<'_>,
+) -> Result<(), String> {
+    check()?;
     dpi_aware();
     let handle = hwnd(window.info.id);
     if !input_desktop_is_default() {
@@ -26,7 +35,7 @@ pub(super) fn send(window: &Geometry, event: &InputEvent) -> Result<(), String> 
             "Unlock your PC and close any security prompt before controlling this window.".into(),
         );
     }
-    super::desktop::bring_to_front(handle);
+    super::desktop::bring_to_front(handle, check)?;
     // SAFETY: read-only window and thread queries.
     unsafe {
         if IsIconic(handle).as_bool() {
@@ -60,7 +69,7 @@ pub(super) fn send(window: &Geometry, event: &InputEvent) -> Result<(), String> 
     }
     let inputs = match event {
         InputEvent::Click { x, y, right } => {
-            aim(handle, window, *x, *y)?;
+            aim(handle, window, *x, *y, check)?;
             let (down, up) = if *right {
                 (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP)
             } else {
@@ -69,7 +78,7 @@ pub(super) fn send(window: &Geometry, event: &InputEvent) -> Result<(), String> 
             vec![mouse(down, 0), mouse(up, 0)]
         }
         InputEvent::Scroll { x, y, delta } => {
-            aim(handle, window, *x, *y)?;
+            aim(handle, window, *x, *y, check)?;
             // 120 is one wheel notch; the phone sends pixels, about 100 a notch.
             vec![mouse(MOUSEEVENTF_WHEEL, delta * 6 / 5)]
         }
@@ -114,12 +123,7 @@ pub(super) fn send(window: &Geometry, event: &InputEvent) -> Result<(), String> 
         // The dispatcher sends a batch one action at a time.
         InputEvent::Keys(_) => return Err("Unsupported window input.".into()),
     };
-    // SAFETY: a slice of fully initialised INPUT records.
-    let sent = unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
-    if sent as usize != inputs.len() {
-        return Err("Windows blocked the input.".into());
-    }
-    Ok(())
+    effects(&inputs, check)
 }
 
 /// Moves the pointer to the tap, refusing if a menu or another window is on
@@ -129,6 +133,7 @@ fn aim(
     window: &Geometry,
     x: f64,
     y: f64,
+    check: &crate::window_preview::InputCheck<'_>,
 ) -> Result<(), String> {
     let (px, py) = super::super::input::point(window, x, y);
     let point = POINT {
@@ -143,33 +148,7 @@ fn aim(
                     .into(),
             );
         }
+        check()?;
         SetCursorPos(point.x, point.y).map_err(|e| e.message())
-    }
-}
-
-fn mouse(flags: MOUSE_EVENT_FLAGS, data: i32) -> INPUT {
-    INPUT {
-        r#type: INPUT_MOUSE,
-        Anonymous: INPUT_0 {
-            mi: MOUSEINPUT {
-                mouseData: data as u32,
-                dwFlags: flags,
-                ..Default::default()
-            },
-        },
-    }
-}
-
-fn key(code: VIRTUAL_KEY, scan: u16, flags: KEYBD_EVENT_FLAGS) -> INPUT {
-    INPUT {
-        r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 {
-            ki: KEYBDINPUT {
-                wVk: code,
-                wScan: scan,
-                dwFlags: flags,
-                ..Default::default()
-            },
-        },
     }
 }

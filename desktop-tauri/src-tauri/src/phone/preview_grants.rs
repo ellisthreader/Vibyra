@@ -153,6 +153,8 @@ mod run_site;
 pub(crate) mod runs;
 mod runs_store;
 mod store;
+mod window_consent;
+pub(crate) use window_consent::WindowConsent;
 
 pub(crate) use run_fingerprint::run_fingerprint;
 pub(crate) use run_grants::run_root;

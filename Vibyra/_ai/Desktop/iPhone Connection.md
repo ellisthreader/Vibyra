@@ -130,3 +130,9 @@ Use current network > Enable connection. Create a QR/link and approve the
 phone's viewing request on the Mac. Matching mobile IPv6 parser changes are in
 the maintained app source/current local bundle; no iOS store release was made.
 Physical iPhone consent, pairing and reconnect remain device acceptance checks.
+
+## Native input authorization
+
+For the current guarded native window control source and regression routes, see
+[[Desktop/Native Remote Input Authorization]]. Signed/native release acceptance
+remains a separate gate.

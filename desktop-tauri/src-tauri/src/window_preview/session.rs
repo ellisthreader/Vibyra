@@ -1,4 +1,4 @@
-use super::{json, request, Target, Value};
+use super::{json, request, request_input, InputCheck, Target, Value};
 use parking_lot::Mutex;
 use std::{
     collections::HashSet,
@@ -98,7 +98,16 @@ impl Session {
         serde_json::from_slice(&bytes).ok()
     }
     /// Sends one input and returns the keyboard focus after it.
-    pub fn input(&self, mut event: Value) -> Result<Value, String> {
+    pub fn input(&self, event: Value, check: &InputCheck<'_>) -> Result<Value, String> {
+        self.input_with(event, check, request_input)
+    }
+
+    fn input_with(
+        &self,
+        mut event: Value,
+        check: &InputCheck<'_>,
+        dispatch: impl FnOnce(Value, &InputCheck<'_>) -> Result<Vec<u8>, String>,
+    ) -> Result<Value, String> {
         if !self.target.control {
             return Err("This window is shared for viewing only.".into());
         }
@@ -106,6 +115,14 @@ impl Session {
         let token = token.ok_or("Window Preview ended.")?;
         // Held for the whole input, so inputs reach the window one at a time.
         let mut sequence = self.sequence.lock();
+        let live = || {
+            check()?;
+            if self.token.lock().as_deref() != Some(token.as_str()) {
+                return super::input_guard::denied();
+            }
+            Ok(())
+        };
+        live()?;
         let next = event["sequence"].as_u64().ok_or("Invalid input sequence")?;
         // Strictly increasing: a lost request is skipped, never replayed or reordered.
         if next <= *sequence {
@@ -114,13 +131,14 @@ impl Session {
         *sequence = next;
         event["op"] = json!("input");
         event["session"] = json!(token);
-        let reply = request(event)?;
+        let reply = dispatch(event, &live)?;
         *self.seen.lock() = Instant::now();
         let reply: Value = serde_json::from_slice(&reply).unwrap_or_default();
         Ok(reply["focus"].clone())
     }
     pub fn close(&self) {
-        if let Some(token) = self.token.lock().take() {
+        let token = self.token.lock().take();
+        if let Some(token) = token {
             let _ = request(json!({"op":"stop","session":token}));
             if self.target.control {
                 leases().lock().remove(&self.target.id);
@@ -133,3 +151,7 @@ impl Drop for Session {
         self.close();
     }
 }
+
+#[cfg(test)]
+#[path = "tests_input_guard.rs"]
+mod tests_input_guard;
