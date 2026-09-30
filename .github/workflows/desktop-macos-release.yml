@@ -29,7 +29,7 @@ jobs:
             source: src-tauri/target/release/bundle/macos/*.app.tar.gz
             suffix: macos-x64.app.tar.gz
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       MACOSX_DEPLOYMENT_TARGET: "12.0"
       # Keep fake-window latency assertions meaningful on small hosted runners.
