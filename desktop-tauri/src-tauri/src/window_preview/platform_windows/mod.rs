@@ -7,6 +7,7 @@ mod effects;
 mod focus;
 mod identity;
 mod input;
+mod input_target;
 mod inventory;
 mod print;
 #[cfg(test)]

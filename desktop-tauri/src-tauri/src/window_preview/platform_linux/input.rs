@@ -2,6 +2,7 @@
 //! and on top where the tap lands.
 
 use super::conn::{text, X};
+use super::input_target::focused;
 use super::inventory::{ancestors, frame};
 use super::keys::type_keysym;
 use super::{Geometry, InputEvent};
@@ -34,23 +35,8 @@ pub(super) fn send_checked(
     check()?;
     let id = window.info.id;
     super::front::bring_to_front(x, id, check)?;
-    let active = x.property32(x.root, x.atoms.active);
-    if active.first().is_some_and(|active| *active != id) {
-        return Err("Bring the shared application window to the front on your computer before controlling it.".into());
-    }
-    let focus = x
-        .conn
-        .get_input_focus()
-        .map_err(text)?
-        .reply()
-        .map_err(text)?
-        .focus;
-    if !(focus == id || ancestors(x, focus).contains(&id) || (active.is_empty() && focus == 1)) {
-        return Err(
-            "A different window or dialog has focus. Return to the shared window on your computer."
-                .into(),
-        );
-    }
+    let targeted = || crate::window_preview::input_guard::require_target(check, || focused(x, id));
+    targeted()?;
     let (left, top, width, height) = frame(x, id)?;
     if (left - window.x).abs() >= 1.0
         || (top - window.y).abs() >= 1.0
@@ -67,9 +53,9 @@ pub(super) fn send_checked(
         } => {
             let point = aim(x, window, *px, *py)?;
             let button = if *right { 3 } else { 1 };
-            fake(x, MOTION, 0, point, check)?;
-            fake(x, BUTTON_PRESS, button, point, check)?;
-            fake(x, BUTTON_RELEASE, button, point, check)?;
+            fake(x, MOTION, 0, point, &targeted)?;
+            fake(x, BUTTON_PRESS, button, point, &targeted)?;
+            fake(x, BUTTON_RELEASE, button, point, &targeted)?;
         }
         InputEvent::Scroll {
             x: px,
@@ -78,10 +64,10 @@ pub(super) fn send_checked(
         } => {
             let point = aim(x, window, *px, *py)?;
             let button = if *delta > 0 { 4 } else { 5 };
-            fake(x, MOTION, 0, point, check)?;
+            fake(x, MOTION, 0, point, &targeted)?;
             for _ in 0..(delta.unsigned_abs().div_ceil(100)).clamp(1, 6) {
-                fake(x, BUTTON_PRESS, button, point, check)?;
-                fake(x, BUTTON_RELEASE, button, point, check)?;
+                fake(x, BUTTON_PRESS, button, point, &targeted)?;
+                fake(x, BUTTON_RELEASE, button, point, &targeted)?;
             }
         }
         InputEvent::Text(units) => {
@@ -94,7 +80,7 @@ pub(super) fn send_checked(
                     } else {
                         0x0100_0000 | code
                     },
-                    check,
+                    &targeted,
                 )?;
             }
         }
@@ -115,7 +101,7 @@ pub(super) fn send_checked(
                 Key::PageUp => 0xff55,
                 Key::PageDown => 0xff56,
             },
-            check,
+            &targeted,
         )?,
         // The dispatcher sends a batch one action at a time.
         InputEvent::Keys(_) => return Err("Unsupported window input.".into()),

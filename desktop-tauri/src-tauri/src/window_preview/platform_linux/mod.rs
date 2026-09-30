@@ -8,6 +8,7 @@ mod conn;
 mod focus;
 mod front;
 mod input;
+mod input_target;
 mod inventory;
 mod keys;
 mod lock;

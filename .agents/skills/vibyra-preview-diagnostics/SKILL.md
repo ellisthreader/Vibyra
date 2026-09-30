@@ -110,6 +110,19 @@ and shutdown. Never expose bearer or capability secrets.
 Do not weaken proxy authorization, bypass explicit Run approval, or kill
 processes by executable name or port to make a Preview appear healthy.
 
+## Native Window Control
+
+For native phone window input, read `Desktop/Native Remote Input Authorization.md`.
+Carry the exact Stream, immutable local consent, current Binding/Session token and
+typing state through a borrowed synchronous callback. Use nonblocking consent
+snapshots; recheck authority after sequence waits and target queries. Before each
+new OS effect, require the same target window or focused descendant, then recheck
+authority. Never retain callback context on async queues or recursively enter X11
+connection/inventory locks. Only releases paired with posted downs and restoration
+of a borrowed keyboard mapping may finish after denial. Preserve queued revoke/
+close zero-effect tests, mid-batch focus/revoke tests and explicit local paths;
+native release acceptance requires the exact platform workflows.
+
 ## Source Ownership
 
 - Rust/Tauri workspace Preview: `desktop-tauri/src/components/preview/`,

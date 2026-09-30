@@ -26,7 +26,11 @@ key/text piece. Cleanup may emit only a release paired with a successfully emitt
 down, plus restoration of an X11 key mapping borrowed by that request. Revocation
 must prevent every subsequent new input effect.
 
-Use the VibyraOptimse skill for permission/timing audits. Regression routes:
+Use the VibyraOptimse skill for permission/timing audits and Preview diagnostics
+for native targeting. Windows/Linux wrap every new effect with authority → exact
+foreground/focused target or descendant → authority. Recheck after OS queries;
+Linux uses the already-held X connection and denies ambiguous PointerRoot focus.
+Regression routes:
 `cargo test --manifest-path desktop-tauri/src-tauri/Cargo.toml input_guard` and
 `window_consent`; the Mac test compiles actual Keys.swift expansion with an
 injected sink and posts no OS events. Keep queue revoke/close zero-effect tests,

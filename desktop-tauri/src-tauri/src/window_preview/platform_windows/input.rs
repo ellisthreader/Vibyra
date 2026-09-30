@@ -3,6 +3,7 @@
 
 use super::desktop::input_desktop_is_default;
 use super::effects::{key, mouse, send_checked as effects};
+use super::input_target::focused;
 use super::inventory::{bounds, dpi_aware, hwnd};
 use super::{Geometry, InputEvent};
 use crate::window_preview::native::Key;
@@ -14,8 +15,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_PRIOR, VK_RETURN, VK_RIGHT, VK_SHIFT, VK_TAB, VK_UP,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetAncestor, GetForegroundWindow, GetGUIThreadInfo, GetWindowThreadProcessId, IsChild,
-    IsIconic, SetCursorPos, WindowFromPoint, GA_ROOT, GUITHREADINFO,
+    GetAncestor, SetCursorPos, WindowFromPoint, GA_ROOT,
 };
 
 pub(super) fn send(window: &Geometry, event: &InputEvent) -> Result<(), String> {
@@ -36,28 +36,9 @@ pub(super) fn send_checked(
         );
     }
     super::desktop::bring_to_front(handle, check)?;
-    // SAFETY: read-only window and thread queries.
-    unsafe {
-        if IsIconic(handle).as_bool() {
-            return Err("The window is minimized. Restore it on your PC to control it.".into());
-        }
-        if GetForegroundWindow() != handle {
-            return Err("Bring the shared application window to the front on your PC before controlling it.".into());
-        }
-        let thread = GetWindowThreadProcessId(handle, None);
-        let mut info = GUITHREADINFO {
-            cbSize: std::mem::size_of::<GUITHREADINFO>() as u32,
-            ..Default::default()
-        };
-        let focused = GetGUIThreadInfo(thread, &mut info).is_ok()
-            && (info.hwndFocus == handle || IsChild(handle, info.hwndFocus).as_bool());
-        if !focused {
-            return Err(
-                "A different window or dialog has focus. Return to the shared window on your PC."
-                    .into(),
-            );
-        }
-    }
+    let targeted =
+        || crate::window_preview::input_guard::require_target(check, || focused(window.info.id));
+    targeted()?;
     let now = bounds(handle, false).ok_or("This window cannot be safely targeted for input.")?;
     if (now.left as f64 - window.x).abs() >= 1.0 || (now.top as f64 - window.y).abs() >= 1.0 {
         return Err("The window moved. Close and reopen Preview to control it.".into());
@@ -69,7 +50,7 @@ pub(super) fn send_checked(
     }
     let inputs = match event {
         InputEvent::Click { x, y, right } => {
-            aim(handle, window, *x, *y, check)?;
+            aim(handle, window, *x, *y, &targeted)?;
             let (down, up) = if *right {
                 (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP)
             } else {
@@ -78,7 +59,7 @@ pub(super) fn send_checked(
             vec![mouse(down, 0), mouse(up, 0)]
         }
         InputEvent::Scroll { x, y, delta } => {
-            aim(handle, window, *x, *y, check)?;
+            aim(handle, window, *x, *y, &targeted)?;
             // 120 is one wheel notch; the phone sends pixels, about 100 a notch.
             vec![mouse(MOUSEEVENTF_WHEEL, delta * 6 / 5)]
         }
@@ -123,7 +104,7 @@ pub(super) fn send_checked(
         // The dispatcher sends a batch one action at a time.
         InputEvent::Keys(_) => return Err("Unsupported window input.".into()),
     };
-    effects(&inputs, check)
+    effects(&inputs, &targeted)
 }
 
 /// Moves the pointer to the tap, refusing if a menu or another window is on
