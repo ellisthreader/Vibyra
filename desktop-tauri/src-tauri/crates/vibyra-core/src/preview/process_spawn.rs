@@ -67,6 +67,7 @@ fn spawn(
         command.env("BROWSER", "none");
     }
     configure_tree(&mut command);
+    super::authorization::check(true)?;
     let mut child = command.spawn().map_err(|error| {
         CoreError::Preview(format!("could not start {}: {error}", spec.program))
     })?;

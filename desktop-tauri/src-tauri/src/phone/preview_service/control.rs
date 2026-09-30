@@ -16,7 +16,9 @@ impl PreviewService {
     }
 
     pub fn start(&self, device: &str, grant_id: &str) -> Result<Value, String> {
+        super::control_access::check()?;
         if let Some(result) = self.start_automatic(device, grant_id)? {
+            super::control_access::check()?;
             return Ok(result);
         }
         let approved =
@@ -29,17 +31,10 @@ impl PreviewService {
             attached::origin(port)?;
             PreviewPhase::Running
         } else {
-            let root = approved
-                .source_root
-                .to_str()
-                .ok_or("Invalid Preview folder")?;
-            self.inner
-                .manager
-                .start(root, &approved.target_id)
-                .map_err(|e| e.to_string())?
-                .phase
+            self.start_approved(device, grant_id, &approved)?.phase
         };
         // Starting a new runtime invalidates every older binding for this grant.
+        super::control_access::check()?;
         self.inner
             .bindings
             .lock()
@@ -50,7 +45,9 @@ impl PreviewService {
     }
 
     pub fn open(&self, device: &str, grant_id: &str) -> Result<Value, String> {
+        super::control_access::check()?;
         if let Some(result) = self.open_automatic(device, grant_id)? {
+            super::control_access::check()?;
             return Ok(result);
         }
         let approved =
@@ -58,6 +55,9 @@ impl PreviewService {
                 .grants
                 .authorize_id(device, grant_id, &self.inner.workspace.read())?;
         let native = crate::window_preview::Target::parse(&approved.target_id)?;
+        if native.is_some() {
+            super::control_access::permission("screen:view")?;
+        }
         // End this device's older capture before opening its replacement.
         self.inner.bindings.lock().retain(|(owner, _), previous| {
             let same_window = native.is_some_and(|target| {
@@ -71,6 +71,7 @@ impl PreviewService {
         let window = native
             .map(crate::window_preview::Session::start)
             .transpose()?;
+        super::control_access::check()?;
         let (origin, runtime_id) = if native.is_some() {
             (
                 reqwest::Url::parse("http://127.0.0.1:1/").map_err(|e| e.to_string())?,
@@ -97,6 +98,7 @@ impl PreviewService {
         getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
         let generation = u64::from_be_bytes(bytes).max(1);
         let mut bindings = self.inner.bindings.lock();
+        super::control_access::check()?;
         bindings.retain(|(bound_device, _), binding| {
             bound_device != device || binding.grant_id != grant_id
         });

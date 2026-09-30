@@ -15,7 +15,9 @@ impl super::super::backend::PreviewControl for PreviewService {
         self.list_handoff(device)
     }
     fn share_window(&self, device: &str, candidate: &str) -> Result<serde_json::Value, String> {
-        PreviewService::share_window(self, device, candidate)
+        self.remote_control(&["preview:access", "screen:view"], || {
+            PreviewService::share_window(self, device, candidate)
+        })
     }
     fn close(&self, device: &str, generation: u64) {
         self.inner
@@ -24,19 +26,27 @@ impl super::super::backend::PreviewControl for PreviewService {
             .remove(&(device.into(), generation));
     }
     fn start(&self, device: &str, grant_id: &str) -> Result<serde_json::Value, String> {
-        PreviewService::start(self, device, grant_id)
+        self.remote_control(&["preview:access"], || {
+            PreviewService::start(self, device, grant_id)
+        })
     }
     fn open(&self, device: &str, grant_id: &str) -> Result<serde_json::Value, String> {
-        PreviewService::open(self, device, grant_id)
+        self.remote_control(&["preview:access"], || {
+            PreviewService::open(self, device, grant_id)
+        })
     }
     fn run(&self, device: &str, params: &serde_json::Value) -> Result<serde_json::Value, String> {
-        PreviewService::run(self, device, params)
+        self.remote_control(&["preview:access", "terminal:access"], || {
+            PreviewService::run(self, device, params)
+        })
     }
     fn stop_run(
         &self,
         device: &str,
         params: &serde_json::Value,
     ) -> Result<serde_json::Value, String> {
-        PreviewService::stop_run(self, device, params)
+        self.remote_control(&["preview:access", "terminal:access"], || {
+            PreviewService::stop_run(self, device, params)
+        })
     }
 }

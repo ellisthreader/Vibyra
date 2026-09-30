@@ -101,6 +101,7 @@ impl PreviewService {
     /// Only a user pressing the phone's explicit View button calls this RPC.
     /// The agent status tool cannot call it, and it never grants input control.
     pub(super) fn share_window(&self, device: &str, token: &str) -> Result<Value, String> {
+        super::control_access::permission("screen:view")?;
         let candidate = self
             .inner
             .handoff
@@ -133,6 +134,7 @@ impl PreviewService {
             &candidate.account,
             &found.info.fingerprint,
         )?;
+        super::control_access::permission("screen:view")?;
         let grant = self
             .inner
             .grants

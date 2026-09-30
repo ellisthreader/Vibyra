@@ -19,6 +19,7 @@ pub(crate) struct StaticServer {
 
 impl StaticServer {
     pub fn start(root: PathBuf, entry: PathBuf) -> CoreResult<Self> {
+        super::authorization::check(false)?;
         let listener = TcpListener::bind(("127.0.0.1", 0))?;
         let port = listener.local_addr()?.port();
         let stop = Arc::new(AtomicBool::new(false));

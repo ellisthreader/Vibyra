@@ -149,11 +149,18 @@ impl Scaffolder {
         let thread = id.clone();
         // Listed before its thread exists, so a quit in between still sees it.
         let tracked = super::in_flight::track(cancel.clone());
+        let access = vibyra_host::current_rpc_access();
         std::thread::Builder::new()
             .name("vibyra-scaffold".into())
             .spawn(move || {
                 let _tracked = tracked;
-                execute(scaffolds, requests, thread, plan, cancel)
+                if let Some(access) = access {
+                    vibyra_host::with_rpc_access(access, || {
+                        execute(scaffolds, requests, thread, plan, cancel)
+                    });
+                } else {
+                    execute(scaffolds, requests, thread, plan, cancel)
+                }
             })
             .map_err(|e| format!("could not start the build: {e}"))?;
         Ok(json!({"runId":id}))

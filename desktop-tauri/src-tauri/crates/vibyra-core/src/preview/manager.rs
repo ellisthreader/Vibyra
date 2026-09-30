@@ -59,6 +59,7 @@ impl PreviewManager {
         let identity = ServiceIdentity::new(root, target_id)?;
         let operation = self.operation(&identity.key);
         let _operation_guard = operation.lock();
+        super::authorization::check(false)?;
         let existing = self.services.lock().get(&identity.key).cloned();
         if let Some(existing) = existing {
             let mut service = existing.lock();
@@ -117,6 +118,7 @@ impl PreviewManager {
         let identity = ServiceIdentity::new(root, target_id)?;
         let operation = self.operation(&identity.key);
         let _operation_guard = operation.lock();
+        super::authorization::check(false)?;
         let removed = self.services.lock().remove(&identity.key);
         if let Some(service) = removed {
             let (status, runtime_id) = {

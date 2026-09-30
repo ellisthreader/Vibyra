@@ -30,6 +30,7 @@ pub(super) struct ActiveRun {
     pub ended: Option<Instant>,
 }
 
+#[derive(Clone)]
 pub(super) struct RunTarget {
     pub project_id: String,
     pub source_root: PathBuf,
@@ -111,6 +112,7 @@ impl PreviewService {
     /// Phone RPC `preview.run`. `approve` counts only with the command version
     /// the phone was shown, so a changed script is shown again first.
     pub fn run(&self, device: &str, params: &Value) -> Result<Value, String> {
+        super::control_access::check()?;
         let project = params["projectId"].as_str().ok_or("Missing project")?;
         let target_id = params["targetId"].as_str().ok_or("Missing app")?;
         let run = self.resolve_run(project, None, Some(target_id), None)?;
@@ -135,6 +137,7 @@ impl PreviewService {
     }
 
     pub(super) fn approve(&self, device: &str, run: &RunTarget) -> Result<(), String> {
+        super::control_access::check()?;
         self.inner.grants.approve_run(
             device,
             &run.project_id,
@@ -143,6 +146,7 @@ impl PreviewService {
             run.command.clone(),
             &run.fingerprint,
         )?;
+        super::control_access::check()?;
         super::run_list::approvals_changed();
         Ok(())
     }

@@ -24,6 +24,7 @@ impl PreviewService {
 
     /// Starts (or joins) the run. `owner` is the device that will view it.
     pub(super) fn launch_run(&self, owner: Option<&str>, run: &RunTarget) -> Result<Value, String> {
+        super::control_access::check()?;
         let account = self.inner.grants.active_account()?;
         let folder = run.source_root.to_str().ok_or("Invalid project folder")?;
         let key = (run.source_root.clone(), run.target.id.clone());
@@ -59,10 +60,8 @@ impl PreviewService {
                 }
             }
         }
-        let started = self
-            .inner
-            .manager
-            .start_with(folder, &run.target.id, &run.custom);
+        super::control_access::check()?;
+        let started = self.start_run_checked(run);
         let (status, runtime_id) = match started.and_then(|_| {
             self.inner
                 .manager
