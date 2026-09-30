@@ -27,6 +27,8 @@ pub(super) async fn serve(
     access: Access,
     lan_policy: Option<(crate::lan_authorization::LanMode, u64)>,
 ) -> Result<(), String> {
+    // Invalidates delayed effects before run_authorized waits for an RPC worker.
+    let lifetime = crate::rpc_access::RpcLifetime::new();
     let events = shared.engine.subscribe();
     let mut preview = PreviewSession::new(shared, device_id, takeover, access.clone());
     let mut tick = tokio::time::interval(Duration::from_millis(20));
@@ -51,6 +53,14 @@ pub(super) async fn serve(
                 let state = shared.clone();
                 let device = device_id.to_owned();
                 let access = access.clone();
+                let effect_access = Arc::new(crate::rpc_access::ScopedRpc {
+                    grant: access.clone(),
+                    owner: Arc::downgrade(&state),
+                    device: device.clone(),
+                    slot: Arc::downgrade(takeover),
+                    lan_generation: lan_policy.map(|(_, generation)| generation),
+                    alive: lifetime.0.clone(),
+                });
                 *running = Some((
                     id,
                     tokio::task::spawn_blocking(move || {
@@ -61,6 +71,7 @@ pub(super) async fn serve(
                             request,
                             &access,
                             lan_policy.map(|(_, generation)| generation),
+                            effect_access,
                         )
                     }),
                 ));

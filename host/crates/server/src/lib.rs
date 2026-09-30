@@ -31,6 +31,7 @@ mod remote_authorization;
 mod remote_permissions;
 mod remote_restrictions;
 mod remote_revocation;
+mod rpc_access;
 #[cfg(test)]
 mod remote_test_support;
 mod restriction_apply;
@@ -38,6 +39,7 @@ mod restriction_checkpoint;
 mod state;
 
 pub use backend::{Backend, PreviewAccess, PreviewHandler};
+pub use rpc_access::{current_rpc_access, with_rpc_access};
 pub use embedded::EmbeddedHost;
 pub use identity_store::IdentityKeyStore;
 pub use preview_upgrade::{UpgradeRequest, UpgradeResponse};

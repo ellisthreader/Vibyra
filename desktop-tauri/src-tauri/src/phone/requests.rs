@@ -24,12 +24,16 @@ pub const NO_WINDOW: &str = crate::platform_text::for_computer(
 );
 
 type Notify = Box<dyn Fn(&Value) + Send + Sync>;
+#[path = "requests_access.rs"]
+mod access;
+pub use access::EffectGuard;
 
 #[derive(Default)]
 pub struct TerminalRequests {
     /// Asked and not yet answered, in the order they came.
     pending: Mutex<Vec<Value>>,
     waiting: Mutex<HashMap<String, mpsc::SyncSender<Result<Value, String>>>>,
+    guards: Mutex<HashMap<String, EffectGuard>>,
     /// The window's answer to each create, by the phone's `requestId`, so a
     /// retry after an uncertain send finds the terminal it already started
     /// rather than starting a second.
@@ -52,6 +56,9 @@ impl TerminalRequests {
         getrandom::fill(&mut bytes).map_err(|e| e.to_string())?;
         let id: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
         request["id"] = Value::String(id.clone());
+        self.guards
+            .lock()
+            .insert(id.clone(), EffectGuard::new(request.clone()));
         let (send, receive) = mpsc::sync_channel(1);
         self.waiting.lock().insert(id.clone(), send);
         self.pending.lock().push(request.clone());
@@ -59,12 +66,18 @@ impl TerminalRequests {
             notify(&request);
         }
         let answer = receive.recv_timeout(WINDOW_TIMEOUT);
+        if let Some(guard) = self.guards.lock().remove(&id) {
+            guard.cancel();
+        }
         self.waiting.lock().remove(&id);
         self.pending.lock().retain(|item| item["id"] != id);
         answer.unwrap_or_else(|_| Err(NO_WINDOW.into()))
     }
     /// The window's answer. False when nothing was waiting for it any more.
     pub fn reply(&self, id: &str, answer: Result<Value, String>) -> bool {
+        if let Some(guard) = self.guards.lock().remove(id) {
+            guard.cancel();
+        }
         self.waiting
             .lock()
             .remove(id)

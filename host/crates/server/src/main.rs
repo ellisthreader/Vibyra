@@ -42,6 +42,7 @@ mod remote_authorization;
 #[cfg(test)]
 mod remote_connection_tests;
 mod remote_permissions;
+mod rpc_access;
 mod remote_restrictions;
 mod remote_revocation;
 #[cfg(test)]

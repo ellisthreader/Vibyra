@@ -3,7 +3,7 @@ use super::{FrameSender, PreviewSession};
 use crate::{remote_authorization::Access, remote_permissions, state::Shared};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::{collections::VecDeque, time::Duration};
+use std::{collections::VecDeque, sync::Arc, time::Duration};
 use vibyra_transport::{Channel, MAX_PLAINTEXT};
 
 #[derive(Deserialize)]
@@ -35,12 +35,13 @@ pub(super) fn receive_request(
 }
 
 pub(super) fn dispatch(
-    shared: &Shared,
+    shared: &Arc<Shared>,
     device: &str,
     connection: u64,
     request: Request,
     access: &Access,
     lan_generation: Option<u64>,
+    effect_access: Arc<crate::rpc_access::ScopedRpc>,
 ) -> Result<Value, String> {
     if lan_generation.is_some_and(|expected| {
         shared
@@ -61,10 +62,14 @@ pub(super) fn dispatch(
         shared.revoke(device)?;
         return Ok(json!({"ok":true}));
     }
-    let value =
+    if !effect_access.live() {
+        return Err("This connection is no longer authorized".into());
+    }
+    let value = crate::rpc_access::with_rpc_access(effect_access, || {
         shared
             .engine
-            .handle_on_connection(device, connection, &request.method, request.params)?;
+            .handle_on_connection(device, connection, &request.method, request.params)
+    })?;
     remote_permissions::response(
         access,
         &request.method,
