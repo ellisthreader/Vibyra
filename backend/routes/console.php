@@ -38,3 +38,9 @@ Schedule::command('vibyra:remote-revocations')->everyMinute()->withoutOverlappin
 Schedule::command('vibyra:security-notifications')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping()->onOneServer();
 Schedule::command('vibyra:cloud-provider-audit')->everyMinute()->when(fn () => config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org'))->withoutOverlapping()->onOneServer();
+
+Schedule::command('vibyra:agent-v2-routines')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
+// An approved write stranded `dispatching` by a dead process is closed as unknown (never re-sent) so the task can finish or be cancelled.
+Schedule::command('vibyra:agent-v2-sweep-dispatching')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
+// F-04: old run journals and attachment files age out; orphaned rows left by a deleted account are swept (daily, any flag state).
+Schedule::command('vibyra:agent-v2-retention')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
