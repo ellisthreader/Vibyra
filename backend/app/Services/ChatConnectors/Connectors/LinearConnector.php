@@ -103,7 +103,8 @@ final class LinearConnector implements Connector
     public function connect(string $credential): string
     {
         $data = $this->query($credential, 'query { viewer { id name } }');
-        return (string) ($data['viewer']['name'] ?? 'Linear account');
+        return \App\Services\ChatConnectors\AccountLabel::of((string) ($data['viewer']['name'] ?? 'Linear account'),
+            isset($data['viewer']['id']) ? (string) $data['viewer']['id'] : null);
     }
 
     private function query(string $token, string $query, array $variables = []): array

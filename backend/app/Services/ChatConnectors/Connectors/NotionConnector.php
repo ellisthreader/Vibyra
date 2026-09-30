@@ -82,7 +82,8 @@ final class NotionConnector implements Connector
     public function connect(string $credential): string
     {
         $me = $this->get($credential, '/users/me');
-        return (string) ($me['bot']['workspace_name'] ?? $me['name'] ?? 'Notion workspace');
+        return \App\Services\ChatConnectors\AccountLabel::of((string) ($me['bot']['workspace_name'] ?? $me['name'] ?? 'Notion workspace'),
+            isset($me['bot']['workspace_id']) ? (string) $me['bot']['workspace_id'] : (isset($me['id']) ? (string) $me['id'] : null));
     }
 
     private function get(string $token, string $path, array $query = []): array

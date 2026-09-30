@@ -44,6 +44,10 @@ return [
                 'token_url' => 'https://oauth2.googleapis.com/token',
                 'refresh_url' => 'https://oauth2.googleapis.com/token',
                 'scope' => 'openid email https://www.googleapis.com/auth/calendar.events',
+                // Agent V2 "add another account" only: calendar list + free/busy need these
+                // (sensitive scopes; add them in Google Auth Platform before live use).
+                'agent_scope' => 'openid email https://www.googleapis.com/auth/calendar.events '
+                    .'https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.freebusy',
                 'client_id' => env('CHAT_CONNECTORS_GOOGLE_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_GOOGLE_CLIENT_SECRET'),
                 'pkce' => true, 'access_type' => 'offline', 'prompt' => 'consent',
@@ -161,6 +165,10 @@ return [
                 'token_url' => 'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
                 'refresh_url' => 'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
                 'scope' => 'offline_access User.Read Chat.Read',
+                // Agent V2 "add another account" only: team/channel reads and approved channel posts.
+                // ChannelMessage.Read.All needs tenant admin consent.
+                'agent_scope' => 'offline_access User.Read Chat.Read Team.ReadBasic.All Channel.ReadBasic.All '
+                    .'ChannelMessage.Read.All ChannelMessage.Send',
                 'client_id' => env('CHAT_CONNECTORS_MICROSOFT_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_MICROSOFT_CLIENT_SECRET'),
                 'pkce' => true,

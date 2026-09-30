@@ -53,8 +53,7 @@ final class GmailConnector implements Connector
         $to = $arguments['to'] ?? null;
         $subject = $arguments['subject'] ?? null;
         $body = $arguments['body'] ?? null;
-        abort_unless(is_string($to) && filter_var($to, FILTER_VALIDATE_EMAIL) && strlen($to) <= 254
-            && !preg_match('/[\r\n]/', $to), 422, 'Give one valid email recipient.');
+        abort_unless(\App\Services\ChatConnectors\Recipient::valid($to), 422, 'Give one valid email recipient.');
         abort_unless(is_string($subject) && trim($subject) !== '' && mb_strlen($subject) <= 200
             && !preg_match('/[\r\n]/', $subject), 422, 'Give a single-line email subject.');
         abort_unless(is_string($body) && trim($body) !== '' && mb_strlen($body) <= 10000,

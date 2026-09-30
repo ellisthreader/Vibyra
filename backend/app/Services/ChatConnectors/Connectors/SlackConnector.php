@@ -78,7 +78,8 @@ final class SlackConnector implements Connector
     public function connect(string $credential): string
     {
         $data = $this->get($credential, 'auth.test');
-        return (string) ($data['team'] ?? $data['team_id'] ?? 'Slack workspace');
+        return \App\Services\ChatConnectors\AccountLabel::of((string) ($data['team'] ?? $data['team_id'] ?? 'Slack workspace'),
+            isset($data['team']) ? ($data['team_id'] ?? null) : null, $data['user_id'] ?? null);
     }
 
     private function get(string $token, string $method, array $query = []): array

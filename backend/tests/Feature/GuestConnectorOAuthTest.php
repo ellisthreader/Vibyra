@@ -5,11 +5,12 @@ namespace Tests\Feature;
 use App\Models\{User, VibyraSession};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Tests\Support\OAuthHop;
 use Tests\TestCase;
 
 class GuestConnectorOAuthTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, OAuthHop;
 
     protected function setUp(): void
     {
@@ -34,8 +35,7 @@ class GuestConnectorOAuthTest extends TestCase
     private function start(string $slug = 'github'): array
     {
         $flow = $this->postJson('/api/connectors/'.$slug.'/start', ['returnUrl' => 'vibyra://integrations/connected'])->assertOk()->json();
-        parse_str(parse_url($flow['url'], PHP_URL_QUERY), $query);
-        return [$flow, $query];
+        return [$flow, $this->queryOf($this->openSignIn($flow['url']))];
     }
 
     public function test_both_providers_persist_on_the_existing_guest_without_creating_a_login(): void

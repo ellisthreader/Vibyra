@@ -7,17 +7,21 @@ use App\Services\ChatConnectors\ConnectorOAuth;
 use App\Services\ChatConnectors\Registry;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Support\OAuthHop;
 use Tests\TestCase;
 
 class GoogleConnectorsTest extends TestCase
 {
+    use OAuthHop;
+
     public function test_google_oauth_requests_offline_access_and_renews_with_the_required_fields(): void
     {
         config(['chat_connectors.catalogue.gmail.oauth.client_id' => 'google-id',
             'chat_connectors.catalogue.gmail.oauth.client_secret' => 'google-secret']);
         $oauth = app(ConnectorOAuth::class);
         $start = $oauth->start(42, 'gmail', null);
-        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        [$provider, $nonce] = $this->openedFlow($start);
+        $query = $this->queryOf($provider);
         $this->assertSame('offline', $query['access_type']);
         $this->assertContains('https://www.googleapis.com/auth/gmail.readonly', explode(' ', $query['scope']));
         $this->assertContains('https://www.googleapis.com/auth/gmail.send', explode(' ', $query['scope']));
@@ -37,17 +41,18 @@ class GoogleConnectorsTest extends TestCase
             'chat_connectors.catalogue.google_calendar.oauth.client_secret' => 'google-secret']);
         $oauth = app(ConnectorOAuth::class);
         $start = $oauth->start(42, 'google_calendar', null);
-        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        [$provider, $nonce] = $this->openedFlow($start);
+        $query = $this->queryOf($provider);
         Http::fake(['oauth2.googleapis.com/token' => Http::response([
             'access_token' => 'calendar-access', 'refresh_token' => 'calendar-refresh', 'expires_in' => 3600])]);
-        [$flow, $grant] = $oauth->finish('google_calendar', $query['state'], 'auth-code');
+        [$flow, $grant] = $oauth->finish('google_calendar', $query['state'], 'auth-code', '', $nonce);
         $this->assertSame(42, $flow['userId']);
         $this->assertSame('calendar-refresh', $grant['refresh']);
         $this->assertSame(3600, $grant['expires_in']);
         Http::assertSent(fn ($request) => $request->url() === 'https://oauth2.googleapis.com/token'
             && $request['code'] === 'auth-code' && $request['redirect_uri'] !== ''
             && $request['grant_type'] === 'authorization_code');
-        [$replay] = $oauth->finish('google_calendar', $query['state'], 'auth-code');
+        [$replay] = $oauth->finish('google_calendar', $query['state'], 'auth-code', '', $nonce);
         $this->assertNull($replay);
     }
 
@@ -58,6 +63,8 @@ class GoogleConnectorsTest extends TestCase
         $this->assertTrue($policy->requiresApproval('gmail', 'gmail_send'));
         $this->assertFalse($policy->requiresApproval('google_calendar', 'google_calendar_upcoming'));
         $this->assertTrue($policy->requiresApproval('google_calendar', 'google_calendar_create_event'));
+        $this->assertFalse($policy->requiresApproval('google_tasks', 'google_tasks_list'));
+        $this->assertTrue($policy->requiresApproval('google_tasks', 'google_tasks_create'));
         $gmail = app(Registry::class)->for('gmail');
         try {
             $gmail->validate('gmail_send', ['to' => "a@example.com\r\nBcc: x@example.com",
@@ -113,5 +120,26 @@ class GoogleConnectorsTest extends TestCase
             'id' => 'abcdefghijkl', 'name' => 'Photo', 'mimeType' => 'image/jpeg', 'size' => 800])]);
         $this->expectException(\RuntimeException::class);
         app(Registry::class)->for('google_drive')->run('google_drive_read', ['id' => 'abcdefghijkl'], 'test-token');
+    }
+
+    public function test_tasks_oauth_scope_and_create_validation(): void
+    {
+        config(['chat_connectors.catalogue.google_tasks.oauth.client_id' => 'google-id',
+            'chat_connectors.catalogue.google_tasks.oauth.client_secret' => 'google-secret']);
+        $start = app(ConnectorOAuth::class)->start(42, 'google_tasks', null);
+        [$provider, $nonce] = $this->openedFlow($start);
+        $query = $this->queryOf($provider);
+        $this->assertContains('https://www.googleapis.com/auth/tasks', explode(' ', $query['scope']));
+        $this->assertSame('offline', $query['access_type']);
+
+        $tasks = app(Registry::class)->for('google_tasks');
+        $safe = $tasks->validate('google_tasks_create', ['listId' => 'list123',
+            'title' => 'Review plan', 'due' => '2026-10-01']);
+        $this->assertSame('2026-10-01', $safe['due']);
+        try {
+            $tasks->validate('google_tasks_create', ['listId' => 'list123',
+                'title' => 'Review plan', 'due' => '2026-02-30']);
+            $this->fail('An impossible due date must be rejected.');
+        } catch (HttpException $e) { $this->assertSame(422, $e->getStatusCode()); }
     }
 }

@@ -17,6 +17,8 @@ return [
                 'token_url' => 'https://slack.com/api/oauth.v2.access',
                 'refresh_url' => 'https://slack.com/api/oauth.v2.access',
                 'scope' => 'channels:read,groups:read,channels:history,groups:history,chat:write',
+                // Agent V2 "Add another account": a user token (Slack search needs one), returned under authed_user.
+                'agent_user_scope' => 'channels:read,groups:read,channels:history,groups:history,search:read,chat:write',
                 'client_id' => env('CHAT_CONNECTORS_SLACK_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_SLACK_CLIENT_SECRET'),
                 'token_fields' => ['client_id', 'client_secret', 'code', 'redirect_uri'],
@@ -64,6 +66,7 @@ return [
                 'token_url' => 'https://api.linear.app/oauth/token',
                 'refresh_url' => 'https://api.linear.app/oauth/token',
                 'scope' => 'read,issues:create',
+                'agent_scope' => 'read,issues:create,comments:create',
                 'client_id' => env('CHAT_CONNECTORS_LINEAR_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_LINEAR_CLIENT_SECRET'),
                 'pkce' => true, 'prompt' => 'consent',

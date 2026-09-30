@@ -7,17 +7,21 @@ use App\Services\ChatConnectors\ConnectorOAuth;
 use App\Services\ChatConnectors\Registry;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Support\OAuthHop;
 use Tests\TestCase;
 
 class AdditionalConnectorsTest extends TestCase
 {
+    use OAuthHop;
+
     public function test_microsoft_oauth_uses_delegated_scopes_and_refreshes(): void
     {
         config(['chat_connectors.catalogue.outlook_mail.oauth.client_id' => 'ms-id',
             'chat_connectors.catalogue.outlook_mail.oauth.client_secret' => 'ms-secret']);
         $oauth = app(ConnectorOAuth::class);
         $start = $oauth->start(42, 'outlook_mail', null);
-        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        [$provider, $nonce] = $this->openedFlow($start);
+        $query = $this->queryOf($provider);
         $this->assertContains('Mail.Read', explode(' ', $query['scope']));
         $this->assertContains('Mail.Send', explode(' ', $query['scope']));
         $this->assertContains('offline_access', explode(' ', $query['scope']));
@@ -37,12 +41,13 @@ class AdditionalConnectorsTest extends TestCase
             'chat_connectors.catalogue.notion.oauth.client_secret' => 'notion-secret']);
         $oauth = app(ConnectorOAuth::class);
         $start = $oauth->start(42, 'notion', null);
-        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        [$provider, $nonce] = $this->openedFlow($start);
+        $query = $this->queryOf($provider);
         $this->assertSame('user', $query['owner']);
         $this->assertArrayNotHasKey('scope', $query);
         Http::fake(['api.notion.com/v1/oauth/token' => Http::response([
             'access_token' => 'notion-access', 'refresh_token' => 'notion-refresh'])]);
-        [$flow, $grant] = $oauth->finish('notion', $query['state'], 'code');
+        [$flow, $grant] = $oauth->finish('notion', $query['state'], 'code', '', $nonce);
         $this->assertSame(42, $flow['userId']);
         $this->assertSame('notion-refresh', $grant['refresh']);
         Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Basic '.base64_encode('notion-id:notion-secret'))

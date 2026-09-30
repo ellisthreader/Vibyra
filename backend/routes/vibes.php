@@ -60,6 +60,10 @@ Route::prefix('api/connectors')->middleware('throttle:60,1,connectors-api')->gro
     Route::get('/', [ChatConnectorsController::class, 'index']);
     Route::get('callback/{integration}', [ChatConnectorsController::class, 'callback']);
     Route::get('flows/{flow}', [ChatConnectorsController::class, 'flow']);
+    // First stop of every connect flow. GET only shows "Connect <provider> to the Vibyra account <masked>?" (no cookie, no
+    // redirect); the POST (session CSRF token) binds the browser with the nonce cookie and goes on to the provider, or cancels. Public; single use.
+    Route::get('begin/{flow}', [\App\Http\Controllers\ConnectorHopController::class, 'show'])->whereUuid('flow');
+    Route::post('begin/{flow}', [\App\Http\Controllers\ConnectorHopController::class, 'decide'])->whereUuid('flow');
     // Ahead of the {integration} routes: a literal segment would otherwise be
     // captured as an integration slug.
     Route::post('github/repositories', [ChatConnectorsController::class, 'createRepository'])
