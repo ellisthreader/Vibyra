@@ -40,6 +40,7 @@ jobs:
         run: |
           python3 scripts/test-notarized-updaters.py
           python3 scripts/test-notarized-source.py
+          python3 scripts/test-notarized-macho.py
       - name: Require an explicit frozen app source
         run: python3 -c 'import os,re; assert re.fullmatch("[a-f0-9]{40}", os.environ["NOTARIZED_SOURCE_COMMIT"])'
       - name: Download the exact reviewed notarized release

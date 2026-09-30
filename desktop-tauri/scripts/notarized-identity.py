@@ -1,5 +1,6 @@
 """Compare exported notarized content with independently downloaded CI bytes."""
 import hashlib
+import importlib.util
 import os
 import plistlib
 import shutil
@@ -47,10 +48,17 @@ def entitlements(path):
 
 
 def unsigned_digest(path, directory):
+    signed = path.read_bytes()
     target = directory / "unsigned-code"
     shutil.copy2(path, target)
     run("codesign", "--remove-signature", str(target))
-    result = digest(target)
+    stripped = target.read_bytes()
+    if signed[:4] == bytes.fromhex("cffaedfe"):
+        spec = importlib.util.spec_from_file_location("macho", Path(__file__).with_name("notarized-macho.py"))
+        macho = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(macho)
+        stripped = macho.canonical_unsigned(signed, stripped)
+    result = hashlib.sha256(stripped).hexdigest()
     target.unlink()
     return result
 
