@@ -119,6 +119,7 @@ impl Capture {
     /// Input only against the geometry the phone is looking at. Returns the
     /// keyboard focus afterwards; after a tap, once focus has had a moment to move.
     pub fn input(&self, request: &Value) -> Result<Value, String> {
+        let tap_deadline = Instant::now() + super::focus::TAP_WAIT;
         self.frame()?;
         let event = InputEvent::parse(request)?;
         let now = self.backend.info(self.window.info.id)?;
@@ -145,7 +146,7 @@ impl Capture {
         }
         let now = self.backend.info(self.window.info.id)?;
         Ok(match before.flatten() {
-            Some(serial) => self.focus.settled(self.backend, &now, serial),
+            Some(serial) => self.focus.settled(self.backend, &now, serial, tap_deadline),
             None => self.focus.current(self.backend, &now),
         })
     }

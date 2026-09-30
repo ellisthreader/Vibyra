@@ -110,6 +110,22 @@ fn unchanged_focus_reads_do_not_extend_the_tap_wait() {
 }
 
 #[test]
+fn input_injection_and_focus_settling_share_one_tap_budget() {
+    let (backend, capture) = capture();
+    eventually(&capture, |state| state["serial"].as_u64() > Some(0));
+    *backend.input_stall.lock() = Duration::from_millis(240);
+    let started = Instant::now();
+    let reply = capture
+        .input(&json!({"kind":"click","x":0.9,"y":0.9}))
+        .unwrap();
+    let elapsed = started.elapsed();
+    capture.stop();
+    assert_eq!(reply["editable"], false);
+    assert_eq!(backend.inputs.lock().len(), 1, "input is still delivered");
+    assert!(elapsed < Duration::from_millis(400), "{elapsed:?}");
+}
+
+#[test]
 fn structure_decides_the_keyboard_before_wording() {
     assert_eq!(kind(true, false, false, "email"), "secure");
     assert_eq!(kind(false, true, false, "Email the team"), "multiline");

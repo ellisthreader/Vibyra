@@ -49,13 +49,17 @@ pub(super) struct Tracker {
 }
 
 const RESCAN: Duration = Duration::from_millis(750);
-const TAP_WAIT: Duration = Duration::from_millis(210);
+pub(super) const TAP_WAIT: Duration = Duration::from_millis(210);
 const TAP_POLL: Duration = Duration::from_millis(30);
 
 impl Tracker {
     /// For each frame: the latest reading, never waiting on the application.
     pub fn current(&self, backend: &'static dyn Backend, window: &Geometry) -> Value {
         self.wake(backend, window);
+        self.cached()
+    }
+
+    fn cached(&self) -> Value {
         let seen = self.seen.lock();
         let mut state = seen.latest.clone().unwrap_or_else(
             || json!({"v":1,"access":true,"editable":false,"front":false,"serial":seen.serial}),
@@ -70,10 +74,18 @@ impl Tracker {
     }
 
     /// The state once a tap has had a moment to move keyboard focus.
-    pub fn settled(&self, backend: &'static dyn Backend, window: &Geometry, before: u64) -> Value {
+    pub fn settled(
+        &self,
+        backend: &'static dyn Backend,
+        window: &Geometry,
+        before: u64,
+        deadline: Instant,
+    ) -> Value {
         // The tap may have changed the layout: map the fields again.
         self.seen.lock().scanned = None;
-        let deadline = Instant::now() + TAP_WAIT;
+        if Instant::now() >= deadline {
+            return self.cached();
+        }
         let mut state = self.measure(backend, window);
         while state["serial"].as_u64() == Some(before) {
             // Application reads and late wakeups share the same wait budget.
@@ -82,6 +94,9 @@ impl Tracker {
                 break;
             }
             std::thread::sleep(TAP_POLL.min(remaining));
+            if Instant::now() >= deadline {
+                break;
+            }
             state = self.measure(backend, window);
         }
         state

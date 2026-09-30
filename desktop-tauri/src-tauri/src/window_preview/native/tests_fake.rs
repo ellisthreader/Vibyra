@@ -19,6 +19,8 @@ pub(super) struct Fake {
     pub pending: Mutex<Option<(Instant, Focused)>>,
     /// An application that takes this long to answer.
     pub stall: Mutex<Duration>,
+    /// Input injection can also wait on the application.
+    pub input_stall: Mutex<Duration>,
 }
 
 struct Grey;
@@ -70,6 +72,8 @@ impl Backend for Fake {
         Ok(Box::new(Grey))
     }
     fn input(&self, _: &Geometry, event: &InputEvent) -> Result<(), String> {
+        let wait = *self.input_stall.lock();
+        std::thread::sleep(wait);
         self.inputs.lock().push(event.clone());
         if matches!(event, InputEvent::Click { .. }) {
             if let Some(next) = self.click_focuses.lock().take() {
