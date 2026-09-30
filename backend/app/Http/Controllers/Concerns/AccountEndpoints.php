@@ -39,10 +39,10 @@ trait AccountEndpoints
         }
 
         try {
-            $rotation = $rotator->rotate(
-                $session,
-                hash('sha256', (string) $request->bearerToken())
-            );
+            $rotation = \Illuminate\Support\Facades\DB::transaction(function () use ($rotator, $session, $request) {
+                app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $session->user_id, [$session->id], 'session_token_rotated');
+                return $rotator->rotate($session, hash('sha256', (string) $request->bearerToken()));
+            });
         } catch (RuntimeException) {
             return $this->json(['ok' => false, 'error' => 'The session token changed. Retry with the current token.'], 409);
         }
@@ -134,20 +134,23 @@ trait AccountEndpoints
             return $this->json(['ok' => false, 'error' => 'Enter a display name and valid email.'], 422);
         }
 
-        if ($email !== $user->email && User::where('email', $email)->where('id', '!=', $user->id)->exists()) {
-            return $this->json(['ok' => false, 'error' => 'That email is already in use.'], 409);
-        }
-        if ($email !== $user->email && ($user->provider ?: 'email') !== 'email') {
-            return $this->json(['ok' => false, 'error' => 'Change the email through your sign-in provider.'], 422);
-        }
-
         $this->moderation->assertLocalTextAllowed($name, 'account.name');
-        $emailChanged = $email !== $user->email;
-        $user->forceFill([
-            'name' => $name,
-            'email' => $email,
-            'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
-        ])->save();
+        [$user, $emailChanged, $error] = app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, function (User $user) use ($request, $name, $email) {
+            $name = $request->has('name') ? $name : $user->name;
+            $email = $request->has('email') ? $email : $user->email;
+            $emailChanged = $email !== $user->email;
+            if ($emailChanged && User::where('email', $email)->where('id', '!=', $user->id)->exists()) {
+                return [$user, false, ['That email is already in use.', 409]];
+            }
+            if ($emailChanged && ($user->provider ?: 'email') !== 'email') {
+                return [$user, false, ['Change the email through your sign-in provider.', 422]];
+            }
+            $user->forceFill(['name' => $name, 'email' => $email,
+                'email_verified_at' => $emailChanged ? null : $user->email_verified_at])->save();
+            if ($emailChanged) app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'email_changed');
+            return [$user, $emailChanged, null];
+        });
+        if ($error) return $this->json(['ok' => false, 'error' => $error[0]], $error[1]);
         if ($emailChanged) {
             try {
                 $user->sendEmailVerificationNotification();
@@ -244,23 +247,20 @@ trait AccountEndpoints
     public function revokeAccountDevice(Request $request, string $deviceId): JsonResponse
     {
         $current = $this->authenticatedSession($request);
-        $sessions = $this->accountSessionQuery($current)->get();
-        $deviceSessions = $sessions->filter(fn (VibyraSession $session) => $this->devicePublicId($session) === $deviceId);
+        return app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $current->user_id, function () use ($current, $deviceId) {
+            $sessions = $this->accountSessionQuery($current)->get();
+            $deviceSessions = $sessions->filter(fn (VibyraSession $session) => $this->devicePublicId($session) === $deviceId);
 
-        if ($deviceSessions->isEmpty()) {
-            return $this->json(['ok' => false, 'error' => 'Device not found.'], 404);
-        }
+            if ($deviceSessions->isEmpty()) {
+                return $this->json(['ok' => false, 'error' => 'Device not found.'], 404);
+            }
 
-        $currentRevoked = $deviceSessions->contains(fn (VibyraSession $session) => $session->is($current));
-        $revoked = VibyraSession::whereIn('id', $deviceSessions->pluck('id'))->update([
-            'previous_token_hash' => null,
-            'previous_token_expires_at' => null,
-            'revoked_at' => now(),
-            'revocation_reason' => 'device_removed',
-            'updated_at' => now(),
-        ]);
+            $currentRevoked = $deviceSessions->contains(fn (VibyraSession $session) => $session->is($current));
+            $revoked = app(\App\Services\Remote\RemoteAccountSecurity::class)->revokeAppSessions(
+                (int) $current->user_id, $deviceSessions->pluck('id')->all(), 'device_removed');
 
-        return $this->json(['ok' => true, 'revoked' => $revoked, 'currentRevoked' => $currentRevoked]);
+            return $this->json(['ok' => true, 'revoked' => $revoked, 'currentRevoked' => $currentRevoked]);
+        });
     }
 
     private function accountSessionQuery(VibyraSession $current)

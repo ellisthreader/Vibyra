@@ -26,12 +26,20 @@ class RemoteAccessController extends Controller
     {
         $user = $this->authenticatedUser($request);
         $data = $request->validate(['hostId' => self::HOST_ID, 'name' => ['required', 'string', 'max:80'],
-            'platform' => ['nullable', 'string', 'max:32'], 'version' => ['nullable', 'string', 'max:40']]);
+            'platform' => ['nullable', 'string', 'max:32'], 'version' => ['nullable', 'string', 'max:40'], 'challengeId' => ['nullable', 'uuid'], 'proof' => ['nullable', 'string', 'max:64']]);
         if (! $remote->availability($user)['live']) {
             return $this->json(['ok' => false, 'error' => 'Remote access is not available yet.'], 503);
         }
 
-        return $this->attempt(fn () => $remote->register($user, $data['hostId'], trim($data['name']), $data['platform'] ?? null, $data['version'] ?? null));
+        return $this->attempt(fn () => $remote->register($user, $data['hostId'], trim($data['name']), $data['platform'] ?? null, $data['version'] ?? null, $this->authenticatedSession($request)->id, $data['challengeId'] ?? null, $data['proof'] ?? null));
+    }
+
+    public function challenge(Request $request, \App\Services\Remote\RemoteIdentityProof $proof): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+        $data = $request->validate(['hostId' => self::HOST_ID, 'action' => ['required', 'in:register,transfer']]);
+        return $this->attempt(fn () => $proof->challenge($user, $this->authenticatedSession($request)->id, $data['hostId'], $data['action']))
+            ->header('Cache-Control', 'no-store');
     }
 
     public function hosts(Request $request, RemoteAccess $remote): JsonResponse
@@ -44,19 +52,24 @@ class RemoteAccessController extends Controller
     public function connect(Request $request, RemoteAccess $remote, string $hostId): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        $data = $request->validate(['clientName' => ['nullable', 'string', 'max:80']]);
+        $data = $request->validate(['clientName' => ['nullable', 'string', 'max:80'],
+            'deviceId' => ['nullable', 'uuid'], 'challengeId' => ['nullable', 'uuid'], 'proof' => ['nullable', 'string', 'max:64'],
+            'permissions' => ['sometimes', 'array', 'max:10'], 'permissions.*' => ['string']]);
         if (! preg_match('/^[a-f0-9]{64}$/', $hostId)) {
             return $this->json(['ok' => false, 'error' => 'That is not a computer identity.'], 422);
         }
 
-        return $this->attempt(fn () => $remote->connect($user, $hostId, $data['clientName'] ?? null));
+        $session = $this->authenticatedSession($request);
+        return $this->attempt(fn () => $remote->connect($user, $hostId, $data['clientName'] ?? null, $session->id, $data), $session, $data['deviceId'] ?? null);
     }
 
     public function revoke(Request $request, RemoteAccess $remote, string $hostId): JsonResponse
     {
         $user = $this->authenticatedUser($request);
 
-        return $this->json(['ok' => true, 'removed' => preg_match('/^[a-f0-9]{64}$/', $hostId) === 1 && $remote->revoke($user, $hostId)]);
+        return $this->json(['ok' => true, 'removed' => preg_match('/^[a-f0-9]{64}$/', $hostId) === 1 && $remote->revoke($user, $hostId),
+            'disconnectPending' => \App\Models\RemoteHost::query()->where('host_id', $hostId)->where('user_id', $user->id)->exists()
+                && app(\App\Services\Remote\RemoteRevocations::class)->pending($hostId)]);
     }
 
     /** The account's remote-access history: connections, never contents. */
@@ -73,7 +86,7 @@ class RemoteAccessController extends Controller
     /** The relay's presence report, authenticated with the secret both share. */
     public function relayEvents(Request $request, RemotePresence $presence): JsonResponse
     {
-        $secret = (string) config('remote.relay_secret');
+        $secret = (string) config('remote.relay_report_secret', config('remote.relay_secret'));
         if (strlen($secret) < 32 || ! hash_equals($secret, (string) $request->bearerToken())) {
             return $this->json(['ok' => false, 'error' => 'Unauthorized'], 401);
         }
@@ -83,12 +96,33 @@ class RemoteAccessController extends Controller
         return $this->json(['ok' => true, 'applied' => $applied]);
     }
 
-    private function attempt(callable $operation): JsonResponse
+    public function authorizeRelay(Request $request, \App\Services\Remote\RelayAuthorization $authorization): JsonResponse
+    {
+        $secret = (string) config('remote.relay_report_secret', config('remote.relay_secret'));
+        if (strlen($secret) < 32 || ! hash_equals($secret, (string) $request->bearerToken())) {
+            return $this->json(['ok' => false, 'error' => 'Unauthorized'], 401);
+        }
+        $data = $request->validate(['token' => ['required', 'string', 'max:4096'], 'renewal' => ['sometimes', 'boolean'],
+            'activityAt' => ['nullable', 'integer', 'min:0']]);
+        $result = \Illuminate\Support\Facades\DB::transaction(function () use ($authorization, $data) {
+            $allowed = $authorization->allows($data['token'], (bool) ($data['renewal'] ?? false), $data['activityAt'] ?? null);
+            $grant = $allowed ? app(\App\Services\Remote\RemoteAuthorizationLease::class)->issue($data['token']) : null;
+            $claims = app(\App\Services\Remote\RelayTokens::class)->verify($data['token'], true);
+            if (($claims['role'] ?? null) === 'client' && $grant === null) $allowed = false;
+            return array_filter(['allowed' => $allowed, 'authorization' => $grant], fn ($value) => $value !== null);
+        });
+        return $this->json(['ok' => true, 'leaseSeconds' => 120] + $result)->header('Cache-Control', 'no-store');
+    }
+
+    private function attempt(callable $operation, ?\App\Models\VibyraSession $session = null, ?string $device = null): JsonResponse
     {
         try {
-            return $this->json(['ok' => true] + $operation());
+            if ($session) app(\App\Services\Remote\RemoteSecurityRateLimit::class)->check($session, 'connect', $device, request()->ip());
+            return $this->json(['ok' => true] + $operation())->header('Cache-Control', 'private, no-store');
         } catch (RemoteAccessException $refused) {
-            return $this->json(['ok' => false, 'error' => $refused->getMessage()], $refused->status);
+            if ($session) app(\App\Services\Remote\RemoteSecurityFailures::class)->rejected($session, $refused, $device, request()->ip());
+            return $this->json(array_filter(['ok' => false, 'error' => $refused->getMessage(),
+                'code' => $refused->errorCode], fn ($value) => $value !== null), $refused->status)->header('Cache-Control', 'private, no-store');
         }
     }
 }

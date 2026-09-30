@@ -43,11 +43,8 @@ class VibyraSession extends Model
 
     public function revoke(string $reason): bool
     {
-        return $this->forceFill([
-            'previous_token_hash' => null,
-            'previous_token_expires_at' => null,
-            'revoked_at' => now(),
-            'revocation_reason' => mb_substr($reason, 0, 80),
-        ])->save();
+        app(\App\Services\Remote\RemoteAccountSecurity::class)->revokeAppSessions((int) $this->user_id, [$this->id], $reason);
+        $this->refresh();
+        return true;
     }
 }

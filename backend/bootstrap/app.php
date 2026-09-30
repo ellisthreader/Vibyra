@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             Route::get('/ready', InfrastructureReadinessController::class);
             require __DIR__.'/../routes/remote.php';
+            require __DIR__.'/../routes/remote_security.php';
             require __DIR__.'/../routes/agents.php';
             require __DIR__.'/../routes/notifications.php';
             require __DIR__.'/../routes/cloud_workspaces.php';
