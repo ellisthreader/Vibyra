@@ -1,5 +1,6 @@
 use vibyra_transport::preview::{
-    Frame, FrameQueue, ReceiveWindow, SendWindow, StreamKey, MAX_CHUNK, WINDOW_BYTES,
+    Frame, FrameQueue, ReceiveWindow, SendWindow, StreamKey, MAX_CHUNK, SEND_WINDOW_BYTES,
+    WINDOW_BYTES,
 };
 use vibyra_transport::MAX_PLAINTEXT;
 
@@ -68,7 +69,7 @@ fn cumulative_credit_never_replays_or_exceeds_one_window() {
     assert!(sender
         .apply_credit(&Frame::Credit {
             key,
-            total: (WINDOW_BYTES + 1) as u64
+            total: (SEND_WINDOW_BYTES + 1) as u64
         })
         .is_err());
     for sequence in 0..4 {

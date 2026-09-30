@@ -31,15 +31,14 @@ mod remote_authorization;
 mod remote_permissions;
 mod remote_restrictions;
 mod remote_revocation;
-mod rpc_access;
 #[cfg(test)]
 mod remote_test_support;
 mod restriction_apply;
 mod restriction_checkpoint;
+mod rpc_access;
 mod state;
 
 pub use backend::{Backend, PreviewAccess, PreviewHandler};
-pub use rpc_access::{current_rpc_access, with_rpc_access};
 pub use embedded::EmbeddedHost;
 pub use identity_store::IdentityKeyStore;
 pub use preview_upgrade::{UpgradeRequest, UpgradeResponse};
@@ -48,6 +47,7 @@ pub use relay::{CredentialSource, RelayCredentials, RelayHandle, RelayStatus};
 pub use remote_authorization::AuthorizationContext;
 pub use remote_restrictions::{RestrictionBatch, RestrictionPage, RestrictionReceipt};
 pub use restriction_checkpoint::RestrictionCheckpoint;
+pub use rpc_access::{current_rpc_access, with_rpc_access};
 pub use vibyra_transport::preview::{
     Frame as PreviewFrame, ReceiveWindow, SendWindow, StreamKey, MAX_CHUNK, SEND_WINDOW_BYTES,
     WINDOW_BYTES,
