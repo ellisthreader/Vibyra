@@ -6,7 +6,8 @@ class Plans
 {
     /** Enforced defaults for an unknown or missing plan. Never widen here. */
     private const FLOOR = ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => false, 'remoteAccess' => false,
-        'sessionCredits' => 60, 'weekCredits' => 150];
+        'sessionCredits' => 60, 'weekCredits' => 150, 'maxTerminals' => 2, 'safeWorktrees' => false, 'agents' => false,
+        'preview' => false, 'review' => false];
 
     public function for(string $plan): array
     {
@@ -23,7 +24,25 @@ class Plans
             // is rate-limited at the floor rather than left unlimited.
             'sessionCredits' => $this->window($configured, 'sessionCredits'),
             'weekCredits' => $this->window($configured, 'weekCredits'),
+            // Workspace limits. Until the switch is on they are unlimited for everyone.
+            'maxTerminals' => $this->limitsOn() ? $this->terminals($configured) : null,
+            'safeWorktrees' => !$this->limitsOn() || (bool) ($configured['safeWorktrees'] ?? self::FLOOR['safeWorktrees']),
+            'agents' => !$this->limitsOn() || (bool) ($configured['agents'] ?? self::FLOOR['agents']),
+            'preview' => !$this->limitsOn() || (bool) ($configured['preview'] ?? self::FLOOR['preview']),
+            'review' => !$this->limitsOn() || (bool) ($configured['review'] ?? self::FLOOR['review']),
         ];
+    }
+
+    public function limitsOn(): bool
+    {
+        return (bool) config('vibes.plan_limits_enabled');
+    }
+
+    /** Null is unlimited; anything else is at least one terminal. */
+    private function terminals(array $configured): ?int
+    {
+        if (!array_key_exists('maxTerminals', $configured)) return self::FLOOR['maxTerminals'];
+        return $configured['maxTerminals'] === null ? null : max(1, (int) $configured['maxTerminals']);
     }
 
     /**

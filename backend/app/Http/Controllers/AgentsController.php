@@ -13,10 +13,14 @@ class AgentsController extends Controller
 {
     use UserPayloads;
 
+    public const AGENTS_NEED_PRO = 'Agents are part of Vibyra Pro. Upgrade to create and run teammates.';
+
     public function index(Request $request, Teammates $agents)
     {
         $user = $this->authenticatedUser($request);
+        // Teammates stay readable after Pro ends; only creating and running them needs Pro.
         return $this->json(['version' => 1, 'enabled' => (bool) config('agents.enabled'),
+            'entitled' => app(\App\Services\Membership\PlanLimits::class)->allows($user, 'agents'),
             'capabilities' => ['cloudTasks' => true, 'cloudComputer' => false,
                 'localComputer' => (bool) config('agents.local_runner_enabled'),
                 'vmTests' => (bool) config('agents.local_runner_enabled') && (bool) config('agents.vm_tests_enabled'),
@@ -37,6 +41,7 @@ class AgentsController extends Controller
         $user = $this->authenticatedUser($request);
         abort_unless(config('agents.enabled'), 503, 'Teammates are being prepared. Please try again later.');
         app(Wallet::class)->ensure($user);
+        abort_unless(app(\App\Services\Membership\PlanLimits::class)->allows($user, 'agents'), 402, self::AGENTS_NEED_PRO);
         $data = $request->validate([
             'id' => $id ? 'prohibited' : 'required|uuid', 'revision' => $id ? 'required|integer|min:1' : 'prohibited',
             'name' => 'required|string|max:80', 'brief' => 'required|string|max:4000', 'memory' => 'present|nullable|string|max:4000',

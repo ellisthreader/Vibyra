@@ -56,9 +56,11 @@ class VibesEntitlementsTest extends TestCase
         // `fullCatalogue` is deliberately absent from this comparison: it is true on
         // every plan now and gates nothing, so it cannot be widened. The limits that
         // do gate must still land on the narrowest offer.
+        config(['vibes.plan_limits_enabled' => true]);
         $this->assertSame(
-            ['maxProjects' => 1, 'concurrentReplies' => 1, 'remoteAccess' => false,
-                'sessionCredits' => 60, 'weekCredits' => 150],
+            ['maxProjects' => 1, 'concurrentReplies' => 1, 'fundedTerminals' => false, 'remoteAccess' => false,
+                'sessionCredits' => 60, 'weekCredits' => 150, 'maxTerminals' => 2, 'safeWorktrees' => false, 'agents' => false,
+                'preview' => false, 'review' => false],
             collect(app(Plans::class)->for('enterprise-does-not-exist'))->except('fullCatalogue')->all()
         );
         // A plan that names no window is rate-limited at the floor, never left

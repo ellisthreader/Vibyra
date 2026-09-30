@@ -2,6 +2,11 @@
 
 return [
     'funded_terminals_enabled' => env('VIBYRA_FUNDED_TERMINALS_ENABLED', false),
+
+    // Free vs Pro workspace limits (terminals at once, safe-mode worktrees, Agents).
+    // Off, every plan reports them unlimited, so clients and the server can ship
+    // before the switch. The server enforces Agents; nothing else here reads it yet.
+    'plan_limits_enabled' => env('VIBYRA_PLAN_LIMITS_ENABLED', false),
     'enabled' => env('VIBES_ENABLED', false),
     // Whether Vibes can be tried with no account. Off by default: a guest grant
     // is real money, and `devicecheck_*` below is what keeps one device to one.
@@ -67,16 +72,25 @@ return [
     // other entitlement is Pro's on both, so the upgrade page can switch sizes and
     // change nothing but the figures.
     'plans' => [
+        // maxTerminals counts every running terminal (agent or shell), so typing an
+        // agent CLI into a plain shell is not a way round it. Legacy paid plans keep
+        // Pro's workspace so nobody who paid loses anything.
         'pro_v2' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
-            'sessionCredits' => 400, 'weekCredits' => 1000],
+            'sessionCredits' => 400, 'weekCredits' => 1000, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
+            'preview' => true, 'review' => true],
+        // Free is one project (desktop and Vibyra AI alike); Preview and Review are Pro.
         'free' => ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
-            'sessionCredits' => 60, 'weekCredits' => 150],
+            'sessionCredits' => 60, 'weekCredits' => 150, 'maxTerminals' => 2, 'safeWorktrees' => false, 'agents' => false,
+            'preview' => false, 'review' => false],
         'starter' => ['maxProjects' => 3, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
-            'sessionCredits' => 70, 'weekCredits' => 175],
+            'sessionCredits' => 70, 'weekCredits' => 175, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
+            'preview' => true, 'review' => true],
         'builder' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
-            'sessionCredits' => 200, 'weekCredits' => 500],
+            'sessionCredits' => 200, 'weekCredits' => 500, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
+            'preview' => true, 'review' => true],
         'pro' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
-            'sessionCredits' => 400, 'weekCredits' => 1000],
+            'sessionCredits' => 400, 'weekCredits' => 1000, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
+            'preview' => true, 'review' => true],
     ],
 
     // The two rolling usage windows, in the units `UsageWindows` measures them in.

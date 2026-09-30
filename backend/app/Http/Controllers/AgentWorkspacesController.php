@@ -24,6 +24,7 @@ final class AgentWorkspacesController extends Controller
     {
         $user = $this->authenticatedUser($request);
         abort_unless(config('agents.enabled') && config('agents.local_runner_enabled'), 503, 'Agent computer is not enabled.');
+        abort_unless(app(\App\Services\Membership\PlanLimits::class)->allows($user, 'agents'), 402, AgentsController::AGENTS_NEED_PRO);
         $data = $request->validate(['agentId' => 'required|uuid', 'hostId' => ['required', 'regex:/^[a-f0-9]{64}$/'],
             'label' => 'required|string|max:80', 'platform' => 'sometimes|in:macos,linux,windows',
             'canWrite' => 'sometimes|boolean', 'canTest' => 'sometimes|boolean']);

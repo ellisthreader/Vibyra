@@ -33,7 +33,10 @@ class Turns
             app(FundedTerminals::class)->guard($userId, $chat, $q['model'], $q['max'] * $microPerUnit);
             app(\App\Services\CloudWorkspaces\Budgets::class)->guardAi($chat, $q['max']);
             app(\App\Services\CloudWorkspaces\Ai::class)->guardSubmit($chat, $q['request']);
-            if (!empty($q['request']['vibyraAgent'])) \App\Services\Agents\TaskContext::validate($userId, $q['request']['vibyraAgent']);
+            if (!empty($q['request']['vibyraAgent'])) {
+                abort_unless(app(Plans::class)->for($this->wallet->planFor($userId))['agents'], 402, \App\Http\Controllers\AgentsController::AGENTS_NEED_PRO);
+                \App\Services\Agents\TaskContext::validate($userId, $q['request']['vibyraAgent']);
+            }
             app(\App\Services\Membership\Projects::class)->guard($userId, $chat);
             $active = DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at');
             $entitled = $this->wallet->planFor($userId);
