@@ -23,6 +23,10 @@ Find the sweet spot:
   only paired releases and borrowed mapping restoration survive revocation.
   Run the queue/revoke, Swift sink and consent tests described in
   `Vibyra/_ai/Desktop/Native Remote Input Authorization.md`.
+- Persist local trust with a complete synced same-directory replacement; preserve
+  private permissions, propagate commit errors and clean only owned pending files.
+  Windows needs its platform write-through replacement path, not Unix directory
+  fsync. Follow `Desktop/Tauri Account Authentication.md` for grant-store tests.
 - Keep every source code file under the project’s limit, commonly 200 lines. Exclude generated folders and temporary tool artifacts.
 
 ## Workflow

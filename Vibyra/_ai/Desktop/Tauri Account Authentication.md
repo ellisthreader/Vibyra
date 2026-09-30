@@ -36,3 +36,20 @@ React auth UI → safe Tauri IPC commands only → native `AccountSessionManager
 ## QA
 
 Local mock of the contract: `/tmp/vibyra-mock-api.py` pattern (run app with `VIBYRA_DESKTOP_API_URL=http://127.0.0.1:8899`). Live provider flows still need real Google/Apple env config (see plan's Backend and Release Configuration section) — not testable against the mock.
+
+## Local Agent Computer Grant Persistence
+
+`agent_computer_store.rs` owns account-scoped local grants; its writer is
+`agent_computer_store_write.rs`. Save a complete, synced `create_new` candidate
+in the same resolved parent, then replace. Unix keeps0600 and parent-directory
+fsync. Windows closes the synced write-through candidate and uses
+[MoveFileExW](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw)
+with REPLACE_EXISTING|WRITE_THROUGH, without copy or reboot fallback. Ordinary
+`File::open(directory).sync_all()` is not a Windows directory fsync. Only clean
+up a pending file after this writer successfully created it; propagate errors.
+
+Keep first-create/revocation, private-store corruption, failed-commit preservation
+and actual Windows denied-replacement tests. `cargo test --manifest-path
+desktop-tauri/src-tauri/Cargo.toml agent_computer_store` is the focused route.
+Cross-target compilation is a type check; actual Windows CI is still required.
+This source fix does not enable the production Agent Computer plane.

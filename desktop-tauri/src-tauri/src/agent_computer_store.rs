@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -91,38 +90,11 @@ pub fn active_worktree(file: &Path, scope: &str, id: &str) -> Result<Grant, Stri
     Ok(grant)
 }
 
-pub fn save(file: &Path, grants: &[Grant]) -> Result<(), String> {
-    let parent = file.parent().ok_or("No Agent Computer state directory")?;
-    std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    let mut random = [0u8; 8];
-    getrandom::fill(&mut random).map_err(|e| e.to_string())?;
-    let pending = parent.join(format!("agent-computer-{}.pending", hex(&random)));
-    let write = (|| {
-        let mut options = std::fs::OpenOptions::new();
-        options.write(true).create_new(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.mode(0o600);
-        }
-        let mut output = options.open(&pending).map_err(|e| e.to_string())?;
-        output
-            .write_all(&serde_json::to_vec(grants).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
-        output.sync_all().map_err(|e| e.to_string())?;
-        std::fs::rename(&pending, file).map_err(|e| e.to_string())?;
-        std::fs::File::open(parent)
-            .and_then(|dir| dir.sync_all())
-            .map_err(|e| e.to_string())
-    })();
-    if write.is_err() {
-        let _ = std::fs::remove_file(&pending);
-    }
-    write
-}
+#[path = "agent_computer_store_write.rs"]
+mod writer;
 
-fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+pub fn save(file: &Path, grants: &[Grant]) -> Result<(), String> {
+    writer::save(file, grants)
 }
 
 #[cfg(test)]
