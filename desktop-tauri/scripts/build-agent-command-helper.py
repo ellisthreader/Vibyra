@@ -64,6 +64,17 @@ def signing_keychain(identity):
             subprocess.run(["security", "delete-keychain", keychain], check=False)
 
 
+def verify_hardened_signature(path, identity):
+    run("codesign", "--verify", "--strict", path)
+    result = subprocess.run(["codesign", "--display", "--verbose=4", str(path)],
+                            capture_output=True, text=True, check=True)
+    details = result.stdout + result.stderr
+    if "(runtime)" not in details:
+        raise RuntimeError(f"Helper lacks hardened runtime: {path.name}")
+    if identity != "-" and "Timestamp=" not in details:
+        raise RuntimeError(f"Helper lacks secure signing timestamp: {path.name}")
+
+
 def build(output, identity):
     service = output / "AgentCommand.xpc"
     executable = service / "Contents/MacOS/AgentCommandService"
@@ -81,12 +92,14 @@ def build(output, identity):
         SOURCE / "CommandProcess.swift", SOURCE / "Service.swift", "-o", executable)
     run("swiftc", "-target", target, SOURCE / "Protocol.swift", SOURCE / "Client.swift",
         "-o", sidecar)
+    timestamp = "--timestamp=none" if identity == "-" else "--timestamp"
     with signing_keychain(identity):
-        run("codesign", "--force", "--sign", identity, "--entitlements",
-            SOURCE / "Sandbox.entitlements", service)
-        run("codesign", "--force", "--sign", identity, sidecar)
-    run("codesign", "--verify", "--strict", service)
-    run("codesign", "--verify", "--strict", sidecar)
+        run("codesign", "--force", "--sign", identity, "--options", "runtime",
+            timestamp, "--entitlements", SOURCE / "Sandbox.entitlements", service)
+        run("codesign", "--force", "--sign", identity, "--options", "runtime",
+            timestamp, sidecar)
+    verify_hardened_signature(service, identity)
+    verify_hardened_signature(sidecar, identity)
     print(f"Built Agent command helper: {output}")
 
 
