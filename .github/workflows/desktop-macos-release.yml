@@ -70,6 +70,10 @@ jobs:
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates
+        # Keep timing fixtures free of competing test cases; their own race
+        # threads and every latency assertion still run unchanged.
+        env:
+          RUST_TEST_THREADS: '1'
         run: npm run verify
       - name: Verify native untrusted-frame IPC boundary
         run: python3 scripts/verify-native-ipc-boundary.py

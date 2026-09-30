@@ -72,3 +72,10 @@ For a latched pre-input focus regression, synchronize on the fake's pending focu
 delivery and its exact 60 ms deadline before releasing the old read. The input log
 is written before delivery; elapsed time from that receipt can race a descheduled
 tap thread. Retain the original 400 ms bound and one-reader/freshness assertions.
+
+Mac release gates set RUST_TEST_THREADS=1 for full npm verification; the reused
+Mac job previously limited test cases to two threads. Serial cases reduce fixture
+competition while all tests, 400 ms assertions and explicit in-test race threads
+remain active. A bounded read cannot prevent an external host scheduling pause;
+the exact CI descheduling cause remains unmeasured. Keep Linux and Windows
+validation scheduling unchanged.

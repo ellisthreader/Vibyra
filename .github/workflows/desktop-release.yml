@@ -81,7 +81,14 @@ jobs:
         run: npm ci --prefix ../host/relay
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
-      - name: Run release gates
+      - name: Run Mac release gates
+        if: runner.os == 'macOS'
+        # Serial test cases preserve timing assertions and internal race threads.
+        env:
+          RUST_TEST_THREADS: '1'
+        run: npm run verify
+      - name: Run Linux and Windows release gates
+        if: runner.os != 'macOS'
         run: npm run verify
       - name: Remove independently built frontend output
         run: >-
