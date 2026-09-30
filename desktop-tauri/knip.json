@@ -8,6 +8,7 @@
     "tests/*.test.mjs",
     "tests/*Fixture.tsx",
     "scripts/frontend-artifact.mjs",
+    "scripts/verify-notarized-signatures.mjs",
     "tests/assistantLiveFixture.ts",
     "tests/installedReferenceBootstrap.ts",
     "scripts/verify-remote-security.mjs",
