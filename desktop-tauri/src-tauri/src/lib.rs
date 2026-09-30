@@ -95,6 +95,8 @@ pub mod shared_chats;
 mod sink;
 mod state;
 mod state_openai_key;
+#[cfg(test)]
+mod test_shell;
 mod window_preview;
 
 pub fn handle_cli() -> Option<Result<&'static str, String>> {

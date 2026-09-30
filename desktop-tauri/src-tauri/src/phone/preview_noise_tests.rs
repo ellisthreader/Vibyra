@@ -1,6 +1,7 @@
 //! Public WebSocket → Noise → DesktopBackend → PreviewService proof.
 #[path = "preview_noise_tests/peer.rs"]
 mod peer;
+use crate::test_shell;
 
 use super::backend::DesktopBackend;
 use super::preview_grants::PreviewGrants;
@@ -12,7 +13,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::sync::Arc;
 use vibyra_core::preview::{inspect_project, PreviewManager, PreviewPhase};
-use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
 use vibyra_host::{EmbeddedHost, PreviewFrame as Frame, StreamKey, WINDOW_BYTES};
 
 struct Sink;
@@ -64,20 +65,8 @@ async fn approved_site_and_terminal_share_actual_encrypted_host_connection() {
         workspace.clone(),
     ));
     let pty = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    pty.create_session(
-        "shell",
-        "Live terminal",
-        &LaunchSpec {
-            program: "/bin/sh".into(),
-            args: vec!["-c".into(), "echo READY; read line".into()],
-            env: vec![],
-            env_remove: vec![],
-            cwd: None,
-            rows: 30,
-            cols: 100,
-        },
-    )
-    .unwrap();
+    pty.create_session("shell", "Live terminal", &test_shell::waiting())
+        .unwrap();
     let backend = DesktopBackend::new_with_preview(
         pty,
         workspace,

@@ -4,6 +4,7 @@ use super::{
     terminal_launch::CreateTerminalRequest, terminal_prepare::LaunchContext,
 };
 use crate::phone::{workspace::DesktopProject, PhoneConnection};
+use crate::test_shell;
 use serde_json::json;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -81,7 +82,7 @@ fn queued_native_create_denies_revocation_wrong_scope_and_allows_exact_live_requ
         PhoneEffect::capture_queued(phone.clone(), Some(&id), &["create"], Some("p"), None).unwrap()
     };
     let context = || LaunchContext {
-        default_shell: Some("/bin/sh".into()),
+        default_shell: Some(test_shell::waiting().program),
         custom_agents: vec![],
         workspace_root: None,
         worktrees_root: dir.path().join("worktrees"),

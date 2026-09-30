@@ -163,3 +163,11 @@ workflow371060173); Windows/Linux run full verify and strict all-target Clippy,
 and Linux runs actual native IPC isolation under dbus/Xvfb. It publishes no
 packages and uses no signing secrets. Compile tests do not establish physical
 OS input acceptance.
+
+
+Run Linux full native `npm run verify` under dbus/Xvfb because Preview Run checks
+X11 availability; retain the separate actual WebKit IPC gate afterwards. Use
+native Windows/Unix PTY fixtures with fixed commands, keep queued revocation and
+Noise checks active, and set fixture Git core.autocrlf=false for byte assertions.
+Attached fixture listeners belong to their advertised cwd on all desktop
+platforms. Linux desktop-entry parser tests use Unix path semantics on every host.

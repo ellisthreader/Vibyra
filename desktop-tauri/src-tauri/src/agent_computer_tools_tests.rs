@@ -131,6 +131,7 @@ fn approved_edit_changes_only_the_agent_worktree() {
             .success());
     };
     run(&["init", "-q"]);
+    run(&["config", "core.autocrlf", "false"]);
     std::fs::write(source.join("notes.txt"), "Original note\n").unwrap();
     run(&["add", "."]);
     run(&[

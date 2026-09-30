@@ -57,3 +57,12 @@ main27af5db0 (workflow371060173). Windows/Linux run full verify/all-target
 Clippy; Linux additionally exercises actual native IPC under dbus/Xvfb.
 Diagnostic receipts are retained, with no signing secrets or artifact publication.
 See the Preview diagnostics skill for dispatch and physical OS test boundaries.
+
+
+Linux full native verification runs under dbus/Xvfb because Preview Run requires
+X11 availability; the actual WebKit IPC fixture remains a separate later gate.
+Queued native PTY and Noise regressions use fixed native Windows/Unix shells,
+without disabling permission/revocation assertions. Git byte fixtures disable
+repo-local autocrlf, and AppImage escaping uses Linux paths even in Windows tests.
+Positive attached-listener discovery is expected for the fixture's own cwd on
+all three desktop platforms. See the Preview diagnostics skill for these gates.

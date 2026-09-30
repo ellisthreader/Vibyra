@@ -47,7 +47,8 @@ pub fn install() {
 // Desktop-entry string escaping is applied before Exec argument unquoting.
 // Percent is escaped separately so a filename never becomes a field code.
 fn escape_exec(path: &str) -> Option<String> {
-    if !std::path::Path::new(path).is_absolute() || path.chars().any(char::is_control) {
+    // Desktop entries use Unix paths even when parser tests run on Windows.
+    if !path.starts_with('/') || path.chars().any(char::is_control) {
         return None;
     }
     let mut escaped = String::new();
@@ -94,7 +95,12 @@ mod tests {
             escape_exec("/tmp/%\"`$\\.AppImage").unwrap(),
             r#"/tmp/%%\\"\\`\\$\\\\.AppImage"#
         );
-        for path in ["relative.AppImage", "/tmp/name\nExec=other", "/tmp/name\0"] {
+        for path in [
+            "relative.AppImage",
+            r"C:\Apps\Vibyra.AppImage",
+            "/tmp/name\nExec=other",
+            "/tmp/name\0",
+        ] {
             assert!(escape_exec(path).is_none());
         }
     }

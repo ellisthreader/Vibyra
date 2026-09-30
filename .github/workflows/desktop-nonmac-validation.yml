@@ -50,7 +50,12 @@ jobs:
       - name: Confirm repository Rust toolchain
         run: rustup show active-toolchain
       - name: Compile native platform and run all security gates
+        if: runner.os != 'Linux'
         run: npm run verify
+      - name: Compile Linux native platform and run all security gates
+        if: runner.os == 'Linux'
+        shell: bash
+        run: dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" npm run verify
       - name: Exercise real Linux WebKit IPC isolation
         if: runner.os == 'Linux'
         shell: bash

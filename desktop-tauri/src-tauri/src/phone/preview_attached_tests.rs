@@ -44,10 +44,7 @@ fn attached_server_survives_downtime_and_never_becomes_a_managed_process() {
         service.list("wrong")["targets"].as_array().unwrap().len(),
         0
     );
-    assert_eq!(
-        service.list("phone")["targets"][0]["running"],
-        cfg!(target_os = "macos")
-    );
+    assert_eq!(service.list("phone")["targets"][0]["running"], true);
     assert!(service.start("wrong", &grant_id).is_err());
     assert!(service.open("wrong", &grant_id).is_err());
     assert_eq!(
