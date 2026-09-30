@@ -12,6 +12,11 @@ on:
         type: boolean
         default: false
 
+      notarized_source_commit:
+        description: Full frozen source SHA for signing-only notarized admission
+        type: string
+        default: ""
+
 permissions:
   contents: read
   actions: read
@@ -262,4 +267,6 @@ jobs:
   notarized:
     if: ${{ inputs.sign_notarized_only }}
     uses: ./.github/workflows/desktop-notarized-update.yml
+    with:
+      notarized_source_commit: ${{ inputs.notarized_source_commit }}
     secrets: inherit
