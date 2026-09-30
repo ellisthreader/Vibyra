@@ -71,7 +71,11 @@ fn a_tap_replies_once_focus_has_moved() {
     assert_eq!(reply["editable"], true, "{reply}");
     assert_eq!(reply["kind"], "secure");
     assert!(reply["serial"].as_u64().unwrap() > before);
-    assert!(started.elapsed() < Duration::from_millis(400));
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed < Duration::from_millis(400),
+        "changed focus: {elapsed:?}"
+    );
     // A tap that moves nothing still answers promptly.
     let started = Instant::now();
     assert_eq!(
@@ -80,8 +84,29 @@ fn a_tap_replies_once_focus_has_moved() {
             .unwrap()["kind"],
         "secure"
     );
-    assert!(started.elapsed() < Duration::from_millis(400));
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed < Duration::from_millis(400),
+        "unchanged focus: {elapsed:?}"
+    );
     capture.stop();
+}
+
+#[test]
+fn unchanged_focus_reads_do_not_extend_the_tap_wait() {
+    let (backend, capture) = capture();
+    eventually(&capture, |state| state["serial"].as_u64() > Some(0));
+    // Polling a responsive but slower application still shares one wait budget.
+    *backend.stall.lock() = Duration::from_millis(35);
+    let started = Instant::now();
+    let reply = capture
+        .input(&json!({"kind":"click","x":0.9,"y":0.9}))
+        .unwrap();
+    assert_eq!(reply["editable"], false);
+    let elapsed = started.elapsed();
+    *backend.stall.lock() = Duration::ZERO;
+    capture.stop();
+    assert!(elapsed < Duration::from_millis(400), "{elapsed:?}");
 }
 
 #[test]

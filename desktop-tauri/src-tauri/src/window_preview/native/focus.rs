@@ -49,6 +49,8 @@ pub(super) struct Tracker {
 }
 
 const RESCAN: Duration = Duration::from_millis(750);
+const TAP_WAIT: Duration = Duration::from_millis(210);
+const TAP_POLL: Duration = Duration::from_millis(30);
 
 impl Tracker {
     /// For each frame: the latest reading, never waiting on the application.
@@ -71,12 +73,15 @@ impl Tracker {
     pub fn settled(&self, backend: &'static dyn Backend, window: &Geometry, before: u64) -> Value {
         // The tap may have changed the layout: map the fields again.
         self.seen.lock().scanned = None;
+        let deadline = Instant::now() + TAP_WAIT;
         let mut state = self.measure(backend, window);
-        for _ in 0..7 {
-            if state["serial"].as_u64() != Some(before) {
+        while state["serial"].as_u64() == Some(before) {
+            // Application reads and late wakeups share the same wait budget.
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
                 break;
             }
-            std::thread::sleep(Duration::from_millis(30));
+            std::thread::sleep(TAP_POLL.min(remaining));
             state = self.measure(backend, window);
         }
         state
