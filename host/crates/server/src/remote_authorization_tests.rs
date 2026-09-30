@@ -146,6 +146,9 @@ fn screen_and_keyboard_grants_do_not_gain_terminal_files_or_preview() {
     assert!(policy::request(&keyboard, "project.read", &json!({})).is_err());
     let terminal = Some(issued(&["terminal:access"]));
     assert!(policy::request(&terminal, "session.input", &json!({})).is_ok());
+    assert!(policy::request(&terminal, "session.resumeSaved", &json!({})).is_ok());
+    assert!(policy::request(&view, "session.resumeSaved", &json!({})).is_err());
+    assert!(policy::request(&keyboard, "session.resumeSaved", &json!({})).is_err());
     assert!(policy::request(&terminal, "conversation.attachment", &json!({})).is_err());
     assert!(policy::request(&terminal, "vibes.tool", &json!({"operation":"write_file"})).is_err());
     let preview = Some(issued(&["preview:access"]));

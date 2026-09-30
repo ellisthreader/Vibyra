@@ -53,6 +53,13 @@ impl PhoneConnection {
     ) {
         self.workspace.write().publish(projects, panes, chats);
     }
+    pub fn publish_saved(&self, saved: Vec<super::saved::SavedPane>) {
+        self.workspace.write().saved = saved
+            .into_iter()
+            .filter(|pane| pane.id < 0)
+            .take(128)
+            .collect();
+    }
     pub fn address(&self) -> &str {
         &self.address
     }

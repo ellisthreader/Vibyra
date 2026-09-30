@@ -82,6 +82,7 @@ impl PreviewService {
             runtime_id,
             status,
         });
+        self.share_run_site(owner.as_deref(), run)?;
         self.run_summary(&key.0, &key.1)
             .ok_or_else(|| "The app stopped".into())
     }
@@ -176,6 +177,11 @@ impl ActiveRun {
 
 fn same_path(left: &Path, right: &Path) -> bool {
     left.components().eq(right.components())
+        || left
+            .canonicalize()
+            .ok()
+            .zip(right.canonicalize().ok())
+            .is_some_and(|(a, b)| a == b)
 }
 
 fn random_id() -> Result<String, String> {

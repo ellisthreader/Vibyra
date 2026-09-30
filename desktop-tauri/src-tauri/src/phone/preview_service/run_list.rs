@@ -9,9 +9,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
-use vibyra_core::preview::{
-    inspect_project_with, DesktopStage, PreviewPhase, PreviewStatus, PreviewTargetKind,
-};
+use vibyra_core::preview::{inspect_project_with, DesktopStage, PreviewPhase, PreviewStatus};
 
 const MAX_PROJECTS: usize = 24;
 const CACHE: Duration = Duration::from_secs(3);
@@ -60,7 +58,7 @@ impl PreviewService {
                 continue;
             };
             for target in inspection.targets {
-                if target.kind != PreviewTargetKind::Desktop || !target.runnable {
+                if !target.runnable {
                     continue;
                 }
                 let Ok(run) = self.resolve_run(project, None, Some(&target.id), None) else {
@@ -73,6 +71,13 @@ impl PreviewService {
                 row["approvalRequired"] = json!(state != RunApprovalState::Approved);
                 row["projectId"] = json!(project);
                 row["framework"] = json!(run.target.framework);
+                row["kind"] = json!(if run.target.kind
+                    == vibyra_core::preview::PreviewTargetKind::Desktop
+                {
+                    "window"
+                } else {
+                    "web"
+                });
                 bases.push(Base {
                     row,
                     root: run.source_root,
@@ -91,6 +96,9 @@ impl PreviewService {
             root,
             target,
         } = base;
+        if row["kind"] == "web" {
+            self.refresh_run_site(&root, &target);
+        }
         let runs = self.inner.runs.lock();
         let active = runs.get(&(root.clone(), target.clone()));
         let status = match active.and_then(|run| run.status.clone()) {
@@ -123,7 +131,15 @@ impl PreviewService {
                 .map(|(_, grant)| grant.clone());
             row["runId"] = json!(active.run_id);
             row["windowGrantId"] = json!(grant);
-            row["autoOpen"] = json!(owner && active.ended.is_none() && grant.is_some());
+            row["autoOpen"] = json!(
+                owner
+                    && active.ended.is_none()
+                    && grant.is_some()
+                    && (row["kind"] != "web"
+                        || status
+                            .as_ref()
+                            .is_some_and(|s| s.phase == PreviewPhase::Running))
+            );
         }
         row
     }

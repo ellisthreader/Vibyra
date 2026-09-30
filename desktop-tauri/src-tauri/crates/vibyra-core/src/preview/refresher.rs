@@ -137,11 +137,8 @@ impl PreviewManager {
             .any(|service| service.try_lock().is_none_or(|s| s.is_live_desktop()))
     }
 
-    /// Desktop runs only: web previews keep being polled as before.
+    /// Lifecycle events also revoke phone grants when a managed website stops.
     pub(super) fn emit(&self, root: &str, runtime_id: u64, status: &PreviewStatus) {
-        if status.stage.is_none() {
-            return;
-        }
         let listener = self.listener.lock().clone();
         if let Some(listener) = listener {
             listener(PreviewEvent {

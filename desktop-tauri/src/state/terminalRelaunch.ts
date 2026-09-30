@@ -12,7 +12,7 @@ type GetState = StoreApi<TerminalStore>["getState"];
 type SetState = StoreApi<TerminalStore>["setState"];
 
 /** Replace only after a successful spawn. Failed resumes leave the saved pane intact. */
-export async function relaunch(set: SetState, get: GetState, id: number, continuing: boolean): Promise<void> {
+export async function relaunch(set: SetState, get: GetState, id: number, continuing: boolean): Promise<number | void> {
   const pane = get().panes.find((candidate) => candidate.id === id);
   (window as any).__dbg?.(`relaunch start id=${id} continuing=${continuing} pane=${!!pane} relaunching=${get().relaunching} status=${pane?.status}`);
   if (!pane || get().relaunching.includes(id) || (continuing && pane.status === "running")) return;
@@ -35,8 +35,9 @@ export async function relaunch(set: SetState, get: GetState, id: number, continu
     const replaySnapshot = continuing || pane.status === "suspended"
       ? pane.snapshot ?? (id > 0 ? await terminalSnapshot(id).catch(() => null) : null)
       : null;
+    let resumed: number | null | void;
     if (pane.agentId === "ssh") {
-      await get().spawnSsh(pane.title, pane.projectId, { replaces: id, replaySnapshot });
+      resumed = await get().spawnSsh(pane.title, pane.projectId, { replaces: id, replaySnapshot });
     } else {
       (window as any).__dbg?.(`listAgents id=${id}`);
       const agents = await listAgents();
@@ -46,7 +47,7 @@ export async function relaunch(set: SetState, get: GetState, id: number, continu
       const fingerprint = pane.workspaceMode === "safe" && pane.sourceCwd && !(continuing && pane.resumeCwd)
         ? (await inspectSafeWorkspace(pane.sourceCwd)).fingerprint : undefined;
       (window as any).__dbg?.(`spawnAgent id=${id}`);
-      await get().spawnAgent(agent, pane.projectId, {
+      resumed = await get().spawnAgent(agent, pane.projectId, {
         model: pane.model,
         permissionMode: pane.permissionMode,
         reasoningEffort: pane.reasoningEffort,
@@ -68,6 +69,7 @@ export async function relaunch(set: SetState, get: GetState, id: number, continu
     destroySession(id);
     dropStats(id);
     if (id > 0) await removeTerminal(id).catch(() => {});
+    return resumed ?? undefined;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     (window as any).__dbg?.(`relaunch error id=${id} ${message} ${(error as any)?.stack ?? ""}`);

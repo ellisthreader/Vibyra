@@ -1,6 +1,6 @@
 import { paneLabel } from "./paneLabel";
 import { isSuspendedId } from "./sessionRestore";
-import type { PhonePane, PhoneProject } from "../ipc/phone";
+import type { PhonePane, PhoneProject, PhoneSavedPane } from "../ipc/phone";
 import type { PaneState } from "../state/terminalStoreTypes";
 import type { ProjectSpec } from "../types";
 
@@ -18,14 +18,13 @@ export function shortenRoot(root: string, homeDir: string): string {
   return `~${root.slice(home.length)}`;
 }
 
-/** Suspended panes are left out. They have no process for a phone to watch, so
- * listing one would offer output nothing is producing — and a restored pane
- * carries a negative placeholder id, which is not a session id at all. */
+/** Chat visibility follows the Mac sidebar; saved panes travel separately
+ * from live PTYs because their negative IDs do not name a running process. */
 export interface ShownChats {
   /** Whether the chat list has been read at all this run. Until it has, the
    * window cannot say which chats it shows, and must not claim "none". */
   loaded: boolean;
-  sessions: { id: string }[];
+  sessions: { id: string; status?: string }[];
   /** The conversations whose cards are up on the Mac's grid. A chat the
    * person closed, or one saved from an earlier run, is not one of them. */
   open: string[];
@@ -35,7 +34,7 @@ export interface ShownChats {
  * draws. The engine keeps every conversation ever had; those are history. */
 export function shownChats(chats: ShownChats): string[] | null {
   if (!chats.loaded) return null;
-  return chats.sessions.filter((chat) => chats.open.includes(chat.id)).map((chat) => chat.id);
+  return chats.sessions.filter((chat) => chats.open.includes(chat.id) || chat.status === "running").map((chat) => chat.id);
 }
 
 export function phoneWorkspacePayload(
@@ -43,9 +42,11 @@ export function phoneWorkspacePayload(
   panes: PaneState[],
   homeDir: string,
   chats: ShownChats = { loaded: false, sessions: [], open: [] },
-): { projects: PhoneProject[]; panes: PhonePane[]; chats: string[] | null } {
+): { projects: PhoneProject[]; panes: PhonePane[]; saved: PhoneSavedPane[]; chats: string[] | null } {
   return {
     chats: shownChats(chats),
+    saved: panes.filter(pane => isSuspendedId(pane.id) && pane.status === 'suspended')
+      .map(pane => ({ id: pane.id, projectId: pane.projectId, title: paneLabel(pane), kind: pane.agentId })),
     projects: projects.map((project) => ({
       id: project.id,
       name: project.name,

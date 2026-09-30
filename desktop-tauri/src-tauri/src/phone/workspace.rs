@@ -52,6 +52,7 @@ pub struct DesktopWorkspace {
     /// refetch after a rename — a change no terminal starting or stopping
     /// would otherwise announce.
     revision: u64,
+    pub(super) saved: Vec<super::saved::SavedPane>,
 }
 
 pub type SharedWorkspace = Arc<RwLock<DesktopWorkspace>>;

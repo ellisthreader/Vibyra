@@ -17,10 +17,19 @@ pub(super) struct OriginRewriter {
 
 impl OriginRewriter {
     /// `port` is the Mac site's; `destination` the phone's `http://127.0.0.1:<port>`.
+    #[cfg(test)]
     pub fn new(port: u16, destination: &str) -> Self {
-        let sources = ["127.0.0.1", "localhost", "[::1]"]
-            .map(|host| format!("{host}:{port}").into_bytes())
-            .to_vec();
+        Self::ports(&[port], destination)
+    }
+
+    pub fn ports(ports: &[u16], destination: &str) -> Self {
+        let sources = ports
+            .iter()
+            .flat_map(|port| {
+                ["127.0.0.1", "localhost", "[::1]"]
+                    .map(|host| format!("{host}:{port}").into_bytes())
+            })
+            .collect::<Vec<_>>();
         let destination = destination
             .strip_prefix("http://")
             .unwrap_or(destination)

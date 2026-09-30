@@ -37,6 +37,7 @@ pub(crate) fn request(access: &Access, method: &str, params: &Value) -> Result<(
         | "session.snapshot"
         | "session.models"
         | "session.create"
+        | "session.resumeSaved"
         | "session.stop"
         | "session.claim"
         | "session.input"

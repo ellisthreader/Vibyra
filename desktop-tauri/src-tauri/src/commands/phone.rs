@@ -98,8 +98,11 @@ pub fn phone_publish_workspace(
     projects: Vec<DesktopProject>,
     panes: Vec<DesktopPane>,
     chats: Option<Vec<String>>,
+    saved: Option<Vec<crate::phone::saved::SavedPane>>,
 ) {
-    state.phone.lock().publish(projects, panes, chats);
+    let phone = state.phone.lock();
+    phone.publish_saved(saved.unwrap_or_default());
+    phone.publish(projects, panes, chats);
 }
 
 /// Terminals a phone has asked this window to start or close and is waiting

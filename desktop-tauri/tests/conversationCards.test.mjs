@@ -61,7 +61,7 @@ test("both surfaces draw their cards from the live list", () => {
  * One set, two surfaces: the phone lists the terminals the Mac's grid draws,
  * so a card that is not up here must not be a terminal there either.
  */
-test("the grid and the phone draw the same set of cards", () => {
+test("the phone retains running conversations alongside visible grid cards", () => {
   const stage = source("../src/components/terminal/TerminalStage.tsx");
   assert.match(stage, /conversations\.open\.includes\(s\.id\)/, "the grid draws the open cards");
   assert.doesNotMatch(stage, /!conversations\.dismissed\.includes/, "not everything minus the dismissals");
@@ -69,7 +69,7 @@ test("the grid and the phone draw the same set of cards", () => {
   assert.match(store, /openConversationCards\(sessions, get\(\)\.open, get\(\)\.dismissed\)/);
   assert.match(store, /readConversationLayout/, "the explicit open set survives a quit");
   const phone = source("../src/lib/phoneWorkspace.ts");
-  assert.match(phone, /chats\.sessions\.filter\(\(chat\) => chats\.open\.includes\(chat\.id\)\)/);
+  assert.match(phone, /chats\.sessions\.filter\(\(chat\) => chats\.open\.includes\(chat\.id\) \|\| chat\.status === "running"\)/);
   assert.match(source("../src/lib/phoneWorkspaceSync.ts"), /open: chats\.open/);
 });
 

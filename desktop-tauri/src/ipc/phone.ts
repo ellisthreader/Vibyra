@@ -113,6 +113,8 @@ export interface PhoneProject {
 }
 
 /** A live pane and the project the desktop is showing it in. */
+export interface PhoneSavedPane { id: number; projectId: string; title: string; kind: string }
+
 export interface PhonePane {
   id: number;
   projectId: string;
@@ -134,14 +136,16 @@ export function phonePublishWorkspace(
   projects: PhoneProject[],
   panes: PhonePane[],
   chats: string[] | null,
+  saved: PhoneSavedPane[] = [],
 ): Promise<void> {
-  return invoke("phone_publish_workspace", { projects, panes, chats });
+  return invoke("phone_publish_workspace", { projects, panes, chats, saved });
 }
 
 /** What a phone asked this window to do: start a terminal in a project, or
  * close one — a pane by its number, a shared chat by its id. */
 export type PhoneTerminalRequest =
   | { id: string; action: "models" }
+  | { id: string; action: "resumeSaved"; paneId: number; projectId: string }
   | { id: string; action: "create"; projectId: string; kind: "shell" | import("../lib/phoneTerminalModels").PhoneTerminalRunner; title: string; requestId: string; safeMode?: boolean; model?: string; effort?: string | null; permissionMode?: "standard" | "full" }
   | { id: string; action: "close"; paneId?: number; conversationId?: string }
   // A project the phone's wizard has just built on this Mac. Rust made the

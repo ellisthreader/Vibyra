@@ -12,7 +12,8 @@ const APP: &str = ".::desktop-desktop";
 
 /// A project whose desktop app is `npm run desktop`, a stand-in that just
 /// sleeps. None when this machine has no npm to run it with.
-fn fixture() -> Option<(tempfile::TempDir, PreviewService, Arc<PreviewGrants>)> {
+pub(in crate::phone::preview_service) fn fixture(
+) -> Option<(tempfile::TempDir, PreviewService, Arc<PreviewGrants>)> {
     let npm = std::process::Command::new("npm").arg("--version").output();
     if !npm.is_ok_and(|output| output.status.success()) {
         return None;

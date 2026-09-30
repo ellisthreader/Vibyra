@@ -19,7 +19,7 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
   return {
     ...terminalSpawnActions(set, get),
     switchAccount: (id, accountId) => switchPaneAccount(get, id, accountId),
-    restart: (id) => relaunch(set, get, id, false),
+    restart: async (id) => { await relaunch(set, get, id, false); },
     resume: (id) => relaunch(set, get, id, true),
     close: async (id) => {
       if (get().relaunching.includes(id)) return;

@@ -8,7 +8,7 @@ use vibyra_core::preview::{inspect_project, PreviewManager, PreviewPhase};
 use vibyra_host::PreviewHandler;
 
 #[test]
-fn managed_backend_preserves_form_csrf_redirect_two_cookies_sse_and_ten_megabytes() {
+fn managed_backend_preserves_form_csrf_redirect_two_cookies_sse_and_twenty_megabytes() {
     if Command::new("php").arg("-v").output().is_err() {
         eprintln!("skipped: PHP not installed");
         return;
@@ -125,7 +125,7 @@ fn managed_backend_preserves_form_csrf_redirect_two_cookies_sse_and_ten_megabyte
         ("GET", "/assets/large", HashMap::new(), &[]),
     );
     assert_eq!(asset.info["status"], 200);
-    assert_eq!(asset.body.len(), 10 * 1024 * 1024);
+    assert_eq!(asset.body.len(), 20 * 1024 * 1024);
     assert!(asset.body.iter().all(|byte| *byte == b'Z'));
     // A saved code edit is served by the same running Mac process and grant.
     fs::write(

@@ -8,6 +8,7 @@ import type { ResolvedAgent } from "../types";
 
 /** What answering leans on. */
 export interface RequestDeps {
+  resumeSaved?: (id: number, projectId: string) => Promise<number>;
   models: () => Promise<import("./phoneTerminalModels").PhoneTerminalModel[]>;
   agents: () => Promise<ResolvedAgent[]>;
   /** Why the last launch started nothing, when the Mac said. */
@@ -41,6 +42,10 @@ export async function answerTerminalRequest(request: Exclude<PhoneTerminalReques
       if (!deps.accountDefault) return { error: "Open Vibyra on your Mac to choose an account." };
       deps.accountDefault(request.provider, request.account);
       return { result: { ok: true } };
+    }
+    if (request.action === "resumeSaved") {
+      if (!deps.resumeSaved) return { error: "Update Vibyra on this computer to resume saved terminals." };
+      return { result: { paneId: await deps.resumeSaved(request.paneId, request.projectId) } };
     }
     if (request.action === "models") return { result: { models: await deps.models(), permissionModes: ["standard", "full"], effortSelection: true } };
     if (request.action === "adopt") {

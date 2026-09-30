@@ -24,8 +24,8 @@ function payload() {
 export function startPhoneWorkspacePublishing(): () => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
   const publish = () => {
-    const { projects, panes, chats } = payload();
-    void phonePublishWorkspace(projects, panes, chats).catch(() => {});
+    const { projects, panes, chats, saved } = payload();
+    void phonePublishWorkspace(projects, panes, chats, saved).catch(() => {});
   };
   // Identity of what a phone would draw — renames included, activity ticks and
   // focus excluded, so the store writes that happen constantly send nothing.

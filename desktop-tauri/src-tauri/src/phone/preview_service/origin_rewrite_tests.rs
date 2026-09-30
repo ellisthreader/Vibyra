@@ -1,3 +1,4 @@
+
 use super::{browser_origin, OriginRewriter};
 
 fn rewrite(chunks: &[&str]) -> String {
@@ -70,4 +71,16 @@ fn accepts_only_exact_phone_loopback_origin() {
     ] {
         assert!(browser_origin(invalid).is_err());
     }
+}
+
+#[test]
+fn rewrites_both_managed_origins_but_never_unrelated_ports() {
+    let mut rewrite = OriginRewriter::ports(&[8100, 8101], "http://127.0.0.1:9000");
+    let text = b"http://localhost:8100/menu http://127.0.0.1:8101/__vibyra_vite/app.js http://localhost:8102/private";
+    let mut result = Vec::new();
+    for chunk in text.chunks(7) {
+        result.extend(rewrite.push(chunk));
+    }
+    result.extend(rewrite.finish());
+    assert_eq!(String::from_utf8(result).unwrap(), "http://127.0.0.1:9000/menu http://127.0.0.1:9000/__vibyra_vite/app.js http://localhost:8102/private");
 }

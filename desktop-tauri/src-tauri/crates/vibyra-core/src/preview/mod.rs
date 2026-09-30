@@ -1,5 +1,6 @@
 mod bounded_text;
 mod builtin;
+mod companion;
 mod desktop_command;
 mod desktop_detect;
 mod desktop_run;

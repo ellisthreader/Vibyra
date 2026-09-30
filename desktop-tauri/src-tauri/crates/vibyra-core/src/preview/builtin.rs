@@ -38,7 +38,7 @@ pub(crate) fn detect_laravel(root: &Path, relative: &str) -> CoreResult<Option<D
         processes.push(vite);
     }
     let suffix = if processes.len() > 1 {
-        " + npm run dev"
+        " + npm run dev -- --host 127.0.0.1 --port=<available> --base /__vibyra_vite/"
     } else {
         ""
     };

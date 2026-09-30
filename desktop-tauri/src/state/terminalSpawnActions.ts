@@ -132,6 +132,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
           lastFocusedAt: Date.now(),
         };
         placePane(set, get, pane, options?.replaces);
+        return info.id;
       } catch (error) {
         if (options?.replaces !== undefined) throw error;
         useWorkspaceStore.getState().setError(String(error));

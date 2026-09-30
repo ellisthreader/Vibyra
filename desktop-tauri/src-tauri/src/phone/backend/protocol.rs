@@ -51,6 +51,8 @@ impl Backend for DesktopBackend {
                 Ok(catalogue)
             }
             "session.create" => self.create_pane(&params),
+            "session.resumeSaved" => self.saved_action(method, &params),
+            "session.stop" if params["sessionId"].as_str().is_some_and(|id| id.contains("-saved-")) => self.saved_action(method, &params),
             "session.stop" => self.close(&params),
             "session.claim" => self.claim(device, &params),
             "session.input" => self.input(device, &params),

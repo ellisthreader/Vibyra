@@ -71,11 +71,11 @@ export interface TerminalStore {
   /** Resolves to the new pane's id, or null when the launch failed and the
    * error went to the workspace banner instead. */
   spawnAgent: (agent: ResolvedAgent, projectId: string, options?: SpawnAgentOptions) => Promise<number | null>;
-  spawnSsh: (target: string, projectId: string, options?: SpawnSshOptions) => Promise<void>;
+  spawnSsh: (target: string, projectId: string, options?: SpawnSshOptions) => Promise<number | void>;
   restart: (id: number) => Promise<void>;
   /** Relaunch one pane on a different provider account, in place. */
   switchAccount: (id: number, accountId: string | null) => Promise<void>;
-  resume: (id: number) => Promise<void>;
+  resume: (id: number) => Promise<number | void>;
   restoreSession: () => Promise<void>;
   close: (id: number) => Promise<void>;
   hibernate: (id: number) => Promise<void>;

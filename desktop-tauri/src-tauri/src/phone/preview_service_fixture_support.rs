@@ -27,8 +27,8 @@ if ($path === '/') {
   echo "data: updated\n\n"; flush();
 } elseif ($path === '/assets/large') {
   header('Content-Type: application/octet-stream');
-  header('Content-Length: 10485760');
-  for ($i = 0; $i < 640; $i++) echo str_repeat('Z', 16384);
+  header('Content-Length: 20971520');
+  for ($i = 0; $i < 1280; $i++) echo str_repeat('Z', 16384);
 } else { http_response_code(404); }
 "#;
 

@@ -30,12 +30,15 @@ impl PreviewService {
         {
             return Err("The running Preview site changed".into());
         }
-        let phone_origin = if binding.attached_port.is_some() {
+        let phone_origin = if binding.attached_port.is_some() || metadata.browser_origin.is_some() {
             Some(browser_origin(metadata.browser_origin.as_deref())?)
         } else {
             None
         };
-        let url = request_url(&binding.origin, &metadata.path)?;
+        let mut ports = vec![binding.origin.port().unwrap_or(80)];
+        ports.extend(self.companion_port(&binding));
+        let request_binding = self.request_binding(&binding, &metadata.path)?;
+        let url = request_url(&request_binding.origin, &metadata.path)?;
         let method = reqwest::Method::from_bytes(metadata.method.as_bytes())
             .map_err(|_| "Invalid Preview method")?;
         if !matches!(
@@ -50,8 +53,8 @@ impl PreviewService {
         ) {
             return Err("Preview method is not allowed".into());
         }
-        let mut headers = request_headers(&metadata.headers, &binding.origin)?;
-        if binding.attached_port.is_some() {
+        let mut headers = request_headers(&metadata.headers, &request_binding.origin)?;
+        if phone_origin.is_some() {
             headers.remove(reqwest::header::IF_NONE_MATCH);
             headers.remove(reqwest::header::IF_MODIFIED_SINCE);
         }
@@ -72,11 +75,12 @@ impl PreviewService {
         let mut rewriter = if rewritable(response.headers().get(reqwest::header::CONTENT_TYPE)) {
             phone_origin
                 .as_ref()
-                .map(|phone| OriginRewriter::new(binding.origin.port().unwrap_or(80), phone))
+                .map(|phone| OriginRewriter::ports(&ports, phone))
         } else {
             None
         };
-        let (mut headers, set_cookies) = response_headers(response.headers(), &binding.origin);
+        let (mut headers, set_cookies) =
+            response_headers(response.headers(), &request_binding.origin);
         let mut gzip = super::compress::wanted(
             &metadata.headers,
             response.headers().get(reqwest::header::CONTENT_TYPE),

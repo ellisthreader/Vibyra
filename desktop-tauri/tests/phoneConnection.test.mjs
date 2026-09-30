@@ -72,7 +72,7 @@ test("the phone is served this Mac's own projects, not one invented folder", asy
     pane(1, "p-1", { customTitle: "Landing page" }),
     pane(2, "p-2"),
     pane(3, "p-1", { status: "suspended" }),
-    pane(-1, "p-1", { customTitle: "Restored last launch" }),
+    pane(-1, "p-1", { customTitle: "Restored last launch", status: "suspended", agentId: "shell" }),
   ], "/Users/ellis");
 
   assert.deepEqual(payload.projects, [
@@ -86,6 +86,8 @@ test("the phone is served this Mac's own projects, not one invented folder", asy
   // A restored pane's placeholder id is not a session id; publishing one would
   // be rejected outright, taking the real terminals in the same call with it.
   assert.equal(payload.panes.some((pane) => pane.id < 0), false);
+  assert.deepEqual(payload.saved, [{ id: -1, projectId: 'p-1', title: 'Restored last launch', kind: 'shell' }]);
+  assert.deepEqual(shownChats({ loaded: true, sessions: [{ id: 'working', status: 'running' }], open: [] }), ['working']);
   // A folder that merely starts with the same letters is a different folder.
   assert.equal(shortenRoot("/Users/ellison/work", "/Users/ellis"), "/Users/ellison/work");
   // Until the chat list has been read this run, the window cannot say which
@@ -111,10 +113,10 @@ test("the desktop republishes its workspace whenever the window changes it", asy
   // The whole chain, because every link is in a different language and a broken
   // one fails silently: the phone simply keeps showing the folders it had.
   const ipc = await read("src/ipc/phone.ts");
-  assert.match(ipc, /invoke\("phone_publish_workspace", \{ projects, panes, chats \}\)/);
+  assert.match(ipc, /invoke\("phone_publish_workspace", \{ projects, panes, chats, saved \}\)/);
   const command = await read("src-tauri/src/commands/phone.rs");
   assert.match(command, /pub fn phone_publish_workspace\(/);
-  assert.match(command, /state\.phone\.lock\(\)\.publish\(projects, panes, chats\)/);
+  assert.match(command, /phone\.publish\(projects, panes, chats\)/);
   const registry = await read("src-tauri/src/commands/registry.rs");
   assert.match(registry, /phone::phone_publish_workspace/, "the webview is allowed to call it");
   const backend = await read("src-tauri/src/phone/backend.rs") + await read("src-tauri/src/phone/backend/protocol.rs") + await read("src-tauri/src/phone/backend/host_state.rs");

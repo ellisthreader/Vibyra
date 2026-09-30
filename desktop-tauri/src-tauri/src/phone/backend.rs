@@ -89,7 +89,7 @@ impl DesktopBackend {
         let workspace = self.workspace.read();
         let typing = self.control.typing();
         let mut unfiled = false;
-        let sessions = self.manager.list().into_iter().take(128).map(|s| {
+        let mut sessions: Vec<Value> = self.manager.list().into_iter().take(128).map(|s| {
             let (project, title) = workspace.place(s.id, &s.title);
             unfiled |= project == UNFILED;
             json!({
@@ -99,6 +99,8 @@ impl DesktopBackend {
                 "readOnly":true, "canInput":typing
             })
         }).collect();
+        drop(workspace);
+        sessions.extend(self.saved_sessions());
         (sessions, unfiled)
     }
     /// The running terminal a request names, and every open one alongside it.

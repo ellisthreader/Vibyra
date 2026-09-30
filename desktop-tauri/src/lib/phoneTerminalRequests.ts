@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { resolveLaunchAccount } from './resolveLaunchAccount';
+import { phoneModelAccounts } from './phoneModelAccounts';
 import { useProviderAccountStore } from '../state/providerAccountStore';
 import type { AccountModel } from './phoneAccountModels';
 import { useProviderDefaultStore } from "../state/providerDefaultStore";
@@ -56,16 +57,11 @@ const storeDeps: RequestDeps = {
       await Promise.race([useModelCatalogStore.getState().refresh(),
         new Promise<void>(resolve => { timeout = setTimeout(resolve, 3000); })]);
     } finally { clearTimeout(timeout); }
-    if (!useProviderAccountStore.getState().loaded) await useProviderAccountStore.getState().refresh();
-    const kinds = ['codex', 'claude', 'gemini'] as const;
-    const advertised = await Promise.all(kinds.map(async provider => {
-      const account = resolveLaunchAccount(provider);
-      const result = account ? await invoke<{ data: AccountModel[] }>('shared_chat_account_models', { provider, accountId: account }) : { data: [] };
-      if (resolveLaunchAccount(provider) !== account) throw new Error('Your AI account changed. Refresh models.');
-      return [provider, result.data] as const;
-    }));
+    await useProviderAccountStore.getState().refresh();
+    const advertised = await phoneModelAccounts(useProviderAccountStore.getState().providers,
+      resolveLaunchAccount, (provider, accountId) => invoke<{ data: AccountModel[] }>('shared_chat_account_models', { provider, accountId }));
     return phoneTerminalModels(useModelCatalogStore.getState().fullGroups, await agents(),
-      useSettingsStore.getState().settings?.enabledAgentIds ?? [], Object.fromEntries(advertised));
+      useSettingsStore.getState().settings?.enabledAgentIds ?? [], advertised);
   },
   // The phone's page is the chat itself, so what it asks for is the Chat route:
   // Claude and Gemini go through the conversation engine like Codex, whatever
@@ -85,6 +81,14 @@ const storeDeps: RequestDeps = {
   },
   lastError: () => launchProblem,
   approvalPending: () => useLaunchApprovalStore.getState().pending !== null,
+  resumeSaved: async (id, projectId) => {
+    const store = useTerminalStore.getState();
+    if (id >= 0 || !store.panes.some(pane => pane.id === id && pane.projectId === projectId && pane.status === 'suspended'))
+      throw new Error('This saved terminal is no longer available.');
+    const resumed = await store.resume(id);
+    if (typeof resumed !== 'number') throw new Error(useTerminalStore.getState().relaunchErrors[id] || 'The terminal did not resume.');
+    return resumed;
+  },
   closePane: (id) => useTerminalStore.getState().close(id),
   closeChat,
   rename: async (projectId, name) => {

@@ -10,7 +10,6 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use vibyra_core::preview::{
     desktop_target_for, inspect_project_with, DesktopCommand, PreviewStatus, PreviewTarget,
-    PreviewTargetKind,
 };
 
 /// (absolute run folder, target ID), the way PreviewManager keys its runs.
@@ -94,8 +93,8 @@ impl PreviewService {
             }
             (None, None) => return Err("Say which app to run".into()),
         };
-        if target.kind != PreviewTargetKind::Desktop || !target.runnable {
-            return Err("Only a project's desktop app can be run this way".into());
+        if !target.runnable {
+            return Err("This project target cannot be run".into());
         }
         let fingerprint = run_fingerprint(&canonical_root, &target, command.as_ref())?;
         Ok(RunTarget {
@@ -180,4 +179,4 @@ fn script_body(root: &Path, target: &PreviewTarget) -> Option<String> {
 
 #[cfg(all(test, unix))]
 #[path = "run_tests.rs"]
-mod tests;
+pub(super) mod tests;

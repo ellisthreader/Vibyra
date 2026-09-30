@@ -96,6 +96,8 @@ pub(crate) fn vite_companion(root: &Path) -> CoreResult<Option<ProcessSpec>> {
         "127.0.0.1".into(),
         "--port".into(),
         "{port}".into(),
+        "--base".into(),
+        "/__vibyra_vite/".into(),
     ]);
     Ok(Some(ProcessSpec {
         label: "Vite".into(),

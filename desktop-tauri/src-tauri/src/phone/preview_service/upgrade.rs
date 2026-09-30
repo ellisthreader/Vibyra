@@ -71,7 +71,8 @@ impl PreviewService {
         {
             return Err("The running Preview site changed".into());
         }
-        let (mut socket, response) = upgrade_io::connect(&binding, request)?;
+        let request_binding = self.request_binding(&binding, &request.path)?;
+        let (mut socket, response) = upgrade_io::connect(&request_binding, request)?;
         let mut writer = socket.try_clone().map_err(|e| e.to_string())?;
         let writer_sender = sender.clone();
         let writer_stream = stream.clone();
