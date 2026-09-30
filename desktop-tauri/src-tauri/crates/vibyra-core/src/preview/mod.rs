@@ -1,5 +1,5 @@
-mod bounded_text;
 mod authorization;
+mod bounded_text;
 mod builtin;
 mod companion;
 mod desktop_command;
@@ -25,8 +25,8 @@ mod static_server;
 mod target;
 mod types;
 
-pub use desktop_command::parse_desktop_command;
 pub use authorization::{check_privileged_effect, with_launch_authorization};
+pub use desktop_command::parse_desktop_command;
 pub use detect::{desktop_target_for, inspect_project, inspect_project_with};
 pub use manager::PreviewManager;
 pub use refresher::{DesktopProbe, PreviewEvent, PreviewListener, ProbeSnapshot, TreeProcess};

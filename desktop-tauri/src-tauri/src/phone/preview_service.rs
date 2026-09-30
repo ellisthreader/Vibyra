@@ -7,11 +7,11 @@ mod companion;
 mod compress;
 mod control;
 mod control_access;
-mod control_targets;
 #[cfg(all(test, unix))]
 mod control_access_tests;
 mod control_list;
 mod control_origin;
+mod control_targets;
 mod control_trait;
 mod discovery;
 mod discovery_system;

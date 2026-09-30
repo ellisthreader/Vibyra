@@ -1,4 +1,3 @@
-
 use super::{browser_origin, OriginRewriter};
 
 fn rewrite(chunks: &[&str]) -> String {
