@@ -79,6 +79,20 @@ class Sources(unittest.TestCase):
             with tarfile.open(fileobj=data) as archive, self.assertRaises(ValueError):
                 gate.safe_members(archive)
 
+    def test_special_permission_bits_and_filter_normalization_cannot_hide_mode_changes(self):
+        original = {"Vibyra.app/file": (0o644, tarfile.REGTYPE)}
+        for changed in [0o444, 0o4755, 0o6755]:
+            with self.assertRaisesRegex(ValueError, "modes/types"):
+                identity.compare_archive_modes(original, {"Vibyra.app/file": (changed, tarfile.REGTYPE)})
+        data = io.BytesIO()
+        with tarfile.open(fileobj=data, mode="w") as archive:
+            member = tarfile.TarInfo("Vibyra.app/file")
+            member.mode = 0o4755
+            archive.addfile(member)
+        data.seek(0)
+        with tarfile.open(fileobj=data) as archive, self.assertRaisesRegex(ValueError, "permission bits"):
+            gate.safe_members(archive)
+
     def test_original_zip_cannot_escape_or_include_symlinks(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

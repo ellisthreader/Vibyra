@@ -64,6 +64,8 @@ def safe_members(archive):
         if (path.is_absolute() or ".." in path.parts or not path.parts
                 or path.parts[0] != "Vibyra.app" or name != path.as_posix() or name in seen):
             raise ValueError("Archive path escapes app or repeats")
+        if (member.isfile() or member.isdir()) and member.mode & 0o7000:
+            raise ValueError("Special archive permission bits are forbidden")
         if not (member.isfile() or member.isdir() or member.issym()):
             raise ValueError("Unsupported archive member")
         if member.issym():
@@ -164,9 +166,13 @@ def main():
             original_dir.mkdir()
             archive_path, version, original_build = originals.fetch(
                 repository, source, manifest["buildRunId"], entry["architecture"], original_dir, identity)
+            modes = {}
             for archive, target in [(directory / entry["filename"], destination), (archive_path, original_dir)]:
                 with tarfile.open(archive, "r:gz") as stream:
-                    stream.extractall(target, members=safe_members(stream), filter="data")
+                    members = safe_members(stream)
+                    modes[target] = {m.name.rstrip("/"): (m.mode, m.type) for m in members if not m.issym()}
+                    stream.extractall(target, members=members, filter="data")
+            identity.compare_archive_modes(modes[original_dir], modes[destination])
             verify_app(original_dir / "Vibyra.app", entry, version, original_build, notarized=False)
             verify_app(destination / "Vibyra.app", entry, version, original_build)
             identity.compare_apps(original_dir / "Vibyra.app", destination / "Vibyra.app")

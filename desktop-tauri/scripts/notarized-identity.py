@@ -95,3 +95,11 @@ def verify_signature(archive, signature, config):
                'const v=await import(m); v.verifyUpdateSignature(fs.readFileSync(a),'
                'fs.readFileSync(s,"utf8"),JSON.parse(fs.readFileSync(c)).plugins.updater.pubkey);')
     run("node", "--input-type=module", "-e", program, str(archive), str(signature), str(config), verifier)
+
+
+def compare_archive_modes(original, notarized):
+    # Python's safe extraction filter normalizes permissions; compare the headers first.
+    if (set(original) ^ set(notarized)) - {"Vibyra.app/Contents/CodeResources"}:
+        raise ValueError("Notarized archive object types differ from the exact CI artifact")
+    if any(original[name] != notarized[name] for name in set(original) & set(notarized)):
+        raise ValueError("Notarized archive modes/types differ from the exact CI artifact")
