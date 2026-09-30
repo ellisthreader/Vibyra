@@ -73,13 +73,13 @@ impl Backend for Fake {
     }
     fn input(&self, _: &Geometry, event: &InputEvent) -> Result<(), String> {
         let wait = *self.input_stall.lock();
-        std::thread::sleep(wait);
         self.inputs.lock().push(event.clone());
         if matches!(event, InputEvent::Click { .. }) {
             if let Some(next) = self.click_focuses.lock().take() {
                 *self.pending.lock() = Some((Instant::now() + Duration::from_millis(60), next));
             }
         }
+        std::thread::sleep(wait);
         Ok(())
     }
     fn focus(&self, _: &Geometry) -> Result<Focused, String> {

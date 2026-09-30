@@ -80,12 +80,11 @@ impl Tracker {
         window: &Geometry,
         before: u64,
         deadline: Instant,
+        mut wait: impl FnMut(Duration),
     ) -> Value {
         // The tap may have changed the layout: map the fields again.
         self.seen.lock().scanned = None;
-        if Instant::now() >= deadline {
-            return self.cached();
-        }
+        // Observe the delivered input once even when injection used the budget.
         let mut state = self.measure(backend, window);
         while state["serial"].as_u64() == Some(before) {
             // Application reads and late wakeups share the same wait budget.
@@ -93,13 +92,14 @@ impl Tracker {
             if remaining.is_zero() {
                 break;
             }
-            std::thread::sleep(TAP_POLL.min(remaining));
+            wait(TAP_POLL.min(remaining));
             if Instant::now() >= deadline {
                 break;
             }
             state = self.measure(backend, window);
         }
-        state
+        // A background observation may have advanced while the poll was asleep.
+        self.cached()
     }
 
     /// New pixels arrived, so the text fields may have moved.

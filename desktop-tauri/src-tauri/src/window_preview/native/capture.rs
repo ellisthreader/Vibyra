@@ -146,7 +146,10 @@ impl Capture {
         }
         let now = self.backend.info(self.window.info.id)?;
         Ok(match before.flatten() {
-            Some(serial) => self.focus.settled(self.backend, &now, serial, tap_deadline),
+            Some(serial) => {
+                self.focus
+                    .settled(self.backend, &now, serial, tap_deadline, std::thread::sleep)
+            }
             None => self.focus.current(self.backend, &now),
         })
     }
