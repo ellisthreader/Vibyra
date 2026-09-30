@@ -28,6 +28,14 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# The GeoLite database that places a request in a launch market lives in
+# container storage, which every deploy wipes; the weekly schedule alone left
+# production without it, so every market-gated route answered 451. Fetch it at
+# boot when MaxMind is configured. A failed download must not stop the app.
+if [[ -n "${MAXMIND_LICENSE_KEY:-}" && ( "$role" == "all" || "$role" == "web" ) ]]; then
+  php artisan maxmind:update || echo "MaxMind update failed; market checks will refuse until it succeeds." >&2
+fi
+
 if [[ "$run_migrations" == "1" && ( "$role" == "all" || "$role" == "web" ) ]]; then
   php artisan migrate --force
 fi
