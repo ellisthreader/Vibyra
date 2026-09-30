@@ -14,20 +14,20 @@ test("empty terminal launch offers one direct AI-account recovery path", () => {
   const startup = source("../src/lib/useWorkspaceRuntime.ts");
 
   assert.match(picker, /Connect your AI accounts/);
-  assert.match(picker, /Open Settings → Integrations/);
+  assert.match(picker, /Open Settings → AI accounts/);
   assert.match(picker, /onConnectAccounts\(\)/);
-  assert.match(launcher, /openSettingsSection\("integrations"\)/);
+  assert.match(launcher, /openSettingsSection\("ai", "terminalAccounts"\)/);
   assert.match(launcher, /\{selected && \(/);
   assert.match(launcher, /!agentsLoaded \|\| !accountsLoaded/);
   assert.match(startup, /void refreshConnectedAccounts\(\)/);
   assert.doesNotMatch(startup, /await refreshConnectedAccounts\(\)/);
 });
 
-test("direct Settings navigation makes Integrations the active section", () => {
+test("direct Settings navigation makes AI accounts the active section", () => {
   const workspace = source("../src/state/workspaceStore.ts");
   const settings = source("../src/components/settings/SettingsModal.tsx");
 
-  assert.match(workspace, /openSettingsSection: \(settingsSection\) => set\(\{ settingsOpen: true, settingsSection \}\)/);
+  assert.match(workspace, /openSettingsSection: \(settingsSection, panel\) =>\s*set\(\{ settingsOpen: true, settingsSection, settingsPanel: panel \?\? null \}\)/);
   assert.match(settings, /state\.settingsSection/);
-  assert.match(settings, /state\.setSettingsSection/);
+  assert.match(source("../src/components/settings/SettingsNav.tsx"), /state\.setSettingsSection/);
 });

@@ -6,6 +6,7 @@
   display: flex;
   align-items: stretch;
   height: var(--chrome-h);
+  flex-shrink: 0;
   background: var(--chrome-bg);
   border-bottom: 1px solid var(--line);
   position: relative;
@@ -17,7 +18,8 @@
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  min-width: calc(var(--rail-w) - 14px);
+  width: var(--rail-w);
+  flex-shrink: 0;
 }
 
 .chrome__logo {
@@ -51,7 +53,8 @@
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-left: 24px;
   min-width: 0;
 }
 

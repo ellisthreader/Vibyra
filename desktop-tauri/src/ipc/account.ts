@@ -19,6 +19,15 @@ export function accountSignupEmail(
   return invoke("account_signup_email", { name, email, password });
 }
 
+/** The code half of a login. The challenge id is held natively. */
+export function accountTwoFactorSubmit(code: string): Promise<AccountSnapshot> {
+  return invoke("account_two_factor_submit", { code });
+}
+
+export function accountTwoFactorCancel(): Promise<AccountSnapshot> {
+  return invoke("account_two_factor_cancel");
+}
+
 export function accountOauthStart(provider: string): Promise<AccountSnapshot> {
   return invoke("account_oauth_start", { provider });
 }
@@ -41,6 +50,12 @@ export function accountPasswordForgot(email: string): Promise<string> {
 
 export function accountResendVerification(): Promise<string> {
   return invoke("account_resend_verification");
+}
+
+/** The account photo as a `data:` URL; null when there is none. Fetched
+ * natively because the renderer's content policy cannot reach the network. */
+export function accountAvatar(): Promise<string | null> {
+  return invoke("account_avatar");
 }
 
 export function accountLogout(): Promise<AccountSnapshot> {

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import type { Settings } from "../../types";
 
@@ -7,32 +7,66 @@ export interface SettingsPaneProps {
   update: (partial: Partial<Settings>) => Promise<void>;
 }
 
+/** One label + control line. `hint` is for a consequence the label does not
+ * carry on its own, never a restatement of the label. */
 export function SettingRow({
   label,
   hint,
   stack,
+  danger,
+  sub,
+  dim,
   children,
 }: {
-  label: string;
+  label: ReactNode;
   hint?: ReactNode;
   stack?: boolean;
-  children: ReactNode;
+  danger?: boolean;
+  /** Indents the row under the one above it, for a choice that only exists
+   * because that row is on. A qualifier presented as a peer reads as a second
+   * unrelated decision. */
+  sub?: boolean;
+  /** Fades label, hint and control together. A row whose control is greyed out
+   * while its text stays bright reads as half-rendered rather than as off. */
+  dim?: boolean;
+  /** Optional: a row can be a statement with nothing to act on. */
+  children?: ReactNode;
 }) {
+  const id = useId();
+  const cls = ["setting-row", stack ? "setting-row--stack" : "", danger ? "setting-row--danger" : "", sub ? "setting-row--sub" : "", dim ? "settings-dim" : ""].join(" ").trim();
   return (
-    <div className={stack ? "setting-row setting-row--stack" : "setting-row"}>
+    <div role="group" aria-labelledby={`${id}-label`} className={cls}>
       <div className="setting-row__text">
-        <span className="setting-row__label">{label}</span>
+        <span id={`${id}-label`} className="setting-row__label">{label}</span>
         {hint ? <span className="setting-row__hint">{hint}</span> : null}
       </div>
-      <div className="setting-row__control">{children}</div>
+      {children ? <div className="setting-row__control">{children}</div> : null}
     </div>
   );
 }
 
-export function SettingsBlock({ label, children }: { label: string; children: ReactNode }) {
+/** A titled group. `panel` names it for deep links: the modal scrolls to and
+ * briefly outlines the block whose `panel` matches the requested target.
+ * `label` is optional: a page's opening group is already named by the pane
+ * header, and repeating it there is noise. */
+export function SettingsBlock({
+  label,
+  note,
+  panel,
+  dim,
+  children,
+}: {
+  label?: string;
+  note?: ReactNode;
+  panel?: string;
+  /** See `SettingRow`'s `dim`: the whole block fades as one. */
+  dim?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className="settings-block">
-      <span className="section-label">{label}</span>
+    <div className={`settings-block${dim ? " settings-dim" : ""}`} data-panel={panel}>
+      {label ? <span className="section-label">{label}</span> : null}
+      {note ? <span className="settings-block__note">{note}</span> : null}
       {children}
     </div>
   );

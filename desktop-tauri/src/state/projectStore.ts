@@ -2,24 +2,21 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { create } from "zustand";
 
 import { fsHomeDir, unwatchWorkspace, watchWorkspace } from "../ipc/fs";
+import { trackDesktopEvent } from "../ipc/analytics";
+import type { ProjectKind } from "../lib/projectTemplateTypes";
+import { removeSharedChatProject } from "../ipc/sharedChats";
 import { stopProjectPreviews } from "../ipc/preview";
+import { projectBrief } from "../ipc/projectBrief";
 import { setTerminalVisibility } from "../ipc/terminal";
 import type { ProjectSpec } from "../types";
 import { useSettingsStore } from "./settingsStore";
 import { useTerminalStore } from "./terminalStore";
 import { useWorkspaceStore } from "./workspaceStore";
 
-export type AppView = "home" | "project";
+export type AppView = "home" | "project" | "new-project";
 
 const PROJECT_COLORS = [
-  "#5b7cfa",
-  "#ff9b6a",
-  "#37c78a",
-  "#bd8cff",
-  "#6aa8ff",
-  "#e8a94b",
-  "#f472b6",
-  "#69d6c7",
+  "#5b7cfa", "#ff9b6a", "#37c78a", "#bd8cff", "#6aa8ff", "#e8a94b", "#f472b6", "#69d6c7",
 ];
 
 export function basename(path: string): string {
@@ -36,7 +33,9 @@ interface ProjectStore {
   activeId: string | null;
   homeDir: string;
   init: () => Promise<void>;
-  create: (root: string, name?: string) => Promise<ProjectSpec | null>;
+  create: (root: string, name?: string, kind?: ProjectKind) => Promise<ProjectSpec | null>;
+  /** Renames a project in the list. The folder on disk keeps its own name. */
+  rename: (id: string, name: string) => Promise<ProjectSpec | null>;
   /** Native folder picker → project. The one-gesture "new project". */
   pickAndCreate: () => Promise<void>;
   activate: (id: string) => Promise<void>;
@@ -113,7 +112,16 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     }
   },
 
-  create: async (root, name) => {
+  rename: async (id, name) => {
+    const trimmed = name.trim();
+    const list = projects();
+    const project = list.find((entry) => entry.id === id);
+    if (!project || !trimmed || trimmed === project.name) return project ?? null;
+    const renamed = { ...project, name: trimmed };
+    await persist(list.map((entry) => (entry.id === id ? renamed : entry)), get().activeId);
+    return renamed;
+  },
+  create: async (root, name, kind) => {
     const trimmed = root.trim().replace(/\/+$/, "");
     if (!trimmed) return null;
     const list = projects();
@@ -130,6 +138,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       lastOpenedMs: Date.now(),
     };
     await persist([...list, project], project.id);
+    trackDesktopEvent("desktop_project_created", kind ? { project_kind: kind } : {});
     await get().activate(project.id);
     return project;
   },
@@ -150,16 +159,20 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const list = projects();
     const project = list.find((p) => p.id === id);
     if (!project) return;
+    const alreadyOpen = get().activeId === id && get().view === "project";
     const previous = list.find((entry) => entry.id === get().activeId);
     if (previous && previous.id !== id) {
       await stopProjectPreviews(previous.root).catch(() => {});
     }
     useWorkspaceStore.setState({ projectMode: "terminals" });
     set({ activeId: id, view: "project" });
+    if (!alreadyOpen) trackDesktopEvent("desktop_project_opened");
     const touched = list.map((p) => (p.id === id ? { ...p, lastOpenedMs: Date.now() } : p));
     void persist(touched, id);
     orchestrateVisibility(id);
     await adoptRoot(project.root, get().homeDir);
+    // Warm the assistant's brief before the first question.
+    void projectBrief(project, "").catch(() => {});
   },
 
   goHome: () => {
@@ -168,6 +181,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   },
 
   remove: async (id) => {
+    await removeSharedChatProject(id);
     const current = projects();
     const project = current.find((entry) => entry.id === id);
     const list = current.filter((entry) => entry.id !== id);
@@ -180,5 +194,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     }
     await persist(list, activeId);
     set({ activeId, view: activeId ? get().view : "home" });
+    if (get().activeId === null) await adoptRoot(get().homeDir, get().homeDir);
+    orchestrateVisibility(activeId);
   },
 }));

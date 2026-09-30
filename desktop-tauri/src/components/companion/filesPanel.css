@@ -1,0 +1,23 @@
+.files-panel { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 12px; padding: 12px; }
+.files-panel__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.files-panel__toolbar [role=group] { display: flex; gap: 2px; background: var(--bg); border-radius: 8px; padding: 3px; }
+.files-panel__toolbar button { padding: 6px 9px; border-radius: 5px; font-size: 11px; color: var(--muted); }
+.files-panel__toolbar button[aria-pressed=true] { color: var(--text); background: var(--hover); }
+.files-live { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+.files-live i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.files-scope { margin: 0; color: var(--dim); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files-empty { color: var(--muted); font-size: 12px; padding: 18px 4px; }
+.files-changes { flex: 1; overflow: auto; min-height: 0; }
+.files-change { display: flex; align-items: center; gap: 7px; padding: 10px 2px; width: 100%; text-align: left; border-bottom: 1px solid var(--line); font-size: 11px; }
+.files-change:hover { background: var(--hover); }
+.files-change > svg { flex: none; color: var(--dim); }
+.files-change[aria-expanded=true] > svg:first-child { transform: rotate(90deg); }
+.files-change > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.files-change small { font-size: 9px; color: var(--muted); }
+.files-diff { padding: 10px; margin: 0; max-height: 360px; overflow: auto; font: 11px/1.6 var(--font-mono); background: var(--bg); border-radius: 6px; tab-size: 2; }
+.companion__head .dock-sizes { gap: 0; }
+.companion__head .dock-sizes button { width: 24px; padding: 3px; }
+
+.files-diff .added { color: var(--success); background: color-mix(in srgb, var(--success) 7%, transparent); }
+.files-diff .removed { color: var(--danger); background: var(--danger-soft); }
+.files-diff > span { display: block; min-height: 1.6em; }

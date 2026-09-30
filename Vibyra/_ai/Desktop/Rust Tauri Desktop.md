@@ -233,3 +233,15 @@ per-session serialization (a writer thread fed by a channel), which also turns
 `write_input`'s synchronous `SessionExited` into a fire-and-forget send. Not
 currently justified; the only real motivation is a large paste blocking on a
 full PTY buffer, which is unmeasured.
+
+Linux 0.8.1 revisits this after the one-character-behind regression. The earlier
+0.1.11 fix (`111017b9`) established the correct structure: `write_terminal` is
+a synchronous Tauri command that only enqueues bytes, and each PTY owns a
+`SessionWriter` thread for the blocking write. Frontend `writeTerminal` posts
+each key immediately; never promise-chain it on the previous invoke reply,
+because that reply shares WebKit's renderer thread with xterm painting and
+caused the exact lag. Both ordinary panes and shared CLI panes use the same
+PTY manager writer. `writer_tests.rs` checks 200 separate writes remain ordered
+and that 1 MiB sent to a non-reading child does not block IPC dispatch;
+`desktopInvariants.test.mjs` pins the no-frontend-queue/synchronous-command
+contract. CI additionally types through the real Linux AppImage/WebKitGTK/PTY.

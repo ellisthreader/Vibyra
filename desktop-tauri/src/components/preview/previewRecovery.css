@@ -1,0 +1,9 @@
+.preview-address { padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.preview-address form { display: flex; gap: 6px; }
+.preview-address input { width: 0; min-width: 0; flex: 1; border: 1px solid var(--border); border-radius: 7px; padding: 8px; color: var(--text); background: var(--bg); font-size: 12px; }
+.preview-address p { font-size: 12px; color: var(--danger); margin: 8px 0 0; }
+.preview-error-details { width: 100%; text-align: left; font-size: 12px; }
+.preview-error-details summary { cursor: pointer; padding: 8px 0; }
+.preview-error-details pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 160px; overflow: auto; font-size: 11px; }
+.preview-frame-help { position: absolute; z-index: 2; bottom: 10px; left: 12px; right: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; }
+.preview-frame-help button { margin-left: 8px; }

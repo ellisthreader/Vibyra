@@ -1,13 +1,16 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
-/** A newly released model the Rust watcher found on OpenRouter. */
+/** A newly released model from the shared backend feed. */
 export interface ReleasedModel {
   id: string;
   name: string;
 }
 
-export function onModelsReleased(
-  callback: (models: ReleasedModel[]) => void,
-): Promise<UnlistenFn> {
-  return listen<ReleasedModel[]>("models:released", (event) => callback(event.payload));
+export function onModelsAvailable(callback: () => void): Promise<UnlistenFn> {
+  return listen("models:available", callback);
+}
+
+export function takeModelReleases(): Promise<ReleasedModel[]> {
+  return invoke<ReleasedModel[]>("take_model_releases");
 }

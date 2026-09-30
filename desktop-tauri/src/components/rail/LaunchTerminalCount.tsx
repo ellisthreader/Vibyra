@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { ChevronDownIcon } from "../common/Icons";
+import { MinusIcon, PlusIcon } from "../common/Icons";
 
 const MAX_TERMINALS = 12;
 const COUNTS = Array.from({ length: MAX_TERMINALS }, (_, index) => index + 1);
@@ -10,6 +10,10 @@ interface LaunchTerminalCountProps {
   onChange: (value: number) => void;
 }
 
+/**
+ * How many terminals the launch opens. A stepper covers the usual case (one
+ * more, one fewer); the number itself opens the exact 1–12 grid for jumps.
+ */
 export function LaunchTerminalCount({ value, onChange }: LaunchTerminalCountProps) {
   const [open, setOpen] = useState(false);
 
@@ -23,33 +27,36 @@ export function LaunchTerminalCount({ value, onChange }: LaunchTerminalCountProp
   }, [open]);
 
   return (
-    <fieldset className="launch-field launch-count">
-      <legend>Terminals</legend>
-      <button
-        type="button"
-        className="launch-count__current"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls="launch-terminal-count-menu"
-        onClick={() => setOpen(!open)}
-      >
-        <span className="launch-count__preview" aria-hidden="true">
-          {COUNTS.map((count) => (
-            <i key={count} className={count <= value ? "is-active" : ""} />
-          ))}
-        </span>
-        <span className="launch-count__copy">
-          <strong>{value}</strong>
-          <small>{value === 1 ? "terminal" : "terminals"}</small>
-        </span>
-        <ChevronDownIcon size={11} />
-      </button>
+    <div className="launch-row launch-count" role="group" aria-label="Terminals">
+      <span className="launch-row__label">
+        <strong>Terminals</strong>
+        <small>{value === 1 ? "One pane" : `${value} panes side by side`}</small>
+      </span>
+      <div className="launch-stepper">
+        <button type="button" aria-label="One fewer terminal" disabled={value <= 1} onClick={() => onChange(value - 1)}>
+          <MinusIcon size={14} />
+        </button>
+        <button
+          type="button"
+          className="launch-stepper__value"
+          aria-label={`${value} ${value === 1 ? "terminal" : "terminals"}, choose a number`}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls="launch-terminal-count-menu"
+          onClick={() => setOpen(!open)}
+        >
+          {value}
+        </button>
+        <button type="button" aria-label="One more terminal" disabled={value >= MAX_TERMINALS} onClick={() => onChange(value + 1)}>
+          <PlusIcon size={14} />
+        </button>
+      </div>
       {open && (
         <>
           <div className="launch-model__backdrop" onClick={() => setOpen(false)} />
           <div
             id="launch-terminal-count-menu"
-            className="launch-count__menu"
+            className="launch-menu launch-menu--right launch-count__menu"
             role="listbox"
             aria-label="Number of terminals"
           >
@@ -71,6 +78,6 @@ export function LaunchTerminalCount({ value, onChange }: LaunchTerminalCountProp
           </div>
         </>
       )}
-    </fieldset>
+    </div>
   );
 }

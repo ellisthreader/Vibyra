@@ -2,11 +2,11 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Vibyra",
   "mainBinaryName": "Vibyra",
-  "version": "0.1.6",
+  "version": "0.8.11",
   "identifier": "app.vibyra.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://127.0.0.1:1420",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
@@ -26,7 +26,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://openrouter.ai; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; frame-src http://127.0.0.1:* http://localhost:*"
+      "csp": "default-src 'self'; connect-src 'self' https://openrouter.ai; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data:; font-src 'self' data:; frame-src http: https:"
     }
   },
   "bundle": {

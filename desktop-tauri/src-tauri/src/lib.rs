@@ -1,28 +1,58 @@
 mod account_api;
 mod account_auth;
+mod account_billing;
+mod account_cancel;
+mod account_delete;
 mod account_device;
+mod account_devices;
+#[cfg(test)]
+mod account_endpoint_tests;
+mod account_endpoints;
+mod account_login;
 mod account_oauth;
+mod account_oauth_start;
 mod account_profile;
+mod account_security;
 mod account_session;
 #[cfg(test)]
 mod account_tests;
 mod account_types;
+mod agent_computer;
+mod agent_computer_access;
+mod agent_computer_reveal;
+mod agent_computer_review;
+mod agent_computer_runner;
+mod agent_computer_runner_auth;
+mod agent_computer_store;
+mod agent_computer_tools;
+mod agent_computer_transport;
 mod ai_usage;
 mod ai_usage_guard;
 mod ai_usage_limits;
+mod ai_usage_permit;
 #[cfg(test)]
 mod ai_usage_tests;
+mod analytics;
+mod analytics_event;
+#[cfg(test)]
+mod analytics_event_tests;
+mod analytics_store;
+#[cfg(test)]
+mod analytics_store_tests;
 mod close_guard;
 mod commands;
 mod desktop_entry;
 mod discord;
 mod discord_setup;
+mod http_client;
 mod model_watch;
-mod model_watch_discord;
+mod model_watch_store;
 #[cfg(test)]
 mod model_watch_tests;
 mod openai_key;
 mod perf;
+mod phone;
+mod platform_text;
 mod provider_auth;
 mod provider_auth_attempt;
 mod provider_auth_claude;
@@ -40,22 +70,32 @@ mod provider_auth_output;
 mod provider_auth_probe;
 mod provider_auth_process;
 mod provider_auth_registry;
+mod provider_auth_round;
 mod provider_auth_state;
 mod provider_auth_url;
 mod provider_auth_view;
 mod renderer;
 mod report;
 mod report_format;
+mod report_hardware;
 mod report_image;
+mod report_relay;
 #[cfg(test)]
 mod report_tests;
 mod report_text;
 mod secret_store;
+mod session_identity;
+#[cfg(any(target_os = "macos", target_os = "linux", test))]
+mod session_process_files;
+#[cfg(any(target_os = "linux", all(test, unix)))]
+mod session_process_linux;
 mod session_store;
 #[cfg(test)]
 mod session_store_tests;
+pub mod shared_chats;
 mod sink;
 mod state;
+mod state_openai_key;
 
 pub fn handle_cli() -> Option<Result<&'static str, String>> {
     discord_setup::handle_cli()
@@ -95,25 +135,18 @@ pub fn run() {
         .manage(state::AppState::new())
         .setup(|app| {
             model_watch::spawn(app.handle().clone());
+            shared_chats::desktop_stream::spawn(app.handle().clone());
+            phone::notify_window(app.handle().clone());
+            agent_computer_runner::spawn(app.handle().clone());
             Ok(())
         })
         // Closing is vetoed once so the UI can warn about live terminals and
         // flush the session to disk; `confirm_close` then sets the flag and
         // closes for real. Only when a UI is mounted that can answer — see
         // `close_guard`.
-        .on_window_event(|window, event| {
-            use tauri::Manager;
-
-            let tauri::WindowEvent::CloseRequested { api, .. } = event else {
-                return;
-            };
-            if !close_guard::should_veto(&window.state::<state::AppState>()) {
-                return;
-            }
-            api.prevent_close();
-            close_guard::hand_off(window);
-        })
+        .on_window_event(close_guard::window_event)
         .invoke_handler(commands::registry::handler())
-        .run(tauri::generate_context!())
-        .expect("error while running Vibyra Desktop");
+        .build(tauri::generate_context!())
+        .expect("error while building Vibyra Desktop")
+        .run(close_guard::run_event);
 }

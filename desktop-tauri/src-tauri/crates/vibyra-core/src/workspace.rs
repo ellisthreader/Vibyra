@@ -122,6 +122,23 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_plain_folder_reports_no_repository_instead_of_failing() {
+        let temp = tempfile::tempdir().unwrap();
+        let folder = temp.path().join("Applications");
+        std::fs::create_dir_all(&folder).unwrap();
+
+        let preflight = crate::workspace_preflight::safe_workspace_preflight(&folder).unwrap();
+        assert!(!preflight.repository);
+        assert_eq!(preflight.changed_files, 0);
+
+        // Still refused at the boundary, but in words a person can act on.
+        let refusal = prepare_safe_workspace(&folder, &temp.path().join("worktrees"), None)
+            .unwrap_err()
+            .to_string();
+        assert!(refusal.contains("Git repository"), "{refusal}");
+    }
+
+    #[test]
     fn snapshots_dirty_files_without_touching_head_or_index() {
         let temp = tempfile::tempdir().unwrap();
         let repo = temp.path().join("repo");

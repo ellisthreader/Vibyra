@@ -35,6 +35,13 @@ pub(super) fn png_bytes(image: &DynamicImage) -> Result<Vec<u8>, String> {
 }
 
 pub(crate) fn decode_png(data_url: &str) -> Result<(Vec<u8>, DynamicImage), String> {
+    let bytes = png_data(data_url)?;
+    let image = decode_png_bytes(&bytes)?;
+    Ok((bytes, image))
+}
+
+/// The PNG inside a data URL, still encoded.
+pub(super) fn png_data(data_url: &str) -> Result<Vec<u8>, String> {
     let encoded = data_url
         .strip_prefix(PNG_PREFIX)
         .ok_or_else(|| "The screenshot is not a PNG data URL.".to_string())?;
@@ -47,8 +54,22 @@ pub(crate) fn decode_png(data_url: &str) -> Result<(Vec<u8>, DynamicImage), Stri
     if bytes.len() > MAX_PNG_BYTES {
         return Err("The screenshot is too large.".to_string());
     }
-    let image = decode_png_bytes(&bytes)?;
-    Ok((bytes, image))
+    Ok(bytes)
+}
+
+/// Checks a PNG's header against the limits `decode_png_bytes` enforces,
+/// without decoding a single pixel.
+pub(super) fn check_png_header(bytes: &[u8]) -> Result<(), String> {
+    let (width, height) = ImageReader::with_format(Cursor::new(bytes), image::ImageFormat::Png)
+        .into_dimensions()
+        .map_err(|_| "The screenshot PNG could not be decoded.".to_string())?;
+    if width == 0 || height == 0 || width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION {
+        return Err("The screenshot PNG could not be decoded.".to_string());
+    }
+    if u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS {
+        return Err("The screenshot dimensions are too large.".to_string());
+    }
+    Ok(())
 }
 
 pub(super) fn decode_png_bytes(bytes: &[u8]) -> Result<DynamicImage, String> {

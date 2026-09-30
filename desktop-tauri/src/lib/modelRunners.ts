@@ -5,7 +5,7 @@
 
 import type { CatalogModel } from "./openRouterCatalog";
 import type { ResolvedAgent } from "../types";
-import { nativeAccountModelSupported } from "./modelArtworkData.ts";
+import { nativeAccountModelSupported } from "./nativeAccountModels.ts";
 
 interface NativeRunner {
   company: string;
@@ -24,8 +24,6 @@ const NATIVE_RUNNERS: NativeRunner[] = [
 
 const OPENROUTER_RUNNERS = ["aider", "opencode"];
 const ACCOUNT_RUNNERS = new Set(["codex", "claude", "gemini"]);
-
-export const MODEL_RUNNER_IDS = ["codex", "claude", "gemini", "qwen", ...OPENROUTER_RUNNERS];
 
 export interface RunnerPlan {
   runner: ResolvedAgent | null;

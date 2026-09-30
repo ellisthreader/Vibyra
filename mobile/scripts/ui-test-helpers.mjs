@@ -10,6 +10,10 @@ export async function capture(page, path) {
   await noTutorialFraming(page);
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
     `${path}: horizontal overflow`);
+  // Two painted frames. A screenshot taken in the same tick as the change that
+  // opened a sheet returns the frame before it, so the artifact a person reviews
+  // shows the screen the assertions above have just walked past.
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))));
   await page.screenshot({ path });
 }
 
@@ -38,4 +42,22 @@ export async function terminalText(page, text) {
   assert.ok(frame, 'The terminal renderer has a document');
   await frame.waitForFunction(value => document.body.textContent.includes(value), text);
   return frame;
+}
+
+const escape = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Open a session from the rail, which has two faces: the projects on its home
+ *  face, and a project's terminals on the face its row swaps to. A session row
+ *  reads "<title>, <agent>, <state>" (src/ui/ProjectTerminalRow.tsx). */
+export async function openSession(page, name, project) {
+  await page.getByRole('button', { name: 'Open navigation menu', exact: true }).click();
+  // The rail's rows arrive with its entrance; count them only once it is open.
+  await page.getByRole('button', { name: 'Close navigation menu', exact: true }).waitFor();
+  await page.waitForTimeout(400);
+  const row = page.getByRole('button', { name: new RegExp(`^${escape(name)}, `) }).first();
+  if (!(await row.count())) {
+    const back = page.getByRole('button', { name: 'Back to projects', exact: true });
+    if (await back.count()) await back.click();
+    await page.getByRole('button', { name: new RegExp(`^${escape(project)}, `) }).first().click();
+  }
+  await row.click();
 }

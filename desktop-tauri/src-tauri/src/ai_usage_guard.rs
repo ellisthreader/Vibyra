@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -8,6 +9,7 @@ use vibyra_core::fsx::write_private_atomic;
 
 use crate::ai_usage::{period_keys, AiCall, AiLimits, UsageLedger};
 use crate::ai_usage_limits::{admit, budget, prune, MINUTE};
+use crate::ai_usage_permit::CallPermit;
 
 // Every OpenAI-billed request in this app funnels through this guard. Two
 // classes of protection live here and they answer different threats:
@@ -25,6 +27,10 @@ use crate::ai_usage_limits::{admit, budget, prune, MINUTE};
 pub struct AiUsageGuard {
     path: PathBuf,
     inner: Mutex<GuardInner>,
+    /// The one chat that can be stopped, and its request id. One slot is
+    /// enough because "one chat in flight" is already this guard's invariant;
+    /// the id is what keeps a late Stop off the retry that replaced it.
+    cancel: Mutex<Option<(String, Arc<AtomicBool>)>>,
 }
 
 #[derive(Debug)]
@@ -34,6 +40,10 @@ pub(crate) struct GuardInner {
     pub(crate) recent: Vec<Instant>,
     pub(crate) chat_in_flight: bool,
     pub(crate) voice_in_flight: bool,
+    /// Its own slot rather than the microphone's: reading a reply aloud and
+    /// dictating the next one are different halves of the same conversation,
+    /// and one must not report the other as busy.
+    pub(crate) speech_in_flight: bool,
 }
 
 impl AiUsageGuard {
@@ -49,8 +59,29 @@ impl AiUsageGuard {
                 recent: Vec::new(),
                 chat_in_flight: false,
                 voice_in_flight: false,
+                speech_in_flight: false,
             }),
+            cancel: Mutex::new(None),
         }
+    }
+
+    /// Arms the cancel slot for this request, replacing whatever was there: a
+    /// leftover entry can only belong to a call that has already finished.
+    pub(crate) fn arm_cancel(&self, request_id: &str) -> Arc<AtomicBool> {
+        let flag = Arc::new(AtomicBool::new(false));
+        *self.cancel.lock() = Some((request_id.to_string(), Arc::clone(&flag)));
+        flag
+    }
+
+    /// Stops the reply with this id. False when the slot holds someone else's
+    /// request, or nothing at all — both mean the reply already ended.
+    pub fn cancel_chat(&self, request_id: &str) -> bool {
+        let slot = self.cancel.lock();
+        let Some((_, flag)) = slot.as_ref().filter(|(id, _)| id == request_id) else {
+            return false;
+        };
+        flag.store(true, Ordering::Relaxed);
+        true
     }
 
     pub fn ledger(&self) -> UsageLedger {
@@ -103,19 +134,17 @@ impl AiUsageGuard {
             match kind {
                 AiCall::Chat => inner.chat_in_flight = true,
                 AiCall::Voice => inner.voice_in_flight = true,
+                AiCall::Speech => inner.speech_in_flight = true,
             }
             inner.recent.push(Instant::now());
             inner.ledger.count_call(kind);
             inner.ledger.clone()
         };
         self.persist(&snapshot);
-        Ok(CallPermit {
-            guard: Arc::clone(self),
-            kind,
-        })
+        Ok(CallPermit::new(Arc::clone(self), kind))
     }
 
-    fn settle(&self, mutate: impl FnOnce(&mut UsageLedger)) {
+    pub(crate) fn settle(&self, mutate: impl FnOnce(&mut UsageLedger)) {
         let (day, month) = period_keys();
         let snapshot = {
             let mut inner = self.inner.lock();
@@ -138,36 +167,18 @@ impl AiUsageGuard {
         let _ = write_private_atomic(&self.path, &raw);
     }
 
-    fn release(&self, kind: AiCall) {
+    pub(crate) fn release(&self, kind: AiCall) {
         let mut inner = self.inner.lock();
         match kind {
             AiCall::Chat => inner.chat_in_flight = false,
             AiCall::Voice => inner.voice_in_flight = false,
+            AiCall::Speech => inner.speech_in_flight = false,
         }
-    }
-}
-
-/// Held for the lifetime of one billed request. Dropping it frees the in-flight
-/// slot whether the request succeeded, failed, or unwound.
-#[derive(Debug)]
-pub struct CallPermit {
-    guard: Arc<AiUsageGuard>,
-    kind: AiCall,
-}
-
-impl CallPermit {
-    pub fn finish_chat(self, input_tokens: u64, output_tokens: u64) {
-        self.guard
-            .settle(|ledger| ledger.add_chat_cost(input_tokens, output_tokens));
-    }
-
-    pub fn finish_voice(self, seconds: f64) {
-        self.guard.settle(|ledger| ledger.add_voice_cost(seconds));
-    }
-}
-
-impl Drop for CallPermit {
-    fn drop(&mut self) {
-        self.guard.release(self.kind);
+        drop(inner);
+        // The flag dies with the call it belonged to, so a Stop that arrives
+        // a moment too late finds an empty slot rather than a stale id.
+        if matches!(kind, AiCall::Chat) {
+            self.cancel.lock().take();
+        }
     }
 }

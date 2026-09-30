@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+
 import type { ProviderAccount } from "../../providerTypes";
+import { CheckIcon, ChevronDownIcon } from "../common/Icons";
 
 interface Props {
   product: string;
@@ -6,6 +9,9 @@ interface Props {
   value: string;
   onChange: (accountId: string) => void;
 }
+
+const accountName = (account: ProviderAccount, index: number) =>
+  account.accountLabel || `Account ${index + 1}`;
 
 /**
  * Which account the next terminal runs as.
@@ -16,22 +22,68 @@ interface Props {
  * launches next rather than what is open now.
  */
 export function LaunchAccountPicker({ product, accounts, value, onChange }: Props) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
+
   if (accounts.length < 2) return null;
+  const currentIndex = Math.max(0, accounts.findIndex((account) => account.accountId === value));
+  const current = accounts[currentIndex];
 
   return (
-    <label className="launch-account">
-      <span className="launch-account__label">{product} account</span>
-      <select
-        className="launch-account__select"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+    <div className="launch-row launch-account" role="group" aria-label={`${product} account`}>
+      <span className="launch-row__label">
+        <strong>{product} account</strong>
+        <small>For the next terminal only</small>
+      </span>
+      <button
+        type="button"
+        className="launch-select"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls="launch-account-menu"
+        onClick={() => setOpen(!open)}
       >
-        {accounts.map((account, index) => (
-          <option key={account.accountId} value={account.accountId}>
-            {account.accountLabel || `Account ${index + 1}`}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span>{accountName(current, currentIndex)}</span>
+        <ChevronDownIcon size={12} />
+      </button>
+      {open && (
+        <>
+          <div className="launch-model__backdrop" onClick={() => setOpen(false)} />
+          <div
+            id="launch-account-menu"
+            className="launch-menu launch-menu--right"
+            role="listbox"
+            aria-label={`${product} account`}
+          >
+            {accounts.map((account, index) => (
+              <button
+                key={account.accountId}
+                type="button"
+                role="option"
+                aria-selected={index === currentIndex}
+                className="launch-option"
+                onClick={() => {
+                  onChange(account.accountId);
+                  setOpen(false);
+                }}
+              >
+                <span className="launch-option__copy">
+                  <strong>{accountName(account, index)}</strong>
+                </span>
+                {index === currentIndex && <CheckIcon size={14} />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }

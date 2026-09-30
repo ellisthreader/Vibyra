@@ -113,3 +113,61 @@ export function bannerCopy(
     busy: false,
   };
 }
+
+export interface ChipCopy {
+  /** A word beside the glyph. The title bar shares its row with the project
+   * switcher and the window controls, so there is no room for a sentence. */
+  label: string;
+  /** The sentence the label abbreviates: tooltip and accessible name. */
+  title: string;
+  /** What the same chip becomes once the package is staged. */
+  glyph: "download" | "restart";
+  busy: boolean;
+}
+
+/**
+ * The permanent title-bar affordance, as opposed to the dismissible banner.
+ *
+ * Returns null only when there is genuinely nothing to say. Notably it does
+ * *not* honour `dismissed`: waving the banner away means "not this second",
+ * and if it also emptied the title bar there would be no way back to the
+ * update short of relaunching — which is the hole this chip exists to close.
+ */
+export function chipCopy(
+  status: UpdateStatus,
+  version: string,
+  progress: UpdateProgress,
+  error: string | null,
+): ChipCopy | null {
+  if (status === "idle" || !version) return null;
+  if (status === "error") {
+    return {
+      label: "Retry",
+      title: error ?? `Vibyra ${version} failed to download. Click to try again.`,
+      glyph: "download",
+      busy: false,
+    };
+  }
+  if (status === "ready") {
+    return {
+      label: "Restart",
+      title: `Vibyra ${version} is ready — restart to finish installing.`,
+      glyph: "restart",
+      busy: false,
+    };
+  }
+  if (status === "downloading") {
+    return {
+      label: progress.total > 0 ? `${progress.percent}%` : "…",
+      title: `Downloading Vibyra ${version}…`,
+      glyph: "download",
+      busy: true,
+    };
+  }
+  return {
+    label: "Update",
+    title: `Vibyra ${version} is available — click to download it.`,
+    glyph: "download",
+    busy: false,
+  };
+}

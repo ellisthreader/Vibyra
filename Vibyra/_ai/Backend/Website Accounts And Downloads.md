@@ -51,11 +51,10 @@ complete metadata, a 64-hex checksum, positive exact file size, DMG extension,
 and a real non-empty stored artifact. Browser detection may recommend macOS but
 must never guess Apple Silicon versus Intel.
 
-The current Linux beta is app version `0.1.1` (product name `Vibyra`, blue V
-icon). Its volume artifact is `releases/linux/Vibyra_0.1.1_amd64.AppImage`,
-served to browsers as `Vibyra.AppImage`. Windows remains
-`Vibyra-Desktop-0.1.0-beta.1-x64-setup.exe` until its next rebuild. 0.1.1
-fixed a fatal launch bug: the AppImage's bundled GLib scanned host gio modules
+As of 2026-09-23, the public Linux AppImage and Debian/Ubuntu channels are
+`0.8.0`; Windows remains on its own release version. The Linux update feed
+routes AppImage and Debian separately because each has its own signed bytes.
+The older 0.1.1 AppImage fixed a fatal launch bug: its bundled GLib scanned host gio modules
 (gvfs built against newer GLib), which killed WebKitWebProcess and left a
 frozen blank window; `run()` now sets `GIO_MODULE_DIR` to the bundled modules
 dir when `APPDIR` is set. `bundleMediaFramework` is enabled so autoaudiosink
@@ -113,11 +112,13 @@ works. After promotion, verify `/web-api/releases`, attachment
 `Content-Length` and `X-Checksum-SHA256` headers, and a real GET signature
 before declaring the buttons live.
 
-Changing Railway env vars triggers a rebuild from the linked GitHub repo,
-which is far behind the locally deployed working tree — the 2026-08-19 cutover
-briefly 404'd the whole site this way. After any `railway variables --set`,
-immediately re-run `railway up` from the repo root to restore the working-tree
-snapshot.
+Changing Railway env vars can rebuild from the linked GitHub repo, which is
+behind the deployed backend. For release metadata changes, use
+`variable set --skip-deploys`, then ordinary `redeploy` of the existing snapshot
+without `--from-source`. Confirm original snapshot provenance; a rebuild can change the image digest. Do not
+run `railway up` from an older local checkout to repair this; first establish
+which source actually matches production. See Desktop/Mac Setup for the
+separate signed Mac updater metadata and persistent archive storage.
 
 Desktop release automation lives in `.github/workflows/desktop-release.yml`
 and packages the Rust/Tauri app directly: native Windows NSIS on

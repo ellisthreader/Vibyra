@@ -31,6 +31,7 @@ function sessionChannel(): { channel: Channel<TermEvent>; bind: (id: number) => 
 export interface CreateTerminalOptions {
   agentId: string;
   cwd?: string | null;
+  resumeCwd?: string | null;
   rows?: number;
   cols?: number;
   model?: string | null;
@@ -48,11 +49,13 @@ export interface CreateTerminalOptions {
 
 export async function createTerminal(options: CreateTerminalOptions): Promise<SessionInfo> {
   const { channel, bind } = sessionChannel();
+  (window as any).__dbg?.(`invoke create_terminal ${JSON.stringify({agentId: options.agentId, resume: options.resume, sid: options.agentSessionId, acct: options.accountId, cwd: options.cwd, rcwd: options.resumeCwd})}`);
   const info = await invoke<SessionInfo>("create_terminal", {
     onEvent: channel,
     request: {
       agentId: options.agentId,
       cwd: options.cwd ?? null,
+      resumeCwd: options.resumeCwd ?? null,
       rows: options.rows ?? null,
       cols: options.cols ?? null,
       model: options.model ?? null,
@@ -65,7 +68,9 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Se
       agentSessionId: options.agentSessionId ?? null,
     },
   });
+  (window as any).__dbg?.(`create_terminal returned ${JSON.stringify(info)}`);
   bind(info.id);
+  (window as any).__dbg?.(`bound ${info.id}`);
   return info;
 }
 
@@ -111,6 +116,20 @@ export function setTerminalVisibility(id: number, visibility: Visibility): Promi
   return invoke("set_terminal_visibility", { id, visibility });
 }
 
+/** Flow control: asks Rust to hold a session's output while its view catches up. */
+export function holdTerminalOutput(id: number, hold: boolean): Promise<void> {
+  return invoke("hold_terminal_output", { id, hold });
+}
+
 export function removeTerminal(id: number): Promise<void> {
-  return invoke("remove_terminal", { id });
+    return invoke("remove_terminal", { id });
+}
+
+/** The whole scrollback ring, or with `maxBytes` only its most recent part. */
+export function terminalSnapshot(id: number, maxBytes?: number): Promise<string> {
+  return invoke("terminal_snapshot", { id, maxBytes });
+}
+
+export function terminalSessionIdentities(panes: { id: number; accountId: string | null }[]): Promise<{ id: number; sessionId: string | null }[]> {
+  return invoke("terminal_session_identities", { panes });
 }

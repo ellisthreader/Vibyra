@@ -33,16 +33,14 @@ export function spendNotification(next: SpendTier): NotificationInput | null {
       body: "Vibyra AI stops making billed calls once the cap is reached.",
       dedupeKey: "aiSpend:near",
       osEligible: false,
-      action: { id: "openAiSettings", label: "Review limits" },
     };
   }
   return {
     category: "aiSpend",
     severity: "danger",
     title: "AI spend cap reached",
-    body: "Chat and dictation are paused until the cap resets or you raise it.",
+    body: "Chat and dictation are paused until the cap resets.",
     dedupeKey: "aiSpend:reached",
     timeoutMs: 0,
-    action: { id: "openAiSettings", label: "Review limits" },
   };
 }

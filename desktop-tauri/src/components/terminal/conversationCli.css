@@ -1,0 +1,7 @@
+.conversation-cli { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--bg); }
+.conversation-cli.pane--hidden { display: none; }
+.conversation-cli-body { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+.conversation-cli-host { flex: 1; min-height: 0; overflow: hidden; padding: 4px 8px; }
+.conversation-cli-host .xterm { height: 100%; }
+.conversation-cli-error { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; color: var(--text); }
+.conversation-cli-error span { flex-basis: 100%; }

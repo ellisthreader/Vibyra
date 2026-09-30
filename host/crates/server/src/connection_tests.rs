@@ -49,7 +49,7 @@ async fn encrypted_pairing_state_and_revocation_roundtrip() {
         .unwrap()
         .unwrap();
     assert!(done.is_err());
-    assert!(!shared.active.lock().unwrap().contains(&device));
+    assert!(!shared.active.lock().unwrap().contains_key(&device));
 }
 
 #[tokio::test]
@@ -79,4 +79,58 @@ async fn replayed_transport_frame_closes_connection_without_second_dispatch() {
     assert!(output.recv().await.is_some());
     input.send(request).await.unwrap();
     assert!(task.await.unwrap().is_err());
+}
+
+/// A phone whose Wi-Fi went can be back before this Host has noticed the socket
+/// it left, so the returning connection has to displace that one rather than be
+/// told the device is already connected — nothing else could clear it.
+#[tokio::test]
+async fn a_returning_device_replaces_the_connection_it_left_behind() {
+    let (_dir, shared) = state();
+    let key = generate_keypair().unwrap();
+    let device = hex::encode(&key[32..]);
+    shared.trust(&device, "Trusted test phone").unwrap();
+    let host = hex::decode(&shared.identity.lock().unwrap().public_key).unwrap();
+    let hello = br#"{"protocol":1,"deviceName":"Phone"}"#;
+
+    let mut stale = Client::new(&key[..32], &host).unwrap();
+    let (stale_input, receiver) = mpsc::channel(32);
+    let (sender, mut stale_output) = mpsc::channel(32);
+    let abandoned = tokio::spawn(connection::run(shared.clone(), receiver, sender));
+    stale_input.send(stale.start(hello).unwrap()).await.unwrap();
+    let opened: Value =
+        serde_json::from_slice(&stale.finish(&stale_output.recv().await.unwrap()).unwrap())
+            .unwrap();
+    assert_eq!(opened["ok"], true);
+
+    let mut returning = Client::new(&key[..32], &host).unwrap();
+    let (input, receiver) = mpsc::channel(32);
+    let (sender, mut output) = mpsc::channel(32);
+    let task = tokio::spawn(connection::run(shared.clone(), receiver, sender));
+    input.send(returning.start(hello).unwrap()).await.unwrap();
+    let reply: Value =
+        serde_json::from_slice(&returning.finish(&output.recv().await.unwrap()).unwrap()).unwrap();
+    assert_eq!(reply["ok"], true, "the phone that came back was refused");
+    assert_eq!(reply["deviceId"], device);
+
+    let ended = tokio::time::timeout(std::time::Duration::from_secs(2), abandoned)
+        .await
+        .expect("the abandoned connection was left running");
+    assert!(ended.unwrap().is_ok());
+
+    // The workspace answers on the connection the phone is actually holding,
+    // and the slot the departing one gave up is still this device's.
+    input
+        .send(
+            returning
+                .encrypt(br#"{"id":"one","method":"host.state","params":{}}"#)
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let state: Value =
+        serde_json::from_slice(&returning.decrypt(&output.recv().await.unwrap()).unwrap()).unwrap();
+    assert_eq!(state["result"]["host"]["name"], "Test computer");
+    assert!(shared.active.lock().unwrap().contains_key(&device));
+    drop(task);
 }

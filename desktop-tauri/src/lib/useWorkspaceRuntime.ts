@@ -1,6 +1,7 @@
+import { useConversationTerminals } from '../state/conversationTerminalStore';
 import { useEffect } from "react";
 
-import { onModelsReleased } from "../ipc/models";
+import { onModelsAvailable, takeModelReleases } from "../ipc/models";
 import { useAgentStore } from "../state/agentStore";
 import { useModelCatalogStore } from "../state/modelCatalogStore";
 import { useProjectStore } from "../state/projectStore";
@@ -11,6 +12,7 @@ import { useWorkspaceStore } from "../state/workspaceStore";
 import { restoredProjectId } from "./sessionRestore";
 import { startAppRuntime } from "./appStartup";
 import { notifyModelsReleased, notifySessionExit } from "./notificationTriggers";
+import { startupPrefetchEnabled, normalizePerformanceMode } from "./performanceMode";
 import { providerAccountRuntimeUpdate } from "./providerAccountPolicy";
 import { setSessionExitHandler, setSessionTitleHandler } from "./terminalEvents";
 
@@ -47,7 +49,11 @@ function useAppStartup(): void {
           // project other than the last one opened — the file tree, the
           // preview and the pane visibility all have to follow them.
           const project = useProjectStore.getState();
-          const restored = restoredProjectId(useTerminalStore.getState().panes, project.activeId);
+          await useConversationTerminals.getState().refresh();
+          const chats = useConversationTerminals.getState();
+          const shared = chats.sessions.filter(session => chats.open.includes(session.id));
+          const restored = restoredProjectId(useTerminalStore.getState().panes, project.activeId)
+            ?? shared.find(session => session.projectId === project.activeId)?.projectId ?? shared[0]?.projectId;
           if (restored) await project.activate(restored);
         },
         refreshAgents: () => useAgentStore.getState().refresh(),
@@ -62,14 +68,17 @@ function useAppStartup(): void {
   }, []);
 }
 
-/** Rust watches OpenRouter in the background; when a model drops, refresh the
- * picker catalog past its cache and tell the user. */
+/** The native watcher saves releases even before this workspace mounts. */
 function useModelReleaseWatch(): void {
   useEffect(() => {
-    const unlisten = onModelsReleased((models) => {
+    const drain = async () => {
+      const models = await takeModelReleases();
+      if (models.length === 0) return;
       void useModelCatalogStore.getState().refresh(true);
       notifyModelsReleased(models);
-    });
+    };
+    const unlisten = onModelsAvailable(() => void drain());
+    void unlisten.then(() => drain());
     return () => {
       void unlisten.then((fn) => fn());
     };
@@ -77,12 +86,17 @@ function useModelReleaseWatch(): void {
 }
 
 /** Warms the screenshot editor chunk once the app is quiet. The shortcut is
- * global, so its first press must not wait on a module fetch. */
+ * global, so its first press must not wait on a module fetch — unless the user
+ * asked for Performance mode, which takes the opposite side of that trade. */
 function useScreenshotEditorPrefetch(): void {
+  const enabled = startupPrefetchEnabled(
+    useSettingsStore((state) => normalizePerformanceMode(state.settings?.performanceMode)),
+  );
   useEffect(() => {
+    if (!enabled) return;
     const timer = setTimeout(() => void import("../components/layout/ScreenshotEditor"), 1_500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [enabled]);
 }
 
 /** Everything the authenticated workspace starts once, kept out of the shell

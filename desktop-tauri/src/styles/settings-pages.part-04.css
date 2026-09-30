@@ -1,0 +1,31 @@
+/* Settings > Advanced > Voice and speech. The voice picker and its test sit on
+   one line; the list is long, so the select takes the room and the test stays
+   a fixed, obvious target. Moved here with the row itself — it is no longer a
+   sub-row of a keyboard shortcut. */
+.speech-voice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speech-voice select {
+  min-width: 148px;
+  max-width: 190px;
+}
+
+.speech-voice__test {
+  flex: none;
+  min-width: 52px;
+}
+
+/* A style direction is a sentence, not a token: let it have the width the
+   other stacked rows get rather than a 190px slot. */
+.setting-row--stack .input {
+  width: 100%;
+}
+
+/* The language names have to be readable in the closed state: an `input--sm`
+   select shrinks to its row and turned "Detect automatically" into "Detect a". */
+.voice-language {
+  min-width: 172px;
+}

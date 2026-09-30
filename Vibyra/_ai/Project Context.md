@@ -10,8 +10,9 @@ client, configs, tests, artwork and preview captures were retired. Read
 For desktop use [[Vibyra Desktop Memory]]; for APIs use [[Vibyra Backend Memory]].
 
 The new phone app uses Host-approved terminals and project access. Optional
-account onboarding calls existing Laravel account APIs. Existing Desktop chats
-are not synchronized into Host sessions; phone-only cloud coding and native
+account onboarding calls existing Laravel account APIs. Mac 0.1.9 can expose
+live Desktop terminal output through an optional encrypted view-only connection;
+standalone Host sessions remain separate. Phone-only cloud coding and native
 store delivery remain separately tracked work.
 
 Follow [[Memory Protocol]] and [[Context Map]] before broad exploration.

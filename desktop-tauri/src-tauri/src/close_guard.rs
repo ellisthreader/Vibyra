@@ -22,6 +22,10 @@ use crate::state::AppState;
 /// or threw before its listener ran.
 const ACK_GRACE: Duration = Duration::from_secs(4);
 
+/// How long quitting waits for scaffold builds to stop their package managers:
+/// one stall poll plus the group's own grace, with room to spare.
+const SCAFFOLD_QUIT_GRACE: Duration = Duration::from_secs(1);
+
 /// True when the UI should be asked first. False means close now: either the
 /// user already confirmed, or nothing is mounted that could answer.
 pub fn should_veto(state: &AppState) -> bool {
@@ -29,23 +33,91 @@ pub fn should_veto(state: &AppState) -> bool {
 }
 
 /// Hands the decision to the UI, with a watchdog behind it.
-pub fn hand_off(window: &Window) {
-    window
-        .state::<AppState>()
+pub fn hand_off(app: &tauri::AppHandle) {
+    app.state::<AppState>()
         .close_requested_ack
         .store(false, Ordering::SeqCst);
-    let _ = window.emit("vibyra://close-requested", ());
-    let window = window.clone();
+    let _ = app.emit("vibyra://close-requested", ());
+    let app = app.clone();
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(ACK_GRACE).await;
-        let state = window.state::<AppState>();
+        let state = app.state::<AppState>();
         if state.close_requested_ack.load(Ordering::SeqCst) || state.closing.load(Ordering::SeqCst)
         {
             return;
         }
-        // Nothing answered, so nothing is going to. An unsaved session is a
-        // bad outcome; a window the user cannot close is a worse one.
         state.closing.store(true, Ordering::SeqCst);
-        let _ = window.close();
+        let _ = finish(&app);
     });
+}
+
+pub fn window_event(window: &Window, event: &tauri::WindowEvent) {
+    let tauri::WindowEvent::CloseRequested { api, .. } = event else {
+        return;
+    };
+    let state = window.state::<AppState>();
+    // The red traffic light closes the view on Mac. Terminals keep running;
+    // Dock reopen returns to the same webview, without a restore or respawn.
+    #[cfg(target_os = "macos")]
+    if !state.closing.load(Ordering::SeqCst) {
+        api.prevent_close();
+        let _ = window.hide();
+        return;
+    }
+    if should_veto(&state) {
+        api.prevent_close();
+        hand_off(window.app_handle());
+    }
+}
+
+pub fn run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
+    match event {
+        tauri::RunEvent::ExitRequested { api, .. } => {
+            if should_veto(&app.state::<AppState>()) {
+                if let Some(window) = app.get_webview_window("main") {
+                    api.prevent_exit();
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    hand_off(app);
+                }
+            }
+        }
+        #[cfg(target_os = "macos")]
+        tauri::RunEvent::Reopen { .. } => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }
+        tauri::RunEvent::Exit => {
+            let state = app.state::<AppState>();
+            let state = state.inner();
+            // Tauri ends the process with `exit`, so no `Drop` runs: dev
+            // servers, sign-ins, installs and scaffolds lead process groups
+            // that would outlive the app. Each signals all of its children and
+            // waits once, side by side with the rest of shutdown.
+            std::thread::scope(|scope| {
+                scope.spawn(|| state.preview.stop_all());
+                scope.spawn(|| crate::phone::scaffold::in_flight::cancel_all(SCAFFOLD_QUIT_GRACE));
+                scope.spawn(|| state.provider_auth.shutdown());
+                scope.spawn(|| {
+                    crate::commands::scaffold::cancel_all(&state.scaffold_runs, SCAFFOLD_QUIT_GRACE)
+                });
+                crate::commands::speech::shutdown();
+                state.shared_chats.shutdown();
+                state.manager.shutdown();
+            });
+        }
+        _ => {}
+    }
+}
+
+pub fn finish(app: &tauri::AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    app.exit(0);
+    #[cfg(not(target_os = "macos"))]
+    if let Some(window) = app.get_webview_window("main") {
+        window.close().map_err(|error| error.to_string())?;
+    }
+    Ok(())
 }

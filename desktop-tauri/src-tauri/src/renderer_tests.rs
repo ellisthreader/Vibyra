@@ -75,7 +75,11 @@ mod detection {
         assert!(!use_shared_memory(RendererMode::Accelerated, &nvidia));
         assert!(use_shared_memory(RendererMode::Compatibility, &intel));
         assert!(use_shared_memory(RendererMode::Auto, &nvidia));
-        assert!(!use_shared_memory(RendererMode::Auto, &intel));
+        assert!(use_shared_memory(RendererMode::Auto, &intel));
+        assert!(use_shared_memory(
+            RendererMode::Auto,
+            &facts(false, None, false)
+        ));
     }
 }
 

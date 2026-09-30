@@ -1,56 +1,166 @@
-/* Settings → Notifications. The category rows carry four controls in a row, so
-   they need their own spacing; everything else reuses the shared setting-row
-   and settings-group chrome. */
+/* Settings → Notifications. The page's own chrome: the indented sub-row shared
+   with the Sound and Desktop groups, and the event list, whose rows carry three
+   controls and so cannot use the shared two-part `setting-row` layout.
 
-.notif-cat {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+   Loads after `settings-shell.css`, so its `.settings-modal--tiles` row rules
+   are already in effect; everything here is additive.
+
+   Groups in this modal are OUTLINES with no fill, so what is painted behind a
+   control is the modal's `--elevated`. Nothing here may use `--bg` as a fill:
+   it reads as a hole cut into the panel rather than a control sitting on it. */
+
+/* ---------- a qualifier indented under the row it belongs to ---------- */
+
+/* An indent and a quieter label, and nothing else. A drawn elbow was tried
+   here and read as a stray tick floating beside the row: at this size the
+   connector is more conspicuous than the relationship it describes. */
+.settings-modal--tiles .setting-row--sub {
+  min-height: 40px;
+  padding: 4px 16px 12px 32px;
+  border-top: 0;
 }
 
-.notif-cat .icon-btn {
-  width: 24px;
-  height: 24px;
+/* A sub-row's control may take the whole line — the volume slider does. Done
+   without `:has()`, which WebKitGTK on Linux cannot be relied on for. The
+   switch rows keep their right alignment either way. */
+.setting-row--sub .setting-row__control {
+  flex: 1;
 }
 
-/* The sound preview is a quiet affordance: present for keyboard users, but it
-   should not compete with the switches for attention until pointed at. */
-.notif-cat .icon-btn {
+.setting-row--sub .setting-row__label {
+  font-weight: 560;
+  color: var(--muted);
+}
+
+/* The note under EVENTS explains one icon; set louder than the nine hints
+   describing the events themselves, it outranked its own subject. */
+.settings-modal--tiles .settings-block__note {
+  font-size: 11.5px;
   color: var(--dim);
 }
 
-.notif-cat .icon-btn:hover:not(:disabled) {
+/* ---------- event list ---------- */
+
+/* Fixed columns, not `space-between`: the switches have to line up down the
+   page even on the rows that cannot reach the desktop or have no sound, which
+   is why those rows render a reserved slot instead of nothing. */
+.notif-events .notif-event {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 26px 112px 34px;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 11px 16px;
+}
+
+.notif-events--silent .notif-event {
+  grid-template-columns: 22px minmax(0, 1fr) 26px 34px;
+}
+
+.notif-events .notif-event + .notif-event {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Full size, not `--sm`: the toast and centre rows show these glyphs at a
+   glance, but here they are being read against a label, and 19px turned the
+   agent mark into a blur. */
+.notif-event__mark {
+  margin-top: 1px;
+  align-self: start;
+}
+
+.notif-event__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notif-event__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.notif-event__hint {
+  font-size: 11.5px;
+  font-weight: 520;
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+/* ---------- "also on the desktop" ---------- */
+
+/* Off it is one more quiet glyph; on it takes the cobalt so a glance down the
+   column says which events are allowed to leave the window. */
+.notif-event__os {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  color: var(--dim);
+  transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard),
+    border-color var(--t-ui) var(--e-standard);
+}
+
+.notif-event__os:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--line-soft);
+  color: var(--text);
+}
+
+/* The glyph alone carries the state. A tinted chip here was drawn with the
+   same recipe as `.nmark` two columns to its left — same fill, same ring, same
+   cobalt on the info rows — so the badge you cannot press and the toggle you
+   can looked identical, and four all-on rows spent the accent budget saying
+   nothing. */
+.notif-event__os[aria-pressed="true"] {
   color: var(--accent);
 }
 
-.notif-cat .icon-btn:disabled {
-  opacity: 0.4;
+.notif-event__os[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
-/* A disabled control still has to be legible — greying it out entirely reads as
-   broken rather than as "not right now". */
-.notif-cat .vswitch:disabled,
-.notif-cat select:disabled {
+/* A disabled control still has to be legible — greying it out entirely reads
+   as broken rather than as "not right now". */
+.notif-event__os:disabled,
+.notif-event .vswitch:disabled,
+.notif-event .cuepick:disabled {
   opacity: 0.45;
-}
-
-.notif-cat select:disabled {
   cursor: default;
 }
 
-/* The whole pane dims when the master switch is off, but the master row itself
-   must stay at full strength or there is no obvious way back. */
-.settings-pane__body .settings-block + .settings-block {
-  margin-top: 14px;
+/* Reserved, empty: these hold the column so the switches stay in line. */
+.notif-event__os-slot,
+.notif-event__cue-slot {
+  display: block;
 }
 
-/* The desktop toggle. Off it reads as one more quiet glyph; on it takes the
-   cobalt so the row says "this one also leaves the window" at a glance. */
-.notif-cat__os[aria-pressed="true"] {
-  background: var(--accent-soft);
-  color: var(--accent);
+/* ---------- block spacing ---------- */
+
+/* "More events" is part of the Events group, not the next section, so it sits
+   nearer to the list than one block sits to the next. */
+.settings-modal--tiles .settings-block > .notif-events + .disclosure {
+  margin-top: 3px;
 }
 
-.notif-cat__os[aria-pressed="true"]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+/* ---------- switched off ---------- */
+
+/* Text and controls fade together. Leaving labels at full strength while the
+   controls sit at 45% reads as a half-rendered page, and nine switches still
+   showing their cobalt "on" track under an off master states the opposite of
+   the master. The control-level dimming is undone inside so nothing fades
+   twice into illegibility. */
+.settings-dim {
+  opacity: 0.5;
+}
+
+.settings-dim .vswitch:disabled,
+.settings-dim .cuepick:disabled,
+.settings-dim .notif-event__os:disabled {
+  opacity: 1;
 }

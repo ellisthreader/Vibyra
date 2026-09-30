@@ -1,6 +1,7 @@
 import { RpcClient } from '../src/transport/RpcClient';
 import { WorkspaceStore } from '../src/state/WorkspaceStore';
-import type { HostState } from '../src/state/types';
+import type { HostState, RuntimeDependencies } from '../src/state/types';
+import type { CloudGrant, RemoteApi } from '../src/remote/remoteApi';
 export const pairing = { version: 1, hostId: 'host1', name: 'Test computer', publicKey: 'ab'.repeat(32),
   url: 'ws://localhost:4318', invite: 'ab'.repeat(32), expiresAt: '2099-01-01T00:00:00Z' };
 export const hostState: HostState = { protocol: 1, host: { id: 'host1', name: 'Test computer', platform: 'macOS' },
@@ -8,14 +9,36 @@ export const hostState: HostState = { protocol: 1, host: { id: 'host1', name: 'T
     id, projectId: 'project1', kind: 'shell', title: id, status: 'running', createdAt: '2026-09-06T00:00:00Z',
   })), devices: [{ id: 'phone1', name: 'This phone', createdAt: '' }], approvals: [{ id: 'approval1', title: 'Action',
     description: 'Exact host action', createdAt: '', expiresAt: '2099-01-01T00:00:00Z', deviceId: 'phone1' }] };
-export const delay = () => new Promise(resolve => setTimeout(resolve, 0));
-export function runtimeHarness() {
-  let id = 0; const sent: any[] = []; const memory = new Map<string, string>(); const flags = new Map<string, string>();
+export const delay = (ms = 0) => new Promise(resolve => setTimeout(resolve, ms));
+/** `memory` and `flags` may be handed back in to mount a second app over the
+ *  storage the first one left behind, which is what relaunching the app is. */
+export interface HarnessOptions { memory?: Map<string, string>; flags?: Map<string, string>; retryDelays?: number[];
+  locate?: RuntimeDependencies['locate']; remote?: RemoteApi; openTimeout?: number }
+/** A stand-in for Vibyra Cloud with one computer on it, online unless told
+ *  otherwise. Every grant is fresh, so a test can see a reconnection ask again. */
+export function cloudHarness(hostId = 'ab'.repeat(32), online = true) {
+  let grants = 0; const asked: string[] = [];
+  const computer = { id: hostId, name: 'Ellis MacBook', platform: 'macos', version: '0.7.5', online, lastSeenAt: null, activeSessions: 0 };
+  const remote: RemoteApi & { asked: string[]; online: boolean } = { asked, online,
+    computers: async () => ({ live: true, entitled: true, computers: [{ ...computer, online: remote.online }] }),
+    connect: async (id: string): Promise<CloudGrant> => {
+      asked.push(id);
+      if (id !== hostId) throw new Error('That computer is not on this account. Turn on remote access in Vibyra on it.');
+      if (!remote.online) throw new Error('That computer is not online. Open Vibyra on it and keep it awake.');
+      return { relayUrl: 'wss://relay.vibyra.test', token: `grant-${++grants}`, host: { id: hostId, name: 'Ellis MacBook', platform: 'macos' } };
+    } };
+  return remote;
+}
+export function runtimeHarness(options: HarnessOptions = {}) {
+  let id = 0; const sent: any[] = []; const memory = options.memory ?? new Map<string, string>();
+  const flags = options.flags ?? new Map<string, string>();
   const calls: any[] = []; const user = { email: 'ellis@example.com', name: 'Ellis', plan: 'free' };
-  const account = { signup: async (email: string, password: string) => { calls.push(['signup', email, password]); return { token: 'tok-1', user: { ...user, email } }; },
+  const account = { signup: async (email: string, password: string, guest?: string) => { calls.push(guest
+      ? ['signup', email, password, guest] : ['signup', email, password]); return { token: 'tok-1', user: { ...user, email } }; },
     login: async (email: string, password: string) => { calls.push(['login', email, password]); return { token: 'tok-2', user: { ...user, email } }; },
     session: async (token: string) => { calls.push(['session', token]); return user; },
-    logout: async (token: string) => { calls.push(['logout', token]); } };
+    logout: async (token: string) => { calls.push(['logout', token]); },
+    sendHostLink: async (token: string | null, email?: string) => { calls.push(['host-link', token, email]); return email ?? user.email; } };
   let handler: ((message: any) => boolean) | undefined;
   let connectionId: string | undefined;
   const rpc = new RpcClient(raw => {
@@ -31,7 +54,7 @@ export function runtimeHarness() {
         : method === 'session.claim' ? { lease: 'lease1', generation: 'g1' } : { ok: true };
       reply(message, result);
     });
-  }, () => String(++id));
+  }, () => String(++id), options.openTimeout);
   function reply(message: any, result: unknown) {
     rpc.receive({ type: 'message', connectionId: message.connectionId, payload: { id: message.payload.id, ok: true, result } });
   }
@@ -41,7 +64,7 @@ export function runtimeHarness() {
   }, flags: {
     read: async key => flags.get(key) ?? null,
     write: async (key, value) => { flags.set(key, value); }, delete: async key => { flags.delete(key); },
-  } });
+  }, retryDelays: options.retryDelays, locate: options.locate, remote: options.remote });
   rpc.receive({ type: 'ready' });
   return { store, rpc, sent, memory, flags, calls, account, reply, handle: (callback?: typeof handler) => { handler = callback; },
     event: (event: string, data: unknown) => rpc.receive({ type: 'message', connectionId, payload: { event, seq: 1, data } }) };

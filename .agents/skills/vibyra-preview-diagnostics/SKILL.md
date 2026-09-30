@@ -67,6 +67,10 @@ and shutdown. Never expose bearer or capability secrets.
 6. Follow the returned Preview URL to the upstream app. Check relative assets,
    Vite modules, fetch, XHR, forms, redirects, cookies, and framework-specific
    routing.
+   On macOS, check that accepted static-server sockets are explicitly returned
+   to blocking mode before bounded reads. They inherit the nonblocking
+   listener flag; fragmented headers otherwise reset the connection. Run
+   `preview::tests_static::accepts_a_request_head_split_across_packets` on Mac.
 7. Verify mobile host fallback and WebView state. Content identity must include
    ID, URL, and an HTML hash. Failed AI edits retain the user's draft.
 8. Verify Stop and shutdown terminate only tracked Preview process groups.

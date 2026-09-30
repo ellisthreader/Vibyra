@@ -37,6 +37,24 @@ and read it. Treat relevant skills as active instructions for the task.
 
 For memory/skill audits, also read `Vibyra/_ai/Memory And Skills Optimization.md`.
 
+## Installed Desktop Reference
+
+For Mac/Linux parity work, identify the installed Mac executable by SHA-256 and
+compare its embedded frontend asset receipt. A release branch with the same
+version can contain different bytes. Keep the shared frontend artifact and
+Linux native runtime checks distinct; a Mac source build does not prove a Linux
+AppImage launches. Route future work through
+`Vibyra/_ai/Desktop/Linux And Mac Parity.md`.
+
+## Linux Terminal Paint Validation
+
+A PTY snapshot or matching screenshots does not prove timely visible echo.
+Use native OS keystrokes and external screen capture; WebDriver screenshots
+or IPC between keys can wake rendering. Assert the current typed prefix before
+the next key, retain idle frames and DOM mutation timestamps, and inspect OCR
+failures visually. Compare compositor changes with the terminal renderer held
+constant. Test both AppImage and installed Debian packages before publishing.
+
 ## What Must Be Recorded
 
 Update Obsidian when the task changes or confirms durable knowledge:

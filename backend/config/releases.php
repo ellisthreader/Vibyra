@@ -68,6 +68,21 @@ return [
             'published_at' => env('VIBYRA_MACOS_ARM64_RELEASE_PUBLISHED_AT', ''),
             'expected_extension' => 'dmg',
             'require_complete_metadata' => true,
+            // The updater cannot install a .dmg. `tauri build` emits a signed
+            // `.app.tar.gz` beside it, and that is the only thing the installed
+            // app will accept — so it gets its own metadata rather than
+            // overwriting the download a human clicks.
+            'updater' => [
+                'version' => env('VIBYRA_MACOS_ARM64_UPDATE_VERSION', ''),
+                'path' => env('VIBYRA_MACOS_ARM64_UPDATE_PATH', ''),
+                'filename' => env('VIBYRA_MACOS_ARM64_UPDATE_FILENAME', ''),
+                'size_bytes' => (int) env('VIBYRA_MACOS_ARM64_UPDATE_SIZE', 0),
+                'sha256' => env('VIBYRA_MACOS_ARM64_UPDATE_SHA256', ''),
+                'signature' => env('VIBYRA_MACOS_ARM64_UPDATE_SIGNATURE', ''),
+                'notes' => env('VIBYRA_MACOS_ARM64_UPDATE_NOTES', ''),
+                'published_at' => env('VIBYRA_MACOS_ARM64_UPDATE_PUBLISHED_AT', ''),
+                'expected_extension' => 'gz',
+            ],
         ],
         'macos-x64' => [
             'label' => 'Vibyra for macOS (Intel)',
@@ -86,6 +101,21 @@ return [
             'published_at' => env('VIBYRA_MACOS_X64_RELEASE_PUBLISHED_AT', ''),
             'expected_extension' => 'dmg',
             'require_complete_metadata' => true,
+            // The updater cannot install a .dmg. `tauri build` emits a signed
+            // `.app.tar.gz` beside it, and that is the only thing the installed
+            // app will accept — so it gets its own metadata rather than
+            // overwriting the download a human clicks.
+            'updater' => [
+                'version' => env('VIBYRA_MACOS_X64_UPDATE_VERSION', ''),
+                'path' => env('VIBYRA_MACOS_X64_UPDATE_PATH', ''),
+                'filename' => env('VIBYRA_MACOS_X64_UPDATE_FILENAME', ''),
+                'size_bytes' => (int) env('VIBYRA_MACOS_X64_UPDATE_SIZE', 0),
+                'sha256' => env('VIBYRA_MACOS_X64_UPDATE_SHA256', ''),
+                'signature' => env('VIBYRA_MACOS_X64_UPDATE_SIGNATURE', ''),
+                'notes' => env('VIBYRA_MACOS_X64_UPDATE_NOTES', ''),
+                'published_at' => env('VIBYRA_MACOS_X64_UPDATE_PUBLISHED_AT', ''),
+                'expected_extension' => 'gz',
+            ],
         ],
     ],
 ];

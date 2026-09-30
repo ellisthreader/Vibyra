@@ -20,6 +20,7 @@ export const DEFAULT_CATEGORIES: Record<NotificationCategory, NotificationCatego
   aiSpend: { channel: "system", cue: "alert" },
   preview: { channel: "app", cue: "none" },
   models: { channel: "app", cue: "none" },
+  appUpdate: { channel: "system", cue: "chime" },
   performance: { channel: "app", cue: "none" },
   system: { channel: "app", cue: "fail" },
 };

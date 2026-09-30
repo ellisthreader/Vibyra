@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232" fill="none">
+  <defs>
+    <linearGradient id="ground" x1="370" y1="0" x2="370" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#141722"/>
+      <stop offset="1" stop-color="#101219"/>
+    </linearGradient>
+    <radialGradient id="air" cx="0" cy="0" r="1" gradientTransform="translate(366 108) scale(278 143)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5b7cfa" stop-opacity=".15"/>
+      <stop offset=".6" stop-color="#5b7cfa" stop-opacity=".045"/>
+      <stop offset="1" stop-color="#5b7cfa" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rear" x1="0" y1="0" x2="140" y2="125" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#29334d"/>
+      <stop offset="1" stop-color="#171c29"/>
+    </linearGradient>
+    <linearGradient id="face" x1="292" y1="65" x2="438" y2="186" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#303d60"/>
+      <stop offset=".48" stop-color="#252f48"/>
+      <stop offset="1" stop-color="#1d2130"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="280" y1="70" x2="416" y2="193" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7490ff" stop-opacity=".36"/>
+      <stop offset=".5" stop-color="#7490ff" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#7490ff" stop-opacity=".025"/>
+    </linearGradient>
+    <linearGradient id="light" x1="307" y1="0" x2="411" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7490ff" stop-opacity=".64"/>
+      <stop offset="1" stop-color="#5b7cfa" stop-opacity=".07"/>
+    </linearGradient>
+    <radialGradient id="pool" cx="0" cy="0" r="1" gradientTransform="translate(368 190) scale(164 25)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5b7cfa" stop-opacity=".13"/>
+      <stop offset="1" stop-color="#5b7cfa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0" cy="0" r="1" gradientTransform="translate(449 75) scale(44)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d4b18a" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#d4b18a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fade" x1="0" y1="179" x2="0" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#101219" stop-opacity="0"/>
+      <stop offset="1" stop-color="#101219"/>
+    </linearGradient>
+  </defs>
+
+  <path fill="url(#ground)" d="M0 0h740v232H0z"/>
+  <path fill="url(#air)" d="M0 0h740v232H0z"/>
+
+  <!-- Broad, quiet layers of the workshop. -->
+  <path d="M0 161C115 151 190 169 275 159s126-21 227-9 170 4 238-5v87H0Z" fill="#1d2130" opacity=".24"/>
+  <path d="M0 184C138 164 187 187 322 177s233-11 418 9" stroke="#7490ff" stroke-opacity=".045"/>
+  <ellipse cx="368" cy="190" rx="164" ry="25" fill="url(#pool)"/>
+
+  <g transform="translate(165 86) rotate(-7)" opacity=".39">
+    <rect x="4" y="7" width="129" height="85" rx="10" fill="#101219"/>
+    <rect width="129" height="85" rx="10" fill="url(#rear)" stroke="#7490ff" stroke-opacity=".13"/>
+    <path d="M1 20h127" stroke="#7490ff" stroke-opacity=".09"/>
+    <rect x="13" y="10" width="20" height="3" rx="1.5" fill="#7490ff" opacity=".23"/>
+    <rect x="14" y="34" width="39" height="5" rx="2.5" fill="#7490ff" opacity=".24"/>
+    <rect x="14" y="47" width="83" height="4" rx="2" fill="#7490ff" opacity=".09"/>
+    <rect x="14" y="59" width="63" height="4" rx="2" fill="#7490ff" opacity=".07"/>
+  </g>
+
+  <g transform="translate(411 52) rotate(6)" opacity=".6">
+    <rect x="4" y="7" width="137" height="101" rx="11" fill="#101219" opacity=".7"/>
+    <rect width="137" height="101" rx="11" fill="url(#rear)" stroke="#7490ff" stroke-opacity=".17"/>
+    <path d="M1 21h135" stroke="#7490ff" stroke-opacity=".1"/>
+    <rect x="14" y="10" width="24" height="3" rx="1.5" fill="#7490ff" opacity=".21"/>
+    <rect x="16" y="36" width="46" height="6" rx="3" fill="#7490ff" opacity=".28"/>
+    <rect x="16" y="52" width="99" height="5" rx="2.5" fill="#7490ff" opacity=".09"/>
+    <rect x="16" y="67" width="76" height="5" rx="2.5" fill="#7490ff" opacity=".12"/>
+    <rect x="16" y="82" width="26" height="4" rx="2" fill="#d4b18a" opacity=".32"/>
+  </g>
+
+  <g transform="translate(257 34) rotate(-3)" opacity=".34">
+    <rect width="123" height="78" rx="9" fill="url(#rear)" stroke="#7490ff" stroke-opacity=".16"/>
+    <rect x="13" y="12" width="18" height="3" rx="1.5" fill="#7490ff" opacity=".3"/>
+    <rect x="13" y="31" width="61" height="4" rx="2" fill="#7490ff" opacity=".12"/>
+  </g>
+
+  <!-- The nearest machine holds a little more light. -->
+  <g transform="rotate(-2 363 128)">
+    <rect x="285" y="76" width="174" height="123" rx="13" fill="#101219" opacity=".55"/>
+    <rect x="279" y="67" width="174" height="123" rx="13" fill="url(#face)" stroke="url(#rim)"/>
+    <path d="M292 67.5h148" stroke="#7490ff" stroke-opacity=".17" stroke-linecap="round"/>
+    <path d="M280 91h172" stroke="#101219" stroke-opacity=".35"/>
+    <rect x="293" y="78" width="27" height="3" rx="1.5" fill="#7490ff" opacity=".28"/>
+    <circle cx="437" cy="79.5" r="2" fill="#b6b5be" opacity=".38"/>
+    <rect x="293" y="104" width="146" height="71" rx="7" fill="#141722" opacity=".41"/>
+    <rect x="307" y="117" width="66" height="6" rx="3" fill="url(#light)"/>
+    <rect x="307" y="133" width="104" height="5" rx="2.5" fill="url(#light)" opacity=".37"/>
+    <rect x="307" y="148" width="79" height="5" rx="2.5" fill="url(#light)" opacity=".22"/>
+    <rect x="401" y="148" width="12" height="5" rx="2.5" fill="#d4b18a" opacity=".48"/>
+    <path d="M302 182h128" stroke="#7490ff" stroke-opacity=".055" stroke-linecap="round"/>
+  </g>
+
+  <!-- Loose traces of light, suspended between the layers. -->
+  <circle cx="449" cy="75" r="44" fill="url(#warm)"/>
+  <path d="M198 60c20-14 37-19 55-21M479 173c24 0 42-5 57-13" stroke="#7490ff" stroke-opacity=".12" stroke-linecap="round"/>
+  <path d="M336 24c20-2 41 0 57 4" stroke="#7490ff" stroke-opacity=".075" stroke-linecap="round"/>
+  <circle cx="225" cy="53" r="2" fill="#7490ff" opacity=".38"/>
+  <circle cx="449" cy="40" r="1.8" fill="#d4b18a" opacity=".51"/>
+  <circle cx="495" cy="174" r="2" fill="#7490ff" opacity=".3"/>
+  <circle cx="564" cy="118" r="1.3" fill="#7490ff" opacity=".2"/>
+  <circle cx="145" cy="134" r="1.2" fill="#7490ff" opacity=".18"/>
+  <circle cx="388" cy="42" r="1" fill="#7490ff" opacity=".25"/>
+  <path fill="url(#fade)" d="M0 179h740v53H0z"/>
+</svg>

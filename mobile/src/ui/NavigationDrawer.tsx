@@ -1,87 +1,115 @@
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FocusDrawer } from './FocusDrawer';
+import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Modal, Platform, Pressable, StatusBar, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
-import { BrandMark, Icon, IconButton } from './primitives';
-import type { Destination, WorkspaceModel } from './types';
+import { ProjectActionsSheet } from './newProject/ProjectActionsSheet';
+import type { Destination, Project, WorkspaceModel } from './types';
 import { useReducedMotion } from './useReducedMotion';
 
-export function NavigationDrawer({ visible, destination, workspace, onClose, onNavigate, onNew }: {
-  visible: boolean; destination: Destination; workspace: WorkspaceModel;
+/** Native edge-to-edge presentation for the workspace tree (or Agents roster).
+ * Disclosures live in FocusDrawer; closeThen preserves iOS sheet handoff.
+ */
+export function NavigationDrawer({ visible, workspace, project, currentProjectId, onClose, onNavigate, onNew, onSettings, onReport,
+  onNewTerminal, onNewProject, onEnterProject, chats, content }: {
+  content?: (closeThen: (action: () => void) => void) => ReactNode;
+  /** The phone's chats as rows: those in a project, or with none named, every one that matches a search. */
+  chats?: (query: string, projectId?: string) => ReactNode; visible: boolean; destination: Destination; workspace: WorkspaceModel;
+  /** The folder you are in, which turns the rail into that folder's own column. Ideas has no face: it is the home. */
+  project?: Project | null;
+  /** The project open on the work surface, marked on the home face even from another page. */
+  currentProjectId?: string | null;
   onClose: () => void; onNavigate: (destination: Destination) => void; onNew: () => void;
+  /** A project row on the home face: the screen enters it, and this rail becomes its face. */
+  onEnterProject?: (projectId: string) => void;
+  /** The home face's pinned action. A computer builds the project, so without one this opens the way to add one. */
+  onNewProject?: () => void;
+  /** Back out of the project face: the rail returns to the projects, the screen to Ideas. */
+  onLeaveProject?: () => void;
+  /** The folder face's pinned action: a named terminal in that folder. */
+  onNewTerminal?: (projectId: string) => void;
+  /** Opens the Settings sheet. It is drawn in the app's own tree, so it rises as this rail closes. */
+  onSettings?: () => void;
+  onReport?: () => void;
+  /** Opens Vibyra tokens, from the balance pill beside the avatar. The same sheet, one page in. */
+  onBalance?: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'All' | 'Chats' | 'Terminals'>('All');
+  const [mounted, setMounted] = useState(visible);
+  const [optionsFor, setOptionsFor] = useState<Project | null>(null);
+  const afterDismiss = useRef<(() => void) | null>(null);
+  const finishDismiss = () => {
+    const action = afterDismiss.current;
+    afterDismiss.current = null;
+    action?.();
+  };
+  // iOS cannot present a sibling sheet while this native modal is still closing.
+  const closeThen = (action: () => void) => {
+    if (afterDismiss.current || !visible) return;
+    afterDismiss.current = action;
+    onClose();
+  };
+  const panelWidth = Math.min(width - 52, 344);
+  const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  useEffect(() => {
+    if (visible) setMounted(true);
+    const motion = Animated.timing(progress, { toValue: visible ? 1 : 0,
+      duration: reducedMotion ? 0 : visible ? 260 : 180, useNativeDriver: Platform.OS !== 'web',
+      easing: visible ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic) });
+    motion.start(({ finished }) => { if (finished && !visible) setMounted(false); });
+    return () => motion.stop();
+  }, [visible, reducedMotion, progress]);
+  useEffect(() => { if (visible) { afterDismiss.current = null; setOptionsFor(null); } }, [visible]);
+  useEffect(() => {
+    // Android/web do not provide the native iOS dismissal acknowledgement.
+    if (!mounted && !visible && Platform.OS !== 'ios') finishDismiss();
+  }, [mounted, visible]);
   const navigate = (to: Destination) => { onNavigate(to); onClose(); };
-  const sessions = workspace.sessions.filter(session =>
-    (filter === 'All' || (filter === 'Terminals' ? session.kind === 'shell' : session.kind !== 'shell')) &&
-    `${session.title} ${workspace.projects.find(project => project.id === session.projectId)?.name ?? ''}`.toLowerCase().includes(query.toLowerCase()));
-  return <Modal visible={visible} transparent animationType={reducedMotion ? 'none' : 'fade'} onRequestClose={onClose}>
-    <View style={[s.overlay, { backgroundColor: colors.scrim }]}>
+  const hidden = !visible;
+  const connected = workspace.status === 'connected';
+  const host = workspace.demo ? 'Sample workspace' : workspace.host?.name ?? 'your computer';
+  // Renaming or removing a folder here needs the computer, and a Desktop needs its typing switch on.
+  const manageReason = workspace.actions.renameProject === undefined || workspace.actions.forgetProject === undefined
+    ? `Update Vibyra on ${host} to rename or remove projects from your phone.`
+    : !connected ? `${host} is away. Reconnect to rename or remove projects.`
+      : workspace.viewOnly !== true || workspace.canManage === true ? null
+        : `Turn on typing from your phone in Vibyra on ${host} to rename or remove projects.`;
+  return <Modal visible={mounted} transparent presentationStyle="overFullScreen" animationType="none"
+    statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}
+    onDismiss={() => { if (!visible) finishDismiss(); }}>
+    {mounted && <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />}
+    <View style={s.overlay}>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim, opacity: progress }]} />
       <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close menu" onPress={onClose} />
-      <SafeAreaView accessibilityViewIsModal style={[s.panel, { width: Math.min(width - 35, 360), backgroundColor: colors.rail }]}>
-        <View style={s.header}><BrandMark size={28} /><Text style={[s.brand, { color: colors.text }]}>Vibyra</Text>
-          <IconButton icon="close" label="Close navigation menu" onPress={onClose} /></View>
-        <View style={[s.search, { backgroundColor: colors.elevated }]}><Icon name="search-outline" size={19} color={colors.muted} />
-          <TextInput accessibilityLabel="Search chats" placeholder="Search chats" placeholderTextColor={colors.muted}
-            value={query} onChangeText={setQuery} style={[s.searchInput, { color: colors.text }]} />
-        </View>
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          <Pressable accessibilityRole="button" accessibilityLabel="New chat" onPress={() => { onNew(); onClose(); }} style={s.navRow}>
-            <Icon name="create-outline" size={21} /><Text style={[s.navText, { color: colors.text }]}>New chat</Text>
-            <Icon name="add" size={18} color={colors.muted} /></Pressable>
-          {(['projects', 'computers'] as const).map(item => <Pressable key={item} accessibilityRole="button"
-            accessibilityLabel={item === 'projects' ? 'Projects' : 'Computers'}
-            accessibilityState={{ selected: destination === item }} onPress={() => navigate(item)}
-            style={[s.navRow, { backgroundColor: destination === item ? colors.elevated : 'transparent' }]}>
-            <Icon name={item === 'projects' ? 'folder-outline' : 'desktop-outline'} size={21} />
-            <Text style={[s.navText, { color: colors.text }]}>{item === 'projects' ? 'Projects' : 'Computers'}</Text>
-            {item === 'computers' && workspace.status === 'connected' && <View style={[s.dot, { backgroundColor: colors.success }]} />}
-          </Pressable>)}
-          <View style={s.filters}>{(['All', 'Chats', 'Terminals'] as const).map(item =>
-            <Pressable key={item} accessibilityRole="tab" aria-selected={filter === item} accessibilityState={{ selected: filter === item }}
-              onPress={() => setFilter(item)} style={[s.filter, { backgroundColor: filter === item ? colors.elevated : 'transparent' }]}>
-              <Text style={[s.filterText, { color: filter === item ? colors.text : colors.muted }]}>{item}</Text>
-            </Pressable>)}</View>
-          {sessions.map(session => <Pressable key={session.id} accessibilityRole="button"
-            accessibilityLabel={`${session.title}, ${session.kind === 'shell' ? 'Terminal' : session.kind === 'claude' ? 'Claude' : 'Codex'}`}
-            accessibilityState={{ selected: session.id === workspace.selectedSessionId }}
-            onPress={() => { workspace.actions.selectSession(session.id); navigate('work'); }}
-            style={[s.recent, { backgroundColor: session.id === workspace.selectedSessionId ? colors.elevated : 'transparent' }]}>
-            <Icon name={session.kind === 'shell' ? 'terminal-outline' : 'chatbubble-outline'} size={18} color={colors.muted} />
-            <View style={s.recentBody}><Text numberOfLines={1} style={[s.recentTitle, { color: colors.text }]}>{session.title}</Text>
-              <Text numberOfLines={1} style={[s.project, { color: colors.muted }]}>{workspace.projects.find(project => project.id === session.projectId)?.name}</Text></View>
-            {session.status === 'running' && <View style={[s.dot, { backgroundColor: colors.success }]} />}
-          </Pressable>)}
-          {!sessions.length && <Text style={[s.empty, { color: colors.muted }]}>{query ? 'No matching chats' : filter === 'Terminals' ? 'No terminals yet' : 'Your chats will appear here'}</Text>}
-        </ScrollView>
-        <Pressable accessibilityRole="button" accessibilityLabel="Settings" onPress={() => navigate('settings')}
-          style={[s.footer, { borderTopColor: colors.border }]}>
-          <View style={[s.avatar, { backgroundColor: colors.elevated }]}><Icon name="settings-outline" size={21} /></View>
-          <View style={s.footerText}><Text style={[s.footerTitle, { color: colors.text }]}>Settings</Text>
-            <Text numberOfLines={1} style={[s.project, { color: colors.muted }]}>{workspace.demo ? 'Sample workspace' : workspace.host?.name ?? 'Connection & appearance'}</Text></View>
-          <Icon name="chevron-forward" size={16} color={colors.muted} />
-        </Pressable>
-      </SafeAreaView>
+      <Animated.View testID="navigation-drawer" accessibilityViewIsModal aria-hidden={hidden} accessibilityElementsHidden={hidden}
+        importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'} pointerEvents={hidden ? 'none' : 'auto'}
+        style={[s.panel, { width: panelWidth, backgroundColor: colors.rail, borderRightColor: colors.border,
+          paddingLeft: insets.left, paddingTop: insets.top,
+          shadowOpacity: dark ? 0.4 : 0.12,
+          transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [-panelWidth - 30, 0] }) }] }]}>
+        {content ? content(closeThen) : <FocusDrawer workspace={workspace} project={project} currentProjectId={currentProjectId} bottom={Math.max(insets.bottom, 14)}
+          onClose={onClose} onEnter={id => onEnterProject?.(id)} onOptions={setOptionsFor} onNavigate={navigate}
+          onNew={onNew} onTerminal={id => onNewTerminal?.(id)} onProject={() => onNewProject?.()} onSettings={() => onSettings?.()}
+          onReport={onReport}
+          chats={chats} closeThen={closeThen} />}
+      </Animated.View>
+      <ProjectActionsSheet project={optionsFor} host={host} reason={manageReason} onClose={() => setOptionsFor(null)}
+        onRename={name => workspace.actions.renameProject!(optionsFor!.id, name)}
+        onForget={() => workspace.actions.forgetProject!(optionsFor!.id)} />
     </View>
   </Modal>;
 }
 const s = StyleSheet.create({
-  overlay: { flex: 1 }, panel: { flex: 1, borderTopRightRadius: 24, borderBottomRightRadius: 24 },
-  header: { paddingLeft: 22, paddingRight: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  brand: { fontSize: 22, fontWeight: '600', letterSpacing: -0.7, flex: 1 },
-  search: { marginHorizontal: 16, marginTop: 6, marginBottom: 12, borderRadius: 15, paddingHorizontal: 13, flexDirection: 'row', gap: 9, alignItems: 'center' },
-  searchInput: { flex: 1, minHeight: 44, fontSize: 15, outlineWidth: 0 }, content: { paddingHorizontal: 12, paddingBottom: 20 },
-  navRow: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 14, borderRadius: 13 },
-  navText: { fontSize: 15, fontWeight: '500', flex: 1 }, filters: { flexDirection: 'row', gap: 5, paddingTop: 24, paddingBottom: 12, paddingHorizontal: 6 },
-  filter: { minHeight: 44, paddingHorizontal: 13, borderRadius: 22, justifyContent: 'center' }, filterText: { fontSize: 12, fontWeight: '500' },
-  recent: { minHeight: 65, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14 },
-  recentBody: { flex: 1, gap: 6 }, recentTitle: { fontSize: 14, fontWeight: '500' }, project: { fontSize: 11 },
-  dot: { width: 6, height: 6, borderRadius: 3 }, empty: { fontSize: 13, lineHeight: 20, padding: 18 },
-  footer: { borderTopWidth: StyleSheet.hairlineWidth, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  footerText: { flex: 1, gap: 5 }, footerTitle: { fontSize: 14, fontWeight: '500' },
+  overlay: { flex: 1 },
+  // The rail paints to both screen edges; only its content receives safe-area padding.
+  panel: { position: 'absolute', top: 0, bottom: 0, left: 0, borderRightWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000', shadowRadius: 22, shadowOffset: { width: 8, height: 0 }, elevation: 20 },
+  body: { flex: 1, minHeight: 0 },
+  list: { flex: 1 },
+  // The actions float over this list, so the last row still scrolls clear of them.
+  listContent: { paddingBottom: 92 },
 });

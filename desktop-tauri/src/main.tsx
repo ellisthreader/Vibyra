@@ -14,14 +14,16 @@ import "./styles/chrome.part-02.css";
 import "./styles/chrome-account.css";
 import "./styles/notifications-bell.css";
 import "./styles/auth.css";
-import "./styles/auth-backdrop.css";
 import "./styles/auth.part-02.css";
 import "./styles/auth-email.css";
 import "./styles/auth-email.part-02.css";
 import "./styles/first-welcome.css";
+import "./styles/first-welcome-art.css";
+import "./styles/first-welcome-demo.css";
 import "./styles/first-welcome-motion.css";
 import "./styles/strip.css";
 import "./styles/home.css";
+import "./styles/new-models-notice.css";
 import "./styles/home.part-02.css";
 import "./styles/home.part-03.css";
 import "./styles/rail.css";
@@ -31,18 +33,24 @@ import "./styles/launch-settings.css";
 import "./styles/launch-controls.css";
 import "./styles/launch-model-picker.css";
 import "./styles/launch-approval.css";
+import "./styles/phone-connection.css";
 import "./styles/workspace.css";
 import "./styles/workspace.part-02.css";
 import "./styles/workspace.part-03.css";
 import "./styles/workspace.part-04.css";
 import "./styles/update-banner.css";
+import "./styles/update-chip.css";
+import "./styles/adaptive-terminals.css";
+import "./styles/project-focus.css";
+import "./styles/project-picker.css";
+import "./styles/teammates.css";
+import "./styles/workspace-font.css";
 import "./styles/notifications-toast.css";
 import "./styles/notifications-toast.part-02.css";
 import "./styles/notifications-center.css";
 import "./styles/notifications-center.part-02.css";
 import "./styles/project-modes.css";
 import "./styles/preview.css";
-import "./styles/preview-picker.css";
 import "./styles/preview-device.css";
 import "./styles/preview-overlay.css";
 import "./styles/companion.css";
@@ -56,19 +64,23 @@ import "./styles/companion-memory-import.css";
 import "./styles/companion-memory-workbench.css";
 import "./styles/companion-memory-document.css";
 import "./styles/companion-files.css";
+import "./styles/companion-chat-actions.css";
+import "./styles/companion-voice.css";
+import "./styles/companion-voice.part-02.css";
+import "./styles/companion-voice.part-03.css";
 import "./styles/palette.css";
 import "./styles/modals.css";
+import "./styles/whats-new.css";
 import "./styles/modals.part-02.css";
 import "./styles/modals.part-03.css";
 import "./styles/modals.part-04.css";
 import "./styles/terminal-suspended.css";
-import "./styles/settings-ai.css";
-import "./styles/settings-ai.part-02.css";
+import "./styles/terminal-density.css";
+import "./styles/settings-credits-meter.css";
 import "./styles/settings-integrations.css";
 import "./styles/settings-account-connect.css";
 import "./styles/settings-integration-accounts.css";
 import "./styles/settings-terminal-integrations.css";
-import "./styles/settings-notifications.css";
 import "./styles/report.css";
 import "./styles/report.part-02.css";
 import "./styles/report.part-03.css";
@@ -77,16 +89,49 @@ import "./styles/screenshot-editor.css";
 import "./styles/screenshot-controls.css";
 import "./styles/screenshot-tray.css";
 import "./styles/settings-graphics.css";
+import "./styles/settings-hint.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
+import "./styles/settings-account.css";
+import "./styles/analytics-consent.css";
+import "./styles/settings-account.part-02.css";
+import "./styles/settings-shell.css";
+import "./styles/settings-controls.css";
+import "./styles/settings-controls.part-02.css";
+import "./styles/settings-status.css";
+import "./styles/settings-find.css";
+import "./styles/settings-pages.css";
+import "./styles/settings-pages.part-02.css";
+import "./styles/settings-pages.part-03.css";
+import "./styles/settings-pages.part-04.css";
+import "./styles/settings-notifications.css";
+import "./styles/settings-notif-volume.css";
+import "./styles/settings-notif-cue.css";
+
+import "./styles/interface-layout.css";
+import "./styles/start-motion.css";
+import "./styles/auth-pocket.css";
+import "./styles/auth-pocket-phone.css";
+import "./styles/auth-pocket-layout.css";
+import "./styles/auth-pocket-showcase.css";
+import "./styles/project-tools.css";
+
+// Last: Performance mode overrides motion, blur and elevation across every
+// sheet above, so it has to win the specificity ties.
+import "./styles/performance.css";
 
 import App from "./App";
 import { installAppDropGuard } from "./lib/terminalDrop";
-import { initRendererPolicy } from "./lib/xtermRenderer";
+import { terminalFontReady } from "./lib/terminalFont";
+import { initRendererPolicy } from "./lib/webglTrust";
+import { desktopPlatform } from "./lib/platform";
 
-// Resolves long before the first terminal can mount (post sign-in).
+document.documentElement.dataset.platform = desktopPlatform;
+
+// Both resolve long before the first terminal can mount (post sign-in), and
+// neither module imports xterm, so the sign-in screen does not load it.
 void initRendererPolicy();
+void terminalFontReady();
 installAppDropGuard();
 
 createRoot(document.getElementById("root")!).render(<App />);
-

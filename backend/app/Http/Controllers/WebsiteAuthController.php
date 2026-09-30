@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Auth\TwoFactor;
+use App\Services\Auth\TwoFactorChallenge;
 use App\Services\ContentModeration;
 use App\Services\Referrals\ReferralService;
 use App\Services\WebsiteAccountPayload;
@@ -77,6 +79,32 @@ class WebsiteAuthController extends Controller
         if (! $user || ($user->provider ?: 'email') !== 'email'
             || ! Hash::check($password, $user->password)) {
             return response()->json(['ok' => false, 'error' => 'Email or password is incorrect.'], 401);
+        }
+
+        /*
+         * The website is the same account as the phone, so it has to ask the same
+         * second question. Without this, a password alone would still open a web
+         * session and the second factor would be a lock on one of two doors.
+         */
+        if (app(TwoFactor::class)->enabled($user)) {
+            return response()->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
+        }
+
+        $this->establishSession($request, $user);
+
+        return response()->json(['ok' => true, 'user' => $this->payload->for($user)]);
+    }
+
+    /** The code that finishes a login the password only got halfway through. */
+    public function loginTwoFactor(Request $request): JsonResponse
+    {
+        $user = app(TwoFactorChallenge::class)->claim(
+            trim((string) $request->input('challengeId', '')),
+            (string) $request->input('code', ''),
+        );
+        if (! $user) {
+            return response()->json(['ok' => false,
+                'error' => 'That code didn’t match. Try the current code from your authenticator app.'], 401);
         }
 
         $this->establishSession($request, $user);

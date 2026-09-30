@@ -24,3 +24,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Atomic hidden-prompt secret staging; never stage credentials.
+.jev-secret-*

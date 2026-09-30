@@ -5,7 +5,7 @@
     "buildCommand": "cd backend && composer install --no-dev --optimize-autoloader --no-interaction && php artisan config:clear && php artisan route:clear"
   },
   "deploy": {
-    "startCommand": "cd backend && mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs && php artisan config:clear && php artisan route:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT",
+    "startCommand": "cd backend && bash scripts/start-production.sh",
     "healthcheckPath": "/up",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

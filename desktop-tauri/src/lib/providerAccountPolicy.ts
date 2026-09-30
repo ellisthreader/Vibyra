@@ -86,3 +86,10 @@ export function providerAccountRuntimeUpdate(
 export function isAccountRuntime(id: string): boolean {
   return ACCOUNT_RUNTIME_SET.has(id);
 }
+
+/** Keep the account shown by Launch setup identical to the one sent to native. */
+export function launchAccountId(accounts: ProviderAccount[], project?: string, preferred?: string): string | null {
+  return accounts.find(account => account.accountId === project)?.accountId
+    ?? accounts.find(account => account.accountId === preferred)?.accountId
+    ?? accounts[0]?.accountId ?? project ?? preferred ?? null;
+}

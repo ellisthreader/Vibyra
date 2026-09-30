@@ -1,0 +1,75 @@
+/* The Run confirmation sheet. Colocated rather than added to `src/styles/`
+   because the modal is lazy-loaded: its rules ride the same chunk instead of
+   widening the boot stylesheet for a dialog most sessions never open. The
+   scrim, panel and buttons come from `modals.css` and `base.css`; only what is
+   specific to reading a command before running it lives here. */
+
+.run-confirm {
+  width: min(520px, 92vw);
+}
+
+.run-confirm__header {
+  padding: 18px 20px 0;
+}
+
+.run-confirm__header h2 {
+  font-size: 16px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+}
+
+.run-confirm__where {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.run-confirm__body {
+  padding: 14px 20px 4px;
+  overflow: auto;
+}
+
+/* Wrapped and selectable: every line has to be readable without scrolling
+   sideways, and copyable out of the sheet. */
+.run-confirm__command {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--workspace);
+  font: 12.5px/1.7 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* Short sentences, not chips: this is the one place `--danger` earns text. */
+.run-confirm__reasons {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.run-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px 18px;
+}
+
+/* Scoped: `.btn--danger` has no global rule, and giving it one here would
+   restyle the four unrelated call sites that already use the class. */
+.run-confirm__actions .btn--danger {
+  border-color: var(--danger-soft);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.run-confirm__actions .btn--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}

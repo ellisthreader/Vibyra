@@ -16,6 +16,9 @@ test('the repository exposes only the maintained mobile application', () => {
     assert.match(scripts[command], /^npm --prefix mobile run /, command);
   }
   assert.equal(json('mobile/package.json').main, 'index.ts');
+  assert.match(json('mobile/package.json').scripts.phone, /--dev-client/,
+    'The phone launcher must open the native app for Apple sign-in');
+  assert.match(json('mobile/package.json').scripts['phone:go'], /--go/);
   assert.match(readFileSync(resolve(root, 'mobile/src/onboarding/WelcomeStep.tsx'), 'utf8'), /your pocket/);
   assert.equal(existsSync(resolve(root, 'mobile/src/onboarding/WelcomeScreen.tsx')), false);
 });

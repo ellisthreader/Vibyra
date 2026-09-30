@@ -45,6 +45,8 @@ fn environment(report: &Report) -> String {
     out.push_str(&row("Model", &optional(context.model.as_ref())));
     out.push_str(&row("Pane", &optional(context.pane.as_ref())));
     out.push_str(&row("Reporter", &optional(context.reporter.as_ref())));
+    out.push_str(&row("IP address", &optional(context.ip.as_ref())));
+    out.push_str(&row("Hardware", &optional(context.hardware.as_ref())));
     out.push_str(&row("Contact", &optional(report.contact.as_ref())));
     out
 }
@@ -56,6 +58,10 @@ pub(crate) fn context_text(report: &Report, id: &str, terminal_tail: Option<&str
     out.push_str(&row("Where", &optional(report.area.as_ref())));
     out.push_str(&row("Summary", report.summary.trim()));
     out.push_str(&section("What happened", &report.details));
+    out.push_str(&section(
+        "Specific error",
+        report.error.as_deref().unwrap_or_default(),
+    ));
     out.push_str(&section(
         "Steps to reproduce",
         report.steps.as_deref().unwrap_or_default(),

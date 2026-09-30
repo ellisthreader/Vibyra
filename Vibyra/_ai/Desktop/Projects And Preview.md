@@ -43,3 +43,9 @@ work off the invoke thread. Common nested roots include `app`, `mobile`,
 `apps/mobile`, `packages/app`, and `packages/mobile`. The renderer catalog has
 47 calibrated presets, and live checks cover its laptop centering and the
 960x600 workspace layout without approving a project command.
+
+On macOS, accepted sockets inherit the static listener's nonblocking mode.
+`static_connection::serve` must explicitly switch each worker socket to blocking
+mode before setting its bounded timeouts; otherwise split request headers fail
+with WouldBlock and the connection resets. Keep the fragmented-header test in
+`preview/tests_static.rs` in the native Mac validation gate.

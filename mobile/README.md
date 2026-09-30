@@ -51,6 +51,12 @@ Host's exclusive input lease. Disconnecting the phone leaves the process running
 stopping a session is a separate action. An uncertain send is never retried
 automatically. Reconnect retrieves a bounded snapshot of current output.
 
+The connection sheet starts with installation steps, then asks before local
+network discovery. Run the LAN Host with `--discover` to make it discoverable.
+Native discovery requires a development build; Expo Go and web retain code
+pairing. See [computer connection](../docs/mobile-computer-connection.md) for
+the permission boundary, Host launch command, artwork and validation.
+
 ## Checks
 
 ```bash

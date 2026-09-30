@@ -6,6 +6,14 @@ boundaries.
 
 ## Contracts
 
+The current presentation path is terminal bytes: `terminalBus.ts` routes
+output/resync/exit events and `terminalEvents.ts` writes them into xterm owned
+by `terminalRegistry.ts`. These events do not themselves encode agent questions
+or command approvals. For structured conversation UI research, the official
+Codex app-server reference (`https://learn.chatgpt.com/docs/app-server`) documents
+item progress, approval requests, and user-input requests; this is a separate
+integration contract, not an existing Vibyra feature.
+
 The Rust/Tauri empty launcher persists its model, count, and effort per project
 in `localStorage["vibyra.launch-settings.v2"]`. `modelEffort.ts` owns the
 model-specific direct-native capability table, `LaunchTerminalCount.tsx` owns
@@ -90,3 +98,72 @@ Gemini fixture validation, provider-account policy, and model-runner tests.
   `components/rail/LaunchSettings.tsx`, and `LaunchModelPicker.tsx`. Validate
   with `tests/appStartup.test.mjs`, the Tauri test/typecheck/build gates, and a
   reopened live picker containing the installed GPT, Claude, or Gemini walls.
+
+## Native model catalog maintenance
+
+`nativeAccountModels.ts` owns exact personal-account CLI eligibility; artwork
+is presentation only. `mergeNativeCatalog.ts` adds the verified native roster
+to both live OpenRouter results and existing caches, retaining live metadata.
+Never replace native availability with OpenRouter availability. Current
+additions are GPT-6 Astra, GPT-5.3 Codex Spark, and Claude Fable 5.1; verify IDs
+against official provider docs/CLI metadata and update `modelEffort.ts` together.
+`tests/modelCatalog.test.mjs` covers live refresh, old/offline caches, absent
+artwork, exact launch IDs, efforts, and the integration-selection boundary.
+
+## Mac resume continuity (September 2026)
+
+See [[Mac Experience And Sessions]] before changing resume or saved-pane UI.
+Claude pins IDs; Mac Codex discovers the owning process's rollout UUID.
+Legacy chats use explicit pickers, never recency guesses. Resume preserves the
+account, output and actual safe worktree, starts the replacement before teardown,
+and exposes errors without destroying the saved pane. Exit tracking belongs to
+the terminal event bus even when xterm is detached. The `plan` skill records the
+Mac UI/recovery validation and release-branch comparison workflow.
+
+## Shared Codex Terminal socket (September 2026)
+
+Shared Codex conversations attach the stock CLI with `codex resume --remote
+unix:///tmp/vibyra-cli-…/rpc.sock <thread-id>`. The engine's
+`conversation/terminal_socket.rs` keeps the listener nonblocking but must make
+each accepted socket blocking while tungstenite completes the WebSocket HTTP
+upgrade; only the connected WebSocket switches to nonblocking live IO. Without
+that transition, Codex 0.156.1 can exit during `Resuming session…` with an
+`IO error: Broken pipe`, leaving the pane disconnected. The focused fragmented
+handshake test is in `terminal_socket_tests.rs`. Run the ignored Desktop test
+`native_codex_cli_shares_the_phone_conversation -- --ignored --nocapture`
+against an installed authenticated CLI to verify terminal input, phone input,
+reattachment and cold resume. It uses an isolated temporary project, never a
+live user journal.
+
+Shared Codex `shared_cli_write` must be a synchronous Tauri command, like
+ordinary `write_terminal`, so rapid keys reach its nonblocking PTY input queue
+in posted order. `ConversationCliView` disables input until `shared_cli_attach`
+finishes because the attach can briefly hold the sessions lock while it
+starts Codex. The Linux all-terminal typing delay diagnosed in 0.8.9 was a
+separate xterm WebGL paint issue; see [[Linux And Mac Parity]].
+
+## Pane grid density (September 2026)
+
+`gridLayout.ts` no longer returns a column count from a fixed ladder. It
+searches every column count against every font from the configured size down to
+10px and scores each by visible terminal characters, discounting width past 64
+columns, empty cells in the last row, panes a scrolling stage pushes off screen,
+and a shrunken font. Panes under ~14 text rows are discounted hardest, because
+that is the state the seventh pane used to force. One to six panes on a laptop
+stage still resolve to the old layout, full font and full chrome; past that the
+grid trades frame and font for lines.
+
+`paneChrome.ts` owns the three chrome budgets (comfortable/compact/dense) and is
+the single source for `terminal-density.css`, which spends the same pixels as
+CSS variables, and for `spawnGeometry.ts`, which predicts the xterm grid from
+them. All three must move together — `tests/desktopInvariants.test.mjs` fails if
+they drift. The grid stops shrinking rows at `minPaneHeight` (ten lines at the
+smallest font) and scrolls instead.
+
+The layout, not the settings, owns terminal font size: `applySettingsToAll`
+deliberately skips `fontSize` and `TerminalStage` reapplies it through
+`setTerminalFontSize`. `measuredCellSize()` reports the font it measured at, and
+`TerminalStage` caches the normalised base cell per font, or a measured cell
+taken at a reduced font would feed back into the next layout. `terminalInstance.ts`
+now owns building one xterm; `terminalRegistry.ts` is the map of them.
+Coverage: `tests/terminalGrid.test.mjs`.

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232">
+<defs>
+  <linearGradient id="night" x2="0" y2="1"><stop stop-color="#1d2130"/><stop offset="1" stop-color="#101219"/></linearGradient>
+  <linearGradient id="left" x2="1" y2="1"><stop stop-color="#303d60"/><stop offset="1" stop-color="#141722"/></linearGradient>
+  <linearGradient id="centre" x2="1" y2="1"><stop stop-color="#35456f"/><stop offset="1" stop-color="#171b29"/></linearGradient>
+  <radialGradient id="blue"><stop stop-color="#5b7cfa" stop-opacity=".23"/><stop offset="1" stop-color="#5b7cfa" stop-opacity="0"/></radialGradient>
+  <linearGradient id="fade" x2="0" y2="1"><stop stop-color="#101219" stop-opacity="0"/><stop offset="1" stop-color="#101219"/></linearGradient>
+</defs>
+<path fill="url(#night)" d="M0 0h740v232H0z"/>
+<ellipse cx="369" cy="102" rx="262" ry="149" fill="url(#blue)"/>
+<g transform="translate(138 66) rotate(-10 102 68)" opacity=".46">
+  <rect width="205" height="132" rx="16" fill="url(#left)" stroke="#7490ff" stroke-opacity=".22"/>
+  <path d="M23 37h84m-84 21h122m-122 21h76" stroke="#7490ff" stroke-opacity=".3" stroke-width="4" stroke-linecap="round"/>
+</g>
+<g transform="translate(434 58) rotate(9 74 64)" opacity=".45">
+  <rect width="158" height="129" rx="15" fill="url(#left)" stroke="#7490ff" stroke-opacity=".24"/>
+  <path d="M23 38h65m-65 21h102m-102 21h78" stroke="#7490ff" stroke-opacity=".3" stroke-width="4" stroke-linecap="round"/>
+</g>
+<g transform="translate(290 39)">
+  <rect width="166" height="137" rx="18" fill="url(#centre)" stroke="#7490ff" stroke-opacity=".45"/>
+  <path d="M31 36h69m-69 22h105m-105 22h85" stroke="#7490ff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round"/>
+  <path d="M48 106h71" stroke="#7490ff" stroke-opacity=".26" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="130" cy="108" r="5" fill="#d4b18a"/>
+</g>
+<g fill="#7490ff" opacity=".34"><circle cx="115" cy="99" r="2"/><circle cx="202" cy="34" r="1.5"/><circle cx="537" cy="38" r="2"/><circle cx="610" cy="125" r="1.5"/><circle cx="263" cy="147" r="1.5"/></g>
+<path d="M0 169h740v63H0z" fill="url(#fade)"/>
+</svg>

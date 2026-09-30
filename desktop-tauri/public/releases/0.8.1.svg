@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232" fill="none">
+  <defs>
+    <linearGradient id="ground" x1="370" y1="0" x2="370" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#141722"/><stop offset="1" stop-color="#101219"/></linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(376 102) scale(264 145)" gradientUnits="userSpaceOnUse"><stop stop-color="#5b7cfa" stop-opacity=".18"/><stop offset="1" stop-color="#5b7cfa" stop-opacity="0"/></radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="122" y2="142" gradientUnits="userSpaceOnUse"><stop stop-color="#303a58"/><stop offset="1" stop-color="#171b28"/></linearGradient>
+    <linearGradient id="fade" x1="370" y1="152" x2="370" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#101219" stop-opacity="0"/><stop offset="1" stop-color="#101219"/></linearGradient>
+  </defs>
+  <rect width="740" height="232" fill="url(#ground)"/>
+  <rect width="740" height="232" fill="url(#glow)"/>
+  <g opacity=".38" transform="translate(108 62) rotate(-7 86 72)">
+    <rect width="172" height="143" rx="11" fill="url(#panel)" stroke="#7490ff" stroke-opacity=".24"/>
+    <rect x="13" y="18" width="146" height="111" rx="5" fill="#111623"/>
+    <path d="M29 43h68M29 58h99M29 73h78M29 88h111" stroke="#7490ff" stroke-opacity=".33" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g opacity=".45" transform="translate(478 41) rotate(8 78 72)">
+    <rect width="157" height="145" rx="11" fill="url(#panel)" stroke="#7490ff" stroke-opacity=".23"/>
+    <rect x="13" y="18" width="131" height="113" rx="5" fill="#111623"/>
+    <path d="M30 48h68M30 63h93M30 78h59M30 93h76" stroke="#7490ff" stroke-opacity=".34" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(281 27)">
+    <rect width="198" height="173" rx="14" fill="#1d263c" stroke="#7490ff" stroke-opacity=".4"/>
+    <rect x="13" y="15" width="172" height="145" rx="7" fill="#111827"/>
+    <path d="M33 47h57M33 66h127M33 85h97M33 104h120M33 123h72" stroke="#7490ff" stroke-opacity=".54" stroke-width="4" stroke-linecap="round"/>
+    <rect x="106" y="118" width="3" height="12" rx="1.5" fill="#d4b18a"/>
+  </g>
+  <circle cx="221" cy="31" r="2" fill="#7490ff" opacity=".5"/>
+  <circle cx="540" cy="24" r="1.5" fill="#d4b18a" opacity=".55"/>
+  <circle cx="619" cy="132" r="1.5" fill="#7490ff" opacity=".4"/>
+  <circle cx="123" cy="164" r="1.5" fill="#7490ff" opacity=".36"/>
+  <rect y="151" width="740" height="81" fill="url(#fade)"/>
+</svg>

@@ -67,11 +67,16 @@ pub(crate) fn select_script<'a>(
     } else {
         &["dev", "web", "start", "serve", "preview"]
     };
-    order.iter().find_map(|key| {
-        scripts
-            .get_key_value(*key)
-            .map(|(key, value)| (key.as_str(), value.as_str()))
-    })
+    let candidates = || {
+        order.iter().filter_map(|key| {
+            scripts
+                .get_key_value(*key)
+                .map(|(key, value)| (key.as_str(), value.as_str()))
+        })
+    };
+    candidates()
+        .find(|(_, body)| safe_script(body) && matches_framework_script(framework, body))
+        .or_else(|| candidates().next())
 }
 
 pub(crate) fn safe_script(body: &str) -> bool {
@@ -128,8 +133,10 @@ pub(crate) fn package_manager(root: &Path) -> &'static str {
 pub(crate) fn manager_args(manager: &str, script: &str) -> Vec<String> {
     if manager == "yarn" {
         vec![script.into()]
-    } else {
+    } else if manager == "npm" {
         vec!["run".into(), script.into(), "--".into()]
+    } else {
+        vec!["run".into(), script.into()]
     }
 }
 

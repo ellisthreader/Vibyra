@@ -35,7 +35,12 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
     if shared.trusted(id) {
         return Ok(());
     }
-    if !shared.consume_invite(hello.invite.as_deref().unwrap_or("")) {
+    // A phone that found this Host over Bonjour has no code to present, so it
+    // may reach the approval queue without an invitation. Trust still comes
+    // only from the local Approve below; an invitation is required whenever
+    // discovery is off, and any supplied invitation must still be valid.
+    let nearby = shared.nearby && hello.invite.as_deref().unwrap_or("").is_empty();
+    if !nearby && !shared.consume_invite(hello.invite.as_deref().unwrap_or("")) {
         return Err("Pairing invitation invalid, used, or expired".into());
     }
     let (send, receive) = oneshot::channel();
@@ -51,14 +56,10 @@ pub async fn authenticate(shared: &Arc<Shared>, id: &str, bytes: &[u8]) -> Resul
         id: id.into(),
     };
     println!(
-        "\nPair request from {}\nDevice key: {}\n\
-         Trust allows this phone to start and control shells as your computer user.\n\
-         Shell commands can access files and programs beyond the configured project folders.\n\
-         This prototype grants access to all configured projects until locally revoked.\n\
-         Type: approve {} (or deny {})",
+        "{} request from {}. {} Approve or deny device {} locally.",
+        if nearby { "Nearby pairing" } else { "Pair" },
         clean_name(&hello.device_name),
-        id,
-        id,
+        shared.engine.pairing_notice(),
         id
     );
     let approved = tokio::time::timeout(Duration::from_secs(85), receive).await;

@@ -30,15 +30,15 @@ export function NotificationBell(props: NotificationBellProps) {
       <button
         ref={buttonRef}
         type="button"
-        className={`chip nbell__btn${unread > 0 ? " nbell__btn--unread" : ""}`}
+        className="icon-btn nbell__btn"
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
         title={label}
         onClick={() => onOpenChange(!open)}
       >
-        <BellIcon size={14} />
-        {unread > 0 && <span className="nbell__badge">{unread > 99 ? "99+" : unread}</span>}
+        <BellIcon size={17} />
+        {unread > 0 && <span className="nbell__badge" aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
       </button>
 
       {/* Politeness lives here rather than on the badge so a screen reader

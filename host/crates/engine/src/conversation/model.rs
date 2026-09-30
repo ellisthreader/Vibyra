@@ -1,0 +1,165 @@
+use super::runtime::Runtime;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use std::{collections::HashMap, sync::Arc};
+
+#[derive(Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Conversation {
+    pub generation: String,
+    pub thread_id: String,
+    pub cursor: u64,
+    pub turn_id: Option<String>,
+    #[serde(default)]
+    pub turn_started_at: Option<String>,
+    #[serde(default)]
+    pub active_submission: Option<String>,
+    pub turn_state: String,
+    pub process_state: String,
+    #[serde(default, skip_serializing)]
+    pub items: Vec<Value>,
+    #[serde(default, skip_serializing)]
+    pub events: Vec<Value>,
+    pub receipts: HashMap<String, Value>,
+    #[serde(default)]
+    pub launch_options: Value,
+    #[serde(default)]
+    pub settings: Value,
+    #[serde(default)]
+    pub active_settings: Value,
+    #[serde(default)]
+    pub usage: Value,
+    #[serde(default)]
+    pub working_directory: Option<String>,
+    #[serde(skip)]
+    pub runtime: Option<Arc<Runtime>>,
+}
+impl Conversation {
+    pub fn new(generation: String) -> Self {
+        Self {
+            generation,
+            turn_state: "idle".into(),
+            process_state: "running".into(),
+            ..Self::default()
+        }
+    }
+    /// Returns whether anything changed, so a conversation already at rest is
+    /// not written again each time the engine opens.
+    pub fn restore(&mut self) -> bool {
+        let mut changed = self.process_state != "interrupted";
+        self.process_state = "interrupted".into();
+        if matches!(self.turn_state.as_str(), "running" | "waiting") {
+            self.turn_state = "interrupted".into();
+            changed = true;
+        }
+        for item in &mut self.items {
+            let status = match item["status"].as_str() {
+                Some("pending") => "expired",
+                Some("responding") => "unknown",
+                Some("running") => "interrupted",
+                _ => continue,
+            };
+            item["status"] = json!(status);
+            changed = true;
+        }
+        for receipt in self.receipts.values_mut() {
+            if receipt["status"] == "dispatching" {
+                receipt["status"] = json!("unknown");
+                changed = true;
+            }
+        }
+        changed
+    }
+    pub fn update(&mut self, session: &str, project: &str, mut item: Option<Value>) -> Value {
+        self.cursor += 1;
+        if let Some(value) = &mut item {
+            value["cursor"] = json!(self.cursor);
+            value["updatedAt"] = json!(crate::now());
+            if let Some(previous) = self.items.iter_mut().find(|old| old["id"] == value["id"]) {
+                value["order"] = previous["order"].clone();
+                value["startedAt"] = previous["startedAt"].clone();
+                if value["kind"] == "activity"
+                    && value["status"] != "running"
+                    && value["durationMs"].is_null()
+                {
+                    if let Some(start) = previous["startedAt"]
+                        .as_str()
+                        .and_then(|time| chrono::DateTime::parse_from_rfc3339(time).ok())
+                    {
+                        value["durationMs"] = json!((chrono::Utc::now()
+                            - start.with_timezone(&chrono::Utc))
+                        .num_milliseconds()
+                        .max(0));
+                    }
+                }
+                *previous = value.clone();
+            } else {
+                if value["order"].is_null() {
+                    value["order"] = json!(self.cursor);
+                }
+                if value["startedAt"].is_null() {
+                    value["startedAt"] = json!(crate::now());
+                }
+                self.items.push(value.clone());
+            }
+            // Retain outstanding decisions even when compacting old completed history.
+            while self.items.len() > 512 {
+                let index = self
+                    .items
+                    .iter()
+                    .position(|i| !matches!(i["status"].as_str(), Some("pending" | "responding")));
+                if let Some(index) = index {
+                    self.items.remove(index);
+                } else {
+                    break;
+                }
+            }
+        }
+        let event = json!({"sessionId":session,"projectId":project,"generation":self.generation,
+            "cursor":self.cursor,"turnId":self.turn_id,"turnState":self.turn_state,
+            "processState":self.process_state,"settings":self.settings,"activeSettings":self.active_settings,"usage":self.usage,"item":item});
+        self.events.push(event.clone());
+        if self.events.len() > 128 {
+            self.events.remove(0);
+        }
+        event
+    }
+    pub fn snapshot(&self, session: &str, project: &str, before: Option<u64>) -> Value {
+        let mut candidates: Vec<_> = self
+            .items
+            .iter()
+            .filter(|i| before.is_none_or(|b| i["order"].as_u64().unwrap_or(0) < b))
+            .collect();
+        candidates.sort_by_key(|i| i["order"].as_u64().unwrap_or(0));
+        let mut items = Vec::new();
+        let mut size = 0;
+        let pending: Vec<_> = self
+            .items
+            .iter()
+            .filter(|i| matches!(i["status"].as_str(), Some("pending" | "responding")))
+            .collect();
+        let budget = 45 * 1024
+            - serde_json::to_vec(&pending)
+                .map_or(0, |v| v.len())
+                .min(40 * 1024);
+        for item in candidates.iter().rev() {
+            size += serde_json::to_vec(item).map_or(0, |v| v.len());
+            if size > budget {
+                break;
+            }
+            items.push((*item).clone());
+        }
+        items.reverse();
+        json!({"sessionId":session,"projectId":project,"generation":self.generation,"cursor":self.cursor,
+            "turnId":self.turn_id,"turnState":self.turn_state,"processState":self.process_state,
+            "workingDirectory":self.working_directory,"settings":self.settings,"activeSettings":self.active_settings,"usage":self.usage,
+            "items":items,"pending":pending,"hasMore":items.len()<candidates.len()})
+    }
+}
+pub(crate) fn bounded(value: &str, bytes: usize) -> String {
+    let mut end = value.len().min(bytes);
+    while !value.is_char_boundary(end) {
+        end -= 1;
+    }
+    value[..end].to_owned()
+}

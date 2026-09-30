@@ -127,7 +127,8 @@ class DesktopProviderOAuthFlow
         $settings = (array) config("services.{$provider}_desktop_oauth", []);
         if (trim((string) ($settings['client_id'] ?? '')) === ''
             || trim((string) ($settings['redirect_uri'] ?? '')) === '') {
-            throw new ProviderIdentityException(ucfirst($provider).' desktop sign-in is not configured.');
+            // Phones use this browser flow too, so the message must not say "desktop".
+            throw new ProviderIdentityException(ucfirst($provider).' sign-in isn’t set up on this Vibyra server.');
         }
 
         return $settings;

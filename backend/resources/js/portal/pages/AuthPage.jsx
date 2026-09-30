@@ -8,11 +8,14 @@ import { completeProviderLogin } from "../providerAuth.js";
 
 export default function AuthPage({ mode }) {
   const creating = mode === "signup";
-  const { user, loading, login, signup, refresh } = useWebsiteSession();
+  const { user, loading, login, loginTwoFactor, signup, refresh } = useWebsiteSession();
   const [fields, setFields] = useState({ name: "", email: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [providerStatus, setProviderStatus] = useState("");
+  // Set once the password is accepted and the account asks its second question.
+  const [challenge, setChallenge] = useState(null);
+  const [code, setCode] = useState("");
   const intent = purchaseIntent();
   const next = safeNext(window.location.search, "/account");
 
@@ -27,10 +30,31 @@ export default function AuthPage({ mode }) {
     setError("");
     try {
       const payload = creating ? fields : { email: fields.email, password: fields.password };
-      await (creating ? signup(payload) : login(payload));
+      if (creating) await signup(payload);
+      else {
+        const result = await login(payload);
+        if (result?.twoFactor) {
+          setChallenge(result.twoFactor);
+          setBusy(false);
+          return;
+        }
+      }
       go(withIntent(next, intent));
     } catch (caught) {
       setError(caught.message);
+      setBusy(false);
+    }
+  };
+  const submitCode = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await loginTwoFactor(challenge.challengeId, code);
+      go(withIntent(next, intent));
+    } catch (caught) {
+      setError(caught.message);
+      setCode("");
       setBusy(false);
     }
   };
@@ -47,6 +71,27 @@ export default function AuthPage({ mode }) {
       setBusy(false);
     }
   };
+
+  if (challenge) {
+    return (
+      <PortalShell title="Enter your code" intro="Your account asks for a code from your authenticator app as well as your password.">
+        <div className="auth-panel">
+          {error && <Notice tone="error">{error}</Notice>}
+          <form className="portal-form" onSubmit={submitCode}>
+            <label>Six-digit code
+              {/* Not restricted to digits: a recovery code goes in the same box. */}
+              <input name="code" inputMode="text" autoComplete="one-time-code" maxLength={20}
+                value={code} onChange={(event) => setCode(event.target.value)} autoFocus required />
+            </label>
+            <button className="portal-button portal-button--primary" disabled={busy || !code.trim()} type="submit">
+              {busy ? "Please wait…" : "Log in"}
+            </button>
+          </form>
+          <p className="auth-switch">Lost your phone? Enter one of your recovery codes instead.</p>
+        </div>
+      </PortalShell>
+    );
+  }
 
   return (
     <PortalShell title={creating ? "Create your Vibyra account" : "Welcome back"} intro="One account connects the website, phone app, and Vibyra Desktop.">

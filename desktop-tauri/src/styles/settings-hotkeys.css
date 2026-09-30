@@ -5,28 +5,33 @@
   gap: 6px;
 }
 
+/* The cap is the key; the button around it is only the place you click, so it
+   stays out of the way until the pointer is on it. */
 .hotkey-recorder {
   min-width: 112px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid transparent;
   border-radius: var(--r-control);
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 650;
+  font-size: 11.5px;
+  font-weight: 620;
   text-align: center;
 }
 
 .hotkey-recorder:hover {
-  border-color: var(--border);
+  border-color: var(--line);
   background: var(--hover);
 }
 
 .hotkey-recorder--active {
   border-color: var(--accent-border);
+  background: var(--accent-soft);
   box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.hotkey-recorder__prompt {
   color: var(--accent-2);
 }
 

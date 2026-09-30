@@ -1,24 +1,18 @@
 import { create } from "zustand";
 
-import { aiServiceStatus, clearOpenAiKey, setOpenAiKey } from "../ipc/ai";
+import { aiServiceStatus } from "../ipc/ai";
 import { spendNotification, spendTier, type SpendTier } from "../lib/aiSpendNotifications";
 import { useNotificationStore } from "./notificationStore";
 import type { AiServiceStatus } from "../types";
-import { useSettingsStore } from "./settingsStore";
 
+/** Read-only. The service credential belongs to the deployment, not to the
+ * person using it, so the renderer can ask what the state of it is and nothing
+ * more — there is deliberately no `save` or `remove` here to call. The native
+ * `set_openai_key` / `clear_openai_key` commands remain for that owner. */
 interface AiServiceStore {
   status: AiServiceStatus | null;
-  busy: boolean;
   error: string | null;
-  saved: boolean;
   refresh: () => Promise<void>;
-  save: (key: string) => Promise<boolean>;
-  remove: () => Promise<void>;
-}
-
-/** Mirrors `openaiKeyConfigured`, which gates chat and dictation elsewhere. */
-async function syncSettings(): Promise<void> {
-  await useSettingsStore.getState().load();
 }
 
 // Fires once per tier per period. `AiUsage` already carries the day and month
@@ -44,9 +38,7 @@ function warnOnSpend(usage: AiServiceStatus["usage"], limits: AiServiceStatus["l
 
 export const useAiServiceStore = create<AiServiceStore>((set) => ({
   status: null,
-  busy: false,
   error: null,
-  saved: false,
 
   refresh: async () => {
     try {
@@ -58,27 +50,4 @@ export const useAiServiceStore = create<AiServiceStore>((set) => ({
     }
   },
 
-  save: async (key) => {
-    set({ busy: true, error: null, saved: false });
-    try {
-      const status = await setOpenAiKey(key);
-      set({ status, busy: false, saved: true });
-      await syncSettings();
-      return true;
-    } catch (error) {
-      set({ busy: false, error: String(error) });
-      return false;
-    }
-  },
-
-  remove: async () => {
-    set({ busy: true, error: null, saved: false });
-    try {
-      const status = await clearOpenAiKey();
-      set({ status, busy: false });
-      await syncSettings();
-    } catch (error) {
-      set({ busy: false, error: String(error) });
-    }
-  },
 }));

@@ -78,4 +78,28 @@ trait TestsAuthProxyLocation
                 ->assertOk()
                 ->assertJsonPath('devices.0.location', 'Brisbane, Australia');
         }
+    public function test_carrier_grade_nat_proxy_records_the_forwarded_device_ip(): void
+        {
+            // Railway's edge reaches the app from 100.64.0.0/10, which PHP does not
+            // count as reserved; the session must still record the phone, not the proxy.
+            $token = $this->withServerVariables(['REMOTE_ADDR' => '100.64.0.7'])
+                ->withHeader('X-Forwarded-For', '8.8.8.8')
+                ->postJson('/api/auth/signup', [
+                    'name' => 'Railway Phone',
+                    'email' => 'railway-phone@example.com',
+                    'password' => 'secret123',
+                    'deviceName' => 'iPhone',
+                    'installId' => 'phone-railway-install',
+                ])
+                ->assertCreated()
+                ->json('token');
+
+            $this->assertDatabaseHas('vibyra_sessions', ['device_identifier' => 'phone-railway-install', 'ip_address' => '8.8.8.8']);
+            $this->withServerVariables(['REMOTE_ADDR' => '100.64.0.7'])
+                ->withHeader('X-Forwarded-For', '8.8.8.8')
+                ->getJson('/api/account/sessions', ['Authorization' => "Bearer {$token}"])
+                ->assertOk()
+                ->assertJsonCount(1, 'devices')
+                ->assertJsonPath('devices.0.ipAddress', '8.8.8.8');
+        }
 }

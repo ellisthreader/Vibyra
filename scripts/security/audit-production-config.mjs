@@ -60,15 +60,30 @@ export function parseEnv(text) {
   return values;
 }
 
-function workflowJobsWithoutTimeout(text) {
+function workflowJobsWithoutTimeout(text, readWorkflow, ancestors = new Set()) {
   const missing = [];
   const lines = text.split(/\r?\n/);
   let inJobs = false;
   let currentJob = null;
   let currentHasTimeout = false;
+  let currentUses = null;
 
   const finishJob = () => {
-    if (currentJob && !currentHasTimeout) missing.push(currentJob);
+    if (!currentJob || currentHasTimeout) return;
+    // GitHub forbids timeout-minutes on reusable-workflow callers. The local
+    // callee must exist and its actual execution jobs must all be bounded.
+    if (readWorkflow && /^\.\/\.github\/workflows\/[A-Za-z0-9_.-]+\.ya?ml$/.test(currentUses ?? "")) {
+      const relative = currentUses.slice(2);
+      if (!ancestors.has(relative)) {
+        try {
+          const callee = readWorkflow(relative);
+          const seen = new Set([...ancestors, relative]);
+          if (/^jobs:\s*\n  [A-Za-z0-9_-]+:/m.test(callee)
+            && workflowJobsWithoutTimeout(callee, readWorkflow, seen).length === 0) return;
+        } catch { /* Missing/unreadable callees must fail closed. */ }
+      }
+    }
+    missing.push(currentJob);
   };
 
   for (const line of lines) {
@@ -87,8 +102,11 @@ function workflowJobsWithoutTimeout(text) {
       finishJob();
       currentJob = jobMatch[1];
       currentHasTimeout = false;
+      currentUses = null;
       continue;
     }
+    const usesMatch = currentJob ? line.match(/^    uses:\s*(\S+)\s*$/) : null;
+    if (usesMatch) currentUses = usesMatch[1];
     if (currentJob && /^    timeout-minutes:\s*\d+\s*$/.test(line)) {
       currentHasTimeout = true;
     }
@@ -97,7 +115,7 @@ function workflowJobsWithoutTimeout(text) {
   return missing;
 }
 
-export function auditWorkflowText(relativePath, text) {
+export function auditWorkflowText(relativePath, text, readWorkflow) {
   const results = [];
   const actionRefs = [...text.matchAll(/uses:\s*([^\s#]+)@([^\s#]+)/g)];
   const unpinned = actionRefs
@@ -113,7 +131,7 @@ export function auditWorkflowText(relativePath, text) {
         )
   );
 
-  const missingTimeouts = workflowJobsWithoutTimeout(text);
+  const missingTimeouts = workflowJobsWithoutTimeout(text, readWorkflow, new Set([relativePath]));
   results.push(
     missingTimeouts.length === 0
       ? pass(`workflow.${relativePath}.timeouts`, "Every job has a timeout.")
@@ -174,7 +192,7 @@ export function auditCiRepository(root = defaultRoot) {
   if (fs.existsSync(workflowDir)) {
     for (const name of fs.readdirSync(workflowDir).filter((item) => /\.ya?ml$/.test(item))) {
       const relativePath = `.github/workflows/${name}`;
-      results.push(...auditWorkflowText(relativePath, readText(root, relativePath)));
+      results.push(...auditWorkflowText(relativePath, readText(root, relativePath), (callee) => readText(root, callee)));
     }
   }
 

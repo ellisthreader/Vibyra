@@ -1,6 +1,7 @@
 import { type RefObject, useEffect } from "react";
 
 import { getPreviewStatus } from "../../ipc/preview";
+import { usePageVisible } from "../../lib/usePageVisible";
 import type { PreviewStatus } from "../../previewTypes";
 
 type LivePhase = "starting" | "running";
@@ -10,12 +11,21 @@ function isLive(status: PreviewStatus): status is PreviewStatus & { phase: LiveP
   return status.phase === "starting" || status.phase === "running";
 }
 
+/** Out of sight a live preview is still checked, so a crash is still noticed
+ * and notified, just not every couple of seconds. */
+const BACKGROUND_POLL_MS = 10_000;
+
 export function usePreviewStatusPolling(
   root: string,
   statuses: Record<string, PreviewStatus>,
   targetRequests: RefObject<Record<string, number>>,
   rememberStatus: (status: PreviewStatus) => void,
+  active = true,
 ) {
+  const visible = usePageVisible();
+  const background = !active || !visible;
+  const pace = (entries: PollTarget[]) =>
+    background ? BACKGROUND_POLL_MS : entries.some(([, phase]) => phase === "starting") ? 500 : 1800;
   const targets: PollTarget[] = Object.values(statuses)
     .filter(isLive)
     .map(
@@ -52,15 +62,13 @@ export function usePreviewStatusPolling(
         }
       });
       if (live.length) {
-        const delay = live.some(([, phase]) => phase === "starting") ? 500 : 1800;
-        timer = window.setTimeout(() => void poll(live), delay);
+        timer = window.setTimeout(() => void poll(live), pace(live));
       }
     };
-    const delay = initial.some(([, phase]) => phase === "starting") ? 500 : 1800;
-    timer = window.setTimeout(() => void poll(initial), delay);
+    timer = window.setTimeout(() => void poll(initial), pace(initial));
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [rememberStatus, root, serialized, targetRequests]);
+  }, [background, rememberStatus, root, serialized, targetRequests]);
 }

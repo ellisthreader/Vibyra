@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   accountWorking,
+  launchAccountId,
   connectedAccounts,
   enabledRuntimesForAccounts,
   isAccountRuntime,
@@ -106,4 +107,15 @@ test("both kinds of child process count as work in progress", () => {
   // One busy account makes the whole card busy: that is what drives the poll.
   assert.equal(providerWorking(provider("claude", "sign-in-required", "connecting")), true);
   assert.equal(providerWorking(provider("claude", "connected")), false);
+});
+
+test('launch account matches the displayed project/default/connected fallback', () => {
+  const accounts = [account('connected','work'),account('connected','personal')];
+  assert.equal(launchAccountId(accounts,undefined,'personal'),'personal');
+  assert.equal(launchAccountId(accounts,'work','personal'),'work');
+  assert.equal(launchAccountId(accounts,'removed','personal'),'personal');
+  assert.equal(launchAccountId(accounts,'removed','removed-default'),'work');
+  assert.equal(launchAccountId([], 'work', 'personal'),'work','transient probes do not erase explicit identity');
+  assert.equal(launchAccountId([], undefined, 'personal'),'personal');
+  assert.equal(launchAccountId([]),null);
 });

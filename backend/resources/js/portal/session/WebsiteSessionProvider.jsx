@@ -27,8 +27,18 @@ export function WebsiteSessionProvider({ children }) {
     refresh().catch(() => setLoading(false));
   }, [refresh]);
 
+  // A login either signs in or comes back asking for a code. The caller is handed
+  // the challenge rather than an error, because nothing has gone wrong: the password
+  // was right and the account simply asks a second question.
   const login = useCallback(async (fields) => {
     const payload = await portalApi.login(fields);
+    if (payload.twoFactor?.challengeId) return { twoFactor: payload.twoFactor };
+    setUser(payload.user ?? null);
+    return { user: payload.user ?? null };
+  }, []);
+
+  const loginTwoFactor = useCallback(async (challengeId, code) => {
+    const payload = await portalApi.loginTwoFactor(challengeId, code);
     setUser(payload.user ?? null);
     return payload.user;
   }, []);
@@ -44,8 +54,8 @@ export function WebsiteSessionProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, loading, refresh, login, signup, logout }), [
-    user, loading, refresh, login, signup, logout,
+  const value = useMemo(() => ({ user, loading, refresh, login, loginTwoFactor, signup, logout }), [
+    user, loading, refresh, login, loginTwoFactor, signup, logout,
   ]);
   return <WebsiteSessionContext.Provider value={value}>{children}</WebsiteSessionContext.Provider>;
 }

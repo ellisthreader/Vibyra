@@ -75,7 +75,7 @@ fn agents_that_resume_by_recency_have_no_id_that_can_go_missing() {
     // refusing them here would break a resume that works perfectly well.
     let root = projects("recency");
 
-    for agent in ["codex", "gemini", "shell", "ssh", "my-custom-agent"] {
+    for agent in ["gemini", "shell", "ssh", "my-custom-agent"] {
         let store = ConversationStore::rooted_at(root.clone());
         assert!(store.resumable(agent, SESSION), "{agent}");
     }
@@ -86,4 +86,15 @@ fn nowhere_to_look_reads_as_no_conversation() {
     let missing = projects("missing").join("never-created");
 
     assert!(!ConversationStore::rooted_at(missing).resumable("claude", SESSION));
+}
+
+#[test]
+fn codex_checks_the_exact_rollout_in_its_account_tree() {
+    let root = projects("codex-exact");
+    let dir = root.join("2026/09/09");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join(format!("rollout-date-{SESSION}.jsonl")), "{}\n").unwrap();
+    let store = ConversationStore::rooted_at(root);
+    assert!(store.resumable("codex", SESSION));
+    assert!(!store.resumable("codex", "9c2b7d10-4e6a-4f52-8b31-0d5e7a1c9f44"));
 }

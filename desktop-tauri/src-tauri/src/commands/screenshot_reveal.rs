@@ -19,6 +19,7 @@ pub async fn reveal_screenshot(state: State<'_, AppState>, path: String) -> Resu
 
 /// `file://` URI for a local path, percent-encoded per segment. `:` is left
 /// alone so a Windows drive letter still reads as `file:///C:/…`.
+#[cfg(any(target_os = "linux", test))]
 pub(super) fn file_uri(path: &Path) -> String {
     let normalized = path.to_string_lossy().replace('\\', "/");
     let rooted = if normalized.starts_with('/') {
@@ -45,11 +46,12 @@ pub(super) fn file_uri(path: &Path) -> String {
 }
 
 fn spawn(mut command: Command) -> Result<(), String> {
+    vibyra_core::launch_env::sanitize_command(&mut command);
     command
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .map(|_| ())
+        .map(vibyra_core::process_group::reap_when_done)
         .map_err(|error| format!("Could not open the screenshot folder: {error}"))
 }
 
@@ -59,7 +61,9 @@ fn reveal(path: &Path) -> Result<(), String> {
     // ships a provider for it — `--print-reply` is what makes a missing one a
     // non-zero exit here instead of a silent no-op, so the folder open behind
     // it actually runs.
-    let selected = Command::new("dbus-send")
+    let mut select = Command::new("dbus-send");
+    vibyra_core::launch_env::sanitize_command(&mut select);
+    let selected = select
         .args([
             "--session",
             "--print-reply",

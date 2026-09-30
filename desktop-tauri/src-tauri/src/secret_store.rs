@@ -1,12 +1,19 @@
 use keyring::{Entry, Error};
+use parking_lot::Mutex;
 
 const SERVICE: &str = "com.vibyra.desktop";
+const DEV_SERVICE: &str = "com.vibyra.desktop.dev.local";
 const OPENAI_ACCOUNT: &str = "openai-api-key";
 const VIBYRA_SESSION_ACCOUNT: &str = "vibyra-account-session";
-const DISCORD_MODEL_WEBHOOK_ACCOUNT: &str = "discord-model-release-webhook";
 const DISCORD_REPORT_WEBHOOK_ACCOUNT: &str = "discord-report-webhook";
 
 pub struct SecretStore;
+
+/// The session token as last read from the store, until the next session
+/// write. Launch reads the token, verifies it, and adopts it — which wrote the
+/// same bytes straight back: a Keychain write on every launch, and a second
+/// access prompt whenever the item's ACL does not yet include this build.
+static SESSION_JUST_READ: Mutex<Option<String>> = Mutex::new(None);
 
 impl SecretStore {
     pub fn read_openai_key(&self) -> Result<Option<String>, String> {
@@ -18,29 +25,35 @@ impl SecretStore {
     }
 
     pub fn read_account_session(&self) -> Result<Option<String>, String> {
-        read_secret(VIBYRA_SESSION_ACCOUNT)
+        let token = read_secret(VIBYRA_SESSION_ACCOUNT)?;
+        SESSION_JUST_READ.lock().clone_from(&token);
+        Ok(token)
     }
 
+    /// Skips only the one write that would put back exactly what the store
+    /// was just read as holding; any other write goes through and forgets it.
     pub fn write_account_session(&self, token: Option<&str>) -> Result<(), String> {
+        let just_read = SESSION_JUST_READ.lock().take();
+        if already_stored(token, just_read.as_deref()) {
+            return Ok(());
+        }
         write_secret(VIBYRA_SESSION_ACCOUNT, token)
     }
 
-    pub fn read_discord_model_webhook(&self) -> Result<Option<String>, String> {
-        read_secret(DISCORD_MODEL_WEBHOOK_ACCOUNT)
-    }
-
-    pub fn write_discord_model_webhook(&self, webhook: Option<&str>) -> Result<(), String> {
-        write_secret(DISCORD_MODEL_WEBHOOK_ACCOUNT, webhook)
-    }
-
-    /// Kept apart from the model-alert webhook on purpose: they point at
-    /// different channels, and revoking one must never silence the other.
     pub fn read_report_webhook(&self) -> Result<Option<String>, String> {
         read_secret(DISCORD_REPORT_WEBHOOK_ACCOUNT)
     }
 
     pub fn write_report_webhook(&self, webhook: Option<&str>) -> Result<(), String> {
         write_secret(DISCORD_REPORT_WEBHOOK_ACCOUNT, webhook)
+    }
+
+    pub fn read_agent_runner_key(&self, grant_id: &str) -> Result<Option<String>, String> {
+        read_secret(&format!("agent-runner-{grant_id}"))
+    }
+
+    pub fn write_agent_runner_key(&self, grant_id: &str, key: Option<&str>) -> Result<(), String> {
+        write_secret(&format!("agent-runner-{grant_id}"), key)
     }
 }
 
@@ -64,7 +77,30 @@ fn write_secret(account: &str, value: Option<&str>) -> Result<(), String> {
 }
 
 fn entry(account: &str) -> Result<Entry, String> {
-    Entry::new(SERVICE, account).map_err(message)
+    let local_api = std::env::var("VIBYRA_DESKTOP_API_URL")
+        .ok()
+        .is_some_and(|url| {
+            url.starts_with("http://127.0.0.1:") || url.starts_with("http://localhost:")
+        });
+    let service = if local_api {
+        std::env::var("VIBYRA_DESKTOP_SECRET_SERVICE")
+            .ok()
+            .filter(|value| value.starts_with("com.vibyra.desktop.dev.") && value.len() <= 100)
+    } else {
+        None
+    };
+    Entry::new(
+        service
+            .as_deref()
+            .unwrap_or(if local_api { DEV_SERVICE } else { SERVICE }),
+        account,
+    )
+    .map_err(message)
+}
+
+fn already_stored(token: Option<&str>, just_read: Option<&str>) -> bool {
+    let token = token.map(str::trim).filter(|token| !token.is_empty());
+    token.is_some() && token == just_read
 }
 
 fn normalize_key(key: String) -> Option<String> {
@@ -78,7 +114,15 @@ fn message(error: Error) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_key;
+    use super::{already_stored, normalize_key};
+
+    #[test]
+    fn only_rewriting_the_token_just_read_is_skipped() {
+        assert!(already_stored(Some(" tok "), Some("tok")));
+        assert!(!already_stored(Some("new"), Some("tok")));
+        assert!(!already_stored(Some("tok"), None));
+        assert!(!already_stored(None, None));
+    }
 
     #[test]
     fn key_normalization_drops_empty_values() {

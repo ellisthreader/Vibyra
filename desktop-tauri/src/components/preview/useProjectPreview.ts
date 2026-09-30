@@ -35,7 +35,7 @@ function errorStatus(targetId: string, error: unknown): PreviewStatus {
   };
 }
 
-export function useProjectPreview(projectId: string, root: string) {
+export function useProjectPreview(projectId: string, root: string, projectRoot = root, active = true) {
   const [inspection, setInspection] = useState<PreviewInspection | null>(null);
   const [targetId, setTargetId] = useState("");
   const [statuses, setStatuses] = useState<Record<string, PreviewStatus>>({});
@@ -47,7 +47,8 @@ export function useProjectPreview(projectId: string, root: string) {
 
   const rememberStatus = useCallback((next: PreviewStatus) => {
     notifyPreviewStatus(next);
-    setStatuses((current) => ({ ...current, [next.targetId]: next }));
+    // Polled every couple of seconds; an identical status keeps the old map so the preview does not re-render.
+    setStatuses((current) => JSON.stringify(current[next.targetId]) === JSON.stringify(next) ? current : { ...current, [next.targetId]: next });
   }, []);
 
   const hydrateStatuses = useCallback((targets: PreviewTarget[]) => {
@@ -114,8 +115,8 @@ export function useProjectPreview(projectId: string, root: string) {
         next.targets.find((target) => target.runnable) ??
         next.targets[0];
       setInspecting(false);
+      setTargetId(selected?.id ?? "");
       if (selected) {
-        setTargetId(selected.id);
         savePreferredTarget(projectId, selected.id);
       }
       hydrateStatuses(next.targets);
@@ -137,7 +138,7 @@ export function useProjectPreview(projectId: string, root: string) {
     };
   }, [inspect]);
 
-  usePreviewStatusPolling(root, statuses, targetRequests, rememberStatus);
+  usePreviewStatusPolling(root, statuses, targetRequests, rememberStatus, active);
 
   const start = useCallback(async () => {
     if (!targetId) return;
@@ -150,7 +151,7 @@ export function useProjectPreview(projectId: string, root: string) {
       error: null,
     });
     try {
-      const next = await startPreview(root, targetId);
+      const next = await startPreview(root, targetId, projectRoot);
       if (lifecycle.current === instance && targetRequests.current[targetId] === version) {
         rememberStatus(next);
       }
@@ -159,7 +160,7 @@ export function useProjectPreview(projectId: string, root: string) {
         rememberStatus(errorStatus(targetId, error));
       }
     }
-  }, [rememberStatus, root, statuses, targetId]);
+  }, [rememberStatus, root, projectRoot, statuses, targetId]);
 
   const stop = useCallback(async () => {
     if (!targetId) return;
