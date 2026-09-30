@@ -124,7 +124,7 @@ impl Capture {
         let event = InputEvent::parse(request)?;
         let now = self.backend.info(self.window.info.id)?;
         let tapped = matches!(event, InputEvent::Click { .. });
-        let before = tapped.then(|| self.focus.measure(self.backend, &now)["serial"].as_u64());
+        let before = tapped.then(|| self.focus.cached()["serial"].as_u64());
         match &event {
             // Each action repeats the backend's foreground and focus checks,
             // so keys stop the moment the window loses focus.

@@ -38,7 +38,11 @@ fn a_late_poll_wake_returns_the_newest_background_observation() {
     let (backend, capture) = capture();
     let tracker = Tracker::default();
     let window = backend.info(3).unwrap();
-    let before = tracker.measure(backend, &window)["serial"]
+    let before = tracker.measure(
+        backend,
+        &window,
+        Instant::now() + Duration::from_millis(100),
+    )["serial"]
         .as_u64()
         .unwrap();
     let deadline = Instant::now() + Duration::from_millis(60);
@@ -46,7 +50,14 @@ fn a_late_poll_wake_returns_the_newest_background_observation() {
     let reply = tracker.settled(backend, &window, before, deadline, |_| {
         *backend.focused.lock() = typing();
         // Model the reader completing during a delayed scheduling wake.
-        assert_eq!(tracker.measure(backend, &window)["editable"], true);
+        assert_eq!(
+            tracker.measure(
+                backend,
+                &window,
+                Instant::now() + Duration::from_millis(100)
+            )["editable"],
+            true
+        );
         std::thread::sleep(deadline.saturating_duration_since(Instant::now()));
         // A new read after this late wake would wait on a hung application.
         *backend.stall.lock() = Duration::from_millis(1500);

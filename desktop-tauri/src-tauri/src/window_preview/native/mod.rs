@@ -16,6 +16,8 @@ mod tests_focus;
 #[cfg(test)]
 mod tests_focus_fresh;
 #[cfg(test)]
+mod tests_focus_reader;
+#[cfg(test)]
 mod tests_keys;
 
 #[cfg(windows)]

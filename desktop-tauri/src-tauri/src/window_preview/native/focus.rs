@@ -7,12 +7,17 @@
 //! UI Automation also wants its client on one thread.
 
 use super::backend::{Backend, Geometry};
-use super::fields::fraction;
 use parking_lot::Mutex;
 use serde_json::{json, Value};
-use std::sync::mpsc::{sync_channel, SyncSender};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+#[path = "focus_reader.rs"]
+mod reader;
+use reader::Reader;
+#[path = "focus_reading.rs"]
+mod reading;
+use reading::{measure, scan};
 
 /// A text field in desktop coordinates, as the input backend uses them.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -40,12 +45,13 @@ struct Seen {
     fields: Vec<Value>,
     scanned: Option<Instant>,
     unchanged: bool,
+    rescan: u64,
 }
 
 #[derive(Default)]
 pub(super) struct Tracker {
     seen: Arc<Mutex<Seen>>,
-    reader: Mutex<Option<SyncSender<Geometry>>>,
+    reader: Mutex<Option<Reader>>,
 }
 
 const RESCAN: Duration = Duration::from_millis(750);
@@ -59,7 +65,7 @@ impl Tracker {
         self.cached()
     }
 
-    fn cached(&self) -> Value {
+    pub(super) fn cached(&self) -> Value {
         let seen = self.seen.lock();
         let mut state = seen.latest.clone().unwrap_or_else(
             || json!({"v":1,"access":true,"editable":false,"front":false,"serial":seen.serial}),
@@ -68,9 +74,15 @@ impl Tracker {
         state
     }
 
-    /// Reads focus now, waiting on the application: around a tap.
-    pub fn measure(&self, backend: &'static dyn Backend, window: &Geometry) -> Value {
-        measure(&self.seen, backend, window)
+    /// A fresh reply from the single reader, with a bounded caller wait.
+    pub fn measure(
+        &self,
+        backend: &'static dyn Backend,
+        window: &Geometry,
+        deadline: Instant,
+    ) -> Value {
+        let reply = self.with_reader(backend, |reader| reader.observe(window, deadline));
+        reply.flatten().unwrap_or_else(|| self.cached())
     }
 
     /// The state once a tap has had a moment to move keyboard focus.
@@ -83,9 +95,15 @@ impl Tracker {
         mut wait: impl FnMut(Duration),
     ) -> Value {
         // The tap may have changed the layout: map the fields again.
-        self.seen.lock().scanned = None;
-        // Observe the delivered input once even when injection used the budget.
-        let mut state = self.measure(backend, window);
+        {
+            let mut seen = self.seen.lock();
+            seen.scanned = None;
+            seen.rescan += 1;
+        }
+        // Queue a distinct post-input read. If injection exhausted the polling
+        // budget, allow at most one poll interval for that fresh reply.
+        let first_reply = deadline.max(Instant::now() + TAP_POLL);
+        let mut state = self.measure(backend, window, first_reply);
         while state["serial"].as_u64() == Some(before) {
             // Application reads and late wakeups share the same wait budget.
             let remaining = deadline.saturating_duration_since(Instant::now());
@@ -96,7 +114,7 @@ impl Tracker {
             if Instant::now() >= deadline {
                 break;
             }
-            state = self.measure(backend, window);
+            state = self.measure(backend, window, deadline);
         }
         // A background observation may have advanced while the poll was asleep.
         self.cached()
@@ -110,84 +128,21 @@ impl Tracker {
     /// Asks the reader thread (started on first use) for a fresh reading.
     /// A reading already queued covers this one.
     fn wake(&self, backend: &'static dyn Backend, window: &Geometry) {
-        let mut reader = self.reader.lock();
-        if reader.is_none() {
-            let (send, receive) = sync_channel::<Geometry>(1);
-            let seen = Arc::clone(&self.seen);
-            let spawned = std::thread::Builder::new()
-                .name("vibyra-window-focus".into())
-                .spawn(move || {
-                    // Ends when the capture, and so the sender, is gone.
-                    while let Ok(window) = receive.recv() {
-                        measure(&seen, backend, &window);
-                        scan(&seen, backend, &window);
-                    }
-                });
-            if spawned.is_ok() {
-                *reader = Some(send);
+        self.with_reader(backend, |reader| reader.refresh(window));
+    }
+
+    fn with_reader<T>(
+        &self,
+        backend: &'static dyn Backend,
+        work: impl FnOnce(&Reader) -> T,
+    ) -> Option<T> {
+        let reader = {
+            let mut reader = self.reader.lock();
+            if reader.is_none() {
+                *reader = Reader::start(backend, Arc::clone(&self.seen));
             }
-        }
-        if let Some(send) = reader.as_ref() {
-            let _ = send.try_send(window.clone());
-        }
+            reader.clone()
+        };
+        reader.as_ref().map(work)
     }
-}
-
-fn measure(seen: &Mutex<Seen>, backend: &'static dyn Backend, window: &Geometry) -> Value {
-    let focused = backend.focus(window).unwrap_or_default();
-    let field = focused.field.as_ref();
-    let mut state = json!({
-        "v": 1, "access": true, "front": focused.front,
-        "editable": field.is_some(), "kind": field.map_or("text", |f| f.kind),
-    });
-    if let Some(field) = field {
-        state["label"] = json!(field.label.chars().take(60).collect::<String>());
-        if let Some(empty) = field.empty {
-            state["empty"] = json!(empty);
-        }
-        if let Some(rect) = field.rect.and_then(|r| fraction(r, window)) {
-            state["field"] = json!(rect);
-        }
-        if let Some(caret) = field.caret.and_then(|r| fraction(r, window)) {
-            state["caret"] = json!(caret);
-        }
-    }
-    let signature = format!("{}|{}", focused.identity, field.map_or("none", |f| f.kind));
-    let mut seen = seen.lock();
-    if seen.identity != signature {
-        seen.identity = signature;
-        seen.serial += 1;
-        seen.unchanged = false;
-    }
-    state["serial"] = json!(seen.serial);
-    seen.latest = Some(state.clone());
-    state["fields"] = Value::Array(seen.fields.clone());
-    state
-}
-
-/// Maps the window's text fields again when it may have changed: slow on busy
-/// windows, so only from the reader thread, and at most every 750 ms.
-fn scan(seen: &Mutex<Seen>, backend: &'static dyn Backend, window: &Geometry) {
-    {
-        let mut seen = seen.lock();
-        let due = seen.scanned.is_none()
-            || (!seen.unchanged && seen.scanned.is_some_and(|at| at.elapsed() >= RESCAN));
-        if !due {
-            return;
-        }
-        seen.unchanged = true;
-    }
-    let fields = backend
-        .fields(window)
-        .into_iter()
-        .take(48)
-        .filter_map(|field| {
-            let mut entry = fraction(field.rect?, window)?.map(|v| json!(v)).to_vec();
-            entry.push(json!(field.kind));
-            Some(Value::Array(entry))
-        })
-        .collect();
-    let mut seen = seen.lock();
-    seen.fields = fields;
-    seen.scanned = Some(Instant::now());
 }

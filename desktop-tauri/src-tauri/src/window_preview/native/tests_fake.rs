@@ -8,6 +8,8 @@ use super::input::InputEvent;
 use crate::window_preview::WindowInfo;
 use parking_lot::Mutex;
 use serde_json::Value;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
 #[derive(Default)]
@@ -21,6 +23,25 @@ pub(super) struct Fake {
     pub stall: Mutex<Duration>,
     /// Input injection can also wait on the application.
     pub input_stall: Mutex<Duration>,
+    pub fields_stall: Mutex<Duration>,
+    pub fields_started: AtomicBool,
+    pub active_reads: AtomicUsize,
+    pub max_reads: AtomicUsize,
+    pub focus_gate: Mutex<Option<(Sender<()>, Receiver<()>)>>,
+}
+
+struct Reading<'a>(&'a Fake);
+impl Fake {
+    fn reading(&self) -> Reading<'_> {
+        let count = self.active_reads.fetch_add(1, Ordering::SeqCst) + 1;
+        self.max_reads.fetch_max(count, Ordering::SeqCst);
+        Reading(self)
+    }
+}
+impl Drop for Reading<'_> {
+    fn drop(&mut self) {
+        self.0.active_reads.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 struct Grey;
@@ -83,6 +104,7 @@ impl Backend for Fake {
         Ok(())
     }
     fn focus(&self, _: &Geometry) -> Result<Focused, String> {
+        let _reading = self.reading();
         std::thread::sleep(*self.stall.lock());
         let mut pending = self.pending.lock();
         if pending
@@ -91,9 +113,18 @@ impl Backend for Fake {
         {
             *self.focused.lock() = pending.take().unwrap().1;
         }
-        Ok(self.focused.lock().clone())
+        let focused = self.focused.lock().clone();
+        drop(pending);
+        if let Some((started, release)) = self.focus_gate.lock().take() {
+            let _ = started.send(());
+            let _ = release.recv_timeout(Duration::from_secs(2));
+        }
+        Ok(focused)
     }
     fn fields(&self, _: &Geometry) -> Vec<Field> {
+        let _reading = self.reading();
+        self.fields_started.store(true, Ordering::SeqCst);
+        std::thread::sleep(*self.fields_stall.lock());
         vec![
             field("email", [150.0, 110.0, 300.0, 30.0]),
             field("secure", [150.0, 160.0, 300.0, 30.0]),
