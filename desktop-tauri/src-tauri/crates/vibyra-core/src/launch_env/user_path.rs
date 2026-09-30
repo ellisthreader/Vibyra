@@ -1,6 +1,10 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+#[path = "user_path_merge.rs"]
+mod path_merge;
+use path_merge::{entries, merge_for, normalize};
+
 /// Per-user tool directories that a **desktop** launch never inherits.
 ///
 /// A GUI launch gets the session manager's PATH, which is built from
@@ -46,33 +50,7 @@ pub fn candidates(home: &Path) -> Vec<String> {
 /// `current` uniquely contributes — the AppImage's bundled `usr/bin` — must
 /// not shadow the user's tools, so it follows rather than leads.
 pub fn merge(current: &str, discovered: &str, extras: &[String]) -> String {
-    let extras: Vec<&str> = extras.iter().map(String::as_str).collect();
-    let mut seen: HashSet<String> = HashSet::new();
-    let mut merged: Vec<String> = Vec::new();
-    for source in [
-        discovered.split(':').collect::<Vec<_>>(),
-        current.split(':').collect::<Vec<_>>(),
-        extras,
-    ] {
-        for entry in source {
-            let entry = normalize(entry);
-            if entry.is_empty() || !seen.insert(entry.clone()) {
-                continue;
-            }
-            merged.push(entry);
-        }
-    }
-    merged.join(":")
-}
-
-/// `/usr/bin/` and `/usr/bin` are one directory. Bare `/` keeps its slash.
-fn normalize(entry: &str) -> String {
-    let trimmed = entry.trim_end_matches('/');
-    if trimmed.is_empty() {
-        entry.to_owned()
-    } else {
-        trimmed.to_owned()
-    }
+    merge_for(cfg!(windows), current, discovered, extras)
 }
 
 /// Pulls `$PATH` out of a login shell's (possibly noisy) output. The markers
@@ -113,11 +91,17 @@ pub fn install() -> String {
 /// every call.
 pub fn add_new_tool_dirs() {
     let current = std::env::var("PATH").unwrap_or_default();
-    let known: HashSet<String> = current.split(':').map(normalize).collect();
+    let known: HashSet<String> = entries(cfg!(windows), &current)
+        .iter()
+        .map(|entry| normalize(cfg!(windows), entry))
+        .collect();
     let extras = dirs::home_dir()
         .map(|home| candidates(&home))
         .unwrap_or_default();
-    if extras.iter().all(|dir| known.contains(&normalize(dir))) {
+    if extras
+        .iter()
+        .all(|dir| known.contains(&normalize(cfg!(windows), dir)))
+    {
         return;
     }
     std::env::set_var("PATH", merge(&current, "", &extras));

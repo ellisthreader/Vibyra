@@ -123,24 +123,11 @@ pub(super) fn locate() -> Option<PathBuf> {
     found
 }
 
-fn on_path(program: &str) -> Option<PathBuf> {
-    let paths = std::env::var_os("PATH")?;
-    std::env::split_paths(&paths)
-        .map(|dir| dir.join(program))
-        .find(|candidate| is_executable(candidate))
-}
-
-#[cfg(unix)]
-fn is_executable(path: &Path) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-    path.metadata()
-        .is_ok_and(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
-}
-
-#[cfg(not(unix))]
-fn is_executable(path: &Path) -> bool {
-    path.is_file()
-}
+#[path = "railway_path.rs"]
+mod path_lookup;
+#[cfg(test)]
+use path_lookup::is_executable;
+use path_lookup::on_path;
 
 fn whoami(binary: &PathBuf) -> Option<String> {
     run(Command::new(binary).arg("whoami"), TIMEOUT)

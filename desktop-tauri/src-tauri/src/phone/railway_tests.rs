@@ -20,11 +20,25 @@ fn a_logged_in_reply_yields_the_account_and_nothing_else() {
 #[test]
 fn a_command_past_its_deadline_is_killed_and_reported_as_nothing() {
     let started = Instant::now();
-    let out = run(
-        Command::new("/bin/sleep").arg("5"),
-        Duration::from_millis(200),
-    );
+    #[cfg(unix)]
+    let mut command = Command::new("/bin/sleep");
+    #[cfg(unix)]
+    command.arg("5");
+    #[cfg(windows)]
+    let mut command = Command::new("powershell.exe");
+    #[cfg(windows)]
+    command.args([
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Start-Sleep -Seconds 5",
+    ]);
+    let out = run(&mut command, Duration::from_millis(200));
     assert_eq!(out, None);
+    assert!(
+        started.elapsed() >= Duration::from_millis(150),
+        "the child must actually wait"
+    );
     assert!(started.elapsed() < Duration::from_secs(3));
 }
 
@@ -37,7 +51,8 @@ fn a_checker_that_has_not_answered_yet_says_nothing_at_all() {
 
 #[test]
 fn a_program_on_path_is_found_without_a_shell() {
-    let found = on_path("sh").expect("sh is on every test machine's PATH");
+    let program = if cfg!(windows) { "cmd" } else { "sh" };
+    let found = on_path(program).expect("the native command interpreter is on PATH");
     assert!(found.is_absolute() && is_executable(&found));
     assert_eq!(on_path("vibyra-no-such-program-anywhere"), None);
 }

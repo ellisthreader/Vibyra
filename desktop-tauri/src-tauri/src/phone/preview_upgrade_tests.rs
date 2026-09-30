@@ -16,9 +16,8 @@ fn approved_websocket_echo_is_full_duplex_and_revocation_cancels_it() {
         return;
     }
     let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../host/relay/tests/fixtures/preview-site.mjs")
-        .canonicalize()
-        .unwrap();
+        .join("../../host/relay/tests/fixtures/preview-site.mjs");
+    assert!(fixture.is_file());
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("managed");
     fs::create_dir(&root).unwrap();
@@ -27,15 +26,25 @@ fn approved_websocket_echo_is_full_duplex_and_revocation_cancels_it() {
         r#"{"require":{"laravel/framework":"1"}}"#,
     )
     .unwrap();
+    // Use argv, not another shell; preserve spaces, quotes and Windows drive paths.
+    let fixture_hex = fixture
+        .to_str()
+        .unwrap()
+        .as_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
     let runner = format!(
         r#"<?php
 $port = '';
 foreach ($argv as $arg) if (str_starts_with($arg, '--port=')) $port = substr($arg, 7);
 if (!ctype_digit($port)) exit(2);
 putenv('PORT='.$port);
-passthru('node '.escapeshellarg('{}'));
+$child = proc_open(['node', hex2bin('{}')], [0 => STDIN, 1 => STDOUT, 2 => STDERR], $pipes);
+if (!is_resource($child)) exit(3);
+exit(proc_close($child));
 "#,
-        fixture.display()
+        fixture_hex
     );
     fs::write(root.join("artisan"), runner).unwrap();
     let target = inspect_project(root.to_str().unwrap())
@@ -66,13 +75,8 @@ passthru('node '.escapeshellarg('{}'));
         }
         std::thread::sleep(Duration::from_millis(50));
     }
-    assert_eq!(
-        manager
-            .status(root.to_str().unwrap(), &target)
-            .unwrap()
-            .phase,
-        PreviewPhase::Running
-    );
+    let status = manager.status(root.to_str().unwrap(), &target).unwrap();
+    assert_eq!(status.phase, PreviewPhase::Running, "{status:?}");
     let grants = Arc::new(PreviewGrants::load(temp.path().join("grants")).unwrap());
     grants.set_account(Some("user:fixture-account")).unwrap();
     grants.grant("phone", "project", &root, &target).unwrap();
