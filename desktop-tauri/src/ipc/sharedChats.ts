@@ -9,9 +9,9 @@ export interface ConversationLaunchOptions {
   model: string | null; reasoningEffort: string | null; permissionMode: 'standard' | 'full';
   workspaceMode: 'safe' | 'shared'; safeSnapshotFingerprint?: string;
 }
-export const createSharedChat = (projectId: string, accountId: string, requestId: string, title: string, options?: ConversationLaunchOptions) =>
-  invoke<SharedSession>('shared_chat_create', { projectId, accountId, requestId, title, options });
-export const chatRequest = <T = Record<string, unknown>>(method: string, params: Record<string, unknown>) =>
-  invoke<T>('shared_chat_request', { method, params });
+export const createSharedChat = (projectId: string, accountId: string, requestId: string, title: string, options?: ConversationLaunchOptions, phoneRequestId?: string) =>
+  invoke<SharedSession>('shared_chat_create', { projectId, accountId, requestId, title, options, phoneRequestId });
+export const chatRequest = <T = Record<string, unknown>>(method: string, params: Record<string, unknown>, phoneRequestId?: string) =>
+  invoke<T>('shared_chat_request', { method, params, phoneRequestId });
 
 export const removeSharedChatProject = (projectId: string) => invoke<void>('shared_chat_remove_project', { projectId });

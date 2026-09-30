@@ -152,16 +152,21 @@ impl PtyManager {
     }
 
     pub fn kill(&self, id: SessionId) -> CoreResult<()> {
-        self.session_ref(id)?.kill();
+        let session = self.session_ref(id)?;
+        crate::preview::check_privileged_effect()?;
+        session.kill();
         Ok(())
     }
 
     pub fn remove(&self, id: SessionId) -> CoreResult<()> {
         let session = self.session_ref(id)?;
         if session.is_alive() {
+            crate::preview::check_privileged_effect()?;
             session.kill();
         }
-        self.sessions.write().remove(&id);
+        let mut sessions = self.sessions.write();
+        crate::preview::check_privileged_effect()?;
+        sessions.remove(&id);
         Ok(())
     }
 

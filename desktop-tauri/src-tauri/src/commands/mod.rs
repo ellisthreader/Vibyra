@@ -57,6 +57,8 @@ pub mod shortcuts;
 pub mod speech;
 pub mod speech_synthesis;
 pub mod terminal;
+mod terminal_create_service;
+pub mod terminal_lifecycle;
 pub(crate) mod terminal_args;
 mod terminal_launch;
 #[cfg(test)]
@@ -91,14 +93,21 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
 }
 
 pub mod phone;
+mod phone_effects;
+mod phone_effect_commands;
+mod phone_project_effects;
 pub mod phone_remote;
 pub mod remote_security;
 pub mod remote_security_actions;
 mod remote_security_scope;
 
 pub mod shared_chats;
+pub mod shared_chat_models;
 pub mod shared_cli;
 
 pub mod teammates;
 
 pub mod teammate_upload;
+
+#[cfg(test)]
+mod phone_effect_tests;

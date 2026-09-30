@@ -11,7 +11,6 @@ use std::{
     },
     time::Duration,
 };
-
 #[derive(Debug)]
 pub(crate) struct RpcError {
     pub unknown: bool,
@@ -74,6 +73,7 @@ impl Runtime {
             use std::os::unix::process::CommandExt;
             command.process_group(0);
         }
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
         let mut child = command
             .spawn()
             .map_err(|e| format!("Could not start Codex: {e}"))?;
@@ -130,6 +130,7 @@ impl Runtime {
             bridge.claim_response(&value)?;
         }
         let mut input = self.input.lock();
+        super::runtime_output::check_effect(&value)?;
         serde_json::to_writer(&mut *input, &value).map_err(|e| e.to_string())?;
         input
             .write_all(b"\n")
@@ -171,7 +172,6 @@ impl Runtime {
     }
     pub fn stop_thread(&self, thread: &str) {
         if !self.exited() {
-            // Let Codex release its persistent writer lease before terminating.
             let _ = self.request_timeout(
                 "thread/unsubscribe",
                 json!({"threadId":thread}),

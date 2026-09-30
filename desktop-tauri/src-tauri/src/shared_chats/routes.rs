@@ -94,6 +94,7 @@ impl SharedChats {
             return engine.handle("desktop", method, params);
         }
         let _action = self.local_action.lock();
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
         let snapshot =
             engine.handle("desktop", "conversation.snapshot", json!({"sessionId":id}))?;
         let claim = match engine.claim_locally("desktop", &id) {
@@ -110,6 +111,7 @@ impl SharedChats {
         params["projectId"] = snapshot["projectId"].clone();
         params["generation"] = claim["generation"].clone();
         params["lease"] = claim["lease"].clone();
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
         let result = engine.handle("desktop", method, params);
         if method == "session.stop" && result.is_ok() {
             self.cli.stop(&id);

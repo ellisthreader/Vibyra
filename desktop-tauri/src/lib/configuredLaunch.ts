@@ -14,6 +14,7 @@ import { useWorkspaceStore } from "../state/workspaceStore";
 interface LaunchOptions {
   safeMode?: boolean;
   requestId?: string;
+  phoneRequestId?: string;
   model?: string | null;
   reasoningEffort?: LaunchEffort;
   reasoningEnabled?: boolean;
@@ -37,6 +38,7 @@ interface LaunchOptions {
 }
 interface PreparedLaunch {
   requestId?: string;
+  phoneRequestId?: string;
   agent: ResolvedAgent;
   projectId: string;
   projectRoot: string;
@@ -53,13 +55,11 @@ interface PreparedLaunch {
 export type LaunchedSession = { paneId: number } | { conversationId: string };
 
 const FULL_ACCESS_AGENTS = new Set(["claude", "codex", "gemini"]);
-
 // Mirrors the backend's add_reasoning_effort matrix: passing an effort to any
 // other agent (plain terminals included) makes the whole launch error out.
 const EFFORT_AGENTS = new Set(["claude", "codex"]);
 
-// A shell (or ssh session) is unrestricted by nature — the Full access toggle
-// neither applies nor should block launching one.
+// Full access does not apply to plain terminals.
 const PLAIN_TERMINALS = new Set(["shell", "ssh"]);
 
 function supportsFullAccess(agentId: string): boolean {
@@ -82,7 +82,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
           permissionMode: launch.permissionMode,
           workspaceMode: launch.safeMode ? "safe" : "shared",
           safeSnapshotFingerprint: fingerprint,
-        }, launch.view === undefined, launch.requestId);
+        }, launch.view === undefined, launch.requestId, launch.phoneRequestId);
         started.push({ conversationId });
       } catch (error) {
         useWorkspaceStore.getState().setError(String(error));
@@ -92,6 +92,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
     }
     const paneId = await useTerminalStore.getState().spawnAgent(launch.agent, launch.projectId, {
       cwd: launch.projectRoot,
+      phoneRequestId: launch.phoneRequestId,
       model: launch.model,
       permissionMode: launch.permissionMode,
       reasoningEffort: launch.reasoningEffort,
@@ -156,6 +157,7 @@ export async function launchConfigured(
     title: options.title,
     safeMode: options.safeMode ?? preferences.safeMode,
     requestId: options.requestId,
+    phoneRequestId: options.phoneRequestId,
     // Which login this terminal runs as. Only account-backed CLIs have one;
     // a shell or an OpenRouter runner has no provider folder to point at.
     accountId: resolveLaunchAccount(agent.id, preferences.accountByProvider[agent.id]),

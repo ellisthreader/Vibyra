@@ -12,7 +12,7 @@ type GetState = StoreApi<TerminalStore>["getState"];
 type SetState = StoreApi<TerminalStore>["setState"];
 
 /** Replace only after a successful spawn. Failed resumes leave the saved pane intact. */
-export async function relaunch(set: SetState, get: GetState, id: number, continuing: boolean): Promise<number | void> {
+export async function relaunch(set: SetState, get: GetState, id: number, continuing: boolean, phoneRequestId?: string): Promise<number | void> {
   const pane = get().panes.find((candidate) => candidate.id === id);
   (window as any).__dbg?.(`relaunch start id=${id} continuing=${continuing} pane=${!!pane} relaunching=${get().relaunching} status=${pane?.status}`);
   if (!pane || get().relaunching.includes(id) || (continuing && pane.status === "running")) return;
@@ -37,7 +37,7 @@ export async function relaunch(set: SetState, get: GetState, id: number, continu
       : null;
     let resumed: number | null | void;
     if (pane.agentId === "ssh") {
-      resumed = await get().spawnSsh(pane.title, pane.projectId, { replaces: id, replaySnapshot });
+      resumed = await get().spawnSsh(pane.title, pane.projectId, { replaces: id, replaySnapshot, phoneRequestId, savedPaneId: id });
     } else {
       (window as any).__dbg?.(`listAgents id=${id}`);
       const agents = await listAgents();
@@ -49,6 +49,7 @@ export async function relaunch(set: SetState, get: GetState, id: number, continu
       (window as any).__dbg?.(`spawnAgent id=${id}`);
       resumed = await get().spawnAgent(agent, pane.projectId, {
         model: pane.model,
+        phoneRequestId, savedPaneId: id,
         permissionMode: pane.permissionMode,
         reasoningEffort: pane.reasoningEffort,
         title: pane.customTitle ?? pane.title,

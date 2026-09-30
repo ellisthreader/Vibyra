@@ -90,6 +90,7 @@ impl Engine {
         let mut conversation = Conversation::new(session.generation.clone());
         conversation.launch_options = identity;
         conversation.working_directory = Some(cwd.to_string_lossy().into_owned());
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
         state.journal.save(&session)?;
         state.journal.save_conversation(&id, &conversation)?;
         let generation = session.generation.clone();

@@ -30,6 +30,7 @@ function sessionChannel(): { channel: Channel<TermEvent>; bind: (id: number) => 
 
 export interface CreateTerminalOptions {
   agentId: string;
+  phoneRequestId?: string; projectId?: string; savedPaneId?: number;
   cwd?: string | null;
   resumeCwd?: string | null;
   rows?: number;
@@ -54,6 +55,7 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Se
     onEvent: channel,
     request: {
       agentId: options.agentId,
+      phoneRequestId: options.phoneRequestId ?? null, projectId: options.projectId ?? null, savedPaneId: options.savedPaneId ?? null,
       cwd: options.cwd ?? null,
       resumeCwd: options.resumeCwd ?? null,
       rows: options.rows ?? null,
@@ -92,13 +94,19 @@ export function agentConversationResumable(
 export async function createSshTerminal(
   target: string,
   dims?: { rows: number; cols: number } | null,
+  phone?: { phoneRequestId?: string; projectId?: string; savedPaneId?: number },
 ): Promise<SessionInfo> {
   const { channel, bind } = sessionChannel();
   const info = await invoke<SessionInfo>("create_ssh_terminal", {
     onEvent: channel,
-    target,
-    rows: dims?.rows ?? null,
-    cols: dims?.cols ?? null,
+    request: {
+      target,
+      phoneRequestId: phone?.phoneRequestId ?? null,
+      projectId: phone?.projectId ?? null,
+      savedPaneId: phone?.savedPaneId ?? null,
+      rows: dims?.rows ?? null,
+      cols: dims?.cols ?? null,
+    },
   });
   bind(info.id);
   return info;
@@ -121,8 +129,8 @@ export function holdTerminalOutput(id: number, hold: boolean): Promise<void> {
   return invoke("hold_terminal_output", { id, hold });
 }
 
-export function removeTerminal(id: number): Promise<void> {
-    return invoke("remove_terminal", { id });
+export function removeTerminal(id: number, phoneRequestId?: string): Promise<void> {
+    return invoke("remove_terminal", { id, phoneRequestId });
 }
 
 /** The whole scrollback ring, or with `maxBytes` only its most recent part. */

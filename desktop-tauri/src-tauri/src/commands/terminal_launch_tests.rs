@@ -8,6 +8,9 @@ use super::terminal_launch::{
 fn request(agent_id: &str) -> CreateTerminalRequest {
     CreateTerminalRequest {
         agent_id: agent_id.into(),
+        phone_request_id: None,
+        project_id: None,
+        saved_pane_id: None,
         cwd: None,
         resume_cwd: None,
         rows: None,

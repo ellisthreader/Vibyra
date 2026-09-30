@@ -174,3 +174,5 @@ export function phoneTerminalReply(
 ): Promise<boolean> {
   return invoke("phone_terminal_reply", { id, result: answer.result ?? null, error: answer.error ?? null });
 }
+
+export const phoneTerminalAuthorize = (id: string, pane: number) => invoke<void>("phone_terminal_authorize", { id, pane });

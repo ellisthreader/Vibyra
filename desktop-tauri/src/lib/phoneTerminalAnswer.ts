@@ -8,24 +8,25 @@ import type { ResolvedAgent } from "../types";
 
 /** What answering leans on. */
 export interface RequestDeps {
-  resumeSaved?: (id: number, projectId: string) => Promise<number>;
-  models: () => Promise<import("./phoneTerminalModels").PhoneTerminalModel[]>;
+  authorize?: (id: string) => Promise<void>;
+  resumeSaved?: (id: number, projectId: string, phoneRequestId?: string) => Promise<number>;
+  models: (phoneRequestId?: string) => Promise<import("./phoneTerminalModels").PhoneTerminalModel[]>;
   agents: () => Promise<ResolvedAgent[]>;
   /** Why the last launch started nothing, when the Mac said. */
   lastError?: () => string | null;
-  launch: (agent: ResolvedAgent, projectId: string, title: string, safeMode?: boolean, requestId?: string, model?: import("./phoneTerminalModels").PhoneTerminalModel, permissionMode?: "standard" | "full") => Promise<LaunchedSession[]>;
+  launch: (agent: ResolvedAgent, projectId: string, title: string, safeMode?: boolean, requestId?: string, model?: import("./phoneTerminalModels").PhoneTerminalModel, permissionMode?: "standard" | "full", phoneRequestId?: string) => Promise<LaunchedSession[]>;
   /** Whether a Safe mode checkpoint is waiting on the person right now. */
   approvalPending: () => boolean;
-  closePane: (id: number) => Promise<void>;
-  closeChat: (id: string) => Promise<void>;
+  closePane: (id: number, phoneRequestId?: string) => Promise<void>;
+  closeChat: (id: string, phoneRequestId?: string) => Promise<void>;
   /** Opens a folder as a project here, exactly as the person's own New project does. */
-  adopt: (path: string, name: string) => Promise<PhoneProjectOpened | null>;
+  adopt: (path: string, name: string, phoneRequestId?: string) => Promise<PhoneProjectOpened | null>;
   /** Renames a project in this window's list. The folder keeps its own name. */
-  rename: (projectId: string, name: string) => Promise<PhoneProjectOpened | null>;
+  rename: (projectId: string, name: string, phoneRequestId?: string) => Promise<PhoneProjectOpened | null>;
   /** Drops a project from this window's list. Nothing on disk is deleted. */
-  forget: (projectId: string) => Promise<void>;
+  forget: (projectId: string, phoneRequestId?: string) => Promise<void>;
   accountDefaults?: () => Record<string, string>;
-  accountDefault?: (provider: string, account: string) => void;
+  accountDefault?: (provider: string, account: string, phoneRequestId?: string) => void | Promise<void>;
 }
 
 export type Reply = { result?: PhoneTerminalStarted | PhoneProjectOpened | { ok: true } | Record<string, string> | { models: import("./phoneTerminalModels").PhoneTerminalModel[]; permissionModes: ["standard", "full"]; effortSelection?: boolean }; error?: string };
@@ -37,35 +38,38 @@ export const APPROVAL_WAITING =
 
 export async function answerTerminalRequest(request: Exclude<PhoneTerminalRequest, { action: 'focusedText' }>, deps: RequestDeps): Promise<Reply> {
   try {
+    await deps.authorize?.(request.id);
     if (request.action === "accountDefaults") return { result: deps.accountDefaults?.() ?? {} };
     if (request.action === "accountDefault") {
       if (!deps.accountDefault) return { error: "Open Vibyra on your Mac to choose an account." };
-      deps.accountDefault(request.provider, request.account);
+      await deps.accountDefault(request.provider, request.account, request.id);
       return { result: { ok: true } };
     }
     if (request.action === "resumeSaved") {
+      await deps.authorize?.(request.id);
       if (!deps.resumeSaved) return { error: "Update Vibyra on this computer to resume saved terminals." };
-      return { result: { paneId: await deps.resumeSaved(request.paneId, request.projectId) } };
+      return { result: { paneId: await deps.resumeSaved(request.paneId, request.projectId, request.id) } };
     }
-    if (request.action === "models") return { result: { models: await deps.models(), permissionModes: ["standard", "full"], effortSelection: true } };
+    if (request.action === "models") return { result: { models: await deps.models(request.id), permissionModes: ["standard", "full"], effortSelection: true } };
     if (request.action === "adopt") {
-      const project = await deps.adopt(request.path, request.name);
+      const project = await deps.adopt(request.path, request.name, request.id);
       // The folder is built either way; what failed is it appearing in the list.
       if (!project) return { error: "Vibyra could not open the new folder as a project." };
       return { result: project };
     }
     if (request.action === "rename") {
-      const project = await deps.rename(request.projectId, request.name);
+      const project = await deps.rename(request.projectId, request.name, request.id);
       if (!project) return { error: `That project is not open on this ${computerName}.` };
       return { result: project };
     }
     if (request.action === "forget") {
-      await deps.forget(request.projectId);
+      await deps.forget(request.projectId, request.id);
       return { result: { ok: true } };
     }
     if (request.action === "close") {
-      if (request.conversationId) await deps.closeChat(request.conversationId);
-      else if (typeof request.paneId === "number") await deps.closePane(request.paneId);
+      await deps.authorize?.(request.id);
+      if (request.conversationId) await deps.closeChat(request.conversationId, request.id);
+      else if (typeof request.paneId === "number") await deps.closePane(request.paneId, request.id);
       else return { error: "Nothing to close" };
       return { result: { ok: true } };
     }
@@ -74,7 +78,7 @@ export async function answerTerminalRequest(request: Exclude<PhoneTerminalReques
     if (!agent.installed && agent.id !== "shell") return { error: `${agent.name} is not installed on this ${computerName}.` };
     if (!["shell", "codex", "claude"].includes(request.kind) && !request.model)
       return { error: "Choose an available model for this terminal runner." };
-    let selected = request.model ? (await deps.models()).find(model => model.id === request.model && model.kind === request.kind) : undefined;
+    let selected = request.model ? (await deps.models(request.id)).find(model => model.id === request.model && model.kind === request.kind) : undefined;
     if (request.model && !selected) return { error: "That model is no longer available on this computer. Refresh the model list and choose again." };
     if (request.effort !== undefined) {
       if (!selected || (request.effort !== null ? !selected.efforts?.includes(request.effort) : !!selected.efforts?.length))
@@ -88,7 +92,8 @@ export async function answerTerminalRequest(request: Exclude<PhoneTerminalReques
       return { error: "Full permissions are not supported by this AI runner." };
     // Older phones omit this field. A phone launch always defaults to the
     // project folder, regardless of this Mac's saved Launch setup.
-    const [started] = await deps.launch(agent, request.projectId, request.title, request.safeMode === true, request.requestId, selected, request.permissionMode);
+    await deps.authorize?.(request.id);
+    const [started] = await deps.launch(agent, request.projectId, request.title, request.safeMode === true, request.requestId, selected, request.permissionMode, request.id);
     if (started) return { result: started };
     // An approval for another launch must never turn this phone's explicit
     // Safe mode off request into a Safe mode error.

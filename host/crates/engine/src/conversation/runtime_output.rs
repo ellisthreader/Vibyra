@@ -76,3 +76,11 @@ pub(super) fn start(
         let _ = events.send(json!({"method":"vibyra/processExited"}));
     });
 }
+
+/// A pending native launch must still be authorized after runtime initialization.
+pub(super) fn check_effect(value: &serde_json::Value) -> Result<(), String> {
+    if value["method"] == "thread/start" {
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}

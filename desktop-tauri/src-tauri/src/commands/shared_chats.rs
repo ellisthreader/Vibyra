@@ -42,7 +42,30 @@ pub async fn shared_chat_create(
     request_id: String,
     title: String,
     options: Option<TerminalOptions>,
+    phone_request_id: Option<String>,
 ) -> Result<Value, String> {
+    let effect = super::phone_effects::PhoneEffect::capture(
+        &state,
+        phone_request_id.as_deref(),
+        &["create"],
+        Some(&project_id),
+        None,
+    )?;
+    if let Some(effect) = &effect {
+        let root = state
+            .phone
+            .lock()
+            .project_root(&project_id)
+            .ok_or("This phone project is no longer open")?;
+        effect.terminal(
+            options
+                .as_ref()
+                .and_then(|o| o.provider.as_deref())
+                .unwrap_or("codex"),
+            root.to_str(),
+            None,
+        )?;
+    }
     if options.as_ref().is_some_and(|o| o.workspace_mode == "safe") {
         super::worktree_access::require_github(&state).await?;
     }
@@ -77,24 +100,30 @@ pub async fn shared_chat_create(
     let chats = state.shared_chats.clone();
     let accounts = std::sync::Arc::clone(&state.provider_auth);
     super::run_blocking(move || {
-        let provider = options
-            .as_ref()
-            .and_then(|o| o.provider.as_deref())
-            .unwrap_or("codex");
-        if !accounts.signed_in(provider, &account_id)? {
-            return Err(format!(
-                "Connect this {provider} account in Settings > Agents first."
-            ));
-        }
-        chats.create_configured(
-            project.id,
-            project.name,
-            project.root.into(),
-            account_id,
-            request_id,
-            title,
-            options,
-        )
+        super::phone_effects::scoped(effect, |effect| {
+            let provider = options
+                .as_ref()
+                .and_then(|o| o.provider.as_deref())
+                .unwrap_or("codex");
+            if !accounts.signed_in(provider, &account_id)? {
+                return Err(format!(
+                    "Connect this {provider} account in Settings > Agents first."
+                ));
+            }
+            super::phone_effects::check(effect)?;
+            if let Some(effect) = effect {
+                effect.project_directory(&project.root)?;
+            }
+            chats.create_configured(
+                project.id,
+                project.name,
+                project.root.into(),
+                account_id,
+                request_id,
+                title,
+                options,
+            )
+        })
     })
     .await
 }
@@ -104,9 +133,33 @@ pub async fn shared_chat_request(
     state: State<'_, AppState>,
     method: String,
     params: Value,
+    phone_request_id: Option<String>,
 ) -> Result<Value, String> {
+    let effect = super::phone_effects::PhoneEffect::capture(
+        &state,
+        phone_request_id.as_deref(),
+        &["close"],
+        None,
+        None,
+    )?;
+    if let Some(effect) = &effect {
+        if method != "session.stop" {
+            return Err("This phone request may only stop its conversation".into());
+        }
+        effect.conversation(
+            params["sessionId"]
+                .as_str()
+                .ok_or("Select a conversation")?,
+        )?;
+    }
     let chats = state.shared_chats.clone();
-    super::run_blocking(move || chats.local(&method, params)).await
+    super::run_blocking(move || {
+        super::phone_effects::scoped(effect, |effect| {
+            super::phone_effects::check(effect)?;
+            chats.local(&method, params)
+        })
+    })
+    .await
 }
 
 #[tauri::command]
@@ -133,29 +186,4 @@ pub fn shared_chat_open_link(url: String) -> Result<(), String> {
     }
     crate::provider_auth_url::open(parsed.as_str())
         .map_err(|_| "Could not open this web link".into())
-}
-
-#[tauri::command]
-pub async fn shared_chat_account_models(
-    state: State<'_, AppState>,
-    provider: String,
-    account_id: String,
-) -> Result<Value, String> {
-    let accounts = state.provider_auth.clone();
-    super::run_blocking(move || {
-        if !accounts.signed_in(&provider, &account_id)? {
-            return Err("Connect this AI account first".into());
-        }
-        let home = crate::provider_auth_registry::Registry::load().home(&provider, &account_id)?;
-        let environment = if provider == "codex" {
-            vec![(
-                "CODEX_HOME".into(),
-                home.credentials_dir().to_string_lossy().into_owned(),
-            )]
-        } else {
-            home.env().into_iter().collect()
-        };
-        vibyra_engine::Engine::account_models(provider, environment)
-    })
-    .await
 }

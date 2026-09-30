@@ -13,6 +13,9 @@ use super::terminal_args::{
 #[serde(rename_all = "camelCase")]
 pub struct CreateTerminalRequest {
     pub agent_id: String,
+    pub phone_request_id: Option<String>,
+    pub project_id: Option<String>,
+    pub saved_pane_id: Option<i64>,
     pub cwd: Option<String>,
     pub resume_cwd: Option<String>,
     pub rows: Option<u16>,
@@ -160,4 +163,15 @@ fn dimension(
 
 pub(super) fn invalid(message: &str) -> CoreError {
     CoreError::Settings(message.into())
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateSshTerminalRequest {
+    pub target: String,
+    pub rows: Option<u16>,
+    pub cols: Option<u16>,
+    pub phone_request_id: Option<String>,
+    pub project_id: Option<String>,
+    pub saved_pane_id: Option<i64>,
 }

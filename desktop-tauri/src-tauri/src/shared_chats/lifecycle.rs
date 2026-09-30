@@ -6,6 +6,7 @@ impl SharedChats {
         self.check()?;
         let _action = self.local_action.lock();
         let mut slots = self.slots.lock();
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
         let projects: Vec<_> = slots
             .iter()
             .filter(|slot| slot.project.project_id != project_id)
@@ -15,13 +16,20 @@ impl SharedChats {
             .iter()
             .filter(|slot| slot.project.project_id == project_id)
         {
+            vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
             slot.engine.shutdown_conversations();
             for session in self.cli.sessions_for_engine(&slot.engine) {
+                vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
                 self.cli.stop(&session);
             }
         }
+        vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())?;
         registry::save(&self.path, &projects)?;
         slots.retain(|slot| slot.project.project_id != project_id);
         Ok(())
     }
+}
+
+pub(super) fn check_effect() -> Result<(), String> {
+    vibyra_core::preview::check_privileged_effect().map_err(|e| e.to_string())
 }

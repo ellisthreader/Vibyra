@@ -44,6 +44,7 @@ fn snapshot(repo: &Path, worktrees_root: &Path, suffix: &str) -> CoreResult<Stri
     let head = git(repo, &["rev-parse", "HEAD"])?;
     let index = worktrees_root.join(format!("snapshot-{suffix}.index"));
     let run = |args: &[&str]| -> CoreResult<String> {
+        crate::preview::check_privileged_effect()?;
         let output = Command::new("git")
             .arg("-C")
             .arg(repo)
@@ -89,6 +90,7 @@ pub fn prepare_safe_workspace(
             "Safe mode needs approval for the current local changes".to_string(),
         ));
     }
+    crate::preview::check_privileged_effect()?;
     std::fs::create_dir_all(worktrees_root)?;
     let suffix = unique_suffix();
     let commit = if state.preflight.changed_files == 0 {
@@ -99,6 +101,7 @@ pub fn prepare_safe_workspace(
     let project_slug = slug(&state.project);
     let branch = format!("vibyra/{project_slug}-{suffix}");
     let target = worktrees_root.join(format!("{project_slug}-{suffix}"));
+    crate::preview::check_privileged_effect()?;
     let output = Command::new("git")
         .arg("-C")
         .arg(&state.repo)
@@ -184,3 +187,7 @@ mod tests {
             .contains("tracked.txt"));
     }
 }
+
+#[cfg(test)]
+#[path = "workspace_authorization_tests.rs"]
+mod authorization_tests;

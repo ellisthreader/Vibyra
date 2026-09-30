@@ -60,8 +60,27 @@ impl PhoneConnection {
             .take(128)
             .collect();
     }
+    #[cfg(test)]
+    pub(crate) fn enable_test_terminal_effects(&mut self) {
+        self.enabled = true;
+        self.typing.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+    pub fn allows_terminal_effect(&self) -> bool {
+        self.enabled && self.typing()
+    }
+    pub fn saved_terminal(&self, id: i64, project: &str) -> Option<(String, String)> {
+        self.workspace
+            .read()
+            .saved
+            .iter()
+            .find(|p| p.id == id && p.project_id == project)
+            .map(|p| (p.kind.clone(), p.title.clone()))
+    }
     pub fn address(&self) -> &str {
         &self.address
+    }
+    pub fn project_terminal_ids(&self, id: &str) -> Vec<u64> {
+        self.workspace.read().project_terminal_ids(id)
     }
     pub fn project_root(&self, id: &str) -> Option<PathBuf> {
         self.workspace.read().project_root(id)

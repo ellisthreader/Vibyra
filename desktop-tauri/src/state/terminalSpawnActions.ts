@@ -55,6 +55,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
         const agentSessionId = options?.agentSessionId ?? newAgentSessionId(agent.id);
         const info = await createTerminal({
           agentId: agent.id,
+          projectId, phoneRequestId: options?.phoneRequestId, savedPaneId: options?.savedPaneId,
           cwd: options?.cwd ?? useSettingsStore.getState().settings?.projects.find((p) => p.id === projectId)?.root ?? null,
           resumeCwd: options?.resumeCwd,
           rows: dims?.rows,

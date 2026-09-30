@@ -1,3 +1,4 @@
+import { phoneProjectMutation } from "./phoneProjectMutation";
 import { invoke } from '@tauri-apps/api/core';
 import { resolveLaunchAccount } from './resolveLaunchAccount';
 import { phoneModelAccounts } from './phoneModelAccounts';
@@ -36,8 +37,8 @@ async function agents(): Promise<ResolvedAgent[]> {
 
 /** The Mac's own Close terminal for a shared chat: the engine session ends
  * and the card comes down, on both screens. */
-async function closeChat(id: string): Promise<void> {
-  await chatRequest("session.stop", { sessionId: id });
+async function closeChat(id: string, phoneRequestId?: string): Promise<void> {
+  await chatRequest("session.stop", { sessionId: id }, phoneRequestId);
   const terminals = useConversationTerminals.getState();
   terminals.dismiss(id);
   await terminals.refresh();
@@ -46,10 +47,14 @@ async function closeChat(id: string): Promise<void> {
 let launchProblem: string | null = null;
 
 const storeDeps: RequestDeps = {
+  authorize: (id) => invoke("phone_request_authorize", { id }),
   accountDefaults: () => useProviderDefaultStore.getState().byRuntime,
-  accountDefault: (provider, account) => useProviderDefaultStore.getState().setDefault(provider, account),
+  accountDefault: async (provider, account, phoneRequestId) => {
+    await invoke("phone_preference_authorize", { id: phoneRequestId, provider, account });
+    useProviderDefaultStore.getState().setDefault(provider, account);
+  },
   agents,
-  models: async () => {
+  models: async (phoneRequestId) => {
     // The Mac already has a usable live/cache/static catalogue. Network refresh
     // must never hold the encrypted request open beyond its 15-second deadline.
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -59,18 +64,18 @@ const storeDeps: RequestDeps = {
     } finally { clearTimeout(timeout); }
     await useProviderAccountStore.getState().refresh();
     const advertised = await phoneModelAccounts(useProviderAccountStore.getState().providers,
-      resolveLaunchAccount, (provider, accountId) => invoke<{ data: AccountModel[] }>('shared_chat_account_models', { provider, accountId }));
+      resolveLaunchAccount, (provider, accountId) => invoke<{ data: AccountModel[] }>('shared_chat_account_models', { provider, accountId, phoneRequestId }));
     return phoneTerminalModels(useModelCatalogStore.getState().fullGroups, await agents(),
       useSettingsStore.getState().settings?.enabledAgentIds ?? [], advertised);
   },
   // The phone's page is the chat itself, so what it asks for is the Chat route:
   // Claude and Gemini go through the conversation engine like Codex, whatever
   // Agent view this Mac keeps for its own panes.
-  launch: async (agent, projectId, title, safeMode, requestId, selected, permissionMode) => {
+  launch: async (agent, projectId, title, safeMode, requestId, selected, permissionMode, phoneRequestId) => {
     // A failed launch reports on this Mac as a notification; keep its words for the phone.
     const since = Math.max(0, ...useNotificationStore.getState().history.map(item => item.id));
     const started = await launchConfigured(agent, projectId, {
-      title, view: "chat", safeMode, requestId,
+      title, view: "chat", safeMode, requestId, phoneRequestId,
       ...(permissionMode ? { permissionMode } : {}),
       ...(selected ? { model: selected.model, reasoningEnabled: selected.effort !== null,
         reasoningEffort: selected.effort as LaunchEffort | undefined } : {}),
@@ -81,24 +86,29 @@ const storeDeps: RequestDeps = {
   },
   lastError: () => launchProblem,
   approvalPending: () => useLaunchApprovalStore.getState().pending !== null,
-  resumeSaved: async (id, projectId) => {
+  resumeSaved: async (id, projectId, phoneRequestId) => {
     const store = useTerminalStore.getState();
     if (id >= 0 || !store.panes.some(pane => pane.id === id && pane.projectId === projectId && pane.status === 'suspended'))
       throw new Error('This saved terminal is no longer available.');
-    const resumed = await store.resume(id);
+    const resumed = await store.resume(id, phoneRequestId);
     if (typeof resumed !== 'number') throw new Error(useTerminalStore.getState().relaunchErrors[id] || 'The terminal did not resume.');
     return resumed;
   },
-  closePane: (id) => useTerminalStore.getState().close(id),
+  closePane: (id, phoneRequestId) => useTerminalStore.getState().close(id, phoneRequestId),
   closeChat,
-  rename: async (projectId, name) => {
+  rename: async (projectId, name, phoneRequestId) => {
+    if (phoneRequestId) return phoneProjectMutation(phoneRequestId, "rename");
     const renamed = await useProjectStore.getState().rename(projectId, name);
     return renamed ? { id: renamed.id, name: renamed.name, path: renamed.root } : null;
   },
   // The Mac's own Remove project: it leaves the list and its terminals close.
   // The folder stays exactly where it is.
-  forget: (projectId) => useProjectStore.getState().remove(projectId),
-  adopt: async (path, name) => {
+  forget: async (projectId, phoneRequestId) => {
+    if (phoneRequestId) { await phoneProjectMutation(phoneRequestId, "forget"); return; }
+    await useProjectStore.getState().remove(projectId);
+  },
+  adopt: async (path, name, phoneRequestId) => {
+    if (phoneRequestId) return phoneProjectMutation(phoneRequestId, "adopt");
     const project = await useProjectStore.getState().create(path, name);
     // The phone's folder list is keyed the way this window publishes it.
     return project ? { id: project.id, name: project.name, path: project.root } : null;

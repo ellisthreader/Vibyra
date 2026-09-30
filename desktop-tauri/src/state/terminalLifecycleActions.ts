@@ -1,3 +1,4 @@
+import { phoneTerminalAuthorize } from "../ipc/phone";
 import type { StoreApi } from "zustand";
 import { removeTerminal, setTerminalVisibility } from "../ipc/terminal";
 import { dropStats } from "../lib/activity";
@@ -20,18 +21,22 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
     ...terminalSpawnActions(set, get),
     switchAccount: (id, accountId) => switchPaneAccount(get, id, accountId),
     restart: async (id) => { await relaunch(set, get, id, false); },
-    resume: (id) => relaunch(set, get, id, true),
-    close: async (id) => {
+    resume: (id, phoneRequestId) => relaunch(set, get, id, true, phoneRequestId),
+    close: async (id, phoneRequestId) => {
       if (get().relaunching.includes(id)) return;
+      if (phoneRequestId) await phoneTerminalAuthorize(phoneRequestId, id);
       // Killing a PTY still delivers an exit event. Without this, closing a pane
       // — and a restart replacing the old process — would report a
       // finished or failed run the user never started.
       suppressExitNotice(id);
-      destroySession(id);
-      dropStats(id);
       // A suspended pane's negative id names no Rust session — sending it
       // would just be a rejected IPC call.
-      if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
+      if (!isSuspendedId(id)) {
+        if (phoneRequestId) await removeTerminal(id, phoneRequestId);
+        else await removeTerminal(id).catch(() => {});
+      }
+      destroySession(id);
+      dropStats(id);
       set((state) => {
         const activity = { ...state.activity };
         delete activity[id];

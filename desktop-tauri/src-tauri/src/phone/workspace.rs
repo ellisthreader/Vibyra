@@ -77,6 +77,13 @@ impl DesktopWorkspace {
     }
 
     /// Whether the window lists this project, so a phone can start work in it.
+    pub fn project_terminal_ids(&self, id: &str) -> Vec<u64> {
+        self.panes
+            .values()
+            .filter(|pane| pane.project_id == id)
+            .map(|pane| pane.id)
+            .collect()
+    }
     pub fn has_project(&self, id: &str) -> bool {
         self.projects.iter().any(|project| project.id == id)
     }

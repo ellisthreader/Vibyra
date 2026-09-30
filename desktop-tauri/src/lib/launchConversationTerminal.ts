@@ -4,13 +4,13 @@ import { useConversationTerminals } from '../state/conversationTerminalStore';
 const launching = new Set<string>();
 /** Resolves to the shared chat's id once it is in the grid. */
 export async function launchConversationTerminal(projectId: string, accountId: string | null,
-  title: string, options: ConversationLaunchOptions, focusMac = true, phoneRequestId?: string): Promise<string> {
+  title: string, options: ConversationLaunchOptions, focusMac = true, phoneRequestId?: string, phoneEffectId?: string): Promise<string> {
   const key = `terminal.create.${projectId}.${options.provider ?? 'codex'}.${accountId ?? 'default'}`;
   if (launching.has(key)) throw new Error('This terminal is still starting.');
   launching.add(key);
   try {
     if (phoneRequestId) {
-      const session = await createSharedChat(projectId, accountId ?? 'default', phoneRequestId, title, options);
+      const session = await createSharedChat(projectId, accountId ?? 'default', phoneRequestId, title, options, phoneEffectId);
       await useConversationTerminals.getState().refresh();
       return session.id;
     }

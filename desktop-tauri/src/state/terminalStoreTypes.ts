@@ -34,6 +34,8 @@ export interface PaneState {
 }
 
 export interface SpawnAgentOptions {
+  phoneRequestId?: string;
+  savedPaneId?: number;
   cwd?: string | null;
   resumeCwd?: string | null;
   model?: string | null;
@@ -56,6 +58,8 @@ export interface SpawnAgentOptions {
 
 /** Everything `spawnSsh` needs beyond the target and its project. */
 export interface SpawnSshOptions {
+  phoneRequestId?: string;
+  savedPaneId?: number;
   replaces?: number;
   replaySnapshot?: string | null;
 }
@@ -75,9 +79,9 @@ export interface TerminalStore {
   restart: (id: number) => Promise<void>;
   /** Relaunch one pane on a different provider account, in place. */
   switchAccount: (id: number, accountId: string | null) => Promise<void>;
-  resume: (id: number) => Promise<number | void>;
+  resume: (id: number, phoneRequestId?: string) => Promise<number | void>;
   restoreSession: () => Promise<void>;
-  close: (id: number) => Promise<void>;
+  close: (id: number, phoneRequestId?: string) => Promise<void>;
   hibernate: (id: number) => Promise<void>;
   wake: (id: number) => Promise<void>;
   toggleZoom: (id: number) => void;

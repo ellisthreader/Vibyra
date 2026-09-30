@@ -85,6 +85,7 @@ impl Session {
             cmd.cwd(cwd);
         }
 
+        crate::preview::check_privileged_effect()?;
         let child = pair
             .slave
             .spawn_command(cmd)
