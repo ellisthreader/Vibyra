@@ -1,7 +1,7 @@
 //! One cached X11 connection shared by every screen capture.
 //!
-//! Each capture used to open four separate connections — opacity off, grab,
-//! opacity on, activate — and every one of them re-ran the socket connect, the
+//! Earlier captures opened separate connections for opacity, grab and window
+//! activation, and every one of them re-ran the socket connect, the
 //! Xauthority read and the full setup handshake before doing any work. The
 //! session below is opened once, reused, and reopened only if the server hands
 //! back an error (display switch, server restart).
@@ -18,7 +18,6 @@ pub struct X11Session {
     pub screen_height: u16,
     /// `_NET_WM_WINDOW_OPACITY`, honoured only by a compositing window manager.
     pub opacity: Atom,
-    pub active_window: Atom,
 }
 
 static SESSION: Mutex<Option<X11Session>> = parking_lot::const_mutex(None);
@@ -38,14 +37,12 @@ fn open() -> Result<X11Session, String> {
     let (root, screen_width, screen_height) =
         (screen.root, screen.width_in_pixels, screen.height_in_pixels);
     let opacity = intern(&conn, b"_NET_WM_WINDOW_OPACITY")?;
-    let active_window = intern(&conn, b"_NET_ACTIVE_WINDOW")?;
     Ok(X11Session {
         conn,
         root,
         screen_width,
         screen_height,
         opacity,
-        active_window,
     })
 }
 

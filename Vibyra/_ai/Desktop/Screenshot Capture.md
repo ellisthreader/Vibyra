@@ -59,3 +59,19 @@ and PNG export in Vibyra Desktop (`desktop-tauri/`).
   Vibyra. All screenshot source files remain at or below 200 lines.
 - Timing target: the editor is up within ~150 ms of F9 at 1080p with the window
   included, and a crop drag holds 60 fps on the shared-memory renderer.
+
+
+### Remote-security release preservation
+
+The build31/0.8.16 security candidate preserves installed build30's separate
+screenshot editor and Session sidebar through a three-way delta from the verified
+build28 snapshot. The editor capability is local and matches only the
+`screenshot-editor` webview; its exact native grants are take capture, finish edit,
+copy and save. It receives no terminal, account, remote security or AgentVM grants.
+Retain descendant IPC exclusion and local-origin ACL checks when adding windows.
+`tests/nativeIpcContracts.test.mjs` checks the exact permission list; the real
+`verify-native-ipc-boundary.py` fixture verifies permitted editor capture and
+rejected terminal/security calls, plus child-frame and remote-origin rejection.
+The microphone cue adds only fixed audio output after the existing explicit
+recording start; it does not acquire microphone permission or expose phone voice.
+Source/fixture gates do not replace native screenshot/edit acceptance after install.

@@ -2,7 +2,7 @@
 .workspace-sidebar[hidden], .workspace-sidebar [hidden] { display: none !important; }
 .workspace-sidebar .companion__head { height:54px; min-height:54px; padding:0 10px 0 12px; gap:3px; flex-shrink:0; background:var(--surface); }
 .workspace-sidebar .companion__tabs { gap:3px; align-self:center; padding:3px; border:1px solid var(--line-soft); border-radius:9px; background:var(--workspace); flex:0 1 auto; margin-right:auto; }
-.workspace-sidebar .companion__tab { position:relative; gap:5px; min-height:28px; padding:0 9px; border-radius:6px; font-size:11px; font-weight:500; flex:0 0 auto; color:var(--muted); }
+.workspace-sidebar .companion__tab { position:relative; gap:5px; min-height:28px; padding:0 7px; border-radius:6px; font-size:11px; font-weight:500; flex:0 0 auto; color:var(--muted); }
 .workspace-sidebar .companion__tab::after { display:none; }
 .workspace-sidebar .companion__tab:hover { background:var(--hover); color:var(--text); }
 .workspace-sidebar .companion__tab--active { background:var(--hover-strong); color:var(--text); }

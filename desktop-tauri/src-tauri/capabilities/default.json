@@ -26,7 +26,9 @@
     "notification:allow-request-permission",
     "notification:allow-notify",
     "updater:default",
-    "process:default"
+    "process:default",
+    "core:webview:allow-create-webview-window",
+    "core:webview:allow-get-all-webviews"
   ],
   "webviews": [
     "main"

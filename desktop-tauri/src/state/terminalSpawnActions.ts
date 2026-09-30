@@ -96,6 +96,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
           exitCode: sessionExitCode(info.id) ?? null,
           visibility: "visible",
           lastFocusedAt: Date.now(),
+          openedAt: Date.now(),
         };
         placePane(set, get, pane, options?.replaces);
         return info.id;
@@ -131,6 +132,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): Pick<Termina
           exitCode: sessionExitCode(info.id) ?? null,
           visibility: "visible",
           lastFocusedAt: Date.now(),
+          openedAt: Date.now(),
         };
         placePane(set, get, pane, options?.replaces);
         return info.id;

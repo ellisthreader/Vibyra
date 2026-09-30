@@ -6,6 +6,7 @@ import { create } from "zustand";
 import { writeTerminal } from "../ipc/terminal";
 import { voiceStart, voiceStatus, voiceStop } from "../ipc/tools";
 import { shortcutLabel } from "../lib/hotkeys";
+import { microphoneCue } from "../lib/microphoneCue";
 import { useSettingsStore } from "./settingsStore";
 import { useTerminalStore } from "./terminalStore";
 
@@ -93,6 +94,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
       // again here: a newer recording may now own the microphone.
       if (generation !== get().generation) return;
       show("listening", "Listening", `${recordingDraft?.title ?? target!.title} · ${voiceShortcut()} to finish`);
+      microphoneCue("start");
       maxTimer = setTimeout(() => {
         if (get().phase === "listening") void stop();
       }, 60_000);
@@ -103,6 +105,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
 
   const stop = async () => {
     clearTimers();
+    microphoneCue("stop");
     const generation = get().generation;
     const targetId = get().targetId;
     const pane = useTerminalStore.getState().panes.find((p) => p.id === targetId);
@@ -154,6 +157,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
 
     cancel: () => {
       clearTimers();
+      if (get().phase === "listening") microphoneCue("stop");
       set((s) => ({ generation: s.generation + 1, phase: "idle" }));
       void voiceStop(true).catch(() => {});
     },

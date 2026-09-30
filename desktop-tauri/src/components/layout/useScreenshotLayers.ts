@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 
 import {
   drawBox,
+  drawEllipse,
+  drawArrow,
   drawCrop,
   drawPen,
   screenshotRect,
@@ -58,6 +60,8 @@ export function useScreenshotLayers(options: Options) {
     if (drag?.kind === "box") {
       drawBox(context, screenshotRect(drag.start, drag.current), drag.lineWidth, drag.color);
     }
+    if (drag?.kind === "ellipse") drawEllipse(context, screenshotRect(drag.start, drag.current), drag.lineWidth, drag.color);
+    if (drag?.kind === "arrow") drawArrow(context, drag.start, drag.current, drag.lineWidth, drag.color);
     if (!crop) return;
     const source = options.documentRef.current;
     const lineWidth = (1.5 * view.width) / (view.cssWidth * view.scale);

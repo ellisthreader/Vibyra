@@ -36,9 +36,6 @@ pub fn capture(window: &tauri::Window, hide_window: bool) -> Result<RgbaImage, S
         .map_err(|error| format!("Could not read the screenshot: {error}"))?;
     let image = super::screenshot_png::decode_png_bytes(&bytes)?.into_rgba8();
     drop(restore);
-    let _ = window.unminimize();
-    let _ = window.show();
-    let _ = window.set_focus();
     Ok(image)
 }
 

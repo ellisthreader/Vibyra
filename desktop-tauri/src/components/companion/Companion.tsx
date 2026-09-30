@@ -13,6 +13,7 @@ import { ChatPanel } from './ChatPanel';
 import { useCompanionResize } from './useCompanionResize';
 import { WorktreesPanel } from '../worktrees/WorktreesPanel';
 import { SidebarPreview } from '../preview/SidebarPreview';
+import { SessionPanel } from './SessionPanel';
 import type { PreviewScope } from '../worktrees/types';
 import './sidebarDesign.css';
 
@@ -32,7 +33,7 @@ function CompanionContent({ active }: { active: boolean }) {
       setCompanionTab: s.setCompanionTab, setCompanionWidth: s.setCompanionWidth, toggleCompanion: s.toggleCompanion })));
   const tab = savedTab;
   const entries: { id: CompanionTab; label: string }[] = [
-    { id: 'chat', label: 'Chat' }, { id: 'worktrees', label: 'Worktrees' }, { id: 'preview', label: 'Preview' },
+    { id: 'chat', label: 'Chat' }, { id: 'worktrees', label: 'Worktrees' }, { id: 'preview', label: 'Preview' }, { id: 'session', label: 'Session' },
   ];
   const tabs = useRef<Partial<Record<CompanionTab, HTMLButtonElement | null>>>({});
   const [previewVisited, setPreviewVisited] = useState(tab === 'preview' && open);
@@ -83,6 +84,9 @@ function CompanionContent({ active }: { active: boolean }) {
     </div>
     <div className="companion__body" id="companion-panel-preview" role="tabpanel" aria-labelledby="companion-tab-preview" hidden={tab !== 'preview'}>
       {previewVisited && <SidebarPreview scope={scope} onReset={() => setScope(null)} active={active && open && tab === 'preview'} />}
+    </div>
+    <div className="companion__body" id="companion-panel-session" role="tabpanel" aria-labelledby="companion-tab-session" hidden={tab !== 'session'}>
+      {tab === 'session' && <SessionPanel active={active && open} />}
     </div>
   </aside>;
 }

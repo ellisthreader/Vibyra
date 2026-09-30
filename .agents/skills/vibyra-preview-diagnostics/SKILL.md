@@ -154,3 +154,12 @@ Do not claim game or device-specific completeness from unit tests alone.
 
 Update the smallest Preview memory note and this skill when the workflow or
 validation contract changes.
+
+
+Validate native Preview changes on both Mac release CI and
+`desktop-nonmac-validation.yml`, dispatched on the same frozen source SHA.
+The dispatch-only workflow is registered on default main (27af5db0,
+workflow371060173); Windows/Linux run full verify and strict all-target Clippy,
+and Linux runs actual native IPC isolation under dbus/Xvfb. It publishes no
+packages and uses no signing secrets. Compile tests do not establish physical
+OS input acceptance.

@@ -13,7 +13,7 @@ import type { ScreenshotOperation } from "../../lib/screenshotOperations";
 
 export type CanvasDrag =
   | { kind: "crop"; mode: CropDragMode; start: Point; initial: Rect | null }
-  | { kind: "box" | "pen"; start: Point; current: Point; points: Point[]; lineWidth: number; color: string };
+  | { kind: "box" | "ellipse" | "arrow" | "pen"; start: Point; current: Point; points: Point[]; lineWidth: number; color: string };
 
 interface MutableRef<T> { current: T }
 
@@ -107,11 +107,15 @@ export function useScreenshotPointer(options: Options) {
     }
     const current = point(event);
     options.dragRef.current = null;
-    if (drag.kind === "box") {
+    if (drag.kind === "box" || drag.kind === "ellipse") {
       const rect = screenshotRect(drag.start, current);
       if (rect.width >= 3 && rect.height >= 3) {
-        options.commit({ type: "box", rect, lineWidth: drag.lineWidth, color: drag.color }, true);
+        options.commit({ type: drag.kind, rect, lineWidth: drag.lineWidth, color: drag.color }, true);
       } else options.render();
+    } else if (drag.kind === "arrow") {
+      if (Math.hypot(current.x - drag.start.x, current.y - drag.start.y) >= 3)
+        options.commit({ type: "arrow", start: drag.start, end: current, lineWidth: drag.lineWidth, color: drag.color }, true);
+      else options.render();
     } else if (drag.points.length > 1) {
       options.commit({
         type: "pen",

@@ -3,8 +3,12 @@ import { capturedScreenshotFromBytes } from "../lib/screenshotCapture";
 import { useSettingsStore } from "../state/settingsStore";
 import type { CapturedScreenshot, ClipboardPaste, Screenshot, SpeechVoice, VoiceLevel, VoiceStatus } from "../types";
 
-export async function captureScreen(selection = false): Promise<CapturedScreenshot> {
-  const pixels = await invoke<ArrayBuffer | Uint8Array>("capture_screen", { selection });
+export function captureScreenForEditor(selection = false): Promise<void> {
+  return invoke("capture_screen_for_editor", { selection });
+}
+
+export async function takeScreenshotEditorCapture(): Promise<CapturedScreenshot> {
+  const pixels = await invoke<ArrayBuffer | Uint8Array>("take_screenshot_editor_capture");
   return capturedScreenshotFromBytes(pixels);
 }
 

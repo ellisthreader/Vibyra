@@ -31,3 +31,21 @@ test('the desktop native registry implements every literal frontend command', ()
   assert.ok(commands.size > 100, 'The frontend command scan must cover the application.');
   assert.deepEqual(missing, [], 'A desktop feature calls an unregistered native command.');
 });
+
+
+test('screenshot editor has only exact local capture/edit permissions', () => {
+  const capability = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/capabilities/screenshot-editor.json')));
+  assert.deepEqual(capability.webviews, ['screenshot-editor']);
+  assert.equal(capability.local, true);
+  assert.equal(capability.windows, undefined);
+  assert.equal(capability.remote, undefined);
+  assert.deepEqual(capability.permissions, [
+    'core:default', 'core:window:allow-close', 'core:event:allow-emit-to',
+    'allow-take-screenshot-editor-capture', 'allow-finish-screenshot-edit',
+    'allow-copy-screenshot', 'allow-save-screenshot',
+  ]);
+  const main = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/capabilities/default.json')));
+  assert.deepEqual(main.webviews, ['main']);
+  assert.equal(main.local, true);
+  assert.equal(main.remote, undefined);
+});

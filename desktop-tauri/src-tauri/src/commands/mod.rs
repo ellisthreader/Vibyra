@@ -65,6 +65,7 @@ mod terminal_launch_tests;
 pub mod terminal_lifecycle;
 mod terminal_prepare;
 pub mod voice;
+pub mod voice_cue;
 mod worktree_access;
 
 use vibyra_core::{CoreError, CoreResult};

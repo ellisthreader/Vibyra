@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { chatRequest, type SharedSession } from '../../ipc/sharedChats';
 import { useConversationTerminals } from '../../state/conversationTerminalStore';
+import { useTerminalStore } from '../../state/terminalStore';
 import { AgentMark } from '../common/AgentMark';
 import { conversationAgent } from '../../lib/conversationAgent';
 import { ExpandIcon } from '../common/Icons';
@@ -30,7 +31,7 @@ export function NativeConversationPane({ session, hidden, active, fontSize, onOp
     </header>
     {error && <p role="alert" className="shared-error">{error}</p>}
     {running ? <ConversationCliView sessionId={session.id} visible={active && !hidden} fontSize={fontSize} onOpenChat={onOpenChat}
-      onFocus={() => useConversationTerminals.setState({ focused: session.id })} /> : <>
+      onFocus={() => { useTerminalStore.setState({ focusedId: null }); useConversationTerminals.setState({ focused: session.id }); }} /> : <>
       <ResumeConversation sessionId={session.id} />
       <div className="conversation-cli-error"><span>Your conversation and project files are saved. Resume this terminal or view its saved chat.</span>
         <button className="btn" onClick={onOpenChat}>View saved chat</button></div>

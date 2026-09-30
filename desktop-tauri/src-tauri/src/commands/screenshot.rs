@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use base64::Engine;
 use image::DynamicImage;
 use serde::Serialize;
+use std::sync::Mutex;
 use tauri::State;
 
 use crate::state::AppState;
@@ -10,6 +11,8 @@ use crate::state::AppState;
 use super::clipboard::copy_image;
 use super::screenshot_capture::{capture_screen_image, finish_capture_session};
 use super::screenshot_png::{decode_png, decode_png_bytes, png_bytes, PNG_PREFIX};
+
+static EDITOR_CAPTURE: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -75,27 +78,49 @@ fn saved_screenshot(path: &Path, image: &DynamicImage) -> Result<Screenshot, Str
 }
 
 #[tauri::command]
-pub async fn capture_screen(
+pub async fn capture_screen_for_editor(
     state: State<'_, AppState>,
     window: tauri::Window,
     selection: Option<bool>,
-) -> Result<tauri::ipc::Response, String> {
+) -> Result<(), String> {
+    if window.label() != "main" {
+        return Err("Capture must start from the main window".into());
+    }
     let hide_window = state.settings.lock().screenshot_hide_window;
     tauri::async_runtime::spawn_blocking(move || {
         let image = capture_screen_image(&window, hide_window, selection.unwrap_or(false))?;
-        let mut response = Vec::with_capacity(12 + image.as_raw().len());
-        response.extend_from_slice(b"VSH\x01");
-        response.extend_from_slice(&image.width().to_be_bytes());
-        response.extend_from_slice(&image.height().to_be_bytes());
-        response.extend_from_slice(image.as_raw());
-        Ok(tauri::ipc::Response::new(response))
+        let mut bytes = Vec::with_capacity(12 + image.as_raw().len());
+        bytes.extend_from_slice(b"VSH\x01");
+        bytes.extend_from_slice(&image.width().to_be_bytes());
+        bytes.extend_from_slice(&image.height().to_be_bytes());
+        bytes.extend_from_slice(image.as_raw());
+        *EDITOR_CAPTURE.lock().map_err(|e| e.to_string())? = Some(bytes);
+        Ok(())
     })
     .await
     .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
+pub fn take_screenshot_editor_capture(
+    window: tauri::Window,
+) -> Result<tauri::ipc::Response, String> {
+    if window.label() != "screenshot-editor" {
+        return Err("Only the screenshot editor can read this capture".into());
+    }
+    let bytes = EDITOR_CAPTURE
+        .lock()
+        .map_err(|e| e.to_string())?
+        .take()
+        .ok_or("No screenshot is waiting to be edited")?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+#[tauri::command]
 pub fn finish_screenshot_edit(window: tauri::Window) {
+    if let Ok(mut capture) = EDITOR_CAPTURE.lock() {
+        *capture = None;
+    }
     finish_capture_session(&window);
 }
 

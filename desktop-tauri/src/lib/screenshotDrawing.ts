@@ -1,4 +1,4 @@
-export type ScreenshotTool = "crop" | "box" | "pen";
+export type ScreenshotTool = "crop" | "box" | "ellipse" | "arrow" | "pen";
 
 export interface Point {
   x: number;
@@ -72,6 +72,33 @@ export function drawBox(
   context.strokeStyle = color;
   context.lineWidth = lineWidth;
   context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+  context.restore();
+}
+
+export function drawEllipse(context: CanvasRenderingContext2D, rect: Rect, lineWidth: number, color: string): void {
+  context.save();
+  context.strokeStyle = color;
+  context.lineWidth = lineWidth;
+  context.beginPath();
+  context.ellipse(rect.x + rect.width / 2, rect.y + rect.height / 2,
+    Math.max(1, rect.width / 2), Math.max(1, rect.height / 2), 0, 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
+}
+
+export function drawArrow(context: CanvasRenderingContext2D, start: Point, end: Point, lineWidth: number, color: string): void {
+  const angle = Math.atan2(end.y - start.y, end.x - start.x);
+  const length = Math.min(30 * lineWidth / 3, Math.max(9 * lineWidth / 3, Math.hypot(end.x - start.x, end.y - start.y) * .24));
+  context.save();
+  context.strokeStyle = color;
+  context.fillStyle = color;
+  context.lineWidth = lineWidth;
+  context.lineCap = 'round';
+  context.beginPath(); context.moveTo(start.x, start.y); context.lineTo(end.x, end.y); context.stroke();
+  context.beginPath(); context.moveTo(end.x, end.y);
+  context.lineTo(end.x - length * Math.cos(angle - .45), end.y - length * Math.sin(angle - .45));
+  context.lineTo(end.x - length * Math.cos(angle + .45), end.y - length * Math.sin(angle + .45));
+  context.closePath(); context.fill();
   context.restore();
 }
 

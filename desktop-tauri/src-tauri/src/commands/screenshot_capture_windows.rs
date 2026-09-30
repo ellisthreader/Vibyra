@@ -70,11 +70,7 @@ pub fn capture_screen_image(
     if hide_window {
         let _ = window.show();
     }
-    let _ = window.unminimize();
-    let _ = window.set_focus();
     captured
 }
 
-pub fn finish_capture_session(window: &tauri::Window) {
-    let _ = window.show();
-}
+pub fn finish_capture_session(_window: &tauri::Window) {}

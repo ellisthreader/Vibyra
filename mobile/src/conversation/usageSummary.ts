@@ -59,6 +59,7 @@ export function usageSummary(value: unknown) {
   return {
     groups,
     tokens,
+    costUsd: typeof thread.costUsd === 'number' && Number.isFinite(thread.costUsd) ? thread.costUsd : undefined,
     note: typeof data.unavailable === 'string' ? data.unavailable : '',
     observedAt: typeof data.observedAt === 'string' ? data.observedAt : undefined,
   };

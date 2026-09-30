@@ -81,6 +81,9 @@ mod tests {
             "remote_security_decide_session",
             "remote_security_set_mode",
             "write_terminal",
+            "capture_screen_for_editor",
+            "take_screenshot_editor_capture",
+            "play_voice_cue",
         ] {
             assert!(commands.iter().any(|name| name == required));
         }

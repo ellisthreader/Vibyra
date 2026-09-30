@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { emitTo } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
-import { finishScreenshotEdit } from "../../ipc/tools";
 import type { ScreenshotTool } from "../../lib/screenshotDrawing";
-import { useReportStore } from "../../state/reportStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
-import { useWorkspaceStore } from "../../state/workspaceStore";
 import {
   ScreenshotCanvas,
   type ScreenshotCanvasHandle,
@@ -28,20 +27,21 @@ function editorHint(tool: ScreenshotTool, state: ScreenshotCanvasState): string 
   if (tool === "crop" && state.selection) return "Drag inside to move · use the corner handles to resize";
   if (tool === "crop") return "Drag over the area you want to keep";
   if (tool === "box") return "Drag to place a rectangle";
+  if (tool === "ellipse") return "Drag to place an ellipse";
+  if (tool === "arrow") return "Drag to point something out";
   return "Draw directly on the screenshot";
 }
 
-export function ScreenshotEditor() {
+export function ScreenshotEditor({ forReport }: { forReport: boolean }) {
   const draft = useScreenshotStore((state) => state.draft);
   const closeEditor = useScreenshotStore((state) => state.closeEditor);
   const close = useCallback(() => {
-    useReportStore.getState().cancelScreenshot();
     closeEditor();
+    void getCurrentWindow().close();
   }, [closeEditor]);
-  const addShot = useScreenshotStore((state) => state.addShot);
+  const addShot = useCallback((shot: import('../../types').Screenshot) => emitTo('main', 'screenshot:saved', shot), []);
   // Set while a report is waiting for this shot: the editor then offers to
   // hand it back rather than only to save or copy it.
-  const forReport = useReportStore((state) => state.capturing);
   const canvas = useRef<ScreenshotCanvasHandle>(null);
   const [tool, setTool] = useState<ScreenshotTool>("crop");
   const [color, setColor] = useState(SCREENSHOT_COLORS[0]);
@@ -49,29 +49,13 @@ export function ScreenshotEditor() {
   const actions = useScreenshotActions(canvas, addShot, close);
   const attachToReport = useCallback(async () => {
     const dataUrl = await canvas.current?.dataUrl();
-    if (dataUrl) useReportStore.getState().applyScreenshot(dataUrl);
-  }, []);
-  const onCanvasError = useCallback((error: unknown) => {
-    close();
-    useWorkspaceStore.getState().setError(`Screenshot could not be prepared: ${String(error)}`);
+    if (!dataUrl) return;
+    await emitTo('main', 'screenshot:report', dataUrl); close();
   }, [close]);
-
-  // The workspace keeps its layout (nothing reflows on the way in or out) but
-  // stops painting and stops taking focus while the editor is up.
-  useEffect(() => {
-    if (!draft) return;
-    document.body.classList.add("screenshot-editing");
-    const editor = document.querySelector<HTMLElement>(".screenshot-editor");
-    const siblings = [...document.querySelectorAll<HTMLElement>(".app > *")].filter((item) => item !== editor);
-    const prior = siblings.map((item) => item.inert);
-    siblings.forEach((item) => { item.inert = true; });
-    editor?.querySelector<HTMLElement>("[data-editor-close]")?.focus();
-    return () => {
-      document.body.classList.remove("screenshot-editing");
-      siblings.forEach((item, index) => { item.inert = prior[index]; });
-      void finishScreenshotEdit();
-    };
-  }, [draft]);
+  const onCanvasError = useCallback((error: unknown) => {
+    void emitTo('main', 'screenshot:error', `Screenshot could not be prepared: ${String(error)}`)
+      .catch(() => {}).finally(close);
+  }, [close]);
 
   useEffect(() => {
     if (!draft) return;
@@ -89,7 +73,7 @@ export function ScreenshotEditor() {
       else if (draft && command && event.key.toLowerCase() === "c") void actions.copy();
       else if (draft && command && event.key.toLowerCase() === "s") void actions.save();
       else if (draft && !command && !event.altKey) {
-        const next = ({ "1": "crop", "2": "box", "3": "pen" } as const)[event.key];
+        const next = ({ "1": "crop", "2": "box", "3": "ellipse", "4": "arrow", "5": "pen" } as const)[event.key];
         if (next) setTool(next);
         else return;
       } else return;

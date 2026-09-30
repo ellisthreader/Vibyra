@@ -28,7 +28,7 @@
     "macOS": {
       "minimumSystemVersion": "12.0",
       "entitlements": "Entitlements.plist",
-      "bundleVersion": "29",
+      "bundleVersion": "31",
       "files": {
         "XPCServices/AgentCommand.xpc": "./target/agent-command-bundle/AgentCommand.xpc",
         "MacOS/AgentCommandClient": "./target/agent-command-bundle/AgentCommandClient"

@@ -1,6 +1,7 @@
 import { useProductMode } from '../../state/productModeStore';
 import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
-import { lazy, Suspense, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useState, useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
 import { NewModelsNotice } from "../home/NewModelsNotice";
@@ -55,8 +56,6 @@ const ReportModal = lazy(() => import("../report/ReportModal")
   .then((module) => ({ default: module.ReportModal })));
 const SavedHistory = lazy(() => import("./SavedHistory")
   .then((module) => ({ default: module.SavedHistory })));
-const ScreenshotEditor = lazy(() => import("./ScreenshotEditor")
-  .then((module) => ({ default: module.ScreenshotEditor })));
 const SettingsModal = lazy(() => import("../settings/SettingsModal")
   .then((module) => ({ default: module.SettingsModal })));
 
@@ -78,7 +77,6 @@ export function WorkspaceApp() {
   const filePreviewOpen = useWorkspaceStore((s) => s.preview !== null);
   const launchApprovalOpen = useLaunchApprovalStore((s) => s.pending !== null);
   const runConfirmOpen = useRunConfirmStore((s) => s.pending !== null);
-  const screenshotEditorOpen = useScreenshotStore((s) => s.draft !== null);
   const reportOpen = useReportStore((s) => s.open);
   const [welcomeOpen, setWelcomeOpen] = useState(() => !hasSeenFirstWelcome(profile));
   const [welcomeHandoff, setWelcomeHandoff] = useState(false);
@@ -93,6 +91,13 @@ export function WorkspaceApp() {
   useUpdateWatch();
   usePhoneWatch();
   useSpendWatch();
+  useEffect(() => {
+    const saved = listen<import('../../types').Screenshot>('screenshot:saved', event => useScreenshotStore.getState().addShot(event.payload));
+    const report = listen<string>('screenshot:report', event => useReportStore.getState().applyScreenshot(event.payload));
+    const closed = listen('screenshot:closed', () => useReportStore.getState().cancelScreenshot());
+    const error = listen<string>('screenshot:error', event => useWorkspaceStore.getState().setError(event.payload));
+    return () => { void saved.then(off => off()); void report.then(off => off()); void closed.then(off => off()); void error.then(off => off()); };
+  }, []);
 
   const beginWelcomeHandoff = useCallback(() => {
     useProductMode.getState().choose("work");
@@ -150,7 +155,6 @@ export function WorkspaceApp() {
       <RemoteSecurityMonitor />
       <ScreenshotTray />
       <Suspense fallback={null}>
-        {screenshotEditorOpen ? <ScreenshotEditor /> : null}
         {paletteOpen ? <CommandPalette /> : null}
         {historyOpen ? <SavedHistory /> : null}
         {agentPickerOpen ? <AgentPickerModal /> : null}

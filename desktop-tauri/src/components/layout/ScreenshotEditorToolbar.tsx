@@ -9,6 +9,8 @@ export const SCREENSHOT_COLORS = ["#ff5f6d", "#ffb547", "#5b7cfa", "#35c58b", "#
 function ToolIcon({ tool }: { tool: ScreenshotTool }) {
   if (tool === "crop") return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3v10.5A2.5 2.5 0 0 0 8.5 16H17M3 6h10.5A2.5 2.5 0 0 1 16 8.5V17" /></svg>;
   if (tool === "box") return <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="4" width="13" height="12" rx="1.5" /></svg>;
+  if (tool === "ellipse") return <svg viewBox="0 0 20 20" aria-hidden="true"><ellipse cx="10" cy="10" rx="7" ry="5.5" /></svg>;
+  if (tool === "arrow") return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 16 16 3M9 3h7v7" /></svg>;
   return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 15 1.1-4.2L13.5 2.5l4 4-8.4 8.4L5 16zM11.8 4.2l4 4" /></svg>;
 }
 
@@ -47,16 +49,18 @@ interface Props {
 export function ScreenshotEditorToolbar(props: Props) {
   return (
     <header className="screenshot-editor__toolbar">
-      <button data-editor-close className="screenshot-close" title="Close editor (Esc)" onClick={props.close}>
+      <div className="screenshot-editor__identity"><button data-editor-close className="screenshot-close" title="Close editor (Esc)" onClick={props.close}>
         <CloseIcon size={15} /><span>Close</span><kbd>Esc</kbd>
-      </button>
+      </button><span className="screenshot-editor__name">Screenshot</span></div>
       <div className="screenshot-tools" aria-label="Screenshot tools">
         <ToolButton label="Crop" shortcut="1" tool="crop" active={props.tool === "crop"} onClick={() => props.onTool("crop")} />
         <ToolButton label="Rectangle" shortcut="2" tool="box" active={props.tool === "box"} onClick={() => props.onTool("box")} />
-        <ToolButton label="Draw" shortcut="3" tool="pen" active={props.tool === "pen"} onClick={() => props.onTool("pen")} />
-        {props.tool !== "crop" && <span className="screenshot-colors" aria-label="Annotation colour">{SCREENSHOT_COLORS.map((value) => (
-          <button key={value} className="screenshot-color" style={{ "--shot-color": value } as CSSProperties} aria-label={`Use ${value}`} aria-pressed={props.color === value} onClick={() => props.onColor(value)} />
-        ))}</span>}
+        <ToolButton label="Ellipse" shortcut="3" tool="ellipse" active={props.tool === "ellipse"} onClick={() => props.onTool("ellipse")} />
+        <ToolButton label="Arrow" shortcut="4" tool="arrow" active={props.tool === "arrow"} onClick={() => props.onTool("arrow")} />
+        <ToolButton label="Draw" shortcut="5" tool="pen" active={props.tool === "pen"} onClick={() => props.onTool("pen")} />
+        <span className="screenshot-colors" data-inactive={props.tool === "crop"} aria-label="Annotation colour">{SCREENSHOT_COLORS.map((value) => (
+          <button key={value} className="screenshot-color" style={{ "--shot-color": value } as CSSProperties} aria-label={`Use ${value}`} aria-pressed={props.color === value} disabled={props.tool === "crop"} onClick={() => props.onColor(value)} />
+        ))}</span>
       </div>
       <div className="screenshot-history" aria-label="Edit history">
         <button className="icon-btn" title="Undo (Ctrl+Z)" disabled={!props.canvasState.canUndo} onClick={props.onUndo}><HistoryIcon kind="undo" /></button>

@@ -3,6 +3,7 @@ import { ResumeConversation } from './ResumeConversation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { chatRequest, type SharedSession, type ConversationSnapshot, type AgentItem } from '../../ipc/sharedChats';
 import { useConversationTerminals } from '../../state/conversationTerminalStore';
+import { useTerminalStore } from '../../state/terminalStore';
 import { useSettingsStore } from '../../state/settingsStore';
 import { conversationViewMemory } from '../../../../mobile/src/conversation/viewMemory';
 import { ConversationAttachments } from '../sharedChats/ConversationAttachments';
@@ -170,7 +171,7 @@ export function ConversationChatPane({ session, hidden, active, fontSize, onRetu
       <form className={`terminal-prompt ${working ? 'is-working' : ''}`} onSubmit={event => { event.preventDefault(); void submit(); }}>
         <textarea ref={input} aria-label={`Message ${agent.name}`} placeholder={working ? 'Draft your next message…' : 'Ask anything, or / for commands…'} value={draft} disabled={busy} rows={2}
           onSelect={event => { memory.selection = { start: event.currentTarget.selectionStart, end: event.currentTarget.selectionEnd }; }}
-          onFocus={() => { useConversationTerminals.setState({ focused: session.id }); voice.focus(); }}
+          onFocus={() => { useTerminalStore.setState({ focusedId: null }); useConversationTerminals.setState({ focused: session.id }); voice.focus(); }}
           onChange={event => { edit(event.target.value); setCommandError(''); }} onKeyDown={event => {
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submit(); }
           }} />

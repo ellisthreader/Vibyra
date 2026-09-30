@@ -21,6 +21,8 @@ export interface PaneState {
   exitCode: number | null;
   visibility: Visibility;
   lastFocusedAt: number;
+  /** Current process start; absent for a restored pane whose original start is unknown. */
+  openedAt?: number;
   /** Restored output for a suspended pane; absent once it is running. */
   snapshot?: string | null;
   /** The agent's own conversation id, for agents that accept one at launch. */

@@ -49,3 +49,11 @@ On macOS, accepted sockets inherit the static listener's nonblocking mode.
 mode before setting its bounded timeouts; otherwise split request headers fail
 with WouldBlock and the connection resets. Keep the fragmented-header test in
 `preview/tests_static.rs` in the native Mac validation gate.
+
+
+Native Preview platform gates: dispatch `desktop-nonmac-validation.yml` on the
+same frozen source as the Mac release workflow. It is registered on default
+main27af5db0 (workflow371060173). Windows/Linux run full verify/all-target
+Clippy; Linux additionally exercises actual native IPC under dbus/Xvfb.
+Diagnostic receipts are retained, with no signing secrets or artifact publication.
+See the Preview diagnostics skill for dispatch and physical OS test boundaries.

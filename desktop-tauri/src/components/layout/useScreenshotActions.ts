@@ -12,7 +12,7 @@ export interface ScreenshotNotice {
 
 export function useScreenshotActions(
   canvas: RefObject<ScreenshotCanvasHandle | null>,
-  addShot: (shot: Screenshot) => void,
+  addShot: (shot: Screenshot) => void | Promise<void>,
   close: () => void,
 ) {
   const [busy, setBusy] = useState<"copy" | "save" | null>(null);
@@ -44,7 +44,7 @@ export function useScreenshotActions(
         await copyScreenshot(dataUrl);
         showNotice({ tone: "success", message: "Copied to clipboard" });
       } else {
-        addShot(await saveScreenshot(dataUrl));
+        await addShot(await saveScreenshot(dataUrl));
         close();
       }
     } catch (error) {

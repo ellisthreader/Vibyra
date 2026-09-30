@@ -87,6 +87,7 @@ import "./styles/report.part-03.css";
 import "./styles/report.part-04.css";
 import "./styles/screenshot-editor.css";
 import "./styles/screenshot-controls.css";
+import "./styles/screenshot-window.css";
 import "./styles/screenshot-tray.css";
 import "./styles/settings-graphics.css";
 import "./styles/settings-hint.css";
@@ -133,4 +134,7 @@ void initRendererPolicy();
 void terminalFontReady();
 installAppDropGuard();
 
-createRoot(document.getElementById("root")!).render(<App />);
+const root = createRoot(document.getElementById("root")!);
+if (new URLSearchParams(location.search).has("screenshot-editor")) {
+  void import("./components/layout/ScreenshotWindow").then(({ ScreenshotWindow }) => root.render(<ScreenshotWindow />));
+} else root.render(<App />);

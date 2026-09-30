@@ -93,10 +93,10 @@ export const useReportStore = create<ReportStore>((set, get) => ({
     if (get().capturing) return;
     set({ capturing: true });
     await nextPaint();
-    await useScreenshotStore.getState().capture(selection);
+    const opened = await useScreenshotStore.getState().capture(selection, true);
     // The capture can fail (no compositor, permission refused); the editor
     // never opens, so hand the dialog back rather than stranding the user.
-    if (!useScreenshotStore.getState().draft) set({ capturing: false });
+    if (!opened) set({ capturing: false });
   },
 
   // Paths rather than bytes all the way through: the picker hands back a
@@ -141,7 +141,6 @@ export const useReportStore = create<ReportStore>((set, get) => ({
   applyScreenshot: (dataUrl) => {
     const draft = get().draft;
     set({ capturing: false, draft: draft ? { ...draft, screenshot: dataUrl } : draft });
-    useScreenshotStore.getState().closeEditor();
   },
 
   cancelScreenshot: () => set({ capturing: false }),

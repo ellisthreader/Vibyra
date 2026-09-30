@@ -92,9 +92,7 @@ pub fn capture_screen_image(
     let bytes = std::fs::read(&path).map_err(|error| error.to_string())?;
     let image = decode_png_bytes(&bytes)?.into_rgba8();
     drop(restore);
-    // Bring the editor forward only after the screen has been captured.
-    let _ = window.show();
-    let _ = window.set_focus();
+    // The separate editor window opens next; leave the main workspace where it was.
     Ok(image)
 }
 

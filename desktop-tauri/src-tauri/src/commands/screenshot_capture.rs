@@ -11,10 +11,7 @@ use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use std::sync::atomic::{AtomicBool, Ordering};
 use x11rb::connection::Connection;
 use x11rb::protocol::randr::ConnectionExt as _;
-use x11rb::protocol::xproto::{
-    AtomEnum, ClientMessageData, ClientMessageEvent, ConnectionExt as _, EventMask, ImageFormat,
-    PropMode,
-};
+use x11rb::protocol::xproto::{AtomEnum, ConnectionExt as _, ImageFormat, PropMode};
 use x11rb::wrapper::ConnectionExt as _;
 
 use super::screenshot_x11::with_session;
@@ -46,29 +43,6 @@ fn set_x11_opacity(window_id: u32, opacity: u32) -> Result<(), String> {
                 session.opacity,
                 AtomEnum::CARDINAL,
                 &[opacity],
-            )
-            .map_err(|e| e.to_string())?
-            .check()
-            .map_err(|e| e.to_string())?;
-        session.conn.flush().map_err(|e| e.to_string())
-    })
-}
-
-fn activate_x11_window(window_id: u32) -> Result<(), String> {
-    with_session(|session| {
-        let event = ClientMessageEvent::new(
-            32,
-            window_id,
-            session.active_window,
-            ClientMessageData::from([2, 0, 0, 0, 0]),
-        );
-        session
-            .conn
-            .send_event(
-                false,
-                session.root,
-                EventMask::SUBSTRUCTURE_REDIRECT | EventMask::SUBSTRUCTURE_NOTIFY,
-                event,
             )
             .map_err(|e| e.to_string())?
             .check()
@@ -121,10 +95,8 @@ pub fn grab_pointer_monitor() -> Result<RgbaImage, String> {
         .ok_or_else(|| "The display returned an invalid capture buffer.".to_string())
 }
 
-/// Grabs the pointer's monitor and raises Vibyra so the editor is usable when
-/// the shortcut fired from another application. The window is neither resized
-/// nor forced fullscreen: the editor is an overlay inside the existing window,
-/// and toggling fullscreen re-lays out every live terminal twice per capture.
+/// Grabs the pointer's monitor without raising the main workspace. A separate
+/// editor window is created after capture, so the terminal grid never reflows.
 pub fn capture_screen_image(
     window: &tauri::Window,
     hide_window: bool,
@@ -152,8 +124,6 @@ pub fn capture_screen_image(
     } else {
         grab_pointer_monitor()
     };
-    let _ = window.unminimize();
-    let _ = activate_x11_window(window_id);
     restored?;
     captured
 }

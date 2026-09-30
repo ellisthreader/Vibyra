@@ -14,12 +14,23 @@ static MUTATIONS: AtomicUsize = AtomicUsize::new(0);
 static ROOT_SAFE: AtomicBool = AtomicBool::new(false);
 static LOCAL_DENIED: AtomicBool = AtomicBool::new(false);
 static REMOTE_DENIED: AtomicBool = AtomicBool::new(false);
+static EDITOR_SAFE: AtomicBool = AtomicBool::new(false);
 
 struct Origin(String);
 
 #[tauri::command]
 fn remote_security_snapshot() -> bool {
     true
+}
+
+#[tauri::command]
+fn take_screenshot_editor_capture() -> bool {
+    true
+}
+
+#[tauri::command]
+fn write_terminal() {
+    MUTATIONS.fetch_add(1, Ordering::SeqCst);
 }
 
 #[tauri::command]
@@ -79,7 +90,12 @@ fn main() {
                     REMOTE_DENIED.store(true, Ordering::SeqCst);
                     "ok"
                 }
+                "/result?kind=editor&denied=true" => {
+                    EDITOR_SAFE.store(true, Ordering::SeqCst);
+                    "ok"
+                }
                 "/top" => include_str!("ipc-boundary/assets/unprivileged.html"),
+                "/screenshot.js" => include_str!("ipc-boundary/assets/screenshot.js"),
                 "/unprivileged.js" => include_str!("ipc-boundary/assets/unprivileged.js"),
                 _ => include_str!("ipc-boundary/attack.html"),
             };
@@ -95,6 +111,8 @@ fn main() {
     tauri::Builder::default()
         .manage(Origin(origin.clone()))
         .setup(move |app| {
+            WebviewWindowBuilder::new(app, "screenshot-editor", WebviewUrl::App("screenshot.html".into()))
+                .visible(false).initialization_script(format!("window.fixtureOrigin = {origin:?};")).build()?;
             WebviewWindowBuilder::new(app, "project-fixture", WebviewUrl::App("unprivileged.html".into()))
                 .visible(false).initialization_script(format!("window.fixtureOrigin = {origin:?};")).build()?;
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
@@ -105,9 +123,9 @@ fn main() {
             std::thread::spawn(move || {
                 for _ in 0..250 {
                     std::thread::sleep(std::time::Duration::from_millis(100));
-                    if ROOT_SAFE.load(Ordering::SeqCst) && LOCAL_DENIED.load(Ordering::SeqCst) && REMOTE_DENIED.load(Ordering::SeqCst) {
+                    if ROOT_SAFE.load(Ordering::SeqCst) && LOCAL_DENIED.load(Ordering::SeqCst) && REMOTE_DENIED.load(Ordering::SeqCst) && EDITOR_SAFE.load(Ordering::SeqCst) {
                         let mutations = MUTATIONS.load(Ordering::SeqCst);
-                        println!("IPC_ACL {} local_webview_denied=true remote_main_denied=true native_mutations={mutations}", if mutations == 0 { "PASS" } else { "FAIL" });
+                        println!("IPC_ACL {} local_webview_denied=true remote_main_denied=true screenshot_editor_scoped=true native_mutations={mutations}", if mutations == 0 { "PASS" } else { "FAIL" });
                         handle.exit(if mutations == 0 { 0 } else { 1 }); return;
                     }
                 }
@@ -116,7 +134,7 @@ fn main() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![remote_security_snapshot, remote_security_decide_device, remote_security_disable_all])
+        .invoke_handler(tauri::generate_handler![remote_security_snapshot, remote_security_decide_device, remote_security_disable_all, take_screenshot_editor_capture, write_terminal])
         .run(tauri::generate_context!("examples/ipc-boundary/tauri.conf.json"))
         .expect("Run isolated native IPC boundary test");
 }

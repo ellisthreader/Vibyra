@@ -1,7 +1,9 @@
-import { drawBox, drawPen, type Point, type Rect } from "./screenshotDrawing";
+import { drawArrow, drawBox, drawEllipse, drawPen, type Point, type Rect } from "./screenshotDrawing";
 
 export type ScreenshotOperation =
   | { type: "box"; rect: Rect; lineWidth: number; color: string }
+  | { type: "ellipse"; rect: Rect; lineWidth: number; color: string }
+  | { type: "arrow"; start: Point; end: Point; lineWidth: number; color: string }
   | { type: "pen"; points: Point[]; lineWidth: number; color: string }
   | { type: "crop"; rect: Rect };
 
@@ -54,6 +56,10 @@ export function applyScreenshotOperation(
   const context = source.getContext("2d")!;
   if (operation.type === "box") {
     drawBox(context, operation.rect, operation.lineWidth, operation.color);
+  } else if (operation.type === "ellipse") {
+    drawEllipse(context, operation.rect, operation.lineWidth, operation.color);
+  } else if (operation.type === "arrow") {
+    drawArrow(context, operation.start, operation.end, operation.lineWidth, operation.color);
   } else {
     drawPen(context, operation.points, operation.lineWidth, operation.color);
   }

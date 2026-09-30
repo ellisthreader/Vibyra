@@ -9,7 +9,7 @@ use super::{
     preview_share, preview_windows, project_brief, provider_accounts, remote_security,
     remote_security_actions, render, report, scaffold, screenshot, screenshot_reveal, session,
     settings, shared_chat_models, shared_chats, shared_cli, shortcuts, speech, speech_synthesis,
-    teammate_upload, teammates, terminal, terminal_lifecycle, voice,
+    teammate_upload, teammates, terminal, terminal_lifecycle, voice, voice_cue,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -158,7 +158,9 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         preview_windows::preview_windows_available,
         preview_windows::preview_windows_list,
         preview_windows::preview_windows_permission,
-        screenshot::capture_screen,
+        screenshot::capture_screen_for_editor,
+        screenshot::take_screenshot_editor_capture,
+        voice_cue::play_voice_cue,
         screenshot::finish_screenshot_edit,
         screenshot::copy_screenshot,
         screenshot::copy_saved_screenshot,
@@ -189,9 +191,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         memory::search_memory_sources,
         memory_browser::memory_note_index,
         memory_browser::read_memory_note,
-        // Spelled out rather than imported above: the crate root of the app has its
-        // own `perf` and `report` modules (the sampler and the delivery
-        // half), so the bare names would resolve to the wrong ones.
+        // Explicit command modules avoid similarly named crate-root services.
         perf::perf_sample,
         report::submit_report,
         report::report_channel_ready,
