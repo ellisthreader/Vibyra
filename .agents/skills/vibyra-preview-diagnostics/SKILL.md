@@ -171,3 +171,9 @@ native Windows/Unix PTY fixtures with fixed commands, keep queued revocation and
 Noise checks active, and set fixture Git core.autocrlf=false for byte assertions.
 Attached fixture listeners belong to their advertised cwd on all desktop
 platforms. Linux desktop-entry parser tests use Unix path semantics on every host.
+
+
+For a latched pre-input focus regression, synchronize on the fake's pending focus
+delivery and its exact 60 ms deadline before releasing the old read. The input log
+is written before delivery; elapsed time from that receipt can race a descheduled
+tap thread. Retain the original 400 ms bound and one-reader/freshness assertions.

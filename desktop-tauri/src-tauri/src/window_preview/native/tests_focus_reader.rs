@@ -90,13 +90,21 @@ fn an_inflight_pre_input_snapshot_cannot_satisfy_the_fresh_reply() {
             .input(&json!({"kind":"click","x":0.2,"y":0.2}))
             .unwrap()
     });
-    let due = Instant::now() + Duration::from_secs(1);
-    while backend.inputs.lock().is_empty() && Instant::now() < due {
+    let delivery_deadline = Instant::now() + Duration::from_secs(1);
+    let focused_at = loop {
+        if let Some((due, _)) = backend.pending.lock().as_ref() {
+            break *due;
+        }
+        assert!(
+            Instant::now() < delivery_deadline,
+            "tap was never delivered"
+        );
         std::thread::sleep(Duration::from_millis(1));
-    }
+    };
     assert_eq!(backend.inputs.lock().len(), 1);
-    // Keep the existing60ms native-focus delay. Then release the old snapshot.
-    std::thread::sleep(Duration::from_millis(70));
+    // Receipt precedes delivery: wait for the fake's actual60ms focus deadline,
+    // not a delay measured from its earlier input log, then release the old read.
+    std::thread::sleep(focused_at.saturating_duration_since(Instant::now()));
     release.send(()).unwrap();
     let reply = thread.join().unwrap();
     let elapsed = began.elapsed();

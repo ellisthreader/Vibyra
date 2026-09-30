@@ -66,3 +66,9 @@ without disabling permission/revocation assertions. Git byte fixtures disable
 repo-local autocrlf, and AppImage escaping uses Linux paths even in Windows tests.
 Positive attached-listener discovery is expected for the fixture's own cwd on
 all three desktop platforms. See the Preview diagnostics skill for these gates.
+
+
+For a latched pre-input focus regression, synchronize on the fake's pending focus
+delivery and its exact 60 ms deadline before releasing the old read. The input log
+is written before delivery; elapsed time from that receipt can race a descheduled
+tap thread. Retain the original 400 ms bound and one-reader/freshness assertions.
