@@ -1,14 +1,24 @@
 <?php
 
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\AnalyticsConsentController;
+use App\Http\Controllers\AnalyticsEventController;
+use App\Http\Controllers\LocalOwnerLoginController;
+use App\Http\Controllers\OwnerAccountsController;
+use App\Http\Controllers\OwnerAnalyticsController;
+use App\Http\Controllers\OwnerTwoFactorEnrollmentController;
+use App\Http\Controllers\WebsiteAnalyticsController;
 use App\Http\Controllers\ReleaseDownloadController;
 use App\Http\Controllers\ReleaseUpdateController;
+use App\Http\Controllers\OpenRouterModelReleaseController;
 use App\Http\Controllers\VibyraAppController;
 use App\Http\Controllers\VibyraDesktopController;
 use App\Http\Controllers\WebsiteAuthController;
 use App\Http\Controllers\WebsiteBillingController;
 use App\Http\Controllers\WebsiteProviderAuthController;
 use App\Http\Middleware\PublicCommunityCache;
+use App\Http\Middleware\RecordWebsiteView;
+use App\Http\Middleware\RequireOwner;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
@@ -16,18 +26,29 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('marketing'));
-Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
-Route::view('/legal/terms', 'legal.terms')->name('legal.terms');
-Route::view('/login', 'portal')->name('login');
-Route::view('/signup', 'portal');
-Route::view('/billing', 'portal');
-Route::view('/billing/success', 'portal');
-Route::view('/billing/cancel', 'portal');
-Route::view('/downloads', 'portal');
-Route::view('/account/downloads', 'portal');
+Route::get('/', fn () => view('marketing'))->middleware(RecordWebsiteView::class);
+Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy')->middleware(RecordWebsiteView::class);
+Route::view('/legal/terms', 'legal.terms')->name('legal.terms')->middleware(RecordWebsiteView::class);
+Route::view('/login', 'portal')->name('login')->middleware(RecordWebsiteView::class);
+Route::view('/signup', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/billing', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/billing/success', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/billing/cancel', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/downloads', 'portal')->middleware(RecordWebsiteView::class);
+Route::view('/account/downloads', 'portal')->middleware(RecordWebsiteView::class);
+Route::get('/owner/login', fn () => response()->view('portal')
+    ->header('Cache-Control', 'private, no-store')
+    ->header('X-Robots-Tag', 'noindex, nofollow'));
+Route::post('/web-api/owner/local-login', LocalOwnerLoginController::class)->middleware('throttle:5,1');
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
+Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
+    ->middleware('throttle:30,1');
 Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])
+    ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
+
+// The signed package the in-app updater fetches. Only macOS has one of its own
+// today; every other platform updates from the download URL above.
+Route::get('/downloads/{platform}/update', [ReleaseDownloadController::class, 'updateArtifact'])
     ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
 
 // The installed desktop app polls this every 20 minutes; 204 is the usual answer.
@@ -38,20 +59,43 @@ Route::get('/web-api/updates/{target}/{arch}/{bundleType}/{current}', [ReleaseUp
     ->where('current', '[0-9A-Za-z.+-]+')
     ->middleware('throttle:60,1');
 
-Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:5,1');
-Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:5,1,web-signup');
+Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:10,1,web-login');
 Route::delete('/web-api/auth/logout', [WebsiteAuthController::class, 'logout'])->middleware('auth');
+Route::post('/web-api/auth/login/2fa', [WebsiteAuthController::class, 'loginTwoFactor'])->middleware('throttle:8,1,web-login-2fa');
 Route::get('/web-api/session', [WebsiteAuthController::class, 'session']);
+Route::get('/web-api/analytics/consent', [WebsiteAnalyticsController::class, 'show'])->middleware('throttle:60,1');
+Route::put('/web-api/analytics/consent', [WebsiteAnalyticsController::class, 'update'])->middleware('throttle:20,1');
+Route::post('/web-api/analytics/event', [WebsiteAnalyticsController::class, 'event'])->middleware('throttle:120,1');
 Route::post('/web-api/auth/provider/{provider}/start', [WebsiteProviderAuthController::class, 'start'])
     ->whereIn('provider', ['apple', 'google'])->middleware('throttle:12,1');
 Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'status'])
     ->whereIn('provider', ['apple', 'google'])->middleware('throttle:120,1');
 
 Route::middleware('auth')->group(function (): void {
-    Route::view('/account', 'portal');
+    Route::view('/account', 'portal')->middleware(RecordWebsiteView::class);
+    Route::get('/owner', fn () => response()->view('portal')
+        ->header('Cache-Control', 'private, no-store')
+        ->header('X-Robots-Tag', 'noindex, nofollow'))->middleware(RequireOwner::class);
+    Route::get('/web-api/owner/analytics', OwnerAnalyticsController::class)->middleware(RequireOwner::class);
+    Route::get('/web-api/owner/accounts', [OwnerAccountsController::class, 'index'])->middleware(RequireOwner::class);
+    Route::post('/web-api/owner/verify-2fa', [OwnerAccountsController::class, 'verify'])
+        ->middleware([RequireOwner::class, 'throttle:8,1']);
+    Route::post('/web-api/owner/2fa/provider/start', [OwnerTwoFactorEnrollmentController::class, 'providerStart'])
+        ->middleware([RequireOwner::class, 'throttle:5,1']);
+    Route::get('/web-api/owner/2fa/provider/status/{flowId}', [OwnerTwoFactorEnrollmentController::class, 'providerStatus'])
+        ->where('flowId', '[A-Za-z0-9]{64}')->middleware([RequireOwner::class, 'throttle:60,1']);
+    Route::post('/web-api/owner/2fa/start', [OwnerTwoFactorEnrollmentController::class, 'start'])
+        ->middleware([RequireOwner::class, 'throttle:5,1']);
+    Route::post('/web-api/owner/2fa/confirm', [OwnerTwoFactorEnrollmentController::class, 'confirm'])
+        ->middleware([RequireOwner::class, 'throttle:8,1']);
     Route::post('/web-api/billing/checkout', [WebsiteBillingController::class, 'checkout']);
     Route::post('/web-api/billing/portal', [WebsiteBillingController::class, 'portal']);
 });
+
+Route::post('/api/analytics/events', AnalyticsEventController::class)->middleware('throttle:120,1');
+Route::get('/api/analytics/consent', [AnalyticsConsentController::class, 'show'])->middleware('throttle:60,1');
+Route::put('/api/analytics/consent', [AnalyticsConsentController::class, 'update'])->middleware('throttle:20,1');
 
 if (config('desktop.legacy_routes_enabled')) {
     Route::get('/desktop', [VibyraDesktopController::class, 'app']);
@@ -78,41 +122,69 @@ if (config('desktop.legacy_routes_enabled')) {
     Route::post('/commands/run', [VibyraDesktopController::class, 'runCommand']);
 }
 
-Route::post('/api/auth/signup', [VibyraAppController::class, 'signup'])->middleware('throttle:5,1');
-Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])->middleware('throttle:12,1');
+// Each auth route counts on its own. An unnamed throttle keys only on the address, so every
+// unnamed limit shared one counter: a guest's Vibes polling (90/min) used up sign-up's 5.
+Route::post('/api/auth/signup', [VibyraAppController::class, 'signup'])->middleware('throttle:5,1,signup');
+Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middleware('throttle:10,1,login');
+// A code is guessable in a way a password is not -- a million of them, six digits --
+// so the only route that takes one at login is limited far harder than login itself.
+Route::post('/api/auth/login/2fa', [VibyraAppController::class, 'loginTwoFactor'])->middleware('throttle:8,1,login-2fa');
+Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])->middleware('throttle:12,1,provider-challenge');
 Route::post('/api/auth/desktop/{provider}/start', [VibyraAppController::class, 'desktopProviderStart'])
     ->whereIn('provider', ['apple', 'google'])
-    ->middleware('throttle:12,1');
+    ->middleware('throttle:12,1,provider-start');
 Route::get('/api/auth/desktop/{provider}/status/{flowId}', [VibyraAppController::class, 'desktopProviderStatus'])
     ->whereIn('provider', ['apple', 'google'])
-    ->middleware('throttle:120,1');
+    ->middleware('throttle:120,1,provider-status');
 Route::match(['get', 'post'], '/api/auth/desktop/{provider}/callback', [VibyraAppController::class, 'desktopProviderCallback'])
     ->whereIn('provider', ['apple', 'google'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:30,1,provider-callback')
     ->name('auth.desktop.callback');
-Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware('throttle:5,1');
-Route::post('/api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1');
+Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware('throttle:5,1,password-forgot');
+Route::post('/api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1,password-reset');
 Route::get('/api/auth/password/open', [VibyraAppController::class, 'openPasswordReset'])->middleware('throttle:12,1');
 Route::get('/reset-password', [VibyraAppController::class, 'showPasswordResetLink'])->middleware('throttle:30,1');
 Route::get('/.well-known/apple-app-site-association', [VibyraAppController::class, 'appleAppSiteAssociation']);
 Route::get('/.well-known/assetlinks.json', [VibyraAppController::class, 'androidAssetLinks']);
-Route::post('/api/auth/email/resend', [VibyraAppController::class, 'resendEmailVerification'])->middleware('throttle:5,1');
+Route::post('/api/auth/email/resend', [VibyraAppController::class, 'resendEmailVerification'])->middleware('throttle:5,1,email-resend');
 Route::delete('/api/auth/logout', [VibyraAppController::class, 'logoutCurrentSession']);
 Route::post('/api/auth/session/rotate', [VibyraAppController::class, 'rotateCurrentSession']);
 Route::get('/api/auth/email/verify/{id}/{hash}', [VibyraAppController::class, 'verifyEmail'])
     ->middleware('throttle:12,1')
     ->name('verification.verify');
 Route::post('/api/account/profile', [VibyraAppController::class, 'updateAccountProfile']);
+Route::post('/api/account/avatar', [VibyraAppController::class, 'uploadAccountAvatar']);
+Route::delete('/api/account/avatar', [VibyraAppController::class, 'deleteAccountAvatar']);
+// The photo behind `avatarUrl`: public to whoever holds the signed URL, so it
+// carries no session or cookie and can be cached as an immutable file.
+Route::get('/api/account/avatar/{user}', [VibyraAppController::class, 'accountAvatar'])
+    ->whereNumber('user')
+    ->withoutMiddleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        PreventRequestForgery::class,
+    ])
+    ->middleware('signed:relative')
+    ->name('account.avatar');
+Route::post('/api/account/host-link', [VibyraAppController::class, 'sendHostDownloadLink'])->middleware('throttle:6,1,host-link');
 Route::post('/api/account/phone/start', [VibyraAppController::class, 'startPhoneVerification'])->middleware('throttle:3,10');
 Route::post('/api/account/phone/check', [VibyraAppController::class, 'checkPhoneVerification'])->middleware('throttle:10,10');
 Route::post('/api/account/session/device', [VibyraAppController::class, 'updateAccountSessionDevice']);
+Route::get('/api/account/2fa', [VibyraAppController::class, 'twoFactorStatus']);
+Route::post('/api/account/2fa/start', [VibyraAppController::class, 'startTwoFactor'])->middleware('throttle:10,1,two-factor-start');
+Route::post('/api/account/2fa/confirm', [VibyraAppController::class, 'confirmTwoFactor'])->middleware('throttle:10,1,two-factor-confirm');
+Route::post('/api/account/2fa/recovery', [VibyraAppController::class, 'replaceTwoFactorRecoveryCodes'])->middleware('throttle:6,1,two-factor-recovery');
+Route::delete('/api/account/2fa', [VibyraAppController::class, 'disableTwoFactor'])->middleware('throttle:10,1,two-factor-off');
 Route::get('/api/account/sessions', [VibyraAppController::class, 'accountSessions']);
 Route::delete('/api/account/devices/{deviceId}', [VibyraAppController::class, 'revokeAccountDevice']);
 Route::delete('/api/account/sessions', [VibyraAppController::class, 'revokeAccountSessions']);
 Route::delete('/api/account/sessions/{sessionId}', [VibyraAppController::class, 'revokeAccountSession']);
 Route::delete('/api/account', [VibyraAppController::class, 'deleteAccount']);
 Route::get('/api/session', [VibyraAppController::class, 'session']);
+Route::get('/api/reports/ready', [VibyraAppController::class, 'reportReady'])->middleware('throttle:30,1');
+Route::post('/api/reports', [VibyraAppController::class, 'reportProblem'])->middleware('throttle:10,1');
 Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
 Route::get('/api/project-memory/{projectId}', [VibyraAppController::class, 'projectMemory']);
 Route::post('/api/project-memory/{projectId}/entries', [VibyraAppController::class, 'addProjectMemory']);
@@ -134,6 +206,8 @@ Route::post('/api/terminal/anthropic/messages', [VibyraAppController::class, 'an
 Route::post('/api/terminal/anthropic/messages/count_tokens', [VibyraAppController::class, 'anthropicTerminalCountTokens']);
 Route::post('/api/terminal/gemini/models/{model}/{action}', [VibyraAppController::class, 'geminiTerminalRequest']);
 Route::post('/api/chat/learning/feedback', [VibyraAppController::class, 'chatLearningFeedback']);
+Route::get('/api/speech/voices', [VibyraAppController::class, 'speechVoices']);
+Route::post('/api/speech', [VibyraAppController::class, 'speech'])->middleware('throttle:30,1');
 Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']);
 Route::get('/api/referrals/me', [VibyraAppController::class, 'referralSummary']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);
@@ -173,3 +247,5 @@ Route::options('/api/{any}', [VibyraAppController::class, 'options'])->where('an
 if (config('desktop.legacy_routes_enabled')) {
     Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');
 }
+
+require __DIR__.'/vibes.php';

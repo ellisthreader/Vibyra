@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Analytics\Recorder;
+use App\Services\Analytics\AuthLoginRecorder;
 use App\Services\Auth\DesktopProviderOAuthFlow;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\SessionAuthenticator;
@@ -35,6 +37,9 @@ class WebsiteProviderAuthController extends Controller
 
     public function status(Request $request, string $provider, string $flowId): JsonResponse
     {
+        if ($this->flows->isEnrollment($flowId)) {
+            return response()->json(['ok' => false, 'error' => 'This verification belongs to an account session.'], 403);
+        }
         $result = $this->flows->status(strtolower($provider), $flowId);
         if (($result['status'] ?? null) !== 'complete') {
             return response()->json($result, ($result['status'] ?? null) === 'expired' ? 410 : 200);
@@ -56,6 +61,10 @@ class WebsiteProviderAuthController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
         $session->delete();
+        app(AuthLoginRecorder::class)->record($user, 'website', strtolower($provider));
+        if (($result['isNewUser'] ?? false) === true) {
+            app(Recorder::class)->signup();
+        }
 
         return response()->json([
             'ok' => true,

@@ -5,10 +5,12 @@ import BillingPage from "./pages/BillingPage.jsx";
 import BillingStatusPage from "./pages/BillingStatusPage.jsx";
 import AccountPage from "./pages/AccountPage.jsx";
 import DownloadsPage from "./pages/DownloadsPage.jsx";
+import OwnerPage from "./pages/OwnerPage.jsx";
 
 function PortalRoute() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  if (path === "/login") return <AuthPage mode="login" />;
+  if (path === "/login" || path === "/owner/login") return <AuthPage mode="login" />;
+  if (path === "/owner") return <OwnerPage />;
   if (path === "/signup") return <AuthPage mode="signup" />;
   if (path === "/billing/success") return <BillingStatusPage status="success" />;
   if (path === "/billing/cancel") return <BillingStatusPage status="cancel" />;

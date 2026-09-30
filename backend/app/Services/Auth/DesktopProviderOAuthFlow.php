@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 
 class DesktopProviderOAuthFlow
 {
+    use ProviderEnrollmentOAuthFlow;
+
     private const FLOW_MINUTES = 10;
 
     public function start(string $provider, array $client): array
@@ -50,11 +52,22 @@ class DesktopProviderOAuthFlow
         Cache::forget($this->flowKey($flowId));
         Cache::put($this->resultKey($flowId), [
             'provider' => is_array($flow) ? ($flow['provider'] ?? null) : null,
+            'enrollment' => is_array($flow) && ($flow['purpose'] ?? null) === 'two_factor_enrollment'
+                ? $this->enrollmentBinding($flow) : null,
             'result' => $result,
         ], now()->addMinutes(5));
     }
 
     public function status(string $provider, string $flowId): array
+    {
+        if ($this->isEnrollment($flowId)) {
+            return ['ok' => false, 'status' => 'forbidden', 'error' => 'Account verification requires its original session.'];
+        }
+
+        return $this->statusResult($provider, $flowId);
+    }
+
+    private function statusResult(string $provider, string $flowId): array
     {
         $completed = Cache::get($this->resultKey($flowId));
         if (is_array($completed) && ($completed['provider'] ?? null) === $provider) {
@@ -127,7 +140,8 @@ class DesktopProviderOAuthFlow
         $settings = (array) config("services.{$provider}_desktop_oauth", []);
         if (trim((string) ($settings['client_id'] ?? '')) === ''
             || trim((string) ($settings['redirect_uri'] ?? '')) === '') {
-            throw new ProviderIdentityException(ucfirst($provider).' desktop sign-in is not configured.');
+            // Phones use this browser flow too, so the message must not say "desktop".
+            throw new ProviderIdentityException(ucfirst($provider).' sign-in isn’t set up on this Vibyra server.');
         }
 
         return $settings;

@@ -1,12 +1,14 @@
 const ENDPOINTS = {
   session: "/web-api/session",
   login: "/web-api/auth/login",
+  loginTwoFactor: "/web-api/auth/login/2fa",
   signup: "/web-api/auth/signup",
   logout: "/web-api/auth/logout",
   plans: "/api/billing/plans",
   checkout: "/web-api/billing/checkout",
   portal: "/web-api/billing/portal",
   releases: "/web-api/releases",
+  ownerAnalytics: "/web-api/owner/analytics",
 };
 
 export class ApiError extends Error {
@@ -45,6 +47,7 @@ export async function apiRequest(path, options = {}) {
 export const portalApi = {
   session: () => apiRequest(ENDPOINTS.session),
   login: (fields) => apiRequest(ENDPOINTS.login, { body: fields }),
+  loginTwoFactor: (challengeId, code) => apiRequest(ENDPOINTS.loginTwoFactor, { body: { challengeId, code } }),
   signup: (fields) => apiRequest(ENDPOINTS.signup, { body: fields }),
   logout: () => apiRequest(ENDPOINTS.logout, { method: "DELETE" }),
   plans: () => apiRequest(ENDPOINTS.plans),
@@ -53,6 +56,7 @@ export const portalApi = {
   }),
   billingPortal: () => apiRequest(ENDPOINTS.portal, { body: {} }),
   releases: () => apiRequest(ENDPOINTS.releases),
+  ownerAnalytics: (days) => apiRequest(`${ENDPOINTS.ownerAnalytics}?days=${days}`),
   startProvider: (provider) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: {} }),
   providerStatus: (provider, flowId) => apiRequest(
     `/web-api/auth/provider/${provider}/status/${encodeURIComponent(flowId)}`

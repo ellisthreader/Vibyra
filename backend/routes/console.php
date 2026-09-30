@@ -10,7 +10,16 @@ Artisan::command('inspire', function () {
 
 Schedule::command('vibyra:refresh-credits')->dailyAt('00:05')->withoutOverlapping(120)->onOneServer();
 Schedule::command('vibyra:sync-openrouter-pricing')->hourly()->withoutOverlapping(55)->onOneServer();
+Schedule::command('vibyra:sync-openrouter-model-releases')->everyFiveMinutes()->withoutOverlapping(4)->onOneServer();
 Schedule::command('vibyra:recover-chat-cost-reservations')->everyFiveMinutes()->withoutOverlapping(4)->onOneServer();
+Schedule::command('vibyra:rollup-analytics')->dailyAt('02:00')->withoutOverlapping(30)->onOneServer();
+Schedule::command('vibyra:prune-analytics')->dailyAt('02:15')->withoutOverlapping(30)->onOneServer();
 Schedule::command('maxmind:update')->weekly()->withoutOverlapping(120)->onOneServer();
 Schedule::command('vibyra:deploy-runtime-demos --limit=1')->everyMinute()->withoutOverlapping(30)->onOneServer();
 Schedule::command('vibyra:cleanup-runtime-demos --limit=5')->everyMinute()->withoutOverlapping(10)->onOneServer();
+
+Schedule::command('vibyra:observe-work')->everyMinute()->withoutOverlapping(2)->onOneServer();
+
+Schedule::command('vibyra:recover-vibes')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Schedule::command('vibyra:reconcile-vibes-purchases')->hourly()->withoutOverlapping(55)->onOneServer();

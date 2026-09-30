@@ -36,6 +36,7 @@ export default function Nav() {
             <a
               key={href}
               href={href}
+              data-analytics-cta={href === "#pricing" ? "pricing_opened" : href === "#faq" ? "faq_opened" : undefined}
               className="text-[14.5px] text-ink-muted transition-colors hover:text-ink"
             >
               {label}
@@ -43,10 +44,10 @@ export default function Nav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3">
-          <a href="/login" className="hidden text-sm font-semibold text-ink-muted transition-colors hover:text-ink sm:inline">
+          <a href="/login" data-analytics-cta="nav_login" className="hidden text-sm font-semibold text-ink-muted transition-colors hover:text-ink sm:inline">
             Log in
           </a>
-          <Button href="/downloads" small className="shrink-0 max-[440px]:hidden">
+          <Button href="/downloads" data-analytics-cta="nav_downloads" small className="shrink-0 max-[440px]:hidden">
             Get Vibyra
           </Button>
           <button

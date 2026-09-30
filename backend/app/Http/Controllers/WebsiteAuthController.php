@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\Auth\TwoFactor;
+use App\Services\Auth\TwoFactorChallenge;
+use App\Services\Analytics\Recorder;
+use App\Services\Analytics\AuthLoginRecorder;
 use App\Services\ContentModeration;
 use App\Services\Referrals\ReferralService;
 use App\Services\WebsiteAccountPayload;
@@ -64,6 +68,7 @@ class WebsiteAuthController extends Controller
         }
 
         $this->establishSession($request, $user);
+        app(Recorder::class)->signup();
 
         return response()->json(['ok' => true, 'user' => $this->payload->for($user)], 201);
     }
@@ -79,7 +84,31 @@ class WebsiteAuthController extends Controller
             return response()->json(['ok' => false, 'error' => 'Email or password is incorrect.'], 401);
         }
 
+        if (app(TwoFactor::class)->enabled($user)) {
+            return response()->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
+        }
+
         $this->establishSession($request, $user);
+        app(AuthLoginRecorder::class)->record($user, 'website', 'password');
+
+        return response()->json(['ok' => true, 'user' => $this->payload->for($user)]);
+    }
+
+    public function loginTwoFactor(Request $request): JsonResponse
+    {
+        $user = app(TwoFactorChallenge::class)->claim(
+            trim((string) $request->input('challengeId', '')),
+            (string) $request->input('code', ''),
+        );
+        if (! $user) {
+            return response()->json(['ok' => false,
+                'error' => 'That code didn’t match. Try the current code from your authenticator app.'], 401);
+        }
+        $this->establishSession($request, $user);
+        $request->session()->put('owner_2fa_verified_at', now()->timestamp);
+        $request->session()->put('owner_second_factor_verified_at', now()->timestamp);
+        $request->session()->put('owner_second_factor_user_id', $user->id);
+        app(AuthLoginRecorder::class)->record($user, 'website', 'totp');
 
         return response()->json(['ok' => true, 'user' => $this->payload->for($user)]);
     }

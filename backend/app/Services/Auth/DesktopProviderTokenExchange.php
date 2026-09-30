@@ -51,7 +51,7 @@ class DesktopProviderTokenExchange
         $keyId = trim((string) ($settings['key_id'] ?? ''));
         $privateKey = str_replace('\n', "\n", trim((string) ($settings['private_key'] ?? '')));
         if ($teamId === '' || $keyId === '' || $privateKey === '') {
-            throw new ProviderIdentityException('Apple desktop sign-in is not fully configured.');
+            throw new ProviderIdentityException('Apple sign-in isn’t fully set up on this Vibyra server.');
         }
 
         $now = time();

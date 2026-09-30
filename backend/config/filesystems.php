@@ -30,6 +30,12 @@ return [
 
     'disks' => [
 
+        'vibes-attachments' => [
+            'driver' => 'local',
+            'root' => env('VIBES_ATTACHMENTS_ROOT', storage_path('app/private')),
+            'throw' => true,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

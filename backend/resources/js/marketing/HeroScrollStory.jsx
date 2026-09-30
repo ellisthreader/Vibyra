@@ -60,7 +60,7 @@ function StoryCopy({ chapter, reduced }) {
       <p className="hero-story-body">{chapter.body}</p>
       {chapter.actions && (
         <div className="mt-7 flex flex-wrap gap-3">
-          <Button href="/downloads">Get Vibyra</Button>
+          <Button href="/downloads" data-analytics-cta="home_get_vibyra">Get Vibyra</Button>
           <Button href="#how-it-works" variant="secondary">How it works <span aria-hidden="true">↓</span></Button>
         </div>
       )}

@@ -1,0 +1,17 @@
+.analytics-choice { position: fixed; z-index: 1000; right: 20px; bottom: 20px; width: min(420px, calc(100vw - 40px)); padding: 22px; border: 1px solid #3E4656; border-radius: 14px; background: #20232A; color: #F5F7FA; box-shadow: 0 22px 70px rgba(0, 0, 0, .48); font-family: Inter, "Segoe UI", system-ui, sans-serif; }
+.analytics-choice:focus { outline: 2px solid #5B7CFA; outline-offset: 3px; }
+.analytics-choice__eyebrow { margin: 0 0 7px; color: #AFC0FF; font-size: 10px; font-weight: 750; letter-spacing: .14em; }
+.analytics-choice h2 { margin: 0 0 9px; color: #F5F7FA; font-size: 21px; font-weight: 700; letter-spacing: -.035em; }
+.analytics-choice > p:not(.analytics-choice__eyebrow) { margin: 0; color: #BBC3CF; font-size: 13px; line-height: 1.55; }
+.analytics-choice a { color: #B8C7FF; text-decoration: underline; text-underline-offset: 3px; }
+.analytics-choice__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 19px; }
+.analytics-choice button { min-height: 42px; padding: 0 10px; border: 1px solid #636D80; border-radius: 8px; background: #292F39; color: #F5F7FA; cursor: pointer; font: inherit; font-size: 12px; font-weight: 670; }
+.analytics-choice button:hover { border-color: #8DA2FF; background: #343D53; }
+.analytics-choice button:focus-visible { outline: 2px solid #8DA2FF; outline-offset: 2px; }
+.analytics-choice__linked { display: flex; align-items: flex-start; gap: 11px; margin-top: 17px; padding: 13px; border: 1px solid #424B5D; border-radius: 9px; background: #272C37; color: #F5F7FA; font-size: 13px; line-height: 1.35; cursor: pointer; }
+.analytics-choice__linked input { width: 18px; height: 18px; margin: 0; flex: none; accent-color: #7290FF; }
+.analytics-choice__linked:has(input:disabled) { opacity: .7; cursor: default; }
+.analytics-choice__linked small { display: block; margin-top: 3px; color: #BBC3CF; font-size: 11px; }
+.analytics-choice__error:not([hidden]) { margin-top: 11px; color: #FFC9C9; }
+.analytics-choice button:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 520px) { .analytics-choice { right: 12px; bottom: 12px; width: calc(100vw - 24px); padding: 19px; } }

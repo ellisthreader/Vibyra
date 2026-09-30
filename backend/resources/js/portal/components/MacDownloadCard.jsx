@@ -29,6 +29,7 @@ export default function MacDownloadCard({ release, recommended }) {
             key={platform}
             className='mac-variant'
             href={downloadPath(platform)}
+            data-analytics-cta={`downloads_${platform.replaceAll("-", "_")}`} data-analytics-download={platform}
             aria-label={`Download Vibyra for ${label} Macs`}
           >
             <span><strong>{label}</strong><small>{detail}</small></span>

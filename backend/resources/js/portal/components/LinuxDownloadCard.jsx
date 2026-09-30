@@ -38,7 +38,7 @@ export default function LinuxDownloadCard({ release, debRelease, recommended }) 
       recommended={recommended}
       disabled={!available && !debAvailable}
       action={debAvailable && (
-        <a className="platform-row__button" href={downloadPath("linux-deb")} aria-label="Download Vibyra .deb for Debian and Ubuntu">
+        <a className="platform-row__button" href={downloadPath("linux-deb")} data-analytics-cta="downloads_linux_deb" data-analytics-download="linux-deb" aria-label="Download Vibyra .deb for Debian and Ubuntu">
           Download .deb <span aria-hidden="true">&darr;</span>
         </a>
       )}

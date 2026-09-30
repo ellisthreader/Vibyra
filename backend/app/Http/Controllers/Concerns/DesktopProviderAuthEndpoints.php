@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Analytics\AuthLoginRecorder;
+
 use App\Models\User;
 use App\Services\Auth\DesktopProviderOAuthFlow;
 use App\Services\Auth\DesktopProviderTokenExchange;
@@ -9,6 +11,7 @@ use App\Services\Auth\ProviderAccountException;
 use App\Services\Auth\ProviderAccountService;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\ProviderIdentityVerifier;
+use App\Services\Auth\ProviderEnrollmentProof;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -85,6 +88,14 @@ trait DesktopProviderAuthEndpoints
 
                 return $this->desktopProviderResultPage(true, '', true);
             }
+            if (($flow['purpose'] ?? null) === 'two_factor_enrollment') {
+                $proof = app(ProviderEnrollmentProof::class)->issue($flow, $provider, $identity);
+                app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
+                    'ok' => true, 'status' => 'complete', 'enrollmentProof' => $proof,
+                ]);
+
+                return $this->desktopProviderResultPage(true, '', false, true);
+            }
             $sessionRequest = Request::create('/api/auth/desktop/session', 'POST', [
                 'deviceName' => $flow['deviceName'],
                 'installId' => $flow['installId'],
@@ -98,6 +109,9 @@ trait DesktopProviderAuthEndpoints
                 $identity
             );
             $payload = $this->sessionPayload($sessionRequest, $account['user']);
+            if ($flow['deviceName'] !== 'Vibyra Website') {
+                app(AuthLoginRecorder::class)->record($account['user'], 'desktop', $provider);
+            }
             app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
                 ...$payload,
                 'isNewUser' => $account['created'],
@@ -160,13 +174,15 @@ trait DesktopProviderAuthEndpoints
         bool $success,
         string $error = '',
         bool $deleted = false,
+        bool $enrollment = false,
     ): Response
     {
         $title = $success
-            ? ($deleted ? 'Vibyra account deleted' : 'Signed in to Vibyra')
+            ? ($deleted ? 'Vibyra account deleted' : ($enrollment ? 'Identity verified' : 'Signed in to Vibyra'))
             : 'Vibyra sign-in failed';
         $message = $success
-            ? 'You can close this browser tab and return to Vibyra Desktop.'
+            ? ($enrollment ? 'Return to Vibyra to finish authenticator setup.'
+                : 'You can close this browser tab and return to Vibyra Desktop.')
             : $error;
         $html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
             .'<title>'.e($title).'</title></head><body style="margin:0;background:#07070a;color:#fff;'

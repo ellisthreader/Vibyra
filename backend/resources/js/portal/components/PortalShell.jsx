@@ -1,14 +1,14 @@
 import React from "react";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
 
-export default function PortalShell({ children, eyebrow = "Vibyra account", title, intro, minimal = false }) {
+export default function PortalShell({ children, eyebrow = "Vibyra account", title, intro, minimal = false, layout = "default" }) {
   const { user } = useWebsiteSession();
   return (
-    <div className={`portal-page ${minimal ? "portal-page--minimal" : ""}`}>
+    <div className={`portal-page portal-page--${layout} ${minimal ? "portal-page--minimal" : ""}`}>
       <header className="portal-header">
         <a className="portal-brand" href="/" aria-label="Vibyra home">
-          <img src="/vibyra-mark.png" alt="" />
-          <span>Vibyra</span>
+          <img src="/vibyra-cobalt.png" alt="" />
+          <span>vibyra<span className="portal-brand-dot">.</span></span>
         </a>
         <nav aria-label="Account navigation">
           {minimal ? <a href="/">Home</a> : <>
@@ -27,7 +27,8 @@ export default function PortalShell({ children, eyebrow = "Vibyra account", titl
         {children}
       </main>
       <footer className="portal-footer">
-        <span>© 2026 Vibyra</span>
+        <span>© {new Date().getFullYear()} Vibyra</span>
+        <div className="portal-legal"><a href="/legal/privacy">Privacy</a><a href="/legal/terms">Terms</a><a href="/?analytics=choices" data-analytics-choices>Analytics choices</a></div>
         {!minimal && <a href="/">Back to the website</a>}
       </footer>
     </div>

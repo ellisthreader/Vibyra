@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/js/marketing.jsx',
                 'resources/css/portal.css',
                 'resources/js/portal.jsx',
+                'resources/js/analyticsChoiceEntry.js',
             ],
             refresh: true,
         }),

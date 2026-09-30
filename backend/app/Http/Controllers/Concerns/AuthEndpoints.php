@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Analytics\AuthLoginRecorder;
+
 use App\Models\User;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\ProviderIdentityVerifier;
 use App\Services\Auth\ProviderChallengeService;
 use App\Services\Auth\ProviderAccountException;
 use App\Services\Auth\ProviderAccountService;
+use App\Services\Auth\TwoFactor;
+use App\Services\Auth\TwoFactorChallenge;
 use App\Services\LevelProgression;
 use App\Services\Referrals\ReferralService;
+use App\Services\Vibes\Guests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -40,6 +45,19 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => 'Enter a valid email and a password with at least 8 characters.'], 422);
         }
 
+        /*
+         * A session on a signup means one of two things. A guest is signing up,
+         * which is what guests are for and is handled below by converting the row.
+         * Anything else is a replay -- most often that same guest token after it
+         * has already become an account, which a phone will send again after a
+         * restore -- and answering it with a second account is exactly wrong, so
+         * it is refused before anything is created.
+         */
+        $session = $this->optionalAuthenticatedUser($request, allowGuest: true);
+        if ($session && ! $session->isGuest()) {
+            return $this->json(['ok' => false, 'error' => 'You are already signed in. Log out to create another account.'], 403);
+        }
+
         if (User::where('email', $email)->exists()) {
             return $this->json(['ok' => false, 'error' => 'An account already exists for that email. Log in instead.'], 409);
         }
@@ -49,6 +67,33 @@ trait AuthEndpoints
         }
 
         $this->moderation->assertLocalTextAllowed($name, 'auth.name');
+
+        /*
+         * Signing up while already using Vibes as a guest turns that guest into
+         * this account instead of making a second one. Nothing is transferred:
+         * the wallet, its grants, its ledger and its chats are already keyed to
+         * this row, so whatever is left of the trial is simply still there, and
+         * spending it all first genuinely leaves nothing.
+         *
+         * The guest is taken from the session token on the request, so it cannot
+         * be named by a caller who does not already hold it. `Guests::claim` locks
+         * the row and rechecks both that it is still an unclaimed guest and that
+         * the address is still free, so two signups racing on one guest cannot
+         * both win.
+         */
+        $guest = $session;
+        if ($guest) {
+            $user = app(Guests::class)->claim($guest, $email, $password, $name);
+            app(ReferralService::class)->registerSignup($user, $referralCode);
+            $user = $user->fresh() ?? $user;
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (\Throwable) {
+                // Account creation stays usable when the mail provider is down.
+            }
+
+            return $this->json([...$this->sessionPayload($request, $user), 'isNewUser' => true], 201);
+        }
 
         $user = User::create([
             'name' => $name !== '' ? $name : $this->nameFromEmail($email),
@@ -114,8 +159,11 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => $error->getMessage()], $error->status);
         }
 
+        $payload = $this->sessionPayload($request, $account['user']);
+        app(AuthLoginRecorder::class)->record($account['user'], 'app', $provider);
+
         return $this->json([
-            ...$this->sessionPayload($request, $account['user']),
+            ...$payload,
             'isNewUser' => $account['created'],
         ]);
     }
@@ -181,7 +229,20 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => 'Email or password is incorrect.'], 401);
         }
 
-        return $this->json($this->sessionPayload($request, $user));
+        /*
+         * A correct password on an account with a second factor buys a challenge,
+         * not a session. Nothing about the account travels with it: the challenge is
+         * a random handle the cache can trade back for this user once, and only when
+         * the code that comes with it is right.
+         */
+        if (app(TwoFactor::class)->enabled($user)) {
+            return $this->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
+        }
+
+        $payload = $this->sessionPayload($request, $user);
+        app(AuthLoginRecorder::class)->record($user, 'app', 'password');
+
+        return $this->json($payload);
     }
 
     private function recordDailyLogin(User $user): void

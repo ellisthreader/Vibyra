@@ -1,3 +1,5 @@
+@font-face { font-family: Manrope; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/fonts/manrope-regular.woff2') format('woff2'); }
+@font-face { font-family: Manrope; font-style: normal; font-weight: 650 800; font-display: swap; src: url('/fonts/manrope-bold.woff2') format('woff2'); }
 :root {
     color-scheme: dark;
     --portal-canvas: #0E0F12;
@@ -13,7 +15,7 @@
     --portal-success: #37C78A;
     --portal-warn: #E3A951;
     --portal-error: #F06472;
-    --portal-font: Inter, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+    --portal-font: Manrope, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
