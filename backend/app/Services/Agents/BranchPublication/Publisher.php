@@ -2,13 +2,18 @@
 
 namespace App\Services\Agents\BranchPublication;
 
-/** Creates one GitHub branch from approved file bytes; never retries a write. */
+/**
+ * Creates one GitHub Agent branch from approved file bytes, or (with $expectedHead, the
+ * head a confirmed earlier publish left) adds one commit on top of it: same base tree
+ * plus the cumulative worktree change, parent = that head, fast-forward ref update.
+ * A moved or missing head is refused. Never retries a write.
+ */
 final class Publisher
 {
     public function __construct(private readonly GitDataClient $github) {}
 
     public function publish(string $token, string $repository, string $baseBranch,
-        string $message, array $manifest): array
+        string $message, array $manifest, ?string $expectedHead = null): array
     {
         abort_unless(config('agents.git_publish_enabled'), 409, 'Agent branch publishing is not enabled.');
         abort_unless(self::repository($repository) && self::branch($baseBranch)
@@ -36,12 +41,15 @@ final class Publisher
         }
         $baseRef = '/git/ref/heads/'.self::encodedBranch($baseBranch);
         $headRef = '/git/ref/heads/'.self::encodedBranch($head);
-        if (!$this->matchesBase($token, $repository, $baseRef, $baseBranch, $base)) {
+        if ($expectedHead !== null && !self::sha($expectedHead)) return $this->refused('Invalid expected branch head.');
+        if ($expectedHead === null && !$this->matchesBase($token, $repository, $baseRef, $baseBranch, $base)) {
             return $this->refused('The approved base branch commit changed or cannot be read.');
         }
-        if (!$this->headAbsent($token, $repository, $headRef)) {
-            return $this->refused('The Agent branch already exists or cannot be checked.');
+        if (!$this->headReady($token, $repository, $headRef, $head, $expectedHead)) {
+            return $this->refused($expectedHead === null ? 'The Agent branch already exists or cannot be checked.'
+                : 'The Agent branch moved since its last confirmed publish. Review it before publishing again.');
         }
+        $parent = $expectedHead ?? $base;
         $commit = $this->github->get($token, $repository, '/git/commits/'.$base);
         $baseTree = $commit['data']['tree']['sha'] ?? null;
         if ($commit['status'] !== 200 || ($commit['data']['sha'] ?? null) !== $base
@@ -73,30 +81,33 @@ final class Publisher
         if ($createdTree['status'] !== 201 || !self::sha($treeSha)) {
             return $this->unknown('GitHub did not confirm the new file tree.');
         }
-        if ($treeSha === $baseTree) return $this->refused('The reviewed snapshot makes no commit change.');
+        $parentTree = $expectedHead === null ? $baseTree
+            : ($this->github->get($token, $repository, '/git/commits/'.$expectedHead)['data']['tree']['sha'] ?? null);
+        if ($treeSha === $parentTree) return $this->refused('The reviewed snapshot makes no commit change.');
         $createdCommit = $this->github->post($token, $repository, '/git/commits',
-            ['message' => $message, 'tree' => $treeSha, 'parents' => [$base]]);
+            ['message' => $message, 'tree' => $treeSha, 'parents' => [$parent]]);
         $commitSha = $createdCommit['data']['sha'] ?? null;
         if ($createdCommit['status'] !== 201 || !self::sha($commitSha)
             || ($createdCommit['data']['tree']['sha'] ?? null) !== $treeSha
-            || ($createdCommit['data']['parents'][0]['sha'] ?? null) !== $base
+            || ($createdCommit['data']['parents'][0]['sha'] ?? null) !== $parent
             || ($createdCommit['data']['message'] ?? null) !== $message) {
             return $this->unknown('GitHub did not confirm the exact commit.');
         }
-        if (!$this->matchesBase($token, $repository, $baseRef, $baseBranch, $base)
-            || !$this->headAbsent($token, $repository, $headRef)) {
-            return $this->refused('A branch moved before publication. No Agent ref was created.');
+        if (($expectedHead === null && !$this->matchesBase($token, $repository, $baseRef, $baseBranch, $base))
+            || !$this->headReady($token, $repository, $headRef, $head, $expectedHead)) {
+            return $this->refused('A branch moved before publication. No Agent ref was changed.');
         }
-        $createdRef = $this->github->post($token, $repository, '/git/refs',
-            ['ref' => 'refs/heads/'.$head, 'sha' => $commitSha]);
-        if ($createdRef['status'] !== 201
+        $createdRef = $expectedHead === null
+            ? $this->github->post($token, $repository, '/git/refs', ['ref' => 'refs/heads/'.$head, 'sha' => $commitSha])
+            : $this->github->patch($token, $repository, '/git/refs/heads/'.self::encodedBranch($head), ['sha' => $commitSha, 'force' => false]);
+        if ($createdRef['status'] !== ($expectedHead === null ? 201 : 200)
             || ($createdRef['data']['ref'] ?? null) !== 'refs/heads/'.$head
             || ($createdRef['data']['object']['type'] ?? null) !== 'commit'
             || ($createdRef['data']['object']['sha'] ?? null) !== $commitSha) {
             return $this->unknown('GitHub did not confirm the Agent branch ref.', $commitSha);
         }
         return ['published' => true, 'repository' => $repository, 'branch' => $head,
-            'baseSha' => $base, 'headSha' => $commitSha,
+            'baseSha' => $base, 'headSha' => $commitSha, 'previousHeadSha' => $expectedHead,
             'commitUrl' => 'https://github.com/'.$repository.'/commit/'.$commitSha];
     }
 
@@ -110,9 +121,13 @@ final class Publisher
             && ($response['data']['object']['sha'] ?? null) === $sha;
     }
 
-    private function headAbsent(string $token, string $repository, string $path): bool
+    /** Create: the Agent branch must not exist. Update: it must still point at the expected head. */
+    private function headReady(string $token, string $repository, string $path, string $head, ?string $expected): bool
     {
-        return $this->github->get($token, $repository, $path)['status'] === 404;
+        $response = $this->github->get($token, $repository, $path);
+        if ($expected === null) return $response['status'] === 404;
+        return $response['status'] === 200 && ($response['data']['ref'] ?? null) === 'refs/heads/'.$head
+            && ($response['data']['object']['sha'] ?? null) === $expected;
     }
 
     private static function deletion(string $path): array

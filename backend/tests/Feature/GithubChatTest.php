@@ -13,7 +13,7 @@ class GithubChatTest extends TestCase
 {
     use RefreshDatabase;
 
-    public static function scenarios(): array { return ['PR review' => ['review'], 'Stakeholder update' => ['activity'], 'Final step answers' => ['laststep']]; }
+    public static function scenarios(): array { return ['PR review' => ['review'], 'Issue fix' => ['issue'], 'Stakeholder update' => ['activity'], 'Final step answers' => ['laststep']]; }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('scenarios')]
     public function test_github_reads_real_tool_results_then_settles_once_without_exposing_credentials(string $scenario): void
@@ -34,20 +34,30 @@ class GithubChatTest extends TestCase
         $this->postJson('/api/vibes/consent', ['accepted' => true])->assertOk();
         $chat = (string) Str::uuid();
         $this->postJson('/api/vibes/chats', ['id' => $chat, 'title' => 'Review'])->assertOk();
-        $prompt = $scenario !== 'activity' ? '@github review o/r#4 and identify weak tests' : '@github turn the last 7 days of o/r commits and merged PRs into a stakeholder update';
+        $prompt = match ($scenario) {
+            'activity' => '@github turn the last 7 days of o/r commits and merged PRs into a stakeholder update',
+            'issue' => '@github read issue o/r#4 before fixing it',
+            default => '@github review o/r#4 and identify weak tests',
+        };
         $q = $this->postJson('/api/vibes/quote', ['chatId' => $chat, 'text' => $prompt,
             'model' => 'qwen/qwen3.8-flash', 'integrations' => ['github']])->assertOk()->json();
-        $answer = 'The diff removes a validation guard. Add a regression test for invalid input: https://github.com/o/r/pull/4';
-        $calls = $scenario !== 'activity' ? [
+        $answer = $scenario === 'issue' ? 'Issue #4 reports startup fails after reconnect.'
+            : 'The diff removes a validation guard. Add a regression test for invalid input: https://github.com/o/r/pull/4';
+        $calls = $scenario === 'issue' ? [[
+            'id' => 'issue', 'type' => 'function', 'function' => ['name' => 'github_issue', 'arguments' => '{"repository":"o/r","number":4}'],
+        ]] : ($scenario !== 'activity' ? [
             ['id' => 'details', 'type' => 'function', 'function' => ['name' => 'github_pull_request', 'arguments' => '{"repository":"o/r","number":4}']],
             ['id' => 'files', 'type' => 'function', 'function' => ['name' => 'github_pull_request_files', 'arguments' => '{"repository":"o/r","number":4}']],
-        ] : [['id' => 'activity', 'type' => 'function', 'function' => ['name' => 'github_repository_activity', 'arguments' => '{"repository":"o/r"}']]];
+        ] : [['id' => 'activity', 'type' => 'function', 'function' => ['name' => 'github_repository_activity', 'arguments' => '{"repository":"o/r"}']]]);
         Http::fake([
             'openrouter.ai/*' => Http::sequence()->push(['id' => 'first', 'usage' => ['cost' => 0.0001], 'choices' => [['message' => [
                 'role' => 'assistant', 'content' => null, 'tool_calls' => $calls,
             ]]]])->push(['id' => 'second', 'usage' => ['cost' => 0.0001], 'choices' => [['message' => ['content' => $answer]]]]),
             'api.github.com/repos/o/r/commits?*' => Http::response([['sha' => 'abc', 'commit' => ['message' => 'if (!valid) guard fix']]]),
             'api.github.com/search/issues*' => Http::response(['items' => [], 'total_count' => 0]),
+            'api.github.com/repos/o/r/issues/4' => Http::response(['number' => 4,
+                'title' => 'Startup issue', 'body' => 'Startup fails after reconnect.', 'comments' => 1]),
+            'api.github.com/repos/o/r/issues/4/comments?*' => Http::response([['body' => 'Reproduced on iPhone']]),
             'api.github.com/repos/o/r/pulls/4' => Http::response(['number' => 4, 'title' => 'Remove guard', 'html_url' => 'https://github.com/o/r/pull/4', 'head' => ['sha' => 'abc']]),
             'api.github.com/repos/o/r/pulls/4/files*' => Http::response([['filename' => 'validate.ts', 'patch' => '- if (!valid) throw new Error();']]),
             'api.github.com/repos/o/r/pulls/4/reviews*' => Http::response([]),
@@ -65,7 +75,8 @@ class GithubChatTest extends TestCase
         Http::assertSent(function ($r) use ($calls, $scenario) {
             if (!str_contains($r->url(), 'openrouter.ai')) return false;
             $messages = $r['messages'];
-            return ($scenario !== 'laststep' || !isset($r['tools'])) && str_contains(json_encode($messages), 'if (!valid)') && count(array_filter($messages, fn ($m) => $m['role'] === 'tool')) === count($calls)
+            $evidence = $scenario === 'issue' ? 'Startup fails after reconnect.' : 'if (!valid)';
+            return ($scenario !== 'laststep' || !isset($r['tools'])) && str_contains(json_encode($messages), $evidence) && count(array_filter($messages, fn ($m) => $m['role'] === 'tool')) === count($calls)
                 && !str_contains(json_encode($r->data()), 'private-fixture-token');
         });
         $before = DB::table('vibes_turns')->where('id', $id)->value('charged');

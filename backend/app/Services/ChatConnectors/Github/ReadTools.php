@@ -25,8 +25,9 @@ final class ReadTools
 
     public static function validate(string $operation, array $args): array
     {
+        // Neither segment may be a dot segment: `../user` would be normalised to /user by the HTTP client (F-17).
         abort_unless(is_string($args['repository'] ?? null) && preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#D', $args['repository'])
-            && !in_array(explode('/', $args['repository'])[1], ['.', '..']), 422, 'Use an owner/name repository.');
+            && array_intersect(explode('/', $args['repository']), ['.', '..']) === [], 422, 'Use an owner/name repository.');
         $safe = ['repository' => $args['repository']];
         if ($operation === 'github_issue' || str_starts_with($operation, 'github_pull_request')) {
             abort_unless(is_int($args['number'] ?? null) && $args['number'] > 0, 422, 'Choose a pull request number.');

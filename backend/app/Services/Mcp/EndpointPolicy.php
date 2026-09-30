@@ -56,18 +56,22 @@ final class EndpointPolicy
         return array_values(array_unique($addresses));
     }
 
-    private static function publicIp(string $ip): bool
+    /** Also used for literal addresses in browser grants, so both refuse the same classes. */
+    public static function publicIp(string $ip): bool
     {
         if (!filter_var($ip, FILTER_VALIDATE_IP,
             FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) return false;
         $packed = inet_pton($ip);
         if ($packed === false) return false;
         if (strlen($packed) === 16) {
-            // Global unicast only. Exclude the documentation and special-purpose
-            // 2001::/23 block even if the runtime's filter considers it public.
+            // Global unicast only. Exclude what embeds or aliases another address or is special-purpose even though it sits in
+            // 2000::/3: Teredo and the rest of 2001::/23, documentation (2001:db8::/32, 3fff::/20) and 6to4 (2002::/16, which
+            // carries an IPv4 address, e.g. 2002:7f00:1::1 is 127.0.0.1). NAT64, IPv4-mapped and site-local forms are outside 2000::/3.
             return self::inCidr($packed, '2000::', 3)
                 && !self::inCidr($packed, '2001::', 23)
-                && !self::inCidr($packed, '2001:db8::', 32);
+                && !self::inCidr($packed, '2001:db8::', 32)
+                && !self::inCidr($packed, '2002::', 16)
+                && !self::inCidr($packed, '3fff::', 20);
         }
         foreach (self::DENIED_V4 as [$network, $bits]) {
             if (self::inCidr($packed, $network, $bits)) return false;

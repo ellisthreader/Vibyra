@@ -20,7 +20,13 @@ final class GitDataClient
         return $this->request($token, $repository, $path, $body);
     }
 
-    private function request(string $token, string $repository, string $path, ?array $body): array
+    /** Fast-forward ref update for a later Agent publish (force is always false). */
+    public function patch(string $token, string $repository, string $path, array $body): array
+    {
+        return $this->request($token, $repository, $path, $body, 'patch');
+    }
+
+    private function request(string $token, string $repository, string $path, ?array $body, string $method = 'post'): array
     {
         try {
             $client = Http::withToken($token)->acceptJson()
@@ -29,7 +35,7 @@ final class GitDataClient
                 ->withHeaders(['Accept' => 'application/vnd.github+json',
                     'X-GitHub-Api-Version' => '2022-11-28']);
             $url = self::BASE.Client::path($repository).$path;
-            $response = $body === null ? $client->get($url) : $client->post($url, $body);
+            $response = $body === null ? $client->get($url) : $client->{$method}($url, $body);
             $data = $response->json();
             return ['status' => $response->status(), 'data' => is_array($data) ? $data : null];
         } catch (\Throwable) {
