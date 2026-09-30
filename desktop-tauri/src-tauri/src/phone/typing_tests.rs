@@ -1,7 +1,10 @@
+#[cfg(unix)]
 use super::{
     backend::DesktopBackend, control::TYPING_OFF, vault::Vault, workspace::SharedWorkspace,
 };
+#[cfg(unix)]
 use serde_json::{json, Value};
+#[cfg(unix)]
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -10,7 +13,10 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+use vibyra_core::pty::OutputSink;
+#[cfg(unix)]
+use vibyra_core::pty::{FlushConfig, LaunchSpec, PtyManager};
+#[cfg(unix)]
 use vibyra_host::Backend;
 
 struct Sink;
@@ -20,6 +26,7 @@ impl OutputSink for Sink {
     fn on_exit(&self, _: u64, _: Option<i32>) {}
 }
 
+#[cfg(unix)]
 fn wait_for(events: &Receiver<Value>, name: &str) {
     let deadline = Instant::now() + Duration::from_secs(5);
     while Instant::now() < deadline {

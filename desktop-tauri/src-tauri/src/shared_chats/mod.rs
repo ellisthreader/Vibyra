@@ -121,9 +121,9 @@ pub(crate) mod fixture;
 mod lookup;
 #[cfg(all(test, unix))]
 mod native_cli_tests;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod phone_resume_tests;
 #[cfg(all(test, unix))]
 mod resume_tests;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod unused_resume_tests;

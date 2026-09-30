@@ -6,12 +6,16 @@ use super::{
     workspace::{DesktopProject, SharedWorkspace},
 };
 use serde_json::{json, Value};
+#[cfg(unix)]
+use std::time::Instant;
 use std::{
     sync::{atomic::AtomicBool, Arc},
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
-use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+#[cfg(unix)]
+use vibyra_core::pty::LaunchSpec;
+use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
 use vibyra_host::Backend;
 
 pub(super) struct Sink;

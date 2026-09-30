@@ -1,5 +1,4 @@
-//! Which processes exist and who started whom, on every desktop platform:
-//! a window belongs to an app Vibyra started by ancestry, never by title.
+//! Process ancestry binds windows to apps Vibyra started on each platform.
 
 use parking_lot::Mutex;
 use std::collections::HashMap;
@@ -61,16 +60,17 @@ impl Table {
         Self { entries }
     }
 
+    #[cfg(target_os = "macos")]
     pub(crate) fn pids(&self) -> Vec<u32> {
         self.entries.keys().copied().collect()
     }
 
+    #[cfg(target_os = "macos")]
     pub(crate) fn name(&self, pid: u32) -> Option<String> {
         self.entries.get(&pid).map(|entry| entry.name.clone())
     }
 
-    /// `root` and every descendant, breadth first with no depth limit. A child
-    /// that claims to predate its parent is a reused pid and is skipped.
+    /// Breadth-first descendants of `root`, excluding children predating their parent.
     pub(crate) fn tree(&self, root: u32) -> Vec<TreeProcess> {
         let Some(entry) = self.entries.get(&root) else {
             return Vec::new();

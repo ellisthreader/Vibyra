@@ -1,5 +1,6 @@
 /// A loopback or wildcard listener: its port, and whether it answers only on IPv6
 /// (Vite on macOS binds `[::1]` alone by default).
+#[cfg(any(target_os = "macos", test))]
 pub(crate) fn listener(name: &str) -> Option<(u16, bool)> {
     let ipv6 = if name.starts_with("[::1]:") || name.starts_with("[::]:") {
         true

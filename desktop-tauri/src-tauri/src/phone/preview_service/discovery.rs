@@ -8,6 +8,7 @@ mod attached;
 mod probe;
 use super::discovery_system as system;
 pub(super) use attached::running_for_root;
+#[cfg(any(target_os = "macos", test))]
 pub(super) use probe::listener;
 use probe::probe;
 use std::time::Duration;
