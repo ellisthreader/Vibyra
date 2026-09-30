@@ -44,6 +44,10 @@ class RunVibesTurn implements ShouldQueue
         }
         try {
             $request = json_decode($t->request, true);
+            try { app(\App\Services\CloudWorkspaces\Ai::class)->dispatch($t, $request); }
+            catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+                $turns->settle($t->id, $t->actual_micro_usd, null, $e->getMessage()); return;
+            }
             $meta = $request['vibyraAgent'] ?? null;
             if ($meta) {
                 try { \App\Services\Agents\TaskContext::validate($t->user_id, $meta); }
@@ -57,6 +61,7 @@ class RunVibesTurn implements ShouldQueue
             // files themselves, and only those linked to this turn.
             [$outgoing, $attached] = app(Attachments::class)->expand($request, $t->id);
             unset($outgoing['vibyraAgent']);
+            unset($outgoing['vibyraCloud']);
             $prices = $request['provider']['max_price'] ?? [];
             // Bounded with the very method `Quotes` priced this turn by, so the budget
             // the job enforces and the budget the person was quoted are one number
@@ -118,6 +123,7 @@ class RunVibesTurn implements ShouldQueue
                     // Integration calls are answered here rather than by the phone, which also
                     // re-queues this turn; a call the phone owes still parks as before.
                     app(ConnectorRunner::class)->run($t->id, (int) $t->user_id);
+                    app(\App\Services\CloudWorkspaces\Tools::class)->enqueue($t->id);
                     return;
                 }
                 // A call that succeeded but came back empty is a budgeting failure on

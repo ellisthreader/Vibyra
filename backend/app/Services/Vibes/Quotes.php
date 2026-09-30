@@ -62,9 +62,10 @@ class Quotes {
             \App\Services\Agents\VmPlatform::allows($computer));
         // Assembled before the price so the schemas are inside the bound, and before
         // the router so it weighs the turn that will actually be sent.
-        $tools = [...($bound ? AgentTools::definitions() : ($computer ? AgentTools::computerDefinitions(
+        $cloud = app(\App\Services\CloudWorkspaces\Budgets::class)->forChat($chat);
+        $tools = [...($cloud ? app(\App\Services\CloudWorkspaces\Ai::class)->definitions($cloud) : ($bound ? AgentTools::definitions() : ($computer ? AgentTools::computerDefinitions(
             (bool) $computer->can_write, \App\Services\Agents\VmPlatform::allows($computer),
-            (bool) $computer->can_write && config('agents.git_publish_enabled') && in_array('github', $named, true)) : [])),
+            (bool) $computer->can_write && config('agents.git_publish_enabled') && in_array('github', $named, true)) : []))),
             ...$this->integrations->definitions($named)];
         $inputBound = TurnPrice::inputBound($messages, $tools) + $this->attachments->tokens($files);
         $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
@@ -136,6 +137,7 @@ class Quotes {
             $max = min($max, $remaining, TurnPrice::ceiling($scale));
             abort_if($remaining <= 0 || $max > $remaining, 402, 'This reply exceeds the terminal’s remaining token limit. Start a new terminal with a larger limit.');
         }
+        $max = app(\App\Services\CloudWorkspaces\Ai::class)->quote($chat, $request, $max, $scale);
         $maxUnits = (int) ceil($max * $scale);
         $data = ['unitScale' => $scale, 'selection' => $model, 'integrations' => $named, 'userId' => $userId, 'chatId' => $chatId, 'text' => $text, 'model' => $selected['id'],
             'trial' => $selected['trial'], 'max' => $maxUnits, 'request' => $request,

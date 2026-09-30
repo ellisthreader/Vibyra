@@ -33,6 +33,7 @@ class Wallet
             $this->grant($user->id, 'welcome:'.$user->id, 'trial',
                 $modern ? 0 : ($trialCredits === null ? self::trialCredits() : max(0, $trialCredits)));
             if ($modern) $user->forceFill(['credits_balance' => 0, 'plan_renews_at' => null])->save();
+            if ($modern) app(\App\Services\Membership\Trials::class)->start($user);
             return $this->lock($user->id);
         }, 3);
     }
@@ -119,7 +120,8 @@ class Wallet
             $w = $this->lock($userId);
             $user = User::findOrFail($userId);
             $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
-            $held = (int) DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at')->sum('reserved');
+            $held = (int) DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at')->sum('reserved')
+                + \App\Services\CloudWorkspaces\Holds::units($userId);
             $available = (int) $grants->sum('remaining');
             $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
             $plan = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';

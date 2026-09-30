@@ -51,7 +51,7 @@ start_web() {
 # never answers. `vibes` leads the list because a person is watching that one.
 start_worker() {
   php artisan queue:work \
-    --queue="${VIBYRA_QUEUE_NAMES:-vibes,decisions,notifications,deployments,default}" \
+    --queue="${VIBYRA_QUEUE_NAMES:-vibes,decisions,cloud-workspaces,notifications,deployments,default}" \
     --sleep="${VIBYRA_QUEUE_SLEEP:-2}" \
     --tries="${VIBYRA_QUEUE_TRIES:-1}" \
     --timeout="${VIBYRA_QUEUE_TIMEOUT:-1200}" \
@@ -75,7 +75,7 @@ cleanup() {
 case "$role" in
   web) start_web ;;
   worker) exec php artisan queue:work \
-      --queue="${VIBYRA_QUEUE_NAMES:-vibes,decisions,notifications,deployments,default}" \
+      --queue="${VIBYRA_QUEUE_NAMES:-vibes,decisions,cloud-workspaces,notifications,deployments,default}" \
       --sleep="${VIBYRA_QUEUE_SLEEP:-2}" \
       --tries="${VIBYRA_QUEUE_TRIES:-1}" \
       --timeout="${VIBYRA_QUEUE_TIMEOUT:-1200}" \

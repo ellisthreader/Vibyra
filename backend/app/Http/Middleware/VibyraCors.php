@@ -35,7 +35,7 @@ class VibyraCors
             $response->setVary('Origin', false);
         }
 
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP, X-Vibyra-Cloud-Access');
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
         $response->headers->set('Access-Control-Max-Age', '86400');
 

@@ -1,0 +1,21 @@
+name: Cloud workspace checks
+on:
+  pull_request:
+    paths: ['cloud-runtime/**', 'backend/app/Services/CloudWorkspaces/**', 'backend/tests/Feature/CloudWorkspaces/**', '.github/workflows/cloud-workspaces.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm test
+        working-directory: cloud-runtime
+      - run: docker build -t vibyra-cloud-qa cloud-runtime
+      - name: Real isolated runtime and final save
+        run: docker run --rm --cap-add NET_ADMIN --cap-add SYS_RESOURCE -v "$PWD/cloud-runtime/tests:/tests:ro" --entrypoint node vibyra-cloud-qa /tests/container-smoke.mjs stop
+      - name: Independent compute lease expiry
+        run: docker run --rm --cap-add NET_ADMIN --cap-add SYS_RESOURCE -v "$PWD/cloud-runtime/tests:/tests:ro" --entrypoint node vibyra-cloud-qa /tests/container-smoke.mjs expire

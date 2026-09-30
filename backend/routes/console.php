@@ -34,3 +34,5 @@ Schedule::call(function () {
 Schedule::command('vibyra:membership-remote-leases')->everyMinute()->withoutOverlapping();
 
 Schedule::command('vibyra:membership-replay')->everyTenMinutes()->withoutOverlapping();
+Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping()->onOneServer();
+Schedule::command('vibyra:cloud-provider-audit')->everyMinute()->when(fn () => config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org'))->withoutOverlapping()->onOneServer();

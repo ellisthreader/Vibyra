@@ -30,6 +30,18 @@ return [
 
     'disks' => [
 
+        'cloud-workspaces' => [
+            'driver' => 's3',
+            'key' => env('CLOUD_WORKSPACES_STORAGE_KEY'),
+            'secret' => env('CLOUD_WORKSPACES_STORAGE_SECRET'),
+            'region' => env('CLOUD_WORKSPACES_STORAGE_REGION', 'auto'),
+            'bucket' => env('CLOUD_WORKSPACES_STORAGE_BUCKET'),
+            'endpoint' => env('CLOUD_WORKSPACES_STORAGE_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         'vibes-attachments' => [
             'driver' => 'local',
             'root' => env('VIBES_ATTACHMENTS_ROOT', storage_path('app/private')),

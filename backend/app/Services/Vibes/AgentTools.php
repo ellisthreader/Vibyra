@@ -107,6 +107,10 @@ class AgentTools
 
     private function fileArguments(string $name, array $args): array
     {
+        if ($name === 'cloud_run_command') {
+            abort_unless(count($args) === 1 && is_string($args['command'] ?? null) && strlen($args['command']) <= 500, 422, 'Invalid cloud command.');
+            return ['command' => $args['command']];
+        }
         if ($name === 'run_test') return VmTestAction::arguments($args);
         abort_unless(in_array($name, ['list_files', 'read_file', 'write_file', 'search_files', 'git_status', 'git_diff'], true), 422, 'Unsupported AI tool.');
         if ($name === 'git_status') {
@@ -123,12 +127,17 @@ class AgentTools
             && is_string($args['expectedSha256'] ?? null), 422, 'Invalid file edit.');
         return array_intersect_key($args, array_flip(['path', 'content', 'expectedSha256']));
     }
-    public function respond(int $userId, string $id, string $decision, array $result): void
+    public function respond(int $userId, string $id, string $decision, array $result, ?string $cloudAction = null): void
     {
-        $turnId = DB::transaction(function () use ($userId, $id, $decision, $result) {
+        $turnId = DB::transaction(function () use ($userId, $id, $decision, $result, $cloudAction) {
             app(Wallet::class)->lock($userId);
             $tool = DB::table('vibes_tools')->where('id', $id)->firstOrFail();
             $turn = DB::table('vibes_turns')->where('id', $tool->turn_id)->where('user_id', $userId)->firstOrFail();
+            $chat = DB::table('vibes_chats')->where('id', $turn->chat_id)->firstOrFail();
+            if ($chat->cloud_workspace_id ?? null) {
+                abort_unless($cloudAction && DB::table('cloud_actions')->where('id', $cloudAction)->where('tool_id', $id)
+                    ->where('workspace_id', $chat->cloud_workspace_id)->where('state', 'completed')->exists(), 403, 'Only the authorized cloud runtime can answer this tool.');
+            }
             $encoded = json_encode($result, JSON_THROW_ON_ERROR);
             if ($tool->result !== null) {
                 abort_unless($tool->decision === $decision && $tool->result === $encoded, 409, 'This tool already has a different response.');

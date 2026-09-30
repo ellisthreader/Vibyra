@@ -31,6 +31,8 @@ class Turns
             $chat = DB::table('vibes_chats')->where('id', $q['chatId'])->where('user_id', $userId)->firstOrFail();
             abort_unless($chat->revision == $q['revision'], 409, 'This chat changed. Refresh the estimate.');
             app(FundedTerminals::class)->guard($userId, $chat, $q['model'], $q['max'] * $microPerUnit);
+            app(\App\Services\CloudWorkspaces\Budgets::class)->guardAi($chat, $q['max']);
+            app(\App\Services\CloudWorkspaces\Ai::class)->guardSubmit($chat, $q['request']);
             if (!empty($q['request']['vibyraAgent'])) \App\Services\Agents\TaskContext::validate($userId, $q['request']['vibyraAgent']);
             app(\App\Services\Membership\Projects::class)->guard($userId, $chat);
             $active = DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at');

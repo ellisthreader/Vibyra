@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             require __DIR__.'/../routes/remote.php';
             require __DIR__.'/../routes/agents.php';
             require __DIR__.'/../routes/notifications.php';
+            require __DIR__.'/../routes/cloud_workspaces.php';
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -34,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $preserveBytes = fn (Request $request): bool => $exactMacBytes($request) || $exactStateSync($request);
         TrimStrings::skipWhen($preserveBytes);
         ConvertEmptyStringsToNull::skipWhen($preserveBytes);
+        TrimStrings::skipWhen(fn ($request) => $request->is('api/cloud-workspaces/*') || $request->is('api/cloud-runtime/*'));
+        ConvertEmptyStringsToNull::skipWhen(fn ($request) => $request->is('api/cloud-workspaces/*') || $request->is('api/cloud-runtime/*'));
         // Railway terminates TLS at its edge and forwards plain HTTP, so
         // without this every generated URL comes out `http://` — including the
         // download URL handed to the desktop updater, which then takes an
@@ -41,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->remove(HandleCors::class);
         $middleware->append(VibyraCors::class);
+        $middleware->prepend(\App\Http\Middleware\CloudPreviewOrigin::class);
         $middleware->append(\App\Http\Middleware\VibesLegacyGuard::class);
         $middleware->validateCsrfTokens(except: [
             'pair',

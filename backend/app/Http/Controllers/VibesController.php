@@ -142,6 +142,9 @@ class VibesController extends Controller
             $beforeDispatch = DB::table('vibes_turns')->where('id', $turn)->whereIn('status', ['queued', 'waiting'])
                 ->whereNull('settled_at')->update(['status' => 'cancelled', 'cancel_requested' => true]);
             DB::table('vibes_turns')->where('id', $turn)->whereNull('settled_at')->update(['cancel_requested' => true]);
+            if (\App\Services\CloudWorkspaces\Holds::available()) DB::table('cloud_actions')->whereIn('tool_id',
+                DB::table('vibes_tools')->where('turn_id', $turn)->select('id'))->whereIn('state', ['queued', 'running'])
+                ->update(['state' => 'cancelled', 'updated_at' => now()]);
             if ($beforeDispatch) $turns->settle($turn, (int) DB::table('vibes_turns')->where('id', $turn)->value('actual_micro_usd'), null, 'Stopped. Only confirmed AI usage was charged.');
         });
         return $this->json(['ok' => true]);
