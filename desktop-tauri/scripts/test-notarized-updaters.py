@@ -89,6 +89,22 @@ class Admission(unittest.TestCase):
         with tarfile.open(fileobj=data) as archive:
             self.assertEqual(len(gate.safe_members(archive)), 1)
 
+    def test_signing_only_or_incomplete_workflow_cannot_replace_native_build_gates(self):
+        provenance = {"headSha": "a" * 40, "status": "completed", "conclusion": "success",
+                      "workflowName": "Rust desktop beta packages", "jobs": []}
+        with self.assertRaises(ValueError):
+            gate.verify_provenance(provenance, "a" * 40)
+        required = ["Run release gates", "Verify native untrusted-frame IPC boundary",
+                    "Verify encrypted embedded phone transport", "Build native package",
+                    "Verify macOS code signature, microphone entitlement and launch"]
+        provenance["jobs"] = [{"name": f"macos / macOS-{arch} Rust package", "conclusion": "success",
+                              "steps": [{"name": step, "conclusion": "success"} for step in required]}
+                              for arch in ["arm64", "x64"]]
+        gate.verify_provenance(provenance, "a" * 40)
+        provenance["jobs"][1]["steps"][0]["conclusion"] = "skipped"
+        with self.assertRaises(ValueError):
+            gate.verify_provenance(provenance, "a" * 40)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -95,6 +95,22 @@ def verify_app(app, entry, version, build):
             raise ValueError("Wrong executable architecture")
 
 
+def verify_provenance(provenance, commit):
+    if (provenance.get("headSha") != commit or provenance.get("status") != "completed"
+            or provenance.get("conclusion") != "success"
+            or provenance.get("workflowName") != "Rust desktop beta packages"):
+        raise ValueError("Build gates have not passed for this exact source")
+    jobs = {job["name"]: job for job in provenance.get("jobs", [])}
+    for arch in ["arm64", "x64"]:
+        job = jobs.get(f"macos / macOS-{arch} Rust package", {})
+        steps = {s["name"]: s.get("conclusion") for s in job.get("steps", [])}
+        required = ["Run release gates", "Verify native untrusted-frame IPC boundary",
+                    "Verify encrypted embedded phone transport", "Build native package",
+                    "Verify macOS code signature, microphone entitlement and launch"]
+        if job.get("conclusion") != "success" or any(steps.get(step) != "success" for step in required):
+            raise ValueError("Complete signed native build gates required for both architectures")
+
+
 def main():
     directory = Path(sys.argv[1])
     manifest = json.loads((directory / "notarized-manifest.json").read_text())
@@ -102,9 +118,8 @@ def main():
     mac = json.loads(Path("src-tauri/tauri.macos.conf.json").read_text())
     entries = validate_entries(manifest, directory, os.environ["GITHUB_SHA"], config["version"])
     provenance = json.loads(run("gh", "run", "view", str(manifest["buildRunId"]), "--repo",
-                                os.environ["GITHUB_REPOSITORY"], "--json", "headSha,status,conclusion"))
-    if provenance != {"headSha": os.environ["GITHUB_SHA"], "status": "completed", "conclusion": "success"}:
-        raise ValueError("Build gates have not passed for this exact source")
+                                os.environ["GITHUB_REPOSITORY"], "--json", "headSha,status,conclusion,jobs,workflowName"))
+    verify_provenance(provenance, os.environ["GITHUB_SHA"])
     with tempfile.TemporaryDirectory(prefix="vibyra-notarized-ci-") as folder:
         for entry in entries:
             destination = Path(folder) / entry["architecture"]
