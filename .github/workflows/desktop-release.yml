@@ -7,18 +7,23 @@ on:
         description: Build the Mac in-app update only
         type: boolean
         default: false
+      sign_notarized_only:
+        description: Sign verified notarized archives for this exact source revision
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   frontend:
-    if: ${{ !inputs.macos_only }}
+    if: ${{ !inputs.macos_only && !inputs.sign_notarized_only }}
     uses: ./.github/workflows/desktop-frontend.yml
 
   package:
     needs: frontend
-    if: ${{ !inputs.macos_only }}
+    if: ${{ !inputs.macos_only && !inputs.sign_notarized_only }}
     name: ${{ matrix.label }} Rust package
     strategy:
       fail-fast: false
@@ -250,6 +255,11 @@ jobs:
           retention-days: 30
 
   macos:
-    if: ${{ inputs.macos_only }}
+    if: ${{ inputs.macos_only && !inputs.sign_notarized_only }}
     uses: ./.github/workflows/desktop-macos-release.yml
+    secrets: inherit
+
+  notarized:
+    if: ${{ inputs.sign_notarized_only }}
+    uses: ./.github/workflows/desktop-notarized-update.yml
     secrets: inherit
