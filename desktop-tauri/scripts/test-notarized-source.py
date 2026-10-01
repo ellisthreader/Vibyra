@@ -12,6 +12,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 from pathlib import Path
 
@@ -28,6 +29,16 @@ gate, originals, identity = [load(name) for name in
 
 
 class Sources(unittest.TestCase):
+    def test_only_one_exact_private_draft_can_be_selected(self):
+        source = "a" * 40
+        draft = {"tag_name": "remote-notarized-" + source, "draft": True}
+        with patch.object(originals, "api", return_value=[{"tag_name": "other"}, draft]):
+            self.assertEqual(originals.draft_release("owner/repo", source), draft)
+        for response in [[], [draft, draft], [{**draft, "draft": False}],
+                         [{**draft, "tag_name": "remote-notarized-" + "b" * 40}]]:
+            with patch.object(originals, "api", return_value=response), self.assertRaises(ValueError):
+                originals.draft_release("owner/repo", source)
+
     def test_release_manifest_cannot_override_exact_source_tag_and_target(self):
         source = "a" * 40
         valid = {"tag_name": "remote-notarized-" + source, "draft": True,

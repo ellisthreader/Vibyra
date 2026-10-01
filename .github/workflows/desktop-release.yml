@@ -266,6 +266,9 @@ jobs:
 
   notarized:
     if: ${{ inputs.sign_notarized_only }}
+    permissions:
+      contents: write # GitHub exposes private drafts only to push-capable callers.
+      actions: read
     uses: ./.github/workflows/desktop-notarized-update.yml
     with:
       notarized_source_commit: ${{ inputs.notarized_source_commit }}

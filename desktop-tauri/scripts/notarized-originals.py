@@ -13,6 +13,15 @@ def api(repository, path):
                                      check=True, capture_output=True).stdout)
 
 
+def draft_release(repository, source):
+    # The by-tag endpoint excludes unpublished drafts, including for owners.
+    releases = api(repository, "releases?per_page=100")
+    matches = [item for item in releases if item.get("tag_name") == "remote-notarized-" + source]
+    if len(matches) != 1 or matches[0].get("draft") is not True:
+        raise ValueError("Exactly one recent private notarized draft required")
+    return matches[0]
+
+
 def source_config(commit, path):
     return subprocess.run(["git", "show", f"{commit}:desktop-tauri/{path}"],
                           check=True, capture_output=True).stdout

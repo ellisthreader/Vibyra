@@ -156,7 +156,7 @@ def main():
     provenance = json.loads(run("gh", "run", "view", str(manifest["buildRunId"]), "--repo",
                                 repository, "--json", "headSha,status,conclusion,jobs,workflowName"))
     verify_provenance(provenance, source)
-    release = originals.api(repository, "releases/tags/remote-notarized-" + source)
+    release = originals.draft_release(repository, source)
     verify_release(release, source, {"notarized-manifest.json", *[e["filename"] for e in entries]})
     with tempfile.TemporaryDirectory(prefix="vibyra-notarized-ci-") as folder:
         for entry in entries:
