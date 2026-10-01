@@ -6,6 +6,7 @@ import json
 import os
 import plistlib
 import shutil
+import struct
 import subprocess
 import sys
 import tarfile
@@ -144,6 +145,26 @@ class RealApps(unittest.TestCase):
         subprocess.run(["codesign", "--force", "--deep", "--sign", "-", "--options", "runtime",
                         "--timestamp=none", str(final)], check=True, capture_output=True)
         identity.compare_apps(original, final)
+
+    def test_malformed_signature_extent_fails_mandatory_apple_admission(self):
+        binary = self.root / "intel-echo"
+        subprocess.run(["lipo", "/bin/echo", "-thin", "x86_64", "-output", str(binary)],
+                       check=True, capture_output=True)
+        app = self.app("malformed", str(binary))
+        executable = app / "Contents/MacOS/Vibyra"
+        data = bytearray(executable.read_bytes())
+        offset, found = 32, False
+        for _ in range(struct.unpack_from("<I", data, 16)[0]):
+            command, size = struct.unpack_from("<II", data, offset)
+            if command == 0x1D:
+                struct.pack_into("<I", data, offset + 12, 1)
+                found = True
+                break
+            offset += size
+        self.assertTrue(found)
+        executable.write_bytes(data)
+        with self.assertRaises(subprocess.CalledProcessError):
+            gate.verify_app(app, {"architecture": "x64"}, "0.8.16", "29", notarized=False)
 
     def test_changed_resources_entitlements_or_executable_modes_are_rejected(self):
         original, resource = self.app("original"), self.app("resource")

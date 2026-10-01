@@ -47,20 +47,31 @@ def entitlements(path):
     return plistlib.loads(raw) if raw else {}
 
 
-def unsigned_digest(path, directory):
+def unsigned_code(path, directory):
     signed = path.read_bytes()
     target = directory / "unsigned-code"
     shutil.copy2(path, target)
     run("codesign", "--remove-signature", str(target))
     stripped = target.read_bytes()
+    target.unlink()
+    return signed, stripped
+
+
+def canonical_code(signed, stripped):
     if signed[:4] == bytes.fromhex("cffaedfe"):
         spec = importlib.util.spec_from_file_location("macho", Path(__file__).with_name("notarized-macho.py"))
         macho = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(macho)
         stripped = macho.canonical_unsigned(signed, stripped)
-    result = hashlib.sha256(stripped).hexdigest()
-    target.unlink()
-    return result
+    return stripped
+
+
+def same_unsigned_code(source, exported, directory):
+    original, final = unsigned_code(source, directory), unsigned_code(exported, directory)
+    # Exact equality needs no assumptions about linker allocation geometry.
+    if original[1] == final[1]:
+        return True
+    return canonical_code(*original) == canonical_code(*final)
 
 
 def compare_apps(original, notarized):
@@ -93,7 +104,7 @@ def compare_apps(original, notarized):
                 raise ValueError("Notarized executable mode differs from the exact CI artifact")
             if entitlements(source) != entitlements(exported):
                 raise ValueError("Notarized entitlements differ from the exact CI artifact")
-            if source.is_file() and unsigned_digest(source, Path(folder)) != unsigned_digest(exported, Path(folder)):
+            if source.is_file() and not same_unsigned_code(source, exported, Path(folder)):
                 raise ValueError("Notarized executable differs from the exact CI artifact")
 
 

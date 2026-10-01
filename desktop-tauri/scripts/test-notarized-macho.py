@@ -3,11 +3,15 @@ import hashlib
 import importlib.util
 import struct
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("macho", Path(__file__).with_name("notarized-macho.py"))
 macho = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(macho)
+spec = importlib.util.spec_from_file_location("identity", Path(__file__).with_name("notarized-identity.py"))
+identity = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(identity)
 
 
 def segment(name, address, virtual, offset, size, protection):
@@ -38,6 +42,34 @@ def changed(data, offset, value, kind="<Q"):
 
 
 class MachO(unittest.TestCase):
+    def test_identical_unsigned_intel_bytes_need_no_allocation_normalization(self):
+        signed, stripped = fixture(0x2000, cpu=0x1000007)
+        metadata = macho.layout(signed, True)
+        allocation = ((metadata["size"] + 16383) // 16384) * 16384
+        pair = (changed(signed, metadata["field"], allocation),
+                changed(stripped, metadata["field"], allocation))
+        # Real admitted Intel CI code uses this allocation; the original strict
+        # normalizer deliberately rejects it. Equality requires no normalization.
+        with self.assertRaisesRegex(ValueError, "allocation"):
+            macho.canonical_unsigned(*pair)
+        with patch.object(identity, "unsigned_code", side_effect=[pair, pair]):
+            self.assertTrue(identity.same_unsigned_code(None, None, None))
+        for offset in [-1, 24]:  # Program byte and Mach-O header flags.
+            tampered = bytearray(pair[1])
+            tampered[offset] ^= 1
+            with patch.object(identity, "unsigned_code", side_effect=[pair, (pair[0], bytes(tampered))]):
+                with self.assertRaisesRegex(ValueError, "allocation"):
+                    identity.same_unsigned_code(None, None, None)
+
+    def test_different_unsigned_bytes_still_require_strict_normalization(self):
+        first, second = fixture(), fixture(0x2000)
+        with patch.object(identity, "unsigned_code", side_effect=[first, second]):
+            self.assertTrue(identity.same_unsigned_code(None, None, None))
+        tampered = bytearray(second[1])
+        tampered[-1] ^= 1
+        with patch.object(identity, "unsigned_code", side_effect=[first, (second[0], bytes(tampered))]):
+            self.assertFalse(identity.same_unsigned_code(None, None, None))
+
     def test_only_signature_size_derived_allocation_changes_are_equal(self):
         for cpu in macho.PAGES:
             first, second = fixture(cpu=cpu), fixture(0x2000, cpu=cpu)
