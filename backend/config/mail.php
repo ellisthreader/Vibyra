@@ -110,8 +110,10 @@ return [
     |
     */
 
+    'reply_to' => ['address' => env('MAIL_REPLY_TO_ADDRESS', 'support@vibyra.net'), 'name' => 'Vibyra Support'],
+
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'hello@vibyra.net'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Community\CommunityAvailability;
+
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
 use App\Models\PublishedProjectDeployment;
@@ -29,6 +31,9 @@ trait CommunityPublishingReviewEndpoint
         $project = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])->where('slug', $slug)->firstOrFail();
         $note = Str::limit(trim((string) $request->input('reason', '')), 500, '');
         $approved = $decision === PublishedProject::REVIEW_APPROVED;
+        if ($approved && ! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
 
         $project->forceFill([
             'review_status' => $decision,

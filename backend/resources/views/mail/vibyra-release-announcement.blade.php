@@ -40,7 +40,7 @@
         </td></tr>
         <tr><td style="padding:22px 32px;background:#121419;border-top:1px solid #2a2e38;color:#7f8796;font-size:12px;line-height:1.6;">
           You’re receiving this essential service update because you have a verified Vibyra account.<br>
-          Questions or continued problems? <a href="mailto:support@vibyra.app" style="color:#8fb1ff;">support@vibyra.app</a> · © {{ now()->year }} Vibyra
+          Questions or continued problems? <a href="mailto:support@vibyra.net" style="color:#8fb1ff;">support@vibyra.net</a> · © {{ now()->year }} Vibyra
         </td></tr>
       </table>
     </td></tr>

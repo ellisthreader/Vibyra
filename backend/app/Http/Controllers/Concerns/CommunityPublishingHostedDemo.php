@@ -43,7 +43,9 @@ trait CommunityPublishingHostedDemo
 
         $entryPath = $this->normalizeHostedDemoPath((string) ($value['entryPath'] ?? ''));
         $files = [];
+        $seenPaths = [];
         $totalBytes = 0;
+        if (count((array) ($value['files'] ?? [])) > 220 || (bool) data_get($value, 'metadata.truncated', false)) return null;
 
         foreach (array_slice((array) ($value['files'] ?? []), 0, 220) as $file) {
             if (! is_array($file)) {
@@ -53,25 +55,29 @@ trait CommunityPublishingHostedDemo
             $encoding = (string) ($file['encoding'] ?? 'utf8');
             $body = (string) ($file['body'] ?? '');
             if ($path === '' || $this->unsafeHostedDemoPath($path) || ! in_array($encoding, ['utf8', 'base64'], true) || $body === '') {
-                continue;
-            }
-            if ($encoding === 'utf8') {
-                $body = $this->neutralizeCompiledPrivateUrlLiterals($body, ['path' => $path]);
-            }
-            if ($encoding === 'utf8'
-                && $this->containsUnsafePublishedUrl($body, ['path' => $path])) {
                 return null;
+            }
+            if (isset($seenPaths[$path])) return null;
+            $seenPaths[$path] = true;
+            $decoded = $encoding === 'base64' ? base64_decode($body, true) : $body;
+            if ($decoded === false || strlen($body) > 2_800_000) return null;
+            // URL safety applies to encoded HTML/JS too, not only UTF-8 transport.
+            $isText = mb_check_encoding($decoded, 'UTF-8');
+            if ($isText) {
+                $decoded = $this->neutralizeCompiledPrivateUrlLiterals($decoded, ['path' => $path]);
+                if ($this->containsUnsafePublishedUrl($decoded, ['path' => $path])) return null;
+                $body = $encoding === 'base64' ? base64_encode($decoded) : $decoded;
             }
             $totalBytes += strlen($body);
             if ($totalBytes > 11_000_000) {
-                break;
+                return null;
             }
             $files[] = [
                 'path' => $path,
-                'contentType' => Str::limit((string) ($file['contentType'] ?? 'application/octet-stream'), 120, ''),
+                'contentType' => $this->safeHostedDemoContentType((string) ($file['contentType'] ?? 'application/octet-stream')),
                 'encoding' => $encoding,
-                'size' => min((int) ($file['size'] ?? strlen($body)), 2_000_000),
-                'body' => Str::limit($body, 2_800_000, ''),
+                'size' => strlen($decoded),
+                'body' => $body,
             ];
         }
 

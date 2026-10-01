@@ -41,15 +41,17 @@ class FaqAnswerer
     {
         $knowledgeHash = sha1($this->knowledge->text());
         $key = 'website-faq:'.sha1(self::model().'|'.$knowledgeHash.'|'.$this->normalise($question));
-        $cached = Cache::get($key);
-        if (is_string($cached) && $cached !== '') {
-            return ['answer' => $cached, 'cached' => true];
+        try {
+            $cached = Cache::get($key);
+            if (is_string($cached) && $cached !== '') {
+                return ['answer' => $cached, 'cached' => true];
+            }
+            $answer = $this->ask($question);
+            Cache::put($key, $answer, self::CACHE_TTL_SECONDS);
+            return ['answer' => $answer, 'cached' => false];
+        } catch (Throwable) {
+            return ['answer' => $this->knowledge->fallback($question), 'cached' => false, 'fallback' => true];
         }
-
-        $answer = $this->ask($question);
-        Cache::put($key, $answer, self::CACHE_TTL_SECONDS);
-
-        return ['answer' => $answer, 'cached' => false];
     }
 
     private function ask(string $question): string
@@ -69,13 +71,17 @@ class FaqAnswerer
 
     private function post(string $question, string $reasoning): Response
     {
+        // The conservative reservation is sized for this inexpensive bounded FAQ model.
+        if (self::model() !== 'gpt-5-nano' || mb_strlen($this->systemPrompt()) > 24000) {
+            throw new RuntimeException('FAQ model or knowledge needs budget review.');
+        }
         $apiKey = (string) config('services.openai.key');
         if ($apiKey === '') {
             throw new RuntimeException('OpenAI is not configured.');
         }
 
         try {
-            $response = Http::timeout(30)
+            $response = app(FaqBudget::class)->run(fn () => Http::timeout(30)->connectTimeout(5)
                 ->acceptJson()
                 ->withToken($apiKey)
                 ->post((string) config('services.openai.chat_url'), [
@@ -86,7 +92,7 @@ class FaqAnswerer
                         ['role' => 'system', 'content' => $this->systemPrompt()],
                         ['role' => 'user', 'content' => $question],
                     ],
-                ]);
+                ]));
         } catch (Throwable $error) {
             throw new RuntimeException('Could not reach the answer service.', 0, $error);
         }

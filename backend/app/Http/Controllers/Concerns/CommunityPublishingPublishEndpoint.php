@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Community\CommunityAvailability;
+
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
 use App\Models\PublishedProjectDeployment;
@@ -20,6 +22,9 @@ trait CommunityPublishingPublishEndpoint
     public function publishProject(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
+        if (! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
         $title = Str::limit(trim((string) $request->input('title', 'Untitled Project')), 90, '');
         $description = Str::limit(trim((string) $request->input('description', 'Built with Vibyra.')), 420, '');
         $stack = Str::limit(trim((string) $request->input('stack', 'App')), 60, '');
@@ -88,8 +93,10 @@ trait CommunityPublishingPublishEndpoint
                 return $this->json(['ok' => false, ...$bundleFailure], 422);
             }
         }
-        $reviewFiles = $this->runtimeReviewFiles($runtimeBundle, $request->input('sourceFiles', []));
+        $artifactReview = \App\Services\Community\PublishedArtifactReview::collect($hostedDemo, $runtimeBundle, $request->input('sourceFiles', []));
+        $reviewFiles = $artifactReview['files'];
         $sourceReview = (array) $request->input('sourceReview', []);
+        $sourceReview['truncated'] = (bool) ($sourceReview['truncated'] ?? false) || $artifactReview['incomplete'];
         $sourceReview['totalFiles'] = max((int) ($sourceReview['totalFiles'] ?? 0), count($reviewFiles));
 
         $safety = $this->projectSafetyReview->review([

@@ -11,7 +11,7 @@ class OwnerAccountsController extends Controller
 {
     public function index(Request $request, TwoFactor $twoFactor): JsonResponse
     {
-        $user = $request->user('web');
+        $user = $request->user('web')->fresh();
         $verifiedAt = $request->session()->get('owner_second_factor_verified_at');
         $verifiedFor = $request->session()->get('owner_second_factor_user_id');
         if (! $twoFactor->enabled($user) || ! is_numeric($verifiedAt)
@@ -61,7 +61,7 @@ class OwnerAccountsController extends Controller
 
     public function verify(Request $request, TwoFactor $twoFactor): JsonResponse
     {
-        $user = $request->user('web');
+        $user = $request->user('web')->fresh();
         if (! $twoFactor->enabled($user)) {
             return response()->json(['ok' => false, 'error' => 'Set up two-factor authentication first.'], 403);
         }

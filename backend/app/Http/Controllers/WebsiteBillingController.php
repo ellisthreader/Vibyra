@@ -27,7 +27,7 @@ class WebsiteBillingController extends Controller
         if ($stripe && $request->has('offerKey')) {
             $input = $request->validate(['offerKey' => 'required|string|max:40', 'offerVersion' => 'required|string|max:40', 'requestId' => 'required|uuid', 'accountScope' => 'nullable|uuid']);
             $url = app(\App\Services\Membership\Checkout::class)->create($user, $input, $stripe);
-            app(Recorder::class)->consented($request, 'website_checkout_started', $input['offerKey']);
+            app(Recorder::class)->consented($request, 'website_checkout_started', app(\App\Services\Membership\Offers::class)->get($input['offerKey'], $input['offerVersion'])['kind']);
             return $this->json(['ok' => true, 'url' => $url]);
         }
         abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Refresh the membership page to use the current offers.');

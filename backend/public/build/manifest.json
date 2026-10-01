@@ -15,16 +15,16 @@
       "_shared-jNpcfZh5.js"
     ]
   },
-  "_analyticsChoice-Bl3-JA8n.js": {
-    "file": "assets/analyticsChoice-Bl3-JA8n.js",
+  "_analyticsChoice-Cm8bhJJW.css": {
+    "file": "assets/analyticsChoice-Cm8bhJJW.css",
+    "src": "_analyticsChoice-Cm8bhJJW.css"
+  },
+  "_analyticsChoice-CuYmE2bM.js": {
+    "file": "assets/analyticsChoice-CuYmE2bM.js",
     "name": "analyticsChoice",
     "css": [
       "assets/analyticsChoice-Cm8bhJJW.css"
     ]
-  },
-  "_analyticsChoice-Cm8bhJJW.css": {
-    "file": "assets/analyticsChoice-Cm8bhJJW.css",
-    "src": "_analyticsChoice-Cm8bhJJW.css"
   },
   "_jsx-runtime-BVko9UzU.js": {
     "file": "assets/jsx-runtime-BVko9UzU.js",
@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-C2gP0-Ek.css",
+    "file": "assets/app-D4eHcl-J.css",
     "name": "app",
     "names": [
       "app.css"
@@ -72,16 +72,16 @@
     "isEntry": true
   },
   "resources/js/analyticsChoiceEntry.js": {
-    "file": "assets/analyticsChoiceEntry-UDOujf9K.js",
+    "file": "assets/analyticsChoiceEntry-Cpy977zq.js",
     "name": "analyticsChoiceEntry",
     "src": "resources/js/analyticsChoiceEntry.js",
     "isEntry": true,
     "imports": [
-      "_analyticsChoice-Bl3-JA8n.js"
+      "_analyticsChoice-CuYmE2bM.js"
     ]
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-D3SaLvqk.js",
+    "file": "assets/app-lAI3Sm7m.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -89,18 +89,18 @@
       "_jsx-runtime-BVko9UzU.js"
     ],
     "css": [
-      "assets/app-C2gP0-Ek.css"
+      "assets/app-D4eHcl-J.css"
     ]
   },
   "resources/js/benchmarks.jsx": {
-    "file": "assets/benchmarks-DhlyFCw-.js",
+    "file": "assets/benchmarks-7ZCnLXB7.js",
     "name": "benchmarks",
     "src": "resources/js/benchmarks.jsx",
     "isEntry": true,
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
       "_Navigation-Cd9UmvQr.js",
-      "_analyticsChoice-Bl3-JA8n.js"
+      "_analyticsChoice-CuYmE2bM.js"
     ],
     "css": [
       "assets/benchmarks-QUHRGWaQ.css",
@@ -108,7 +108,7 @@
     ]
   },
   "resources/js/downloads.jsx": {
-    "file": "assets/downloads-D2ECRz4T.js",
+    "file": "assets/downloads-B_t_wZNS.js",
     "name": "downloads",
     "src": "resources/js/downloads.jsx",
     "isEntry": true,
@@ -116,7 +116,7 @@
       "_jsx-runtime-BVko9UzU.js",
       "_shared-jNpcfZh5.js",
       "_Navigation-Cd9UmvQr.js",
-      "_analyticsChoice-Bl3-JA8n.js",
+      "_analyticsChoice-CuYmE2bM.js",
       "_useReleaseCatalog-BP22uuT9.js"
     ],
     "css": [
@@ -125,7 +125,7 @@
     ]
   },
   "resources/js/marketing.jsx": {
-    "file": "assets/marketing-C5v6Qu11.js",
+    "file": "assets/marketing-DWZolxRV.js",
     "name": "marketing",
     "src": "resources/js/marketing.jsx",
     "isEntry": true,
@@ -134,7 +134,7 @@
       "_shared-jNpcfZh5.js",
       "_Navigation-Cd9UmvQr.js",
       "_PhoneWaitlist-Cji9Tzz5.js",
-      "_analyticsChoice-Bl3-JA8n.js"
+      "_analyticsChoice-CuYmE2bM.js"
     ],
     "css": [
       "assets/marketing-CDv-2xuG.css",
@@ -142,14 +142,14 @@
     ]
   },
   "resources/js/portal.jsx": {
-    "file": "assets/portal-DReLIxpW.js",
+    "file": "assets/portal-J3CuxXcq.js",
     "name": "portal",
     "src": "resources/js/portal.jsx",
     "isEntry": true,
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
       "_PhoneWaitlist-Cji9Tzz5.js",
-      "_analyticsChoice-Bl3-JA8n.js",
+      "_analyticsChoice-CuYmE2bM.js",
       "_useReleaseCatalog-BP22uuT9.js"
     ],
     "css": [

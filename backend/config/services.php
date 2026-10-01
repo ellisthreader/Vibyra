@@ -69,9 +69,9 @@ return [
         'secret' => env('STRIPE_SECRET_KEY'),
         'publishable' => env('STRIPE_PUBLISHABLE_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-        'success_url' => env('STRIPE_SUCCESS_URL', 'https://vibyra.app/billing/success'),
-        'cancel_url' => env('STRIPE_CANCEL_URL', 'https://vibyra.app/billing/cancel'),
-        'portal_return_url' => env('STRIPE_PORTAL_RETURN_URL', 'https://vibyra.app/account'),
+        'success_url' => env('STRIPE_SUCCESS_URL', 'https://vibyra.net/billing/success'),
+        'cancel_url' => env('STRIPE_CANCEL_URL', 'https://vibyra.net/billing/cancel'),
+        'portal_return_url' => env('STRIPE_PORTAL_RETURN_URL', 'https://vibyra.net/account'),
     ],
 
     'twilio_verify' => [
@@ -82,6 +82,7 @@ return [
 
     'apple_iap' => [
         'shared_secret' => env('APPLE_IAP_SHARED_SECRET'),
+        'bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
         'verify_url' => env('APPLE_IAP_VERIFY_URL', 'https://buy.itunes.apple.com/verifyReceipt'),
         'sandbox_url' => env('APPLE_IAP_SANDBOX_URL', 'https://sandbox.itunes.apple.com/verifyReceipt'),
     ],

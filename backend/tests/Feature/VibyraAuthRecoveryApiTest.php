@@ -35,7 +35,7 @@ class VibyraAuthRecoveryApiTest extends TestCase
             ['id' => $user->id, 'hash' => sha1($user->email)]
         );
 
-        $this->get($url)->assertRedirect('vibyra://email-verified?email=verify%40example.com');
+        $this->get($url)->assertOk()->assertSee('Your email is verified')->assertSee('vibyra://email-verified?email=verify%40example.com');
         $this->assertNotNull($user->fresh()->email_verified_at);
     }
 
@@ -105,14 +105,14 @@ class VibyraAuthRecoveryApiTest extends TestCase
         config()->set('auth.recovery_links.mode', 'legacy');
         $legacy = (new VibyraResetPassword('legacy-token'))->toMail($user);
         $this->assertStringStartsWith(
-            'http://localhost/api/auth/password/open?',
+            'http://localhost/reset-password?',
             $legacy->actionUrl
         );
 
         config()->set('auth.recovery_links.mode', 'dual');
         $dual = (new VibyraResetPassword('dual-token'))->toMail($user);
         $this->assertSame(
-            'https://links.vibyra.app/reset-password?token=dual-token&email=reset%40example.com',
+            'http://localhost/reset-password?token=dual-token&email=reset%40example.com',
             $dual->actionUrl
         );
         $this->assertTrue(collect($dual->outroLines)->contains(
@@ -122,7 +122,7 @@ class VibyraAuthRecoveryApiTest extends TestCase
         config()->set('auth.recovery_links.mode', 'verified');
         $verified = (new VibyraResetPassword('verified-token'))->toMail($user);
         $this->assertSame(
-            'https://links.vibyra.app/reset-password?token=verified-token&email=reset%40example.com',
+            'http://localhost/reset-password?token=verified-token&email=reset%40example.com',
             $verified->actionUrl
         );
         $this->assertFalse(collect($verified->outroLines)->contains(
@@ -136,7 +136,7 @@ class VibyraAuthRecoveryApiTest extends TestCase
         config()->set('auth.recovery_links.verified_url', 'https://links.vibyra.app/reset-password');
 
         $response = $this->get('/api/auth/password/open?email=reset%40example.com&token=abc')
-            ->assertRedirect('https://links.vibyra.app/reset-password?token=abc&email=reset%40example.com')
+            ->assertRedirect('http://localhost/reset-password?token=abc&email=reset%40example.com')
             ->assertHeader('Referrer-Policy', 'no-referrer');
         $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
     }
@@ -147,12 +147,12 @@ class VibyraAuthRecoveryApiTest extends TestCase
             ->assertOk()
             ->assertHeader('Referrer-Policy', 'no-referrer')
             ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
-            ->assertSee('Open this link on a device with Vibyra installed', false);
+            ->assertSee('portal-root', false);
 
         $response->assertDontSee('private@example.com', false);
         $response->assertDontSee('secret-token', false);
 
-        $this->get('/reset-password')->assertBadRequest();
+        $this->get('/reset-password')->assertOk();
     }
 
     public function test_association_documents_require_real_credentials_and_are_no_referrer(): void

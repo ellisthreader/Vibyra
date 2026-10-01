@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>Just a moment | Vibyra</title>
     <link rel="icon" type="image/png" href="{{ asset('vibyra-cobalt.png') }}">
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <style>
+    <script nonce="{{ request()->attributes->get('vibyra.csp_nonce') }}" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <style nonce="{{ request()->attributes->get('vibyra.csp_nonce') }}">
         @font-face { font-family: Manrope; src: url('/fonts/manrope-regular.woff2') format('woff2'); font-weight: 400 600; font-display: swap; }
         @font-face { font-family: Manrope; src: url('/fonts/manrope-bold.woff2') format('woff2'); font-weight: 650 800; font-display: swap; }
         :root {
@@ -75,7 +75,7 @@
 
         <p class="fine">Protected by Cloudflare Turnstile · <a href="/legal/privacy">Privacy</a></p>
     </main>
-    <script>
+    <script nonce="{{ request()->attributes->get('vibyra.csp_nonce') }}">
         function vibyraHumanPassed() {
             document.getElementById('human-check').submit();
         }

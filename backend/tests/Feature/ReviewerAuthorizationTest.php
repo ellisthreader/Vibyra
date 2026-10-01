@@ -28,6 +28,7 @@ class ReviewerAuthorizationTest extends TestCase
         $this->postJson('/api/account/profile', [
             'name' => 'Unverified User',
             'email' => 'reviewer@example.com',
+            'currentPassword' => 'secret123',
         ], ['Authorization' => "Bearer {$token}"])
             ->assertOk()
             ->assertJsonPath('user.emailVerified', false);

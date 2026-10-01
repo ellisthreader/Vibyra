@@ -13,7 +13,7 @@ class LegalPagesTest extends TestCase
             ->assertSee('Privacy Policy')
             ->assertSee('Local and cloud processing')
             ->assertSee('Community content')
-            ->assertSee('support@vibyra.app');
+            ->assertSee('support@vibyra.net');
     }
 
     public function test_terms_are_public_and_link_back_to_the_privacy_policy(): void

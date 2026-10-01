@@ -131,6 +131,10 @@ class BillingController extends Controller
             return response()->json(['ok' => false, 'error' => 'Invalid payload.'], 400);
         }
 
+        if (app()->environment('production') && !($event->livemode ?? false)) {
+            return response()->json(['ok' => false, 'error' => 'Test payments are not accepted.'], 400);
+        }
+
         try {
             if ((config('membership.enabled') || \Illuminate\Support\Facades\DB::table('membership_periods')->exists())
                 && ($stripe = $this->stripe()) && app(\App\Services\Membership\StripeEvents::class)->handle($event, $stripe)) {
@@ -179,6 +183,7 @@ class BillingController extends Controller
                 $verified,
                 function ($lockedUser, $claimedReceipt, string $canonicalTransactionId) use (
                     $product,
+                    $verified,
                     $platform,
                     $productId
                 ): void {
@@ -191,6 +196,7 @@ class BillingController extends Controller
                             null,
                             "iap-subscription:{$platform}:{$canonicalTransactionId}"
                         );
+                        $lockedUser->forceFill(['membership_ends_at' => $verified['expiresAt']])->save();
 
                         return;
                     }

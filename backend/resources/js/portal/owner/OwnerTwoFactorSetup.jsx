@@ -3,13 +3,23 @@ import { apiRequest } from "../api.js";
 
 const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-export default function OwnerTwoFactorSetup({ onComplete }) {
+export default function OwnerTwoFactorSetup({ onComplete, provider = "google" }) {
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState(null);
+
+  const verifyPassword = async (event) => {
+    event.preventDefault(); setBusy(true); setError("");
+    try {
+      setSetup(await apiRequest("/web-api/owner/2fa/start", { body: { currentPassword: password } }));
+      setPassword("");
+    } catch (caught) { setError(caught.message); }
+    finally { setBusy(false); }
+  };
 
   const verifyWithGoogle = async () => {
     const popup = window.open("", "vibyra-owner-verification", "popup,width=540,height=720");
@@ -71,8 +81,14 @@ export default function OwnerTwoFactorSetup({ onComplete }) {
     <p className="owner-kicker">Protect account records</p>
     <h2>Set up your authenticator</h2>
     {!setup && !recoveryCodes && <>
+      {provider === "email" ? <form onSubmit={verifyPassword}>
+        <p>Confirm your password, then add Vibyra to your authenticator app.</p>
+        <label>Current password<input type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} required /></label>
+        <button disabled={busy || !password}>{busy ? "Checking…" : "Confirm password"}</button>
+      </form> : <>
       <p>Check the Google account linked to Vibyra, then add a Vibyra authenticator code. Google may reuse an existing sign-in. A separate authenticator code is required each time you open owner account records.</p>
       <button type="button" disabled={busy} onClick={verifyWithGoogle}>{busy ? "Checking…" : "Check Google account"}</button>
+      </>}
       {status && <p role="status">{status}</p>}
     </>}
     {setup && <>

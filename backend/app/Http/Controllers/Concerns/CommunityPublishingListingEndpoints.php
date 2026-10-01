@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Community\CommunityAvailability;
+
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
 use App\Models\PublishedProjectDeployment;
@@ -20,6 +22,9 @@ trait CommunityPublishingListingEndpoints
     public function updatePublishedProjectListing(Request $request, string $slug): JsonResponse
     {
         $user = $this->authenticatedUser($request);
+        if (! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
         $project = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment', 'deployments'])
             ->where('slug', $slug)
             ->where('user_id', $user->id)
@@ -72,6 +77,9 @@ trait CommunityPublishingListingEndpoints
             ->where('user_id', $user->id)
             ->firstOrFail();
         $visibility = $this->publishVisibility((string) $request->input('visibility', $project->visibility));
+        if ($visibility !== 'private' && ! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
 
         if ($visibility === 'public' && ! $this->hasOpenablePublishedApp($project)) {
             return $this->json([

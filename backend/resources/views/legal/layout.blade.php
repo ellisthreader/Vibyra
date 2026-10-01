@@ -8,7 +8,7 @@
     <meta name="description" content="@yield('description')">
     <link rel="icon" type="image/png" href="{{ asset('vibyra-cobalt.png') }}">
     @vite('resources/js/analyticsChoiceEntry.js')
-    <style>
+    <style nonce="{{ request()->attributes->get('vibyra.csp_nonce') }}">
         @font-face { font-family: Manrope; src: url('/fonts/manrope-regular.woff2') format('woff2'); font-weight: 400 600; font-display: swap; }
         @font-face { font-family: Manrope; src: url('/fonts/manrope-bold.woff2') format('woff2'); font-weight: 650 800; font-display: swap; }
         :root {
@@ -137,7 +137,7 @@
         @yield('content')
     </main>
     <footer>
-        &copy; {{ now()->year }} Vibyra. Questions: <a href="mailto:support@vibyra.app">support@vibyra.app</a> · <a href="/?analytics=choices" data-analytics-choices>Analytics choices</a>
+        &copy; {{ now()->year }} Vibyra. Questions: <a href="mailto:support@vibyra.net">support@vibyra.net</a> · <a href="/?analytics=choices" data-analytics-choices>Analytics choices</a>
     </footer>
 </body>
 </html>

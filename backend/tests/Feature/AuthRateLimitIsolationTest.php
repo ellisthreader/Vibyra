@@ -42,6 +42,7 @@ class AuthRateLimitIsolationTest extends TestCase
             'email' => 'first-signup@example.com',
             'password' => 'correct-horse-battery-staple',
             'installId' => 'desktop-installation',
+            'flowSecret' => str_repeat('s', 64),
             'deviceName' => 'Customer PC',
         ])->assertCreated()->assertJsonPath('ok', true);
     }
@@ -98,12 +99,13 @@ class AuthRateLimitIsolationTest extends TestCase
     {
         $start = $this->fromClient()->postJson('/api/auth/desktop/google/start', [
             'installId' => 'desktop-installation',
+            'flowSecret' => str_repeat('s', 64),
             'deviceName' => 'Customer PC',
         ])->assertOk()->json();
 
         for ($attempt = 0; $attempt < 35; $attempt++) {
             $this->fromClient()
-                ->getJson("/api/auth/desktop/google/status/{$start['flowId']}")
+                ->withHeader('X-Vibyra-Flow-Secret', str_repeat('s', 64))->getJson("/api/auth/desktop/google/status/{$start['flowId']}")
                 ->assertOk()
                 ->assertJsonPath('status', 'pending');
         }

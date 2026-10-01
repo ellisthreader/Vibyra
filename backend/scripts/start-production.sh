@@ -47,9 +47,9 @@ fi
 # sign-up included, waits until Railway's proxy gives up with a 502.
 start_web() {
   cd public
-  exec php -d upload_max_filesize=8M -d post_max_size=32M \
+  exec php -d expose_php=0 -d upload_max_filesize=8M -d post_max_size=32M \
     -S "0.0.0.0:$port" \
-    ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
+    ../scripts/production-router.php
 }
 
 # Sponsored phone chat runs as a queued job (`RunVibesTurn` on the `vibes`

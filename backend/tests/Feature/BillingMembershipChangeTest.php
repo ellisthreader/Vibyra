@@ -10,26 +10,15 @@ class BillingMembershipChangeTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_manual_membership_can_change_plan_and_cycle(): void
+    public function test_manual_membership_cannot_self_upgrade_or_refill(): void
     {
         [$user, $token] = $this->paidUser('manual-change@example.test', 'manual');
-
-        $this->postJson('/api/billing/change', [
-            'plan' => 'starter',
-            'cycle' => 'monthly',
-        ], ['Authorization' => "Bearer {$token}"])
-            ->assertOk()
-            ->assertJsonPath('status', 'completed')
-            ->assertJsonPath('user.plan', 'starter')
-            ->assertJsonPath('user.planBillingCycle', 'monthly')
-            ->assertJsonPath('user.creditsBalance', (int) config('billing.plans.starter.monthly_credits'));
-
-        $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'plan' => 'starter',
-            'plan_billing_cycle' => 'monthly',
-            'billing_provider' => 'manual',
-        ]);
+        $before = $user->fresh()->only(['plan', 'plan_billing_cycle', 'credits_balance', 'plan_renews_at']);
+        foreach (['starter', 'pro'] as $plan) {
+            $this->postJson('/api/billing/change', ['plan' => $plan, 'cycle' => 'annual'],
+                ['Authorization' => "Bearer {$token}"])->assertStatus(422)->assertJsonPath('ok', false);
+        }
+        $this->assertEquals($before, $user->fresh()->only(array_keys($before)));
     }
 
     public function test_store_membership_change_returns_provider_settings(): void

@@ -36,6 +36,7 @@ Route::view('/legal/privacy', 'legal.privacy')->middleware(RecordWebsiteView::cl
 Route::view('/legal/terms', 'legal.terms')->middleware(RecordWebsiteView::class)->name('legal.terms');
 Route::view('/login', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class])->name('login');
 Route::view('/signup', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+Route::get('/forgot-password', fn () => response()->view('portal')->header('Cache-Control', 'private, no-store'))->middleware(VerifyHuman::class);
 Route::view('/billing', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
 Route::view('/checkout', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
 Route::view('/billing/success', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
@@ -45,12 +46,12 @@ Route::view('/benchmarks', 'benchmarks')->middleware([VerifyHuman::class, Record
 Route::view('/account/downloads', 'downloads')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
 Route::get('/owner/login', fn () => response()->view('portal')
     ->header('Cache-Control', 'private, no-store')
-    ->header('X-Robots-Tag', 'noindex, nofollow'));
+    ->header('X-Robots-Tag', 'noindex, nofollow'))->middleware(VerifyHuman::class);
 Route::post('/web-api/human-check', HumanCheckController::class)->middleware('throttle:20,1');
 Route::post('/web-api/owner/local-login', LocalOwnerLoginController::class)->middleware('throttle:5,1');
 Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'catalog']);
-Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware('throttle:5,10');
-Route::post('/web-api/faq/ask', [WebsiteFaqController::class, 'ask'])->middleware('throttle:12,1');
+Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware([VerifyHuman::class.':api', 'throttle:5,10']);
+Route::post('/web-api/faq/ask', [WebsiteFaqController::class, 'ask'])->middleware([VerifyHuman::class.':api', 'throttle:12,1']);
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
 Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
     ->middleware('throttle:30,1');
@@ -70,16 +71,18 @@ Route::get('/web-api/updates/{target}/{arch}/{bundleType}/{current}', [ReleaseUp
     ->where('current', '[0-9A-Za-z.+-]+')
     ->middleware('throttle:60,1');
 
-Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:auth-signup');
-Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:auth-login');
+Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware([VerifyHuman::class.':api', 'throttle:auth-signup']);
+Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware([VerifyHuman::class.':api', 'throttle:auth-login']);
 Route::delete('/web-api/auth/logout', [WebsiteAuthController::class, 'logout'])->middleware('auth');
-Route::post('/web-api/auth/login/2fa', [WebsiteAuthController::class, 'loginTwoFactor'])->middleware('throttle:8,1,web-login-2fa');
+Route::post('/web-api/auth/login/2fa', [WebsiteAuthController::class, 'loginTwoFactor'])->middleware([VerifyHuman::class.':api', 'throttle:8,1,web-login-2fa']);
 Route::get('/web-api/analytics/consent', [WebsiteAnalyticsController::class, 'show'])->middleware('throttle:60,1');
 Route::put('/web-api/analytics/consent', [WebsiteAnalyticsController::class, 'update'])->middleware('throttle:20,1');
 Route::post('/web-api/analytics/event', [WebsiteAnalyticsController::class, 'event'])->middleware('throttle:120,1');
+Route::post('/web-api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware([VerifyHuman::class.':api', 'throttle:auth-password-forgot']);
+Route::post('/web-api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1,web-password-reset');
 Route::get('/web-api/session', [WebsiteAuthController::class, 'session']);
 Route::post('/web-api/auth/provider/{provider}/start', [WebsiteProviderAuthController::class, 'start'])
-    ->whereIn('provider', ['apple', 'google', 'microsoft'])->middleware('throttle:auth-provider-start');
+    ->whereIn('provider', ['apple', 'google', 'microsoft'])->middleware([VerifyHuman::class.':api', 'throttle:auth-provider-start']);
 Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'status'])
     ->whereIn('provider', ['apple', 'google', 'microsoft'])->middleware('throttle:auth-provider-status');
 Route::get('/web-api/auth/providers', [WebsiteProviderAuthController::class, 'providers'])
@@ -105,8 +108,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/web-api/billing/orders/{order}', [\App\Http\Controllers\MembershipController::class, 'order'])->whereUuid('order');
     Route::get('/web-api/billing/account', [\App\Http\Controllers\MembershipController::class, 'snapshot']);
     Route::get('/web-api/billing/activity', [\App\Http\Controllers\MembershipController::class, 'activity']);
-    Route::post('/web-api/billing/checkout', [WebsiteBillingController::class, 'checkout']);
-    Route::post('/web-api/billing/portal', [WebsiteBillingController::class, 'portal']);
+    Route::post('/web-api/billing/checkout', [WebsiteBillingController::class, 'checkout'])->middleware('throttle:10,1,web-billing-checkout');
+    Route::post('/web-api/billing/portal', [WebsiteBillingController::class, 'portal'])->middleware('throttle:10,1,web-billing-portal');
 });
 
 Route::post('/api/analytics/events', AnalyticsEventController::class)->middleware('throttle:120,1');
@@ -259,7 +262,7 @@ Route::post('/api/billing/checkout', [BillingController::class, 'checkout']);
 Route::post('/api/billing/portal', [BillingController::class, 'portal']);
 Route::post('/api/billing/change', [BillingController::class, 'changeMembership']);
 Route::post('/api/billing/cancel', [BillingController::class, 'cancelMembership']);
-Route::post('/api/billing/iap-receipt', [BillingController::class, 'iapReceipt']);
+Route::post('/api/billing/iap-receipt', [BillingController::class, 'iapReceipt'])->middleware('throttle:10,1,billing-iap');
 Route::post('/api/billing/webhook', [BillingController::class, 'webhook']);
 Route::options('/api/{any}', [VibyraAppController::class, 'options'])->where('any', '.*');
 

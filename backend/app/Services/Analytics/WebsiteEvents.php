@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 class WebsiteEvents
 {
     public const ROUTES = ['/', '/downloads', '/benchmarks', '/login', '/signup',
-        '/billing', '/billing/success', '/billing/cancel', '/account',
+        '/billing', '/checkout', '/billing/success', '/billing/cancel', '/account',
         '/account/downloads', '/legal/privacy', '/legal/terms'];
     public const CTA_IDS = ['nav_downloads', 'nav_login', 'home_get_vibyra',
         'home_login', 'downloads_windows', 'downloads_linux', 'downloads_linux_deb',
@@ -17,7 +17,7 @@ class WebsiteEvents
         'pricing_opened', 'faq_opened', 'hero_download', 'hero_walkthrough',
         'hero_film', 'plans_buy', 'plans_signup', 'mobile_waitlist',
         'getting_started_download', 'nav_mobile_download', 'faq_downloads',
-        'billing_buy', 'billing_start_free'];
+        'billing_buy', 'billing_start_free', 'checkout_signup', 'checkout_login', 'checkout_pay'];
     public const PLATFORMS = ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64'];
     public const FORMS = ['signup', 'waitlist', 'faq', 'billing'];
     public const CLIENT_EVENTS = ['website_page_view', 'website_cta_clicked',

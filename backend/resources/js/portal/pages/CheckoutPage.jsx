@@ -9,10 +9,10 @@ import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
 // the offer and version ride along through sign-up and log-in in the URL.
 const PRO_OFFERS = ["pro_annual", "pro_monthly"];
 const INCLUDED = [
-    "The full Vibyra ecosystem on Mac and iPhone",
+    "Vibyra Desktop, with the iPhone companion coming October 2026",
     "Your own Claude, ChatGPT and Gemini accounts",
-    "Vibyra Cloud: reach your computer from anywhere on iPhone",
-    "Agents that keep working while you’re away",
+    "Vibyra Cloud: reach your awake, online computer when the iPhone app launches",
+    "Agents that work while your computer is on and Vibyra is open",
     "Vibyra AI built into every project",
     "Tokens that never expire, even if you cancel",
 ];
@@ -44,10 +44,10 @@ function Summary({ offer, monthly }) {
             {saving > 0 && <div className="is-saving"><dt>Annual saving</dt><dd>−{money(saving)}</dd></div>}
             <div><dt>Vibyra tokens</dt><dd>{offer.credits.toLocaleString("en-GB")}{yearly ? " up front" : " a month"}</dd></div>
         </dl>
-        <div className="checkout-total"><span>Due today</span><strong>{money(offer.pence)}</strong></div>
-        <p className="checkout-renews">Then {money(offer.pence)} every {yearly ? "year" : "month"} from {renewal(yearly ? 12 : 1)}, until you cancel. GBP, taxes included.</p>
+        <div className="checkout-total"><span>{offer.stripeEnabled === true ? "Due today" : "Plan price when available"}</span><strong>{money(offer.pence)}</strong></div>
+        <p className="checkout-renews">{offer.stripeEnabled === true ? <>Then {money(offer.pence)} every {yearly ? "year" : "month"} from {renewal(yearly ? 12 : 1)}, until you cancel.</> : <>Purchases are not open. No payment is due today.</>} GBP, taxes included.</p>
         <p className="checkout-guarantee"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 3v7c0 5-8 10-8 10S4 17 4 12V5Z" /><path d="m8 11 3 3 5-5" /></svg>
-            <span><strong>14-day money-back guarantee.</strong> Not for you? Email support@vibyra.app within 14 days for a full refund of this payment.</span></p>
+            <span><strong>14-day money-back guarantee.</strong> Not for you? Email support@vibyra.net within 14 days for a full refund of this payment.</span></p>
     </aside>;
 }
 
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
     const step = !user ? 0 : !verified ? 0 : 1;
 
     const pay = async () => {
-        if (!offer || !user) return;
+        if (!offer || !user || offer.stripeEnabled !== true) return;
         setBusy(true); setError("");
         const key = `${user.id}:${offer.offerKey}:${offer.offerVersion}`;
         if (!requests.has(key)) requests.set(key, crypto.randomUUID());
@@ -114,8 +114,9 @@ export default function CheckoutPage() {
         window.location.assign(authPath("login", "/checkout", here));
     };
 
-    return <PortalShell layout="checkout" eyebrow="" title="Continue with Vibyra Pro" intro={null}>
+    return <PortalShell layout="checkout" eyebrow="" title={offer && offer.stripeEnabled !== true ? "Vibyra Pro is opening soon" : "Continue with Vibyra Pro"} intro={null}>
         <Steps current={step} />
+        {offer && offer.stripeEnabled !== true && <Notice>Paid plans are not available yet. You can download Vibyra Desktop and use your free account today. <a href="/downloads">Get Vibyra Desktop</a></Notice>}
         {error && <Notice tone="error">{error} {!offers && <button className="portal-link-button" onClick={() => setAttempt(n => n + 1)}>Try again</button>}</Notice>}
         {!offers && !error && <div className="portal-loading" role="status">Loading current prices…</div>}
         {offer && <div className="checkout-layout">
@@ -167,13 +168,13 @@ export default function CheckoutPage() {
                     <ul className="checkout-included">{INCLUDED.map(text => <li key={text}>{text}</li>)}</ul>
 
                     {alreadyPro && <Notice>You already have Vibyra Pro on this account. <a href="/billing">Manage your membership</a></Notice>}
-                    {legacy && <Notice>This account keeps its original billing terms. Contact support@vibyra.app to move to Pro.</Notice>}
+                    {legacy && <Notice>This account keeps its original billing terms. Contact support@vibyra.net to move to Pro.</Notice>}
                     {mismatch && <Notice tone="error">This browser is signed in to a different account from the app that opened this purchase. Switch accounts to continue.</Notice>}
-                    {!offer.stripeEnabled && !alreadyPro && <Notice>Pro isn’t on sale on the website yet. You can review everything here; payment opens soon.</Notice>}
+                    {offer.stripeEnabled !== true && !alreadyPro && <Notice>Pro isn’t on sale on the website yet. You can review everything here; payment opens soon.</Notice>}
 
                     <button className="portal-button portal-button--primary checkout-pay" data-analytics-cta="checkout_pay"
-                        disabled={busy || alreadyPro || legacy || mismatch || !offer.stripeEnabled} onClick={pay}>
-                        {busy ? "Opening secure payment…" : `Continue to payment · ${money(offer.pence)}`}
+                        disabled={busy || alreadyPro || legacy || mismatch || offer.stripeEnabled !== true} onClick={pay}>
+                        {busy ? "Opening secure payment…" : offer.stripeEnabled !== true ? "Purchases opening soon" : `Continue to payment · ${money(offer.pence)}`}
                     </button>
                     <p className="checkout-fine">You’ll pay on Stripe’s secure page. By continuing you agree to the <a href="/legal/terms">Terms</a>. Pro renews every {offer.interval === "year" ? "year" : "month"} until you cancel, and you can cancel any time from your account.</p>
                 </section>}

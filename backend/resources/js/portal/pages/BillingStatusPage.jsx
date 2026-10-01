@@ -33,7 +33,7 @@ export default function BillingStatusPage({ status }) {
   if (!success) return <PortalShell layout="checkout" eyebrow="" title="You haven’t been charged" intro="You closed the payment page before paying. Your plan and balance are unchanged.">
     <div className="status-panel checkout-panel">
       <div className="status-actions"><a className="portal-button portal-button--primary" href="/checkout">Back to checkout</a><a className="portal-button portal-button--secondary" href="/#pricing">Compare plans</a></div>
-      <p className="checkout-fine">Questions before you buy? Email support@vibyra.app.</p>
+      <p className="checkout-fine">Questions before you buy? Email support@vibyra.net.</p>
     </div>
   </PortalShell>;
   return <PortalShell layout="checkout" eyebrow="" title={confirmed ? "Welcome to Vibyra Pro" : "Confirming your payment"} intro={confirmed ? "Your membership is active and your tokens are in your account." : "This usually takes a few seconds. You can keep this page open."}>

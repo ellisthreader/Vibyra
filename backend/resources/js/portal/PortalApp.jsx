@@ -1,5 +1,6 @@
 import React from "react";
 import { WebsiteSessionProvider } from "./session/WebsiteSessionProvider.jsx";
+import RecoveryPage from "./pages/RecoveryPage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import BillingPage from "./pages/BillingPage.jsx";
 import BillingStatusPage from "./pages/BillingStatusPage.jsx";
@@ -9,6 +10,8 @@ import OwnerPage from "./pages/OwnerPage.jsx";
 
 function PortalRoute() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/forgot-password") return <RecoveryPage />;
+  if (path === "/reset-password") return <RecoveryPage reset />;
   if (path === "/login") return <AuthPage mode="login" />;
   if (path === "/owner/login") return <AuthPage mode="login" />;
   if (path === "/owner") return <OwnerPage />;

@@ -34,8 +34,8 @@ final class Snapshot
         $payload['purchasesEnabled'] = !$payload['guest'] && config('membership.enabled') && config('membership.apple_enabled')
             && (bool) config('vibes.apple_private_key') && (bool) config('vibes.apple_issuer') && (bool) config('vibes.apple_key_id');
         $payload['salesCapabilities'] = ['apple' => (bool) $payload['purchasesEnabled'],
-            'stripe' => !$payload['guest'] && (bool) config('membership.enabled') && (bool) config('membership.stripe_enabled')
-                && (bool) config('membership.stripe_portal_configuration') && (bool) config('services.stripe.secret') && (bool) config('services.stripe.webhook_secret')];
+            'stripe' => (bool) config('legal.paid_sales_enabled') && !$payload['guest'] && (bool) config('membership.enabled') && (bool) config('membership.stripe_enabled')
+                && (bool) config('membership.stripe_portal_configuration') && (bool) config('services.stripe.secret') && (bool) config('services.stripe.webhook_secret') && app(Offers::class)->stripeEnvironmentReady()];
         $payload['freeAllowance'] = ['eligible' => $w->free_enrolled_at !== null,
             'tokens' => config('membership.free_tokens'), 'nextAt' => $w->free_next_at,
             'expiresAt' => DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->where('remaining', '>', 0)->min('expires_at')];

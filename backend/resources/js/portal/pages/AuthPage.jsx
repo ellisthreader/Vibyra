@@ -172,6 +172,7 @@ export default function AuthPage({ mode }) {
           {busy ? "Please wait…" : creating ? "Create account" : "Log in"}
         </button>
       </form>
+      {!creating && <p className="auth-foot"><a href="/forgot-password">Forgot your password?</a></p>}
       {!ownerLogin && <p className="auth-foot">
         {creating ? "Already have an account? " : "New to Vibyra? "}
         <a href={switchTo.href}>{creating ? "Log in" : "Create an account"}</a>

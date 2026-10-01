@@ -31,7 +31,7 @@ export default function PocketDialog({ kind, onClose, opener: invokingElement })
                 <button type="button" onClick={onClose} aria-label="Close mobile dialog"><Icon name="close" size={22} /></button>
             </div>
             {preview ? <PocketDemo /> : <>
-                <p className="pocket-dialog-intro">Be the first to hear when Vibyra Mobile is ready.</p>
+                <p className="pocket-dialog-intro">Coming October 2026. Join the list for the iPhone launch.</p>
                 <PhoneWaitlist />
             </>}
         </dialog>

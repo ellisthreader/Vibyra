@@ -8,6 +8,12 @@ class RemoteWebClientTest extends TestCase
 {
     public function test_web_entry_uses_mobile_policy_and_cannot_bypass_headers_through_static_index(): void
     {
+        if (!is_file(resource_path('mobile-web/index.html'))) {
+            foreach (['/app', '/app/', '/app/index.html'] as $path) {
+                $this->get($path)->assertRedirect('/downloads')->assertHeader('Cache-Control', 'no-store, private');
+            }
+            return;
+        }
         $this->assertFileDoesNotExist(public_path('app/index.html'));
         foreach (['/app', '/app/', '/app/index.html'] as $path) {
             $response = $this->get($path)->assertOk()->assertHeader('X-Frame-Options', 'DENY')
@@ -25,6 +31,12 @@ class RemoteWebClientTest extends TestCase
     }
     public function test_only_manifest_assets_are_served_with_bridge_policy_kept_separate(): void
     {
+        if (!is_file(resource_path('mobile-web/assets.json'))) {
+            foreach (['/app/__vibyra/transport.html', '/app/.env', '/app/index.php'] as $path) {
+                $this->get($path)->assertNotFound();
+            }
+            return;
+        }
         $response = $this->get('/app/__vibyra/transport.html')->assertOk()->assertHeader('X-Frame-Options', 'SAMEORIGIN');
         $this->assertStringContainsString('sha256-', $response->headers->get('Content-Security-Policy'));
         $this->assertStringContainsString("frame-ancestors 'self'", $response->headers->get('Content-Security-Policy'));

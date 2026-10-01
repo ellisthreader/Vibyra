@@ -4,12 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\{Request, Response};
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Http\RedirectResponse;
 
 /** Static mobile web entry; its policy is separate from trusted website nonces. */
 class RemoteWebClientController extends Controller
 {
-    public function __invoke(Request $request, string $path = ''): Response|BinaryFileResponse
+    public function __invoke(Request $request, string $path = ''): Response|BinaryFileResponse|RedirectResponse
     {
+        // A backend-only release may intentionally omit the optional browser
+        // client. Do not expose a 500 or restore a retired Expo build for it.
+        if (!is_file(resource_path('mobile-web/index.html')) || !is_file(resource_path('mobile-web/assets.json'))) {
+            abort_unless(in_array($path, ['', 'index.html'], true), 404);
+            return redirect('/downloads', 302)->header('Cache-Control', 'private, no-store');
+        }
         if (! in_array($path, ['', 'index.html'], true)) return $this->asset($request, $path);
         return response(file_get_contents(resource_path('mobile-web/index.html')))
             ->header('Content-Type', 'text/html; charset=utf-8')

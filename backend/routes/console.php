@@ -33,7 +33,8 @@ Schedule::call(function () {
 
 Schedule::command('vibyra:membership-remote-leases')->everyMinute()->withoutOverlapping();
 
-Schedule::command('vibyra:membership-replay')->everyTenMinutes()->withoutOverlapping();
+Schedule::command('vibyra:membership-replay')->everyTenMinutes()
+    ->when(fn () => filled(config('services.stripe.secret')))->withoutOverlapping()->onOneServer();
 Schedule::command('vibyra:remote-revocations')->everyMinute()->withoutOverlapping();
 Schedule::command('vibyra:security-notifications')->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping()->onOneServer();

@@ -36,7 +36,7 @@ class WebsiteProviderAuthController extends Controller
                 'deviceName' => 'Vibyra Website',
                 'installId' => 'website:'.$request->session()->getId(),
                 'publicIp' => (string) $request->ip(),
-            ]);
+            ], $this->flowBinding($request), app(\App\Services\Legal\TrustedClientIp::class)->forOAuthRequest($request));
         } catch (ProviderIdentityException $error) {
             return response()->json(['ok' => false, 'error' => $error->getMessage()], 422);
         }
@@ -49,7 +49,10 @@ class WebsiteProviderAuthController extends Controller
         if ($this->flows->isEnrollment($flowId)) {
             return response()->json(['ok' => false, 'error' => 'This verification belongs to an account session.'], 403);
         }
-        $result = $this->flows->status(strtolower($provider), $flowId);
+        $result = $this->flows->status(strtolower($provider), $flowId, $this->flowBinding($request));
+        if (($result['status'] ?? null) === 'forbidden') {
+            return response()->json($result, 403);
+        }
         if (($result['status'] ?? null) !== 'complete') {
             return response()->json($result, ($result['status'] ?? null) === 'expired' ? 410 : 200);
         }
@@ -81,5 +84,18 @@ class WebsiteProviderAuthController extends Controller
             'isNewUser' => (bool) ($result['isNewUser'] ?? false),
             'user' => $this->payload->for($user),
         ]);
+    }
+
+    // The browser that started a sign-in keeps a random key in its session;
+    // only that browser can collect the result.
+    private function flowBinding(Request $request): string
+    {
+        $key = (string) $request->session()->get('provider_flow_binding', '');
+        if (strlen($key) < 40) {
+            $key = \Illuminate\Support\Str::random(48);
+            $request->session()->put('provider_flow_binding', $key);
+        }
+
+        return 'website:'.$key;
     }
 }

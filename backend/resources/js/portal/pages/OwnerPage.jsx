@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ApiError, portalApi } from "../api.js";
+import useOwnerReport from "../owner/useOwnerReport.js";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
 import OwnerOverview from "../owner/OwnerOverview.jsx";
 import { DesktopDetails, MobileDetails, WebsiteDetails } from "../owner/OwnerDetails.jsx";
@@ -20,35 +20,12 @@ export default function OwnerPage() {
   const { user, loading } = useWebsiteSession();
   const [section, setSection] = useState("overview");
   const [days, setDays] = useState(30);
-  const [data, setData] = useState(null);
-  const [pending, setPending] = useState(true);
-  const [error, setError] = useState("");
+  const { data, pending, error, updatedAt, refresh } = useOwnerReport(days, user);
 
   useEffect(() => { document.title = "Owner overview | Vibyra"; }, []);
   useEffect(() => {
     if (!loading && !user) window.location.assign("/owner/login");
   }, [loading, user]);
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const load = (initial = false) => {
-      if (initial) { setPending(true); setError(""); }
-      portalApi.ownerAnalytics(days).then((payload) => {
-        if (!cancelled) { setData(payload); setError(""); }
-      }).catch((caught) => {
-        if (cancelled) return;
-        if (caught instanceof ApiError && caught.status === 401) {
-          window.location.assign("/owner/login");
-          return;
-        }
-        setData(null);
-        setError(caught.status === 403 ? "This account does not have access to the owner workspace." : caught.message);
-      }).finally(() => { if (!cancelled && initial) setPending(false); });
-    };
-    load(true);
-    const timer = user.email === "owner.local@vibyra.test" ? window.setInterval(() => load(), 60_000) : null;
-    return () => { cancelled = true; if (timer) window.clearInterval(timer); };
-  }, [days, user]);
 
   const current = SECTIONS.find((item) => item.key === section) ?? SECTIONS[0];
   const dateLabel = data?.range?.from && data?.range?.to
@@ -75,11 +52,11 @@ export default function OwnerPage() {
           <div className="owner-period" aria-label="Reporting period"><span>LAST</span>{PERIODS.map((value) => <button type="button" key={value} aria-pressed={days === value} onClick={() => setDays(value)}>{value}D</button>)}</div>
         </div>
         <nav className="owner-mobile-nav" aria-label="Owner sections">{SECTIONS.map((item) => <button type="button" key={item.key} aria-current={section === item.key ? "page" : undefined} onClick={() => setSection(item.key)}>{item.label}</button>)}</nav>
-        <div className="owner-date-line"><span><i /> {dateLabel}</span><span>{snapshotLabel ?? "All dates in UTC"}</span></div>
+        <div className="owner-date-line"><span><i /> {dateLabel}</span><span>{snapshotLabel ?? (updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every minute` : "All dates in UTC")}</span><button type="button" className="portal-link-button" disabled={pending} onClick={refresh}>{pending ? "Refreshing…" : "Refresh now"}</button></div>
         {data && ["overview", "website", "desktop", "mobile"].includes(section) && !data.data_quality?.tracking_started_at && <section className="owner-state owner-state--notice" role="status"><strong>Product activity tracking has not started</strong><p>Historical website, Desktop, and Mobile usage was not recorded. A dash means data is unavailable. Existing account and Vibes cloud records are shown separately. New product activity appears after consented events reach production and {snapshotLabel ? "the aggregate snapshot is refreshed." : "this service."}</p></section>}
         {data && ["website", "desktop", "mobile"].includes(section) && data.data_quality?.tracking_started_at && !data.data_quality?.tracking_by_surface?.[section] && <section className="owner-state owner-state--notice" role="status"><strong>{current.label} tracking has not started</strong><p>There are no historical events for this surface. Counts appear once new activity reaches this server.</p></section>}
-        {error ? <section className="owner-state owner-state--error"><strong>Analytics unavailable</strong><p>{error}</p><a href="/account">Return to account</a></section>
-          : pending && !data ? <div className="owner-skeleton" role="status">Loading owner insights…</div>
+        {error && <section className="owner-state owner-state--error" role="alert"><strong>{data ? "Showing the last loaded figures" : "Analytics unavailable"}</strong><p>{error}</p><button type="button" className="portal-link-button" disabled={pending} onClick={refresh}>Try again</button></section>}
+        {pending && !data ? <div className="owner-skeleton" role="status">Loading owner insights…</div>
           : data ? <div className={pending ? "owner-content--updating" : ""}>
             {section === "overview" && <OwnerOverview data={data} onSelect={setSection} />}
             {section === "website" && <WebsiteDetails data={data} />}

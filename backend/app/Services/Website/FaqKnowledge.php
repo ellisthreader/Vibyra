@@ -2,53 +2,40 @@
 
 namespace App\Services\Website;
 
-/**
- * The knowledge the homepage's "Ask Vibyra" answer is allowed to draw on:
- * the curated marketing facts plus the live plan catalogue, so an answer
- * about pricing can never drift from what the pricing section shows.
- */
+use App\Services\Membership\Offers;
+
+/** Public FAQ and purchase pages use the same current offer catalogue. */
 class FaqKnowledge
 {
     public function text(): string
     {
         $path = resource_path('knowledge/website-faq.md');
         $facts = is_file($path) ? (string) file_get_contents($path) : '';
-
         return rtrim($facts)."\n\n".$this->planCatalogue();
+    }
+
+    public function fallback(string $question): string
+    {
+        if (preg_match('/price|cost|plan|pro|token|credit|pay|subscription|annual|monthly/i', $question)) {
+            return 'The current plans and purchase availability are shown at /billing. Desktop downloads are free at /downloads; your coding agents’ own subscriptions are separate.';
+        }
+        return 'Please check the information on this page or email support@vibyra.net for help. Current desktop downloads are listed at /downloads.';
     }
 
     private function planCatalogue(): string
     {
-        $lines = ["## Live plan catalogue (GBP, VAT included)"];
-        foreach ((array) config('billing.plans', []) as $key => $plan) {
-            $monthly = $this->pounds((int) ($plan['monthly_price_pence'] ?? 0));
-            $annual = $this->pounds((int) ($plan['annual_price_pence'] ?? 0));
-            $projects = (int) ($plan['max_active_projects'] ?? 0);
-            $agents = (int) ($plan['max_concurrent_agents'] ?? 0);
-            $lines[] = sprintf(
-                '- %s: %s per month or %s per year, %d credits per month, %d active %s, %s.',
-                $plan['label'] ?? ucfirst((string) $key),
-                $monthly,
-                $annual,
-                (int) ($plan['monthly_credits'] ?? 0),
-                $projects,
-                $projects === 1 ? 'project' : 'projects',
-                $agents > 0 ? "{$agents} concurrent cloud ".($agents === 1 ? 'agent' : 'agents') : 'free and budget model access only',
-            );
+        $lines = ['## Current public offer catalogue (GBP, VAT included)',
+            'These are the only prices to quote. An offer marked unavailable cannot currently be purchased on the website.'];
+        foreach (app(Offers::class)->all() as $offer) {
+            $period = $offer['interval'] === 'year' ? 'per year, tokens up front' : ($offer['interval'] === 'month' ? 'per month' : 'one time');
+            $label = $offer['kind'] === 'subscription' ? 'Vibyra Pro' : 'Token top-up';
+            $lines[] = sprintf('- %s: £%s %s, %d tokens. Website purchase: %s.', $label,
+                number_format($offer['pence'] / 100, 2, '.', ''), $period, $offer['credits'],
+                $offer['stripeEnabled'] ? 'available for eligible verified accounts' : 'not available yet');
         }
-        foreach ((array) config('billing.topups', []) as $topup) {
-            $lines[] = sprintf(
-                '- Top-up: %d credits for %s.',
-                (int) ($topup['credits'] ?? 0),
-                $this->pounds((int) ($topup['price_pence'] ?? 0)),
-            );
-        }
-
+        $lines[] = config('membership.enabled') && config('membership.free_enabled')
+            ? 'A limited verified-account free-token pilot may be available; sign in to see eligibility.'
+            : 'The free-token pilot is not currently enabled.';
         return implode("\n", $lines);
-    }
-
-    private function pounds(int $pence): string
-    {
-        return $pence === 0 ? '£0' : '£'.rtrim(rtrim(number_format($pence / 100, 2, '.', ''), '0'), '.');
     }
 }

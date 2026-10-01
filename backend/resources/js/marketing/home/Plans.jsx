@@ -13,10 +13,10 @@ const FREE_PERKS = topUpFrom => [
 ];
 const FREE_MISSING = ["Your own Claude, ChatGPT or Gemini accounts", "Vibyra Cloud on your iPhone"];
 const PRO_PERKS = [
-    ["The full Vibyra ecosystem", " on Mac and iPhone"],
+    ["Vibyra Desktop", " with the iPhone companion coming October 2026"],
     ["Your own AI accounts", ": Claude, ChatGPT and Gemini"],
     ["Vibyra Cloud", ": reach your computer from anywhere"],
-    ["Agents", " that keep working while you’re away"],
+    ["Agents", " that work while your computer is on and Vibyra is open"],
     ["Vibyra AI", " built into every project"],
     ["Tokens that never expire", ", even if you cancel"],
 ];
@@ -84,11 +84,11 @@ export default function Plans() {
                         ? <><strong>{plan.credits.toLocaleString("en-GB")} tokens</strong> up front each year</>
                         : <><strong>{plan.credits} tokens</strong> every month</>}</p>
                     <Ticks items={PRO_PERKS} lead="Everything in Free, plus" />
-                    <a className="plan-cta pro-buy" href={`/checkout?offer=${plan.offerKey}&version=${plan.offerVersion}`} data-analytics-cta="plans_buy">Continue with Pro</a>
+                    {plan.stripeEnabled === true ? <a className="plan-cta pro-buy" href={`/checkout?offer=${plan.offerKey}&version=${plan.offerVersion}`} data-analytics-cta="plans_buy">Continue with Pro</a> : <><button type="button" className="plan-cta pro-buy" disabled>Pro purchases opening soon</button><p className="plan-billing">Paid plans are not available yet.</p></>}
                 </article>
             </div>}
             {plan && <p className="pro-guarantee"><Icon name="shield" size={16} /><span><strong>14-day money-back guarantee on Pro.</strong> Not for you? We’ll refund your first payment.</span></p>}
-            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Remote access needs your computer on and online; the iPhone app is in development. <a href="/legal/terms">Terms</a></p>}
+            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Remote access needs your computer on and online; the iPhone app is coming October 2026. <a href="/legal/terms">Terms</a></p>}
         </div>
     </section>;
 }

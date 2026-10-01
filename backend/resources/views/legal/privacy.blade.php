@@ -11,7 +11,7 @@
 
     <section>
         <h2>1. Who is responsible</h2>
-        <p>Vibyra is responsible for the personal data described in this policy. Contact <a href="mailto:support@vibyra.app">support@vibyra.app</a> with privacy questions or requests.</p>
+        <p>Vibyra is responsible for the personal data described in this policy. Contact <a href="mailto:support@vibyra.net">support@vibyra.net</a> with privacy questions or requests.</p>
     </section>
 
     <section>

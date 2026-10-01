@@ -99,7 +99,8 @@ class WebsiteAuthSessionTest extends TestCase
             'absolute_expires_at' => now()->addDay(),
         ]);
         $flows = app(DesktopProviderOAuthFlow::class);
-        $flow = $flows->start('google', ['deviceName' => 'Vibyra Website']);
+        $this->withSession(['provider_flow_binding' => str_repeat('b', 48)]);
+        $flow = $flows->start('google', ['deviceName' => 'Vibyra Website'], 'website:'.str_repeat('b', 48));
         $flows->finish($flow['flowId'], [
             'ok' => true,
             'status' => 'complete',
@@ -151,7 +152,7 @@ class WebsiteAuthSessionTest extends TestCase
             'hash' => sha1($user->getEmailForVerification()),
         ]);
 
-        $this->get($url)->assertRedirect('/account');
+        $this->get($url)->assertOk()->assertSee('Your email is verified');
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
 

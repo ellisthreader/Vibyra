@@ -37,7 +37,7 @@ class WebsiteFaqController extends Controller
 
             return response()->json([
                 'ok' => false,
-                'error' => 'We couldn’t answer that just now. Try again in a moment, or email hello@vibyra.com.',
+                'error' => 'We couldn’t answer that just now. Try again in a moment, or email support@vibyra.net.',
             ], 503);
         }
 

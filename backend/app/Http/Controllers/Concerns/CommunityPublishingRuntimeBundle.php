@@ -47,16 +47,15 @@ trait CommunityPublishingRuntimeBundle
                 return null;
             }
             $seenPaths[$path] = true;
-            if ($encoding === 'base64' && base64_decode($body, true) === false) {
-                return null;
-            }
-            if ($encoding === 'utf8' && $this->isGeneratedRuntimeAssetPath($path, $frontendDistDirectory)) {
-                $body = $this->neutralizeCompiledPrivateUrlLiterals($body, ['path' => $path]);
-            }
-            if ($encoding === 'utf8'
-                && $this->runtimePrivateUrlMustBePublic($path, $platform, $frontendDistDirectory)
-                && $this->containsUnsafePublishedUrl($body, ['path' => $path])) {
-                return null;
+            $decoded = $encoding === 'base64' ? base64_decode($body, true) : $body;
+            if ($decoded === false) return null;
+            if (mb_check_encoding($decoded, 'UTF-8')) {
+                if ($this->isGeneratedRuntimeAssetPath($path, $frontendDistDirectory)) {
+                    $decoded = $this->neutralizeCompiledPrivateUrlLiterals($decoded, ['path' => $path]);
+                }
+                if ($this->runtimePrivateUrlMustBePublic($path, $platform, $frontendDistDirectory)
+                    && $this->containsUnsafePublishedUrl($decoded, ['path' => $path])) return null;
+                $body = $encoding === 'base64' ? base64_encode($decoded) : $decoded;
             }
             $totalBytes += strlen($body);
             if ($totalBytes > 10_000_000) {

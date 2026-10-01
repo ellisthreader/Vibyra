@@ -17,7 +17,8 @@ class IapReceiptVerifierTest extends TestCase
         ]);
         Http::fake([
             'https://apple.test/verify' => Http::response([
-                'status' => 0,
+                'status' => 0, 'environment' => 'Production',
+                'receipt' => ['bundle_id' => 'app.vibyra.mobile'],
                 'latest_receipt_info' => [[
                     'product_id' => 'app.vibyra.membership.pro.monthly',
                     'transaction_id' => 'apple-renewal-1',
@@ -99,7 +100,8 @@ class IapReceiptVerifierTest extends TestCase
         ]);
         Http::fake([
             'https://apple.test/verify' => Http::response([
-                'status' => 0,
+                'status' => 0, 'environment' => 'Production',
+                'receipt' => ['bundle_id' => 'app.vibyra.mobile'],
                 'latest_receipt_info' => [[
                     'product_id' => 'app.vibyra.topup.1500',
                     'transaction_id' => 'different-transaction',

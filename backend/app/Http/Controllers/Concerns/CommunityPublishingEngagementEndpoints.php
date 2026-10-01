@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Community\CommunityAvailability;
+
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
 use App\Models\PublishedProjectDeployment;
@@ -21,6 +23,9 @@ trait CommunityPublishingEngagementEndpoints
     public function commentOnCommunityProject(Request $request, string $slug): JsonResponse
     {
         $user = $this->authenticatedUser($request);
+        if (! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
         $project = $this->publicPublishedProject($slug);
         $this->enforceCommunityRateLimit('comment:'.$project->id, $request, $user->id, 5, 60);
         $body = Str::limit(trim((string) $request->input('text', '')), 600, '');
@@ -41,6 +46,9 @@ trait CommunityPublishingEngagementEndpoints
     public function reactToCommunityProject(Request $request, string $slug): JsonResponse
     {
         $user = $this->authenticatedUser($request);
+        if (! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
         $project = $this->publicPublishedProject($slug);
         $reaction = PublishedProjectReaction::firstOrCreate([
             'published_project_id' => $project->id,

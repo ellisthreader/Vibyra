@@ -46,24 +46,24 @@ class AuthThrottleSeparationTest extends TestCase
         for ($i = 0; $i < 14; $i++) {
             $this->getJson('/api/vibes/wallet', ['Authorization' => "Bearer {$token}"])->assertOk();
         }
-        $this->postJson('/api/auth/provider/challenge', ['provider' => 'apple'])->assertOk();
+        $this->postJson('/api/auth/provider/challenge', ['provider' => 'apple', 'installId' => 'stable-provider-install'])->assertOk();
         $this->assertNotSame(429, $this->getJson('/api/auth/desktop/google/status/'.str_repeat('a', 43))->status());
         // The connect flow's "email me the download link" (6 a minute) is asked signed out too.
         $this->assertNotSame(429, $this->postJson('/api/account/host-link', ['email' => 'guest-link@example.com'])->status());
         for ($i = 0; $i < 11; $i++) {
-            $this->postJson('/api/auth/provider/challenge', ['provider' => 'apple'])->assertOk();
+            $this->postJson('/api/auth/provider/challenge', ['provider' => 'apple', 'installId' => 'stable-provider-install'])->assertOk();
         }
-        $this->postJson('/api/auth/provider/challenge', ['provider' => 'apple'])->assertStatus(429);
+        $this->postJson('/api/auth/provider/challenge', ['provider' => 'apple', 'installId' => 'stable-provider-install'])->assertStatus(429);
     }
 
     public function test_each_auth_limit_still_trips_on_its_own(): void
     {
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 20; $i++) {
             $this->postJson('/api/auth/signup', ['name' => 'Person', 'email' => "person{$i}@example.com", 'password' => 'secret123'])->assertSuccessful();
         }
-        $this->postJson('/api/auth/signup', ['name' => 'Person', 'email' => 'person9@example.com', 'password' => 'secret123'])->assertStatus(429);
+        $this->postJson('/api/auth/signup', ['name' => 'Person', 'email' => 'person20@example.com', 'password' => 'secret123'])->assertStatus(429);
 
-        // Sign-up's five are spent; log-in still has all ten of its own.
+        // Sign-up's aggregate IP allowance is spent; log-in still has all ten of its own.
         $this->postJson('/api/auth/login', ['provider' => 'email', 'email' => 'person0@example.com', 'password' => 'secret123'])->assertOk();
         for ($i = 1; $i < 10; $i++) {
             $status = $this->postJson('/api/auth/login', ['provider' => 'email', 'email' => 'person0@example.com', 'password' => 'wrong-one'])->status();

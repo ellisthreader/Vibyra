@@ -47,8 +47,8 @@ export default function OwnerAccounts({ local }) {
 
   if (local) return <section className="owner-state" role="status"><strong>Production owner access only</strong>
     <p>This local one-click account shows aggregate production snapshots. Names, email addresses and login records stay on the protected production service.</p></section>;
-  if (challenge && !challenge.enabled && challenge.provider === "google")
-    return <OwnerTwoFactorSetup onComplete={() => setRevision((value) => value + 1)} />;
+  if (challenge && !challenge.enabled && ["google", "email"].includes(challenge.provider))
+    return <OwnerTwoFactorSetup provider={challenge.provider} onComplete={() => setRevision((value) => value + 1)} />;
   if (challenge) return <section className="owner-panel owner-accounts-gate">
     <p className="owner-kicker">Extra protection</p><h2>Verify before opening account records</h2>
     {challenge.enabled ? <p>Enter a current authenticator code or a recovery code. Access lasts 10 minutes.</p>

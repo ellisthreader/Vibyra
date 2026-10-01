@@ -28,10 +28,25 @@ class WebsiteHumanCheckTest extends TestCase
             ->assertSee('value="/downloads"', false);
     }
 
-    public function test_verified_visitor_and_crawlers_go_straight_through(): void
+    public function test_verified_visitor_goes_straight_through(): void
     {
         $this->withCookie(VerifyHuman::COOKIE, '1')->get('/downloads')->assertOk();
-        $this->withHeader('User-Agent', 'Mozilla/5.0 (compatible; Googlebot/2.1)')->get('/downloads')->assertOk();
+
+    }
+
+    public function test_unverified_crawler_names_do_not_bypass_the_gate(): void
+    {
+        foreach (['Googlebot', 'bingbot', 'Applebot', 'Twitterbot', 'Discordbot'] as $agent) {
+            $this->withHeader('User-Agent', $agent)->get('/downloads')->assertForbidden();
+        }
+    }
+
+    public function test_browser_mutations_need_a_human_cookie_even_with_a_crawler_name(): void
+    {
+        foreach (['/web-api/auth/signup', '/web-api/auth/login', '/web-api/phone-waitlist', '/web-api/faq/ask'] as $url) {
+            $this->withHeader('User-Agent', 'Googlebot')->postJson($url, [])->assertForbidden()
+                ->assertJsonPath('code', 'human_check_required');
+        }
     }
 
     public function test_legal_pages_and_disabled_check_are_not_gated(): void

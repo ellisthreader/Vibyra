@@ -135,23 +135,33 @@ trait AccountEndpoints
         }
 
         $this->moderation->assertLocalTextAllowed($name, 'account.name');
-        [$user, $emailChanged, $error] = app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, function (User $user) use ($request, $name, $email) {
+        [$user, $emailChanged, $error, $previousEmail] = app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, function (User $user) use ($request, $name, $email) {
             $name = $request->has('name') ? $name : $user->name;
             $email = $request->has('email') ? $email : $user->email;
             $emailChanged = $email !== $user->email;
             if ($emailChanged && User::where('email', $email)->where('id', '!=', $user->id)->exists()) {
-                return [$user, false, ['That email is already in use.', 409]];
+                return [$user, false, ['That email is already in use.', 409], null];
             }
             if ($emailChanged && ($user->provider ?: 'email') !== 'email') {
-                return [$user, false, ['Change the email through your sign-in provider.', 422]];
+                return [$user, false, ['Change the email through your sign-in provider.', 422], null];
             }
+            if ($emailChanged && ! Hash::check((string) $request->input('currentPassword', ''), (string) $user->password)) {
+                return [$user, false, ['Enter your current password to change your email.', 401], null];
+            }
+            $previousEmail = (string) $user->email;
             $user->forceFill(['name' => $name, 'email' => $email,
                 'email_verified_at' => $emailChanged ? null : $user->email_verified_at])->save();
             if ($emailChanged) app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'email_changed');
-            return [$user, $emailChanged, null];
+            return [$user, $emailChanged, null, $previousEmail];
         });
         if ($error) return $this->json(['ok' => false, 'error' => $error[0]], $error[1]);
         if ($emailChanged) {
+            try {
+                \Illuminate\Support\Facades\Notification::route('mail', $previousEmail)
+                    ->notify(new \App\Notifications\AccountEmailChanged($email));
+            } catch (\Throwable) {
+                // Recovery notification delivery is best effort.
+            }
             try {
                 $user->sendEmailVerificationNotification();
             } catch (\Throwable) {
@@ -192,7 +202,7 @@ trait AccountEndpoints
             }
         }
 
-        $user->delete();
+        app(\App\Services\Account\AccountDeletion::class)->delete($user);
 
         return $this->json(['ok' => true]);
     }
@@ -233,13 +243,8 @@ trait AccountEndpoints
     public function revokeAccountSessions(Request $request): JsonResponse
     {
         $current = $this->authenticatedSession($request);
-        $revoked = $this->accountSessionQuery($current)->update([
-            'previous_token_hash' => null,
-            'previous_token_expires_at' => null,
-            'revoked_at' => now(),
-            'revocation_reason' => 'all_sessions_removed',
-            'updated_at' => now(),
-        ]);
+        $revoked = app(\App\Services\Remote\RemoteAccountSecurity::class)->revokeAppSessions(
+            (int) $current->user_id, null, 'all_sessions_removed');
 
         return $this->json(['ok' => true, 'revoked' => $revoked, 'currentRevoked' => true]);
     }

@@ -33,22 +33,7 @@ trait AuthRecoveryEndpoints
 
     public function showPasswordResetLink(Request $request): Response
     {
-        $token = trim((string) $request->query('token', ''));
-        $email = trim((string) $request->query('email', ''));
-        $valid = $token !== '' && strlen($token) <= 512 && $email !== '' && strlen($email) <= 320;
-        $message = $valid
-            ? 'Open this link on a device with Vibyra installed to reset your password.'
-            : 'This password reset link is incomplete or invalid.';
-
-        return response(
-            '<!doctype html><html lang="en"><head><meta charset="utf-8">'
-            .'<meta name="viewport" content="width=device-width,initial-scale=1">'
-            .'<meta name="referrer" content="no-referrer"><title>Vibyra password reset</title>'
-            .'</head><body><main><h1>Vibyra password reset</h1><p>'
-            .e($message).'</p></main></body></html>',
-            $valid ? 200 : 400,
-            $this->recoverySecurityHeaders()
-        );
+        return response()->view('portal')->withHeaders(\Illuminate\Support\Arr::except($this->recoverySecurityHeaders(), ['Content-Security-Policy']));
     }
 
     public function appleAppSiteAssociation(): JsonResponse
@@ -145,6 +130,10 @@ trait AuthRecoveryEndpoints
                 ])->save();
                 app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'password_changed');
                 VibyraSession::where('user_id', $user->id)->delete();
+                if (config('session.driver') === 'database') {
+                    \Illuminate\Support\Facades\DB::connection(config('session.connection'))
+                        ->table((string) config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+                }
                 app(\App\Services\Remote\SecurityEvents::class)->record((int) $user->id, 'PASSWORD_CHANGED');
                 return $user;
             });
@@ -189,7 +178,7 @@ trait AuthRecoveryEndpoints
         ]);
     }
 
-    public function verifyEmail(Request $request, string $id, string $hash): RedirectResponse|JsonResponse
+    public function verifyEmail(Request $request, string $id, string $hash): Response|JsonResponse
     {
         $user = User::find($id);
         if (! $request->hasValidSignature()
@@ -202,11 +191,9 @@ trait AuthRecoveryEndpoints
             $user->markEmailAsVerified();
         }
 
-        if ($user->provider === 'microsoft') {
-            return redirect('/account');
-        }
-
-        return redirect()->away('vibyra://email-verified?email='.rawurlencode($user->email));
+        return response()->view('email-verified', [
+            'appUrl' => 'vibyra://email-verified?email='.rawurlencode($user->email),
+        ])->withHeaders($this->recoverySecurityHeaders());
     }
 
     private function recoveryLinkMode(): string
@@ -218,21 +205,7 @@ trait AuthRecoveryEndpoints
 
     private function verifiedRecoveryUrl(array $parameters): string
     {
-        $configured = trim((string) config('auth.recovery_links.verified_url'));
-        $parts = parse_url($configured);
-        if (! is_array($parts)
-            || ($parts['scheme'] ?? null) !== 'https'
-            || empty($parts['host'])
-            || ($parts['path'] ?? '') !== '/reset-password'
-            || isset($parts['port'])
-            || isset($parts['user'])
-            || isset($parts['pass'])
-            || isset($parts['query'])
-            || isset($parts['fragment'])) {
-            throw new RuntimeException('RECOVERY_VERIFIED_URL must be an exact HTTPS /reset-password URL.');
-        }
-
-        return $configured.'?'.http_build_query($parameters);
+        return rtrim((string) config('app.url'), '/').'/reset-password?'.http_build_query($parameters);
     }
 
     private function recoverySecurityHeaders(): array

@@ -48,7 +48,7 @@ class RemoteAccountAtomicityTest extends TestCase
         $this->postJson('/api/account/profile', ['name' => 'Updated'], $headers)->assertOk();
         $this->assertSame('concurrent@example.test', $user->fresh()->email);
         $this->assertTrue(app(RelayAuthorization::class)->allows($grant['token'], true));
-        $this->postJson('/api/account/profile', ['email' => $user->email], $headers)->assertOk();
+        $this->postJson('/api/account/profile', ['email' => $user->email, 'currentPassword' => 'password'], $headers)->assertOk();
         $this->assertSame($user->email, $user->fresh()->email);
         $this->assertNull($user->fresh()->email_verified_at);
         $this->assertFalse(app(RelayAuthorization::class)->allows($grant['token'], true));

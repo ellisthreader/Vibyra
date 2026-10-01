@@ -31,7 +31,7 @@ const questions = [
         "Which computers and phones can I use?",
         <>
             Visit <a href={DOWNLOAD_URL} data-analytics-cta="faq_downloads">Downloads</a> to see the current Windows, macOS and Linux
-            installers and system requirements. The phone companion is in development. You can explore
+            installers and system requirements. The iPhone companion is coming October 2026. You can explore
             the <a href="#mobile">phone walkthrough</a> here on the website.
         </>,
     ],

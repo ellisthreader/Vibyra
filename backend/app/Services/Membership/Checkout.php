@@ -10,8 +10,9 @@ final class Checkout
 {
     public function create(User $user, array $input, StripeClient $stripe): string
     {
+        abort_unless(app(Offers::class)->stripeEnvironmentReady(), 503, 'Live payments are not configured.');
         $offer = app(Offers::class)->get($input['offerKey'], $input['offerVersion']);
-        abort_unless(config('membership.enabled') && config('membership.stripe_enabled') && config('membership.stripe_portal_configuration') && $offer['stripe'], 503, 'This offer is not on sale yet.');
+        abort_unless(config('legal.paid_sales_enabled') && config('membership.enabled') && config('membership.stripe_enabled') && config('membership.stripe_portal_configuration') && $offer['stripe'], 503, 'This offer is not on sale yet.');
         abort_unless(Units::modern($user->id), 409, 'This account still has its original billing terms. Contact support to move to the new membership.');
         abort_unless($user->hasVerifiedEmail() && !$user->isGuest(), 403, 'Verify your account before purchasing.');
         if (!empty($input['accountScope'])) {

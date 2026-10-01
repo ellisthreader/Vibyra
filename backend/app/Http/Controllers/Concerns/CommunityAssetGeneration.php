@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Community\CommunityAvailability;
+
 use App\Services\Billing\BillingReservationException;
 use App\Services\Billing\ChatCostReservationService;
 use App\Services\CommunityAssetGenerator;
@@ -19,6 +21,9 @@ trait CommunityAssetGeneration
     ): JsonResponse
     {
         $user = $this->authenticatedUser($request);
+        if (! app(CommunityAvailability::class)->enabled()) {
+            return app(CommunityAvailability::class)->unavailable();
+        }
         $kind = (string) $request->input('kind', 'logo');
         if (! in_array($kind, ['logo', 'screenshot'], true)) {
             return $this->json(['ok' => false, 'error' => 'Choose logo or screenshot generation.'], 422);

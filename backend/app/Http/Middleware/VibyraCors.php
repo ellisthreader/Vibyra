@@ -20,6 +20,13 @@ class VibyraCors
     public static function withCorsHeaders(Response $response, ?Request $request = null): Response
     {
         $request ??= request();
+        // Public sandboxed demo assets need anonymous module/font loads from an opaque origin.
+        if ($request->is('api/community/projects/*/demo*')
+            && str_starts_with((string) $response->headers->get('Content-Security-Policy'), 'sandbox')) {
+            $response->headers->set('Access-Control-Allow-Origin', '*');
+            $response->headers->remove('Access-Control-Allow-Credentials');
+            return $response;
+        }
         $origin = trim((string) $request->headers->get('Origin', ''));
         $allowAnyOrigin = (bool) config('vibyra_cors.allow_any_origin', false);
         $allowedOrigins = array_values((array) config('vibyra_cors.allowed_origins', []));
@@ -35,7 +42,7 @@ class VibyraCors
             $response->setVary('Origin', false);
         }
 
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP, X-Vibyra-Cloud-Access');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP, X-Vibyra-Cloud-Access, X-Vibyra-Flow-Secret');
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
         $response->headers->set('Access-Control-Max-Age', '86400');
 

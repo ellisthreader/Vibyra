@@ -4,6 +4,8 @@
     @php
         $pages = [
             'login' => ['Log in to Vibyra', 'Sign in to return to your projects, agents and Vibyra membership.'],
+            'forgot-password' => ['Reset your password | Vibyra', 'Recover access to your Vibyra account.'],
+            'reset-password' => ['Choose a new password | Vibyra', 'Set a new password for your account.'],
             'signup' => ['Create your Vibyra account', 'Create an account for your Vibyra projects and membership.'],
             'billing' => ['Vibyra membership plans', 'Compare current membership plans and Vibyra cloud AI credits.'],
             'checkout' => ['Continue with Vibyra Pro | Vibyra', 'Review your Vibyra Pro membership and continue to secure payment.'],
@@ -21,7 +23,7 @@
     <meta name="theme-color" content="#0e0f12">
     <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $pageDescription }}">
-    @if(request()->is('owner*'))
+    @if(request()->is('owner*', 'forgot-password', 'reset-password'))
         <meta name="robots" content="noindex,nofollow">
     @endif
     @if(request()->is('owner/login') && \App\Http\Middleware\LocalOwnerAccess::available(request()))

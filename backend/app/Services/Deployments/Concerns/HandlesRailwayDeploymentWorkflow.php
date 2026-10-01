@@ -2,6 +2,8 @@
 
 namespace App\Services\Deployments\Concerns;
 
+use App\Services\Community\CommunityAvailability;
+
 use App\Models\PublishedProjectDeployment;
 use App\Services\Deployments\RuntimeDemoLifecycleService;
 use Illuminate\Support\Facades\File;
@@ -14,6 +16,9 @@ trait HandlesRailwayDeploymentWorkflow
     {
         if ($deployment->provider !== PublishedProjectDeployment::PROVIDER_RAILWAY || $deployment->status !== PublishedProjectDeployment::STATUS_QUEUED) {
             return $deployment;
+        }
+        if (! app(CommunityAvailability::class)->enabled()) {
+            return $this->markStopped($deployment, 'Community sharing is disabled.');
         }
         $claimed = PublishedProjectDeployment::query()
             ->whereKey($deployment->id)

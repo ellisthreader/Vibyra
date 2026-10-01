@@ -1,0 +1,283 @@
+{
+  "date": "2026-10-01",
+  "release_baseline": "0a02f32a5a6244ac942903d97d9bb69d226ed486",
+  "roots": {
+    "main": "/Users/ellis/Desktop/Vibyra",
+    "website": "/Users/ellis/Desktop/Vibyra-web"
+  },
+  "private_source_backups": [
+    "/private/tmp/vibyra-main-web-port-20261001-154850",
+    "/private/tmp/vibyra-web-source-port-20261001-155113"
+  ],
+  "files": [
+    {
+      "checkout": "main",
+      "path": "backend/app/Http/Middleware/VibyraCors.php",
+      "before_sha256": "3886d150ff5eebd2babe9c0fb9dfffbce512ab322420e9723cc3f60b78647f97",
+      "after_sha256": "afe21b08993d5fdd3579230a984721119d900dd5f3db1afa453bd2c59e3aa2ee",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Http/Controllers/Concerns/CommunityPublishingHostedDemo.php",
+      "before_sha256": "38ab3af444261b6c53baf3c1bd8a18a2e97947c03b050369428f41e2b39a54ec",
+      "after_sha256": "0073c7b872a12e1c775b4ecba48b2c59acc0a1f493c9e6147ad4c6c7e87010fc",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Http/Controllers/Concerns/CommunityPublishingPreviewEndpoints.php",
+      "before_sha256": "56e25f1c2d8326852e36fd0076dc9cbc8c4c0f496bfddccc96ae619bc4528855",
+      "after_sha256": "330febc8df4e0ac7d2de10b48babb1ba0b874a8353b50cbf9cc4a6152e274c68",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Http/Controllers/Concerns/CommunityPublishingPublishEndpoint.php",
+      "before_sha256": "74429fc8eb13743d2b5ef2c4bdff43348ad20bfefecdcb647cd77871c96843de",
+      "after_sha256": "533b8791c5c33c2e2efbe75f25df8d80a8a62cb8ba30b8c3c4c6c731de6d6e3d",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Http/Controllers/Concerns/CommunityPublishingRuntimeBundle.php",
+      "before_sha256": "22d65dfaf956853762c904f06c179d9cf060ad514cd2877fce2ced9ce1625e74",
+      "after_sha256": "78ac220c5ecb6f25d60118bb9fce3b11436138e89711904a386e438cce4157e4",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Http/Controllers/Concerns/CommunityPublishingUtilities.php",
+      "before_sha256": "ad72674dc363a239033ca99dcfe2b2937dceffe0e5f0d27c43862d06ea186661",
+      "after_sha256": "cf7286382738bcf470a5d8695794abe44c07aadc8b1ea4157146847f11e52363",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Services/Community/ProjectSafetyReview.php",
+      "before_sha256": "c8ba39428c2a47d0cf7f757cd094418333fc96875a2f527c8b21e5237c4775a0",
+      "after_sha256": "450b5954b039997c702b5b388478ffd67b5a0ecb8892efb51dd536e0fb8303fa",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Services/Community/ProjectSafetyReviewAi.php",
+      "before_sha256": "0700a115c2d29493d52576e3d6645ce9a3ff763301e83adc7135a04a8640e9a9",
+      "after_sha256": "206a2357e9c75e9e56d3269364ba482fadcbdf9059c795060b2afdd600d10106",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Services/Community/ProjectSafetySourceBodyScanning.php",
+      "before_sha256": "7cf897216b1aeb747ae6eac503a034624a0d93e303f7579c46a7b6f5ba30a723",
+      "after_sha256": "83e85ef5795d7758d5babf79bfa11707a1a55e850cab4a7df5f82de927b0a658",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/tests/Feature/Concerns/CommunityPublishing/HostedDemoFullStackArtifactTests.php",
+      "before_sha256": "25db033e8e8c27d127e4f1dadea23f12e09be64ced2733ce849448ef60efea55",
+      "after_sha256": "68a5e555d79ffc233511730f5faf212aa96b14537887a3d5d320e0bb1fa0c16b",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/app/Services/Community/PublishedArtifactReview.php",
+      "before_sha256": null,
+      "after_sha256": "6708bba3d754fd1ea1b92bb0fa339723227b71ef475c54f2ffc1a5d1c69171e4",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/tests/Feature/Concerns/CommunityPublishing/PublishingReviewOverrideTests.php",
+      "before_sha256": "a6ec74201ad287e2ae6f6523ecebdd9992c71a6f1a2698f531709b05ad7cd4c2",
+      "after_sha256": "439bc178340615df31446ecad7b8cb50a819860343dcead346d2891881c5c7fc",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/resources/js/portal/pages/OwnerPage.jsx",
+      "before_sha256": "d53fb210bc8b97a4b1216b270473899bd05ab24d22eb3620022ad57419ec1b96",
+      "after_sha256": "bd2c305dafd6c0138251996ee7eaa90e8f381dd17e87e5913bf5c985fd91b5c4",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/resources/js/portal/owner/useOwnerReport.js",
+      "before_sha256": null,
+      "after_sha256": "c217ef1e0fbde4aef335ab6defe522549a66e4d55bab83eea6c6c5779e509482",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/resources/js/portal/owner/reportIdentity.js",
+      "before_sha256": null,
+      "after_sha256": "af5fa3dc91af279d310f61d0b1a31495b0389e02a1d5773df47b7abbc4726a3e",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "main",
+      "path": "backend/resources/js/portal/owner/reportIdentity.test.mjs",
+      "before_sha256": null,
+      "after_sha256": "78fdaa7f6c01689d9142a9abe05b141bdea80a01721e2307a5427bd62512586f",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/marketing/home/Desktop.jsx",
+      "before_sha256": "d5329eeb9d384055a43d2d98cfa10e967a8d102391b3588d3fce9a50e50dae06",
+      "after_sha256": "10a829242b00e2aa74a26cf717dce81e9c7b73d6fb84a166027c71eaaf6a2738",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/marketing/home/phone/PocketDialog.jsx",
+      "before_sha256": "7f0391b62d1cac709fad91f77c4b9b4bdb6c64fa88ea32076ea76f6d277b1fef",
+      "after_sha256": "ad503040059f70153e4bcce30f56c2a9c9048d458d464a9fd535da17bfed7249",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/marketing/home/work/NightShift.jsx",
+      "before_sha256": "9b28441d0a40350441e3089fd518291d6d43dee6888163784d804dda55555877",
+      "after_sha256": "b0b6c8e1624e1dbbaed75e9e2db86823a62e926c6f3920f5f8e28d0cf514bcad",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/portal/pages/OwnerPage.jsx",
+      "before_sha256": "43632247d5e9ba080055b7417bcfbdc8ff7faaec9b4d4aa903453a2c2ac2656d",
+      "after_sha256": "5136de1f0c0429ed77bed5d433e50053a78116c41aaaeeb2f7fcdc206b30c09a",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/views/human-check.blade.php",
+      "before_sha256": "39b07af2e0d3f3e7b89759b723dde1c788e1e45978924c1bd54bc0d6bf8d03df",
+      "after_sha256": "9decbdaba65d5b8290433b3e263bad997102991fc7193ba82da7d7e1b73028f1",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/marketing/home/Mobile.jsx",
+      "before_sha256": "4ff57fb11b427428041c9a32827580c9737c6acea3460e389289c0845ef13e0e",
+      "after_sha256": "2a1780c5f3635d50aeaaccbbc26792a1a5057c70d9a8429ad60647cef4bf1a28",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/marketing/home/Plans.jsx",
+      "before_sha256": "c3b336b2930627ccd4f727c4ab310c2c9b20d0d69e8828628e563b9e9cf3e894",
+      "after_sha256": "b7ea512674120fca7c13e5f19e90020d83338e9992b13c8bf74ae4f52836497e",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/marketing/home/Questions.jsx",
+      "before_sha256": "1222b1830ce00923d4b045aa191c31925f6fa40738f091c100d5b0e3fa4b69b0",
+      "after_sha256": "24de6c0075dbf6823bfe2be5ce0beff318e4a46373f42ff772c90e5bbb4723c1",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/portal/pages/CheckoutPage.jsx",
+      "before_sha256": "b6ad8979cf84548edbfcf248fe76e2507777b681e1eb0d8e34c9d12760d514a9",
+      "after_sha256": "3daf364a9d456b55b66e9e0ac74c9f0347bf1ba5fc28b70cea1fbc5c1d1dc40f",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/views/legal/layout.blade.php",
+      "before_sha256": "28ed32f2424aeb67cc233f527756ec432103fec1419c7d8fe50980bd976ac7df",
+      "after_sha256": "10cc1b0f67a41886fa75b46060fcee0adbd3850260a1fab17f46c4c0dfe7259e",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/app/Http/Middleware/VerifyHuman.php",
+      "before_sha256": "fb1da665e1ec09fc3e1004e0f48a72daa672cef3b401efb22a73905bb189c473",
+      "after_sha256": "8ecfa8a827d44f38f135a1972f386e04f231d2e1bc7df7cebfbb274052747437",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/app/Http/Middleware/SecurityHeaders.php",
+      "before_sha256": "dbf4e09c2f6218cdd1b50c9f6ee7dbcdbc893df5980bc8f79b6d50d67eff33f5",
+      "after_sha256": "7a2dc97c90e5aabd0e10efb07ce4f4c7d2d20abf7883d0f904dd1a777739afc3",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/portal/owner/useOwnerReport.js",
+      "before_sha256": null,
+      "after_sha256": "c217ef1e0fbde4aef335ab6defe522549a66e4d55bab83eea6c6c5779e509482",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/portal/owner/reportIdentity.js",
+      "before_sha256": null,
+      "after_sha256": "af5fa3dc91af279d310f61d0b1a31495b0389e02a1d5773df47b7abbc4726a3e",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/resources/js/portal/owner/reportIdentity.test.mjs",
+      "before_sha256": null,
+      "after_sha256": "78fdaa7f6c01689d9142a9abe05b141bdea80a01721e2307a5427bd62512586f",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/app/Services/WebsiteContentSecurityPolicy.php",
+      "before_sha256": null,
+      "after_sha256": "082e9869885e85b7052f043a0beeef4f68124888c55194678a33074148489134",
+      "status": "applied scoped delta"
+    },
+    {
+      "checkout": "website",
+      "path": "backend/tests/Feature/SecurityHeadersTest.php",
+      "before_sha256": "237f34760c2b73c785385872d762a4dd5b63c6f9616425f886aabe7406a8e74c",
+      "after_sha256": "f86bcfd70aabad2fc03acac5a81ae1cb42904eabeaa9185696f4e4148187aa36",
+      "status": "applied scoped delta"
+    }
+  ],
+  "preserved": [
+    "main stronger legal routes, privacy request forms, existing nonce layout",
+    "website TrustedClientIp crawler verification, paid sales gates, rights forms, newer entitlement copy",
+    "main original four OwnerPage sections; account/TOTP additions coordinated separately with auth agent"
+  ],
+  "unported_or_parent_owned": [
+    "main missing production marketing/home subtree and CheckoutPage: use reviewed website source overlay, never copy isolated leaves",
+    "main VerifyHuman/human-check/service config/route integration must be a coordinated parent port if desired",
+    "main full candidate owner Account/Commercial/DataQuality screens exceed older report backend and were not copied",
+    "auth, billing, signup/market eligibility, startup/static router, bootstrap/routes, dependencies and production rollout belong to parent/other agents",
+    "website checkout remains a separate older backend: never deploy it wholesale over current Railway API",
+    "built assets deliberately not copied to main/website; both compiled into separate temporary output directories"
+  ],
+  "validation": {
+    "main": [
+      "CommunityPublishingCoreTest20pass179assertions",
+      "CommunityPublishingHostedDemoTest26pass277assertions",
+      "reportIdentity Node1pass",
+      "Vite temporary-output build passes"
+    ],
+    "website": [
+      "SecurityHeadersTest1pass15assertions",
+      "WebsiteHumanCheckTest8pass30assertions",
+      "reportIdentity Node1pass",
+      "Vite temporary-output build passes; existing >500k chunk warning"
+    ]
+  },
+  "community_followup": {
+    "candidate_only": true,
+    "report": "community-and-native-followup.md",
+    "main_stronger_public_read_gate_preserved": true,
+    "validation": {
+      "tests": 72,
+      "assertions": 587,
+      "warnings": "isolated checkout missing .env"
+    },
+    "native_provider_compatibility": "public platform artifacts unverified; source 0.8.10 lacks mandatory flowSecret"
+  }
+}

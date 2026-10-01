@@ -1,13 +1,13 @@
 import { initWebsiteVitals } from "./websiteVitals.js";
 
-const ROUTES = new Set(["/", "/downloads", "/benchmarks", "/login", "/signup", "/billing",
+const ROUTES = new Set(["/", "/downloads", "/benchmarks", "/login", "/signup", "/billing", "/checkout",
   "/billing/success", "/billing/cancel", "/account", "/account/downloads", "/legal/privacy", "/legal/terms"]);
 const CTAS = new Set(["nav_downloads", "nav_login", "home_get_vibyra", "home_login",
   "downloads_windows", "downloads_linux", "downloads_linux_deb", "downloads_macos_arm64",
   "downloads_macos_x64", "signup_submit", "pricing_opened", "faq_opened",
   "hero_download", "hero_walkthrough", "hero_film", "plans_buy", "plans_signup",
   "mobile_waitlist", "getting_started_download", "nav_mobile_download", "faq_downloads",
-  "billing_buy", "billing_start_free"]);
+  "billing_buy", "billing_start_free", "checkout_signup", "checkout_login", "checkout_pay"]);
 const PLATFORMS = new Set(["windows", "linux", "linux-deb", "macos-arm64", "macos-x64"]);
 const FORMS = new Set(["signup", "waitlist", "faq", "billing"]);
 const path = location.pathname.replace(/\/+$/, "") || "/";

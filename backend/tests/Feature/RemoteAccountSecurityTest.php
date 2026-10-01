@@ -98,7 +98,7 @@ class RemoteAccountSecurityTest extends TestCase
         [, , , $grant, $headers] = $this->connected();
         $this->postJson('/api/account/profile', ['name' => 'Updated Name'], $headers)->assertOk();
         $this->assertTrue(app(RelayAuthorization::class)->allows($grant['token'], true));
-        $this->postJson('/api/account/profile', ['email' => 'new-address@example.com'], $headers)->assertOk();
+        $this->postJson('/api/account/profile', ['email' => 'new-address@example.com', 'currentPassword' => 'password'], $headers)->assertOk();
         $this->assertFalse(app(RelayAuthorization::class)->allows($grant['token'], true));
         $this->assertDatabaseHas('remote_sessions', ['grant_id' => $grant['sessionId'], 'status' => 'REVOKED']);
         $this->assertDatabaseCount('remote_strong_auth', 0);

@@ -18,7 +18,7 @@ const modes = [
     },
     {
         id: "agents",
-        title: "Agents that work while you’re away.",
+        title: "Agents that work while Vibyra is open.",
         line: "Give each teammate a job. Wake up to it done.",
         Scene: NightShift,
     },

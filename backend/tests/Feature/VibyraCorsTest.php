@@ -38,6 +38,6 @@ class VibyraCorsTest extends TestCase
             ->optionsJson('/api/account/sessions')
             ->assertNoContent()
             ->assertHeader('Access-Control-Allow-Origin', '*')
-            ->assertHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP');
+            ->assertHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP, X-Vibyra-Cloud-Access, X-Vibyra-Flow-Secret');
     }
 }

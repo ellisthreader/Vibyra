@@ -53,7 +53,7 @@ trait HostedDemoFullStackArtifactTests
         $this->assertContains('frontend/dist/assets/app.js', collect($deployment->demo_files)->pluck('path')->all());
     }
 
-    public function test_generated_full_stack_assets_are_not_scanned_as_source_code(): void
+    public function test_generated_full_stack_assets_are_reviewed_before_publication(): void
     {
         $this->fakeCleanModeration();
 
@@ -83,8 +83,8 @@ trait HostedDemoFullStackArtifactTests
                 ],
             ],
         ], ['Authorization' => "Bearer {$token}"])
-            ->assertCreated()
-            ->assertJsonMissing(['code' => 'dynamic_code_execution'])
-            ->assertJsonMissing(['code' => 'auth_payment_surface']);
+            ->assertStatus(202)
+            ->assertJsonPath('isPublic', false)
+            ->assertJsonFragment(['code' => 'dynamic_code_execution']);
     }
 }

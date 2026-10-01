@@ -1,0 +1,194 @@
+[
+  {
+    "file": "backend/app/Http/Middleware/VerifyHuman.php",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/app/Http/Middleware/VibyraCors.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Http/Controllers/Concerns/CommunityPublishingHostedDemo.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Http/Controllers/Concerns/CommunityPublishingPreviewEndpoints.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Http/Controllers/Concerns/CommunityPublishingPublishEndpoint.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Http/Controllers/Concerns/CommunityPublishingRuntimeBundle.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Http/Controllers/Concerns/CommunityPublishingUtilities.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Services/Community/ProjectSafetyReview.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Services/Community/ProjectSafetyReviewAi.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Services/Community/ProjectSafetySourceBodyScanning.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/app/Services/Community/PublishedArtifactReview.php",
+    "status": "missing; add new only",
+    "new": true,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/marketing/home/Desktop.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/marketing/home/Mobile.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/marketing/home/Plans.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/marketing/home/Questions.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/marketing/home/phone/PocketDialog.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/marketing/home/work/NightShift.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/portal/pages/BillingPage.jsx",
+    "status": "conflicting/diverged",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/resources/js/portal/pages/BillingStatusPage.jsx",
+    "status": "conflicting/diverged",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/resources/js/portal/pages/CheckoutPage.jsx",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/portal/pages/OwnerPage.jsx",
+    "status": "conflicting/diverged",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/resources/js/portal/owner/useOwnerReport.js",
+    "status": "missing; add new only",
+    "new": true,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/portal/owner/reportIdentity.js",
+    "status": "missing; add new only",
+    "new": true,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/js/portal/owner/reportIdentity.test.mjs",
+    "status": "missing; add new only",
+    "new": true,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/views/human-check.blade.php",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/resources/views/legal/layout.blade.php",
+    "status": "conflicting/diverged",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/resources/views/legal/privacy.blade.php",
+    "status": "conflicting/diverged",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/resources/views/legal/terms.blade.php",
+    "status": "conflicting/diverged",
+    "new": false,
+    "main_exists": true
+  },
+  {
+    "file": "backend/resources/views/mail/vibyra-release-announcement.blade.php",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/tests/Feature/WebsiteHumanCheckTest.php",
+    "status": "missing baseline file; manual restore decision",
+    "new": false,
+    "main_exists": false
+  },
+  {
+    "file": "backend/tests/Feature/WebsiteLaunchSecurityTest.php",
+    "status": "missing; add new only",
+    "new": true,
+    "main_exists": false
+  },
+  {
+    "file": "backend/tests/Feature/Concerns/CommunityPublishing/HostedDemoFullStackArtifactTests.php",
+    "status": "clean baseline",
+    "new": false,
+    "main_exists": true
+  }
+]

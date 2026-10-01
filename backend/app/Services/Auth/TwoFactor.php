@@ -5,6 +5,7 @@ namespace App\Services\Auth;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Two-factor authentication as the rest of the app sees it: start a setup, confirm
@@ -75,12 +76,18 @@ class TwoFactor
         return $codes;
     }
 
-    /**
-     * A code at login: the app's six digits, or one recovery code, which is spent.
-     * Everything else -- a repeat of a code already used, a code for an account with
-     * no second factor -- is false, and the caller says nothing about which.
-     */
+    /** Stale callers cannot replay a slot or restore a replaced recovery-code set. */
     public function check(User $user, string $code): bool
+    {
+        [$accepted, $locked] = DB::transaction(function () use ($user, $code): array {
+            $locked = User::whereKey($user->getKey())->lockForUpdate()->first();
+            return [$locked !== null && $this->checkLocked($locked, $code), $locked];
+        }, 3);
+        if ($locked) $user->setRawAttributes($locked->getAttributes(), true);
+        return $accepted;
+    }
+
+    private function checkLocked(User $user, string $code): bool
     {
         if (! $this->enabled($user)) {
             return false;

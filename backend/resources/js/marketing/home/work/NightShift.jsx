@@ -164,7 +164,7 @@ export default function NightShift() {
                     ) : (
                         <span className="ns-note-copy" key="night">
                             <strong>Team lead</strong>
-                            <small>Keeping watch while you’re away</small>
+                            <small>Keeping watch while Vibyra is open</small>
                         </span>
                     )}
                 </div>

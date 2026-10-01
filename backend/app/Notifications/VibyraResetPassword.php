@@ -4,8 +4,6 @@ namespace App\Notifications;
 
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Support\Facades\URL;
-use RuntimeException;
 
 class VibyraResetPassword extends ResetPassword
 {
@@ -15,9 +13,10 @@ class VibyraResetPassword extends ResetPassword
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
         ];
-        $legacyUrl = URL::to('/api/auth/password/open').'?'.http_build_query($parameters);
+        $origin = rtrim((string) config('app.url'), '/');
+        $legacyUrl = $origin.'/api/auth/password/open?'.http_build_query($parameters);
         $mode = $this->recoveryLinkMode();
-        $url = $mode === 'legacy' ? $legacyUrl : $this->verifiedUrl($parameters);
+        $url = $origin.'/reset-password?'.http_build_query($parameters);
 
         $message = (new MailMessage)
             ->subject('Reset your Vibyra password')
@@ -38,22 +37,4 @@ class VibyraResetPassword extends ResetPassword
         return in_array($mode, ['legacy', 'dual', 'verified'], true) ? $mode : 'dual';
     }
 
-    private function verifiedUrl(array $parameters): string
-    {
-        $configured = trim((string) config('auth.recovery_links.verified_url'));
-        $parts = parse_url($configured);
-        if (! is_array($parts)
-            || ($parts['scheme'] ?? null) !== 'https'
-            || empty($parts['host'])
-            || ($parts['path'] ?? '') !== '/reset-password'
-            || isset($parts['port'])
-            || isset($parts['user'])
-            || isset($parts['pass'])
-            || isset($parts['query'])
-            || isset($parts['fragment'])) {
-            throw new RuntimeException('RECOVERY_VERIFIED_URL must be an exact HTTPS /reset-password URL.');
-        }
-
-        return $configured.'?'.http_build_query($parameters);
-    }
 }

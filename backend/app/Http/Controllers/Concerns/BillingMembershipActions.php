@@ -26,14 +26,6 @@ trait BillingMembershipActions
         }
 
         $provider = strtolower((string) ($user->billing_provider ?? ''));
-        if ($provider === 'manual') {
-            $this->applySubscription($user, $plan, $cycle, 'manual');
-            return $this->json([
-                'ok' => true,
-                'status' => 'completed',
-                'user' => $this->userPayload($user->fresh()),
-            ]);
-        }
         if ($provider === 'stripe') {
             return $this->portal($request);
         }

@@ -1,0 +1,4 @@
+# Run each role as a separate service when scaling beyond the combined profile.
+web: VIBYRA_PROCESS_ROLE=web bash scripts/start-production.sh
+worker: VIBYRA_PROCESS_ROLE=worker VIBYRA_RUN_MIGRATIONS=0 bash scripts/start-production.sh
+scheduler: VIBYRA_PROCESS_ROLE=scheduler VIBYRA_RUN_MIGRATIONS=0 bash scripts/start-production.sh

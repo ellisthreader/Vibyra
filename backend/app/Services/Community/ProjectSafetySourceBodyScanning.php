@@ -19,7 +19,7 @@ trait ProjectSafetySourceBodyScanning
             'shell_command_execution' => '/\b(?:child_process|execSync\s*\(|spawnSync\s*\(|shell_exec\s*\(|passthru\s*\(|proc_open\s*\(|system\s*\()/i',
             'destructive_file_operation' => '/\b(?:rm\s+-rf|fs\.rmSync\s*\(|unlinkSync\s*\(|rmdirSync\s*\()/i',
             'hidden_remote_script' => '/<\s*script\b[^>]*\bsrc\s*=\s*["\']https?:\/\//i',
-            'browser_storage_exfiltration' => '/\b(?:localStorage|sessionStorage|document\.cookie)\b[\s\S]{0,240}\b(?:fetch\s*\(|XMLHttpRequest|sendBeacon)\b/i',
+            'browser_storage_exfiltration' => '/\b(?:localStorage|sessionStorage|document\.cookie)\b[\s\S]{0,240}\b(?:fetch\s*\(|XMLHttpRequest\b|sendBeacon\b)/i',
             'sensitive_browser_api' => '/\b(?:getUserMedia|getDisplayMedia|geolocation|getCurrentPosition|clipboard\.read|Notification\.requestPermission)\b/i',
             'untrusted_network_endpoint' => '/\b(?:fetch|axios|XMLHttpRequest|sendBeacon)\b[\s\S]{0,160}\bhttps?:\/\/(?!api\.openai\.com|openrouter\.ai|fonts\.googleapis\.com|fonts\.gstatic\.com)[^\'"\s)]+/i',
             'auth_payment_surface' => '/\b(?:stripe|checkout|password|oauth|jwt|session_token|access_token|refresh_token|payment[_ -]?(?:intent|method|gateway|processor)|processPayment)\b/i',

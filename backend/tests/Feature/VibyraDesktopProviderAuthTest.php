@@ -16,10 +16,16 @@ class VibyraDesktopProviderAuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withHeader('X-Vibyra-Flow-Secret', str_repeat('s', 64));
+    }
+
     public function test_google_desktop_oauth_creates_a_real_account_session(): void
     {
         $this->configureProvider('google', 'google-desktop-client');
-        $start = $this->postJson('/api/auth/desktop/google/start', [
+        $start = $this->postJson('/api/auth/desktop/google/start', ['flowSecret' => str_repeat('s', 64),
             'deviceName' => 'Office PC',
             'installId' => 'desktop-install',
             'publicIp' => '8.8.8.8',
@@ -66,7 +72,7 @@ class VibyraDesktopProviderAuthTest extends TestCase
     public function test_apple_desktop_oauth_accepts_form_post_and_first_login_name(): void
     {
         $this->configureProvider('apple', 'apple.desktop.service');
-        $start = $this->postJson('/api/auth/desktop/apple/start', [
+        $start = $this->postJson('/api/auth/desktop/apple/start', ['flowSecret' => str_repeat('s', 64),
             'deviceName' => 'Studio Mac',
             'installId' => 'studio-mac',
         ])->assertOk()->json();
@@ -170,7 +176,7 @@ class VibyraDesktopProviderAuthTest extends TestCase
     public function test_desktop_oauth_status_is_one_time_and_expires_after_pickup(): void
     {
         $this->configureProvider('google', 'google-desktop-client');
-        $start = $this->postJson('/api/auth/desktop/google/start')->assertOk()->json();
+        $start = $this->postJson('/api/auth/desktop/google/start', ['flowSecret' => str_repeat('s', 64)])->assertOk()->json();
         $query = $this->authorizationQuery($start['authUrl']);
         [$identityToken, $jwk] = $this->signedToken([
             'iss' => 'https://accounts.google.com',
