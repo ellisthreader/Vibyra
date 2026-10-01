@@ -1,0 +1,7 @@
+# Attempted once 2026-10-01; provider rejected Not Authorized. Requires plan/access resolution.
+mutation {
+  volumeInstanceBackupScheduleUpdate(
+    volumeInstanceId: "28502c90-efb6-4489-b35c-e605957feaf2"
+    kinds: [DAILY, WEEKLY]
+  )
+}

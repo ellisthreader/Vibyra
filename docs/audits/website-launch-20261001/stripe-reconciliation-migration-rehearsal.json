@@ -1,0 +1,17 @@
+{
+  "migration": "2026_10_01_000002_track_membership_reconciliation_orders.php",
+  "migration_sha256": "4a6a9a51026b038b4cefa242abdabcaa8ae01be9911fc7e34e55d89596009343",
+  "archive_sha256": "0e3c4bcffe86c99a576294997038cd3cd922fc21a0866c915905a80d8a7dd25c",
+  "server": "PostgreSQL17.11",
+  "socket_only": true,
+  "production_writes": false,
+  "up_passed": true,
+  "down_passed": true,
+  "up_again_passed": true,
+  "original_data_unchanged": true,
+  "disposable_removed": true,
+  "original_public_tables": 113,
+  "original_rows": 5313,
+  "expected_migration_ledger_rows_added": 1,
+  "disposable_database_dropped": true
+}

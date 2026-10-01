@@ -1,0 +1,62 @@
+{
+  "complete": false,
+  "status": "stopped_at_parent_request_for_approved_plan_resize",
+  "verified_count": 6,
+  "verified_bytes": 593107920,
+  "planned_count": 10,
+  "files": [
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.11_amd64.AppImage",
+      "bytes": 98908664,
+      "modified_date": "2026-08-24",
+      "local_path": "/Users/ellis/Desktop/Vibyra-release-archive-20261001/Vibyra_0.1.11_amd64.AppImage",
+      "sha256": "b1b4dc6303a3ee8a65f12d195f180820bebcc02b2c381aed1de75bcc942cade8",
+      "verified_utc": "2026-10-01T16:14:25Z"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.10_amd64.AppImage",
+      "bytes": 98904568,
+      "modified_date": "2026-08-24",
+      "local_path": "/Users/ellis/Desktop/Vibyra-release-archive-20261001/Vibyra_0.1.10_amd64.AppImage",
+      "sha256": "cd6708b9fe4b49dafa779c0efbd2aa36a326106e3a76118f412183f90b961530",
+      "verified_utc": "2026-10-01T16:14:25Z"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.9_amd64.AppImage",
+      "bytes": 98904568,
+      "modified_date": "2026-08-23",
+      "local_path": "/Users/ellis/Desktop/Vibyra-release-archive-20261001/Vibyra_0.1.9_amd64.AppImage",
+      "sha256": "9784280aebdbf6426dd2436bb2793662cec013330dab76da8089b5428454f84c",
+      "verified_utc": "2026-10-01T16:14:25Z"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.8_amd64.AppImage",
+      "bytes": 98904568,
+      "modified_date": "2026-08-23",
+      "local_path": "/Users/ellis/Desktop/Vibyra-release-archive-20261001/Vibyra_0.1.8_amd64.AppImage",
+      "sha256": "1c9ad7cc7e9e2ef9f2416466708e9347ad3b0e66ed48a52c0be5f114363770f1",
+      "verified_utc": "2026-10-01T16:14:25Z"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.7_amd64.AppImage",
+      "bytes": 98744824,
+      "modified_date": "2026-08-23",
+      "local_path": "/Users/ellis/Desktop/Vibyra-release-archive-20261001/Vibyra_0.1.7_amd64.AppImage",
+      "sha256": "e231b085ba20457698e142507bbc13e221df6af214e4869e24471b720200054a",
+      "verified_utc": "2026-10-01T16:14:26Z"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.6_amd64.AppImage",
+      "bytes": 98740728,
+      "modified_date": "2026-08-22",
+      "local_path": "/Users/ellis/Desktop/Vibyra-release-archive-20261001/Vibyra_0.1.6_amd64.AppImage",
+      "sha256": "d802215450169e9311b98b5b599e4f121f37660b1b596288cad2f530333694b2",
+      "verified_utc": "2026-10-01T16:14:26Z"
+    }
+  ],
+  "no_remote_files_deleted": false,
+  "source_reverified_after_download": true,
+  "remote_cleanup_utc": "2026-10-01T18:44:01+00:00",
+  "remote_removed_count": 6,
+  "local_archives_retained": true
+}

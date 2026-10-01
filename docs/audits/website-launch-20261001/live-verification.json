@@ -1,0 +1,60 @@
+{
+  "verified_at": "2026-10-01T19:37:23Z",
+  "source_sha": "327f43d8def5541349ce0143166b103b8fa24a87",
+  "deployment_id": "c6be555e-12a0-40fe-81df-4c385ddeb82f",
+  "immutable_files_checked": 1242,
+  "immutable_files_matched": 1242,
+  "health_status": 200,
+  "anonymous_owner_analytics_status": 401,
+  "anonymous_owner_accounts_status": 401,
+  "anonymous_agent_routes_status": 401,
+  "fake_googlebot_status": 403,
+  "legal_privacy_status": 200,
+  "http_redirect_status": 301,
+  "legacy_tls_refused": true,
+  "static_router_process_verified": true,
+  "scheduler_and_three_queue_workers_verified": true,
+  "owner_browser_report_loaded": true,
+  "owner_browser_refresh_timestamp_advanced": true,
+  "mail_transport": "resend",
+  "mail_domain_verified": true,
+  "owner_verification_notification_provider_accepted": true,
+  "mail_delivery_confirmed": true,
+  "paid_sales_enabled": false,
+  "stripe_configuration_pending": true,
+  "top_level_test_files_passed": 253,
+  "nested_test_files_passed": 20,
+  "gated_test_skips": 3,
+  "mail_verification_browser_link_passed": true,
+  "mail_forwarders_saved": [
+    "support",
+    "privacy",
+    "refunds",
+    "hello"
+  ],
+  "security_release_sha": "9a4db56f2699ad08423f7ecf130df758cae969d9",
+  "security_release_deployment_id": "2ed88095-78c4-487d-8e32-a6d5e8e2ffca",
+  "subsequent_geo_fix_test": {
+    "tests": 4,
+    "assertions": 7,
+    "result": "pass"
+  },
+  "provider_authority_regression": {
+    "tests": 43,
+    "assertions": 290,
+    "result": "pass"
+  },
+  "stripe_annual_price_configured": true,
+  "stripe_annual_price": "price_1ULmGGFpWKUenh5gbkrtSSEi",
+  "stripe_product_description_monthly_and_annual": true,
+  "initial_verification_at": "2026-10-01T15:19:00Z",
+  "recursive_test_files_passed": 277,
+  "reconciliation_migration_installed": true,
+  "reconciliation_tests": {
+    "tests": 7,
+    "assertions": 34,
+    "result": "pass"
+  },
+  "production_modern_order_count": 0,
+  "production_held_order_count": 0
+}

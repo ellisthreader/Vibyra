@@ -1,0 +1,120 @@
+{
+  "utc": "2026-10-01T18:44:01+00:00",
+  "free_bytes_before": 67297280,
+  "free_bytes_after": 660414464,
+  "total_bytes": 4838498304,
+  "results": [
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.11_amd64.AppImage",
+      "status": "removed",
+      "bytes": 98908664,
+      "sha256": "b1b4dc6303a3ee8a65f12d195f180820bebcc02b2c381aed1de75bcc942cade8"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.10_amd64.AppImage",
+      "status": "removed",
+      "bytes": 98904568,
+      "sha256": "cd6708b9fe4b49dafa779c0efbd2aa36a326106e3a76118f412183f90b961530"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.9_amd64.AppImage",
+      "status": "removed",
+      "bytes": 98904568,
+      "sha256": "9784280aebdbf6426dd2436bb2793662cec013330dab76da8089b5428454f84c"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.8_amd64.AppImage",
+      "status": "removed",
+      "bytes": 98904568,
+      "sha256": "1c9ad7cc7e9e2ef9f2416466708e9347ad3b0e66ed48a52c0be5f114363770f1"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.7_amd64.AppImage",
+      "status": "removed",
+      "bytes": 98744824,
+      "sha256": "e231b085ba20457698e142507bbc13e221df6af214e4869e24471b720200054a"
+    },
+    {
+      "path": "/app/storage/app/private/releases/linux/Vibyra_0.1.6_amd64.AppImage",
+      "status": "removed",
+      "bytes": 98740728,
+      "sha256": "d802215450169e9311b98b5b599e4f121f37660b1b596288cad2f530333694b2"
+    }
+  ],
+  "other_preexisting_files_changed": [],
+  "files_before": 109,
+  "files_after": 103,
+  "archive_directory": "/Users/ellis/Desktop/Vibyra-release-archive-20261001",
+  "local_archives_retained": true,
+  "public_artifact_heads": [
+    {
+      "path": "/downloads/windows",
+      "status": 200,
+      "content_length": "8441495",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.6.3-x64-setup.exe",
+      "expected_bytes": 8441495,
+      "expected_filename": "Vibyra-Desktop-0.6.3-x64-setup.exe",
+      "matches": true
+    },
+    {
+      "path": "/downloads/linux",
+      "status": 200,
+      "content_length": "102390264",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.8.10-x86_64.AppImage",
+      "expected_bytes": 102390264,
+      "expected_filename": "Vibyra-Desktop-0.8.10-x86_64.AppImage",
+      "matches": true
+    },
+    {
+      "path": "/downloads/linux-deb",
+      "status": 200,
+      "content_length": "17959424",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.8.10-amd64.deb",
+      "expected_bytes": 17959424,
+      "expected_filename": "Vibyra-Desktop-0.8.10-amd64.deb",
+      "matches": true
+    },
+    {
+      "path": "/downloads/macos-arm64",
+      "status": 200,
+      "content_length": "20483186",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.8.7-macos-arm64.dmg",
+      "expected_bytes": 20483186,
+      "expected_filename": "Vibyra-Desktop-0.8.7-macos-arm64.dmg",
+      "matches": true
+    },
+    {
+      "path": "/downloads/macos-arm64/update",
+      "status": 200,
+      "content_length": "20016080",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.8.7-macos-arm64.app.tar.gz",
+      "expected_bytes": 20016080,
+      "expected_filename": "Vibyra-Desktop-0.8.7-macos-arm64.app.tar.gz",
+      "matches": true
+    },
+    {
+      "path": "/downloads/macos-x64",
+      "status": 200,
+      "content_length": "21588193",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.8.7-macos-x64.dmg",
+      "expected_bytes": 21588193,
+      "expected_filename": "Vibyra-Desktop-0.8.7-macos-x64.dmg",
+      "matches": true
+    },
+    {
+      "path": "/downloads/macos-x64/update",
+      "status": 200,
+      "content_length": "20860305",
+      "content_disposition": "attachment; filename=Vibyra-Desktop-0.8.7-macos-x64.app.tar.gz",
+      "expected_bytes": 20860305,
+      "expected_filename": "Vibyra-Desktop-0.8.7-macos-x64.app.tar.gz",
+      "matches": true
+    }
+  ],
+  "df_after": {
+    "total_mib": 4615,
+    "used_mib": 3969,
+    "available_mib": 630,
+    "use_percent": 87
+  }
+}

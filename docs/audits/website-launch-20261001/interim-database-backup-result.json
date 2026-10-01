@@ -1,0 +1,29 @@
+{
+  "archive_directory": "/Users/ellis/Desktop/Vibyra-production-backup-20261001",
+  "created_utc": "20261001T185828Z",
+  "bytes": 7686857,
+  "sha256": "0e3c4bcffe86c99a576294997038cd3cd922fc21a0866c915905a80d8a7dd25c",
+  "source_engine": "PostgreSQL18.6",
+  "archive_full_decode_passed": true,
+  "archive_tables": 113,
+  "archive_rows": 5313,
+  "restore_receipt": {
+    "database": "vibyra_restore_c1524ed7ce1d",
+    "server_version": "17.11",
+    "production_version": "18.6",
+    "socket_only": true,
+    "network_listening": false,
+    "restore_succeeded": true,
+    "row_counts_match": true,
+    "disposable_removed": true,
+    "tables_verified": 113,
+    "rows_verified": 5313,
+    "public_schema_tables": 113,
+    "disposable_database_dropped": true
+  },
+  "directory_mode": "0700",
+  "files_mode": "0600",
+  "remote_staging": false,
+  "production_writes": false,
+  "native_schedules_enabled": false
+}
