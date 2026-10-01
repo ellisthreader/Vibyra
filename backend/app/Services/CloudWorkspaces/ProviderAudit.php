@@ -27,6 +27,10 @@ final class ProviderAudit
                         $retired = in_array($w->state, ['deleted', 'expired'], true) && $w->operation_id === ($meta['vibyra_operation'] ?? null);
                         $policy = $q ? json_decode($q->payload, true) : null;
                         if ($retired && !isset($policy['generation'])) $policy = ['generation' => $w->generation];
+                        // A cloud computer wakes without a quote: its own machine at a generation it has reached is known.
+                        $generation = (string) ($meta['vibyra_generation'] ?? '');
+                        if (!$policy && ($w->kind ?? 'project') === 'computer' && ctype_digit($generation)
+                            && (int) $generation >= 1 && (int) $generation <= (int) $w->generation) $policy = ['generation' => (int) $generation];
                         if (($meta['vibyra_workspace'] ?? null) !== $w->id || !$policy
                             || (string) ($meta['vibyra_generation'] ?? '') !== (string) ($policy['generation'] ?? '')) {
                             $issues[] = 'unknown_machine'; continue;

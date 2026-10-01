@@ -67,7 +67,7 @@ class Computers
             'ready' => !$online ? 'starting' : ($this->active($w) > 0 ? 'running' : 'idle'),
             'stopping' => 'stopping',
             'recovery_required' => 'error',
-            'stopped', 'archived', 'expired' => in_array($w->stop_reason, ['boot_timeout', 'boot_failed'], true) ? 'error' : 'stopped',
+            'stopped', 'archived', 'expired' => in_array($w->stop_reason, ['boot_timeout', 'boot_failed', 'host_unreachable'], true) ? 'error' : 'stopped',
             default => 'none',
         };
     }
@@ -120,6 +120,7 @@ class Computers
         return match ($w->stop_reason) {
             'boot_timeout' => 'Your cloud computer did not start in time. Try waking it again.',
             'boot_failed' => 'Your cloud computer could not start. Try waking it again.',
+            'host_unreachable' => 'Your cloud computer started but could not connect to Vibyra Cloud. Try waking it again.',
             default => 'Your cloud computer needs attention. Stop it and wake it again.',
         };
     }
