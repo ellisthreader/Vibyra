@@ -1,1 +1,2 @@
 desktop-tauri/src-tauri/tests/fixtures/updater-fixture.bin -text
+desktop-tauri/package-lock.json text eol=lf
