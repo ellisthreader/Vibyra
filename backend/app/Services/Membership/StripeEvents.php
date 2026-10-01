@@ -16,18 +16,20 @@ final class StripeEvents
         DB::table('membership_events')->insertOrIgnore(['id' => $id, 'type' => $event->type, 'status' => 'pending',
             'payload' => \Illuminate\Support\Facades\Crypt::encryptString($event->toJSON()), 'created_at' => now(), 'updated_at' => now()]);
         $row = DB::table('membership_events')->where('id', $id)->first();
-        if ($row->status === 'processed') return true;
+        $reconciliation = app(StripeReconciliation::class);
+        // Old processed reversals have no association; canonical replay repairs their stuck holds.
+        $repair = !$row->order_id && ($row->type === 'charge.refunded' || str_starts_with($row->type, 'charge.dispute.'));
+        if ($row->status === 'processed' && !$repair) return $reconciliation->finish($id, true);
         if ($row->status === 'legacy') return false;
         try {
-            $handled = $this->apply($event, $stripe);
-            DB::table('membership_events')->where('id', $id)->update(['status' => $handled ? 'processed' : 'legacy', 'error' => null, 'updated_at' => now()]);
-            return $handled;
+            $handled = $this->apply($event, $stripe, $id);
+            return $reconciliation->finish($id, $handled);
         } catch (\Throwable $e) {
-            DB::table('membership_events')->where('id', $id)->update(['status' => 'failed', 'error' => 'Provider reconciliation required', 'updated_at' => now()]);
+            $reconciliation->fail($id);
             throw $e;
         }
     }
-    private function apply(Event $event, StripeClient $stripe): bool
+    private function apply(Event $event, StripeClient $stripe, string $eventId): bool
     {
         $o = $event->data->object;
         $type = (string) $event->type;
@@ -85,7 +87,7 @@ final class StripeEvents
                 if ($payment !== '') {
                     $intent = $stripe->paymentIntents->retrieve($payment);
                     $orderId = $intent->metadata->membershipOrder ?? null;
-                    if ($orderId) $this->awaitPurchase($orderId);
+                    if ($orderId) $this->awaitPurchase($orderId, $eventId);
                 }
                 $invoiceIds = ($charge->invoice ?? null) ? [$charge->invoice]
                     : ($payment !== '' ? app(StripePayments::class)->invoicesForIntent($stripe, $payment) : []);
@@ -94,18 +96,25 @@ final class StripeEvents
                     $sub = $invoice->subscription ?? $invoice->parent->subscription_details->subscription ?? null;
                     if ($sub) {
                         $subscription = $stripe->subscriptions->retrieve($sub);
-                        if ($orderId = $subscription->metadata->membershipOrder ?? null) $this->awaitPurchase($orderId);
+                        if ($orderId = $subscription->metadata->membershipOrder ?? null) $this->awaitPurchase($orderId, $eventId);
                     }
                 }
                 return false;
             }
+            $orders = $periods->pluck('order_id')->unique();
+            abort_unless($orders->count() === 1 && $orders->first(), 409, 'Payment reversal needs an unambiguous order.');
+            $reconciliation = app(StripeReconciliation::class);
+            if (!$reconciliation->track($eventId, $orders->first())) return true;
             // A dispute is not proof of a refund. Restrict new funded work while reviewed.
             if ($type !== 'charge.refunded') {
-                $dispute = $stripe->disputes->retrieve($o->id);
-                foreach ($periods as $p) {
-                    DB::table('membership_periods')->where('reference', $p->reference)->update(['disputed' => !in_array($dispute->status, ['won', 'warning_closed'], true)]);
-                    if ($dispute->status === 'lost') app(Periods::class)->refund($p->reference, $p->paid_minor, true);
-                }
+                $status = $reconciliation->withWallet($periods->first()->user_id, function () use ($stripe, $o, $periods) {
+                    $status = $stripe->disputes->retrieve($o->id)->status;
+                    DB::table('membership_periods')->whereIn('reference', $periods->pluck('reference'))
+                        ->update(['disputed' => !in_array($status, ['won', 'warning_closed'], true)]);
+                    return $status;
+                });
+                // Keep Periods' durable refund-intent transaction outside the marking transaction.
+                if ($status === 'lost') foreach ($periods as $p) app(Periods::class)->refund($p->reference, $p->paid_minor, true);
                 return true;
             }
             foreach ($periods as $p) app(Periods::class)->refund($p->reference, (int) $charge->amount_refunded);
@@ -114,9 +123,9 @@ final class StripeEvents
         return false;
     }
 
-    private function awaitPurchase(string $orderId): void
+    private function awaitPurchase(string $orderId, string $eventId): void
     {
-        if (DB::table('membership_orders')->where('id', $orderId)->update(['refund_pending' => true])) {
+        if (app(StripeReconciliation::class)->track($eventId, $orderId)) {
             abort(503, 'Refund is waiting for its purchase reconciliation.');
         }
     }
