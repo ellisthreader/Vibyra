@@ -1,5 +1,4 @@
 {
-  "candidate": "9a4db56",
   "sandboxAccount": "acct_1ULlUoRY9BXBxj7m",
   "sandboxExpires": "2026-10-08",
   "sandboxKeyKind": "claimable",
@@ -8,56 +7,202 @@
     "fiveAppCheckoutSessionsCreated": true,
     "listenerApiVersion": [
       "2026-08-26.dahlia"
-    ]
-  },
-  "pendingFixtures": [
-    {
-      "fixture": "monthly",
-      "pending": true,
-      "grantUnits": 0,
-      "failedEvents": 0
+    ],
+    "sevenAppCheckoutSessionsCreated": true,
+    "monthlyHostedCheckoutPaid": true,
+    "monthlySingleGrantAndPro": true,
+    "monthlyOriginalInvoiceReplayedViaCli": true,
+    "monthlyReplayHttp200DeliveryCount": 2,
+    "monthlyReplayDidNotDoubleGrant": true,
+    "annualHostedCheckoutPaidAnd3600Tokens": true,
+    "smallHostedCheckoutPaid80Tokens": true,
+    "mediumHostedCheckoutPaid200Tokens": true,
+    "smallPartialRefund100Pence": {
+      "passed": true,
+      "revokedUnits": 160320,
+      "remainingUnits": 639680
     },
-    {
-      "fixture": "annual",
-      "pending": true,
-      "grantUnits": 0,
-      "failedEvents": 0
+    "smallFullRefund499Pence": {
+      "passed": true,
+      "revokedUnits": 800000,
+      "remainingUnits": 0
     },
-    {
-      "fixture": "small",
-      "pending": true,
-      "grantUnits": 0,
-      "failedEvents": 0
+    "smallOriginalCheckoutAndBothRefundsReplayed": {
+      "passed": true,
+      "eachHttp200Deliveries": 2,
+      "snapshotUnchangedExcludingObservationTime": true
     },
-    {
-      "fixture": "medium",
-      "pending": true,
-      "grantUnits": 0,
-      "failedEvents": 0
-    },
-    {
-      "fixture": "large",
-      "pending": true,
-      "grantUnits": 0,
-      "failedEvents": 0
+    "largeHostedCheckoutPaid450Tokens": true,
+    "disputeWebhookFailureBlocksFunding": true,
+    "wonLostOutcomes": false,
+    "localAdmissionGuardObserved": [
+      {
+        "fixture": "monthly",
+        "admitted": true
+      },
+      {
+        "fixture": "dispute-win",
+        "admitted": false,
+        "status": 503,
+        "reconciliationHold": true
+      },
+      {
+        "fixture": "dispute-loss",
+        "admitted": false,
+        "status": 503,
+        "reconciliationHold": true
+      }
+    ],
+    "localAdmissionGuardScope": "Read-only local authorize(start=false); cloud feature switch enabled only in inspection process; no cloud allocation or production configuration change.",
+    "monthlyPortalCancellation": {
+      "fixtureLocalPassed": true,
+      "cancelAtEnd": true,
+      "tier": "pro",
+      "grantUnits": 3000000,
+      "remainingUnits": 3000000,
+      "sameAfterReplay": true,
+      "providerEventHttp200Deliveries": 2,
+      "globalBlockedDisputeEvents": 4,
+      "rootBrowserObservation": "Cancels1Nov2026; paid access through end; no plan/quantity switch; payment-method update and invoice history visible",
+      "canonicalShape": "active; cancel_at_period_end=false; future cancel_at; ended_at=null",
+      "recoveryMethod": "Patched cancel_at mapping; restarted receiver; new genuine provider metadata update preserving cancellation; exact signed event replay; no event-payload/database edits."
     }
-  ],
+  },
   "unexecuted": [
-    "hosted_checkout_completion",
-    "paid_grants",
-    "event_replay",
-    "portal_cancellation",
-    "partial_full_refund",
     "dispute_won_lost",
     "subscription_renewals",
     "failed_renewal"
   ],
   "limitations": {
     "testClockCreate": "403_claimable_key_permission",
-    "productionRestrictedScopes": "not_verified_claimable_key_is_different"
+    "productionRestrictedScopes": "not_verified_claimable_key_is_different",
+    "invoicePaymentsRestrictedScope": "Actual live restricted-key endpoint response required; no separate Dashboard permission row assumed.",
+    "disputesRead": "403_claimable_key_permission; canonical dispute processing remains retryable and funding blocked"
   },
   "localHarnessTests": {
-    "tests": 8,
-    "assertions": 36
+    "tests": 9,
+    "assertions": 38
+  },
+  "runtimeCandidate": "c8c5b8c3",
+  "observedAt": "2026-10-01T21:14:36.273705+00:00",
+  "fixtureSnapshots": [
+    {
+      "fixture": "monthly",
+      "tier": "pro",
+      "grantUnits": 3000000,
+      "remainingUnits": 3000000,
+      "fundingBlocked": false,
+      "failedEvents": 0,
+      "testOnly": true,
+      "periodCount": 1,
+      "refundedPence": 0,
+      "revokedUnits": 0
+    },
+    {
+      "fixture": "annual",
+      "tier": "pro",
+      "grantUnits": 36000000,
+      "remainingUnits": 36000000,
+      "fundingBlocked": false,
+      "failedEvents": 0,
+      "testOnly": true,
+      "periodCount": 1,
+      "refundedPence": 0,
+      "revokedUnits": 0
+    },
+    {
+      "fixture": "small",
+      "tier": "free",
+      "grantUnits": 800000,
+      "remainingUnits": 0,
+      "fundingBlocked": false,
+      "failedEvents": 0,
+      "testOnly": true,
+      "periodCount": 1,
+      "refundedPence": 499,
+      "revokedUnits": 800000
+    },
+    {
+      "fixture": "medium",
+      "tier": "free",
+      "grantUnits": 2000000,
+      "remainingUnits": 2000000,
+      "fundingBlocked": false,
+      "failedEvents": 0,
+      "testOnly": true,
+      "periodCount": 1,
+      "refundedPence": 0,
+      "revokedUnits": 0
+    },
+    {
+      "fixture": "large",
+      "passed": true,
+      "tier": "free",
+      "grantUnits": 4500000,
+      "remainingUnits": 4500000,
+      "fundingBlocked": false,
+      "failedEvents": 0,
+      "testOnly": true,
+      "periodCount": 1
+    },
+    {
+      "fixture": "dispute-win",
+      "tier": "pro",
+      "grantUnits": 3000000,
+      "remainingUnits": 3000000,
+      "fundingBlocked": true,
+      "failedEvents": 4,
+      "testOnly": true,
+      "periodCount": 1,
+      "disputedPeriods": 0
+    },
+    {
+      "fixture": "dispute-loss",
+      "tier": "pro",
+      "grantUnits": 3000000,
+      "remainingUnits": 3000000,
+      "fundingBlocked": true,
+      "failedEvents": 4,
+      "testOnly": true,
+      "periodCount": 1,
+      "disputedPeriods": 0
+    }
+  ],
+  "initialSetupCandidate": "9a4db56",
+  "verifiedBillingFixCommit": "268e9b35",
+  "runtimeCandidateMeaning": "c8c5b8c3 is the checkout base HEAD label, not a claim that portal verification used unpatched code. The receiver was restarted with the exact cancellation-fix source later committed as f04f8f8f before the genuine canonical subscription update and duplicate delivery.",
+  "nonUiLifecycle": {
+    "monthlyAnchorReset": {
+      "providerAccepted": true,
+      "billingMode": "flexible",
+      "prorationBehavior": "none",
+      "newInvoiceCreated": false,
+      "newGrantCreated": false,
+      "scheduledRenewalProven": false,
+      "reason": "Flexible billing requires always_invoice for immediate reset invoicing; that produces off-contract prorations rather than scheduled renewal."
+    },
+    "monthlyPortalSessionCreated": true,
+    "invoicePaymentsApiOwnedMatch": true,
+    "invoicePaymentsApiEmptyFilterReturns200": true
+  },
+  "cancellationFixCommit": "f04f8f8f",
+  "cancellationVerificationSource": "Genuine metadata update and provider replay ran against the exact working-tree source subsequently committed unchanged as f04f8f8f; the receiver was restarted before verification.",
+  "cancellationFixValidation": {
+    "newRegressionTests": 1,
+    "newRegressionAssertions": 12,
+    "releaseFocusedFiles": 7,
+    "releaseFocusedTests": 42,
+    "releaseFocusedAssertions": 173,
+    "mainFocusedFiles": 8,
+    "mainFocusedTests": 49,
+    "mainFocusedAssertions": 192,
+    "independentReview": "passed",
+    "rootFullRecursiveSuite": {
+      "status": "passed",
+      "filesPassed": 278,
+      "filesRun": 278,
+      "existingGatedSkips": 3,
+      "report": "/private/tmp/vibyra-cancellation-all-tests-20261001.txt"
+    }
   }
 }

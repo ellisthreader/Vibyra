@@ -2,6 +2,8 @@
 
 Authorized scope: fix the live website audit, test, and deploy reviewed changes to Railway. Preserve customer records and the analytics reset. iOS public availability is **Coming October 2026**, as confirmed by the owner; do not imply it is downloadable today.
 
+Current verified release: `2d3f0290e20501d8999b42ca7e64165496721e58`, deployment `6ff33581-37cc-4f34-a930-70bd8e324313` (SUCCESS). It preserves concurrent cloud-computer fix `6746ad02` and includes flexible subscription cancellation fix `f04f8f8f`. All 280 test files pass with three existing gated skips; all 1,242 immutable live files match, with three queue workers and one scheduler. The current Composer lock has zero advisories. Compatible desktop 0.8.17 is public on all five download targets: seven complete HTTP artifact hashes and five signed updater feeds passed. Both Mac apps and outer DMGs passed Apple notarization/Gatekeeper. These results supersede the native-publication and deployment limitations in earlier checkpoints below; actual client self-upgrade and completed provider login remain separate checks. See `website-launch-20261001/combined-live-verification.json` and `public-release-acceptance.json`.
+
 Baseline: production SHA `0a02f32a5a6244ac942903d97d9bb69d226ed486`, deployment `0b32c7bc-d307-4697-a4bc-f9d142d22bb2`.
 
 Concurrent production update detected at 15:02 UTC: SHA `e16bcd3fb9fb3bec7f091b81a04994c7fbfb3570`, deployment `71575721-1fea-49d1-950b-df4283c6f13f`, adds cloud-computer functionality. Preserve this commit in the website release ancestry and rerun the complete integrated suite; the earlier baseline is no longer the deployment target.
@@ -43,9 +45,9 @@ Resend reports the authorized Laravel verification email delivered, and its sign
 
 | Original findings | Current status | Remaining acceptance |
 |---|---|---|
-| 1–3: provider flow binding, email change, hosted content | Fixed and deployed; regression tests and independent review pass | Compatible public native OAuth clients must be released; old clients fail closed |
+| 1–3: provider flow binding, email change, hosted content | Fixed and deployed; regression tests and independent review pass | Compatible 0.8.17 clients published; completed native provider login and actual self-upgrade remain unverified |
 | 4: outbound mail | Resend configured; authorized verification delivered and browser link passed | Incoming forwarding delivery and actual password-reset delivery remain separate checks |
-| 5: paid billing | Production safeguards deployed; public sale flags remain disabled | Finish Stripe key/annual price/webhook/portal and real sandbox lifecycle tests before activation |
+| 5: paid billing | Production safeguards deployed; public sale flags remain disabled | Annual price complete; finish Stripe key/webhook/portal and remaining real sandbox lifecycle tests before activation |
 | 6: owned return URLs and contacts | Canonical origin, Stripe return URLs and public contacts use vibyra.net; four forwarders saved | Incoming forwarding has configuration evidence only |
 | 7–8: reset revocation and atomic 2FA | Fixed and deployed; real PostgreSQL concurrency check passed | Owner must enroll their own authenticator |
 | 9–10: manual entitlement mutation and legacy store guards | Fixed and deployed | Store purchase and App Review acceptance are not completed by backend tests |
@@ -54,7 +56,7 @@ Resend reports the authorized Laravel verification email delivered, and its sign
 | 16: scheduler prerequisites | Replay scheduled only when configured; scheduler and workers present | Cloud-provider audit recovered separately; do not attribute it to this release |
 | 17–18: checkout analytics and FAQ catalogue | Modern offer dimensions, checkout allowlist and catalogue-backed answers deployed | A real customer purchase funnel awaits billing activation |
 | 19: owner refresh and enrollment UI | Manual refresh, timestamp, 60-second polling, 15-second retry and browser enrollment deployed | Authenticator enrollment requires owner action |
-| 20: release clarity | iOS explicitly Coming October 2026; platform download endpoints reachable | Signed installer installation and compatible native release remain outstanding |
+| 20: release clarity | iOS explicitly Coming October 2026; platform download endpoints reachable | Compatible 0.8.17 signed updater artifacts published; actual installed-client acceptance remains separate |
 | 21: vulnerable framework version | Laravel 13.34 deployed; Composer audits clean | No known dependency advisory at verification time |
 
 These checks establish the deployed protections and working email/analytics journeys. They do not establish that paid commerce, every store purchase, native installers, backup restoration or monitoring delivery has passed acceptance.
@@ -74,3 +76,9 @@ Runtime fix `268e9b35` and guarded acceptance tooling `327f43d8` are deployed as
 The reproduced dispute ordering bug left funded work blocked after a won dispute delivered before its paid invoice. The fix associates individual reversal events, preserves other unresolved payment reversals on the same order, repairs older unmapped events through canonical replay, prevents stale duplicate handlers from downgrading completed events, and isolates test/live backlogs. Seven targeted regressions pass (34 assertions), with independent adversarial review. The complete recursive per-file suite passes 277 files with three documented gated skips. The exact migration passed up/down/up on an isolated restored PostgreSQL database, preserving all archived business-table counts. See `stripe-reconciliation-migration-rehearsal.json` and the recovery runbook.
 
 An interim private database dump is retained on the owner's Desktop and passed a full restore check: 113 tables/5,313 rows. Its original APP_KEY and external configuration remain separate recovery dependencies. Six verified obsolete installer copies were archived before removal, restoring 630 MiB free space; all current downloads passed HEAD checks. Native Railway backup schedules and a 10 GB allocation remain unconfigured: the actual workspace is Hobby with an insufficient-funds invoice, and the owner explicitly deferred payment resolution. Do not retry the unconfirmed separate workspace upgrade blindly.
+
+## Monitoring evidence correction and configuration limits
+
+Empty custom notification rules do not establish that Railway sends no alerts. Current [provider documentation](https://railway.com/changelog/2025-11-21-notifications) describes default high-severity deployment failure, crash/OOM and volume events for every workspace, with Email/In-App delivery options. Our API inspection established only `notificationRules(workspaceId: f71cda0c…, projectId: 4e292f83…)` has no custom overrides and `observabilityDashboards(environmentId: 8d678e46…, first:25)` has no dashboard edges. Existing default preferences and actual delivery to the owner remain unverified. A filtered `notificationDeliveries(first:25, type:EMAIL, workspaceId:f71cda0c…, projectId:4e292f83…)` read was denied (`Not Authorized`, trace 7895435955156704499), not an empty delivery result.
+
+[Custom threshold monitors](https://docs.railway.com/observability#monitors) require Pro; they are deferred with the owner's payment resolution. Existing startup `/up` health checks and crash restarts do not prove continuous external availability monitoring. API schema supports `notificationRuleCreate(input: CreateNotificationRuleInput!)`, but its required channelConfigs field is an undocumented scalar and no verified owner-email recipient/config contract was obtained. No mutation was fabricated or executed, no new provider/cost/access was introduced, and no test alert was sent. Exact read-only queries and supported limits are in `website-launch-20261001/railway-monitoring-preparation.md`.

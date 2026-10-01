@@ -1,0 +1,100 @@
+{
+  "at": "2026-10-01T22:12:01.327499+00:00",
+  "origin": "https://vibyra.net",
+  "helperSha256": "f423cc050f57f6a03dd8b7800145c4bb1932cf2eba9ba642e85b48cd1d705431",
+  "readOnly": true,
+  "userCookiesUsed": false,
+  "trackingConsentSent": false,
+  "maxConcurrentStreams": 2,
+  "phase": "complete",
+  "catalogue": {
+    "platformsVerified": 5,
+    "version": "0.8.17"
+  },
+  "updaters": [
+    {
+      "platform": "macos-arm64",
+      "from0.8.7": 200,
+      "current0.8.17": 204,
+      "signatureMatched": true
+    },
+    {
+      "platform": "macos-x64",
+      "from0.8.7": 200,
+      "current0.8.17": 204,
+      "signatureMatched": true
+    },
+    {
+      "platform": "windows",
+      "from0.8.7": 200,
+      "current0.8.17": 204,
+      "signatureMatched": true
+    },
+    {
+      "platform": "linux",
+      "from0.8.7": 200,
+      "current0.8.17": 204,
+      "signatureMatched": true
+    },
+    {
+      "platform": "linux-deb",
+      "from0.8.7": 200,
+      "current0.8.17": 204,
+      "signatureMatched": true
+    }
+  ],
+  "downloads": [
+    {
+      "platform": "macos-arm64",
+      "channel": "update",
+      "bytes": 20810951,
+      "sha256": "b243fee9470bbb7b7ac7a75a26e4296b01d9b6470b8d67ce8d233a39b8bbddfd",
+      "verified": true
+    },
+    {
+      "platform": "macos-arm64",
+      "channel": "download",
+      "bytes": 22678233,
+      "sha256": "91311fbbc9d7e21bb4e8c030ac83fcd1d3a7d6582ab8183f959817e2fd8524cf",
+      "verified": true
+    },
+    {
+      "platform": "macos-x64",
+      "channel": "update",
+      "bytes": 21898722,
+      "sha256": "0e4d30cd1dbb768b267e852fd60ff8fd8faf782ee54f100f49e0ad7482945fe1",
+      "verified": true
+    },
+    {
+      "platform": "macos-x64",
+      "channel": "download",
+      "bytes": 23954405,
+      "sha256": "eca39a3d490eb74ec74b7b919e629a0f592b32b253708a9966eca3a04bb71db3",
+      "verified": true
+    },
+    {
+      "platform": "linux-deb",
+      "channel": "download-and-update",
+      "bytes": 22558392,
+      "sha256": "4cbb765c5c160efacebec4a75fdd9b437f75a0311aa1cff38b82eb0802a65abe",
+      "verified": true
+    },
+    {
+      "platform": "linux",
+      "channel": "download-and-update",
+      "bytes": 110836216,
+      "sha256": "7b2c4dc142332b55eff247b71e14d4c52ea433e0ca7c68783e499225227c7039",
+      "verified": true
+    },
+    {
+      "platform": "windows",
+      "channel": "download-and-update",
+      "bytes": 19013532,
+      "sha256": "7dcc74986bca365923606ee08490d77554a6b0bbf13868912793290b9d968b38",
+      "verified": true
+    }
+  ],
+  "success": true,
+  "requests": 18,
+  "bytesVerified": 241750451
+}

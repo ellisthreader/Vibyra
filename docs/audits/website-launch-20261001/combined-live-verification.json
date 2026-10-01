@@ -1,0 +1,71 @@
+{
+  "observedAt": "2026-10-01T22:14:42.553534+00:00",
+  "commit": "2d3f0290e20501d8999b42ca7e64165496721e58",
+  "deployment": "6ff33581-37cc-4f34-a930-70bd8e324313",
+  "deploymentStatus": "SUCCESS",
+  "preservedConcurrentCommit": "6746ad02376478778d2ec5ff276508c9958e4c34",
+  "immutableFilesMatched": 1242,
+  "queueWorkers": 3,
+  "schedulers": 1,
+  "perFileTests": {
+    "files": 280,
+    "passed": 280,
+    "existingGatedSkips": 3
+  },
+  "composerAudit": {
+    "advisories": 0,
+    "abandoned": 0
+  },
+  "securityProbes": {
+    "health": 200,
+    "privateEndpoints": 401,
+    "fakeCrawler": 403,
+    "unverifiedDownloadsPage": 403,
+    "privateFiles": 404,
+    "privacyPage": 200,
+    "httpRedirect": 301,
+    "tls10Refused": true,
+    "tls11Refused": true,
+    "foreignOriginCorsNotGranted": true,
+    "secureSessionCookie": true,
+    "httpOnlySessionCookie": true,
+    "hstsPresent": true,
+    "cspPresent": true,
+    "nosniffPresent": true
+  },
+  "configurationOnly": {
+    "scope": "configuration_only",
+    "ready": false,
+    "checks": {
+      "production_environment": true,
+      "debug_disabled": true,
+      "app_origin_owned": true,
+      "mail_transport_configured": true,
+      "mail_sender_owned": true,
+      "paid_sales_enabled": false,
+      "membership_enabled": false,
+      "stripe_sales_enabled": false,
+      "stripe_live_environment": true,
+      "stripe_live_key": false,
+      "stripe_webhook_configured": false,
+      "stripe_portal_configured": false,
+      "stripe_success_url_owned": true,
+      "stripe_cancel_url_owned": true,
+      "stripe_portal_return_url_owned": true,
+      "stripe_price_pro_monthly_configured": true,
+      "stripe_price_pro_annual_configured": true,
+      "stripe_price_tokens_80_configured": true,
+      "stripe_price_tokens_200_configured": true,
+      "stripe_price_tokens_450_configured": true,
+      "new_account_enrollment_configured": false
+    }
+  },
+  "desktopVersion": "0.8.17",
+  "publicReleaseEvidence": "public-release-acceptance.json",
+  "limitations": [
+    "Stripe restricted key creation still awaits a fresh owner authenticator code; webhook and portal remain unconnected.",
+    "Paid flags remain off; full sandbox renewal, failed-renewal and dispute outcome acceptance remain blocked by limited sandbox credentials.",
+    "Actual installed-client upgrade and completed native provider login are not established by download/protocol checks.",
+    "Railway payment resolution was deferred by owner; Pro, 10GB allocation and scheduled backups remain inactive."
+  ]
+}
