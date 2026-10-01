@@ -20,12 +20,31 @@ class CountryResolver
         }
 
         try {
-            $this->reader ??= new Reader($path);
-            $code = strtoupper((string) $this->reader->country($ip)->country->isoCode);
+            $this->reader ??= $this->open($path);
+            $code = strtoupper($this->isoCode($this->reader, $ip));
 
             return preg_match('/^[A-Z]{2}$/D', $code) ? $code : null;
         } catch (Throwable) {
             return null;
+        }
+    }
+
+    protected function open(string $path): Reader
+    {
+        return new Reader($path);
+    }
+
+    /**
+     * `maxmind:update` installs GeoLite2-City, and the library only accepts `country()` on a Country
+     * database: on the City file it throws, which this class turned into "unknown", so every request
+     * was refused as outside a launch market. Ask the City database first; keep Country as the fallback.
+     */
+    private function isoCode(Reader $reader, string $ip): string
+    {
+        try {
+            return (string) $reader->city($ip)->country->isoCode;
+        } catch (\BadMethodCallException) {
+            return (string) $reader->country($ip)->country->isoCode;
         }
     }
 }
