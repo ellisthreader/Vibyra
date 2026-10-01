@@ -19,6 +19,12 @@ class PasskeyCeremonies
         $device = $this->device($session, $deviceId);
         $server = $this->verifier->server();
         $credentials = DB::table('passkey_credentials')->where('user_id', $session->user_id)->whereNull('revoked_at')->get();
+        // A phone still waiting for approval (cloud computer) may only prove a passkey, never add one.
+        if ($purpose === 'register' && $device->approved_at === null) throw new RemoteAccessException('This device has not been approved for remote access.', 403);
+        // Adding a passkey to an account that has one needs a fresh assertion from an existing passkey in this session.
+        if ($purpose === 'register' && $credentials->isNotEmpty() && ! $this->freshAssertion($session, $device)) {
+            throw new RemoteAccessException('Verify with an existing passkey before adding another.', 403, 'strong_auth_required');
+        }
         if ($purpose === 'authenticate' && $credentials->isEmpty()) throw new RemoteAccessException('Add a passkey on this approved device first.', 409, 'passkey_required');
         if ($purpose === 'register' && $credentials->count() >= 10) throw new RemoteAccessException('Remove a passkey before adding another.', 409);
         $ids = $credentials->map(fn ($row) => WebAuthnVerifier::decode($row->credential_id))->all();
@@ -72,6 +78,16 @@ class PasskeyCeremonies
         return ['status' => $row->invalidated_at ? 'failed' : ($row->verified_at ? 'verified' : ($row->consumed_at ? 'failed' : (now()->gte($row->expires_at) ? 'expired' : 'waiting')))];
     }
 
+    /** Same app session and device, an unrevoked passkey of this account, verified within the strong-auth window. */
+    private function freshAssertion(VibyraSession $session, object $device): bool
+    {
+        $window = min(300, max(1, (int) config('remote_security.strong_auth_seconds', 300)));
+        return DB::table('remote_strong_auth as a')->join('passkey_credentials as p', 'p.id', '=', 'a.passkey_credential_id')
+            ->where('a.app_session_id', $session->id)->where('a.trusted_device_id', $device->id)
+            ->where('p.user_id', $session->user_id)->whereNull('p.revoked_at')->where('a.expires_at', '>', now())
+            ->where('a.verified_at', '>=', now()->subSeconds($window))->where('a.verified_at', '<=', now())->exists();
+    }
+
     public function device(?VibyraSession $session, int $id): object
     {
         if (! $session || $session->revoked_at || ! $session->absolute_expires_at || ! $session->idle_expires_at
@@ -81,7 +97,15 @@ class PasskeyCeremonies
         $device = DB::table('trusted_devices as d')->join('remote_hosts as h', 'h.id', '=', 'd.remote_host_id')
             ->where('d.id', $id)->where('d.user_id', $session->user_id)->where('h.user_id', $session->user_id)
             ->where('h.remote_access_mode', '!=', 'disabled')->whereColumn('d.authorization_generation', 'h.authorization_generation')->whereNull('d.denied_at')
-            ->whereNotNull('d.approved_at')->whereNull('d.revoked_at')->whereNull('h.revoked_at')->select('d.*')->first();
+            ->whereNull('d.revoked_at')->whereNull('h.revoked_at')
+            ->where(function ($q): void {
+                $q->whereNotNull('d.approved_at')->orWhere(function ($q): void {
+                    // Pending phone of a trusted cloud computer: it may start a passkey assertion to be approved by it.
+                    $q->whereNull('d.approved_at')->where('d.request_expires_at', '>', now())->where('h.remote_access_mode', 'trusted')
+                        ->whereExists(fn ($w) => $w->selectRaw('1')->from('cloud_workspaces as w')->whereColumn('w.remote_host_id', 'h.id')
+                            ->whereColumn('w.user_id', 'h.user_id')->where('w.kind', 'computer')->where('w.state', '!=', 'deleted'));
+                });
+            })->select('d.*')->first();
         if (! $device) throw new RemoteAccessException('This device has not been approved for remote access.', 403);
         return $device;
     }

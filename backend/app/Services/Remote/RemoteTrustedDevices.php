@@ -53,6 +53,9 @@ class RemoteTrustedDevices
         if (! in_array($decision, ['approve', 'deny'], true)) throw new RemoteAccessException('Invalid device decision.', 422);
         return DB::transaction(function () use ($session, $hostId, $uuid, $decision) {
             $device = $this->pendingDevice($session, $hostId, $uuid);
+            if ($decision === 'approve' && app(\App\Services\CloudComputer\HostAuthority::class)->bound($device->host)) {
+                throw new RemoteAccessException('A cloud computer approves a new device with your passkey.', 403, 'cloud_passkey_required');
+            }
             return app(RemoteDeviceProof::class)->issue($session, $device, $decision, $hostId, $device->permissions);
         });
     }
@@ -62,10 +65,13 @@ class RemoteTrustedDevices
         if (! in_array($decision, ['approve', 'deny'], true)) throw new RemoteAccessException('Invalid device decision.', 422);
         return DB::transaction(function () use ($session, $hostId, $uuid, $decision, $challenge, $proof) {
             $device = $this->pendingDevice($session, $hostId, $uuid);
+            if (app(\App\Services\CloudComputer\HostAuthority::class)->bound($device->host)) {
+                throw new RemoteAccessException('A cloud computer approves a new device with your passkey.', 403, 'cloud_passkey_required');
+            }
             app(RemoteDeviceProof::class)->consumeFor($session, $device, $decision, $challenge, $proof, $device->permissions);
             $revision = app(RemoteRestrictions::class)->advance($device->host);
             $device->forceFill($decision === 'approve'
-                ? ['approved_at' => now(), 'approved_revision' => $revision, 'revocation_revision' => 0]
+                ? ['approved_at' => now(), 'approved_revision' => $revision, 'revocation_revision' => 0, 'approved_via' => 'host_proof']
                 : ['denied_at' => now(), 'revoked_at' => now(), 'revocation_revision' => $revision])->save();
             app(RemotePresence::class)->audit($device->host, $decision === 'approve' ? 'device.approved' : 'device.denied', ['device' => $device->device_name], $device->id);
             return $device;

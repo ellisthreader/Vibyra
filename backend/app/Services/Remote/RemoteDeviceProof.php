@@ -14,7 +14,7 @@ class RemoteDeviceProof
         if (! in_array($purpose, ['connect', 'passkey'], true)) throw new RemoteAccessException('Invalid device verification purpose.', 422);
         return DB::transaction(function () use ($session, $uuid, $purpose, $permissions) {
             $device = $this->owned($session, $uuid);
-            if (! $device->trusted()) throw new RemoteAccessException('This device has not been approved for remote access.', 403, 'device_not_trusted');
+            if (! $device->trusted() && ! $this->pendingCloudPasskey($device, $purpose)) throw new RemoteAccessException('This device has not been approved for remote access.', 403, 'device_not_trusted');
             $this->permissions($device, $permissions);
             return $this->issue($session, $device, $purpose, $device->public_key, $permissions);
         });
@@ -24,7 +24,7 @@ class RemoteDeviceProof
     {
         return DB::transaction(function () use ($session, $uuid, $purpose, $id, $proof, $permissions) {
             $device = $this->owned($session, $uuid);
-            if (! $device->trusted()) throw new RemoteAccessException('This device has not been approved for remote access.', 403, 'device_not_trusted');
+            if (! $device->trusted() && ! $this->pendingCloudPasskey($device, $purpose)) throw new RemoteAccessException('This device has not been approved for remote access.', 403, 'device_not_trusted');
             $this->permissions($device, $permissions);
             $this->consumeFor($session, $device, $purpose, $id, $proof, $permissions);
             $device->forceFill(['last_seen_at' => now()])->save();
@@ -82,6 +82,12 @@ class RemoteDeviceProof
         if (! $device) throw new RemoteAccessException('That device request is no longer available.', 404);
         $device->setRelation('host', $host);
         return $device;
+    }
+
+    /** A pending phone of a cloud computer may prove key possession only to start its approving passkey ceremony. */
+    private function pendingCloudPasskey(TrustedDevice $device, string $purpose): bool
+    {
+        return $purpose === 'passkey' && app(\App\Services\CloudComputer\HostAuthority::class)->passkeyApprovable($device, $device->host);
     }
 
     private function permissions(TrustedDevice $device, array $permissions): void

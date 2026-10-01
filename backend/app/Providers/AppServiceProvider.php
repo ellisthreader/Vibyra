@@ -26,5 +26,10 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Cache\RateLimiting\Limit::perMinute(240)->by('workspace:'.$request->route('workspace').':'.hash('sha256', (string) $request->bearerToken())),
             \Illuminate\Cache\RateLimiting\Limit::perMinute(3000)->by('ip:'.$request->ip()),
         ]);
+        // A GitHub token is minted here: bucket by the workspace and its bearer, not by a shared (NAT/relay) IP.
+        \Illuminate\Support\Facades\RateLimiter::for('cloud-git-credential', fn (\Illuminate\Http\Request $request) => [
+            \Illuminate\Cache\RateLimiting\Limit::perMinute(30)->by('git-cred:'.$request->route('workspace').':'.hash('sha256', (string) $request->bearerToken())),
+            \Illuminate\Cache\RateLimiting\Limit::perMinute(600)->by('git-cred-ip:'.$request->ip()),
+        ]);
     }
 }

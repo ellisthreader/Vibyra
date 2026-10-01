@@ -53,13 +53,14 @@ final class Lifecycle
     }
     public function stopReason(object $w): ?string
     {
+        if (($w->kind ?? 'project') === 'computer') return app(\App\Services\CloudComputer\Idle::class)->stopReason($w);
         if (!$w->lease_until || now()->gte($w->lease_until)) return 'compute_lease_expired';
         if (now()->gte($w->deadline_at)) return 'deadline';
         try { app(Eligibility::class)->authorize($w->user_id); }
         catch (\Throwable) { return 'entitlement_or_payment'; }
         if (!app(Access::class)->deviceActive($w->device_id, $w->device_generation, $w->user_id)) return 'authority_revoked';
         $busy = DB::table('cloud_actions')->where('workspace_id', $w->id)->whereIn('state', ['queued', 'running'])->exists()
-            || DB::table('vibes_turns')->where('chat_id', $w->chat_id)->whereNull('settled_at')->exists();
+            || ($w->chat_id && DB::table('vibes_turns')->where('chat_id', $w->chat_id)->whereNull('settled_at')->exists());
         if (!$busy && now()->gte(Carbon::parse($w->last_activity_at)->addSeconds(config('cloud_workspaces.idle_seconds')))) return 'idle';
         return null;
     }

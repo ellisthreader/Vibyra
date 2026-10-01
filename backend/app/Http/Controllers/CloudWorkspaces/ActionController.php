@@ -16,7 +16,7 @@ final class ActionController extends Controller
         $data = $request->validate(['id' => 'required|uuid', 'operation' => 'required|string|max:40', 'arguments' => 'present|array']);
         $action = DB::transaction(function () use ($user, $workspace, $request, $data, $actions, $workspaces) {
             app(Wallet::class)->lock($user->id);
-            $w = $workspaces->owned($user->id, $workspace);
+            $w = $workspaces->ownedProject($user->id, $workspace);
             app(Access::class)->verify($request, $w);
             return $actions->create($w, $data['id'], $data['operation'], $data['arguments']);
         }, 5);
@@ -24,7 +24,7 @@ final class ActionController extends Controller
     }
     public function show(Request $request, string $workspace, string $action, Actions $actions, Workspaces $workspaces)
     {
-        $w = $workspaces->owned($this->authenticatedUser($request)->id, $workspace);
+        $w = $workspaces->ownedProject($this->authenticatedUser($request)->id, $workspace);
         app(Access::class)->verify($request, $w);
         return $this->json(['ok' => true, 'action' => $actions->payload(DB::table('cloud_actions')->where('id', $action)->where('workspace_id', $workspace)->firstOrFail())]);
     }
@@ -33,7 +33,7 @@ final class ActionController extends Controller
         $user = $this->authenticatedUser($request);
         return DB::transaction(function () use ($user, $request, $workspace, $action, $workspaces) {
         app(Wallet::class)->lock($user->id);
-        $w = $workspaces->owned($user->id, $workspace);
+        $w = $workspaces->ownedProject($user->id, $workspace);
         app(Access::class)->verify($request, $w);
         DB::table('cloud_actions')->where('id', $action)->where('workspace_id', $workspace)->whereIn('state', ['queued', 'running'])
             ->update(['state' => 'cancelled', 'updated_at' => now()]);

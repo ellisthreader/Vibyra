@@ -41,10 +41,16 @@ final class Artifacts
         return $files;
     }
 
-    public function save(object $w, array $files): string
+    /** A github workspace stores only its changed paths plus the base-commit contents of those paths. */
+    public function save(object $w, array $files, ?array $base = null): string
     {
         $files = $this->validate($files);
-        $json = json_encode(['version' => 1, 'files' => $files], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        $body = ['version' => 1, 'files' => $files];
+        if ($base !== null) {
+            $body['base'] = $this->validate($base);
+            abort_if(count($files) + count($body['base']) > 2 * config('cloud_workspaces.max_files'), 422, 'Too many changed files.');
+        }
+        $json = json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
         $hash = hash('sha256', $json); $key = $w->user_id.'/'.$w->id.'/'.$hash.'.json';
         $disk = Storage::disk(config('cloud_workspaces.disk'));
         abort_unless($disk->put($key, $json, ['visibility' => 'private']), 503, 'Project could not be saved.');
@@ -62,5 +68,13 @@ final class Artifacts
         $bytes = Storage::disk(config('cloud_workspaces.disk'))->get($record->object_key);
         abort_unless(hash_equals($hash, hash('sha256', $bytes)), 503, 'Project backup checksum failed.');
         return json_decode($bytes, true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    /** The export contract: `current` is the saved set, `base` the original contents. For github only changed paths exist. */
+    public function export(object $w): array
+    {
+        if ($w->source !== 'github') return ['base' => $this->read($w, $w->base_checkpoint), 'current' => $this->read($w)];
+        $saved = $w->checkpoint ? $this->read($w) : ['files' => []];
+        return ['base' => ['version' => 1, 'files' => $saved['base'] ?? []], 'current' => ['version' => 1, 'files' => $saved['files']]];
     }
 }

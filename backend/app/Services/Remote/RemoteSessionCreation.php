@@ -13,7 +13,12 @@ class RemoteSessionCreation
         return DB::transaction(function () use ($user, $hostId, $name, $sessionId, $request) {
             $host = RemoteHost::where('user_id', $user->id)->where('host_id', $hostId)->whereNull('revoked_at')->lockForUpdate()->first();
             if (! $host) throw new RemoteAccessException('That computer is not on this account. Turn on remote access in Vibyra on it.', 404);
-            if (! $host->isOnline()) throw new RemoteAccessException('That computer is not online. Open Vibyra on it and keep it awake.', 409);
+            if (! $host->isOnline()) {
+                $cloud = app(\App\Services\CloudComputer\Computers::class)->forHost($host->id);
+                if ($cloud && in_array($cloud->state, ['stopped', 'archived', 'expired'], true)) throw new RemoteAccessException('Your cloud computer is asleep.', 409, 'host_asleep', ['wake' => true]);
+                if ($cloud) throw new RemoteAccessException('Your cloud computer is starting.', 409, 'host_starting', ['wake' => false]);
+                throw new RemoteAccessException('That computer is not online. Open Vibyra on it and keep it awake.', 409);
+            }
             $app = $this->appSession($user, $sessionId);
             $device = app(RequireRemoteAccessAuthorization::class)->verify($app, $host, $request);
             RemoteSession::where('user_id', $user->id)->where('status', 'WAITING_FOR_APPROVAL')->whereNull('ended_at')

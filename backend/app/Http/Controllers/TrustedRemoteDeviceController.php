@@ -57,8 +57,21 @@ class TrustedRemoteDeviceController extends Controller
     public function decide(Request $request, RemoteTrustedDevices $devices, string $hostId, string $id): JsonResponse
     {
         $session = $this->account($request);
-        $data = $request->validate(['decision' => ['required', 'in:approve,deny'], 'challengeId' => ['required', 'uuid'], 'proof' => ['required', 'string', 'max:64']]);
-        return $this->attempt($request, $session, 'decision', $id, fn () => ['device' => $devices->describe($devices->decide($session, $hostId, $id, $data['decision'], $data['challengeId'], $data['proof']))]);
+        $data = $request->validate(['decision' => ['required', 'in:approve,deny'], 'challengeId' => ['nullable', 'uuid'], 'proof' => ['nullable', 'string', 'max:64'],
+            'assertionId' => ['nullable', 'uuid']]);
+        return $this->attempt($request, $session, 'decision', $id, function () use ($devices, $session, $hostId, $id, $data) {
+            $cloud = \App\Models\RemoteHost::where('host_id', $hostId)->where('user_id', $session->user_id)->whereNull('revoked_at')->first();
+            if (! $cloud) throw new RemoteAccessException('That computer is not available.', 404);
+            if (app(\App\Services\CloudComputer\HostAuthority::class)->bound($cloud)) {
+                // No Mac exists to approve: a fresh passkey assertion (ceremony id) decides, never a host proof.
+                $approvals = app(\App\Services\CloudComputer\DevicePasskeyApproval::class);
+                return ['device' => $devices->describe($data['decision'] === 'approve'
+                    ? $approvals->approve($session, $hostId, $id, (string) ($data['assertionId'] ?? ''))
+                    : $approvals->deny($session, $hostId, $id))];
+            }
+            if (! isset($data['challengeId'], $data['proof'])) throw new RemoteAccessException('Verify this device on its computer.', 422);
+            return ['device' => $devices->describe($devices->decide($session, $hostId, $id, $data['decision'], $data['challengeId'], $data['proof']))];
+        });
     }
 
     public function destroy(Request $request, RemoteTrustedDevices $devices, string $id): JsonResponse

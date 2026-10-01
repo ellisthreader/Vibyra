@@ -77,11 +77,13 @@ return [
         // Pro's workspace so nobody who paid loses anything.
         'pro_v2' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
             'sessionCredits' => 400, 'weekCredits' => 1000, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
-            'preview' => true, 'review' => true],
+            'preview' => true, 'review' => true,
+            // Included cloud-computer hours per membership month; the owner sets it, 0 promises nothing.
+            'cloudHours' => (float) env('CLOUD_INCLUDED_HOURS_PRO', 0)],
         // Free is one project (desktop and Vibyra AI alike); Preview and Review are Pro.
         'free' => ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
             'sessionCredits' => 60, 'weekCredits' => 150, 'maxTerminals' => 2, 'safeWorktrees' => false, 'agents' => false,
-            'preview' => false, 'review' => false],
+            'preview' => false, 'review' => false, 'cloudHours' => 0],
         'starter' => ['maxProjects' => 3, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
             'sessionCredits' => 70, 'weekCredits' => 175, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
             'preview' => true, 'review' => true],

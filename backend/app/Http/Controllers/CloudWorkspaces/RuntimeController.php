@@ -24,12 +24,13 @@ final class RuntimeController extends Controller
     }
     public function checkpoint(Request $request, string $workspace, Runtime $runtime)
     {
-        $data = $request->validate(['files' => 'present|array']);
-        return response()->json(['ok' => true, ...$runtime->checkpoint($runtime->authenticate($workspace, (string) $request->bearerToken()), $data['files'])]);
+        $data = $request->validate(['files' => 'present|array', 'base' => 'sometimes|array', 'baseCommit' => ['sometimes', 'nullable', 'string', 'regex:/^([a-f0-9]{40}|[a-f0-9]{64})$/']]);
+        return response()->json(['ok' => true, ...$runtime->checkpoint($runtime->authenticate($workspace, (string) $request->bearerToken()), $data['files'], $data['base'] ?? null, $data['baseCommit'] ?? null)]);
     }
     public function next(Request $request, string $workspace, Runtime $runtime)
     {
         $w = $runtime->authenticate($workspace, (string) $request->bearerToken());
+        abort_if(($w->kind ?? 'project') === 'computer', 409, 'A cloud computer does not run hosted-project actions.');
         // Retry the durable tool outbox, including results accepted before a worker crash.
         app(Tools::class)->drain($w);
         if ($w->chat_id) {
@@ -46,6 +47,7 @@ final class RuntimeController extends Controller
     {
         $data = $request->validate(['result' => 'present|array']);
         $w = $runtime->authenticate($workspace, (string) $request->bearerToken());
+        abort_if(($w->kind ?? 'project') === 'computer', 409, 'A cloud computer does not run hosted-project actions.');
         $a = $runtime->result($w, $action, $data['result']);
         app(Tools::class)->complete($a);
         return response()->json(['ok' => true]);

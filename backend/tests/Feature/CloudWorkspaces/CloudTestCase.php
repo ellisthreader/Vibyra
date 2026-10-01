@@ -59,9 +59,9 @@ abstract class CloudTestCase extends TestCase
             'files' => [['path' => 'app.txt', 'content' => base64_encode('hello'), 'sha256' => hash('sha256', 'hello')]]])->assertOk();
         return $id;
     }
-    protected function start(string $id): array
+    protected function start(string $id, int $revision = 1): array
     {
-        $q = $this->postJson('/api/cloud-workspaces/'.$id.'/quote', ['revision' => 1, 'deviceId' => $this->device->uuid,
+        $q = $this->postJson('/api/cloud-workspaces/'.$id.'/quote', ['revision' => $revision, 'deviceId' => $this->device->uuid,
             'model' => 'test/model', 'budgetUnits' => 500000, 'seconds' => 3600, 'canWrite' => true, 'commands' => ['npm test']])->assertOk()->json('quote');
         $challenge = $q['challenge'];
         $proof = sodium_crypto_box_seal_open(base64_decode($challenge['ciphertext']), $this->keys);
