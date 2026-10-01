@@ -18,20 +18,24 @@ final class WorkspaceController extends Controller
         try { app(Eligibility::class)->authorize($user->id, true); }
         catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $eligible = false; $reason = $e->getMessage(); }
         return $this->json(['ok' => true, 'enabled' => $eligible, 'reason' => $reason,
+            'github' => ['connected' => in_array('github', app(\App\Services\ChatConnectors\Installs::class)->installed($user->id), true)],
             'visible' => (bool) config('cloud_workspaces.ui_enabled') || DB::table('cloud_workspaces')->where('user_id', $user->id)->where('state', '!=', 'deleted')->exists(),
-            'workspaces' => DB::table('cloud_workspaces')->where('user_id', $user->id)->where('state', '!=', 'deleted')->orderByDesc('created_at')->get()->map(fn ($w) => $workspaces->payload($w)),
+            'workspaces' => DB::table('cloud_workspaces')->where('user_id', $user->id)->where('kind', 'project')->where('state', '!=', 'deleted')->orderByDesc('created_at')->get()->map(fn ($w) => $workspaces->payload($w)),
             'limits' => ['projectBytes' => config('cloud_workspaces.max_project_bytes'), 'fileBytes' => config('cloud_workspaces.max_file_bytes'),
                 'maxFiles' => config('cloud_workspaces.max_files'), 'maxSeconds' => config('cloud_workspaces.max_background_seconds')]]);
     }
     public function create(Request $request, Workspaces $workspaces)
     {
         $user = $this->authenticatedUser($request); app(Wallet::class)->ensure($user);
-        $data = $request->validate(['id' => 'required|uuid', 'name' => 'required|string|max:120', 'projectId' => 'required|string|max:150']);
+        $data = $request->validate(['id' => 'required|uuid', 'name' => 'required|string|max:120', 'projectId' => 'required|string|max:150',
+            'source' => 'sometimes|array', 'source.type' => 'required_with:source|in:github',
+            'source.repo' => ['required_with:source', 'string', 'max:200', 'regex:~^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$~', 'not_regex:~(^|/)\.{1,2}(/|$)~'],
+            'source.ref' => ['nullable', 'string', 'max:200', 'regex:~^(?!-)[A-Za-z0-9._/-]+$~']]);
         return $this->json(['ok' => true, 'workspace' => $workspaces->payload($workspaces->create($user->id, $data))]);
     }
     public function show(Request $request, string $workspace, Workspaces $workspaces)
     {
-        return $this->json(['ok' => true, 'workspace' => $workspaces->payload($workspaces->owned($this->authenticatedUser($request)->id, $workspace))]);
+        return $this->json(['ok' => true, 'workspace' => $workspaces->payload($workspaces->ownedProject($this->authenticatedUser($request)->id, $workspace))]);
     }
     public function import(Request $request, string $workspace, Workspaces $workspaces)
     {
@@ -45,7 +49,7 @@ final class WorkspaceController extends Controller
             'budgetUnits' => 'required|integer|min:1|max:'.config('cloud_workspaces.max_budget_units'),
             'seconds' => 'required|integer|min:60|max:'.config('cloud_workspaces.max_background_seconds'), 'canWrite' => 'required|boolean',
             'commands' => 'present|array|max:10', 'commands.*' => 'required|string|max:500']);
-        return $this->json(['ok' => true, 'quote' => $quotes->create($session, $workspaces->owned($session->user_id, $workspace), $data)]);
+        return $this->json(['ok' => true, 'quote' => $quotes->create($session, $workspaces->ownedProject($session->user_id, $workspace), $data)]);
     }
     public function start(Request $request, string $workspace, Start $start)
     {
@@ -54,20 +58,20 @@ final class WorkspaceController extends Controller
     }
     public function stop(Request $request, string $workspace, Shutdown $shutdown, Workspaces $workspaces)
     {
+        $workspaces->ownedProject($this->authenticatedUser($request)->id, $workspace);
         $w = $shutdown->request($this->authenticatedUser($request)->id, $workspace);
         \App\Jobs\ReconcileCloudWorkspace::dispatch($workspace);
         return $this->json(['ok' => true, 'workspace' => $workspaces->payload($w)]);
     }
     public function export(Request $request, string $workspace, Workspaces $workspaces, Artifacts $artifacts)
     {
-        $w = $workspaces->owned($this->authenticatedUser($request)->id, $workspace);
+        $w = $workspaces->ownedProject($this->authenticatedUser($request)->id, $workspace);
         abort_if($w->state === 'deleted', 410, 'This cloud project was deleted.');
-        return $this->json(['ok' => true, 'workspace' => $workspaces->payload($w), 'base' => $artifacts->read($w, $w->base_checkpoint),
-            'current' => $artifacts->read($w), 'savedAt' => $w->checkpoint_at, 'mayHaveUnsavedChanges' => (bool) $w->unsaved_possible]);
+        return $this->json(['ok' => true, 'workspace' => $workspaces->payload($w), ...$artifacts->export($w), 'savedAt' => $w->checkpoint_at, 'mayHaveUnsavedChanges' => (bool) $w->unsaved_possible]);
     }
     public function receipts(Request $request, string $workspace, Workspaces $workspaces)
     {
-        $w = $workspaces->owned($this->authenticatedUser($request)->id, $workspace);
+        $w = $workspaces->ownedProject($this->authenticatedUser($request)->id, $workspace);
         $rows = DB::table('cloud_reservations')->where('workspace_id', $workspace)->orderByDesc('created_at')->limit(200)->get();
         return $this->json(['ok' => true, 'workspace' => $workspaces->payload($w), 'runtime' => $rows->map(fn ($r) => [
             'id' => $r->id, 'generation' => $r->generation, 'reservedUnits' => (string) $r->reserved, 'chargedUnits' => (string) $r->charged,

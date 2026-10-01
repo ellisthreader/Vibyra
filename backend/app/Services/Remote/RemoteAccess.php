@@ -72,9 +72,10 @@ class RemoteAccess
     /** @return list<array<string,mixed>> */
     public function computers(User $user): array
     {
+        $cloud = DB::table('cloud_workspaces')->where('user_id', $user->id)->where('kind', 'computer')->where('state', '!=', 'deleted')->whereNotNull('remote_host_id')->get()->keyBy('remote_host_id');
         return RemoteHost::query()->where('user_id', $user->id)->whereNull('revoked_at')
             ->withCount(['sessions as active_sessions' => fn ($query) => $query->where('status', 'CONNECTED')->whereNull('ended_at')->where('expires_at', '>', now())])
-            ->orderByDesc('online_until')->orderBy('name')->get()->map(fn (RemoteHost $host) => $this->describe($host))->all();
+            ->orderByDesc('online_until')->orderBy('name')->get()->map(fn (RemoteHost $host) => $this->describe($host) + (isset($cloud[$host->id]) ? app(\App\Services\CloudComputer\Computers::class)->hostFields($cloud[$host->id], $host->isOnline()) : []))->all();
     }
 
     /** A phone asking to reach one of the account's computers: a fresh grant, or the reason there is none. */

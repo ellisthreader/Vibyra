@@ -12,6 +12,8 @@ return [
     // Exact existing wallet units per hour; zero/unset refuses quotes and starts.
     'units_per_hour' => (int) env('CLOUD_WORKSPACES_UNITS_PER_HOUR', 0),
     'provider_micro_per_hour' => (int) env('CLOUD_WORKSPACES_PROVIDER_MICRO_PER_HOUR', 0),
+    // What happens once the included monthly hours are used: tokens (default) or blocked. Only matters when hours are set.
+    'overage' => in_array(env('CLOUD_OVERAGE', 'tokens'), ['tokens', 'blocked'], true) ? env('CLOUD_OVERAGE', 'tokens') : 'tokens',
     'region' => env('CLOUD_WORKSPACES_REGION', 'lhr'),
     'image' => env('CLOUD_WORKSPACES_IMAGE'),
     'api_origin' => env('CLOUD_WORKSPACES_API_ORIGIN', env('APP_URL')),
@@ -28,6 +30,11 @@ return [
     'starts_per_account_day' => (int) env('CLOUD_WORKSPACES_STARTS_PER_ACCOUNT_DAY', 60),
     'starts_per_global_day' => (int) env('CLOUD_WORKSPACES_STARTS_PER_GLOBAL_DAY', 200),
     'daily_micro_limit' => (int) env('CLOUD_WORKSPACES_DAILY_MICRO_LIMIT', 0),
+    // Operator-wide ceilings. Monthly defaults to 31 days of the daily limit.
+    'monthly_micro_limit' => (int) env('CLOUD_WORKSPACES_MONTHLY_MICRO_LIMIT', 0),
+    'soft_stop_percent' => (int) env('CLOUD_WORKSPACES_SOFT_STOP_PERCENT', 90),
+    'warn_percent' => (int) env('CLOUD_WORKSPACES_WARN_PERCENT', 80),
+    'max_retained_global' => (int) env('CLOUD_WORKSPACES_MAX_RETAINED_GLOBAL', 200),
     'account_daily_units' => (int) env('CLOUD_WORKSPACES_ACCOUNT_DAILY_UNITS', 3000000),
     'account_monthly_units' => (int) env('CLOUD_WORKSPACES_ACCOUNT_MONTHLY_UNITS', 30000000),
     'max_budget_units' => 10000000,
@@ -39,6 +46,8 @@ return [
     'boot_timeout_seconds' => 180,
     'stop_timeout_seconds' => 45,
     'stopped_days' => 7,
+    // A stopped cloud computer's Fly volume is deleted after this many days (min 7); a warning goes out 3 days before.
+    'computer_stopped_days' => max(7, (int) env('CLOUD_COMPUTER_STOPPED_DAYS', 30)),
     'archive_days' => 30,
     'checkpoint_history' => 5,
     'max_file_bytes' => 1048576,

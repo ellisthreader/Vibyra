@@ -33,6 +33,15 @@ class Plans
         ];
     }
 
+    /**
+     * Included cloud-computer hours per membership month. Its own method so the entitlement payload
+     * stays unchanged; 0 (absent, free, legacy plans, or unset env) promises nothing.
+     */
+    public function cloudHours(string $plan): float
+    {
+        return max(0.0, (float) (config('vibes.plans')[$plan]['cloudHours'] ?? 0));
+    }
+
     public function limitsOn(): bool
     {
         return (bool) config('vibes.plan_limits_enabled');

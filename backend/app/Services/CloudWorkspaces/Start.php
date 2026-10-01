@@ -13,7 +13,7 @@ final class Start
         app(FlyProvider::class)->preflight();
         return DB::transaction(function () use ($session, $id, $data) {
             app(Wallet::class)->lock($session->user_id);
-            $w = app(Workspaces::class)->owned($session->user_id, $id);
+            $w = app(Workspaces::class)->ownedProject($session->user_id, $id);
             $q = DB::table('cloud_quotes')->where('id', $data['quoteId'])->where('workspace_id', $id)->where('user_id', $session->user_id)->firstOrFail();
             $p = json_decode($q->payload, true);
             if ($q->accepted_at) {
@@ -52,7 +52,7 @@ final class Start
                 'budget_units' => $p['budgetUnits'], 'ready_at' => null, 'metered_at' => null, 'lease_until' => null, 'heartbeat_at' => null,
                 'bootstrap_secret' => Crypt::encryptString(Str::random(64)), 'bootstrapped_at' => null, 'runtime_token_hash' => null,
                 'stop_requested_at' => null, 'stop_reason' => null, 'deadline_at' => now()->addSeconds($p['seconds']), 'last_activity_at' => now(), 'updated_at' => now()]);
-            $w = app(Workspaces::class)->owned($session->user_id, $id);
+            $w = app(Workspaces::class)->ownedProject($session->user_id, $id);
             app(Reservations::class)->reserve($w, Quotes::runway($w->units_per_hour));
             DB::table('cloud_quotes')->where('id', $q->id)->update(['accepted_at' => now(), 'accepted_proof_hash' => hash('sha256', $data['proof'])]);
             // Persisted starting state is the durable outbox. Reconciliation retries even if dispatch is lost.

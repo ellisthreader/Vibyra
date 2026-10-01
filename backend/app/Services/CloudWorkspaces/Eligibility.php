@@ -27,6 +27,7 @@ final class Eligibility
                     && now()->lt(\Illuminate\Support\Carbon::parse($audit->provider_audited_at)->addMinutes(2)), 503, 'Cloud resources need a successful provider audit before starting.');
             }
             abort_unless(config('cloud_workspaces.starts_enabled'), 503, 'Starting hosted computers is temporarily unavailable.');
+            app(SpendGuard::class)->admitStart();
             abort_unless(config('cloud_workspaces.units_per_hour') > 0 && config('cloud_workspaces.provider_micro_per_hour') > 0
                 && config('cloud_workspaces.tariff_version') && config('cloud_workspaces.daily_micro_limit') > 0, 503, 'Hosted pricing has not been configured.');
             abort_unless(config('cloud_workspaces.units_per_hour') >= config('cloud_workspaces.provider_micro_per_hour'), 503, 'Hosted pricing needs review.');

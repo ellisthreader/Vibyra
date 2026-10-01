@@ -20,6 +20,7 @@ final class Enrollment
                 409, 'Keep the existing subscription until its contracted term has ended.');
             abort_if(DB::table('vibes_turns')->where('user_id', $u->id)->whereNull('settled_at')->exists(),
                 409, 'Finish or reconcile pending AI work before migrating.');
+            abort_if(\App\Services\CloudWorkspaces\Holds::units($u->id) > 0, 409, 'Reconcile hosted computing before migrating.');
             abort_if(DB::table('chat_cost_reservations')->where('user_id', $u->id)->whereNull('settled_at')->exists(), 409, 'Reconcile legacy AI reservations before migrating.');
             abort_unless((int) $u->credits_balance === $expectedLegacy, 409, 'Legacy balance changed. Reconcile again.');
             DB::table('vibes_grants')->where('user_id', $u->id)->update([

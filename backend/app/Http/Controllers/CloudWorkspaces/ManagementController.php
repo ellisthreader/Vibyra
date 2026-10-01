@@ -16,7 +16,7 @@ final class ManagementController extends Controller
         $user = $this->authenticatedUser($request);
         return DB::transaction(function () use ($user, $request, $workspace, $d, $workspaces) {
             app(Wallet::class)->lock($user->id);
-            return $this->json(['ok' => true, ...app(\App\Services\CloudWorkspaces\Preview::class)->ticket($request, $workspaces->owned($user->id, $workspace), $d['port'])]);
+            return $this->json(['ok' => true, ...app(\App\Services\CloudWorkspaces\Preview::class)->ticket($request, $workspaces->ownedProject($user->id, $workspace), $d['port'])]);
         }, 5);
     }
     public function access(Request $request, string $workspace, Workspaces $workspaces)
@@ -25,7 +25,7 @@ final class ManagementController extends Controller
         $data = $request->validate(['deviceId' => 'required|uuid', 'challengeId' => 'sometimes|uuid', 'proof' => 'sometimes|string|max:64']);
         return DB::transaction(function () use ($session, $workspace, $data, $workspaces) {
             app(Wallet::class)->lock($session->user_id);
-            $w = $workspaces->owned($session->user_id, $workspace);
+            $w = $workspaces->ownedProject($session->user_id, $workspace);
             abort_if($w->state === 'deleted', 410);
             $purpose = DeviceAuthorization::purpose('access', $workspace.':'.$w->generation);
             if (!isset($data['proof'], $data['challengeId'])) return $this->json(['ok' => true, 'challenge' => app(DeviceAuthorization::class)->challenge($session, $data['deviceId'], $purpose)]);
@@ -41,7 +41,7 @@ final class ManagementController extends Controller
         $w = DB::transaction(function () use ($user, $workspace, $request, $data, $workspaces) {
             app(Wallet::class)->lock($user->id);
             app(Eligibility::class)->authorize($user->id);
-            $w = $workspaces->owned($user->id, $workspace);
+            $w = $workspaces->ownedProject($user->id, $workspace);
             app(Access::class)->verify($request, $w);
             $reference = 'cloud-budget:'.$data['id'];
             $old = DB::table('vibes_ledger')->where('user_id', $user->id)->where('reference', $reference)->first();
@@ -54,14 +54,14 @@ final class ManagementController extends Controller
             DB::table('cloud_workspaces')->where('id', $workspace)->update(['budget_units' => $data['budgetUnits'], 'revision' => $w->revision + 1]);
             DB::table('vibes_chats')->where('id', $w->chat_id)->update(['terminal_budget_micro' => $data['budgetUnits']]);
             app(Wallet::class)->record($user->id, $reference, 'cloud_budget', 0, ['workspaceId' => $workspace, 'budgetUnits' => (string) $data['budgetUnits']]);
-            return $workspaces->owned($user->id, $workspace);
+            return $workspaces->ownedProject($user->id, $workspace);
         }, 5);
         return $this->json(['ok' => true, 'workspace' => $workspaces->payload($w)]);
     }
     public function delete(Request $request, string $workspace, Workspaces $workspaces)
     {
         $request->validate(['confirmed' => 'required|accepted']);
-        $w = $workspaces->owned($this->authenticatedUser($request)->id, $workspace);
+        $w = $workspaces->ownedProject($this->authenticatedUser($request)->id, $workspace);
         app(\App\Services\CloudWorkspaces\Deletion::class)->delete($w);
         return $this->json(['ok' => true]);
     }

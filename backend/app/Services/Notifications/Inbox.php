@@ -39,6 +39,7 @@ final class Inbox
         $event = DB::table('work_events')->where('id', $item->event_id)->first();
         if (!$event) return false;
         if ($event->source === 'agent_run') return app(AgentRunNotifications::class)->current($item, $event);
+        if ($event->source === 'cloud_computer') return app(\App\Services\CloudWorkspaces\Git\CloudEvents::class)->current($item, $event);
         $progress = DB::table('work_progress')->where('source', $event->source)->where('run_id', $event->run_id)->first();
         $data = json_decode($event->metadata, true);
         $advisory = in_array($event->phase, ['possible_loop','possible_blocker']);

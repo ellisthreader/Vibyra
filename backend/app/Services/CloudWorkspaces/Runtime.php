@@ -25,7 +25,19 @@ final class Runtime
             $token = $w->runtime_secret ? Crypt::decryptString($w->runtime_secret) : Str::random(64);
             DB::table('cloud_workspaces')->where('id', $id)->update(['runtime_secret' => Crypt::encryptString($token),
                 'runtime_token_hash' => hash('sha256', $token), 'bootstrapped_at' => now()]);
-            return ['token' => $token, 'checkpoint' => $w->checkpoint, 'project' => app(Artifacts::class)->read($w),
+            $github = $w->source === 'github';
+            if (($w->kind ?? 'project') === 'computer') {
+                // The VM volume is the source of truth; nothing is uploaded or cloned by the control plane.
+                $source = ['type' => 'computer']; $project = ['files' => [], 'base' => []];
+            } elseif ($github) {
+                $installs = app(\App\Services\ChatConnectors\Installs::class);
+                abort_unless(in_array('github', $installs->installed($w->user_id), true), 409, 'GitHub is no longer connected.');
+                $saved = $w->checkpoint ? app(Artifacts::class)->read($w) : ['files' => []];
+                // Fetched fresh for this boot only; never stored, never logged.
+                $source = ['type' => 'github', 'repo' => $w->repo, 'ref' => $w->ref, 'baseCommit' => $w->base_commit, 'token' => $installs->credential($w->user_id, 'github')];
+                $project = ['files' => $saved['files'], 'base' => $saved['base'] ?? []];
+            } else { $source = ['type' => 'upload']; $project = app(Artifacts::class)->read($w); }
+            return ['mode' => ($w->kind ?? 'project') === 'computer' ? 'computer' : 'project', 'token' => $token, 'checkpoint' => $w->checkpoint, 'source' => $source, 'project' => $project,
                 'limits' => ['files' => config('cloud_workspaces.max_files'), 'fileBytes' => config('cloud_workspaces.max_file_bytes'),
                     'projectBytes' => config('cloud_workspaces.max_project_bytes')]];
         }, 5);
@@ -37,10 +49,10 @@ final class Runtime
             $w = DB::table('cloud_workspaces')->where('id', $initial->id)->lockForUpdate()->firstOrFail();
             abort_unless($w->generation === $initial->generation && $w->runtime_token_hash === $initial->runtime_token_hash, 401, 'Runtime generation changed.');
             if ($w->state === 'starting') {
-                abort_unless($ready && $w->checkpoint_at && now()->lt($w->deadline_at), 409, 'Complete verified project setup before readiness.');
+                abort_unless($ready && ($w->checkpoint_at || $w->kind === 'computer') && now()->lt($w->deadline_at), 409, 'Complete verified project setup before readiness.');
                 app(Eligibility::class)->authorize($w->user_id);
                 DB::table('cloud_workspaces')->where('id', $w->id)->update(['state' => 'ready', 'ready_at' => now(), 'metered_at' => now(),
-                    'bootstrap_secret' => null, 'runtime_secret' => null, 'lease_until' => min(now()->addSeconds(config('cloud_workspaces.lease_seconds')), \Illuminate\Support\Carbon::parse($w->deadline_at))]);
+                    'bootstrap_secret' => null, 'runtime_secret' => null, 'last_activity_at' => $w->kind === 'computer' ? now() : $w->last_activity_at, 'lease_until' => min(now()->addSeconds(config('cloud_workspaces.lease_seconds')), \Illuminate\Support\Carbon::parse($w->deadline_at))]);
             } elseif ($w->state === 'ready') {
                 $reason = app(Lifecycle::class)->stopReason($w);
                 if ($reason) app(Shutdown::class)->request($w->user_id, $w->id, $reason);
@@ -64,16 +76,23 @@ final class Runtime
                 'stop' => $w->state !== 'ready', 'checkpoint' => $w->checkpoint];
         }, 5);
     }
-    public function checkpoint(object $initial, array $files): array
+    public function checkpoint(object $initial, array $files, ?array $base = null, ?string $baseCommit = null): array
     {
-        return DB::transaction(function () use ($initial, $files) {
+        return DB::transaction(function () use ($initial, $files, $base, $baseCommit) {
             app(Wallet::class)->lock($initial->user_id);
             $w = DB::table('cloud_workspaces')->where('id', $initial->id)->firstOrFail();
             abort_unless($w->generation === $initial->generation && $w->runtime_token_hash === $initial->runtime_token_hash && in_array($w->state, Workspaces::ACTIVE, true), 409);
-            $hash = app(Artifacts::class)->save($w, $files);
+            if ($w->kind === 'computer') return ['checkpoint' => null, 'saved' => true];
+            $update = [];
+            if ($w->source === 'github') {
+                abort_unless($baseCommit !== null || $w->base_commit, 422, 'The base commit is required.');
+                abort_if($baseCommit !== null && $w->base_commit && $w->base_commit !== $baseCommit, 409, 'The base commit changed.');
+                if (!$w->base_commit) $update['base_commit'] = $baseCommit;
+                $hash = app(Artifacts::class)->save($w, $files, $base ?? []);
+            } else $hash = app(Artifacts::class)->save($w, $files);
             $backgroundPossible = $w->state === 'ready' && DB::table('cloud_actions')->where('workspace_id', $w->id)->where('generation', $w->generation)
                 ->where('operation', 'cloud_run_command')->whereNotNull('claimed_at')->exists();
-            DB::table('cloud_workspaces')->where('id', $w->id)->update(['checkpoint' => $hash, 'checkpoint_at' => now(), 'unsaved_possible' => $backgroundPossible]);
+            DB::table('cloud_workspaces')->where('id', $w->id)->update([...$update, 'checkpoint' => $hash, 'checkpoint_at' => now(), 'unsaved_possible' => $backgroundPossible]);
             app(Retention::class)->prune(DB::table('cloud_workspaces')->where('id', $w->id)->first());
             return ['checkpoint' => $hash, 'saved' => true];
         }, 5);

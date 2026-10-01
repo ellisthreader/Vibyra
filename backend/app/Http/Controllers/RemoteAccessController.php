@@ -122,7 +122,7 @@ class RemoteAccessController extends Controller
         } catch (RemoteAccessException $refused) {
             if ($session) app(\App\Services\Remote\RemoteSecurityFailures::class)->rejected($session, $refused, $device, request()->ip());
             return $this->json(array_filter(['ok' => false, 'error' => $refused->getMessage(),
-                'code' => $refused->errorCode], fn ($value) => $value !== null), $refused->status)->header('Cache-Control', 'private, no-store');
+                'code' => $refused->errorCode], fn ($value) => $value !== null) + $refused->extra, $refused->status)->header('Cache-Control', 'private, no-store');
         }
     }
 }
