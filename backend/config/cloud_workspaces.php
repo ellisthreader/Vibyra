@@ -44,6 +44,8 @@ return [
     'idle_seconds' => 300,
     'max_background_seconds' => 28800,
     'boot_timeout_seconds' => 180,
+    // A booted cloud computer whose Host never shows up on the relay is stopped with an error after this long.
+    'computer_connect_seconds' => (int) env('CLOUD_COMPUTER_CONNECT_SECONDS', 150),
     'stop_timeout_seconds' => 45,
     'stopped_days' => 7,
     // A stopped cloud computer's Fly volume is deleted after this many days (min 7); a warning goes out 3 days before.

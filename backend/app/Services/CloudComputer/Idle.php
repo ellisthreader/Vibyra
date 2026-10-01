@@ -20,7 +20,16 @@ class Idle
         // Included hours are spent and overage is blocked: stop rather than run unpaid.
         if (app(\App\Services\CloudWorkspaces\Allowance::class)->exhaustedAndBlocked((int) $w->user_id)) return 'allowance_exhausted';
         if (app(Computers::class)->active($w) > 0) return null;
+        // Booted but the Host never reached the relay: stop with an error instead of showing "starting" forever.
+        if ($this->neverConnected($w)) return 'host_unreachable';
         if (now()->gte(Carbon::parse($w->last_activity_at)->addSeconds(config('cloud_workspaces.idle_seconds')))) return 'idle';
         return null;
+    }
+
+    private function neverConnected(object $w): bool
+    {
+        if (!$w->ready_at || now()->lt(Carbon::parse($w->ready_at)->addSeconds(config('cloud_workspaces.computer_connect_seconds')))) return false;
+        $seen = $w->remote_host_id ? DB::table('remote_hosts')->where('id', $w->remote_host_id)->value('last_seen_at') : null;
+        return !$seen || Carbon::parse($seen)->lt($w->ready_at);
     }
 }

@@ -15,6 +15,8 @@ class ActivityAndListingTest extends ComputerTestCase
     public function test_reported_work_keeps_the_machine_up_until_the_deadline_and_idle_stops_otherwise(): void
     {
         $token = $this->computerReady(); $this->hold();
+        $this->registerHost($token)->assertOk();
+        DB::table('remote_hosts')->where('host_id', $this->hostId)->update(['last_seen_at' => now()]);
         $lifecycle = app(Lifecycle::class);
         $this->assertNull($lifecycle->stopReason($this->row()));
         $this->travel(301)->seconds(); $this->hold();
