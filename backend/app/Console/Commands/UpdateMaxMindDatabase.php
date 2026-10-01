@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use PharData;
+use Symfony\Component\Process\Process;
 
 class UpdateMaxMindDatabase extends Command
 {
@@ -86,11 +87,10 @@ class UpdateMaxMindDatabase extends Command
                 throw new \RuntimeException('MaxMind database download failed.');
             }
 
-            (new PharData($archivePath))->decompress();
             if (! is_dir($extractDir)) {
                 mkdir($extractDir, 0755, true);
             }
-            (new PharData($tarPath))->extractTo($extractDir, null, true);
+            $this->extract($archivePath, $tarPath, $extractDir);
 
             $source = $this->findDatabaseFile($extractDir);
             if (! $source) {
@@ -128,6 +128,30 @@ class UpdateMaxMindDatabase extends Command
         }
 
         return $handle;
+    }
+
+    /**
+     * The archive is tens of megabytes. PHP's PharData unpacks it in memory, and on a small
+     * production container that was killed with no message, leaving no database and every
+     * market-gated route answering 451. The system `tar` streams it; PharData stays as the
+     * fallback for a machine without `tar`.
+     */
+    private function extract(string $archivePath, string $tarPath, string $extractDir): void
+    {
+        $tar = new Process(['tar', '-xzf', $archivePath, '-C', $extractDir]);
+        $tar->setTimeout(120);
+        try {
+            $tar->run();
+            if ($tar->isSuccessful()) {
+                return;
+            }
+        } catch (\Throwable) {
+            // No usable tar on this machine: fall back below.
+        }
+
+        ini_set('memory_limit', '512M');
+        (new PharData($archivePath))->decompress();
+        (new PharData($tarPath))->extractTo($extractDir, null, true);
     }
 
     private function findDatabaseFile(string $dir): ?string
