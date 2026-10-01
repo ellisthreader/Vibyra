@@ -87,9 +87,12 @@ jobs:
         env:
           RUST_TEST_THREADS: '1'
         run: npm run verify
-      - name: Run Linux and Windows release gates
-        if: runner.os != 'macOS'
+      - name: Run Windows release gates
+        if: runner.os == 'Windows'
         run: npm run verify
+      - name: Run Linux release gates
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" npm run verify
       - name: Remove independently built frontend output
         run: >-
           node -e "require('node:fs').rmSync('dist', { recursive: true, force: true })"
