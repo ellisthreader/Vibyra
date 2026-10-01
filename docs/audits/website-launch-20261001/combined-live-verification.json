@@ -66,6 +66,7 @@
     "Stripe restricted key creation still awaits a fresh owner authenticator code; webhook and portal remain unconnected.",
     "Paid flags remain off; full sandbox renewal, failed-renewal and dispute outcome acceptance remain blocked by limited sandbox credentials.",
     "Actual installed-client upgrade and completed native provider login are not established by download/protocol checks.",
-    "Railway payment resolution was deferred by owner; Pro, 10GB allocation and scheduled backups remain inactive."
+    "Railway payment resolution was deferred by owner; Pro, 10GB allocation and scheduled backups remain inactive.",
+    "Windows updater signing is verified, but the installer does not have Authenticode publisher signing."
   ]
 }
