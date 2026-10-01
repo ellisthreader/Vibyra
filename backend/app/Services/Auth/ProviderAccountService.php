@@ -43,11 +43,16 @@ class ProviderAccountService
                 422
             );
         }
-        if (User::where('email', $email)->exists()) {
-            throw new ProviderAccountException(
-                'An account already exists for that email. Log in with its original method.',
-                409
-            );
+        $existing = User::where('email', $email)->first();
+        if ($existing) {
+            if (! $this->canSignInByEmail($existing, $provider, $identity)) {
+                throw new ProviderAccountException(
+                    'An account already exists for that email. Log in with its original method.',
+                    409
+                );
+            }
+
+            return ['user' => $existing, 'created' => false];
         }
 
         $name = trim((string) $request->input('name', ''))
@@ -82,5 +87,20 @@ class ProviderAccountService
         }
 
         return ['user' => $user->fresh() ?? $user, 'created' => true];
+    }
+
+    /**
+     * Google and Apple only hand over an email they have verified, so that
+     * person owns the mailbox and may sign in to the account registered to it.
+     * The account's own address must be verified too: otherwise someone could
+     * register a victim's email first and wait for them to arrive by Google.
+     * An account protected by two-factor keeps its password-and-code sign-in.
+     */
+    private function canSignInByEmail(User $user, string $provider, array $identity): bool
+    {
+        return in_array($provider, ['google', 'apple'], true)
+            && ($identity['emailVerified'] ?? false) === true
+            && $user->email_verified_at !== null
+            && ! app(TwoFactor::class)->enabled($user);
     }
 }
