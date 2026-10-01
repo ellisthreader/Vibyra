@@ -16,14 +16,14 @@ for (const role of ['web', 'all']) {
       writeFileSync(join(cwd, 'php'), '#!/bin/sh\nprintf "%s|%s\\n" "$PHP_CLI_SERVER_WORKERS" "$*"\n', { mode: 0o755 });
       const result = spawnSync('bash', ['-c', `
         wait() {
-          if [[ "$1" == "-n" ]]; then builtin wait "$2"; else builtin wait "$@"; fi
+          if [[ "$1" == "-n" ]]; then shift; builtin wait "$@"; else builtin wait "$@"; fi
         }
         ${launcher}
       `], { cwd, encoding: 'utf8', timeout: 5000,
         env: { ...process.env, PATH: `${cwd}:${process.env.PATH}`, VIBYRA_PROCESS_ROLE: role,
-          VIBYRA_RUN_MIGRATIONS: '0', VIBYRA_WEB_WORKERS: '8', PORT: '8000' } });
+          VIBYRA_RUN_MIGRATIONS: '0', VIBYRA_WEB_SERVER: 'builtin', VIBYRA_WEB_WORKERS: '8', PORT: '8000' } });
       assert.equal(result.error, undefined);
-      assert.match(result.stdout, /8\|-d upload_max_filesize=8M -d post_max_size=32M -S 0\.0\.0\.0:8000 \.\.\/vendor\/laravel\/framework\/src\/Illuminate\/Foundation\/resources\/server\.php/);
+      assert.match(result.stdout, /8\|-d expose_php=0 -d upload_max_filesize=8M -d post_max_size=32M -S 0\.0\.0\.0:8000 \.\.\/scripts\/production-router\.php/);
       assert.equal(result.status, role === 'web' ? 0 : 1, result.stderr);
     } finally { rmSync(cwd, { recursive: true, force: true }); }
   });

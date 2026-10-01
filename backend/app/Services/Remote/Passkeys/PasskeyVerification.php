@@ -15,6 +15,9 @@ class PasskeyVerification
                 // Match the host→account session→device→ceremony→passkey lock order.
                 $hostId = DB::table('trusted_devices')->where('id', $flow->trusted_device_id)->value('remote_host_id');
                 DB::table('remote_hosts')->where('id', $hostId)->lockForUpdate()->first();
+                // Different hosts/sessions can enroll the same account concurrently.
+                // Serialize registration before re-reading its existing-passkey requirement.
+                if ($flow->purpose === 'register') DB::table('users')->where('id', $flow->user_id)->lockForUpdate()->firstOrFail();
                 $session = VibyraSession::whereKey($flow->app_session_id)->lockForUpdate()->first();
                 DB::table('trusted_devices')->where('id', $flow->trusted_device_id)->lockForUpdate()->first();
                 $device = app(PasskeyCeremonies::class)->device($session, $flow->trusted_device_id);
@@ -30,9 +33,9 @@ class PasskeyVerification
                 $response = $credential['response'];
                 $challenge = base64_decode($flow->challenge, true);
                 if ($flow->purpose === 'register') {
+                    app(PasskeyCeremonies::class)->assertRegistrationAllowed($session, $device);
                     $result = $server->processCreate($client, WebAuthnVerifier::decode($response['attestationObject'] ?? null), $challenge, true, true);
                     if (! hash_equals($result->credentialId, $id)) throw new \RuntimeException('Credential mismatch');
-                    if (DB::table('passkey_credentials')->where('user_id', $session->user_id)->whereNull('revoked_at')->count() >= 10) throw new \RuntimeException('Passkey limit');
                     $credentialId = DB::table('passkey_credentials')->insertGetId([
                         'user_id' => $session->user_id, 'credential_hash' => hash('sha256', $id),
                         'credential_id' => WebAuthnVerifier::encode($id), 'public_key' => $result->credentialPublicKey,

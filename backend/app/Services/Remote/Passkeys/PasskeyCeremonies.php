@@ -19,14 +19,8 @@ class PasskeyCeremonies
         $device = $this->device($session, $deviceId);
         $server = $this->verifier->server();
         $credentials = DB::table('passkey_credentials')->where('user_id', $session->user_id)->whereNull('revoked_at')->get();
-        // A phone still waiting for approval (cloud computer) may only prove a passkey, never add one.
-        if ($purpose === 'register' && $device->approved_at === null) throw new RemoteAccessException('This device has not been approved for remote access.', 403);
-        // Adding a passkey to an account that has one needs a fresh assertion from an existing passkey in this session.
-        if ($purpose === 'register' && $credentials->isNotEmpty() && ! $this->freshAssertion($session, $device)) {
-            throw new RemoteAccessException('Verify with an existing passkey before adding another.', 403, 'strong_auth_required');
-        }
+        if ($purpose === 'register') $this->assertRegistrationAllowed($session, $device);
         if ($purpose === 'authenticate' && $credentials->isEmpty()) throw new RemoteAccessException('Add a passkey on this approved device first.', 409, 'passkey_required');
-        if ($purpose === 'register' && $credentials->count() >= 10) throw new RemoteAccessException('Remove a passkey before adding another.', 409);
         $ids = $credentials->map(fn ($row) => WebAuthnVerifier::decode($row->credential_id))->all();
         $options = $purpose === 'register'
             ? $server->getCreateArgs((string) $session->user_id, $session->user->email, $session->user->name ?: 'Vibyra user', 120, 'preferred', 'required', null, $ids)
@@ -76,6 +70,17 @@ class PasskeyCeremonies
         if (! $row) throw new RemoteAccessException('Verification was not found.', 404);
         $this->device($session, $row->trusted_device_id);
         return ['status' => $row->invalidated_at ? 'failed' : ($row->verified_at ? 'verified' : ($row->consumed_at ? 'failed' : (now()->gte($row->expires_at) ? 'expired' : 'waiting')))];
+    }
+
+    /** Rechecked at completion while the account row serializes all its registrations. */
+    public function assertRegistrationAllowed(VibyraSession $session, object $device): void
+    {
+        if ($device->approved_at === null) throw new RemoteAccessException('This device has not been approved for remote access.', 403);
+        $count = DB::table('passkey_credentials')->where('user_id', $session->user_id)->whereNull('revoked_at')->count();
+        if ($count > 0 && ! $this->freshAssertion($session, $device)) {
+            throw new RemoteAccessException('Verify with an existing passkey before adding another.', 403, 'strong_auth_required');
+        }
+        if ($count >= 10) throw new RemoteAccessException('Remove a passkey before adding another.', 409);
     }
 
     /** Same app session and device, an unrevoked passkey of this account, verified within the strong-auth window. */

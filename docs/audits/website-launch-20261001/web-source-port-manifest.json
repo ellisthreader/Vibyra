@@ -279,5 +279,28 @@
       "warnings": "isolated checkout missing .env"
     },
     "native_provider_compatibility": "public platform artifacts unverified; source 0.8.10 lacks mandatory flowSecret"
+  },
+  "server_port_followup": {
+    "report": "web-runtime-readonly-diagnosis.md",
+    "main": [
+      "backend/scripts/production-router.php",
+      "backend/scripts/start-production.sh",
+      "backend/scripts/start-production.test.mjs"
+    ],
+    "website": [
+      "backend/scripts/production-router.php",
+      "backend/scripts/start-production-web.sh"
+    ],
+    "candidate_test": [
+      "backend/scripts/start-production.test.mjs"
+    ],
+    "main_optional_fpm_preserved": true,
+    "website_default_fpm_preserved": true,
+    "validations": [
+      "main launcher 4 tests",
+      "candidate launcher 4 tests",
+      "main local FPM/control pools and identity 3 tests",
+      "website shell/PHP syntax"
+    ]
   }
 }
