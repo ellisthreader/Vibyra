@@ -46,7 +46,13 @@ class ProviderIdentityVerifier
             'subject' => (string) $claims['sub'],
             'email' => $email,
             'name' => $this->claimString($claims, 'name'),
-            'emailVerified' => $provider !== 'microsoft',
+            'emailVerified' => $email !== null && $provider !== 'microsoft',
+            'authoritativeEmail' => $email !== null && match ($provider) {
+                'google' => str_ends_with($email, '@gmail.com')
+                    || (is_string($claims['hd'] ?? null) && trim($claims['hd']) !== ''),
+                'apple' => true,
+                default => false,
+            },
         ];
     }
 

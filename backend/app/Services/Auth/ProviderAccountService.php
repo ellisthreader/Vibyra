@@ -90,8 +90,8 @@ class ProviderAccountService
     }
 
     /**
-     * Google and Apple only hand over an email they have verified, so that
-     * person owns the mailbox and may sign in to the account registered to it.
+     * Only provider-authoritative, verified email can select an existing account.
+     * Google verification alone can be stale for external, non-Workspace mailboxes.
      * The account's own address must be verified too: otherwise someone could
      * register a victim's email first and wait for them to arrive by Google.
      * An account protected by two-factor keeps its password-and-code sign-in.
@@ -100,6 +100,7 @@ class ProviderAccountService
     {
         return in_array($provider, ['google', 'apple'], true)
             && ($identity['emailVerified'] ?? false) === true
+            && ($identity['authoritativeEmail'] ?? false) === true
             && $user->email_verified_at !== null
             && ! app(TwoFactor::class)->enabled($user);
     }
