@@ -209,7 +209,9 @@ jobs:
           $installer = Join-Path $PWD "release/${{ steps.version.outputs.output }}"
           $install = Start-Process $installer -ArgumentList '/S' -PassThru -Wait
           if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
-          $app = Get-ChildItem $env:LOCALAPPDATA -Recurse -Filter 'vibyra-desktop.exe' |
+          $binaryName = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).mainBinaryName
+          if (-not $binaryName) { throw 'The packaged binary name is missing.' }
+          $app = Get-ChildItem $env:LOCALAPPDATA -Recurse -File -Filter "$binaryName.exe" |
             Select-Object -First 1
           if (-not $app) { throw 'The Vibyra executable was not installed.' }
           $process = Start-Process $app.FullName -PassThru
