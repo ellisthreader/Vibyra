@@ -1,3 +1,7 @@
+## 0.8.17 — Browser sign-in compatibility (candidate, 2026-10-01)
+
+Isolated candidate over reviewed 66ae2364. Google/Apple OAuth starts carry a fresh random proof and native polling returns it in a header; the backend binds completion to that attempt. Includes no unrelated dirty-main changes. Native package signing, notarization, publication and installed acceptance remain pending.
+
 ## 0.8.16 — Remote access security (candidate, 2026-09-29)
 
 Build 29 preserves installed 0.8.15 build 26 features and adds approved device trust, passkey-protected Cloud sessions, scoped signed leases, independent permissions, active-session warnings, revocation and native restrictive synchronization. Nearby access requires local approval while security state is unavailable. Candidate publication and installation are recorded separately after verification.

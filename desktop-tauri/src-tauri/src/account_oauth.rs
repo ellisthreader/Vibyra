@@ -4,16 +4,15 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::account_api::{error_detail, request, request_raw, ApiError, Endpoint};
+use crate::account_api::{error_detail, request, request_raw_with_flow_secret, ApiError, Endpoint};
 use crate::account_auth::bind_preview_account;
 use crate::account_device;
-use crate::account_oauth_start::request_start;
+use crate::account_oauth_start::{parse_start, request_start, start_body};
 use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
 use crate::secret_store::SecretStore;
 use crate::state::AppState;
 
 const POLL_INTERVAL: Duration = Duration::from_secs(1);
-const DEFAULT_EXPIRY_SECS: u64 = 600;
 const EXPIRED_MESSAGE: &str = "This sign-in attempt expired. Try again.";
 
 /// Starts a Google or Apple browser sign-in: asks the backend for an
@@ -25,10 +24,16 @@ pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
     bind_preview_account(&state, None);
     account.begin_authorizing(Some(provider.clone()));
     let cancel = account.begin_oauth();
-    let body = serde_json::json!({
-        "deviceName": account_device::device_label(),
-        "installId": account_device::installation_id(),
-    });
+    let (flow_secret, body) = match start_body(
+        &account_device::device_label(),
+        &account_device::installation_id(),
+    ) {
+        Ok(parts) => parts,
+        Err(message) => {
+            account.finish_oauth(&cancel);
+            return fail(account, message);
+        }
+    };
     let started = request_start(&provider, body).await;
     if cancel.load(Ordering::SeqCst) {
         return account.snapshot();
@@ -54,29 +59,16 @@ pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
     }
     let poller = app.clone();
     tauri::async_runtime::spawn(async move {
-        poll_until_done(poller, provider, flow_id, expires_in, cancel).await;
+        poll_until_done(poller, provider, flow_id, flow_secret, expires_in, cancel).await;
     });
     account.snapshot()
-}
-
-fn parse_start(body: serde_json::Value) -> Option<(String, String, u64)> {
-    let flow_id = body.get("flowId")?.as_str()?.to_owned();
-    let auth_url = body.get("authUrl")?.as_str()?.to_owned();
-    if !auth_url.starts_with("https://") {
-        return None;
-    }
-    let expires_in = body
-        .get("expiresIn")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(DEFAULT_EXPIRY_SECS)
-        .clamp(30, 3600);
-    Some((flow_id, auth_url, expires_in))
 }
 
 async fn poll_until_done(
     app: AppHandle,
     provider: String,
     flow_id: String,
+    flow_secret: String,
     expires_in: u64,
     cancel: Arc<AtomicBool>,
 ) {
@@ -90,7 +82,14 @@ async fn poll_until_done(
             finish(&app, &cancel, Err(EXPIRED_MESSAGE.to_owned())).await;
             return;
         }
-        match request_raw(Endpoint::OauthStatus(&provider, &flow_id), None, None).await {
+        match request_raw_with_flow_secret(
+            Endpoint::OauthStatus(&provider, &flow_id),
+            None,
+            None,
+            Some(&flow_secret),
+        )
+        .await
+        {
             Ok((status, body)) => {
                 let flow_status = body.get("status").and_then(|v| v.as_str()).unwrap_or("");
                 match (status, flow_status) {

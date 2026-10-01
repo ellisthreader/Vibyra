@@ -3,6 +3,12 @@ use std::time::Duration;
 const PRODUCTION_URL: &str = "https://vibyra-production.up.railway.app";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const RETRY_DELAY: Duration = Duration::from_secs(1);
+static OAUTH_CLIENT: std::sync::LazyLock<Result<reqwest::Client, reqwest::Error>> =
+    std::sync::LazyLock::new(|| {
+        reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+    });
 
 /// Errors split by what the caller may safely conclude. Only `Unauthorized`
 /// permits discarding a stored session; `Network` must preserve it.
@@ -44,17 +50,50 @@ pub async fn request_raw(
     token: Option<&str>,
     body: Option<serde_json::Value>,
 ) -> Result<(u16, serde_json::Value), ApiError> {
-    let url = format!("{}{}", base_url(), endpoint.path()?);
+    request_raw_with_flow_secret(endpoint, token, body, None).await
+}
+
+/// The OAuth claim proof remains native and travels only in the dedicated header.
+pub(crate) async fn request_raw_with_flow_secret(
+    endpoint: Endpoint<'_>,
+    token: Option<&str>,
+    body: Option<serde_json::Value>,
+    flow_secret: Option<&str>,
+) -> Result<(u16, serde_json::Value), ApiError> {
+    request_raw_at(&base_url(), endpoint, token, body, flow_secret).await
+}
+
+async fn request_raw_at(
+    base: &str,
+    endpoint: Endpoint<'_>,
+    token: Option<&str>,
+    body: Option<serde_json::Value>,
+    flow_secret: Option<&str>,
+) -> Result<(u16, serde_json::Value), ApiError> {
+    let url = format!("{}{}", base, endpoint.path()?);
     let method = endpoint.method();
+    let client = if matches!(
+        endpoint,
+        Endpoint::OauthStart(_) | Endpoint::OauthStatus(..)
+    ) {
+        OAUTH_CLIENT.as_ref().map_err(|_| {
+            ApiError::Network("Secure sign-in could not start. Please try again.".into())
+        })?
+    } else {
+        crate::http_client::shared()
+    };
     let mut last = String::new();
     for attempt in 0..2 {
         if attempt > 0 {
             tokio::time::sleep(RETRY_DELAY).await;
         }
-        let mut request = crate::http_client::shared()
+        let mut request = client
             .request(method.clone(), &url)
             .header("Accept", "application/json")
             .timeout(REQUEST_TIMEOUT);
+        if let Some(secret) = flow_secret {
+            request = request.header("X-Vibyra-Flow-Secret", secret);
+        }
         if let Some(token) = token {
             request = request.bearer_auth(token);
         }
@@ -116,3 +155,11 @@ pub fn error_detail(value: &serde_json::Value, status: u16) -> String {
             _ => "The Vibyra account service rejected the request.".into(),
         })
 }
+
+#[cfg(test)]
+#[path = "account_oauth_protocol_tests.rs"]
+mod oauth_protocol_tests;
+
+#[cfg(test)]
+#[path = "account_oauth_redirect_tests.rs"]
+mod oauth_redirect_tests;
