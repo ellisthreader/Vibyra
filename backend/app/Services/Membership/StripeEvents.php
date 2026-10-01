@@ -156,7 +156,9 @@ final class StripeEvents
     private function lifecycle(object $s, string $environment): void
     {
         $query = DB::table('membership_periods')->where('provider', 'stripe')->where('environment', $environment)->where('subscription_id', $s->id);
-        $update = ['cancel_at_end' => (bool) ($s->cancel_at_period_end ?? false), 'updated_at' => now()];
+        // Flexible billing's portal uses a future cancel_at while the legacy flag remains false.
+        $scheduled = (bool) ($s->cancel_at_period_end ?? false) || (int) ($s->cancel_at ?? 0) > now()->timestamp;
+        $update = ['cancel_at_end' => $scheduled, 'updated_at' => now()];
         // Failed renewal does not remove the period that was already purchased.
         if ($s->status === 'canceled' && ($s->ended_at ?? null)) {
             $query->where('ends_at', '>', Carbon::createFromTimestamp($s->ended_at));
