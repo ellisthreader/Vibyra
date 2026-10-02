@@ -1,8 +1,13 @@
 # Real Stripe sandbox acceptance
 
-Prepared against website candidate `9a4db56`. This is an opt-in operator workflow,
-not evidence that provider acceptance has run. No production billing flags, keys,
+Initial setup used candidate `9a4db56`; actual purchase/replay checks ran on
+`c8c5b8c3` as the base HEAD. Portal verification used the restarted receiver
+with the exact patched source later committed unchanged as `f04f8f8f`. The staged sanitized
+results are in `docs/audits/website-launch-20261001/stripe-sandbox-acceptance.json`.
+This opt-in workflow is not itself evidence that every case has passed. No production billing flags, keys,
 database or webhook endpoint may be changed for this exercise.
+The final recursive per-file source suite passed 278/278 files with the same
+three existing gated skips; this does not close the unexecuted provider cases.
 
 `vibyra:website-launch-readiness` reads configuration only.
 `vibyra:membership-replay` retries previously verified pending/failed stored events;
@@ -25,7 +30,9 @@ Two keys from that same sandbox are needed, loaded privately via environment:
 
 - Runtime `STRIPE_SECRET_KEY`: `rk_test_…` with Customers, Checkout Sessions and
   Customer Portal Write; Invoices, Subscriptions, Charges, Payment Intents,
-  Disputes and Invoice Payments Read. Do not broaden it to make test operations
+  Disputes Read. Verify the Invoice Payments GET endpoint with the same key;
+  its Dashboard permission grouping must be established by an actual response,
+  not assumed to be a separate permission row. Do not broaden it to make test operations
   succeed; provider log403s identify missing runtime permissions.
 - `STRIPE_SANDBOX_OPERATOR_KEY`: a separate sandbox-only key able to create test
   clocks/customers, read prices/portal configurations, advance clocks, change
@@ -52,9 +59,29 @@ Its limited `rkcs_…` key requires explicit `STRIPE_SANDBOX_CLAIMABLE=1` in thi
 local helper. This does not relax the production key guard. On2026-10-01 the
 claimable key could create products/prices/portal/Checkout, but Test Clock create
 returned403 requiring a claimed/full key. `STRIPE_SANDBOX_NO_CLOCKS=1` explicitly
-allows initial purchase/cancel/refund/dispute fixtures without clocks; renewal,
-failed-renewal and expiry acceptance remain unexecuted until a full sandbox key
-is provided. The claimable key cannot prove the planned restricted-key scopes.
+allows initial purchase/cancel/refund fixtures without clocks. Genuine dispute
+events can be generated, but canonical Disputes reads also return403 with this
+key: both disputed fixtures correctly remain held and their events retryable.
+Winning/losing outcomes, renewal, failed-renewal and expiry acceptance require a
+full sandbox key. The claimable key cannot prove the planned restricted-key scopes.
+Keep those failed dispute events and synthetic fixtures for replay after the key
+is replaced; never mark them processed or bypass canonical reads to pass tests.
+The global assertion guard will then reject unrelated fixtures too; report an
+independently observed fixture-local result together with the known unresolved
+event count, without editing the global guard.
+
+### Current flexible-billing limitation
+
+The hosted monthly fixture created with the pinned April API returned flexible
+billing mode. A sandbox-only operator reset of `billing_cycle_anchor=now` with
+`proration_behavior=none` was accepted, produced no new invoice, and correctly
+left its one300-token grant unchanged. Stripe's [billing-cycle documentation](https://docs.stripe.com/billing/subscriptions/billing-cycle)
+specifies `always_invoice` for immediate invoicing on a flexible-mode reset;
+that introduces prorations, outside this fixed-offer acceptance contract. Do not
+label an anchor reset or a standalone manual invoice as a scheduled renewal,
+or weaken line/amount checks to make it pass. Clock-driven natural renewal and
+failed-renewal remain open checks. The original subscription fixture remains
+usable for portal cancellation and retaining already-paid entitlements.
 
 ## Isolate and start
 
