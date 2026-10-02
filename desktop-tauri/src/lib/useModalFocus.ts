@@ -7,6 +7,9 @@ function popupOwnsKeys(): boolean {
   return owner instanceof HTMLElement && owner.getClientRects().length > 0;
 }
 
+const activeModals: HTMLElement[] = [];
+const inertOwners = new Map<HTMLElement, { count: number; wasInert: boolean }>();
+
 const FOCUSABLE =
   "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), " +
   "textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
@@ -30,7 +33,12 @@ export function useModalFocus(
     const background = Array.from(
       document.querySelectorAll<HTMLElement>(".app > .chrome, .app > .shell"),
     );
-    for (const element of background) element.setAttribute("inert", "");
+    activeModals.push(node);
+    for (const element of background) {
+      const prior = inertOwners.get(element);
+      inertOwners.set(element, { count: (prior?.count ?? 0) + 1, wasInert: prior?.wasInert ?? element.hasAttribute("inert") });
+      element.setAttribute("inert", "");
+    }
     node.querySelector<HTMLElement>(FOCUSABLE)?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -43,7 +51,7 @@ export function useModalFocus(
       // layer marks itself `data-escape-owner`; the attribute lives on the
       // popup element, so it cannot outlive it. It must also be rendered: a
       // hidden node carrying it would silently disable Escape app-wide.
-      if (popupOwnsKeys()) return;
+      if (activeModals.at(-1) !== node || popupOwnsKeys()) return;
       if (event.key === "Escape") {
         event.stopPropagation();
         close.current();
@@ -66,8 +74,21 @@ export function useModalFocus(
     window.addEventListener("keydown", onKeyDown, true);
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
-      for (const element of background) element.removeAttribute("inert");
-      opener?.focus();
+      const wasTop = activeModals.at(-1) === node;
+      const index = activeModals.lastIndexOf(node);
+      if (index >= 0) activeModals.splice(index, 1);
+      for (const element of background) {
+        const owner = inertOwners.get(element);
+        if (owner && --owner.count === 0) {
+          if (!owner.wasInert) element.removeAttribute("inert");
+          inertOwners.delete(element);
+        }
+      }
+      if (wasTop) {
+        const next = activeModals.at(-1);
+        if (!next || (opener && next.contains(opener))) opener?.focus();
+        else next.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+      }
     };
   }, [ref, open]);
 }

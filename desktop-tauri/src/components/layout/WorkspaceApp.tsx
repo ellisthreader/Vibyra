@@ -3,6 +3,8 @@ import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
 import { lazy, Suspense, useCallback, useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 
+import { BetaWelcome } from "../beta/BetaWelcome";
+import { useBetaWelcome } from "../../lib/useBetaWelcome";
 import { FirstWelcome } from "../auth/FirstWelcome";
 import { NewModelsNotice } from "../home/NewModelsNotice";
 import { CloseConfirmModal } from "./CloseConfirmModal";
@@ -83,6 +85,7 @@ export function WorkspaceApp() {
   const [welcomeHandoff, setWelcomeHandoff] = useState(false);
   const [newModelsOpen, setNewModelsOpen] = useState(() => (isMac || isLinux) && !newModelsNoticeHidden());
 
+  const beta = useBetaWelcome(profile, settingsLoaded && !welcomeOpen && !welcomeHandoff);
   useGlobalShortcuts();
   useWorkspaceRuntime();
   useNotificationRuntime();
@@ -149,7 +152,7 @@ export function WorkspaceApp() {
       </div>
       <UpdateBanner />
       <Toasts />
-      <WhatsNew deferred={welcomeOpen || newModelsOpen} />
+      <WhatsNew deferred={welcomeOpen || welcomeHandoff || beta.pending || beta.priorityBlocked || newModelsOpen} />
       <VoiceHud />
       <CloseConfirmModal />
       <PhoneApprovalModal />
@@ -173,7 +176,8 @@ export function WorkspaceApp() {
           onHandoffStart={beginWelcomeHandoff}
         />
       ) : null}
-      {!welcomeOpen && newModelsOpen ? <NewModelsNotice
+      {beta.open && profile && beta.receipt ? <BetaWelcome name={profile.name} receipt={beta.receipt} onDismiss={beta.dismiss} onReport={() => { beta.dismiss(); void useReportStore.getState().begin(); }} /> : null}
+      {!welcomeOpen && !welcomeHandoff && !beta.pending && !beta.priorityBlocked && newModelsOpen ? <NewModelsNotice
         onClose={() => setNewModelsOpen(false)} onStart={startWithNewModels}
       /> : null}
     </div>

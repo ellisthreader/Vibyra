@@ -4,6 +4,7 @@ use crate::account_auth;
 use crate::account_login;
 use crate::account_oauth;
 use crate::account_profile;
+use crate::account_signup::AccountSignupDeclarations;
 use crate::account_types::AccountSnapshot;
 use crate::state::AppState;
 
@@ -32,8 +33,9 @@ pub async fn account_signup_email(
     name: String,
     email: String,
     password: String,
+    declarations: AccountSignupDeclarations,
 ) -> Result<AccountSnapshot, String> {
-    Ok(account_login::signup_email(&state, name, email, password).await)
+    Ok(account_login::signup_email(&state, name, email, password, declarations).await)
 }
 
 /// The second half of a login on an account with a second factor. The
@@ -56,8 +58,9 @@ pub fn account_two_factor_cancel(state: State<'_, AppState>) -> AccountSnapshot 
 pub async fn account_oauth_start(
     app: AppHandle,
     provider: String,
+    signup: Option<AccountSignupDeclarations>,
 ) -> Result<AccountSnapshot, String> {
-    Ok(account_oauth::start(app, provider).await)
+    Ok(account_oauth::start(app, provider, signup).await)
 }
 
 #[tauri::command]

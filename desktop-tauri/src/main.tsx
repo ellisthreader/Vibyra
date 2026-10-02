@@ -139,3 +139,5 @@ const root = createRoot(document.getElementById("root")!);
 if (new URLSearchParams(location.search).has("screenshot-editor")) {
   void import("./components/layout/ScreenshotWindow").then(({ ScreenshotWindow }) => root.render(<ScreenshotWindow />));
 } else root.render(<App />);
+
+import "./styles/auth-signup.css";

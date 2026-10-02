@@ -1,3 +1,4 @@
+import { AccountLicense } from "./AccountLicense";
 import { useState } from "react";
 
 import { accountBillingPage, accountBillingPortal } from "../../ipc/accountBilling";
@@ -52,6 +53,7 @@ export function AccountMembershipBlock({ profile }: { profile: AccountProfile })
 
         <AccountCredits key={`${profile.welcomeKey}:${profile.billingProvider}`} profile={profile} showResetDate={resetIsElsewhere} />
 
+        <AccountLicense key={profile.welcomeKey} profile={profile} />
         {view.paid && view.billing && (
           <SettingRow
             label={

@@ -11,8 +11,12 @@ use crate::secret_store::SecretStore;
 mod attempt;
 #[path = "account_session_binding.rs"]
 mod binding;
+#[path = "account_session_license.rs"]
+mod license;
 #[path = "account_session_rejection.rs"]
 mod rejection;
+#[path = "account_session_welcome.rs"]
+mod welcome;
 
 struct SessionState {
     epoch: u64,
@@ -79,11 +83,7 @@ impl AccountSessionManager {
             .lock()
             .profile
             .as_ref()
-            .map(|profile| {
-                profile
-                    .plan_limits
-                    .effective_at(chrono::Utc::now().timestamp_millis())
-            })
+            .map(Self::license_limits)
             .unwrap_or_else(crate::plan_limits::PlanLimits::signed_out)
     }
 

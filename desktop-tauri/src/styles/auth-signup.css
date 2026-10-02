@@ -1,0 +1,48 @@
+.auth-pocket .auth-signup-declarations {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 19px;
+  padding: 0;
+  border: 0;
+}
+.auth-pocket .auth-signup-declarations legend {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+.auth-pocket .auth-signup-declarations label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.auth-pocket .auth-signup-declarations input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--action);
+}
+.auth-pocket .auth-signup-declarations small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.auth-pocket .auth-signup-declarations button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.auth-pocket .auth-signup-declarations :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -6,6 +6,8 @@ interface AuthProvidersProps {
   pendingProvider: string | null;
   providerError: string | null;
   emailOpen: boolean;
+  creating: boolean;
+  canCreate: boolean;
   onProvider: (provider: "google" | "apple") => void;
   onCancel: () => void;
   onToggleEmail: () => void;
@@ -16,6 +18,8 @@ export function AuthProviders({
   pendingProvider,
   providerError,
   emailOpen,
+  creating,
+  canCreate,
   onProvider,
   onCancel,
   onToggleEmail,
@@ -26,23 +30,23 @@ export function AuthProviders({
       <div className="auth-choices__group">
         <button
           className="auth-choice auth-choice--apple"
-          disabled={authorizing}
+          disabled={authorizing || (creating && !canCreate)}
           onClick={() => onProvider("apple")}
         >
           <span className="auth-choice__mark auth-choice__mark--apple">
             <AppleMark />
           </span>
-          Continue with Apple
+          {creating ? "Create with Apple" : "Continue with Apple"}
         </button>
         <button
           className="auth-choice"
-          disabled={authorizing}
+          disabled={authorizing || (creating && !canCreate)}
           onClick={() => onProvider("google")}
         >
           <span className="auth-choice__mark">
             <GoogleMark />
           </span>
-          Continue with Google
+          {creating ? "Create with Google" : "Continue with Google"}
         </button>
       </div>
       <div className="auth-provider-status" role="status" aria-live="polite">
@@ -71,7 +75,7 @@ export function AuthProviders({
         <span className="auth-choice__mark auth-choice__mark--email">
           <EmailMark />
         </span>
-        Continue with email
+        {creating ? "Create with email" : "Continue with email"}
         <span className="auth-choice__chevron" aria-hidden="true" />
       </button>
     </div>

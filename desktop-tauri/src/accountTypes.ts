@@ -12,6 +12,8 @@ export type AccountStatus =
   | "connectionError";
 
 export interface AccountProfile {
+  licenseRedemptionStatus?: string | null;
+  license?: { tokens: number; allowance: "once" | "monthly"; endsAt: string; nextAt: string | null; betaWelcome?: { id: string; months: number | null } | null } | null;
   name: string;
   email: string;
   provider: string;

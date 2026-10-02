@@ -1,6 +1,7 @@
 use crate::account_api::{request, Endpoint};
 use crate::account_auth::bind_preview_account;
 use crate::account_device;
+use crate::account_signup::AccountSignupDeclarations;
 use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
 use crate::state::AppState;
 
@@ -14,8 +15,16 @@ pub async fn signup_email(
     name: String,
     email: String,
     password: String,
+    declarations: AccountSignupDeclarations,
 ) -> AccountSnapshot {
-    let body = credential_body(&email, &password, Some(&name));
+    let mut body = credential_body(&email, &password, Some(&name));
+    if let Err(error) = declarations.add_to(&mut body) {
+        let epoch = state.account.begin_attempt(None, || {});
+        state
+            .account
+            .status_for_attempt(epoch, AccountStatus::SignedOut, Some(error.into()));
+        return state.account.snapshot();
+    }
     submit_credentials(state, Endpoint::Signup, body).await
 }
 

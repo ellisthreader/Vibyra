@@ -6,6 +6,7 @@ interface AuthEmailFormProps {
   active: boolean;
   initialMode?: EmailAuthMode;
   busy: boolean;
+  canCreate: boolean;
   serverError: string | null;
   onLogin: (email: string, password: string) => void;
   onSignup: (name: string, email: string, password: string) => void;
@@ -14,7 +15,7 @@ interface AuthEmailFormProps {
   onRecoveryChange?: (recovering: boolean) => void;
 }
 
-export function AuthEmailForm({ active, initialMode = "login", busy, serverError, onLogin, onSignup, onForgot, onResetError, onRecoveryChange }: AuthEmailFormProps) {
+export function AuthEmailForm({ active, initialMode = "login", busy, canCreate, serverError, onLogin, onSignup, onForgot, onResetError, onRecoveryChange }: AuthEmailFormProps) {
   const [mode, setMode] = useState<EmailAuthMode>("login");
   const [recovering, setRecovering] = useState(false);
   const [name, setName] = useState("");
@@ -48,6 +49,10 @@ export function AuthEmailForm({ active, initialMode = "login", busy, serverError
     const problem = validateEmailAuth(mode, { name, email, password });
     setLocalError(problem);
     if (problem) return;
+    if (mode === "signup" && !canCreate) {
+      setLocalError("Confirm the account requirements before continuing.");
+      return;
+    }
     if (mode === "login") onLogin(email.trim(), password);
     else onSignup(name.trim(), email.trim(), password);
   };
@@ -101,7 +106,7 @@ export function AuthEmailForm({ active, initialMode = "login", busy, serverError
         {error && <span className="auth-email__error">{error}</span>}
         {!error && notice && <span className="auth-email__notice">{notice}</span>}
       </div>
-      <button className="auth-submit" type="submit" disabled={busy}>
+      <button className="auth-submit" type="submit" disabled={busy || (mode === "signup" && !canCreate)}>
         {submitLabel}
       </button>
       {(recovering || mode === "login") && (

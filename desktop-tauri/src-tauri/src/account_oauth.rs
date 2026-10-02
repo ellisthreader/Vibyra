@@ -21,12 +21,16 @@ const EXPIRED_MESSAGE: &str = "This sign-in attempt expired. Try again.";
 /// Starts a Google or Apple browser sign-in: asks the backend for an
 /// authorization URL, opens it in the system browser, and polls the one-time
 /// status endpoint in the background. The URL and flow id stay native-side.
-pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
+pub async fn start(
+    app: AppHandle,
+    provider: String,
+    signup: Option<crate::account_signup::AccountSignupDeclarations>,
+) -> AccountSnapshot {
     let state = app.state::<AppState>();
     let account = &state.account;
     let (epoch, cancel) =
         account.begin_oauth_attempt(provider.clone(), || bind_preview_account(&state, None));
-    let (flow_secret, body) = match start_body(
+    let (flow_secret, mut body) = match start_body(
         &account_device::device_label(),
         &account_device::installation_id(),
     ) {
@@ -36,6 +40,12 @@ pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
             return fail(account, epoch, message);
         }
     };
+    if let Some(signup) = signup {
+        if let Err(message) = signup.add_to(&mut body) {
+            account.finish_oauth(&cancel);
+            return fail(account, epoch, message);
+        }
+    }
     let started = request_start(&provider, body).await;
     if cancel.load(Ordering::SeqCst) || !account.attempt_current(epoch) {
         return account.snapshot();

@@ -1,13 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct AccountLicense {
-    pub tokens: u32,
-    pub allowance: String,
-    pub ends_at: String,
-    pub next_at: Option<String>,
-}
+pub use crate::account_license_types::AccountLicense;
 
 /// Renderer-safe account states. The bearer token never leaves native code;
 /// the renderer only ever sees these coarse states plus display fields.

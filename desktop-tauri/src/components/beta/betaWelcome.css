@@ -1,0 +1,65 @@
+.beta-backdrop{position:fixed;z-index:120;inset:0;display:grid;place-items:center;padding:24px;background:rgba(4,6,10,.65);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.beta-backdrop[hidden]{display:none}
+.beta-welcome{width:min(920px,100%);border:1px solid #353a46;border-radius:22px;overflow:hidden;background:#12151c;box-shadow:0 42px 120px #0009,0 1px 0 #ffffff0a inset;outline:none;animation:beta-arrive .65s cubic-bezier(.2,.8,.2,1) both;max-height:calc(100dvh - 48px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#404757 #12151c}
+.beta-hero{position:relative;min-height:464px;background:#101216;isolation:isolate;overflow:hidden}
+.beta-hero-art{position:absolute;z-index:-2;width:100%;height:100%;object-fit:contain;object-position:right center;pointer-events:none}
+.beta-art-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(15,17,21,.46) 0%,rgba(15,17,21,.15) 40%,transparent 66%),linear-gradient(0deg,#101216 0%,transparent 22%);pointer-events:none}
+.beta-wordmark{position:absolute;left:42px;top:31px;gap:9px;font-size:23px;color:#edf0f8}
+.beta-wordmark img{width:27px;height:27px;object-fit:contain}
+.beta-close{position:absolute;right:22px;top:22px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:#bfc6d4;background:#19202aa6;border:1px solid #ffffff13}
+.beta-close svg{width:17px;height:17px}
+.beta-welcome-copy{position:relative;padding:101px 0 34px 44px;width:51%;max-width:480px}
+.beta-eyebrow{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.14em;font-weight:650;color:#aab7d6}
+.beta-eyebrow>span{height:4px;width:4px;background:#a5b8ff;border-radius:50%}
+.beta-welcome h1{font-size:63px;font-weight:560;letter-spacing:-.055em;line-height:1.02;margin:17px 0 23px}
+.beta-welcome h1 span{display:block;background:linear-gradient(100deg,#a7c0ff 0%,#769eff 50%,#aa9fff 100%);background-clip:text;-webkit-background-clip:text;color:transparent;overflow-wrap:anywhere}
+.beta-welcome h2{font-size:20px;letter-spacing:-.025em;line-height:1.35;font-weight:530;margin:0 0 13px}
+.beta-welcome-copy p{max-width:342px;font-size:14px;color:#aeb5c3;line-height:1.7;letter-spacing:-.01em;margin:0}
+.beta-welcome-copy .beta-thanks{margin-top:13px;color:#dce1ed;font-weight:450;font-size:14px}
+.beta-art-caption{position:absolute;right:36px;bottom:32px;font-size:7px;letter-spacing:.17em;display:flex;gap:10px;align-items:center;color:#858f9f}
+.beta-fine-line{width:22px;height:1px;background:#7383a0}
+.beta-membership{display:flex;align-items:center;gap:13px;padding:20px 42px;background:#161a23;border-top:1px solid #ffffff09;border-bottom:1px solid #ffffff09}
+.beta-membership-icon{height:36px;width:36px;display:grid;place-items:center;color:#a4b7ff;background:#839fff0c;border:1px solid #8eabff20;border-radius:10px}
+.beta-membership-icon svg{height:21px;width:21px}
+.beta-membership-label{display:grid;gap:4px}
+.beta-membership-label strong{font-weight:500;font-size:12px;letter-spacing:.005em}
+.beta-membership-label span{font-size:11px;color:#939dad}
+.beta-badge{margin-left:auto;white-space:nowrap;color:#aebcdf;background:#819fff0b;border:1px solid #8299ce2b;border-radius:30px;padding:7px 11px;font-size:8px;font-weight:550;letter-spacing:.1em}
+.beta-actions{display:flex;align-items:center;justify-content:space-between;padding:25px 42px 27px;gap:20px;background:#13161d}
+.beta-report-help button{background:none;font-size:12px;padding:0;font-weight:500;color:#d5dbe8}
+.beta-report-help button span{margin-left:7px;color:#a0acd2}
+.beta-report-help p{font-size:10px;color:#838c9f;margin:7px 0 0}
+.beta-primary{display:flex;align-items:center;justify-content:center;gap:28px;min-height:43px;background:#eaf0ff;color:#151d31;box-shadow:0 1px 1px #fff4 inset;border-radius:9px;padding:0 20px;font-size:12px;font-weight:600;white-space:nowrap}
+.beta-primary svg{height:17px;width:17px}
+.beta-welcome { color:#f1f2f6; font-family:'DM Sans',system-ui,sans-serif; }
+.beta-welcome *, .beta-welcome *::before { box-sizing:border-box; }
+.beta-welcome button { cursor:pointer; font-family:inherit; border:0; }
+.beta-welcome button:focus-visible { outline:2px solid #a6baff; outline-offset:4px; }
+.beta-welcome button:hover { filter:brightness(1.13); }
+.beta-membership-icon { font-size:28px; }
+.beta-art-caption>span { width:22px; height:1px; background:#7383a0; }
+.beta-primary { gap:28px; }
+@keyframes beta-arrive { from { opacity:0; transform:translateY(14px) scale(.987) } to { opacity:1; transform:none } }
+@media(max-width:650px) {
+ .beta-backdrop { padding:14px; }
+ .beta-welcome { border-radius:17px; max-height:calc(100dvh - 28px); }
+ .beta-hero { min-height:440px; }
+ .beta-hero-art { object-fit:cover; opacity:.54; object-position:64% center; }
+ .beta-art-shade { background:linear-gradient(90deg,#101216ed,#10121688 65%,#10121625),linear-gradient(0deg,#101216,transparent 55%); }
+ .beta-wordmark { left:25px; top:24px; font-size:21px; }
+ .beta-wordmark img { width:24px; height:24px; }
+ .beta-welcome-copy { width:100%; max-width:none; padding:91px 25px 30px; }
+ .beta-welcome-copy p { max-width:285px; font-size:13px; }
+ .beta-welcome h1 { font-size:55px; margin:20px 0 23px; }
+ .beta-welcome h2 { font-size:19px; }
+ .beta-eyebrow { font-size:8px; }
+ .beta-art-caption { display:none; }
+ .beta-membership { padding:18px 23px; gap:10px; }
+ .beta-membership-label strong { font-size:11px; }
+ .beta-membership-label span { font-size:10px; }
+ .beta-badge { display:none; }
+ .beta-actions { padding:20px 23px; flex-direction:column-reverse; align-items:stretch; gap:22px; }
+ .beta-primary { min-height:45px; }
+ .beta-report-help { text-align:center; }
+}
+@media(prefers-reduced-motion:reduce) { .beta-welcome { animation:none; } }

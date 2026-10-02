@@ -4,6 +4,9 @@ import { useState } from "react";
 import { vibyraLogoUrl as logoUrl } from "../../assets/vibyraLogo";
 import { accountOpenLegal } from "../../ipc/account";
 import { useAccountStore } from "../../state/accountStore";
+import { signupDeclarations, type SignupChecklist } from "../../lib/signupDeclarations";
+import { AuthSignupDeclarations } from "./AuthSignupDeclarations";
+import { AuthLicenseField } from "./AuthLicenseField";
 import { AuthMobileCampaign } from "./AuthMobileCampaign";
 import { AuthEmailForm } from "./AuthEmailForm";
 import { AuthProviders } from "./AuthProviders";
@@ -18,9 +21,11 @@ export function AuthScreen() {
   const snapshot = useAccountStore((s) => s.snapshot);
   const busy = useAccountStore((s) => s.busy);
   const [recovering, setRecovering] = useState(false);
+  const [licenseKey, setLicenseKey] = useState("");
   const [signup, setSignup] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [lastAttempt, setLastAttempt] = useState<Attempt>(null);
+  const [checklist, setChecklist] = useState<SignupChecklist>({ termsAccepted: false, adultConfirmed: false, ukResidentConfirmed: false });
 
   const restoring = snapshot.status === "restoring";
   const connectionError = snapshot.status === "connectionError";
@@ -28,10 +33,22 @@ export function AuthScreen() {
   const twoFactor = snapshot.status === "twoFactor";
   const providerError = lastAttempt !== "email" ? snapshot.error : null;
   const emailError = lastAttempt === "email" ? snapshot.error : null;
+  const declarations = signupDeclarations(checklist);
+  const newAccount = declarations ? { ...declarations, ...(licenseKey.trim() ? { licenseKey } : {}) } : null;
 
   const startProvider = (provider: "google" | "apple") => {
+    if (signup && !newAccount) return;
     setLastAttempt(provider);
-    void useAccountStore.getState().startOauth(provider);
+    void useAccountStore.getState().startOauth(provider, signup ? newAccount ?? undefined : undefined);
+  };
+
+  const returnToLogin = () => {
+    setSignup(false);
+    setLicenseKey("");
+    setEmailOpen(false);
+    setRecovering(false);
+    setChecklist({ termsAccepted: false, adultConfirmed: false, ukResidentConfirmed: false });
+    useAccountStore.getState().clearError();
   };
 
   return (
@@ -69,22 +86,25 @@ export function AuthScreen() {
           {twoFactor && <AuthTwoFactorForm busy={busy} error={snapshot.error} />}
           {!restoring && !connectionError && !twoFactor && (
             <>
+              {signup && !recovering && <AuthSignupDeclarations value={checklist} onChange={setChecklist} />}
+              {signup && !recovering && <AuthLicenseField value={licenseKey} onChange={setLicenseKey} disabled={busy || authorizing} />}
               {!emailOpen && <AuthProviders
                 authorizing={authorizing || busy}
                 pendingProvider={snapshot.pendingProvider}
                 providerError={providerError}
                 emailOpen={emailOpen}
+                creating={signup}
+                canCreate={Boolean(newAccount)}
                 onProvider={startProvider}
                 onCancel={() => void useAccountStore.getState().cancelOauth()}
                 onToggleEmail={() => {
                   useAccountStore.getState().clearError();
                   setLastAttempt(null);
                   setRecovering(false);
-                  setSignup(false);
                   setEmailOpen(true);
                 }}
               />}
-              {!emailOpen && <p className="account-prompt">New here? <button className="text-button" disabled={authorizing || busy} onClick={() => { setRecovering(false); setSignup(true); setEmailOpen(true); useAccountStore.getState().clearError(); }}>Create an account</button></p>}
+              {!emailOpen && !signup && <p className="account-prompt">New here? <button className="text-button" disabled={authorizing || busy} onClick={() => { setRecovering(false); setSignup(true); setEmailOpen(false); setChecklist({ termsAccepted: false, adultConfirmed: false, ukResidentConfirmed: false }); useAccountStore.getState().clearError(); }}>Create an account</button></p>}
               <div
                 className={`auth-reveal auth-reveal--form ${emailOpen ? "auth-reveal--open" : ""}`}
                 inert={!emailOpen}
@@ -95,21 +115,24 @@ export function AuthScreen() {
                     initialMode={signup ? "signup" : "login"}
                     onRecoveryChange={setRecovering}
                     busy={authorizing || busy}
+                    canCreate={Boolean(newAccount)}
                     serverError={emailError}
                     onLogin={(email, password) => {
                       setLastAttempt("email");
                       void useAccountStore.getState().loginEmail(email, password);
                     }}
                     onSignup={(name, email, password) => {
+                      if (!newAccount) return;
                       setLastAttempt("email");
-                      void useAccountStore.getState().signupEmail(name, email, password);
+                      void useAccountStore.getState().signupEmail(name, email, password, newAccount);
                     }}
                     onForgot={(email) => useAccountStore.getState().forgotPassword(email)}
                     onResetError={() => useAccountStore.getState().clearError()}
                   />
                 </div>
               </div>
-              {emailOpen && <div className="back"><button disabled={authorizing || busy} onClick={() => { setEmailOpen(false); useAccountStore.getState().clearError(); }}>← &nbsp; All sign-in options</button></div>}
+              {emailOpen && <div className="back"><button disabled={authorizing || busy} onClick={() => { setEmailOpen(false); useAccountStore.getState().clearError(); }}>← &nbsp; {signup ? "All account options" : "All sign-in options"}</button></div>}
+              {signup && <p className="account-prompt">Already have an account? <button className="text-button" disabled={authorizing || busy} onClick={returnToLogin}>Sign in</button></p>}
             </>
           )}
         </section>

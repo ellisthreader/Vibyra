@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import type { AccountSnapshot } from "../types";
+import type { SignupDeclarations } from "../lib/signupDeclarations";
 
 export function accountRestore(): Promise<AccountSnapshot> {
   return invoke("account_restore");
@@ -15,8 +16,9 @@ export function accountSignupEmail(
   name: string,
   email: string,
   password: string,
+  declarations: SignupDeclarations,
 ): Promise<AccountSnapshot> {
-  return invoke("account_signup_email", { name, email, password });
+  return invoke("account_signup_email", { name, email, password, declarations });
 }
 
 /** The code half of a login. The challenge id is held natively. */
@@ -28,8 +30,8 @@ export function accountTwoFactorCancel(): Promise<AccountSnapshot> {
   return invoke("account_two_factor_cancel");
 }
 
-export function accountOauthStart(provider: string): Promise<AccountSnapshot> {
-  return invoke("account_oauth_start", { provider });
+export function accountOauthStart(provider: string, signup?: SignupDeclarations): Promise<AccountSnapshot> {
+  return invoke("account_oauth_start", { provider, signup });
 }
 
 export function accountOauthCancel(): Promise<AccountSnapshot> {

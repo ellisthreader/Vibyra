@@ -16,6 +16,7 @@ import {
 } from "../ipc/account";
 import { clearTerminalSession } from "../ipc/session";
 import type { AccountSnapshot } from "../types";
+import type { SignupDeclarations } from "../lib/signupDeclarations";
 
 const INITIAL: AccountSnapshot = {
   status: "restoring",
@@ -32,8 +33,8 @@ interface AccountStore {
   applySnapshot: (snapshot: AccountSnapshot) => void;
   clearError: () => void;
   loginEmail: (email: string, password: string) => Promise<void>;
-  signupEmail: (name: string, email: string, password: string) => Promise<void>;
-  startOauth: (provider: string) => Promise<void>;
+  signupEmail: (name: string, email: string, password: string, declarations: SignupDeclarations) => Promise<void>;
+  startOauth: (provider: string, signup?: SignupDeclarations) => Promise<void>;
   cancelOauth: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   /** Resolves to an inline error message, or null on success. */
@@ -98,10 +99,10 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
 
   loginEmail: (email, password) => runAuthAction(set, get, () => accountLoginEmail(email, password)),
 
-  signupEmail: (name, email, password) =>
-    runAuthAction(set, get, () => accountSignupEmail(name, email, password)),
+  signupEmail: (name, email, password, declarations) =>
+    runAuthAction(set, get, () => accountSignupEmail(name, email, password, declarations)),
 
-  startOauth: (provider) => runAuthAction(set, get, () => accountOauthStart(provider)),
+  startOauth: (provider, signup) => runAuthAction(set, get, () => accountOauthStart(provider, signup)),
 
   cancelOauth: async () => {
     try {

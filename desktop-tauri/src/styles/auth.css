@@ -22,3 +22,11 @@
 @media (max-width: 1000px) { .auth__viewport { grid-template-columns: 1fr 330px; gap: 40px; padding: 32px; } .auth-card { padding-left: 28px; } }
 @media (max-width: 760px) { .auth__viewport { display: flex; flex-direction: column; justify-content: safe center; padding: 28px; gap: 28px; } .auth-intro { display: none; } .auth__wordmark img { display: block; } .auth-card { max-width: 380px; border: 0; padding: 20px 0; } }
 @media (max-height: 720px) and (min-width: 761px) { .auth-intro h2 { font-size: 44px; } .auth-intro__features { margin-top: 22px; } }
+
+.auth-license { margin: 12px 0; text-align: left; font-size: 13px; }
+.auth-license summary, .account-license summary { cursor: pointer; padding: 8px 0; }
+.auth-license label, .account-license label { display: grid; gap: 6px; margin: 8px 0; }
+.auth-license input, .account-license input { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); background: var(--bg); font: inherit; }
+.auth-license p, .account-license p { font-size: 12px; line-height: 1.5; color: var(--muted); }
+.account-license { padding: 12px 16px; }
+.account-license form { max-width: 420px; }

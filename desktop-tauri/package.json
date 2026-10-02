@@ -1,7 +1,7 @@
 {
   "name": "vibyra-desktop-tauri",
-  "version": "0.8.18",
-  "description": "Vibyra Desktop — AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
+  "version": "0.8.19",
+  "description": "Vibyra Desktop \u2014 AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
   "private": true,
   "type": "module",
   "engines": {
@@ -39,7 +39,9 @@
     "release:macos:publish": "node scripts/publish-macos-update.mjs",
     "release:art": "node scripts/new-release-art.mjs",
     "review:parity": "node scripts/serve-desktop-parity.mjs",
-    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs"
+    "verify:linux:terminal": "node scripts/smoke-linux-terminal.mjs",
+    "verify:beta-welcome": "node scripts/verify-beta-welcome.mjs",
+    "verify:signup": "node scripts/verify-signup.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

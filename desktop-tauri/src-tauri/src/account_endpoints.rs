@@ -27,6 +27,8 @@ pub enum Endpoint<'a> {
     /// Signs out every device, this one included.
     RevokeSessions,
     DeleteAccount,
+    RedeemLicense,
+    LicenseWelcome,
     BillingPortal,
     BillingCheckout,
     BillingCatalogue,
@@ -63,6 +65,8 @@ impl Endpoint<'_> {
                 Ok("/api/account/sessions".into())
             }
             Endpoint::DeleteAccount => Ok("/api/account".into()),
+            Endpoint::RedeemLicense => Ok("/api/account/license".into()),
+            Endpoint::LicenseWelcome => Ok("/api/account/license/welcome".into()),
             Endpoint::BillingPortal => Ok("/api/billing/portal".into()),
             Endpoint::BillingCheckout => Ok("/api/billing/checkout".into()),
             Endpoint::BillingCatalogue => Ok("/api/billing/catalogue".into()),

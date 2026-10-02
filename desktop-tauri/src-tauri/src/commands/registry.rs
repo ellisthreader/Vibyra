@@ -93,6 +93,8 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         account_billing::account_billing_portal,
         account_billing::account_billing_topup,
         account_billing::account_billing_page,
+        account_billing::account_redeem_license,
+        account_billing::account_license_welcome,
         terminal::create_terminal,
         terminal::safe_workspace_preflight,
         terminal::safe_workspace_supported,
