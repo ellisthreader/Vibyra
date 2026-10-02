@@ -51,6 +51,8 @@ final class Checkout
         $success .= (str_contains($success, '?') ? '&' : '?').'order='.$order->id;
         $session = $stripe->checkout->sessions->create([
             'mode' => $offer['kind'] === 'subscription' ? 'subscription' : 'payment',
+            // Session-only header; Stripe retains its configured merchant in terms and receipts.
+            'branding_settings' => ['display_name' => 'Vibyra'],
             'customer' => $order->customer_id, 'line_items' => [['price' => $order->price_id, 'quantity' => 1]],
             'success_url' => $success, 'cancel_url' => config('services.stripe.cancel_url'), 'metadata' => $meta,
             ($offer['kind'] === 'subscription' ? 'subscription_data' : 'payment_intent_data') => ['metadata' => $meta],
