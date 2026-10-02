@@ -16,6 +16,10 @@ use super::types::{DesktopCommand, PreviewPhase, PreviewStatus};
 /// 80 ms connect per port) holds up only that preview, never the map.
 pub(super) type Shared = Arc<Mutex<PreviewService>>;
 
+/// Asked with the project root before a preview starts, so an embedding app can
+/// apply a plan's Preview and project limits to every caller at once.
+pub type PreviewAdmission = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync>;
+
 pub struct PreviewManager {
     pub(super) services: Mutex<HashMap<String, Shared>>,
     operations: Mutex<HashMap<String, Arc<Mutex<()>>>>,
@@ -28,6 +32,7 @@ pub struct PreviewManager {
     pub(super) refreshing: AtomicBool,
     pub(super) probe: Mutex<Option<Arc<dyn DesktopProbe>>>,
     pub(super) listener: Mutex<Option<PreviewListener>>,
+    admission: Mutex<Option<PreviewAdmission>>,
 }
 
 impl PreviewManager {
@@ -42,7 +47,12 @@ impl PreviewManager {
             refreshing: AtomicBool::new(false),
             probe: Mutex::new(None),
             listener: Mutex::new(None),
+            admission: Mutex::new(None),
         })
+    }
+
+    pub fn set_admission(&self, admission: PreviewAdmission) {
+        *self.admission.lock() = Some(admission);
     }
 
     pub fn start(&self, root: &str, target_id: &str) -> CoreResult<PreviewStatus> {
@@ -76,6 +86,11 @@ impl PreviewManager {
             service.stop();
         }
 
+        // Only a new start is admitted; a running preview's status stays readable.
+        let admission = self.admission.lock().clone();
+        if let Some(admit) = admission {
+            admit(&identity.root).map_err(crate::CoreError::PlanLimit)?;
+        }
         let generation = self.generation(&identity.root);
         let probe = self.probe.lock().clone();
         let mut service = launch(root, target_id, custom, probe)?;
@@ -134,45 +149,6 @@ impl PreviewManager {
         })
     }
 
-    pub fn stop_project(&self, root: &str) -> CoreResult<()> {
-        let root = stable_root(root)?.to_string_lossy().into_owned();
-        let prefix = format!("{root}\0");
-        *self
-            .project_generations
-            .lock()
-            .entry(root.clone())
-            .or_default() += 1;
-        let removed = {
-            let mut services = self.services.lock();
-            let keys = services
-                .keys()
-                .filter(|key| key.starts_with(&prefix))
-                .cloned()
-                .collect::<Vec<_>>();
-            keys.into_iter()
-                .filter_map(|key| services.remove(&key))
-                .collect::<Vec<_>>()
-        };
-        for service in removed {
-            let (status, runtime_id) = {
-                let mut service = service.lock();
-                (service.stopped_status(), service.runtime_id)
-            };
-            self.emit(&root, runtime_id, &status);
-        }
-        Ok(())
-    }
-
-    /// Stops every preview when the app quits. Tauri ends the process with
-    /// `exit`, so `Drop` never runs; dev servers lead their own process group
-    /// and would otherwise outlive the app. All of them are signalled first
-    /// and then waited for once.
-    pub fn stop_all(&self) {
-        self.shut_down.store(true, Ordering::SeqCst);
-        let services = self.services.lock().drain().collect::<Vec<_>>();
-        stop_services(services.into_iter().map(|(_, service)| service));
-    }
-
     fn operation(&self, key: &str) -> Arc<Mutex<()>> {
         Arc::clone(
             self.operations
@@ -187,8 +163,5 @@ impl PreviewManager {
     }
 }
 
-impl Drop for PreviewManager {
-    fn drop(&mut self) {
-        stop_services(self.services.get_mut().drain().map(|(_, service)| service));
-    }
-}
+#[path = "manager_shutdown.rs"]
+mod manager_shutdown;

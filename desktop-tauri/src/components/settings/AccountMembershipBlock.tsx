@@ -18,6 +18,7 @@ export function AccountMembershipBlock({ profile }: { profile: AccountProfile })
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const view = membershipView(profile);
+  const trial = view.plan === "Pro trial";
   // The plan row already says the date; the credits note repeats it only when
   // credits refresh on some other day.
   const resetIsElsewhere = !sameDay(view.stateDate, profile.creditsResetAt);
@@ -39,17 +40,17 @@ export function AccountMembershipBlock({ profile }: { profile: AccountProfile })
       <div className="settings-group">
         <SettingRow
           label={`${view.plan} plan`}
-          hint={view.state ?? (view.paid ? undefined : "Upgrade for more credits and bigger models.")}
+          hint={view.state ?? (view.paid ? undefined : "More projects, unlimited terminals and advanced workspace tools with Pro.")}
         >
           {view.paid && profile.membershipCancelAtPeriodEnd && <StatusChip tone="warn">Cancelling</StatusChip>}
-          {!view.paid && (
-            <button className="btn btn--primary" disabled={busy} onClick={() => void run(() => accountBillingPage("plans"))}>
-              See plans
+          {(!view.paid || trial) && (
+            <button className="btn btn--primary" disabled={busy} onClick={() => void run(() => accountBillingPage("pro"))}>
+              {trial ? "Keep Pro" : "Get Pro"}
             </button>
           )}
         </SettingRow>
 
-        <AccountCredits profile={profile} showResetDate={resetIsElsewhere} />
+        <AccountCredits key={`${profile.welcomeKey}:${profile.billingProvider}`} profile={profile} showResetDate={resetIsElsewhere} />
 
         {view.paid && view.billing && (
           <SettingRow

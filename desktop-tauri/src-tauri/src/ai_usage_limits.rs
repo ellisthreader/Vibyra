@@ -7,8 +7,9 @@ use crate::ai_usage_guard::GuardInner;
 // user-editable: they exist to stop a stuck key repeat, a render loop, or a
 // retry storm from firing hundreds of paid calls in seconds — the failure mode
 // that produces a surprise bill before anyone can react.
-const MIN_CALL_INTERVAL: Duration = Duration::from_millis(1_200);
-const MAX_CALLS_PER_MINUTE: usize = 10;
+// A tool result or voice transcript can legitimately trigger the next phase
+// immediately. Bound the burst, rather than rejecting every fast follow-up.
+const MAX_CALLS_PER_MINUTE: usize = 20;
 pub(crate) const MINUTE: Duration = Duration::from_secs(60);
 const HOUR: Duration = Duration::from_secs(3_600);
 
@@ -30,13 +31,6 @@ pub(crate) fn admit(
     }
     prune(&mut inner.recent);
     let now = Instant::now();
-    if inner
-        .recent
-        .last()
-        .is_some_and(|last| now.duration_since(*last) < MIN_CALL_INTERVAL)
-    {
-        return Err("Slow down — Vibyra allows about one AI request per second.".into());
-    }
     let last_minute = inner
         .recent
         .iter()

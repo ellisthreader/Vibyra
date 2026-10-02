@@ -15,6 +15,8 @@ interface SettingsStore {
   saveError: string;
   /** What the Settings header shows. "saved" settles back to idle by itself. */
   saveState: SaveState;
+  /** Explicit Agent view choices, including reselecting the current value. */
+  agentViewRevision: number;
   load: () => Promise<void>;
   /** Immediate: switches, segmented choices, anything that is one click. */
   update: (partial: Partial<Settings>) => Promise<void>;
@@ -88,6 +90,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   settings: null,
   saveError: '',
   saveState: 'idle',
+  agentViewRevision: 0,
 
   load: async () => {
     await writes.catch(() => {});
@@ -100,7 +103,8 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     const current = get().settings;
     if (!current) return;
     const next = { ...current, ...partial };
-    set({ settings: next, saveState: 'saving' });
+    set({ settings: next, saveState: 'saving',
+      agentViewRevision: get().agentViewRevision + (partial.agentView === undefined ? 0 : 1) });
     applyDocument(next);
     // Re-fitting every xterm is only needed when appearance actually changed;
     // unrelated writes (project bookkeeping, agent toggles) must not disturb

@@ -114,7 +114,7 @@ mockIPC(async (command, raw) => {
   return {id:100 + spawned.length,title:`${args.request.agentId} ${spawned.length}`,agentId:args.request.agentId,cwd:args.request.cwd};
  }
  if (command === 'terminal_snapshot') return 'npm run build\n> studio@1.0.0 build\nBuilt in 1.2s';
- if (command === 'voice_status') return {recorder:true,keyConfigured:true};
+ if (command === 'voice_status') return {recorder:true,keyConfigured:!query.has('no-tokens'),reason:query.has('no-tokens')?'You need more Vibyra tokens.':null};
  if (command === 'voice_start') { listeningSince = Date.now(); return null; }
  if (command === 'voice_level') {
   const elapsed = Date.now() - listeningSince;
@@ -138,7 +138,7 @@ mockIPC(async (command, raw) => {
  if (command === 'ai_chat_stop') { chatStopped = true; return null; }
  if (command === 'ai_chat') {
   // Tauri rejects a command with a plain string, and the chat shows exactly that.
-  if (query.has('no-key')) throw 'Add your OpenAI API key in Settings › Vibyra AI, or set OPENAI_API_KEY, to use chat.';
+  if (query.has('no-tokens')) throw 'You need more Vibyra tokens. Open your token balance to continue.';
   // ?act=<tool>:<json> makes the first reply ask Vibyra to do something, the
   // way a real model would. The second pass has no tools and just talks.
   const act = query.get('act');

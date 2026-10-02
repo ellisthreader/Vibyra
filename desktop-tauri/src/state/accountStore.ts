@@ -37,7 +37,7 @@ interface AccountStore {
   cancelOauth: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   /** Resolves to an inline error message, or null on success. */
-  updateProfile: (name: string, email: string) => Promise<string | null>;
+  updateProfile: (name: string, email: string, currentPassword?: string) => Promise<string | null>;
   /** Both resolve to a confirmation or failure message for inline display. */
   forgotPassword: (email: string) => Promise<string>;
   resendVerification: () => Promise<string>;
@@ -119,9 +119,9 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     }
   },
 
-  updateProfile: async (name, email) => {
+  updateProfile: async (name, email, currentPassword) => {
     try {
-      set({ snapshot: await accountProfileUpdate(name, email) });
+      set({ snapshot: await accountProfileUpdate(name, email, currentPassword) });
       return null;
     } catch (error) {
       return String(error);

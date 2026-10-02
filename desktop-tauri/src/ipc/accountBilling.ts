@@ -21,8 +21,8 @@ export function accountBillingTopup(topup: string): Promise<void> {
   return invoke("account_billing_topup", { topup });
 }
 
-/** Opens an enumerated page: the website's plans page, or Apple's
- * subscriptions page. The renderer names a page, never a URL. */
-export function accountBillingPage(page: "plans" | "appStore"): Promise<void> {
+/** Opens an enumerated page: the website's plans page, Pro checkout, or
+ * Apple's subscriptions page. The renderer names a page, never a URL. */
+export function accountBillingPage(page: "plans" | "pro" | "appStore" | "activity"): Promise<void> {
   return invoke("account_billing_page", { page });
 }

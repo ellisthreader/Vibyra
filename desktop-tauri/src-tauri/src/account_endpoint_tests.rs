@@ -41,6 +41,7 @@ fn account_paths_and_methods_match_the_backend() {
     );
     assert_eq!(path(Endpoint::AccountSessions), "/api/account/sessions");
     assert_eq!(path(Endpoint::DeleteAccount), "/api/account");
+    assert_eq!(path(Endpoint::BillingCatalogue), "/api/billing/catalogue");
     assert_eq!(path(Endpoint::BillingPortal), "/api/billing/portal");
     assert_eq!(path(Endpoint::BillingCheckout), "/api/billing/checkout");
     assert_eq!(path(Endpoint::VibesWallet), "/api/vibes/wallet");
@@ -48,7 +49,7 @@ fn account_paths_and_methods_match_the_backend() {
     assert_eq!(Endpoint::TwoFactorStatus.method(), reqwest::Method::GET);
     assert_eq!(Endpoint::AccountSessions.method(), reqwest::Method::GET);
     assert_eq!(Endpoint::VibesWallet.method(), reqwest::Method::GET);
-    assert_eq!(Endpoint::BillingPlans.method(), reqwest::Method::GET);
+    assert_eq!(Endpoint::BillingCatalogue.method(), reqwest::Method::GET);
     assert_eq!(Endpoint::TwoFactorDisable.method(), reqwest::Method::DELETE);
     assert_eq!(Endpoint::DeleteAccount.method(), reqwest::Method::DELETE);
     assert_eq!(Endpoint::RevokeSessions.method(), reqwest::Method::DELETE);

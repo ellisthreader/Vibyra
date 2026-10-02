@@ -53,7 +53,5 @@ export function aiServiceStatus(): Promise<AiServiceStatus> {
   return invoke("ai_service_status");
 }
 
-// `set_openai_key`, `clear_openai_key` and `open_openai_key_page` are
-// deliberately not wrapped: the credential is the deployment's, and the
-// renderer has no page from which to change it. The native commands stay
-// registered for whoever owns the install.
+// Built-in AI authenticates with the native Vibyra account session.
+// There are no provider-key commands; the credential stays on the backend.

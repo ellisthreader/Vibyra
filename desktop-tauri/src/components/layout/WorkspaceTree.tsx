@@ -8,11 +8,14 @@ import { splitConversationRows } from '../../lib/conversationCards';
 import { ChevronDownIcon, PlusIcon } from '../common/Icons';
 import { SessionList } from '../rail/SessionList';
 import { ProjectContextMenu } from './ProjectContextMenu';
+import { useAccountStore } from '../../state/accountStore';
+import { projectLocked } from '../../lib/planLimits';
 
 interface ContextTarget { projectId: string; x: number; y: number; opener: HTMLButtonElement }
 
 export function WorkspaceTree() {
   const projects = useProjects();
+  const profile = useAccountStore(s => s.snapshot.profile);
   const active = useProjectStore(s => s.activeId);
   const view = useProjectStore(s => s.view);
   const panes = useTerminalStore(s => s.panes);
@@ -29,13 +32,15 @@ export function WorkspaceTree() {
     setContext({ projectId, opener, x: x || rect.left + 20, y: y || rect.bottom });
   }
   return <div className="workspace-tree">
-    {projects.map(project => {
+    {projects.map((project, position) => {
+      const locked = projectLocked(profile, position);
       const count = panes.filter(p => p.projectId === project.id).length
         + splitConversationRows(sessions.filter(s => s.projectId === project.id), open).live.length;
       const hasTerminals = count > 0;
       const unfolded = hasTerminals && (expanded[project.id] ?? false);
       return <section key={project.id} aria-label={project.name}>
-        <button className={`workspace-tree__row ${view === 'project' && active === project.id ? 'is-active' : ''}`}
+        <button className={`workspace-tree__row ${view === 'project' && active === project.id ? 'is-active' : ''} ${locked ? 'is-locked' : ''}`}
+          title={locked ? 'Free includes one project. Get Vibyra Pro, or remove another project, to use this one.' : undefined}
           aria-current={view === 'project' && active === project.id ? 'page' : undefined}
           onPointerDown={event => { if (event.button === 2) { event.preventDefault(); showContext(project.id, event.currentTarget, event.clientX, event.clientY); } }}
           onContextMenu={event => { event.preventDefault(); showContext(project.id, event.currentTarget, event.clientX, event.clientY); }}
@@ -49,6 +54,7 @@ export function WorkspaceTree() {
             void useProjectStore.getState().activate(project.id);
           }}>
           <span className="pstrip__name">{project.name}</span>
+          {locked && <span className="pro-mark" aria-label="Needs Vibyra Pro">Pro</span>}
           {hasTerminals && <><span className="workspace-tree__disclosure-space" /><span className="workspace-tree__count">{count}</span></>}
         </button>
         {hasTerminals && <button className="workspace-tree__disclosure" aria-label={`${unfolded ? 'Collapse' : 'Expand'} sessions for ${project.name}`} aria-expanded={unfolded} onClick={() => setExpanded(value => ({ ...value, [project.id]: !unfolded }))}><span className={unfolded ? '' : 'workspace-tree__collapsed'}><ChevronDownIcon size={12} /></span></button>}

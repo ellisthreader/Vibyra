@@ -7,8 +7,7 @@ import type { AiServiceStatus } from "../types";
 
 /** Read-only. The service credential belongs to the deployment, not to the
  * person using it, so the renderer can ask what the state of it is and nothing
- * more — there is deliberately no `save` or `remove` here to call. The native
- * `set_openai_key` / `clear_openai_key` commands remain for that owner. */
+ * more. The key is held only by the backend, never by a desktop install. */
 interface AiServiceStore {
   status: AiServiceStatus | null;
   error: string | null;
@@ -43,7 +42,7 @@ export const useAiServiceStore = create<AiServiceStore>((set) => ({
   refresh: async () => {
     try {
       const status = await aiServiceStatus();
-      set({ status });
+      set({ status, error: status.serviceError ?? null });
       warnOnSpend(status.usage, status.limits);
     } catch (error) {
       set({ error: String(error) });

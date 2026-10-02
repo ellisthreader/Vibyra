@@ -9,61 +9,11 @@ use std::{
     },
 };
 use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
+use vibyra_desktop_lib::diagnostic_phone::{
+    DesktopBackend, DesktopProject, SharedBackend, SharedWorkspace, Vault,
+};
 use vibyra_desktop_lib::shared_chats;
 use vibyra_host::EmbeddedHost;
-// The desktop's own modules, not copies, so the probe cannot drift from them.
-#[allow(dead_code)]
-#[path = "../src/phone/backend.rs"]
-mod backend;
-#[allow(dead_code)]
-#[path = "../src/phone/control.rs"]
-mod control;
-#[allow(dead_code)]
-#[path = "../src/phone/frames.rs"]
-mod frames;
-#[allow(dead_code)]
-#[path = "../src/phone/manage.rs"]
-mod manage;
-#[path = "../src/platform_text.rs"]
-mod platform_text;
-#[allow(dead_code, unused_imports)]
-#[path = "support/phone_typing_preview.rs"]
-mod preview_service;
-#[path = "support/phone_probe_accounts.rs"]
-mod provider_auth;
-#[allow(dead_code)]
-#[path = "../src/phone/railway.rs"]
-mod railway;
-#[allow(dead_code)]
-#[path = "../src/phone/railway_resources.rs"]
-mod railway_resources;
-#[allow(dead_code)]
-#[path = "../src/phone/railway_tools.rs"]
-mod railway_tools;
-#[allow(dead_code)]
-#[path = "../src/phone/requests.rs"]
-mod requests;
-#[allow(dead_code)]
-#[path = "../src/phone/saved.rs"]
-mod saved;
-#[allow(dead_code)]
-#[path = "../src/phone/scaffold.rs"]
-mod scaffold;
-#[allow(dead_code)]
-#[path = "../src/session_process_files.rs"]
-mod session_process_files;
-#[allow(dead_code)]
-#[path = "../src/phone/stream.rs"]
-mod stream;
-#[allow(dead_code)]
-#[path = "../src/phone/vault.rs"]
-mod vault;
-#[allow(dead_code)]
-#[path = "../src/phone/workspace.rs"]
-mod workspace;
-
-#[path = "../src/phone/shared_backend.rs"]
-mod shared_backend;
 struct Sink;
 impl OutputSink for Sink {
     fn on_output(&self, _: u64, _: String) {}
@@ -88,9 +38,9 @@ fn main() {
         .expect("create real Codex chat");
     println!("session {}", session);
     let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    let workspace = workspace::SharedWorkspace::default();
+    let workspace = SharedWorkspace::default();
     workspace.write().publish(
-        vec![workspace::DesktopProject {
+        vec![DesktopProject {
             id: "shared-project".into(),
             name: "Shared chat probe".into(),
             path: root,
@@ -99,8 +49,8 @@ fn main() {
         None,
     );
     let typing = Arc::new(AtomicBool::new(true));
-    let vault = vault::Vault::new(std::path::Path::new(&state).join("vault-source"));
-    let terminal = backend::DesktopBackend::new(
+    let vault = Vault::new(std::path::Path::new(&state).join("vault-source"));
+    let terminal = DesktopBackend::new(
         manager.clone(),
         workspace,
         typing.clone(),
@@ -108,7 +58,7 @@ fn main() {
         Default::default(),
     )
     .unwrap();
-    let backend = shared_backend::SharedBackend {
+    let backend = SharedBackend {
         terminal,
         chats: chats.clone(),
         typing: typing.clone(),

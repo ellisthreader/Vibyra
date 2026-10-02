@@ -42,7 +42,7 @@ test('a pick becomes the exact commands the computer runs, and dependencies can 
   assert.equal(describeSteps(buildScaffoldRequest(templateById('fastapi')!, '/p/api', DEFAULT_TEMPLATE_OPTIONS))[1],
     '{{venv}}/pip install fastapi uvicorn[standard]');
   assert.equal(hasInstallStep(templateById('express')!), true);
-  assert.equal(hasInstallStep(templateById('laravel')!), false);
+  assert.equal(hasInstallStep(templateById('laravel')!), true);
   assert.deepEqual(missingTools(templateById('tauri')!, { node: true, npm: true, cargo: false }), ['cargo']);
   assert.deepEqual(missingTools(templateById('tauri')!, {}), [], 'an unanswered preflight blocks nothing');
 });

@@ -5,11 +5,14 @@ import { fsHomeDir, unwatchWorkspace, watchWorkspace } from "../ipc/fs";
 import { removeSharedChatProject } from "../ipc/sharedChats";
 import { stopProjectPreviews } from "../ipc/preview";
 import { projectBrief } from "../ipc/projectBrief";
-import { setTerminalVisibility } from "../ipc/terminal";
+import { orchestrateVisibility } from "./projectVisibility";
 import type { ProjectSpec } from "../types";
 import { useSettingsStore } from "./settingsStore";
 import { useTerminalStore } from "./terminalStore";
 import { useWorkspaceStore } from "./workspaceStore";
+import { useAccountStore } from "./accountStore";
+import { usePlanPromptStore } from "./planPromptStore";
+import { canAddProject, projectLocked } from "../lib/planLimits";
 
 export type AppView = "home" | "project" | "new-project";
 
@@ -56,26 +59,6 @@ async function adoptRoot(root: string, homeDir: string): Promise<void> {
   if (root !== homeDir) {
     await watchWorkspace(root).catch(() => {});
   }
-}
-
-/** Rust throttles hidden terminals; tell it which project is on stage. */
-function orchestrateVisibility(activeId: string | null): void {
-  const { panes } = useTerminalStore.getState();
-  for (const pane of panes) {
-    if (pane.status !== "running" || pane.visibility === "hibernated") continue;
-    const target = pane.projectId === activeId ? "visible" : "hidden";
-    if (pane.visibility !== target) {
-      void setTerminalVisibility(pane.id, target).catch(() => {});
-    }
-  }
-  useTerminalStore.setState((state) => ({
-    zoomedId: null,
-    panes: state.panes.map((p) =>
-      p.status !== "running" || p.visibility === "hibernated"
-        ? p
-        : { ...p, visibility: p.projectId === activeId ? "visible" : "hidden" },
-    ),
-  }));
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -129,6 +112,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       await get().activate(existing.id);
       return existing;
     }
+    // Free keeps one project; the native settings save refuses a second too.
+    if (!canAddProject(useAccountStore.getState().snapshot.profile, list.length)) {
+      usePlanPromptStore.getState().show({ feature: "projects", message: "Free includes one project. Remove it to start another, or get Vibyra Pro for unlimited projects." });
+      return null;
+    }
     const project: ProjectSpec = {
       id: `p-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4).toString(36)}`,
       name: (name ?? "").trim() || basename(trimmed),
@@ -157,6 +145,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const list = projects();
     const project = list.find((p) => p.id === id);
     if (!project) return;
+    // A project past the plan's limit stays saved but locked until Pro, or
+    // until an earlier project is removed.
+    if (projectLocked(useAccountStore.getState().snapshot.profile, list.indexOf(project))) {
+      usePlanPromptStore.getState().show({ feature: "projects", message: "Free includes one project. Remove it to start another, or get Vibyra Pro for unlimited projects." });
+      return;
+    }
     const previous = list.find((entry) => entry.id === get().activeId);
     if (previous && previous.id !== id) {
       await stopProjectPreviews(previous.root).catch(() => {});
@@ -167,8 +161,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     void persist(touched, id);
     orchestrateVisibility(id);
     await adoptRoot(project.root, get().homeDir);
-    // Warm the assistant's brief: reading git state allows itself 5 s, so
-    // without this the first question looks hung before the request leaves.
+    // Warm the assistant's brief before the first question.
     void projectBrief(project, "").catch(() => {});
   },
 

@@ -1,5 +1,5 @@
+import { RELEASE_0818 } from "./changelogRelease0818.ts";
 import { RELEASE_0817 } from "./changelogRelease0817.ts";
-// The full changelog ships with the app so What's New stays accurate offline.
 import { RELEASE_088 } from "./changelogRelease088.ts";
 import { RELEASE_087 } from "./changelogRelease087.ts";
 import { RELEASE_086 } from "./changelogRelease086.ts";
@@ -12,6 +12,7 @@ import type { ChangelogEntry } from "./changelogTypes.ts";
 export type { ChangelogEntry, ChangelogSection } from "./changelogTypes.ts";
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_0818,
   RELEASE_0817,
   {
     version: "0.8.16", date: "2026-09-29", image: "/releases/0.8.16.svg",

@@ -67,8 +67,11 @@ pub async fn shared_chat_create(
         )?;
     }
     if options.as_ref().is_some_and(|o| o.workspace_mode == "safe") {
+        super::plan_access::admit_safe_worktrees(&state)?;
         super::worktree_access::require_github(&state).await?;
     }
+    super::plan_access::admit_project_id(&state, &project_id)?;
+    let _admitted = super::plan_access::admit_terminal(&state).await?;
     let project = state
         .settings
         .lock()

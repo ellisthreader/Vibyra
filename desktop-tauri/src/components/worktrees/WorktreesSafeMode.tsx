@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { setUpGitRepository } from '../../ipc/workspace';
 import { useLaunchSettingsStore } from '../../state/launchSettingsStore';
+import { allows } from '../../lib/planLimits';
+import { useAccountStore } from '../../state/accountStore';
+import { usePlanPromptStore } from '../../state/planPromptStore';
 import { WorktreesPublish } from './WorktreesPublish';
 import './worktreesSafeMode.css';
 
@@ -18,7 +21,12 @@ type Props = {
 export function WorktreesSafeMode({ projectId, root, name, available, onSetUp }: Props) {
   const [working, setWorking] = useState(false);
   const [failure, setFailure] = useState('');
+  const included = useAccountStore((s) => allows(s.snapshot.profile, 'safeWorktrees'));
   const enable = () => {
+    if (!included) {
+      usePlanPromptStore.getState().show({ feature: 'worktrees', message: 'Safe mode gives each agent its own copy of your project. It comes with Vibyra Pro.' });
+      return;
+    }
     if (projectId) useLaunchSettingsStore.getState().update(projectId, { safeMode: true });
   };
   // Writes to the person's folder, so the button says exactly what it does and
@@ -53,7 +61,7 @@ export function WorktreesSafeMode({ projectId, root, name, available, onSetUp }:
         : 'Safe Mode branches from Git, and this project folder is not a repository yet.'}</p>
       {available
         ? <button className="worktrees-safe__enable" disabled={!projectId} onClick={enable}>
-            Turn on Safe Mode <span aria-hidden="true">↗</span>
+            {included ? 'Turn on Safe Mode' : 'Get Safe Mode with Pro'} <span aria-hidden="true">↗</span>
           </button>
         : <button className="worktrees-safe__enable" disabled={!root || working} onClick={() => void setUp()}>
             {working ? 'Setting up Git…' : 'Set up Git here'}

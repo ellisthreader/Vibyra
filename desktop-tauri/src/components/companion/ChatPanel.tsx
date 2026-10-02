@@ -29,7 +29,7 @@ export function ChatPanel({ active = true }: { active?: boolean }) {
   const stop = useChatStore((s) => s.stop);
   const clear = useChatStore((s) => s.clear);
   const projects = useSettingsStore((s) => s.settings?.projects);
-  const serviceConfigured = useSettingsStore((s) => Boolean(s.settings?.openaiKeyConfigured));
+  const serviceConfigured = useAccountStore((s) => s.snapshot.status === 'signedIn');
   const email = useAccountStore((s) => s.snapshot.profile?.email ?? "guest");
   const draftKey = `companion.draft.${encodeURIComponent(email)}.${projectId}`;
   const [draft, updateDraft] = useState(() => { try { return localStorage.getItem(draftKey) ?? ""; } catch { return ""; } });

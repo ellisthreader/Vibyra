@@ -11,17 +11,9 @@ use crate::ai_usage::{period_keys, AiCall, AiLimits, UsageLedger};
 use crate::ai_usage_limits::{admit, budget, prune, MINUTE};
 use crate::ai_usage_permit::CallPermit;
 
-// Every OpenAI-billed request in this app funnels through this guard. Two
-// classes of protection live here and they answer different threats:
-//
-//   * Structural limits (the consts below) are not user-editable. They stop a
-//     stuck key repeat, a render loop, or a retry storm from firing hundreds of
-//     paid calls in seconds — the failure mode that produces a surprise bill
-//     before anyone can react.
-//   * Budget caps (AiLimits, from settings) are the user's own ceiling on daily
-//     and monthly spend. They are checked against a pre-flight worst-case
-//     estimate, so a call that would cross the cap is refused before it costs
-//     anything.
+// Local cancellation, one in-flight request per kind, and burst protection.
+// The backend owns token billing and persistent limits across all devices.
+// Legacy local cost estimates remain diagnostic; they never debit a wallet.
 
 #[derive(Debug)]
 pub struct AiUsageGuard {

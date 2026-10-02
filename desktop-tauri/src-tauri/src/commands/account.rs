@@ -78,8 +78,9 @@ pub async fn account_profile_update(
     state: State<'_, AppState>,
     name: String,
     email: String,
+    current_password: Option<String>,
 ) -> Result<AccountSnapshot, String> {
-    account_profile::update(&state, name, email).await
+    account_profile::update(&state, name, email, current_password).await
 }
 
 #[tauri::command]

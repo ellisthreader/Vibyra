@@ -33,6 +33,15 @@ impl Backend for DesktopBackend {
         if let Some(result) = self.ai_accounts(method, &params) {
             return result;
         }
+        if matches!(
+            method,
+            "preview.start" | "preview.open" | "preview.run" | "preview.window.share"
+        ) {
+            crate::plan_limits::current().admit_preview()?;
+        }
+        if matches!(method, "scaffold.start" | "scaffold.adopt") {
+            crate::plan_limits::admit_new_project()?;
+        }
         match method {
             "host.state" => self.host_state(),
             "session.list" => {

@@ -1,3 +1,4 @@
+import "./styles/plan-upgrade.css";
 import { createRoot } from "react-dom/client";
 
 import "@fontsource-variable/inter";

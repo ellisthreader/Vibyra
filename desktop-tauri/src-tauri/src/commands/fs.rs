@@ -53,7 +53,11 @@ pub async fn unwatch_workspace(app: AppHandle) -> Result<(), CoreError> {
 }
 
 #[tauri::command]
-pub async fn fs_changes(root: String) -> Result<fsx::git_changes::Changes, CoreError> {
+pub async fn fs_changes(
+    state: tauri::State<'_, crate::state::AppState>,
+    root: String,
+) -> Result<fsx::git_changes::Changes, CoreError> {
+    super::plan_access::admit_review(&state).map_err(CoreError::PlanLimit)?;
     run_blocking_core(move || fsx::git_changes::changes(&root)).await
 }
 
@@ -63,6 +67,11 @@ pub async fn workspace_worktrees(root: String) -> Result<fsx::worktrees::Invento
 }
 
 #[tauri::command]
-pub async fn fs_change_preview(root: String, path: String) -> Result<String, CoreError> {
+pub async fn fs_change_preview(
+    state: tauri::State<'_, crate::state::AppState>,
+    root: String,
+    path: String,
+) -> Result<String, CoreError> {
+    super::plan_access::admit_review(&state).map_err(CoreError::PlanLimit)?;
     run_blocking_core(move || fsx::git_changes::change_preview(&root, &path)).await
 }

@@ -28,6 +28,7 @@ export interface MembershipView {
  * A rename belongs in both. */
 const PLAN_NAMES: Record<string, string> = {
   free: "Free",
+  pro_v2: "Pro",
   starter: "Starter",
   builder: "Pro 10×",
   pro: "Pro 20×",
@@ -51,6 +52,18 @@ export function membershipView(profile: AccountProfile | null): MembershipView {
   const plan = titled(id);
   if (!paid || !profile) {
     return { plan: "Free", paid: false, state: null, billing: null, cycle: null, manage: null, stateDate: null };
+  }
+  // The free Pro trial is Pro until it ends on its own; there is nothing to
+  // manage and no card behind it.
+  if (profile.billingProvider === "trial" || profile.planLimits?.trial) {
+    const ends = valid(profile.planLimits?.paidUntil) ?? valid(profile.membershipEndsAt);
+    return { plan: "Pro trial", paid: true, state: ends ? `Ends on ${longDate(ends)}` : null,
+      billing: null, cycle: null, manage: null, stateDate: ends };
+  }
+  if (profile.billingProvider === "license") {
+    const ends = valid(profile.membershipEndsAt);
+    return { plan: "Pro", paid: true, state: ends ? `Ends on ${longDate(ends)}` : null,
+      billing: "Pro license", cycle: null, manage: null, stateDate: ends };
   }
   const stripe = profile.billingProvider === "stripe";
   const apple = profile.billingProvider?.startsWith("iap-apple") ?? false;

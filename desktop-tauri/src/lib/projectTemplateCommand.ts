@@ -53,10 +53,19 @@ export function buildScaffoldRequest(entry: ProjectTemplate, dir: string, option
   extras: ProjectTemplate[] = []): ScaffoldRequest {
   const slug = slugify(dir.split(/[\\/]/).filter(Boolean).pop() ?? '');
   const parent = parentOf(dir);
-  const chosen = [entry, ...extras];
+  // Additions own a subproject, never the base app's package.json or entry file.
+  const layers = extras.map(pick => ({ ...pick,
+    seeds: [...pick.seeds.map(seed => ({ ...seed, path: `services/${pick.id}/${seed.path}` })),
+      { path: `services/${pick.id}/.gitkeep`, body: '' }],
+    steps: pick.steps.map(step => ({ ...step, label: `${step.label} (services/${pick.id})`,
+      program: step.program.replace('{{venv}}', `{{dir}}/services/${pick.id}/.venv/{{venv-bin}}`),
+      args: step.args.map(arg => arg.replace('{{venv}}', `{{dir}}/services/${pick.id}/.venv/{{venv-bin}}`)),
+      layerDir: `${dir}/services/${pick.id}` })),
+  }));
+  const chosen = [entry, ...layers];
   const wanted = chosen.flatMap(pick => pick.steps.filter(step => step.phase === 'create' || options.install));
   const steps = quicken(wanted.map(step => ({ label: step.label, program: fill(step.program, slug),
-    args: step.args.map(arg => fill(arg, slug)), cwd: step.cwd === 'parent' ? parent : dir })));
+    args: step.args.map(arg => fill(arg, slug)), cwd: 'layerDir' in step ? String(step.layerDir) : step.cwd === 'parent' ? parent : dir })));
   // A scaffolder that makes its own folder must not find one already there:
   // some refuse outright, and the ones that do not still expect to own it.
   const createDir = !entry.steps.some(step => step.cwd === 'parent');
@@ -72,7 +81,11 @@ export function buildScaffoldRequest(entry: ProjectTemplate, dir: string, option
  *  computer runs it after them, from `gitInit` — but a switch that is on and a
  *  command list that never mentions it reads as a switch that does nothing. */
 export function describeSteps(request: ScaffoldRequest): string[] {
-  const commands = request.steps.map(step => [step.program, ...step.args]
-    .map(token => (/[\s"']/.test(token) ? JSON.stringify(token) : token)).join(' '));
+  const commands = request.steps.map(step => {
+    const command = [step.program, ...step.args]
+      .map(token => (/[\s"']/.test(token) ? JSON.stringify(token) : token)).join(' ');
+    const relative = step.cwd.startsWith(`${request.dir}/`) ? step.cwd.slice(request.dir.length + 1) : null;
+    return relative ? `(in ${relative}) ${command}` : command;
+  });
   return request.gitInit ? [...commands, 'git init'] : commands;
 }

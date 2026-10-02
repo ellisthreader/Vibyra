@@ -98,6 +98,7 @@ mod phone_effect_commands;
 mod phone_effects;
 mod phone_project_effects;
 pub mod phone_remote;
+pub(crate) mod plan_access;
 pub mod remote_security;
 pub mod remote_security_actions;
 mod remote_security_scope;

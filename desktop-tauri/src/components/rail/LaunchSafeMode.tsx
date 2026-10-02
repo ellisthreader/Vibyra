@@ -1,3 +1,6 @@
+import { allows } from "../../lib/planLimits";
+import { useAccountStore } from "../../state/accountStore";
+import { usePlanPromptStore } from "../../state/planPromptStore";
 import { useSafeWorkspaceSupport } from "../../lib/useSafeWorkspaceSupport";
 
 interface Props {
@@ -14,7 +17,8 @@ interface Props {
  */
 export function LaunchSafeMode({ projectRoot, value, onChange }: Props) {
   const available = useSafeWorkspaceSupport(projectRoot).supported !== false;
-  const on = available && value;
+  const included = useAccountStore((s) => allows(s.snapshot.profile, "safeWorktrees"));
+  const on = available && included && value;
   return (
     <button
       type="button"
@@ -22,11 +26,11 @@ export function LaunchSafeMode({ projectRoot, value, onChange }: Props) {
       aria-pressed={on}
       disabled={!available}
       title={available ? undefined : "Safe mode branches from Git, and this folder is not a repository. Set one up in the Worktrees sidebar."}
-      onClick={() => onChange(!value)}
+      onClick={() => included ? onChange(!value) : usePlanPromptStore.getState().show({ feature: "worktrees", message: "Safe mode gives each agent its own copy of your project. It comes with Vibyra Pro." })}
     >
       <span className="launch-switch" aria-hidden="true"><i /></span>
       <span className="launch-safe__copy">
-        <strong>Safe mode</strong>
+        <strong>Safe mode{!included && <span className="pro-mark">Pro</span>}</strong>
         <small>
           {!available
             ? "Needs a Git repository"

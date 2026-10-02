@@ -161,6 +161,17 @@ impl Engine {
         }
     }
 
+    /// Running sessions of every kind this engine owns, terminal or
+    /// conversation, so an embedding app can apply a plan's terminal limit.
+    pub fn running_sessions(&self) -> usize {
+        self.shared
+            .lock()
+            .sessions
+            .values()
+            .filter(|session| session.meta.status == "running")
+            .count()
+    }
+
     /// This is intentionally unavailable over the remote protocol.
     pub fn allow_preview(&self, project: &str, port: u16) -> Result<(), String> {
         let mut state = self.shared.lock();

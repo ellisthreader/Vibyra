@@ -11,11 +11,11 @@ export async function verifyAccountRecovery({ open, t, shot, theme, last }) {
 
     // ── a read that failed says so, rather than going quiet ──────────────
     const offline = await open(`${t}fail=credits,devices,two_factor_status`);
-    await offline.page.getByText('Credits unavailable').waitFor();
+    await offline.page.getByText('Tokens unavailable').waitFor();
     await offline.page.getByText('Devices unavailable').waitFor();
     await offline.page.getByRole('group', { name: 'Two-factor authentication' })
       .getByRole('button', { name: 'Try again' }).waitFor();
-    await offline.page.getByRole('group', { name: 'Credits unavailable' }).getByRole('button', { name: 'Try again' }).click();
+    await offline.page.getByRole('group', { name: 'Tokens unavailable' }).getByRole('button', { name: 'Try again' }).click();
     assert.equal((await last(offline.page))[0], 'account_credits');
 
     // ── the code half of a sign-in ───────────────────────────────────────

@@ -1,4 +1,4 @@
-//! Companion chat, billed to the user's own OpenAI key. The payload ceilings
+//! Companion chat through the authenticated Vibyra service. The payload ceilings
 //! live in `ai_clamp`, the frame reader in `ai_sse` and the request itself in
 //! `ai_stream`; what is left here is the surface the webview can call.
 
@@ -16,10 +16,6 @@ use crate::state::AppState;
 /// gpt-5-mini at minimal effort got 140/141 right where gpt-5-nano managed
 /// 31/47 at minimal and 134/141 at low — so the extra cents buy the accuracy.
 pub const CHAT_MODEL: &str = "gpt-5-mini";
-/// gpt-5 models bill their hidden reasoning inside the output budget, so the
-/// cheapest effort is also the one that leaves the whole budget for the reply.
-/// A heavier effort can spend the lot and return empty content with no error.
-pub(super) const REASONING_EFFORT: &str = "minimal";
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ChatMessage {
@@ -67,13 +63,7 @@ pub async fn ai_chat(
     tools: Option<serde_json::Value>,
     on_event: Channel<ChatDelta>,
 ) -> Result<ChatOutcome, String> {
-    let key = state.openai_key().ok_or_else(|| {
-        crate::platform_text::for_computer(
-            "Chat is not configured on this Mac. Set OPENAI_API_KEY and restart Vibyra.",
-            "Chat is not configured on this computer. Set OPENAI_API_KEY and restart Vibyra.",
-        )
-        .to_string()
-    })?;
+    let token = crate::assistant_api::token(&state)?;
 
     let messages = clamp(messages);
     let estimate = chat_cost_usd(estimated_input_tokens(&messages), MAX_OUTPUT_TOKENS);
@@ -82,7 +72,7 @@ pub async fn ai_chat(
         .reserve(AiCall::Chat, state.ai_limits(), estimate)?;
     // Armed from the permit, so the flag dies with the call that owns it.
     let cancel = permit.cancel_flag(&request_id);
-    ai_stream::run(&key, messages, tools, on_event, permit, &cancel).await
+    ai_stream::run(&token, messages, tools, on_event, permit, &cancel).await
 }
 
 /// Stops a reply that is still being written. Always `Ok`: stopping one that

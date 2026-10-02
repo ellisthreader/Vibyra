@@ -4,7 +4,6 @@
 
 /// The model and the voices it offers. A fixed list, so a request cannot reach
 /// for a different model by putting its name in the voice field.
-pub const SPEECH_MODEL: &str = "gpt-4o-mini-tts";
 pub const SPEECH_VOICES: [&str; 11] = [
     "alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse",
 ];
@@ -85,40 +84,22 @@ pub fn resolve_instructions(style: Option<String>, rate: f32) -> Option<String> 
 }
 
 pub(super) async fn synthesize(
-    key: &str,
+    token: &str,
     text: &str,
     voice: &str,
     rate: f32,
     instructions: Option<String>,
 ) -> Result<Vec<u8>, String> {
     let mut body = serde_json::json!({
-        "model": SPEECH_MODEL,
         "voice": voice,
-        "input": text,
-        "response_format": AUDIO_FORMAT,
+        "text": text,
+        "format": AUDIO_FORMAT,
         "speed": rate,
     });
     if let Some(instructions) = instructions {
         body["instructions"] = serde_json::Value::String(instructions);
     }
-    let response = crate::http_client::shared()
-        .post("https://api.openai.com/v1/audio/speech")
-        .bearer_auth(key.trim())
-        .json(&body)
-        .timeout(std::time::Duration::from_secs(60))
-        .send()
-        .await
-        .map_err(|error| format!("Could not reach the speech service: {error}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        let detail = serde_json::from_str::<serde_json::Value>(&body)
-            .ok()
-            .and_then(|value| value["error"]["message"].as_str().map(String::from))
-            .unwrap_or_else(|| format!("HTTP {status}"));
-        return Err(detail);
-    }
+    let response = crate::assistant_api::post("speech", token, body).await?;
 
     let audio = response
         .bytes()

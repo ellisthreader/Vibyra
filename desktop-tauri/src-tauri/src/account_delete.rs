@@ -1,7 +1,7 @@
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use crate::account_api::{error_detail, request, request_raw, ApiError, Endpoint};
+use crate::account_api::{error_detail, request, request_raw_with_flow_secret, ApiError, Endpoint};
 use crate::account_auth;
 use crate::account_device;
 use crate::state::AppState;
@@ -37,11 +37,11 @@ pub async fn with_provider(state: &AppState, provider: String) -> Result<(), Str
     let Some(token) = state.account.token() else {
         return Err("You are not signed in.".to_owned());
     };
-    let body = serde_json::json!({
-        "purpose": "deletion",
-        "deviceName": account_device::device_label(),
-        "installId": account_device::installation_id(),
-    });
+    let (flow_secret, mut body) = crate::account_oauth_start::start_body(
+        &account_device::device_label(),
+        &account_device::installation_id(),
+    )?;
+    body["purpose"] = serde_json::json!("deletion");
     let started = request(Endpoint::OauthStart(&provider), Some(&token), Some(body)).await;
     let (flow_id, auth_url, expires_in) = match started.map(parse_start) {
         Ok(Some(parts)) => parts,
@@ -58,7 +58,7 @@ pub async fn with_provider(state: &AppState, provider: String) -> Result<(), Str
             // The provider's page never sends the browser back, so someone who
             // closes it the moment it says deleted can beat the next poll. One
             // more look settles which of the two happened.
-            break match check(&provider, &flow_id).await {
+            break match check(&provider, &flow_id, &flow_secret).await {
                 Some(Ok(())) => Ok(()),
                 _ => Err(CANCELLED.to_owned()),
             };
@@ -66,7 +66,7 @@ pub async fn with_provider(state: &AppState, provider: String) -> Result<(), Str
         if std::time::Instant::now() >= deadline {
             break Err(EXPIRED.to_owned());
         }
-        if let Some(result) = check(&provider, &flow_id).await {
+        if let Some(result) = check(&provider, &flow_id, &flow_secret).await {
             break result;
         }
     };
@@ -83,10 +83,15 @@ pub fn cancel(state: &AppState) {
 
 /// One look at the one-time flow: `None` while it is still pending or the
 /// network is briefly unreachable, so the caller keeps waiting.
-async fn check(provider: &str, flow_id: &str) -> Option<Result<(), String>> {
-    let (status, body) = request_raw(Endpoint::OauthStatus(provider, flow_id), None, None)
-        .await
-        .ok()?;
+async fn check(provider: &str, flow_id: &str, flow_secret: &str) -> Option<Result<(), String>> {
+    let (status, body) = request_raw_with_flow_secret(
+        Endpoint::OauthStatus(provider, flow_id),
+        None,
+        None,
+        Some(flow_secret),
+    )
+    .await
+    .ok()?;
     let flow_status = body.get("status").and_then(|v| v.as_str()).unwrap_or("");
     let deleted = body
         .get("deleted")

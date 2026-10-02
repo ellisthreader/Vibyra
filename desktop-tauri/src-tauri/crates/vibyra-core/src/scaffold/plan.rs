@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -41,11 +41,10 @@ pub fn prepare(plan: &ScaffoldPlan) -> CoreResult<Vec<ScaffoldStep>> {
         .parent()
         .ok_or_else(|| CoreError::InvalidPath("choose a folder inside another folder".into()))?;
     fs::create_dir_all(parent)?;
-    if plan.create_dir || !plan.seeds.is_empty() {
+    super::seeds::validate(&plan.seeds)?;
+    if plan.create_dir {
         fs::create_dir_all(&dir)?;
-    }
-    for seed in &plan.seeds {
-        write_seed(&dir, seed)?;
+        apply_seeds(plan)?;
     }
     Ok(plan.steps.iter().map(|step| resolve(step, &dir)).collect())
 }
@@ -124,26 +123,16 @@ fn check_destination(dir: &Path) -> CoreResult<()> {
     }
 }
 
-/// Seeds are written by us, so their paths are ours — but a template is data,
-/// and data that walks out of the project folder would be a way to write
-/// anywhere on disk.
-fn write_seed(dir: &Path, seed: &ScaffoldSeed) -> CoreResult<()> {
-    let relative = Path::new(&seed.path);
-    let safe = relative
-        .components()
-        .all(|component| matches!(component, Component::Normal(_)));
-    if !safe {
-        return Err(CoreError::InvalidPath(format!(
-            "{} is not a path inside the project",
-            seed.path
-        )));
+/// Folder-owning creators run before addon files can be placed in their tree.
+pub fn apply_seeds(plan: &ScaffoldPlan) -> CoreResult<()> {
+    if !Path::new(&plan.dir).is_dir()
+        || (!plan.create_dir && destination_state(Path::new(&plan.dir)) != DestinationState::Used)
+    {
+        return Err(CoreError::Scaffold(
+            "The creator did not create a project folder.".into(),
+        ));
     }
-    let target = dir.join(relative);
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(target, &seed.body)?;
-    Ok(())
+    super::seeds::write(Path::new(&plan.dir), &plan.seeds)
 }
 
 /// `{{dir}}` and `{{venv}}` are resolved here rather than in the renderer,
@@ -155,6 +144,10 @@ fn resolve(step: &ScaffoldStep, dir: &Path) -> ScaffoldStep {
         value
             .replace("{{dir}}", &dir_text)
             .replace("{{venv}}", &venv)
+            .replace(
+                "{{venv-bin}}",
+                if cfg!(windows) { "Scripts" } else { "bin" },
+            )
     };
     ScaffoldStep {
         label: step.label.clone(),

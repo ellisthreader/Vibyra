@@ -1,4 +1,3 @@
-import { computerName } from "../lib/platform";
 import { useProductMode } from './productModeStore';
 import { stopCurrentReplySpeech } from '../lib/speechPlayback';
 import { create } from "zustand";
@@ -72,7 +71,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
       return;
     }
     set({ targetId: recordingDraft ? null : target!.id });
-    show("starting", "Opening microphone", recordingDraft?.title ?? target!.title);
+    show("starting", "Opening microphone", `${recordingDraft?.title ?? target!.title} · Vibyra tokens`);
     try {
       await stopCurrentReplySpeech();
       if (generation !== get().generation) return;
@@ -84,7 +83,7 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
       }
       if (!status.keyConfigured) {
         clearTimers();
-        show("error", `Dictation is not set up on this ${computerName}`, "OPENAI_API_KEY is not configured");
+        show("error", "Dictation is unavailable", status.reason ?? "Sign in to Vibyra and try again");
         hideSoon(5200);
         return;
       }

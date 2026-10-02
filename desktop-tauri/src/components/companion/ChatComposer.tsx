@@ -28,7 +28,7 @@ export function ChatComposer({
 
   const hint = elsewhere
     ? `A reply is still streaming in ${elsewhere}`
-    : sending ? 'Vibyra is working…' : 'Enter to send · Shift + Enter for a new line';
+    : sending ? 'Vibyra is working…' : 'Uses Vibyra tokens · Enter to send · Shift + Enter for a new line';
 
   return (
     <div className="chat-input">
@@ -50,7 +50,7 @@ export function ChatComposer({
       />
       <div className="chat-composer-tools">
         <ChatVoiceStart disabled={!serviceConfigured} />
-        <span className="chat-composer-hint" title={hint}>{elsewhere ? `Replying in ${elsewhere}` : sending ? 'Working…' : '↵ Send'}</span>
+        <span className="chat-composer-hint" title={hint}>{elsewhere ? `Replying in ${elsewhere}` : sending ? 'Working…' : 'Vibyra tokens · ↵ Send'}</span>
         {sending || elsewhere ? (
           <button
             className="chat-input__send chat-input__send--stop"

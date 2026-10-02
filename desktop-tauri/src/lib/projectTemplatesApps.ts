@@ -32,7 +32,7 @@ export const APP_TEMPLATES: ProjectTemplate[] = [
   template({ id: 'electron', kinds: ['desktop'], name: 'Electron',
     blurb: 'Chromium and Node in a desktop window', requires: ['node', 'npx'], docs: NODE_DOCS,
     steps: [create('Creating the Electron app', 'npx', ['--yes', 'create-electron-app@latest', '{{name}}',
-      '--template=webpack-typescript'])] }),
+      '--template=webpack', '--typescript'])] }),
   template({ id: 'phaser', kinds: ['game'], name: 'Phaser (Vite)',
     blurb: '2D games in the browser, with hot reload', requires: ['node', 'npm'], docs: NODE_DOCS,
     steps: [viteGame('Phaser'), NPM_INSTALL, install('Adding Phaser', 'npm', ['install', 'phaser'])] }),

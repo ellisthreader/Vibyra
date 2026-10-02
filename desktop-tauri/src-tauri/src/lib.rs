@@ -33,9 +33,12 @@ mod ai_usage_limits;
 mod ai_usage_permit;
 #[cfg(test)]
 mod ai_usage_tests;
+mod assistant_api;
 mod close_guard;
 mod commands;
 mod desktop_entry;
+#[doc(hidden)]
+pub mod diagnostic_phone;
 mod discord;
 mod discord_setup;
 mod http_client;
@@ -44,9 +47,9 @@ mod model_watch_store;
 #[cfg(test)]
 mod model_watch_tests;
 mod native_logging;
-mod openai_key;
 mod perf;
 mod phone;
+mod plan_limits;
 mod platform_text;
 mod preview_probe;
 mod process_table;
@@ -94,7 +97,6 @@ mod session_store_tests;
 pub mod shared_chats;
 mod sink;
 mod state;
-mod state_openai_key;
 #[cfg(test)]
 mod test_shell;
 mod window_preview;
@@ -137,6 +139,8 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(state::AppState::new())
         .setup(|app| {
+            account_api::set_app_version(app.package_info().version.to_string());
+            plan_limits::setup(app.handle().clone());
             model_watch::spawn(app.handle().clone());
             shared_chats::desktop_stream::spawn(app.handle().clone());
             phone::notify_window(app.handle().clone());

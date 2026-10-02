@@ -4,8 +4,6 @@ use tauri::State;
 use crate::ai_usage::{
     AiLimits, CHAT_INPUT_USD_PER_MTOK, CHAT_OUTPUT_USD_PER_MTOK, VOICE_USD_PER_MINUTE,
 };
-use crate::openai_key;
-use crate::provider_auth_url;
 use crate::state::AppState;
 
 /// Everything the Vibyra AI settings pane renders, in one round trip.
@@ -13,11 +11,10 @@ use crate::state::AppState;
 #[serde(rename_all = "camelCase")]
 pub struct AiServiceView {
     key_configured: bool,
-    /// Whether that key came from `OPENAI_API_KEY` rather than the credential
-    /// store — the pane cannot offer to remove a key it did not save.
+    /// Compatibility fields: clients never hold or reveal the provider key.
     key_from_environment: bool,
-    /// Masked fragment ("sk-…wxyz"), never the key itself.
     key_hint: Option<String>,
+    service_error: Option<String>,
     secure_storage_available: bool,
     recorder_available: bool,
     key_page_url: &'static str,
@@ -56,41 +53,21 @@ pub struct PricingView {
 
 #[tauri::command]
 pub async fn ai_service_status(state: State<'_, AppState>) -> Result<AiServiceView, String> {
-    Ok(view(&state))
+    let status = crate::assistant_api::status(&state).await;
+    Ok(view(&state, status))
 }
 
-#[tauri::command]
-pub async fn set_openai_key(
-    state: State<'_, AppState>,
-    key: String,
-) -> Result<AiServiceView, String> {
-    let key = openai_key::validate(&key)?;
-    openai_key::verify(&key).await?;
-    state.store_openai_key(Some(&key))?;
-    Ok(view(&state))
-}
-
-#[tauri::command]
-pub async fn clear_openai_key(state: State<'_, AppState>) -> Result<AiServiceView, String> {
-    state.store_openai_key(None)?;
-    Ok(view(&state))
-}
-
-#[tauri::command]
-pub async fn open_openai_key_page() -> Result<(), String> {
-    provider_auth_url::open(openai_key::KEY_PAGE_URL)
-}
-
-fn view(state: &AppState) -> AiServiceView {
+fn view(state: &AppState, status: crate::assistant_api::Status) -> AiServiceView {
     let ledger = state.usage.ledger();
     let (calls_last_minute, calls_last_hour) = state.usage.recent_counts();
     AiServiceView {
-        key_configured: state.openai_key().is_some(),
-        key_from_environment: state.openai_key_from_environment(),
-        key_hint: state.openai_key().as_deref().map(openai_key::hint),
-        secure_storage_available: state.secret_store_available(),
+        key_configured: status.available,
+        key_from_environment: false,
+        key_hint: None,
+        service_error: status.reason,
+        secure_storage_available: state.account.snapshot().secure_storage,
         recorder_available: super::voice::recorder_available(),
-        key_page_url: openai_key::KEY_PAGE_URL,
+        key_page_url: "",
         limits: state.ai_limits(),
         usage: UsageView {
             day: ledger.day.clone(),

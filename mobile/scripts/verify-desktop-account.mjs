@@ -9,6 +9,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright-core';
 import assert from 'node:assert/strict';
+import { verifyDesktopProfile } from './verify-desktop-profile.mjs';
 import { verifyAccountRecovery } from './verify-desktop-account-recovery.mjs';
 
 const output = resolve('../output/desktop-account');
@@ -61,11 +62,12 @@ try {
   for (const theme of ['dark', 'light']) {
     const t = theme === 'light' ? 'light&' : '';
 
+    await verifyDesktopProfile({ open, t, shot, theme });
     // ── membership, every shape an account can be in ─────────────────────
     const free = await open(`${t}plan=free`);
     await free.page.getByText('Free plan').waitFor();
-    await free.page.getByRole('button', { name: 'See plans' }).click();
-    assert.deepEqual(await last(free.page), ['account_billing_page', { page: 'plans' }]);
+    await free.page.getByRole('button', { name: 'Get Pro' }).click();
+    assert.deepEqual(await last(free.page), ['account_billing_page', { page: 'pro' }]);
     await shot(free.page, `membership-free-${theme}`, 'membership');
     assert.equal(await free.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
 
@@ -107,13 +109,13 @@ try {
     await credits.getByText('1,284').waitFor();
     await credits.getByText(/Refreshes on/).waitFor();
     await credits.getByText('60 in flight').waitFor();
-    assert.match(await credits.getByRole('meter', { name: 'Credits left' }).getAttribute('aria-valuenow'), /^\d+$/);
-    await credits.getByRole('button', { name: 'Buy credits' }).click();
+    assert.match(await credits.getByRole('meter', { name: 'Vibyra tokens left' }).getAttribute('aria-valuenow'), /^\d+$/);
+    await credits.getByRole('button', { name: 'Buy tokens' }).click();
     await credits.getByRole('button', { name: /^500 · £20/ }).click();
     assert.deepEqual(await last(credits), ['account_billing_topup', { topup: 'topup_500' }]);
 
     const quiet = await open(`${t}nochat`);
-    assert.equal(await quiet.page.getByRole('button', { name: 'Buy credits' }).count(), 0,
+    assert.equal(await quiet.page.getByRole('button', { name: 'Buy tokens' }).count(), 0,
       'nothing is sold while chat is switched off');
 
     // ── two-factor ───────────────────────────────────────────────────────

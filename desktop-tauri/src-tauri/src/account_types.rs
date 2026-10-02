@@ -1,4 +1,13 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountLicense {
+    pub tokens: u32,
+    pub allowance: String,
+    pub ends_at: String,
+    pub next_at: Option<String>,
+}
 
 /// Renderer-safe account states. The bearer token never leaves native code;
 /// the renderer only ever sees these coarse states plus display fields.
@@ -33,6 +42,8 @@ impl AccountStatus {
 #[derive(Clone, Serialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountProfile {
+    pub license: Option<AccountLicense>,
+    pub license_redemption_status: Option<String>,
     pub name: String,
     pub email: String,
     pub provider: String,
@@ -57,6 +68,8 @@ pub struct AccountProfile {
     pub has_avatar: bool,
     #[serde(skip)]
     pub avatar_url: Option<String>,
+    /// Free or Pro workspace limits; open when the server sends none.
+    pub plan_limits: crate::plan_limits::PlanLimits,
 }
 
 #[derive(Clone, Serialize, Debug)]
@@ -82,6 +95,10 @@ pub fn profile_from_user(user: &serde_json::Value) -> Option<AccountProfile> {
     let cycle = text("planBillingCycle", "monthly");
     let avatar_url = optional_text(user, "avatarUrl");
     Some(AccountProfile {
+        license: user
+            .get("license")
+            .and_then(|value| serde_json::from_value(value.clone()).ok()),
+        license_redemption_status: optional_text(user, "licenseRedemptionStatus"),
         name: text("name", ""),
         email,
         provider: text("provider", "email"),
@@ -103,6 +120,7 @@ pub fn profile_from_user(user: &serde_json::Value) -> Option<AccountProfile> {
         can_manage_stripe_billing: flag("canManageStripeBilling"),
         has_avatar: avatar_url.is_some(),
         avatar_url,
+        plan_limits: crate::plan_limits::PlanLimits::from_user(user),
     })
 }
 

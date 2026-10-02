@@ -17,6 +17,7 @@ export function AccountIdentityBlock({ profile }: { profile: AccountProfile }) {
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
   const [feedback, setFeedback] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export function AccountIdentityBlock({ profile }: { profile: AccountProfile }) {
   }, [profile.hasAvatar, profile.email]);
 
   const emailEditable = canEditEmail(profile);
+  const emailChanged = emailEditable && email.trim().toLowerCase() !== profile.email.toLowerCase();
   const dirty = name !== profile.name || email !== profile.email;
   const initial = (profile.name || profile.email).trim().charAt(0).toUpperCase();
   const since = profile.createdAt ? `Member since ${monthAndYear(profile.createdAt)}` : null;
@@ -42,8 +44,10 @@ export function AccountIdentityBlock({ profile }: { profile: AccountProfile }) {
   const save = async () => {
     const problem = validateProfileEdit({ name, email });
     if (problem) return setFeedback({ tone: "error", text: problem });
+    if (emailChanged && !currentPassword) return setFeedback({ tone: "error", text: "Enter your current password to change your email." });
     setSaving(true);
-    const error = await useAccountStore.getState().updateProfile(name, email);
+    const error = await useAccountStore.getState().updateProfile(name, email, emailChanged ? currentPassword : undefined);
+    setCurrentPassword("");
     setSaving(false);
     setFeedback(error ? { tone: "error", text: error } : { tone: "ok", text: "Profile saved." });
     if (!error) setEditing(false);
@@ -104,11 +108,16 @@ export function AccountIdentityBlock({ profile }: { profile: AccountProfile }) {
                 aria-label="Email address"
               />
             </SettingRow>
+            {emailChanged && <SettingRow label="Current password" hint="Confirm your password to change your email.">
+              <input className="input" type="password" autoComplete="current-password"
+                aria-label="Current password" value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)} disabled={saving} />
+            </SettingRow>}
             <div className="profile-actions">
               <span className={`profile-feedback ${feedback?.tone === "error" ? "profile-feedback--error" : ""}`} role="status" aria-live="polite">
                 {feedback?.text}
               </span>
-              <button className="btn" onClick={() => { setEditing(false); setName(profile.name); setEmail(profile.email); }}>Cancel</button>
+              <button className="btn" onClick={() => { setEditing(false); setName(profile.name); setEmail(profile.email); setCurrentPassword(""); }}>Cancel</button>
               <button className="btn btn--primary" disabled={!dirty || saving || busy} onClick={() => void save()}>
                 {saving ? "Saving…" : "Save"}
               </button>

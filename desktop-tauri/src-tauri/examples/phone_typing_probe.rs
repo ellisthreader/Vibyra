@@ -19,57 +19,9 @@ use std::{
 use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
 use vibyra_host::EmbeddedHost;
 
-// The desktop's own modules, not copies, so the probe cannot drift from them.
-#[allow(dead_code)]
-#[path = "../src/phone/backend.rs"]
-mod backend;
-#[allow(dead_code)]
-#[path = "../src/phone/control.rs"]
-mod control;
-#[allow(dead_code)]
-#[path = "../src/phone/frames.rs"]
-mod frames;
-#[allow(dead_code)]
-#[path = "../src/phone/manage.rs"]
-mod manage;
-#[path = "../src/platform_text.rs"]
-mod platform_text;
-#[allow(dead_code, unused_imports)]
-#[path = "support/phone_typing_preview.rs"]
-mod preview_service;
-#[path = "support/phone_probe_accounts.rs"]
-mod provider_auth;
-#[allow(dead_code)]
-#[path = "../src/phone/railway.rs"]
-mod railway;
-#[allow(dead_code)]
-#[path = "../src/phone/railway_resources.rs"]
-mod railway_resources;
-#[allow(dead_code)]
-#[path = "../src/phone/railway_tools.rs"]
-mod railway_tools;
-#[allow(dead_code)]
-#[path = "../src/phone/requests.rs"]
-mod requests;
-#[allow(dead_code)]
-#[path = "../src/phone/saved.rs"]
-mod saved;
-#[allow(dead_code)]
-#[path = "../src/phone/scaffold.rs"]
-mod scaffold;
-#[allow(dead_code)]
-#[path = "../src/session_process_files.rs"]
-mod session_process_files;
-#[allow(dead_code)]
-#[path = "../src/phone/stream.rs"]
-mod stream;
-#[allow(dead_code)]
-#[path = "../src/phone/vault.rs"]
-mod vault;
-#[allow(dead_code)]
-#[path = "../src/phone/workspace.rs"]
-mod workspace;
-
+use vibyra_desktop_lib::diagnostic_phone::{
+    DesktopBackend, DesktopPane, DesktopProject, SharedWorkspace, Vault,
+};
 struct Sink;
 impl OutputSink for Sink {
     fn on_output(&self, _: u64, _: String) {}
@@ -110,14 +62,14 @@ fn main() {
     let pane = manager
         .create_session("shell", "zsh", &shell)
         .expect("shell did not start");
-    let workspace = workspace::SharedWorkspace::default();
+    let workspace = SharedWorkspace::default();
     workspace.write().publish(
-        vec![workspace::DesktopProject {
+        vec![DesktopProject {
             id: "p-1".into(),
             name: "Typing probe".into(),
             path: project,
         }],
-        vec![workspace::DesktopPane {
+        vec![DesktopPane {
             id: pane.id,
             project_id: "p-1".into(),
             title: "Mac terminal".into(),
@@ -125,8 +77,8 @@ fn main() {
         None,
     );
     let typing = Arc::new(AtomicBool::new(false));
-    let vault = vault::Vault::new(std::path::PathBuf::from(&state));
-    let backend = backend::DesktopBackend::new(
+    let vault = Vault::new(std::path::PathBuf::from(&state));
+    let backend = DesktopBackend::new(
         manager.clone(),
         workspace,
         typing.clone(),

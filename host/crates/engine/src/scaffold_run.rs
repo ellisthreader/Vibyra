@@ -112,7 +112,13 @@ pub(crate) fn execute(
         reporter.step(index, total, &step.label);
         let emit = |line: String| reporter.line(line);
         match run_step(step, &emit, &cancel) {
-            Ok(StepOutcome::Finished(0)) => {}
+            Ok(StepOutcome::Finished(0)) => {
+                if index == 0 && !plan.create_dir {
+                    if let Err(error) = vibyra_core::scaffold::apply_seeds(&plan) {
+                        return reporter.finish(Phase::Failed, Some(error.to_string()), None);
+                    }
+                }
+            }
             Ok(StepOutcome::Finished(code)) => {
                 return reporter.finish(
                     Phase::Failed,

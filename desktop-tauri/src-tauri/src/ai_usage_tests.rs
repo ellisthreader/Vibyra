@@ -29,18 +29,18 @@ fn a_second_request_is_refused_while_one_is_still_running() {
     let error = guard.reserve(AiCall::Chat, limits(), 0.0).unwrap_err();
     assert!(error.contains("already running"));
     // Voice is a separate slot, so dictation is not blocked by a slow chat.
-    assert!(guard
-        .reserve(AiCall::Voice, limits(), 0.0)
-        .is_err_and(|e| e.contains("Slow down")));
+    assert!(guard.reserve(AiCall::Voice, limits(), 0.0).is_ok());
     drop(permit);
 }
 
 #[test]
-fn back_to_back_requests_are_rate_limited() {
+fn fast_tool_and_voice_followups_work_but_a_runaway_loop_is_rate_limited() {
     let (_dir, guard) = guard();
-    drop(guard.reserve(AiCall::Chat, limits(), 0.0).unwrap());
+    for _ in 0..20 {
+        drop(guard.reserve(AiCall::Chat, limits(), 0.0).unwrap());
+    }
     let error = guard.reserve(AiCall::Chat, limits(), 0.0).unwrap_err();
-    assert!(error.contains("Slow down"), "{error}");
+    assert!(error.contains("Rate limit"), "{error}");
 }
 
 #[test]
@@ -61,11 +61,7 @@ fn the_daily_call_cap_stops_further_requests() {
     };
     drop(guard.reserve(AiCall::Chat, capped, 0.0).unwrap());
     let error = guard.reserve(AiCall::Chat, capped, 0.0).unwrap_err();
-    // The one-per-second rule fires first; what matters is that it is refused.
-    assert!(
-        error.contains("Slow down") || error.contains("Daily limit"),
-        "{error}"
-    );
+    assert!(error.contains("Daily limit"), "{error}");
 }
 
 #[test]
@@ -178,7 +174,7 @@ fn a_cancelled_chat_is_still_billed_for_what_it_streamed_and_releases_its_slot()
     // must not be a free-tokens button in our own ledger.
     permit.finish_chat(1_000_000, 1_000_000);
     assert!(guard.ledger().spend_usd > 0.0);
-    // Refused by the one-per-second rule, not by a slot the stop left held.
+    // The legacy test cap binds, rather than a slot left held by Stop.
     let error = guard.reserve(AiCall::Chat, limits(), 0.0).unwrap_err();
     assert!(!error.contains("already running"), "{error}");
 }
@@ -189,8 +185,7 @@ fn a_stop_for_a_finished_reply_cannot_cancel_the_next_one() {
     let finished = guard.reserve(AiCall::Chat, limits(), 0.0).unwrap();
     let first = finished.cancel_flag("ask-1");
     drop(finished);
-    // The retry arms the slot under its own id, directly: a second reserve
-    // this soon is refused by the rate limit, and the id is what is on test.
+    // The retry arms its own cancellation ID.
     let retry = guard.arm_cancel("ask-2");
     assert!(!guard.cancel_chat("ask-1"));
     assert!(!first.load(Ordering::Relaxed) && !retry.load(Ordering::Relaxed));

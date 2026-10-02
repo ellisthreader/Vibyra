@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
 import { PROJECT_KINDS } from "../src/lib/projectTemplateKinds.ts";
 import {
   additionsFor, allRequiredTools, canLayer, hasInstallStep, missingTools,
@@ -12,13 +11,10 @@ import {
 } from "../src/lib/projectDestination.ts";
 import { searchTemplates, templateScore } from "../src/lib/projectStackSearch.ts";
 import { kindForTemplate, stepAfterKind, stepAfterStack } from "../src/lib/projectCreateFlow.ts";
-
 const OPTIONS = { install: true, git: true, openTerminal: true };
-
 /** Every tool id is an executable name, because preflight is a PATH lookup and
  *  nothing more. A `requires` naming something else disables a row forever. */
 const TOOLS = new Set(["node", "npm", "npx", "git", "cargo", "go", "python3", "composer", "rails", "flutter"]);
-
 test("catalog ids are unique and every kind has somewhere to go", () => {
   const ids = PROJECT_TEMPLATES.map((entry) => entry.id);
   assert.equal(new Set(ids).size, ids.length, "duplicate template id");
@@ -26,7 +22,6 @@ test("catalog ids are unique and every kind has somewhere to go", () => {
     assert.ok(templatesForKind(kind.id).length > 0, `${kind.id} has no stack`);
   }
 });
-
 test("every required tool is an executable preflight can look up", () => {
   for (const entry of PROJECT_TEMPLATES) {
     for (const tool of entry.requires) {
@@ -35,7 +30,6 @@ test("every required tool is an executable preflight can look up", () => {
   }
   for (const tool of allRequiredTools()) assert.ok(TOOLS.has(tool));
 });
-
 /**
  * The single biggest correctness risk. The runner gives a step no TTY, so a
  * scaffolder that stops to ask a question hangs until the stall guard kills it
@@ -60,7 +54,6 @@ test("every scaffolder is driven non-interactively", () => {
     }
   }
 });
-
 test("a template either runs something or writes something", () => {
   for (const entry of PROJECT_TEMPLATES) {
     if (entry.id === "empty") continue;
@@ -140,11 +133,17 @@ test("turning dependencies off drops only the install steps", () => {
 
 test("a layered stack follows the base into the folder it made", () => {
   const request = buildScaffoldRequest(templateById("next"), "/a/my-app", OPTIONS, [templateById("express")]);
-  assert.ok(request.seeds.some((seed) => seed.path === "index.js"), "the extra's seeds are written");
+  assert.ok(request.seeds.some((seed) => seed.path === "services/express/index.js"), "the extra's seeds are written");
   assert.ok(request.seeds.every((seed) => !seed.path.includes("..")), "no seed escapes the project");
   assert.ok(request.seeds.some((seed) => seed.body.includes("my-app")), "{{name}} is filled in");
-  const inside = request.steps.filter((step) => step.cwd === "/a/my-app");
-  assert.ok(inside.length > 0);
+  const inside = request.steps.filter((step) => step.cwd === "/a/my-app/services/express");
+  assert.equal(inside.length, 1);
+  assert.ok(!request.seeds.some(seed => seed.path === "package.json"), "base package stays untouched");
+  const layers = buildScaffoldRequest(templateById("express"), "/a/my-app", OPTIONS,
+    [templateById("claude-node"), templateById("claude-python")]);
+  assert.equal(new Set(layers.seeds.map(seed => seed.path)).size, layers.seeds.length);
+  assert.ok(layers.steps.some(step => step.program.includes("services/claude-python/.venv/")));
+
 });
 
 test("the setup screen shows exactly what will be run", () => {

@@ -6,6 +6,8 @@ use crate::state::AppState;
 
 #[path = "voice_meter.rs"]
 mod meter;
+#[path = "voice_resample.rs"]
+mod resample;
 #[path = "voice_transcribe.rs"]
 mod transcribe;
 pub use transcribe::VOICE_MODEL;
@@ -17,7 +19,10 @@ mod capture;
 #[cfg(not(target_os = "macos"))]
 #[path = "voice_capture_process.rs"]
 mod capture;
-pub use capture::VoiceRecording;
+pub struct VoiceRecording {
+    capture: capture::VoiceRecording,
+    token: String,
+}
 
 #[cfg(all(target_os = "macos", test))]
 #[allow(dead_code)]
@@ -34,6 +39,7 @@ pub(super) struct CapturedAudio {
 pub struct VoiceStatus {
     pub recorder: bool,
     pub key_configured: bool,
+    pub reason: Option<String>,
 }
 
 /// What the microphone is hearing right now. A spoken conversation polls this
@@ -63,7 +69,7 @@ pub async fn voice_level(state: State<'_, AppState>) -> Result<VoiceLevel, Strin
             seconds: 0.0,
         });
     };
-    let (rms, seconds) = recording.level(LEVEL_WINDOW);
+    let (rms, seconds) = recording.capture.level(LEVEL_WINDOW);
     Ok(VoiceLevel {
         recording: true,
         metered: true,
@@ -74,9 +80,11 @@ pub async fn voice_level(state: State<'_, AppState>) -> Result<VoiceLevel, Strin
 
 #[tauri::command]
 pub async fn voice_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
+    let status = crate::assistant_api::status(&state).await;
     Ok(VoiceStatus {
         recorder: recorder_available(),
-        key_configured: state.openai_key().is_some(),
+        key_configured: status.available,
+        reason: status.reason,
     })
 }
 
@@ -89,16 +97,17 @@ pub async fn voice_start(state: State<'_, AppState>) -> Result<(), String> {
     stop_recorder(&state);
     // Checked before the microphone opens: being refused after speaking a
     // whole sentence is a worse experience than being told up front.
-    if state.openai_key().is_none() {
-        return Err(crate::platform_text::for_computer(
-            "Dictation is not configured on this Mac. Set OPENAI_API_KEY and restart Vibyra.",
-            "Dictation is not configured on this computer. Set OPENAI_API_KEY and restart Vibyra.",
-        )
-        .into());
+    let token = crate::assistant_api::token(&state)?;
+    let status = crate::assistant_api::status(&state).await;
+    if !status.available {
+        return Err(status
+            .reason
+            .unwrap_or_else(|| "Vibyra dictation is temporarily unavailable.".into()));
     }
     state.usage.budget_available(state.ai_limits())?;
-    let recording = super::run_blocking(VoiceRecording::start).await?;
-    *state.voice.lock() = Some(recording);
+    let capture = super::run_blocking(capture::VoiceRecording::start).await?;
+    crate::assistant_api::same_account(&state, &token)?;
+    *state.voice.lock() = Some(VoiceRecording { capture, token });
     Ok(())
 }
 
@@ -115,7 +124,9 @@ pub async fn voice_stop(
         drop(recording);
         return Ok(None);
     }
-    let audio = super::run_blocking(move || recording.finish()).await?;
+    let VoiceRecording { capture, token } = recording;
+    crate::assistant_api::same_account(&state, &token)?;
+    let audio = super::run_blocking(move || resample::canonical(capture.finish()?)).await?;
     let raw = audio.raw;
     let bytes_per_second = audio.sample_rate as usize * 2;
 
@@ -125,14 +136,6 @@ pub async fn voice_stop(
         return Err("No speech heard".to_string());
     }
 
-    let key = state.openai_key().ok_or_else(|| {
-        crate::platform_text::for_computer(
-            "Dictation is not configured on this Mac. Set OPENAI_API_KEY and restart Vibyra.",
-            "Dictation is not configured on this computer. Set OPENAI_API_KEY and restart Vibyra.",
-        )
-        .to_string()
-    })?;
-
     let raw = &raw[..raw.len().min(bytes_per_second * 120)];
     let seconds = raw.len() as f64 / bytes_per_second as f64;
     let permit = state
@@ -140,8 +143,10 @@ pub async fn voice_stop(
         .reserve(AiCall::Voice, state.ai_limits(), voice_cost_usd(seconds))?;
 
     let wav = wrap_wav(raw, audio.sample_rate, 1);
-    let text = transcribe(wav, key.trim().to_string(), resolve_language(language)).await?;
+    crate::assistant_api::same_account(&state, &token)?;
+    let text = transcribe(wav, token.clone(), resolve_language(language)).await?;
     permit.finish_voice(seconds);
+    crate::assistant_api::same_account(&state, &token)?;
     let text = text.trim().to_string();
     if text.is_empty() {
         return Err("No speech heard".to_string());

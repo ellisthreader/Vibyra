@@ -1,70 +1,22 @@
+import type { LaunchOptions, PreparedLaunch } from "./configuredLaunchTypes";
+import { EFFORT_AGENTS, PLAIN_TERMINALS, supportsFullAccess } from "./configuredLaunchPolicy";
+import { useAccountStore } from "../state/accountStore";
+import { usePlanPromptStore } from "../state/planPromptStore";
+import { allows } from "./planLimits";
 import { resolveLaunchAccount } from "./resolveLaunchAccount";
 import type { ResolvedAgent } from "../types";
 import { launchConversationTerminal } from "./launchConversationTerminal";
-import { launchRoute, type AgentView } from "./launchRoute";
+import { launchRoute } from "./launchRoute";
 import { inspectSafeWorkspace, safeWorkspaceSupported } from "../ipc/workspace";
 import { useLaunchApprovalStore } from "../state/launchApprovalStore";
 import {
   useLaunchSettingsStore,
-  type LaunchEffort,
 } from "../state/launchSettingsStore";
 import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
-interface LaunchOptions {
-  safeMode?: boolean;
-  requestId?: string;
-  phoneRequestId?: string;
-  model?: string | null;
-  reasoningEffort?: LaunchEffort;
-  reasoningEnabled?: boolean;
-  /** Overrides Launch setup when asked ("full permissions"); still only where supported. */
-  permissionMode?: "standard" | "full";
-  title?: string;
-  /**
-   * Terminals to open. Defaults to one: the project's `terminalCount`
-   * preference belongs to the Launch setup button that spells it out
-   * ("Launch 4 terminals"), and must not be inherited by the picker or the
-   * quick chips, where a single click reads as a single terminal.
-   */
-  count?: number;
-  /**
-   * Which presentation the launch is for, when it is not this Mac's own
-   * Settings > General > Agent view. A phone asks for Chat: its page is the
-   * conversation itself, so a Claude or Gemini launch it asked for must run
-   * through the conversation engine, never a PTY it can only watch.
-   */
-  view?: AgentView;
-}
-interface PreparedLaunch {
-  requestId?: string;
-  phoneRequestId?: string;
-  agent: ResolvedAgent;
-  projectId: string;
-  projectRoot: string;
-  count: number;
-  model: string | null;
-  permissionMode: "standard" | "full";
-  reasoningEffort: LaunchEffort | null;
-  title?: string;
-  safeMode: boolean;
-  accountId: string | null;
-  view?: AgentView;
-}
 /** What one launch opened: a pane of this window's, or a shared chat. */
 export type LaunchedSession = { paneId: number } | { conversationId: string };
-
-const FULL_ACCESS_AGENTS = new Set(["claude", "codex", "gemini"]);
-// Mirrors the backend's add_reasoning_effort matrix: passing an effort to any
-// other agent (plain terminals included) makes the whole launch error out.
-const EFFORT_AGENTS = new Set(["claude", "codex"]);
-
-// Full access does not apply to plain terminals.
-const PLAIN_TERMINALS = new Set(["shell", "ssh"]);
-
-function supportsFullAccess(agentId: string): boolean {
-  return FULL_ACCESS_AGENTS.has(agentId);
-}
 
 async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<LaunchedSession[]> {
   // Terminal view opens the agent's own CLI; Chat view opens a conversation.
@@ -163,6 +115,15 @@ export async function launchConfigured(
     accountId: resolveLaunchAccount(agent.id, preferences.accountByProvider[agent.id]),
     view: options.view,
   };
+  // Safe mode is Pro. A saved preference (say, from a finished trial) opens in
+  // the project folder instead; an explicit request for it offers the upgrade.
+  if (launch.safeMode && !allows(useAccountStore.getState().snapshot.profile, "safeWorktrees")) {
+    if (options.safeMode === true) {
+      usePlanPromptStore.getState().show({ feature: "worktrees", message: "Safe mode gives each agent its own copy of your project. It comes with Vibyra Pro." });
+      return [];
+    }
+    launch.safeMode = false;
+  }
   if (!launch.safeMode) return runLaunch(launch);
 
   try {

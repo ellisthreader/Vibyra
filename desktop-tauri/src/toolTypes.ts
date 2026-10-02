@@ -24,6 +24,7 @@ export type ClipboardPaste =
 export interface VoiceStatus {
   recorder: boolean;
   keyConfigured: boolean;
+  reason?: string | null;
 }
 
 /** A live reading from the open microphone. `metered` is false where the

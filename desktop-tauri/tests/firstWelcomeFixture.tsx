@@ -27,7 +27,7 @@ function Fixture() {
   const [handoff, setHandoff] = useState(false);
   return <div className={`app${handoff ? ' app--welcome-handoff' : ''}`}>
     <TitleBar />
-    {query.has('test') && <button type="button" style={{position:'absolute',top:10,right:350,zIndex:41}} onClick={() => {setHandoff(false);setOpen(true);}}>Replay intro fixture</button>}
+    {query.has('test') && <button type="button" style={{position:'absolute',top:10,right:350,zIndex:41}} onClick={(event) => {event.currentTarget.focus();setHandoff(false);setOpen(true);}}>Replay intro fixture</button>}
     <div className="shell"><div className="product-code-shell"><ProjectStrip /><HomeView /></div></div>
     {open && <FirstWelcome profile={profile} onFinish={() => setOpen(false)} onHandoffStart={() => setHandoff(true)} />}
   </div>;

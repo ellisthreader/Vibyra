@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 
 /** True while a popup layered over a dialog is handling Escape and Tab itself. */
@@ -19,6 +19,8 @@ export function useModalFocus(
   open: boolean,
   onClose: () => void,
 ) {
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     if (!open) return;
     const node = ref.current;
@@ -44,7 +46,7 @@ export function useModalFocus(
       if (popupOwnsKeys()) return;
       if (event.key === "Escape") {
         event.stopPropagation();
-        onClose();
+        close.current();
         return;
       }
       const items = Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE));
@@ -67,5 +69,5 @@ export function useModalFocus(
       for (const element of background) element.removeAttribute("inert");
       opener?.focus();
     };
-  }, [ref, open, onClose]);
+  }, [ref, open]);
 }

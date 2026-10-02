@@ -33,6 +33,7 @@ async fn review(
     if !looks_uuid(&id) {
         return Err("Unknown computer grant.".into());
     }
+    crate::commands::plan_access::admit_review(&state)?;
     let scope = account_scope(&state)?;
     let expected_scope = scope.clone();
     let file = agent_computer_store::path(&state.settings_path)?;

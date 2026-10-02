@@ -12,7 +12,7 @@ export function ChatVoiceStart({ disabled }: { disabled: boolean }) {
       type="button"
       className={`chat-voice-button chat-voice-start ${live ? "is-talking" : ""}`}
       aria-label={live ? "End the voice conversation" : "Start a voice conversation"}
-      title={live ? "End the voice conversation" : "Talk to Vibyra"}
+      title={live ? "End the voice conversation" : "Talk to Vibyra · uses Vibyra tokens"}
       aria-pressed={live}
       disabled={disabled && !live}
       onClick={toggle}

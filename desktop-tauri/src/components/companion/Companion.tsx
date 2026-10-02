@@ -1,3 +1,4 @@
+import { allows } from "../../lib/planLimits";
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { COMPANION_MAX_WIDTH, COMPANION_MIN_WIDTH, type CompanionTab } from '../../lib/companionPreferences';
 import { useAccountStore } from '../../state/accountStore';
@@ -32,6 +33,7 @@ function CompanionContent({ active }: { active: boolean }) {
       companionOpen: s.companionOpen, companionSize: s.companionSize, companionTab: s.companionTab, companionWidth: s.companionWidth,
       setCompanionTab: s.setCompanionTab, setCompanionWidth: s.setCompanionWidth, toggleCompanion: s.toggleCompanion })));
   const tab = savedTab;
+  const previewIncluded = useAccountStore(s => allows(s.snapshot.profile, "preview"));
   const entries: { id: CompanionTab; label: string }[] = [
     { id: 'chat', label: 'Chat' }, { id: 'worktrees', label: 'Worktrees' }, { id: 'preview', label: 'Preview' }, { id: 'session', label: 'Session' },
   ];
@@ -69,7 +71,7 @@ function CompanionContent({ active }: { active: boolean }) {
           id={`companion-tab-${entry.id}`} role="tab" aria-selected={tab === entry.id || (tab === 'files' && entry.id === 'chat')}
           aria-controls={`companion-panel-${entry.id}`} tabIndex={tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 0 : -1}
           className={`companion__tab ${tab === entry.id || (tab === 'files' && entry.id === 'chat') ? 'companion__tab--active' : ''} ${talking && entry.id === 'chat' ? 'companion__tab--talking' : ''}`}
-          onClick={() => setTab(entry.id)} onKeyDown={event => moveTabFocus(event, index)}>{entry.label}
+          onClick={() => setTab(entry.id)} onKeyDown={event => moveTabFocus(event, index)}>{entry.label}{entry.id === "preview" && !previewIncluded && <span className="pro-mark" aria-label="Needs Vibyra Pro">Pro</span>}
           {entry.id === 'chat' && (replying || talking) && <span className="companion__activity" aria-label={talking ? 'Voice conversation active' : 'Reply in progress'} />}</button>)}
       </nav>
       <DockSizeControl />

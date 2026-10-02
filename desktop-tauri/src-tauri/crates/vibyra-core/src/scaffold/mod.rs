@@ -13,12 +13,13 @@
 mod plan;
 mod preflight;
 mod run;
+mod seeds;
 #[cfg(test)]
 mod tests;
 
 pub use plan::{
-    destination_state, free_name, prepare, DestinationState, ScaffoldPlan, ScaffoldSeed,
-    ScaffoldStep,
+    apply_seeds, destination_state, free_name, prepare, DestinationState, ScaffoldPlan,
+    ScaffoldSeed, ScaffoldStep,
 };
 pub use preflight::installed_tools;
 pub use run::{git_init, run_step, StepOutcome};

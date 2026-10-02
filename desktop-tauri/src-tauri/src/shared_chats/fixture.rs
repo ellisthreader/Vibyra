@@ -56,6 +56,7 @@ for line in sys.stdin:
         local_action: Mutex::new(()),
         wake: Default::default(),
         preview: Default::default(),
+        admission: Default::default(),
     });
     let session = engine
         .handle(

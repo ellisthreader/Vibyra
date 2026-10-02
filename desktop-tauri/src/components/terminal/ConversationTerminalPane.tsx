@@ -10,10 +10,11 @@ export const ConversationTerminalPane = memo(function ConversationTerminalPane(p
   session: SharedSession; hidden: boolean; active: boolean; fontSize: number;
 }) {
   const settings = useSettingsStore(s => s.settings);
+  const viewRevision = useSettingsStore(s => s.agentViewRevision);
   const view = settings?.agentView ?? 'terminal';
   const [chatPreview, setChatPreview] = useState(false);
   // An explicit Settings action takes precedence even when it reselects Terminal.
-  useEffect(() => setChatPreview(false), [settings]);
+  useEffect(() => setChatPreview(false), [view, viewRevision]);
   const nativeAvailable = (props.session.kind ?? 'codex') === 'codex';
   const nativeVisible = nativeAvailable && view === 'terminal' && !chatPreview;
   // Terminal view means the genuine CLI, which only Codex can attach to a

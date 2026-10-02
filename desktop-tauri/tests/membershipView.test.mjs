@@ -105,3 +105,13 @@ test("prices read as pounds", () => {
   assert.equal(pounds(2000), "£20.00");
   assert.equal(pounds(15200), "£152.00");
 });
+
+
+test("the current Pro offer and free trial retain distinct billing actions", () => {
+  assert.equal(membershipView(profile({plan:"pro_v2",billingProvider:"stripe"})).plan, "Pro");
+  const trial = membershipView(profile({plan:"pro_v2",billingProvider:"trial",planLimits:{trial:true,paidUntil:"2026-10-10T00:00:00Z"}}));
+  assert.equal(trial.plan, "Pro trial");
+  assert.equal(trial.state, "Ends on 10 October 2026");
+  assert.equal(trial.manage, null);
+  assert.equal(trial.billing, null);
+});

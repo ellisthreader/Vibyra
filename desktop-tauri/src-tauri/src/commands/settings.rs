@@ -30,6 +30,13 @@ pub async fn save_settings(app: AppHandle, mut settings: Settings) -> Result<(),
     run_blocking_core(move || {
         let state = app.state::<AppState>();
         let _write = state.settings_write.lock();
+        // Adding a project past the plan's limit is refused; keeping, reordering
+        // and removing projects never is.
+        state
+            .account
+            .plan_limits()
+            .admit_project_list(&state.settings.lock().projects, &settings.projects)
+            .map_err(CoreError::PlanLimit)?;
         settings.legacy_openai_api_key = state.settings.lock().legacy_openai_api_key.clone();
         settings.save_to(&state.settings_path)?;
         *state.settings.lock() = settings;
@@ -39,12 +46,10 @@ pub async fn save_settings(app: AppHandle, mut settings: Settings) -> Result<(),
 }
 
 fn view(state: &AppState) -> SettingsView {
-    // Cloned into its own statement: the key lookup below may take the
-    // settings lock itself on first use.
     let settings = state.settings.lock().clone();
     SettingsView {
         settings,
-        openai_key_configured: state.openai_key().is_some(),
-        secure_storage_available: state.secret_store_available(),
+        openai_key_configured: false, // Retired compatibility field; use ai_service_status.
+        secure_storage_available: state.account.snapshot().secure_storage,
     }
 }

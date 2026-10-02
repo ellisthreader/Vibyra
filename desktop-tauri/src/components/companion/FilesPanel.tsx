@@ -1,3 +1,6 @@
+import { useAccountStore } from "../../state/accountStore";
+import { allows } from "../../lib/planLimits";
+import { ProLockPanel } from "../plan/ProLockPanel";
 import { useEffect, useRef, useState } from 'react';
 import { useFilesRoot } from './useFilesRoot';
 import { invoke } from '@tauri-apps/api/core';
@@ -18,8 +21,9 @@ export function FilesPanel({ scope, active = true }: { scope?: { root: string | 
   const focused = useFilesRoot(!scope);
   const { root, error: rootError, title } = scope ?? focused;
   const version = useWorkspaceStore(s => s.fsVersion);
-  const live = usePageVisible() && active;
-  const [mode, setMode] = useState<'changes' | 'all'>('changes');
+  const reviewing = useAccountStore(s => allows(s.snapshot.profile, "review"));
+  const live = usePageVisible() && active && reviewing;
+  const [mode, setMode] = useState<'changes' | 'all'>(reviewing ? 'changes' : 'all');
   const [changes, setChanges] = useState<Changes | null>(null);
   const [error, setError] = useState('');
   const [path, setPath] = useState<string | null>(null);
@@ -52,19 +56,19 @@ export function FilesPanel({ scope, active = true }: { scope?: { root: string | 
     return () => { alive = false; clearTimeout(timer); };
   }, [root, version, live]);
   useEffect(() => {
-    if (!root || !path || mode !== 'changes') { setPreview(''); return; }
+    if (!root || !path || !reviewing || mode !== 'changes') { setPreview(''); return; }
     let alive = true;
     void invoke<string>('fs_change_preview', { root, path }).then(value => { if (alive) setPreview(value); })
       .catch(error => { if (alive) setPreview(String(error)); });
     return () => { alive = false; };
-  }, [root, path, revision, mode]);
+  }, [root, path, revision, mode, reviewing]);
   return <div className="files-panel">
     <div className="files-panel__toolbar"><div role="group" aria-label="File view">
       <button aria-pressed={mode === 'changes'} onClick={() => setMode('changes')}>Changes{changes ? ` (${changes.files.length})` : ''}</button>
       <button aria-pressed={mode === 'all'} onClick={() => setMode('all')}>All files</button>
     </div><span className="files-live"><i />{error ? "Unavailable" : "Live"}</span></div>
     {rootError && <p role="alert" className="chat-error">{rootError}</p>}
-    {mode === 'all' ? <FileTree folder={root} refreshVersion={revision} /> : <>
+    {mode === 'all' ? <FileTree folder={root} refreshVersion={revision} /> : !reviewing ? <ProLockPanel title="Review is part of Vibyra Pro" body="See every file your agents changed, line by line, before you keep it." /> : <>
       <p className="files-scope" title={root ?? ''}>{title} · {root?.split('/').filter(Boolean).at(-1) ?? 'No project'}</p>
       {error && <p role="alert" className="chat-error">{error}</p>}
       {!changes && !error && !rootError && <p className="files-empty">Checking changes…</p>}

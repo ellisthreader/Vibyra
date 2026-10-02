@@ -1,7 +1,7 @@
 import { platformName } from "../../lib/platform";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { accountBillingTopup, accountCredits, accountTopupOptions } from "../../ipc/accountBilling";
+import { accountBillingPage, accountBillingTopup, accountCredits, accountTopupOptions } from "../../ipc/accountBilling";
 import { longDate, pounds } from "../../lib/membership";
 import type { AccountProfile, CreditsSummary, TopupOption } from "../../types";
 import { SettingRow } from "./SettingsShared";
@@ -11,8 +11,8 @@ import { SettingRow } from "./SettingsShared";
  * of its own: what you are on and what you have left are one thing, so they
  * share the membership card.
  *
- * The Mac does not spend these — its terminals run on your own provider
- * accounts — which the note says once, without an essay.
+ * The built-in assistant spends these tokens; coding terminals use the
+ * person’s connected provider accounts.
  */
 export function AccountCredits({
   profile,
@@ -27,27 +27,30 @@ export function AccountCredits({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const generation = useRef(0);
   const load = useCallback(() => {
+    const request = ++generation.current;
     setError(null);
     void accountCredits()
-      .then(setCredits)
-      .catch((cause) => setError(String(cause)));
+      .then(value => { if (request === generation.current) setCredits(value); })
+      .catch((cause) => { if (request === generation.current) setError(String(cause)); });
   }, []);
 
   useEffect(() => {
+    setCredits(null);
     load();
     void accountTopupOptions().then(setTopups).catch(() => {});
     // A top-up is paid for in the browser, so the balance is re-read when the
     // window comes back rather than on a timer of its own.
     window.addEventListener("focus", load);
-    return () => window.removeEventListener("focus", load);
-  }, [load]);
+    return () => { generation.current++; window.removeEventListener("focus", load); };
+  }, [load, profile.welcomeKey, profile.email]);
 
   // Nothing at all while the first read is in flight; a plain sentence if it
   // failed, because a missing row reads as a missing feature.
   if (!credits) {
     return error ? (
-      <SettingRow label="Credits unavailable" hint={error}>
+      <SettingRow label="Tokens unavailable" hint={error}>
         <button className="btn" onClick={load}>Try again</button>
       </SettingRow>
     ) : null;
@@ -75,14 +78,14 @@ export function AccountCredits({
     <>
       <div className="credits-row" data-panel="credits">
         <div className="credits-row__head">
-          <span className="credits-row__value">{credits.available.toLocaleString()}</span>
-          <span className="credits-row__unit">credits left</span>
-          {credits.held > 0 && <span className="credits-row__held">{credits.held.toLocaleString()} in flight</span>}
+          <span className="credits-row__value">{credits.available.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+          <span className="credits-row__unit">Vibyra tokens left</span>
+          {credits.held > 0 && <span className="credits-row__held">{credits.held.toLocaleString(undefined, { maximumFractionDigits: 4 })} in flight</span>}
         </div>
         <div
           className="ai-meter__track"
           role="meter"
-          aria-label="Credits left"
+          aria-label="Vibyra tokens left"
           aria-valuenow={fill}
           aria-valuemin={0}
           aria-valuemax={100}
@@ -90,12 +93,18 @@ export function AccountCredits({
           <span className="ai-meter__fill" style={{ width: `${fill}%` }} />
         </div>
         <span className="credits-row__note">
+          {credits.paidAvailable != null && `${credits.paidAvailable.toLocaleString(undefined, { maximumFractionDigits: 4 })} paid tokens never expire. `}
+          {credits.promotionalExpiresAt && `Free tokens expire ${longDate(credits.promotionalExpiresAt)}. `}
+          {credits.freeNextAt && `Next free allowance ${longDate(credits.freeNextAt)}. `}
           {resets}Spent by Vibyra AI and the phone app; {platformName} terminals use your own accounts.
         </span>
       </div>
+      <SettingRow label="Token activity" hint="View additions, reservations and refunds in your website account.">
+        <button className="btn" onClick={() => void accountBillingPage("activity").catch(cause => setError(String(cause)))}>View activity</button>
+      </SettingRow>
       {credits.purchasesEnabled && topups.length > 0 && (
         <SettingRow label="Top up" hint="A one-off purchase, on top of your plan.">
-          {!choosing && <button className="btn" onClick={() => setChoosing(true)}>Buy credits</button>}
+          {!choosing && <button className="btn" onClick={() => setChoosing(true)}>Buy tokens</button>}
           {choosing && (
             <div className="credits-topups">
               {topups.map((option) => (

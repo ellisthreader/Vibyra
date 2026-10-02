@@ -33,8 +33,8 @@ pub(super) async fn read(
             }
             Ok(Ok(Some(chunk))) => chunk,
             Ok(Ok(None)) => break,
-            Ok(Err(error)) => {
-                out.error = Some(format!("the reply stopped early: {error}"));
+            Ok(Err(_)) => {
+                out.error = Some("The reply stopped early. Please try again.".into());
                 break;
             }
         };
@@ -49,8 +49,15 @@ pub(super) async fn read(
             flush(on_event, &mut pending, &mut flushed);
         }
     }
+    check_completion(&mut out, ended);
     flush(on_event, &mut pending, &mut flushed);
     out
+}
+
+fn check_completion(out: &mut Streamed, ended: bool) {
+    if !ended && !out.stopped && out.error.is_none() {
+        out.error = Some("The reply stopped early. Please try again.".into());
+    }
 }
 
 /// Folds one chunk's frames into the reply so far. True once the stream has
@@ -100,4 +107,28 @@ fn flush(on_event: &Channel<ChatDelta>, pending: &mut String, flushed: &mut Inst
         text: std::mem::take(pending),
     });
     *flushed = Instant::now();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn eof_cannot_turn_an_interrupted_reply_into_success() {
+        let mut partial = Streamed {
+            text: "Partial reply".into(),
+            ..Streamed::default()
+        };
+        check_completion(&mut partial, false);
+        assert!(partial.error.is_some());
+        assert_eq!(partial.text, "Partial reply");
+        let mut stopped = Streamed {
+            stopped: true,
+            ..Streamed::default()
+        };
+        check_completion(&mut stopped, false);
+        assert!(stopped.error.is_none());
+        let mut complete = Streamed::default();
+        check_completion(&mut complete, true);
+        assert!(complete.error.is_none());
+    }
 }

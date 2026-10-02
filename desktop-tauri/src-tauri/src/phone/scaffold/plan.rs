@@ -49,8 +49,15 @@ pub fn validate(plan: &ScaffoldPlan) -> Result<(), String> {
             return Err("a step in this template is malformed".into());
         }
         let cwd = Path::new(&step.cwd);
-        if cwd != dir && cwd != parent {
-            return Err("steps may only run in the new folder or beside it".into());
+        if cwd != dir
+            && cwd != parent
+            && !cwd.strip_prefix(dir).is_ok_and(|relative| {
+                relative
+                    .components()
+                    .all(|part| matches!(part, std::path::Component::Normal(_)))
+            })
+        {
+            return Err("steps may only run inside the new folder or beside it".into());
         }
     }
     for seed in &plan.seeds {
@@ -78,4 +85,21 @@ pub fn default_parent(projects: &[PathBuf], home: &Path) -> PathBuf {
         .max_by_key(|(parent, count)| (*count, std::cmp::Reverse(parent.to_path_buf())))
         .map(|(parent, _)| parent.to_path_buf())
         .unwrap_or_else(|| home.join("Projects"))
+}
+
+#[cfg(test)]
+mod layer_tests {
+    use super::validate;
+    #[test]
+    fn addon_steps_stay_inside_the_new_project() {
+        let plan = |cwd: &str| {
+            serde_json::from_value(serde_json::json!({
+            "dir": "/tmp/qa/app", "createDir": true, "gitInit": false, "seeds": [],
+            "steps": [{"label": "Install addon", "program": "npm", "args": ["install"], "cwd": cwd}]
+        })).unwrap()
+        };
+        assert!(validate(&plan("/tmp/qa/app/services/express")).is_ok());
+        assert!(validate(&plan("/tmp/qa/app/../other")).is_err());
+        assert!(validate(&plan("/tmp/qa/application")).is_err());
+    }
 }

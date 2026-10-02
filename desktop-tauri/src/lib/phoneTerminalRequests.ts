@@ -1,3 +1,4 @@
+import { usePlanPromptStore } from "../state/planPromptStore";
 import { phoneProjectMutation } from "./phoneProjectMutation";
 import { invoke } from '@tauri-apps/api/core';
 import { resolveLaunchAccount } from './resolveLaunchAccount';
@@ -74,14 +75,19 @@ const storeDeps: RequestDeps = {
   launch: async (agent, projectId, title, safeMode, requestId, selected, permissionMode, phoneRequestId) => {
     // A failed launch reports on this Mac as a notification; keep its words for the phone.
     const since = Math.max(0, ...useNotificationStore.getState().history.map(item => item.id));
+    const limitsBefore = usePlanPromptStore.getState().seq;
     const started = await launchConfigured(agent, projectId, {
       title, view: "chat", safeMode, requestId, phoneRequestId,
       ...(permissionMode ? { permissionMode } : {}),
       ...(selected ? { model: selected.model, reasoningEnabled: selected.effort !== null,
         reasoningEffort: selected.effort as LaunchEffort | undefined } : {}),
     });
-    launchProblem = started.length ? null : useNotificationStore.getState().history
-      .find(item => item.id > since && item.category === "system" && item.severity === "danger")?.body ?? null;
+    const limit = usePlanPromptStore.getState();
+    // A plan limit keeps its marker, so the phone offers Pro rather than an error.
+    launchProblem = started.length ? null : limit.seq !== limitsBefore && limit.last
+      ? `plan-limit:${limit.last.feature}: ${limit.last.message}`
+      : useNotificationStore.getState().history
+        .find(item => item.id > since && item.category === "system" && item.severity === "danger")?.body ?? null;
     return started;
   },
   lastError: () => launchProblem,

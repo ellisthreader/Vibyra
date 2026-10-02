@@ -1,5 +1,5 @@
-import { paneLabel } from "./paneLabel";
-import { isSuspendedId } from "./sessionRestore";
+import { paneLabel } from "./paneLabel.ts";
+import { isSuspendedId } from "./sessionRestore.ts";
 import type { PhonePane, PhoneProject, PhoneSavedPane } from "../ipc/phone";
 import type { PaneState } from "../state/terminalStoreTypes";
 import type { ProjectSpec } from "../types";
@@ -30,8 +30,8 @@ export interface ShownChats {
   open: string[];
 }
 
-/** The shared chats the phone should list as terminals: the ones the grid
- * draws. The engine keeps every conversation ever had; those are history. */
+/** The phone terminal list mirrors the Mac sidebar: open cards plus running
+ * conversations. Closing a grid card does not stop its process. */
 export function shownChats(chats: ShownChats): string[] | null {
   if (!chats.loaded) return null;
   return chats.sessions.filter((chat) => chats.open.includes(chat.id) || chat.status === "running").map((chat) => chat.id);

@@ -1,11 +1,9 @@
 //! Starting a project from the phone: the same plan the desktop wizard builds,
 //! run on this computer by `vibyra_core::scaffold`, reported back as events.
-//!
 //! A run is started and answered at once; the work happens on its own thread
 //! and reaches the phone as `scaffold.step`, `scaffold.output` and
 //! `scaffold.done`. A request that blocked for the whole build would hold the
 //! connection's event pump with it, so nothing here waits on a process.
-
 use crate::{state::Shared, text, Engine};
 use parking_lot::Mutex;
 use serde_json::{json, Value};
@@ -15,10 +13,8 @@ use std::{
     sync::{atomic::AtomicBool, atomic::Ordering, Arc},
 };
 use vibyra_core::scaffold::{installed_tools, ScaffoldPlan};
-
 pub(crate) const LINE_TAIL: usize = 200;
 const KEPT_RUNS: usize = 8;
-
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum Phase {
     Running,
@@ -38,7 +34,6 @@ impl Phase {
         }
     }
 }
-
 pub(crate) struct Run {
     pub dir: String,
     pub phase: Phase,
@@ -60,7 +55,6 @@ impl Run {
             "lines":self.lines,"error":self.error,"project":self.project})
     }
 }
-
 #[derive(Default)]
 pub(crate) struct Scaffolds {
     pub runs: HashMap<String, Run>,
@@ -70,7 +64,6 @@ pub(crate) struct Scaffolds {
     pub targets: HashSet<String>,
 }
 pub(crate) type SharedScaffolds = Arc<Mutex<Scaffolds>>;
-
 fn run_id(params: &Value) -> Result<&str, String> {
     let id = text(params, "runId")?;
     if id.is_empty() || id.len() > 64 || !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
@@ -79,74 +72,9 @@ fn run_id(params: &Value) -> Result<&str, String> {
     }
     Ok(id)
 }
-
-/// Refuses anything the wizard could not have produced before a process runs.
-/// Steps are argv without a shell; programs are bare tool names or live inside
-/// the new folder's virtual environment; every cwd is the folder or its parent.
-pub(crate) fn validate(plan: &ScaffoldPlan) -> Result<(), String> {
-    let dir = Path::new(&plan.dir);
-    if plan.dir.len() > 1024 || plan.dir.chars().any(char::is_control) || !dir.is_absolute() {
-        return Err("the project folder needs a full path".into());
-    }
-    let parent = dir
-        .parent()
-        .filter(|parent| parent.parent().is_some())
-        .ok_or("choose a folder inside another folder")?;
-    if plan.steps.len() > 12 || plan.seeds.len() > 32 {
-        return Err("this template asks for too much".into());
-    }
-    for step in &plan.steps {
-        let bare = !step.program.contains(['/', '\\']);
-        let inside = step.program.starts_with("{{venv}}/") || step.program.starts_with("{{dir}}/");
-        if step.program.is_empty()
-            || step.program.len() > 256
-            || !(bare || inside)
-            || step.program.chars().any(char::is_control)
-        {
-            return Err(format!(
-                "{} is not a tool this computer can be asked to run",
-                step.program
-            ));
-        }
-        if step.label.len() > 80
-            || step.args.len() > 64
-            || step
-                .args
-                .iter()
-                .any(|arg| arg.len() > 512 || arg.contains('\0'))
-        {
-            return Err("a step in this template is malformed".into());
-        }
-        let cwd = Path::new(&step.cwd);
-        if cwd != dir && cwd != parent {
-            return Err("steps may only run in the new folder or beside it".into());
-        }
-    }
-    for seed in &plan.seeds {
-        if seed.path.len() > 256 || seed.body.len() > 64 * 1024 {
-            return Err("a starter file in this template is too large".into());
-        }
-    }
-    Ok(())
-}
-
-/// Where new projects go: beside most of the approved ones, else ~/Projects.
-pub(crate) fn default_parent(projects: &[PathBuf], home: &Path) -> PathBuf {
-    let mut counts: HashMap<&Path, usize> = HashMap::new();
-    for project in projects {
-        if let Some(parent) = project.parent() {
-            if parent != home && parent.parent().is_some() {
-                *counts.entry(parent).or_default() += 1;
-            }
-        }
-    }
-    counts
-        .into_iter()
-        .max_by_key(|(parent, count)| (*count, std::cmp::Reverse(parent.to_path_buf())))
-        .map(|(parent, _)| parent.to_path_buf())
-        .unwrap_or_else(|| home.join("Projects"))
-}
-
+#[path = "scaffold_plan.rs"]
+mod plan;
+pub(crate) use plan::{default_parent, validate};
 impl Engine {
     pub(crate) fn scaffold_handle(&self, method: &str, params: &Value) -> Result<Value, String> {
         match method {
@@ -183,7 +111,6 @@ impl Engine {
             _ => Err("method not supported by host protocol 1".into()),
         }
     }
-
     fn scaffold_preflight(&self, params: &Value) -> Result<Value, String> {
         let tools: Vec<String> = params["tools"]
             .as_array()
@@ -218,7 +145,6 @@ impl Engine {
             json!({"tools":installed_tools(&tools),"home":home,"parent":default_parent(&roots, &home)}),
         )
     }
-
     fn scaffold_start(&self, params: &Value) -> Result<Value, String> {
         let id = run_id(params)?.to_owned();
         let plan: ScaffoldPlan = serde_json::from_value(params["plan"].clone())

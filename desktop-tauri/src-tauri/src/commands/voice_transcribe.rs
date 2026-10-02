@@ -3,6 +3,7 @@
 //! which owns the microphone — together they crossed the 200-line limit, and
 //! apart each file is one thing.
 
+use base64::Engine;
 use serde::Deserialize;
 
 pub const VOICE_MODEL: &str = "whisper-1";
@@ -18,7 +19,7 @@ pub(super) fn resolve_language(language: Option<String>) -> Option<String> {
 
 pub(super) async fn transcribe(
     wav: Vec<u8>,
-    key: String,
+    token: String,
     language: Option<String>,
 ) -> Result<String, String> {
     #[derive(Deserialize)]
@@ -26,39 +27,20 @@ pub(super) async fn transcribe(
         text: String,
     }
 
-    let part = reqwest::multipart::Part::bytes(wav)
-        .file_name("audio.wav")
-        .mime_str("audio/wav")
-        .map_err(|e| e.to_string())?;
-    let mut form = reqwest::multipart::Form::new()
-        .text("model", VOICE_MODEL)
-        .part("file", part);
+    let mut body =
+        serde_json::json!({ "audio": base64::engine::general_purpose::STANDARD.encode(wav) });
     // Telling Whisper what to expect is both faster and more accurate than
     // letting it detect; it is also what stops it translating a reply into
     // English when it mishears the language.
     if let Some(language) = language {
-        form = form.text("language", language);
+        body["language"] = serde_json::Value::String(language);
     }
 
-    let response = crate::http_client::shared()
-        .post("https://api.openai.com/v1/audio/transcriptions")
-        .bearer_auth(key)
-        .multipart(form)
-        .timeout(std::time::Duration::from_secs(60))
-        .send()
+    let response = crate::assistant_api::post("transcriptions", &token, body).await?;
+    let parsed: Transcription = response
+        .json()
         .await
-        .map_err(|e| format!("transcription request failed: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        let detail = serde_json::from_str::<serde_json::Value>(&body)
-            .ok()
-            .and_then(|v| v["error"]["message"].as_str().map(String::from))
-            .unwrap_or_else(|| format!("HTTP {status}"));
-        return Err(format!("Transcription failed: {detail}"));
-    }
-    let parsed: Transcription = response.json().await.map_err(|e| e.to_string())?;
+        .map_err(|_| "Vibyra could not read the transcription.".to_string())?;
     Ok(parsed.text)
 }
 

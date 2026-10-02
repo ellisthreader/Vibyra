@@ -1,3 +1,13 @@
+## 0.8.18 — Token-funded assistant and account recovery (candidate, 2026-10-02)
+
+Prepared from the verified 0.8.17 source533219cb, Mac build42. Built-in chat,
+dictation and speech use the backend-held key and shared Vibyra token wallet.
+Email reauthentication failures preserve sessions and running terminals; explicit
+Terminal selection ends temporary chat previews; account modal callbacks preserve
+focus and deletion OAuth binds its flow proof. No new Agent, connector, cloud,
+notification or VM feature is enabled. Backend rollout and native artifact
+acceptance are release gates; this candidate entry is not publication evidence.
+
 ## 0.8.17 — Browser sign-in compatibility (candidate, 2026-10-01)
 
 Isolated candidate over reviewed 66ae2364. Google/Apple OAuth starts carry a fresh random proof and native polling returns it in a header; the backend binds completion to that attempt. Includes no unrelated dirty-main changes. Native package signing, notarization, publication and installed acceptance remain pending.

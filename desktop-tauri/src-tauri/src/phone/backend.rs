@@ -38,7 +38,7 @@ impl DesktopBackend {
         Self::new_with_preview(manager, workspace, typing, vault, requests, None)
     }
 
-    pub fn new_with_preview(
+    pub(crate) fn new_with_preview(
         manager: Arc<PtyManager>,
         workspace: SharedWorkspace,
         typing: Arc<AtomicBool>,

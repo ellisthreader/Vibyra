@@ -171,10 +171,10 @@ export interface AiPricing {
 
 export interface AiServiceStatus {
   keyConfigured: boolean;
-  /** The key came from OPENAI_API_KEY, not from the credential store. */
+  /** Legacy compatibility; the provider credential is held only by the server. */
   keyFromEnvironment: boolean;
-  /** Masked fragment such as "sk-…wxyz" — never the whole key. */
   keyHint: string | null;
+  serviceError?: string | null;
   secureStorageAvailable: boolean;
   recorderAvailable: boolean;
   keyPageUrl: string;

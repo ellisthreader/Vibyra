@@ -31,6 +31,10 @@ pub enum CoreError {
 
     #[error("background task failed: {0}")]
     Task(String),
+
+    /// A plan limit, already worded for people and marked for an upgrade prompt.
+    #[error("{0}")]
+    PlanLimit(String),
 }
 
 impl serde::Serialize for CoreError {

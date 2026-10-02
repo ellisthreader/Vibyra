@@ -12,7 +12,7 @@ pub(crate) mod remote_registration;
 mod remote_revocation;
 pub(crate) mod remote_transfer_scope;
 // Prepared Mac-side permission boundary. Deliberately disconnected from RPC.
-mod backend;
+pub(crate) mod backend;
 mod connection_init;
 mod connection_lifecycle;
 mod control;

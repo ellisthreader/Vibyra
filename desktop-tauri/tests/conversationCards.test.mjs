@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { shownChats } from "../src/lib/phoneWorkspace.ts";
 import { openConversationCards, splitConversationRows } from "../src/lib/conversationCards.ts";
 
 function source(path) {
@@ -58,8 +59,8 @@ test("both surfaces draw their cards from the live list", () => {
 });
 
 /**
- * One set, two surfaces: the phone lists the terminals the Mac's grid draws,
- * so a card that is not up here must not be a terminal there either.
+ * The grid shows open cards. Both sidebars also keep running conversations
+ * reachable after their cards close; closing a card must not hide active work.
  */
 test("the phone retains running conversations alongside visible grid cards", () => {
   const stage = source("../src/components/terminal/TerminalStage.tsx");
@@ -68,8 +69,9 @@ test("the phone retains running conversations alongside visible grid cards", () 
   const store = source("../src/state/conversationTerminalStore.ts");
   assert.match(store, /openConversationCards\(sessions, get\(\)\.open, get\(\)\.dismissed\)/);
   assert.match(store, /readConversationLayout/, "the explicit open set survives a quit");
-  const phone = source("../src/lib/phoneWorkspace.ts");
-  assert.match(phone, /chats\.sessions\.filter\(\(chat\) => chats\.open\.includes\(chat\.id\) \|\| chat\.status === "running"\)/);
+  const sessions = [live("background"), saved("open"), saved("history")];
+  assert.deepEqual(shownChats({ loaded: true, sessions, open: ["open"] }),
+    splitConversationRows(sessions, ["open"]).live.map(session => session.id));
   assert.match(source("../src/lib/phoneWorkspaceSync.ts"), /open: chats\.open/);
 });
 

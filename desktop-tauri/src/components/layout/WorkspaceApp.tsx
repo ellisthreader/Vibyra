@@ -13,6 +13,7 @@ import { TitleBar } from "./TitleBar";
 import { UpdateBanner } from "./UpdateBanner";
 import { WhatsNew } from "./WhatsNew";
 import { VoiceHud } from "./VoiceHud";
+import { PlanUpgradeModal } from "../plan/PlanUpgradeModal";
 import { RemoteSecurityMonitor } from "../phone/RemoteSecurityMonitor";
 import { PhoneApprovalModal } from "../phone/PhoneApprovalModal";
 import { Toasts } from "../notifications/Toasts";
@@ -153,6 +154,7 @@ export function WorkspaceApp() {
       <CloseConfirmModal />
       <PhoneApprovalModal />
       <RemoteSecurityMonitor />
+      <PlanUpgradeModal />
       <ScreenshotTray />
       <Suspense fallback={null}>
         {paletteOpen ? <CommandPalette /> : null}

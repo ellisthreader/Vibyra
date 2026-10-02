@@ -41,10 +41,19 @@ pub async fn create_terminal(
             .map_err(CoreError::Settings)?;
     }
     if request.workspace_mode.as_deref() == Some("safe") {
+        super::plan_access::admit_safe_worktrees(&state).map_err(CoreError::PlanLimit)?;
         super::worktree_access::require_github(&state)
             .await
             .map_err(CoreError::Settings)?;
     }
+    super::plan_access::admit_project_path(
+        &state,
+        request.cwd.as_deref().or(request.resume_cwd.as_deref()),
+    )
+    .map_err(CoreError::PlanLimit)?;
+    let _admitted = super::plan_access::admit_terminal(&state)
+        .await
+        .map_err(CoreError::PlanLimit)?;
     let context = {
         let settings = state.settings.lock();
         LaunchContext {
@@ -85,6 +94,7 @@ pub async fn safe_workspace_preflight(
     state: State<'_, AppState>,
     project_root: String,
 ) -> Result<SafeWorkspacePreflight, CoreError> {
+    super::plan_access::admit_safe_worktrees(&state).map_err(CoreError::PlanLimit)?;
     super::worktree_access::require_github(&state)
         .await
         .map_err(CoreError::Settings)?;
@@ -124,6 +134,9 @@ pub async fn create_ssh_terminal(
             .map_err(CoreError::Settings)?;
     }
     validate_ssh_target(&target)?;
+    let _admitted = super::plan_access::admit_terminal(&state)
+        .await
+        .map_err(CoreError::PlanLimit)?;
     let mut spec = LaunchSpec::ssh(&target, &[]);
     configure_dimensions(&mut spec, rows, cols)?;
     let info = super::phone_effects::scoped(effect, |_| {
@@ -183,18 +196,4 @@ pub async fn terminal_snapshot(
         Some(max) => state.manager.snapshot_tail(id, max),
         None => state.manager.snapshot(id),
     }
-}
-
-#[tauri::command]
-pub async fn list_terminals(state: State<'_, AppState>) -> Result<Vec<SessionInfo>, CoreError> {
-    Ok(state.manager.list())
-}
-
-#[tauri::command]
-pub async fn terminal_session_identities(
-    state: State<'_, AppState>,
-    panes: Vec<crate::session_identity::IdentityRequest>,
-) -> Result<Vec<crate::session_identity::SessionIdentity>, String> {
-    let manager = Arc::clone(&state.manager);
-    super::run_blocking(move || crate::session_identity::identify(&manager, &panes)).await
 }

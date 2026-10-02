@@ -10,6 +10,18 @@ static OAUTH_CLIENT: std::sync::LazyLock<Result<reqwest::Client, reqwest::Error>
             .build()
     });
 
+/// The app's release version, sent as `X-Vibyra-Desktop` so the account service
+/// can ask an outdated build to update once plan limits are on.
+static APP_VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub fn set_app_version(version: String) {
+    let _ = APP_VERSION.set(version);
+}
+
+pub fn app_version() -> Option<&'static str> {
+    APP_VERSION.get().map(String::as_str)
+}
+
 /// Errors split by what the caller may safely conclude. Only `Unauthorized`
 /// permits discarding a stored session; `Network` must preserve it.
 #[derive(Debug, Clone)]
@@ -91,6 +103,9 @@ async fn request_raw_at(
             .request(method.clone(), &url)
             .header("Accept", "application/json")
             .timeout(REQUEST_TIMEOUT);
+        if let Some(version) = app_version() {
+            request = request.header("X-Vibyra-Desktop", version);
+        }
         if let Some(secret) = flow_secret {
             request = request.header("X-Vibyra-Flow-Secret", secret);
         }

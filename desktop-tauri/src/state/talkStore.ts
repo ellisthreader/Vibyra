@@ -116,7 +116,7 @@ export const useTalkStore = create<TalkStore>((set, get) => {
       const status = await voiceStatus();
       if (!live(generation)) return;
       if (!status.recorder) return fail("No microphone is available on this computer");
-      if (!status.keyConfigured) return fail("A spoken conversation needs an OpenAI key");
+      if (!status.keyConfigured) return fail(status.reason ?? "Vibyra voice is temporarily unavailable");
       for (;;) {
         const said = await listen(generation);
         if (!live(generation)) return;

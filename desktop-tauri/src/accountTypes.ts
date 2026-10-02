@@ -30,6 +30,28 @@ export interface AccountProfile {
   billingProvider: string | null;
   canManageStripeBilling: boolean;
   hasAvatar: boolean;
+  /** Free or Pro workspace limits; every limit is open until `enforced`. */
+  planLimits: PlanLimits;
+}
+
+/** What this account's plan allows, as the account service states it. The
+ * Mac's native commands enforce terminals and Safe mode; the server enforces
+ * Agents and Vibyra Cloud. The renderer only shows the state. */
+export interface PlanLimits {
+  enforced: boolean;
+  plan: string;
+  /** On the free Pro trial, which ends at `paidUntil`. */
+  trial: boolean;
+  paidUntil: string | null;
+  /** Running terminals at once, agent or shell; null is unlimited. */
+  maxTerminals: number | null;
+  /** Usable projects, oldest first; later ones stay saved but locked. */
+  maxProjects: number | null;
+  safeWorktrees: boolean;
+  preview: boolean;
+  review: boolean;
+  agents: boolean;
+  remoteAccess: boolean;
 }
 
 /** One place this account is signed in, as Settings > Account lists it. */
@@ -63,6 +85,9 @@ export interface CreditsSummary {
   total: number;
   chatEnabled: boolean;
   purchasesEnabled: boolean;
+  paidAvailable?: number;
+  promotionalExpiresAt?: string | null;
+  freeNextAt?: string | null;
 }
 
 export interface TopupOption {

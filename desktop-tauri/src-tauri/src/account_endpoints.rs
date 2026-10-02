@@ -29,7 +29,7 @@ pub enum Endpoint<'a> {
     DeleteAccount,
     BillingPortal,
     BillingCheckout,
-    BillingPlans,
+    BillingCatalogue,
     /// The versioned Vibes wallet: the account's AI balance.
     VibesWallet,
     /// Registers this computer for remote access and takes a relay token.
@@ -65,7 +65,7 @@ impl Endpoint<'_> {
             Endpoint::DeleteAccount => Ok("/api/account".into()),
             Endpoint::BillingPortal => Ok("/api/billing/portal".into()),
             Endpoint::BillingCheckout => Ok("/api/billing/checkout".into()),
-            Endpoint::BillingPlans => Ok("/api/billing/plans".into()),
+            Endpoint::BillingCatalogue => Ok("/api/billing/catalogue".into()),
             Endpoint::VibesWallet => Ok("/api/vibes/wallet".into()),
             Endpoint::HostNotificationCredential => {
                 Ok("/api/notifications/v1/host-credential".into())
@@ -105,7 +105,7 @@ impl Endpoint<'_> {
             | Endpoint::OauthStatus(..)
             | Endpoint::TwoFactorStatus
             | Endpoint::AccountSessions
-            | Endpoint::BillingPlans
+            | Endpoint::BillingCatalogue
             | Endpoint::VibesWallet
             | Endpoint::ReportReady => reqwest::Method::GET,
             Endpoint::Logout

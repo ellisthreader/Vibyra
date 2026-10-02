@@ -19,6 +19,8 @@ struct Slot {
     pub project: Project,
     pub engine: Arc<Engine>,
 }
+pub type Admission =
+    Arc<dyn Fn() -> Result<tokio::sync::OwnedMutexGuard<()>, String> + Send + Sync>;
 pub struct SharedChats {
     path: PathBuf,
     slots: Mutex<Vec<Slot>>,
@@ -27,6 +29,7 @@ pub struct SharedChats {
     cli: cli::CliTerminals,
     wake: stream::Wake,
     preview: Mutex<Option<preview::Providers>>,
+    admission: Mutex<Option<Admission>>,
 }
 impl SharedChats {
     pub fn new(path: PathBuf) -> Arc<Self> {
@@ -43,7 +46,15 @@ impl SharedChats {
             cli: cli::CliTerminals::default(),
             wake: stream::Wake::default(),
             preview: Mutex::new(None),
+            admission: Mutex::new(None),
         })
+    }
+    pub fn set_admission(&self, admission: Admission) {
+        *self.admission.lock() = Some(admission);
+    }
+    fn admit(&self) -> Result<Option<tokio::sync::OwnedMutexGuard<()>>, String> {
+        let check = self.admission.lock().clone();
+        check.map(|check| check()).transpose()
     }
     fn check(&self) -> Result<(), String> {
         self.error.clone().map_or(Ok(()), Err)
@@ -86,6 +97,14 @@ impl SharedChats {
             "name":slot.project.name,"path":slot.project.root})
             })
             .collect()
+    }
+    /// Conversations running across every project, for the plan's terminal limit.
+    pub fn running(&self) -> usize {
+        self.slots
+            .lock()
+            .iter()
+            .map(|slot| slot.engine.running_sessions())
+            .sum()
     }
     pub fn owns(&self, id: &str) -> bool {
         self.slots

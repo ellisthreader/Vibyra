@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 import { fsReadPreview, onFsChanged } from "../ipc/fs";
 import { useNotificationStore } from "./notificationStore";
+import { planLimitFrom } from "../lib/planLimits";
+import { usePlanPromptStore } from "./planPromptStore";
 import {
   clampCompanionWidth,
   restoreCompanionSize,
@@ -33,6 +35,12 @@ export type ProjectMode = "terminals" | "preview";
 /** Routes a failure into the notification system as a sticky app error. */
 function reportProblem(message: string | null): void {
   if (!message) return;
+  // A plan limit is a choice to offer, not a failure to report.
+  const limit = planLimitFrom(message);
+  if (limit) {
+    usePlanPromptStore.getState().show(limit);
+    return;
+  }
   useNotificationStore.getState().push({
     category: "system",
     severity: "danger",

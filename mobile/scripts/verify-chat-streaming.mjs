@@ -15,7 +15,7 @@ import { resolve } from 'node:path';
 import { chromium } from 'playwright-core';
 
 import { capture, until } from './ui-test-helpers.mjs';
-
+import { verifyFundedChat } from './chat-funded-checks.mjs';
 const output = resolve('../output/chat-streaming');
 await mkdir(output, { recursive: true });
 // The desktop fixture, bundled whole: `fixture-server.mjs` is mobile-shaped and
@@ -70,6 +70,7 @@ const ask = async (page) => {
 
 try {
   for (const theme of ['dark', 'light']) {
+    await verifyFundedChat({ open, ask, settled, calls, theme });
     // ── the dots hold the place until the first token ──────────────────
     const { page, errors } = await open(`theme=${theme}&slow-chat`);
     await ask(page);

@@ -3,7 +3,6 @@ use parking_lot::Mutex;
 
 const SERVICE: &str = "com.vibyra.desktop";
 const DEV_SERVICE: &str = "com.vibyra.desktop.dev.local";
-const OPENAI_ACCOUNT: &str = "openai-api-key";
 const VIBYRA_SESSION_ACCOUNT: &str = "vibyra-account-session";
 const DISCORD_REPORT_WEBHOOK_ACCOUNT: &str = "discord-report-webhook";
 
@@ -37,14 +36,6 @@ mod host_identity_test_store;
 static SESSION_JUST_READ: Mutex<Option<String>> = Mutex::new(None);
 
 impl SecretStore {
-    pub fn read_openai_key(&self) -> Result<Option<String>, String> {
-        read_secret(OPENAI_ACCOUNT)
-    }
-
-    pub fn write_openai_key(&self, key: Option<&str>) -> Result<(), String> {
-        write_secret(OPENAI_ACCOUNT, key)
-    }
-
     pub fn read_account_session(&self) -> Result<Option<String>, String> {
         let token = read_secret(VIBYRA_SESSION_ACCOUNT)?;
         SESSION_JUST_READ.lock().clone_from(&token);

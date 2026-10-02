@@ -24,7 +24,7 @@ const events: unknown[] = [];
 const day = 86_400_000;
 const iso = (offset: number) => new Date(Date.now() + offset).toISOString();
 const plan = query.get('plan') ?? 'free';
-const twoFactor = query.get('2fa') ?? 'off';
+let twoFactor = query.get('2fa') ?? 'off';
 const deviceCount = Number(query.get('devices') ?? '3');
 
 const memberships: Record<string, Partial<AccountProfile>> = {
@@ -89,7 +89,8 @@ const answers: Record<string, unknown> = {
     uri: 'otpauth://totp/Vibyra:barbara@example.test?secret=JBSWY3DPEHPK3PXP&issuer=Vibyra',
     account: 'barbara@example.test',
   }),
-  account_two_factor_confirm: () => RECOVERY,
+  account_two_factor_confirm: () => { twoFactor = 'on'; return RECOVERY; },
+  account_two_factor_disable: () => { twoFactor = 'off'; return null; },
   account_two_factor_recovery_codes: () => RECOVERY,
   account_devices: () => devices,
   account_device_revoke: () => ({ signedOut: false }),
@@ -105,6 +106,14 @@ mockIPC((command, payload) => {
   }
   const answer = answers[command];
   if (typeof answer === 'function') return (answer as () => unknown)();
+  if (command === 'account_profile_update') {
+    const edit = payload as { name: string; email: string; currentPassword?: string };
+    if (edit.email !== profile.email && edit.currentPassword !== 'fixture-correct-password')
+      throw 'Enter your current password to change your email.';
+    Object.assign(profile, { name: edit.name, email: edit.email,
+      emailVerified: edit.email === profile.email && profile.emailVerified });
+    return { ...useAccountStore.getState().snapshot, profile: { ...profile } };
+  }
   if (command === 'account_two_factor_submit') {
     const code = (payload as { code?: string }).code ?? '';
     if (code === '000000') {
@@ -118,7 +127,7 @@ mockIPC((command, payload) => {
   return null;
 });
 
-Object.assign(window, { accountEvents: events, accountLast: () => events.at(-1) });
+Object.assign(window, { accountEvents: events, accountLast: () => events.at(-1), accountState: () => useAccountStore.getState().snapshot, accountPanes: () => useTerminalStore.getState().panes });
 
 useAccountStore.setState({
   snapshot: {
@@ -130,7 +139,6 @@ useAccountStore.setState({
   // Ending the session reloads the real window; here it is only recorded.
   endSession: async () => { events.push(['end-session']); },
   logout: async () => { events.push(['logout']); },
-  updateProfile: async (name, email) => { events.push(['update-profile', name, email]); return null; },
   forgotPassword: async (email) => { events.push(['forgot', email]); return 'Reset link sent.'; },
   resendVerification: async () => { events.push(['resend']); return 'Verification email sent.'; },
 });

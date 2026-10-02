@@ -133,7 +133,13 @@ fn execute(
             let _ = on_event.send(ScaffoldEvent::Line { data });
         };
         match vibyra_core::scaffold::run_step(step, &emit, cancel) {
-            Ok(StepOutcome::Finished(0)) => {}
+            Ok(StepOutcome::Finished(0)) => {
+                if index == 0 && !plan.create_dir {
+                    if let Err(error) = vibyra_core::scaffold::apply_seeds(plan) {
+                        return failed(sentence(error.to_string()));
+                    }
+                }
+            }
             Ok(StepOutcome::Finished(code)) => {
                 return failed(format!("{} stopped with exit code {code}.", step.label));
             }

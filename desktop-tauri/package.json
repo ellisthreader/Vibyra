@@ -1,6 +1,6 @@
 {
   "name": "vibyra-desktop-tauri",
-  "version": "0.8.17",
+  "version": "0.8.18",
   "description": "Vibyra Desktop — AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test": "node --experimental-strip-types --test --test-concurrency=4 tests/*.test.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

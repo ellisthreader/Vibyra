@@ -14,9 +14,7 @@ use crate::ai_usage::AiLimits;
 use crate::ai_usage_guard::AiUsageGuard;
 use crate::commands::voice::VoiceRecording;
 use crate::provider_auth::ProviderAuthManager;
-use crate::secret_store::SecretStore;
 use crate::sink::ChannelSink;
-use crate::state_openai_key::{Loaded, SettingsFile, StoredKey};
 
 pub struct AppState {
     pub shared_chats: Arc<crate::shared_chats::SharedChats>,
@@ -34,11 +32,6 @@ pub struct AppState {
     /// written without blocking readers and two writes never interleave.
     pub settings_write: Mutex<()>,
     pub agent_computer_write: Mutex<()>,
-    /// Read off the main thread; see `state_openai_key`.
-    openai_api_key: StoredKey,
-    /// A key found in the environment or a `.env` file at startup. Read once:
-    /// the working directory cannot change under a running window.
-    env_openai_key: Option<String>,
     pub usage: Arc<AiUsageGuard>,
     pub provider_auth: Arc<ProviderAuthManager>,
     pub watcher: Mutex<Option<WorkspaceWatcher>>,
@@ -70,8 +63,6 @@ impl AppState {
         );
         let settings_path = Settings::default_path();
         let settings = Settings::load_from(&settings_path);
-        let openai_api_key = StoredKey::start();
-        let env_openai_key = crate::openai_key::from_environment(settings_path.parent());
         let usage_path = settings_path
             .parent()
             .map(|dir| dir.join("ai-usage.json"))
@@ -83,6 +74,15 @@ impl AppState {
                 .join("shared-chats"),
         );
         let account = Arc::new(AccountSessionManager::default());
+        {
+            let account = account.clone();
+            let manager = manager.clone();
+            let chats = Arc::downgrade(&shared_chats);
+            shared_chats.set_admission(Arc::new(move || {
+                let chats = chats.upgrade().ok_or("This workspace has closed.")?;
+                crate::commands::plan_access::admit_resume(&account, &manager, &chats)
+            }));
+        }
         let phone_state_dir = settings_path
             .parent()
             .unwrap_or(std::path::Path::new("."))
@@ -118,8 +118,6 @@ impl AppState {
             settings_path,
             settings_write: Mutex::new(()),
             agent_computer_write: Mutex::new(()),
-            openai_api_key,
-            env_openai_key,
             usage: Arc::new(AiUsageGuard::new(usage_path)),
             provider_auth,
             watcher: Mutex::new(None),
@@ -131,59 +129,14 @@ impl AppState {
         }
     }
 
-    /// The stored key, waiting for the startup read if it is still running.
-    /// Never call while holding `settings` or `settings_write`.
-    fn stored_key(&self) -> &Loaded {
-        self.openai_api_key.get(SettingsFile {
-            settings: &self.settings,
-            path: &self.settings_path,
-            write: &self.settings_write,
-        })
-    }
-
-    pub fn secret_store_available(&self) -> bool {
-        *self.stored_key().store_available.lock()
-    }
-
-    /// True when chat is running on the environment's key because Settings has
-    /// none. "Remove key" cannot take that one away, so the pane says so.
-    pub fn openai_key_from_environment(&self) -> bool {
-        self.stored_key().key.lock().is_none() && self.env_openai_key.is_some()
-    }
-
-    /// A key saved in Settings wins; otherwise the environment supplies one, so
-    /// a desktop launched from a checkout that already has `OPENAI_API_KEY`
-    /// chats without anyone pasting the key a second time.
-    pub fn openai_key(&self) -> Option<String> {
-        self.stored_key()
-            .key
-            .lock()
-            .clone()
-            .or_else(|| self.env_openai_key.clone())
-    }
-
-    /// Writes the key to the operating-system credential store first: if that
-    /// fails the key is never taken into memory, so the UI can never claim a
-    /// key is saved when nothing was persisted.
-    pub fn store_openai_key(&self, key: Option<&str>) -> Result<(), String> {
-        // Loaded first, so the startup read cannot land after this write.
-        let stored = self.stored_key();
-        SecretStore.write_openai_key(key)?;
-        *stored.store_available.lock() = true;
-        *stored.key.lock() = key
-            .map(str::trim)
-            .filter(|key| !key.is_empty())
-            .map(str::to_owned);
-        Ok(())
-    }
-
     pub fn ai_limits(&self) -> AiLimits {
-        let settings = self.settings.lock();
+        // The server owns the shared token balance. Retired device-local dollar
+        // ceilings must not refuse a funded request or carry across accounts.
         AiLimits {
-            daily_calls: settings.ai_daily_call_cap,
-            hourly_calls: settings.ai_hourly_call_cap,
-            daily_spend_usd: settings.ai_daily_spend_cap_usd,
-            monthly_spend_usd: settings.ai_monthly_spend_cap_usd,
+            daily_calls: 0,
+            hourly_calls: 0,
+            daily_spend_usd: 0.0,
+            monthly_spend_usd: 0.0,
         }
     }
 }

@@ -57,7 +57,7 @@ test("the phone is served this Mac's own projects, not one invented folder", asy
   // copying the rules and letting them drift.
   const hooks = registerHooks({
     resolve: (specifier, context, next) => next(
-      context.parentURL?.endsWith("/phoneWorkspace.ts") && specifier.startsWith("./")
+      context.parentURL?.endsWith("/phoneWorkspace.ts") && specifier.startsWith("./") && !specifier.endsWith(".ts")
         ? `${specifier}.ts` : specifier, context),
   });
   const { phoneWorkspacePayload, shortenRoot, shownChats } = await import("../src/lib/phoneWorkspace.ts");

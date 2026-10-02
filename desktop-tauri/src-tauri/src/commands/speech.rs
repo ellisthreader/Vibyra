@@ -47,10 +47,7 @@ pub async fn speech_start(
             "Choose a non-empty reply shorter than {MAX_CHARS} characters to read aloud."
         ));
     }
-    let key = state.openai_key().ok_or_else(|| {
-        crate::platform_text::for_computer("Spoken replies are not configured on this Mac. Set OPENAI_API_KEY and restart Vibyra.", "Spoken replies are not configured on this computer. Set OPENAI_API_KEY and restart Vibyra.")
-            .to_string()
-    })?;
+    let token = crate::assistant_api::token(&state)?;
     state.usage.budget_available(state.ai_limits())?;
     let characters = text.chars().count() as u64;
     let permit = state.usage.reserve(
@@ -61,7 +58,7 @@ pub async fn speech_start(
 
     let rate = resolve_rate(rate);
     let audio = synthesize(
-        &key,
+        &token,
         &text,
         &resolve_voice(voice),
         rate,
@@ -69,6 +66,7 @@ pub async fn speech_start(
     )
     .await?;
     permit.finish_speech(characters);
+    crate::assistant_api::same_account(&state, &token)?;
     super::run_blocking(move || play(id, audio)).await
 }
 

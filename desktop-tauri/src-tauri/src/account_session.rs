@@ -66,6 +66,21 @@ impl AccountSessionManager {
         self.inner.lock().token.clone()
     }
 
+    /// The limits native commands enforce. Without a verified profile the
+    /// workspace is Free's, so no state before sign-in widens anything.
+    pub fn plan_limits(&self) -> crate::plan_limits::PlanLimits {
+        self.inner
+            .lock()
+            .profile
+            .as_ref()
+            .map(|profile| {
+                profile
+                    .plan_limits
+                    .effective_at(chrono::Utc::now().timestamp_millis())
+            })
+            .unwrap_or_else(crate::plan_limits::PlanLimits::signed_out)
+    }
+
     pub fn set_status(&self, status: AccountStatus, error: Option<String>) {
         let mut state = self.inner.lock();
         state.status = status;

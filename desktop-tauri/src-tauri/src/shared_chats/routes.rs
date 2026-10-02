@@ -146,9 +146,13 @@ impl SharedChats {
         {
             return Err("The saved terminal changed. Refresh it before continuing.".into());
         }
-        if snapshot["processState"] != "running" {
+        let _admitted = if snapshot["processState"] != "running" {
+            let guard = self.admit()?;
             self.cli.stop(id);
-        }
+            guard
+        } else {
+            None
+        };
         engine.resume_desktop_conversation(id)
     }
 }

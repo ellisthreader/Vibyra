@@ -34,28 +34,40 @@ pub async fn update(
     state: &AppState,
     name: String,
     email: String,
+    current_password: Option<String>,
 ) -> Result<AccountSnapshot, String> {
     let account = &state.account;
     let Some(token) = account.token() else {
         return Err("You are not signed in.".to_owned());
     };
-    let body = serde_json::json!({ "name": name.trim(), "email": email.trim().to_lowercase() });
-    match request(Endpoint::Profile, Some(&token), Some(body)).await {
-        Ok(response) => {
-            if let Some(profile) =
-                profile_from_user(response.get("user").unwrap_or(&serde_json::Value::Null))
-            {
-                account.set_profile(profile);
-            }
-            Ok(account.snapshot())
-        }
-        Err(ApiError::Unauthorized(_)) => {
-            crate::account_auth::teardown(state);
-            Err("Your session expired. Please log in again.".to_owned())
-        }
-        Err(error) => Err(error.message().to_owned()),
+    let body = serde_json::json!({ "name": name.trim(), "email": email.trim().to_lowercase(),
+        "currentPassword": current_password });
+    let result = request(Endpoint::Profile, Some(&token), Some(body)).await;
+    // An old edit must never overwrite a different account after logout/login.
+    if account.token().as_deref() != Some(&token) {
+        return Err("Your account changed. Reopen Settings to edit your profile.".to_owned());
     }
+    apply_update(account, result)
 }
+
+fn apply_update(
+    account: &crate::account_session::AccountSessionManager,
+    result: Result<serde_json::Value, ApiError>,
+) -> Result<AccountSnapshot, String> {
+    // Profile 401 also means rejected password confirmation. Only the
+    // authoritative /api/session refresh may end this session and its PTYs.
+    let response = result.map_err(|error| error.message().to_owned())?;
+    let profile = profile_from_user(response.get("user").unwrap_or(&serde_json::Value::Null))
+        .ok_or_else(|| {
+            "The account service returned an incomplete profile. Try refreshing.".to_owned()
+        })?;
+    account.set_profile(profile);
+    Ok(account.snapshot())
+}
+
+#[cfg(test)]
+#[path = "account_profile_tests.rs"]
+mod tests;
 
 /// Requests a password-recovery email. Enumeration-safe on the backend, so
 /// the confirmation copy is always neutral.

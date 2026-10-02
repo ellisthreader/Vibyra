@@ -22,7 +22,7 @@ export function useDraftDictation(identity: string, active: boolean, append: (te
   };
   return { focus, button: <button type="button" className={`chat-voice-button ${owner === target && recording ? 'is-recording' : ''}`}
     aria-label={owner === target && phase === 'listening' ? 'Finish dictation' : 'Dictate message'}
-    title="Dictate into your draft" disabled={!active || (recording && owner !== target) || phase === 'transcribing'}
+    title="Dictate into your draft · uses Vibyra tokens" disabled={!active || (recording && owner !== target) || phase === 'transcribing'}
     onClick={() => { focus(); useVoiceStore.getState().toggle(); }}>
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>
   </button> };
@@ -66,7 +66,7 @@ export const SpeakReply = memo(function SpeakReply({ text, active = true }: { te
     } catch (error) { setError(String(error)); setPlaying(false); }
     finally { pending.current = false; }
   };
-  return <span className="reply-audio"><button type="button" className="chat-voice-button" aria-label={playing ? 'Stop reading' : 'Read reply aloud'} title={playing ? 'Stop reading' : 'Read reply aloud'} onClick={() => void toggle()}>
+  return <span className="reply-audio"><button type="button" className="chat-voice-button" aria-label={playing ? 'Stop reading' : 'Read reply aloud'} title={playing ? 'Stop reading' : 'Read reply aloud · uses Vibyra tokens'} onClick={() => void toggle()}>
     {playing ? <span aria-hidden="true">■</span> : <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M11 4 5 9H2v6h3l6 5V4ZM15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></svg>}
   </button>{error && <small role="alert">{error}</small>}</span>;
 });

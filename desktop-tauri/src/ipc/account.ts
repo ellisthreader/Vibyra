@@ -40,8 +40,8 @@ export function accountProfileRefresh(): Promise<AccountSnapshot> {
   return invoke("account_profile_refresh");
 }
 
-export function accountProfileUpdate(name: string, email: string): Promise<AccountSnapshot> {
-  return invoke("account_profile_update", { name, email });
+export function accountProfileUpdate(name: string, email: string, currentPassword?: string): Promise<AccountSnapshot> {
+  return invoke("account_profile_update", { name, email, currentPassword });
 }
 
 export function accountPasswordForgot(email: string): Promise<string> {

@@ -178,7 +178,7 @@ fn a_pinned_listener_also_answers_on_loopback() {
 #[tokio::test]
 async fn a_desktop_pinned_to_its_network_address_answers_on_loopback_too() {
     let Some(lan) = this_machine_address() else {
-        eprintln!("skipped: no non-loopback IPv4 on this machine");
+        eprintln!("skipped: no supported non-loopback LAN address on this machine");
         return;
     };
     let dir = tempfile::tempdir().unwrap();
@@ -191,7 +191,10 @@ async fn a_desktop_pinned_to_its_network_address_answers_on_loopback_too() {
         "Pinned Desktop",
     )
     .unwrap();
-    for reach in [lan, std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)] {
+    let loopback = super::embedded::companion_loopback(std::net::SocketAddr::new(lan, port))
+        .unwrap()
+        .ip();
+    for reach in [lan, loopback] {
         let served = ask_identity(std::net::SocketAddr::new(reach, port)).await;
         assert!(
             served.contains("\"version\":1"),
@@ -201,10 +204,20 @@ async fn a_desktop_pinned_to_its_network_address_answers_on_loopback_too() {
 }
 
 fn this_machine_address() -> Option<std::net::IpAddr> {
-    let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("192.0.2.1:9").ok()?;
-    let ip = socket.local_addr().ok()?.ip();
-    (!ip.is_loopback() && !ip.is_unspecified()).then_some(ip)
+    // Like Desktop, reject an IPv4 CLAT shim and try a native IPv6 route.
+    // UDP connect chooses a source address without sending any data.
+    for (bind, target) in [("0.0.0.0:0", "192.0.2.1:9"), ("[::]:0", "[2001:db8::1]:9")] {
+        let selected = std::net::UdpSocket::bind(bind).and_then(|socket| {
+            socket.connect(target)?;
+            socket.local_addr()
+        });
+        if let Ok(address) = selected {
+            if !address.ip().is_loopback() && super::peer_policy::allowed(address, address) {
+                return Some(address.ip());
+            }
+        }
+    }
+    None
 }
 
 fn free_port() -> u16 {
