@@ -94,6 +94,7 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
 }
 
 pub mod phone;
+mod phone_controls;
 mod phone_effect_commands;
 mod phone_effects;
 mod phone_project_effects;

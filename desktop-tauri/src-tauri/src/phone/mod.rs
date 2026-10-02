@@ -3,6 +3,8 @@ pub mod address;
 mod ai_accounts;
 #[cfg(test)]
 mod ai_accounts_tests;
+#[cfg(test)]
+mod lock_order_tests;
 mod notifications;
 mod preferences;
 mod remote;

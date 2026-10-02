@@ -10,14 +10,17 @@ use super::run_blocking;
 /// thread: a rebind holds that lock while the old listener shuts down.
 #[tauri::command]
 pub async fn phone_status(state: State<'_, AppState>) -> Result<Value, String> {
-    Ok(state.phone.lock().status())
+    let signed_in = state.account.token().is_some();
+    Ok(state.phone.lock().status(signed_in))
 }
 
 #[tauri::command]
 pub async fn phone_configure(state: State<'_, AppState>, enabled: bool) -> Result<Value, String> {
     let phone = state.phone.clone();
     let manager = state.manager.clone();
+    let account = state.account.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        let signed_in = account.token().is_some();
         let mut phone = phone.lock();
         // A failed start still leaves the switch on, so the network watcher can
         // pick it up the moment this Mac joins a usable network.
@@ -26,67 +29,11 @@ pub async fn phone_configure(state: State<'_, AppState>, enabled: bool) -> Resul
         } else {
             phone.disable()
         };
-        let status = phone.status();
+        let status = phone.status(signed_in);
         started.map(|()| status)
     })
     .await
     .map_err(|e| e.to_string())?
-}
-
-/// Whether allowed phones may type into terminals as well as watch them. Only
-/// this Mac can turn it on; a phone has no way to ask for it.
-#[tauri::command]
-pub fn phone_set_typing(state: State<'_, AppState>, enabled: bool) -> Result<Value, String> {
-    let mut phone = state.phone.lock();
-    phone.set_typing(enabled)?;
-    Ok(phone.status())
-}
-
-/// One-time Mac consent for a paired phone to open project-owned running sites.
-#[tauri::command]
-pub fn phone_set_preview_auto(
-    state: State<'_, AppState>,
-    id: String,
-    enabled: bool,
-) -> Result<Value, String> {
-    let status = state.phone.lock().status();
-    if status["previewAutoAvailable"] != true
-        || !status["devices"]
-            .as_array()
-            .is_some_and(|devices| devices.iter().any(|device| device["id"] == id))
-    {
-        return Err("Pair this phone with the Mac first".into());
-    }
-    state
-        .preview_grants
-        .as_ref()
-        .map_err(Clone::clone)?
-        .set_automatic(&id, enabled)?;
-    Ok(state.phone.lock().status())
-}
-
-/// Remote access through Vibyra Cloud. Only this Mac can turn it on, it needs
-/// the Mac signed in, and only that account's phones can reach it.
-#[tauri::command]
-pub fn phone_set_remote(state: State<'_, AppState>, enabled: bool) -> Result<Value, String> {
-    let mut phone = state.phone.lock();
-    phone.set_remote(enabled)?;
-    Ok(phone.status())
-}
-
-#[tauri::command]
-pub fn phone_set_notifications(state: State<'_, AppState>, enabled: bool) -> Result<Value, String> {
-    let mut phone = state.phone.lock();
-    phone.set_notifications(enabled)?;
-    Ok(phone.status())
-}
-
-/// Ends every session that came through the cloud, at once.
-#[tauri::command]
-pub fn phone_remote_disconnect_all(state: State<'_, AppState>) -> Value {
-    let phone = state.phone.lock();
-    phone.remote_disconnect_all();
-    phone.status()
 }
 
 /// The window republishes its projects and panes whenever either changes, so a
@@ -177,21 +124,23 @@ pub async fn phone_vault_choose(
             .and_then(|path| path.into_path().ok()))
     })
     .await?;
+    let signed_in = state.account.token().is_some();
     let Some(path) = picked else {
-        return Ok(state.phone.lock().status());
+        return Ok(state.phone.lock().status(signed_in));
     };
     let phone = state.phone.clone();
     run_blocking(move || {
         let phone = phone.lock();
         phone.vault.choose(path)?;
-        Ok(phone.status())
+        Ok(phone.status(signed_in))
     })
     .await
 }
 
 #[tauri::command]
 pub fn phone_vault_clear(state: State<'_, AppState>) -> Result<Value, String> {
+    let signed_in = state.account.token().is_some();
     let phone = state.phone.lock();
     phone.vault.clear()?;
-    Ok(phone.status())
+    Ok(phone.status(signed_in))
 }

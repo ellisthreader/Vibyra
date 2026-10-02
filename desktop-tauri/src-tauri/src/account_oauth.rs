@@ -4,13 +4,16 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::account_api::{error_detail, request, request_raw_with_flow_secret, ApiError, Endpoint};
+use crate::account_api::{error_detail, request_raw_with_flow_secret, Endpoint};
 use crate::account_auth::bind_preview_account;
 use crate::account_device;
 use crate::account_oauth_start::{parse_start, request_start, start_body};
-use crate::account_types::{profile_from_user, AccountSnapshot, AccountStatus};
-use crate::secret_store::SecretStore;
+use crate::account_types::{AccountSnapshot, AccountStatus};
 use crate::state::AppState;
+
+#[path = "account_oauth_complete.rs"]
+mod complete;
+use complete::verify_completed;
 
 const POLL_INTERVAL: Duration = Duration::from_secs(1);
 const EXPIRED_MESSAGE: &str = "This sign-in attempt expired. Try again.";
@@ -21,9 +24,8 @@ const EXPIRED_MESSAGE: &str = "This sign-in attempt expired. Try again.";
 pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
     let state = app.state::<AppState>();
     let account = &state.account;
-    bind_preview_account(&state, None);
-    account.begin_authorizing(Some(provider.clone()));
-    let cancel = account.begin_oauth();
+    let (epoch, cancel) =
+        account.begin_oauth_attempt(provider.clone(), || bind_preview_account(&state, None));
     let (flow_secret, body) = match start_body(
         &account_device::device_label(),
         &account_device::installation_id(),
@@ -31,11 +33,11 @@ pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
         Ok(parts) => parts,
         Err(message) => {
             account.finish_oauth(&cancel);
-            return fail(account, message);
+            return fail(account, epoch, message);
         }
     };
     let started = request_start(&provider, body).await;
-    if cancel.load(Ordering::SeqCst) {
+    if cancel.load(Ordering::SeqCst) || !account.attempt_current(epoch) {
         return account.snapshot();
     }
     let (flow_id, auth_url, expires_in) = match started.map(parse_start) {
@@ -44,22 +46,40 @@ pub async fn start(app: AppHandle, provider: String) -> AccountSnapshot {
             account.finish_oauth(&cancel);
             return fail(
                 account,
+                epoch,
                 "The account service returned an unexpected response.",
             );
         }
         Err(error) => {
             account.finish_oauth(&cancel);
-            return fail(account, error.message());
+            return fail(account, epoch, error.message());
         }
     };
-    if let Err(error) = crate::provider_auth_url::open(&auth_url) {
+    let Some(opened) = account.with_attempt(epoch, || crate::provider_auth_url::open(&auth_url))
+    else {
+        return account.snapshot();
+    };
+    if let Err(error) = opened {
         account.finish_oauth(&cancel);
         eprintln!("Vibyra could not open the sign-in page: {error}");
-        return fail(account, "Vibyra could not open your browser. Try again.");
+        return fail(
+            account,
+            epoch,
+            "Vibyra could not open your browser. Try again.",
+        );
     }
     let poller = app.clone();
     tauri::async_runtime::spawn(async move {
-        poll_until_done(poller, provider, flow_id, flow_secret, expires_in, cancel).await;
+        poll_until_done(
+            poller,
+            provider,
+            flow_id,
+            flow_secret,
+            expires_in,
+            cancel,
+            epoch,
+        )
+        .await;
     });
     account.snapshot()
 }
@@ -71,15 +91,17 @@ async fn poll_until_done(
     flow_secret: String,
     expires_in: u64,
     cancel: Arc<AtomicBool>,
+    epoch: u64,
 ) {
     let deadline = std::time::Instant::now() + Duration::from_secs(expires_in + 30);
     loop {
         tokio::time::sleep(POLL_INTERVAL).await;
-        if cancel.load(Ordering::SeqCst) {
+        if cancel.load(Ordering::SeqCst) || !app.state::<AppState>().account.attempt_current(epoch)
+        {
             return;
         }
         if std::time::Instant::now() >= deadline {
-            finish(&app, &cancel, Err(EXPIRED_MESSAGE.to_owned())).await;
+            finish(&app, &cancel, epoch, Err(EXPIRED_MESSAGE.to_owned())).await;
             return;
         }
         match request_raw_with_flow_secret(
@@ -95,17 +117,17 @@ async fn poll_until_done(
                 match (status, flow_status) {
                     (200, "pending") => continue,
                     (200, "complete") => {
-                        let outcome = verify_completed(&app, body, &cancel).await;
-                        finish(&app, &cancel, outcome).await;
+                        let outcome = verify_completed(&app, body, &cancel, epoch).await;
+                        finish(&app, &cancel, epoch, outcome).await;
                         return;
                     }
                     (code, _) if retryable_status(code) => continue,
                     (410, _) => {
-                        finish(&app, &cancel, Err(EXPIRED_MESSAGE.to_owned())).await;
+                        finish(&app, &cancel, epoch, Err(EXPIRED_MESSAGE.to_owned())).await;
                         return;
                     }
                     (code, _) => {
-                        finish(&app, &cancel, Err(error_detail(&body, code))).await;
+                        finish(&app, &cancel, epoch, Err(error_detail(&body, code))).await;
                         return;
                     }
                 }
@@ -121,52 +143,12 @@ fn retryable_status(status: u16) -> bool {
     status == 429 || (500..=599).contains(&status)
 }
 
-/// Consumes the one-time completion payload: verifies the returned session
-/// against /api/session before persisting it.
-async fn verify_completed(
+async fn finish(
     app: &AppHandle,
-    body: serde_json::Value,
     cancel: &Arc<AtomicBool>,
-) -> Result<(), String> {
-    let token = body
-        .get("token")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| "The account service returned an unexpected response.".to_owned())?;
-    // The status response is one-shot. Keep its token in native memory while a
-    // temporary backend outage clears, instead of discarding a completed login.
-    let deadline = std::time::Instant::now() + Duration::from_secs(90);
-    loop {
-        if cancel.load(Ordering::SeqCst) {
-            return Err("Sign-in cancelled.".into());
-        }
-        match request(Endpoint::Session, Some(token), None).await {
-            Ok(session) => {
-                let profile =
-                    profile_from_user(session.get("user").unwrap_or(&serde_json::Value::Null))
-                        .ok_or_else(|| {
-                            "The account service returned an unexpected response.".to_owned()
-                        })?;
-                let state = app.state::<AppState>();
-                if cancel.load(Ordering::SeqCst) {
-                    return Err("Sign-in cancelled.".into());
-                }
-                bind_preview_account(&state, session.get("user"));
-                state
-                    .account
-                    .adopt_session(&SecretStore, token.to_owned(), profile);
-                state.phone.lock().account_signed_in();
-                return Ok(());
-            }
-            Err(ApiError::Unauthorized(message)) => return Err(message),
-            Err(ApiError::Network(_)) if std::time::Instant::now() < deadline => {
-                tokio::time::sleep(Duration::from_secs(2)).await;
-            }
-            Err(error) => return Err(error.message().to_owned()),
-        }
-    }
-}
-
-async fn finish(app: &AppHandle, cancel: &Arc<AtomicBool>, outcome: Result<(), String>) {
+    epoch: u64,
+    outcome: Result<(), String>,
+) {
     let state = app.state::<AppState>();
     let account = &state.account;
     account.finish_oauth(cancel);
@@ -174,13 +156,17 @@ async fn finish(app: &AppHandle, cancel: &Arc<AtomicBool>, outcome: Result<(), S
         return;
     }
     if let Err(message) = outcome {
-        account.set_status(AccountStatus::SignedOut, Some(message));
+        account.status_for_attempt(epoch, AccountStatus::SignedOut, Some(message));
     }
     let _ = app.emit("account:changed", account.snapshot());
 }
 
-fn fail(account: &crate::account_session::AccountSessionManager, message: &str) -> AccountSnapshot {
-    account.set_status(AccountStatus::SignedOut, Some(message.to_owned()));
+fn fail(
+    account: &crate::account_session::AccountSessionManager,
+    epoch: u64,
+    message: &str,
+) -> AccountSnapshot {
+    account.status_for_attempt(epoch, AccountStatus::SignedOut, Some(message.to_owned()));
     account.snapshot()
 }
 

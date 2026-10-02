@@ -5,7 +5,7 @@ impl AccountSessionManager {
         &self,
         token: &str,
         account: &str,
-        stop_remote: impl FnOnce(),
+        stop_remote: impl FnOnce() -> bool,
     ) -> bool {
         self.reject_remote_with(token, account, stop_remote, || {
             if SecretStore.write_account_session(None).is_err() {
@@ -17,7 +17,7 @@ impl AccountSessionManager {
         &self,
         token: &str,
         account: &str,
-        stop_remote: impl FnOnce(),
+        stop_remote: impl FnOnce() -> bool,
         persist: impl FnOnce(),
     ) -> bool {
         let mut state = self.inner.lock();
@@ -30,7 +30,10 @@ impl AccountSessionManager {
         {
             return false;
         }
-        stop_remote();
+        if !stop_remote() {
+            return false;
+        }
+        state.epoch = state.epoch.wrapping_add(1);
         state.token = None;
         state.profile = None;
         state.status = AccountStatus::SignedOut;
@@ -64,12 +67,20 @@ mod tests {
                 || panic!("new token cleared")
             ));
         }
+        assert!(!account.reject_remote_with(
+            "fresh",
+            "b",
+            || false,
+            || panic!("checkpoint mismatch cleared account")
+        ));
+        assert_eq!(account.token().as_deref(), Some("fresh"));
         let stopped = AtomicBool::new(false);
         assert!(account.reject_remote_with(
             "fresh",
             "b",
             || {
                 stopped.store(true, Ordering::SeqCst);
+                true
             },
             || assert!(stopped.load(Ordering::SeqCst))
         ));

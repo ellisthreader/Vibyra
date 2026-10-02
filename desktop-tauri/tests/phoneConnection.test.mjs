@@ -132,10 +132,10 @@ test("typing from the phone is its own switch, turned on only on this Mac", asyn
   assert.match(pane, /setTyping\(next\)/);
   const ipc = await read("src/ipc/phone.ts");
   assert.match(ipc, /invoke\("phone_set_typing", \{ enabled \}\)/);
-  const command = await read("src-tauri/src/commands/phone.rs");
+  const command = await read("src-tauri/src/commands/phone_controls.rs");
   assert.match(command, /pub fn phone_set_typing\(state: State<'_, AppState>, enabled: bool\)/);
   const registry = await read("src-tauri/src/commands/registry.rs");
-  assert.match(registry, /phone::phone_set_typing/, "the webview is allowed to call it");
+  assert.match(registry, /phone_controls::phone_set_typing/, "the webview is allowed to call it");
   // The prompt promises what a phone can do the moment it is allowed, so with
   // typing on it must not still say the phone cannot type.
   const modal = await read("src/components/phone/PhoneApprovalModal.tsx");
@@ -157,7 +157,7 @@ test("remote access follows the one phone switch: on when signed in, off with it
   assert.match(ipc, /invoke\("phone_set_remote", \{ enabled \}\)/);
   assert.match(ipc, /invoke\("phone_remote_disconnect_all"\)/);
   const registry = await read("src-tauri/src/commands/registry.rs");
-  for (const command of [/phone::phone_set_remote/, /phone::phone_remote_disconnect_all/]) assert.match(registry, command);
+  for (const command of [/phone_controls::phone_set_remote/, /phone_controls::phone_remote_disconnect_all/]) assert.match(registry, command);
   const remote = await read("src-tauri/src/phone/remote.rs") + await read("src-tauri/src/phone/remote_registration.rs");
   assert.match(remote, /Endpoint::RemoteRegister/, "the Mac registers itself with the account before every relay connection");
   assert.match(remote, /starts_with\("wss:\/\/"\)/, "and only follows a secure relay address");

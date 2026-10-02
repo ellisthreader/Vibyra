@@ -25,84 +25,74 @@ impl Captured {
             checkpoint,
         })
     }
-    fn account_current(&self, state: &AppState) -> bool {
-        state.account.token().as_deref() == Some(&self.token)
-            && state
-                .account
-                .snapshot()
-                .profile
-                .is_some_and(|profile| profile.welcome_key == self.account)
+    /// Every guarded action takes account before phone, matching logout/adoption.
+    fn bound<T>(
+        &self,
+        state: &AppState,
+        action: impl FnOnce(&mut crate::phone::PhoneConnection) -> Result<T, String>,
+    ) -> Result<T, String> {
+        state
+            .account
+            .with_token_scope(&self.token, &self.account, || {
+                let mut phone = state.phone.lock();
+                self.checkpoint.check(phone.host()?)?;
+                action(&mut phone)
+            })?
     }
     fn current(&self, state: &AppState) -> bool {
-        let phone = state.phone.lock();
-        self.account_current(state)
-            && phone
-                .host()
-                .is_ok_and(|host| self.checkpoint.check(host).is_ok())
+        self.bound(state, |_| Ok(())).is_ok()
     }
     fn suspend(&self, state: &AppState) {
-        let phone = state.phone.lock();
-        if self.account_current(state)
-            && phone
-                .host()
-                .is_ok_and(|host| self.checkpoint.check(host).is_ok())
-        {
-            let _ = self.checkpoint.suspend();
-        }
+        let _ = self.bound(state, |_| self.checkpoint.suspend());
     }
     fn disable(&self, state: &AppState) -> Result<(), String> {
-        let mut phone = state.phone.lock();
-        if !self.account_current(state) {
-            return Err("Account changed".into());
-        }
-        self.checkpoint.check(phone.host()?)?;
-        // Both restrictions hold in memory even when either save fails.
-        let cloud = phone.set_remote(false);
-        let nearby = self.checkpoint.disable();
-        cloud.and(nearby)
+        self.bound(state, |phone| {
+            // Both restrictions hold in memory even when either save fails.
+            let cloud = phone.set_remote(false);
+            let nearby = self.checkpoint.disable();
+            cloud.and(nearby)
+        })
     }
     fn reject(&self, state: &AppState) {
-        let mut phone = state.phone.lock();
-        if !phone
-            .host()
-            .is_ok_and(|host| self.checkpoint.check(host).is_ok())
-        {
-            return;
-        }
         state
             .account
             .reject_remote_token(&self.token, &self.account, || {
+                let mut phone = state.phone.lock();
+                if !phone
+                    .host()
+                    .is_ok_and(|host| self.checkpoint.check(host).is_ok())
+                {
+                    return false;
+                }
                 phone.account_signed_out();
                 let _ = phone.revoke_remote_devices(None);
                 if let Ok(grants) = &state.preview_grants {
                     let _ = grants.revoke_all_devices();
                 }
+                true
             });
     }
     fn finish(&self, state: &AppState, batch: RestrictionBatch) -> Result<(), String> {
-        let phone = state.phone.lock();
-        if !self.account_current(state) {
-            return Err("Account changed".into());
-        }
-        self.checkpoint.check(phone.host()?)?;
-        // Clean separate Preview consent before committing the durable cursor.
-        // A failed grant-store save must cause this snapshot to be retried.
-        let preview = (|| -> Result<(), String> {
-            let grants = state.preview_grants.as_ref().map_err(Clone::clone)?;
-            if batch.resets_trust() {
-                grants.revoke_all_devices()?;
-            } else {
-                for key in batch.revoked_keys() {
-                    grants.revoke_device(key)?;
+        self.bound(state, |_| {
+            // Clean separate Preview consent before committing the durable cursor.
+            // A failed grant-store save must cause this snapshot to be retried.
+            let preview = (|| -> Result<(), String> {
+                let grants = state.preview_grants.as_ref().map_err(Clone::clone)?;
+                if batch.resets_trust() {
+                    grants.revoke_all_devices()?;
+                } else {
+                    for key in batch.revoked_keys() {
+                        grants.revoke_device(key)?;
+                    }
                 }
+                Ok(())
+            })();
+            if let Err(error) = preview {
+                let _ = self.checkpoint.restrict_without_acknowledgement(batch);
+                return Err(error);
             }
-            Ok(())
-        })();
-        if let Err(error) = preview {
-            let _ = self.checkpoint.restrict_without_acknowledgement(batch);
-            return Err(error);
-        }
-        self.checkpoint.finish(batch).map(|_| ())
+            self.checkpoint.finish(batch).map(|_| ())
+        })
     }
 }
 pub fn start(app: AppHandle) {

@@ -72,7 +72,11 @@ async fn check_boundary(change: fn(&mut PhoneConnection)) {
     )
     .await;
     timeout(Duration::from_secs(3), async {
-        while phone.status()["pending"].as_array().unwrap().is_empty() {
+        while phone.status(false)["pending"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+        {
             sleep(Duration::from_millis(5)).await;
         }
     })
@@ -98,7 +102,7 @@ async fn check_boundary(change: fn(&mut PhoneConnection)) {
     )
     .unwrap();
     assert_eq!(result["id"], "state");
-    assert_eq!(phone.status()["active"], json!([device]));
+    assert_eq!(phone.status(false)["active"], json!([device]));
     phone
         .host()
         .unwrap()
@@ -129,14 +133,14 @@ async fn check_boundary(change: fn(&mut PhoneConnection)) {
     .await
     .unwrap();
     timeout(Duration::from_secs(3), async {
-        while !phone.status()["active"].as_array().unwrap().is_empty() {
+        while !phone.status(false)["active"].as_array().unwrap().is_empty() {
             sleep(Duration::from_millis(5)).await;
         }
     })
     .await
     .unwrap();
-    assert_eq!(phone.status()["devices"][0]["id"], device);
-    let url = format!("ws://127.0.0.1:{}", phone.status()["port"]);
+    assert_eq!(phone.status(false)["devices"][0]["id"], device);
+    let url = format!("ws://127.0.0.1:{}", phone.status(false)["port"]);
     let (mut nearby, _) = connect_async(url).await.unwrap();
     nearby.close(None).await.unwrap();
     assert!(
@@ -158,42 +162,5 @@ async fn account_replacement_drops_the_previous_cloud_leg_before_registration() 
     check_boundary(PhoneConnection::account_signed_in).await;
 }
 
-#[test]
-fn disabling_cloud_stays_off_when_local_preferences_cannot_be_saved() {
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("not-a-directory");
-    std::fs::write(&path, "block persistence").unwrap();
-    let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    let mut phone = PhoneConnection::new(path, manager.clone()).into_inner();
-    phone.remote_enabled = true;
-    assert!(phone.set_remote(false).is_err());
-    assert!(!phone.remote_enabled);
-    phone.account_signed_in();
-    assert!(phone.remote.is_none());
-    manager.shutdown();
-}
-
-#[test]
-fn revoke_all_clears_local_trust_even_when_sharing_is_stopped() {
-    let dir = tempfile::tempdir().unwrap();
-    let host = EmbeddedHost::start(
-        dir.path().to_owned(),
-        "127.0.0.1:0".parse().unwrap(),
-        Arc::new(View::default()),
-        "Test",
-    )
-    .unwrap();
-    let host_id = host.id();
-    let key = "a".repeat(64);
-    host.approve_remote_device(&key, "Saved phone").unwrap();
-    drop(host);
-    let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    let phone = PhoneConnection::new(dir.path().to_owned(), manager.clone()).into_inner();
-    assert!(phone.owns_remote_host(&host_id).unwrap());
-    assert!(!phone.owns_remote_host(&"b".repeat(64)).unwrap());
-    phone.revoke_remote_devices(None).unwrap();
-    let saved: Value =
-        serde_json::from_slice(&std::fs::read(dir.path().join("identity.json")).unwrap()).unwrap();
-    assert!(saved["devices"].as_object().unwrap().is_empty());
-    manager.shutdown();
-}
+#[path = "remote_lifecycle_preferences_tests.rs"]
+mod preferences_tests;

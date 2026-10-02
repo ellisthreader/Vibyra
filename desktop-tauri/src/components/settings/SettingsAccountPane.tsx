@@ -37,10 +37,10 @@ export function SettingsAccountPane() {
 
   return (
     <>
-      <AccountIdentityBlock profile={profile} />
-      <AccountMembershipBlock profile={profile} />
-      <AccountSecurityBlock profile={profile} />
-      <AccountDevicesBlock />
+      <AccountIdentityBlock key={profile.welcomeKey} profile={profile} />
+      <AccountMembershipBlock key={profile.welcomeKey} profile={profile} />
+      <AccountSecurityBlock key={profile.welcomeKey} profile={profile} />
+      <AccountDevicesBlock key={profile.welcomeKey} />
 
       <SettingsBlock label="Session">
         <div className="settings-group">
@@ -70,7 +70,7 @@ export function SettingsAccountPane() {
         </div>
       </SettingsBlock>
 
-      <AccountDangerBlock profile={profile} />
+      <AccountDangerBlock key={profile.welcomeKey} profile={profile} />
 
       <footer className="account-legal">
         <button className="account-legal__link" onClick={() => void accountOpenLegal("privacy")}>Privacy Policy</button>

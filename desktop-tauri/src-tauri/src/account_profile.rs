@@ -16,12 +16,14 @@ pub async fn refresh(state: &AppState) -> Result<AccountSnapshot, String> {
             if let Some(profile) =
                 profile_from_user(body.get("user").unwrap_or(&serde_json::Value::Null))
             {
-                account.set_profile(profile);
+                if !account.set_profile_for_token(&token, profile) {
+                    return Err("Your account changed. Refresh Settings.".into());
+                }
             }
             Ok(account.snapshot())
         }
         Err(ApiError::Unauthorized(_)) => {
-            crate::account_auth::teardown(state);
+            crate::account_auth::teardown_for_token(state, &token);
             Ok(account.snapshot())
         }
         Err(error) => Err(error.message().to_owned()),
@@ -47,11 +49,12 @@ pub async fn update(
     if account.token().as_deref() != Some(&token) {
         return Err("Your account changed. Reopen Settings to edit your profile.".to_owned());
     }
-    apply_update(account, result)
+    apply_update(account, &token, result)
 }
 
 fn apply_update(
     account: &crate::account_session::AccountSessionManager,
+    token: &str,
     result: Result<serde_json::Value, ApiError>,
 ) -> Result<AccountSnapshot, String> {
     // Profile 401 also means rejected password confirmation. Only the
@@ -61,7 +64,9 @@ fn apply_update(
         .ok_or_else(|| {
             "The account service returned an incomplete profile. Try refreshing.".to_owned()
         })?;
-    account.set_profile(profile);
+    if !account.set_profile_for_token(token, profile) {
+        return Err("Your account changed. Reopen Settings.".into());
+    }
     Ok(account.snapshot())
 }
 
@@ -103,6 +108,9 @@ pub async fn resend_verification(state: &AppState) -> Result<String, String> {
 /// account payload and is checked against the API's own origin before any
 /// request is made.
 pub async fn avatar(state: &AppState) -> Result<Option<String>, String> {
+    let Some(token) = state.account.token() else {
+        return Ok(None);
+    };
     let Some(url) = state
         .account
         .snapshot()
@@ -135,7 +143,9 @@ pub async fn avatar(state: &AppState) -> Result<Option<String>, String> {
         .await
         .map_err(|error| error.without_url().to_string())?;
     let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
-    Ok(Some(format!("data:{media};base64,{encoded}")))
+    state
+        .account
+        .with_token(&token, || Some(format!("data:{media};base64,{encoded}")))
 }
 
 fn message_or(value: &serde_json::Value, fallback: &str) -> String {

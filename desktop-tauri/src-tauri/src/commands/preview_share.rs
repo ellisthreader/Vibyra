@@ -33,8 +33,9 @@ fn current_scope(project: &Path, requested: &Path) -> Result<PathBuf, String> {
 }
 
 fn paired_project(state: &AppState, device_id: &str, project_id: &str) -> Result<PathBuf, String> {
+    let signed_in = state.account.token().is_some();
     let phone = state.phone.lock();
-    let paired = phone.status()["devices"]
+    let paired = phone.status(signed_in)["devices"]
         .as_array()
         .is_some_and(|devices| devices.iter().any(|device| device["id"] == device_id));
     if !paired {

@@ -88,18 +88,17 @@ pub async fn phone_remote_transfer(
         .snapshot()
         .profile
         .ok_or("The account changed. Review the transfer again.")?;
-    let mut phone = state.phone.lock();
-    let (current_host, _, _) = phone.remote_transfer_identity()?;
-    remote_transfer_scope::verify(
-        &expected_account,
-        &expected_host,
-        &profile.welcome_key,
-        &current_host,
-    )?;
-    if state.account.token().as_deref() != Some(token.as_str()) {
-        return Err("The account session changed. Review the transfer again.".into());
-    }
-    phone.account_signed_in(); // Ordinary register-only reconnect, even on failure.
-    outcome?;
-    Ok(phone.status())
+    state.account.with_token(&token, || {
+        let mut phone = state.phone.lock();
+        let (current_host, _, _) = phone.remote_transfer_identity()?;
+        remote_transfer_scope::verify(
+            &expected_account,
+            &expected_host,
+            &profile.welcome_key,
+            &current_host,
+        )?;
+        phone.account_signed_in(); // Ordinary reconnect, even on transfer failure.
+        outcome?;
+        Ok(phone.status(true))
+    })?
 }

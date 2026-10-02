@@ -1,13 +1,16 @@
 use serde::Serialize;
 
-use crate::account_api::{request, ApiError, Endpoint};
+use crate::account_api::{request, Endpoint};
+#[path = "account_billing_session.rs"]
+mod session;
 use crate::state::AppState;
+use session::BillingSession;
 
 /// The website pages billing sends people to. The renderer names a page and
 /// never a URL, exactly as it does for the legal pages.
-const PLANS_PAGE: &str = "https://vibyra.app/billing";
+const PLANS_PAGE: &str = "https://vibyra.net/billing";
 /// Checkout opens on Annual; the page itself asks for an account first.
-const PRO_CHECKOUT: &str = "https://vibyra.app/checkout?offer=pro_annual";
+const PRO_CHECKOUT: &str = "https://vibyra.net/checkout?offer=pro_annual";
 const APP_STORE_SUBSCRIPTIONS: &str = "https://apps.apple.com/account/subscriptions";
 
 /// The account's AI balance, as the versioned Vibes wallet reports it. The
@@ -37,7 +40,8 @@ pub struct TopupOption {
 }
 
 pub async fn credits(state: &AppState) -> Result<CreditsSummary, String> {
-    let body = call(state, Endpoint::VibesWallet, None).await?;
+    let action = BillingSession::capture(&state.account)?;
+    let body = action.request(Endpoint::VibesWallet, None).await?;
     let wallet = body.get("wallet").unwrap_or(&serde_json::Value::Null);
     Ok(CreditsSummary {
         available: balance(wallet, "available")?,
@@ -74,21 +78,23 @@ pub async fn topups() -> Result<Vec<TopupOption>, String> {
 /// Opens the Stripe customer portal in the system browser. The one-time URL
 /// is handed straight to the browser and never crosses into the renderer.
 pub async fn open_portal(state: &AppState) -> Result<(), String> {
-    let body = call(state, Endpoint::BillingPortal, Some(serde_json::json!({}))).await?;
-    open_returned_url(&body)
+    let action = BillingSession::capture(&state.account)?;
+    let body = action
+        .request(Endpoint::BillingPortal, Some(serde_json::json!({})))
+        .await?;
+    action.perform(|| open_returned_url(&body))
 }
 
 /// Opens Stripe Checkout for one top-up size.
 pub async fn open_topup_checkout(state: &AppState, topup: String) -> Result<(), String> {
+    let action = BillingSession::capture(&state.account)?;
     let key = topup.trim();
     let shaped =
         (1..=40).contains(&key.len()) && key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
     if !shaped {
         return Err("Unknown top-up.".to_owned());
     }
-    let catalogue = request(Endpoint::BillingCatalogue, None, None)
-        .await
-        .map_err(|e| e.message().to_owned())?;
+    let catalogue = action.request(Endpoint::BillingCatalogue, None).await?;
     let offer = catalogue
         .get("offers")
         .and_then(|v| v.as_array())
@@ -98,8 +104,10 @@ pub async fn open_topup_checkout(state: &AppState, topup: String) -> Result<(), 
         })
         .ok_or_else(|| "This top-up is unavailable. Refresh prices.".to_owned())?;
     let body = serde_json::json!({ "offerKey": key, "offerVersion": offer["offerVersion"], "requestId": uuid::Uuid::new_v4().to_string() });
-    let body = call(state, Endpoint::BillingCheckout, Some(body)).await?;
-    open_returned_url(&body)
+    let body = action
+        .request(Endpoint::BillingCheckout, Some(body))
+        .await?;
+    action.perform(|| open_returned_url(&body))
 }
 
 /// Opens one of the enumerated billing pages: the website's plans page, or
@@ -108,7 +116,7 @@ pub fn open_page(page: &str) -> Result<(), String> {
     let url = match page {
         "plans" => PLANS_PAGE,
         "pro" => PRO_CHECKOUT,
-        "activity" => "https://vibyra.app/account?activity=1",
+        "activity" => "https://vibyra.net/account?activity=1",
         "appStore" => APP_STORE_SUBSCRIPTIONS,
         _ => return Err("Unknown billing page.".to_owned()),
     };
@@ -123,24 +131,6 @@ fn open_returned_url(body: &serde_json::Value) -> Result<(), String> {
         .ok_or_else(|| "Billing could not be opened. Try again.".to_owned())?;
     crate::provider_auth_url::open(url)
         .map_err(|_| "Vibyra could not open your browser. Try again.".to_owned())
-}
-
-async fn call(
-    state: &AppState,
-    endpoint: Endpoint<'_>,
-    body: Option<serde_json::Value>,
-) -> Result<serde_json::Value, String> {
-    let Some(token) = state.account.token() else {
-        return Err("You are not signed in.".to_owned());
-    };
-    match request(endpoint, Some(&token), body).await {
-        Ok(value) => Ok(value),
-        Err(ApiError::Unauthorized(message)) => {
-            crate::account_auth::reject_session(state);
-            Err(message)
-        }
-        Err(error) => Err(error.message().to_owned()),
-    }
 }
 
 fn topup(row: &serde_json::Value) -> Option<TopupOption> {

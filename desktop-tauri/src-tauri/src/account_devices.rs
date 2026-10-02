@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::account_api::{request, ApiError, Endpoint};
+use crate::account_api::{request, Endpoint};
 use crate::account_auth;
 use crate::state::AppState;
 
@@ -26,7 +26,7 @@ pub struct RevokeOutcome {
 }
 
 pub async fn list(state: &AppState) -> Result<Vec<AccountDevice>, String> {
-    let body = call(state, Endpoint::AccountSessions, None).await?;
+    let (_, body) = call(state, Endpoint::AccountSessions, None).await?;
     let devices = body
         .get("devices")
         .and_then(|v| v.as_array())
@@ -38,23 +38,27 @@ pub async fn list(state: &AppState) -> Result<Vec<AccountDevice>, String> {
 /// Signs out one device. Losing this one tears the local session down so a
 /// revoked bearer is never left in the keyring.
 pub async fn revoke_device(state: &AppState, device: String) -> Result<RevokeOutcome, String> {
-    let body = call(state, Endpoint::RevokeDevice(&device), None).await?;
-    finish(state, &body)
+    let (token, body) = call(state, Endpoint::RevokeDevice(&device), None).await?;
+    finish(state, &token, &body)
 }
 
 /// Signs out every device, this one included.
 pub async fn revoke_all(state: &AppState) -> Result<RevokeOutcome, String> {
-    let body = call(state, Endpoint::RevokeSessions, None).await?;
-    finish(state, &body)
+    let (token, body) = call(state, Endpoint::RevokeSessions, None).await?;
+    finish(state, &token, &body)
 }
 
-fn finish(state: &AppState, body: &serde_json::Value) -> Result<RevokeOutcome, String> {
+fn finish(
+    state: &AppState,
+    token: &str,
+    body: &serde_json::Value,
+) -> Result<RevokeOutcome, String> {
     let signed_out = body
         .get("currentRevoked")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    if signed_out {
-        account_auth::teardown(state);
+    if signed_out && !account_auth::teardown_for_token(state, token) {
+        return Err("Your account changed. Refresh Settings.".into());
     }
     Ok(RevokeOutcome { signed_out })
 }
@@ -77,18 +81,17 @@ async fn call(
     state: &AppState,
     endpoint: Endpoint<'_>,
     body: Option<serde_json::Value>,
-) -> Result<serde_json::Value, String> {
+) -> Result<(String, serde_json::Value), String> {
     let Some(token) = state.account.token() else {
         return Err("You are not signed in.".to_owned());
     };
-    match request(endpoint, Some(&token), body).await {
-        Ok(value) => Ok(value),
-        Err(ApiError::Unauthorized(message)) => {
-            crate::account_auth::reject_session(state);
-            Err(message)
-        }
-        Err(error) => Err(error.message().to_owned()),
-    }
+    let result = request(endpoint, Some(&token), body).await;
+    state
+        .account
+        .with_token(&token, || {
+            result.map_err(|error| error.message().to_owned())
+        })?
+        .map(|body| (token, body))
 }
 
 fn text(row: &serde_json::Value, key: &str) -> Option<String> {

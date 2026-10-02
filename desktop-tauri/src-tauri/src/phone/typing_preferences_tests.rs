@@ -15,18 +15,22 @@ fn every_switch_persists_on_its_own_and_no_address_is_stored() {
     let reopened = |key: &str| {
         PhoneConnection::new(path.clone(), manager.clone())
             .lock()
-            .status()[key]
+            .status(false)[key]
             .clone()
     };
     let phone = PhoneConnection::new(path.clone(), manager.clone());
     {
         let mut phone = phone.lock();
-        assert_eq!(phone.status()["enabled"], json!(false));
-        assert_eq!(phone.status()["typing"], json!(false), "typing starts off");
+        assert_eq!(phone.status(false)["enabled"], json!(false));
+        assert_eq!(
+            phone.status(false)["typing"],
+            json!(false),
+            "typing starts off"
+        );
         // Enabling can still fail on a machine with no usable network; the
         // switch stays on either way so the watcher can bind later.
         let _ = phone.enable(manager.clone());
-        assert_eq!(phone.status()["enabled"], json!(true));
+        assert_eq!(phone.status(false)["enabled"], json!(true));
     }
     assert_eq!(
         saved(),
@@ -36,15 +40,15 @@ fn every_switch_persists_on_its_own_and_no_address_is_stored() {
     {
         let mut phone = phone.lock();
         phone.disable().unwrap();
-        assert_eq!(phone.status()["enabled"], json!(false));
-        assert_eq!(phone.status()["discoverable"], json!(false));
+        assert_eq!(phone.status(false)["enabled"], json!(false));
+        assert_eq!(phone.status(false)["discoverable"], json!(false));
         assert_eq!(phone.address(), "");
         // A connection nobody asked for is never started by the watcher.
         phone.refresh(manager.clone());
-        assert_eq!(phone.status()["discoverable"], json!(false));
+        assert_eq!(phone.status(false)["discoverable"], json!(false));
         // Allowing typing never turns the connection itself on.
         phone.set_typing(true).unwrap();
-        assert_eq!(phone.status()["discoverable"], json!(false));
+        assert_eq!(phone.status(false)["discoverable"], json!(false));
     }
     assert_eq!(
         saved(),
@@ -58,11 +62,11 @@ fn every_switch_persists_on_its_own_and_no_address_is_stored() {
     {
         let mut phone = phone.lock();
         phone.set_remote(true).unwrap();
-        assert_eq!(phone.status()["remote"]["enabled"], json!(true));
-        assert_eq!(phone.status()["remote"]["signedIn"], json!(false));
-        assert_eq!(phone.status()["remote"]["leg"], json!(null));
+        assert_eq!(phone.status(false)["remote"]["enabled"], json!(true));
+        assert_eq!(phone.status(false)["remote"]["signedIn"], json!(false));
+        assert_eq!(phone.status(false)["remote"]["leg"], json!(null));
         assert_eq!(
-            phone.status()["enabled"],
+            phone.status(false)["enabled"],
             json!(false),
             "turning remote on never turns the connection on"
         );

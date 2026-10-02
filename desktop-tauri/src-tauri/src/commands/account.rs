@@ -110,8 +110,8 @@ pub async fn account_logout(state: State<'_, AppState>) -> Result<AccountSnapsho
 #[tauri::command]
 pub fn account_open_legal(page: String) -> Result<(), String> {
     let url = match page.as_str() {
-        "privacy" => "https://vibyra.app/legal/privacy",
-        "terms" => "https://vibyra.app/legal/terms",
+        "privacy" => "https://vibyra.net/legal/privacy",
+        "terms" => "https://vibyra.net/legal/terms",
         _ => return Err("Unknown legal page.".to_owned()),
     };
     crate::provider_auth_url::open(url)

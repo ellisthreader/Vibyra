@@ -7,10 +7,15 @@ use crate::account_cancel::CancelFlag;
 use crate::account_types::{AccountProfile, AccountSnapshot, AccountStatus};
 use crate::secret_store::SecretStore;
 
+#[path = "account_session_attempt.rs"]
+mod attempt;
+#[path = "account_session_binding.rs"]
+mod binding;
 #[path = "account_session_rejection.rs"]
 mod rejection;
 
 struct SessionState {
+    epoch: u64,
     status: AccountStatus,
     token: Option<String>,
     profile: Option<AccountProfile>,
@@ -36,6 +41,7 @@ impl Default for AccountSessionManager {
     fn default() -> Self {
         Self {
             inner: Mutex::new(SessionState {
+                epoch: 0,
                 status: AccountStatus::Restoring,
                 token: None,
                 profile: None,
@@ -81,6 +87,7 @@ impl AccountSessionManager {
             .unwrap_or_else(crate::plan_limits::PlanLimits::signed_out)
     }
 
+    #[cfg(test)]
     pub fn set_status(&self, status: AccountStatus, error: Option<String>) {
         let mut state = self.inner.lock();
         state.status = status;
@@ -90,69 +97,22 @@ impl AccountSessionManager {
         }
     }
 
+    #[cfg(test)]
     pub fn begin_authorizing(&self, provider: Option<String>) {
         let mut state = self.inner.lock();
+        state.epoch += 1;
         state.status = AccountStatus::Authorizing;
         state.error = None;
         state.pending_provider = provider;
     }
 
+    #[cfg(test)]
     pub fn set_profile(&self, profile: AccountProfile) {
         self.inner.lock().profile = Some(profile);
     }
 
-    /// Installs a verified session: persists the token to the OS credential
-    /// store first, then swaps it into memory. When the store is unavailable
-    /// the session continues for this process only and the snapshot says so.
-    pub fn adopt_session(&self, store: &SecretStore, token: String, profile: AccountProfile) {
-        let mut state = self.inner.lock();
-        let persisted = match store.write_account_session(Some(&token)) {
-            Ok(()) => true,
-            Err(error) => {
-                eprintln!("Vibyra could not persist the account session: {error}");
-                false
-            }
-        };
-        state.token = Some(token);
-        state.profile = Some(profile);
-        state.status = AccountStatus::SignedIn;
-        state.error = None;
-        state.pending_provider = None;
-        state.secure_storage = persisted;
-        state.two_factor_challenge = None;
-    }
-
-    /// Replaces the token after a rotation. The new token is written to the
-    /// credential store before memory so a crash never strands a stale entry.
-    pub fn replace_token(&self, store: &SecretStore, token: String) {
-        let mut state = self.inner.lock();
-        let persisted = store.write_account_session(Some(&token)).is_ok();
-        state.token = Some(token);
-        if !persisted {
-            state.secure_storage = false;
-        }
-    }
-
-    pub fn mark_secure_storage(&self, available: bool) {
-        self.inner.lock().secure_storage = available;
-    }
-
-    /// Clears the credential entry and every trace of the session, returning
-    /// the manager to the signed-out state.
-    pub fn clear_session(&self, store: &SecretStore) {
-        if let Err(error) = store.write_account_session(None) {
-            eprintln!("Vibyra could not clear the stored account session: {error}");
-        }
-        let mut state = self.inner.lock();
-        state.token = None;
-        state.profile = None;
-        state.status = AccountStatus::SignedOut;
-        state.error = None;
-        state.pending_provider = None;
-        state.two_factor_challenge = None;
-    }
-
     /// Holds the challenge a correct password bought and asks for the code.
+    #[cfg(test)]
     pub fn begin_two_factor(&self, challenge: String) {
         let mut state = self.inner.lock();
         state.status = AccountStatus::TwoFactor;
@@ -161,6 +121,7 @@ impl AccountSessionManager {
         state.two_factor_challenge = Some(challenge);
     }
 
+    #[cfg(test)]
     pub fn two_factor_challenge(&self) -> Option<String> {
         self.inner.lock().two_factor_challenge.clone()
     }
@@ -169,6 +130,7 @@ impl AccountSessionManager {
     /// is dropped here as well as on the backend's own expiry.
     pub fn cancel_two_factor(&self) {
         let mut state = self.inner.lock();
+        state.epoch += 1;
         state.two_factor_challenge = None;
         if state.status == AccountStatus::TwoFactor {
             state.status = AccountStatus::SignedOut;
@@ -178,13 +140,15 @@ impl AccountSessionManager {
 
     /// Starts a new OAuth attempt, cancelling any previous one, and returns
     /// the cancellation flag the poll loop should watch.
+    #[cfg(test)]
     pub fn begin_oauth(&self) -> Arc<AtomicBool> {
         self.oauth_cancel.begin()
     }
 
     pub fn cancel_oauth(&self) {
-        self.oauth_cancel.cancel();
         let mut state = self.inner.lock();
+        self.oauth_cancel.cancel();
+        state.epoch += 1;
         if state.status == AccountStatus::Authorizing {
             state.status = AccountStatus::SignedOut;
             state.error = None;

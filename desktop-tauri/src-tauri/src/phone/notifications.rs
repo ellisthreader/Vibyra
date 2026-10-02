@@ -4,7 +4,7 @@ use crate::account_api::{request, Endpoint};
 use serde_json::json;
 use std::sync::Arc;
 impl PhoneConnection {
-    pub fn set_notifications(&mut self, on: bool) -> Result<(), String> {
+    pub fn set_notifications(&mut self, on: bool, owner: Option<String>) -> Result<(), String> {
         self.notifications = None;
         if !on {
             return Ok(());
@@ -17,7 +17,7 @@ impl PhoneConnection {
                 "Sign in on this Mac first.",
                 "Sign in on this computer first.",
             ))?;
-        let owner = account.token().ok_or(crate::platform_text::for_computer(
+        let owner = owner.ok_or(crate::platform_text::for_computer(
             "Sign in on this Mac first.",
             "Sign in on this computer first.",
         ))?;

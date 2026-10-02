@@ -9,7 +9,8 @@ use super::workspace::{DesktopPane, DesktopProject};
 use std::path::PathBuf;
 
 impl PhoneConnection {
-    pub fn status(&self) -> Value {
+    /// Capture account state before taking the PhoneConnection mutex.
+    pub fn status(&self, signed_in: bool) -> Value {
         let mut status = self
             .host
             .as_ref()
@@ -20,7 +21,7 @@ impl PhoneConnection {
         status["typing"] = json!(self.typing());
         status["remote"] = json!({
             "enabled": self.remote_enabled,
-            "signedIn": self.account.as_ref().is_some_and(|a| a.token().is_some()),
+            "signedIn": signed_in,
             "leg": self.remote.as_ref().map(RelayHandle::status),
         });
         if self.host.is_none() {
