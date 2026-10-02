@@ -93,7 +93,10 @@ fn unverified_checkout_403_preserves_session_and_real_pty() {
         .create_session(
             "shell",
             "billing-fixture",
-            &LaunchSpec::shell(Some("/bin/sh".into()), None),
+            &LaunchSpec::shell(
+                Some(if cfg!(windows) { "cmd.exe" } else { "/bin/sh" }.into()),
+                None,
+            ),
         )
         .unwrap();
     for status in [403, 401, 429, 503] {
@@ -110,7 +113,7 @@ fn unverified_checkout_403_preserves_session_and_real_pty() {
         assert!(manager.process_id(terminal.id).unwrap().is_some());
     }
     manager
-        .write_input(terminal.id, b"printf billing-session-preserved\n")
+        .write_input(terminal.id, b"echo billing-session-preserved\n")
         .unwrap();
     manager.shutdown();
 }

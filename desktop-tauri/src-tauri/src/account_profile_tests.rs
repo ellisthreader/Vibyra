@@ -21,7 +21,10 @@ fn rejected_profile_change_preserves_signed_in_profile_and_running_terminal() {
         },
     );
     let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    let spec = LaunchSpec::shell(Some("/bin/sh".into()), None);
+    let spec = LaunchSpec::shell(
+        Some(if cfg!(windows) { "cmd.exe" } else { "/bin/sh" }.into()),
+        None,
+    );
     let terminal = manager
         .create_session("shell", "profile-fixture", &spec)
         .unwrap();
@@ -42,7 +45,7 @@ fn rejected_profile_change_preserves_signed_in_profile_and_running_terminal() {
         assert!(manager.process_id(terminal.id).unwrap().is_some());
     }
     manager
-        .write_input(terminal.id, "printf profile-preserved\n".as_bytes())
+        .write_input(terminal.id, "echo profile-preserved\n".as_bytes())
         .unwrap();
     manager.shutdown();
 }

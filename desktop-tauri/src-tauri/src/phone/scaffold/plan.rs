@@ -92,14 +92,15 @@ mod layer_tests {
     use super::validate;
     #[test]
     fn addon_steps_stay_inside_the_new_project() {
-        let plan = |cwd: &str| {
+        let dir = std::env::temp_dir().join("vibyra-plan-qa").join("app");
+        let plan = |cwd: std::path::PathBuf| {
             serde_json::from_value(serde_json::json!({
-            "dir": "/tmp/qa/app", "createDir": true, "gitInit": false, "seeds": [],
-            "steps": [{"label": "Install addon", "program": "npm", "args": ["install"], "cwd": cwd}]
-        })).unwrap()
+                "dir": dir, "createDir": true, "gitInit": false, "seeds": [],
+                "steps": [{"label": "Install addon", "program": "npm", "args": ["install"], "cwd": cwd}]
+            })).unwrap()
         };
-        assert!(validate(&plan("/tmp/qa/app/services/express")).is_ok());
-        assert!(validate(&plan("/tmp/qa/app/../other")).is_err());
-        assert!(validate(&plan("/tmp/qa/application")).is_err());
+        assert!(validate(&plan(dir.join("services").join("express"))).is_ok());
+        assert!(validate(&plan(dir.join("..").join("other"))).is_err());
+        assert!(validate(&plan(dir.with_file_name("application"))).is_err());
     }
 }
