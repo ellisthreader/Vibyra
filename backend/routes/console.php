@@ -47,3 +47,5 @@ Schedule::command('vibyra:agent-v2-routines')->everyMinute()->when(fn () => (boo
 Schedule::command('vibyra:agent-v2-sweep-dispatching')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
 // F-04: old run journals and attachment files age out; orphaned rows left by a deleted account are swept (daily, any flag state).
 Schedule::command('vibyra:agent-v2-retention')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
+
+Schedule::command('vibyra:backup-attachments')->dailyAt('02:45')->withoutOverlapping(30)->onOneServer();
