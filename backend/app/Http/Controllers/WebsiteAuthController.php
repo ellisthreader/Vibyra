@@ -44,7 +44,7 @@ class WebsiteAuthController extends Controller
         }
 
         $this->moderation->assertLocalTextAllowed($name, 'auth.name');
-        $user = User::create([
+        $user = app(\App\Services\Membership\Licenses\Pending::class)->createUser([
             'name' => $name !== '' ? $name : $this->nameFromEmail($email),
             'email' => $email,
             'provider' => 'email',
@@ -58,10 +58,9 @@ class WebsiteAuthController extends Controller
             'onboarding_complete' => false,
             'remembered_desktops' => [],
             'app_state' => [],
-        ]);
+        ], $request);
         $this->referrals->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
-        app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
 
         try {
             $user->sendEmailVerificationNotification();

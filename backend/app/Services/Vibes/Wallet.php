@@ -18,13 +18,14 @@ class Wallet
      * request, and — the part that matters — what stops a guest who signs up from
      * being handed a second trial on top of whatever is left of the first.
      */
-    public function ensure(User $user, ?int $trialCredits = null): object
+    public function ensure(User $user, ?int $trialCredits = null, bool $licenseSignup = false): object
     {
-        return DB::transaction(function () use ($user, $trialCredits) {
+        return DB::transaction(function () use ($user, $trialCredits, $licenseSignup) {
             User::whereKey($user->id)->lock(DB::connection()->getDriverName() === 'pgsql' ? 'for no key update' : true)->firstOrFail();
             $wallet = DB::table('vibes_wallets')->where('user_id', $user->id)->first();
             if ($wallet) return $wallet;
-            $modern = \App\Services\Membership\NewAccounts::eligible($user);
+            $modern = ($licenseSignup && config('licenses.enabled') && !$user->isGuest() && ($user->plan ?: 'free') === 'free' && !$user->membership_ends_at)
+                || \App\Services\Membership\NewAccounts::eligible($user);
             DB::table('vibes_wallets')->insert([
                 'billing_version' => $modern ? 2 : 1,
                 'user_id' => $user->id, 'account_token' => (string) Str::uuid(),

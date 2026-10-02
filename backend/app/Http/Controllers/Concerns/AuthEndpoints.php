@@ -96,7 +96,7 @@ trait AuthEndpoints
             return $this->json([...$this->sessionPayload($request, $user), 'isNewUser' => true], 201);
         }
 
-        $user = User::create([
+        $user = app(\App\Services\Membership\Licenses\Pending::class)->createUser([
             'name' => $name !== '' ? $name : $this->nameFromEmail($email),
             'email' => $email,
             'provider' => 'email',
@@ -110,10 +110,9 @@ trait AuthEndpoints
             'onboarding_complete' => false,
             'remembered_desktops' => [],
             'app_state' => [],
-        ]);
+        ], $request);
         app(ReferralService::class)->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
-        app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
 
         try {
             $user->sendEmailVerificationNotification();

@@ -11,7 +11,7 @@ final class Issuance
 {
     public function create(User $owner, array $terms): array
     {
-        abort_unless(config('licenses.enabled') && config('membership.enabled'), 503, 'License creation is not available.');
+        abort_unless(config('licenses.enabled'), 503, 'License creation is not available.');
         return DB::transaction(function () use ($owner, $terms) {
             User::whereKey($owner->id)->lockForUpdate()->firstOrFail();
             $request = $terms['request_id']; unset($terms['request_id']);

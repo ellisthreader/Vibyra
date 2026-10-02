@@ -60,7 +60,7 @@ class ProviderAccountService
             ?: ucfirst($provider).' User';
         $this->moderation->assertLocalTextAllowed($name, 'auth.name');
 
-        $user = User::create([
+        $user = app(\App\Services\Membership\Licenses\Pending::class)->createUser([
             'name' => $name,
             'email' => $email,
             'provider' => $provider,
@@ -75,7 +75,7 @@ class ProviderAccountService
             'remembered_desktops' => [],
             'app_state' => [],
             'email_verified_at' => ($identity['emailVerified'] ?? true) ? now() : null,
-        ]);
+        ], $request);
         $this->referrals->registerSignup($user, $referralCode);
 
         if ($provider === 'microsoft') {
@@ -86,7 +86,6 @@ class ProviderAccountService
             }
         }
 
-        app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
         return ['user' => $user->fresh() ?? $user, 'created' => true];
     }
 

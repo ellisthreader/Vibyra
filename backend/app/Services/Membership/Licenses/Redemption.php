@@ -12,7 +12,7 @@ final class Redemption
 {
     public function redeem(User $user, string $hash): array
     {
-        abort_unless(config('licenses.enabled') && config('membership.enabled'), 503, 'License redemption is not available yet.');
+        abort_unless(config('licenses.enabled'), 503, 'License redemption is not available yet.');
         return DB::transaction(function () use ($user, $hash) {
             $u = User::whereKey($user->id)->lock(DB::connection()->getDriverName() === 'pgsql' ? 'for no key update' : true)->firstOrFail();
             abort_unless(!$u->isGuest() && $u->hasVerifiedEmail(), 403, 'Verify your email before redeeming a license.');

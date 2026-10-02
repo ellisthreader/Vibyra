@@ -24,8 +24,8 @@ class VibyraDesktopProviderAuthTest extends TestCase
 
     public function test_google_desktop_oauth_creates_a_real_account_session(): void
     {
-        config(['licenses.enabled' => true, 'membership.enabled' => true,
-            'membership.new_accounts_from' => now()->subDay()->toIso8601String()]);
+        config(['licenses.enabled' => true, 'membership.enabled' => false,
+            'membership.new_accounts_from' => null]);
         $license = app(\App\Services\Membership\Licenses\Issuance::class)->create(\App\Models\User::factory()->create(), [
             'request_id' => (string) \Illuminate\Support\Str::uuid(), 'label' => 'OAuth test', 'tokens' => 300,
             'allowance' => 'once', 'duration_months' => 1, 'fixed_ends_at' => null, 'claim_by' => now()->addDay()]);

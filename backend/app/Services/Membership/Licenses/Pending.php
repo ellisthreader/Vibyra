@@ -9,12 +9,23 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 final class Pending
 {
-    public function capture(User $user, Request $request): void
+    /** Only trusted account-creation paths call this; never infer enrollment from client fields. */
+    public function createUser(array $attributes, Request $request): User
+    {
+        return DB::transaction(function () use ($attributes, $request) {
+            $user = User::create($attributes);
+            $this->capture($user, $request, true);
+            return $user->fresh();
+        }, 3);
+    }
+
+    public function capture(User $user, Request $request, bool $newAccount = false): void
     {
         $hash = $request->attributes->get('license_hash');
         if (!$hash) return;
-        DB::transaction(function () use ($user, $hash) {
+        DB::transaction(function () use ($user, $hash, $newAccount) {
             User::whereKey($user->id)->lock(DB::connection()->getDriverName() === 'pgsql' ? 'for no key update' : true)->firstOrFail();
+            if ($newAccount && config('licenses.enabled')) app(\App\Services\Vibes\Wallet::class)->ensure($user, 0, true);
             DB::table('membership_license_claims')->updateOrInsert(['user_id' => $user->id], [
                 'key_hash' => $hash, 'status' => 'pending_verification', 'expires_at' => now()->addDays(30),
                 'created_at' => now(), 'updated_at' => now()]);
