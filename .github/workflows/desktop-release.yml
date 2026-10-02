@@ -50,7 +50,8 @@ jobs:
             source: src-tauri/target/release/bundle/macos/*.app.tar.gz
             suffix: macos-x64.app.tar.gz
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    # Cold Intel builds include all verification and optimized native linking.
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: desktop-tauri
