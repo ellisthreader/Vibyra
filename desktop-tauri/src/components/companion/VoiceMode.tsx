@@ -10,6 +10,7 @@ import { VoiceOrb } from "./VoiceOrb";
  * and what should I do about it. */
 const PROMPT: Record<TalkPhase, string> = {
   idle: "",
+  starting: "Wait until the microphone is ready.",
   listening: "Just talk. It answers when you pause.",
   thinking: "Working out an answer",
   speaking: "Say anything to interrupt",

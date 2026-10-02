@@ -1,3 +1,11 @@
+## 0.8.21 — 2 October 2026 (voice readiness candidate)
+
+Mac build45 retains the native freeze fix and announces Listening only after
+native microphone startup succeeds. Startup failures remain visible; canceling
+an old startup cannot discard a newer voice recording. Delayed-start, failure
+and cancellation regressions cover the real store and serialized IPC adapter.
+Exact artifact, publication and physical audio acceptance remain separate.
+
 ## 0.8.20 — 2 October 2026 (native responsiveness candidate)
 
 Mac build44 preserves0.8.19beta welcome/license changes and fixes the native

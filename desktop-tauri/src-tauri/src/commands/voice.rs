@@ -106,8 +106,12 @@ pub async fn voice_start(state: State<'_, AppState>) -> Result<(), String> {
     }
     state.usage.budget_available(state.ai_limits())?;
     let capture = super::run_blocking(capture::VoiceRecording::start).await?;
-    crate::assistant_api::same_account(&state, &token)?;
-    *state.voice.lock() = Some(VoiceRecording { capture, token });
+    state.account.with_token(&token, || {
+        *state.voice.lock() = Some(VoiceRecording {
+            capture,
+            token: token.clone(),
+        });
+    })?;
     Ok(())
 }
 

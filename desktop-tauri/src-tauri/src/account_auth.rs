@@ -97,6 +97,7 @@ pub(crate) fn teardown_for_token(state: &AppState, token: &str) -> bool {
 }
 
 fn cleanup(state: &AppState) {
+    stop_account_audio(state);
     state.phone.lock().account_signed_out();
     clear_preview_grants(state);
     for id in state.manager.close_all() {
@@ -105,6 +106,7 @@ fn cleanup(state: &AppState) {
 }
 
 pub fn bind_preview_account(state: &AppState, user: Option<&serde_json::Value>) {
+    stop_account_audio(state);
     let scope = user.and_then(verified_preview_account_id);
     if let Ok(grants) = &state.preview_grants {
         if let Err(error) = grants.set_account(scope.as_deref()) {
@@ -119,4 +121,11 @@ fn clear_preview_grants(state: &AppState) {
             eprintln!("Vibyra Preview grants could not be persisted as revoked: {error}");
         }
     }
+}
+
+// Auth transitions hold account authority before audio locks; neither audio
+// resource may re-enter AccountSessionManager while being stopped.
+fn stop_account_audio(state: &AppState) {
+    drop(state.voice.lock().take());
+    crate::commands::speech::shutdown();
 }

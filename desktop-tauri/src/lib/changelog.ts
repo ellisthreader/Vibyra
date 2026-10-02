@@ -1,3 +1,4 @@
+import { RELEASE_0821 } from "./changelogRelease0821.ts";
 import { RELEASE_0820 } from "./changelogRelease0820.ts";
 import { RELEASE_0816 } from "./changelogRelease0816.ts";
 import { RELEASE_0819 } from "./changelogRelease0819.ts";
@@ -15,6 +16,7 @@ import type { ChangelogEntry } from "./changelogTypes.ts";
 export type { ChangelogEntry, ChangelogSection } from "./changelogTypes.ts";
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_0821,
   RELEASE_0820,
   RELEASE_0819,
   RELEASE_0818,

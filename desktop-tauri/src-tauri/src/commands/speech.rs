@@ -66,8 +66,8 @@ pub async fn speech_start(
     )
     .await?;
     permit.finish_speech(characters);
-    crate::assistant_api::same_account(&state, &token)?;
-    super::run_blocking(move || play(id, audio)).await
+    let account = state.account.clone();
+    super::run_blocking(move || account.with_token(&token, || play(id, audio))?).await
 }
 
 /// Writes the audio beside the app's other private files and plays it. The

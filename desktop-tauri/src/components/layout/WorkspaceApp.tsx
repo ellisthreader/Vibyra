@@ -1,3 +1,4 @@
+import { useVoiceLifecycle } from "../../lib/useVoiceLifecycle";
 import { useProductMode } from '../../state/productModeStore';
 import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
 import { lazy, Suspense, useCallback, useState, useEffect } from "react";
@@ -86,6 +87,7 @@ export function WorkspaceApp() {
   const [newModelsOpen, setNewModelsOpen] = useState(() => (isMac || isLinux) && !newModelsNoticeHidden());
 
   const beta = useBetaWelcome(profile, settingsLoaded && !welcomeOpen && !welcomeHandoff);
+  useVoiceLifecycle(profile?.welcomeKey);
   useGlobalShortcuts();
   useWorkspaceRuntime();
   useNotificationRuntime();

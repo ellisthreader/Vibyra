@@ -14,7 +14,7 @@ import { useWorkspaceStore } from "./workspaceStore";
 // → speaking → listening, until the same key ends it. Every turn lands in the
 // project's own thread, so the conversation can be read as well as heard.
 
-export type TalkPhase = "idle" | "listening" | "thinking" | "speaking" | "error";
+export type TalkPhase = "idle" | "starting" | "listening" | "thinking" | "speaking" | "error";
 
 interface TalkStore {
   phase: TalkPhase;
@@ -72,9 +72,12 @@ export const useTalkStore = create<TalkStore>((set, get) => {
   /** Holds the microphone open until the person stops talking, publishing what
    * it hears as it goes. Resolves to what they said, or null for an empty turn. */
   const listen = async (generation: number): Promise<string | null> => {
-    show("listening", "Listening", "Speak, then pause");
+    show("starting", "Opening microphone", "");
     await voiceStart();
-    if (!live(generation)) { await voiceStop(true).catch(() => {}); return null; }
+    // End already queued its discard after this start; another stop could
+    // discard a newer conversation that now owns the microphone.
+    if (!live(generation)) return null;
+    show("listening", "Listening", "Speak, then pause");
     let progress: TurnProgress = { spokeMs: 0, quietMs: 0 };
     const started = Date.now();
     for (;;) {
@@ -92,6 +95,7 @@ export const useTalkStore = create<TalkStore>((set, get) => {
     set({ level: 0 });
     show("thinking", "Thinking", "");
     const said = await voiceStop(false);
+    if (!live(generation)) return null;
     if (said) set({ heard: said });
     return said;
   };
@@ -105,7 +109,9 @@ export const useTalkStore = create<TalkStore>((set, get) => {
     for (;;) {
       await wait(SPEECH_POLL_MS);
       if (!live(generation)) return;
-      if (!(await invoke<boolean>("speech_active", { id }))) return set({ speakingTurn: null });
+      const active = await invoke<boolean>("speech_active", { id });
+      if (!live(generation)) return;
+      if (!active) return set({ speakingTurn: null });
     }
   };
 
@@ -160,7 +166,7 @@ export const useTalkStore = create<TalkStore>((set, get) => {
       useWorkspaceStore.getState().setCompanionTab("chat");
       const generation = get().generation + 1;
       const projectId = useProjectStore.getState().activeId;
-      set({ generation, phase: "listening", title: "Opening microphone", sub: "", level: 0, speakingTurn: null, heard: "", showTranscript: false });
+      set({ generation, phase: "starting", title: "Opening microphone", sub: "", level: 0, speakingTurn: null, heard: "", showTranscript: false });
       if (!projectId) return fail("Open a project to talk about");
       void converse(generation, projectId);
     },
