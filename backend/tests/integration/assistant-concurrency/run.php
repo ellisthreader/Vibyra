@@ -66,3 +66,19 @@ $r = race([fn () => app(Budget::class)->finish($id, 321), fn () => app(Budget::c
 check(successes($r) === 2 && in_array(app(Wallet::class)->available($d->id), [9679, 10000], true), 'recovery racing provider settlement cannot refund twice');
 check(DB::table('vibes_ledger')->where('reference', 'assistant-settle:'.$id)->count() === 1, 'recovery has one settlement receipt');
 check(DB::table('vibes_spend_days')->where('held', '<', 0)->count() === 0, 'shared provider holds never go negative');
+
+// Funded traffic no longer competes for a fixed month allowance. Failure exposure remains bounded.
+foreach (DB::table('assistant_requests')->where('state', 'reserved')->pluck('id') as $activeId) app(Budget::class)->finish($activeId, 0);
+$existingRisk = (int) DB::table('assistant_requests')->where('state', 'uncertain')->sum('charged_micro_usd');
+config(['assistant.month_micro_usd' => 0, 'assistant.uncertain_month_micro_usd' => $existingRisk + 8000]);
+$e = account(20000); $f = account(20000);
+$r = race([fn () => app(Budget::class)->reserve($e->id, (string) Str::uuid(), 'chat', 8000),
+    fn () => app(Budget::class)->reserve($f->id, (string) Str::uuid(), 'chat', 8000)]);
+check(successes($r) === 1, 'cross-account racing calls cannot overspend in-flight plus unknown provider exposure');
+$held = DB::table('assistant_requests')->whereIn('user_id', [$e->id, $f->id])->first();
+app(Budget::class)->finish($held->id, null);
+$r = race([fn () => app(Budget::class)->reserve($e->id, (string) Str::uuid(), 'chat', 1),
+    fn () => app(Budget::class)->reserve($f->id, (string) Str::uuid(), 'chat', 1)]);
+check(successes($r) === 0, 'refunded unknown outcomes retain risk across accounts with monthly spend ceiling disabled');
+check(app(Wallet::class)->available($e->id) === 20000 && app(Wallet::class)->available($f->id) === 20000,
+    'exposure refusal and uncertain settlement leave customer balances intact');

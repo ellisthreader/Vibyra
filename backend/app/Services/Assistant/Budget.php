@@ -23,6 +23,7 @@ final class Budget
             if (DB::table('assistant_requests')->where('user_id', $user)->where('request_id', $request)->exists()) {
                 Failure::raise(409, 'assistant_duplicate', 'This request was already received. Start a new request to try again.');
             }
+            app(Exposure::class)->admit($cost);
             $active = DB::table('assistant_requests')->where('state', 'reserved')->where('created_at', '>', now()->subMinutes(3));
             $plan = app(\App\Services\Vibes\Wallet::class)->planFor($user);
             $slots = min(config('assistant.user_concurrent_calls'), app(\App\Services\Vibes\Plans::class)->for($plan)['concurrentReplies']);
@@ -82,8 +83,9 @@ final class Budget
     private function limits(int $user): array
     {
         $now = now()->utc(); $month = $now->format('Ym'); $day = $now->format('Ymd');
+        $monthLimit = (int) config('assistant.month_micro_usd');
         return [
-            'month:'.$month => [max(0, config('assistant.month_micro_usd')), PHP_INT_MAX],
+            'month:'.$month => [$monthLimit === 0 ? PHP_INT_MAX : max(0, $monthLimit), PHP_INT_MAX],
             "user:$user:day:$day" => [PHP_INT_MAX, max(0, config('assistant.user_day_calls'))],
             "user:$user:minute:".$now->format('YmdHi') => [PHP_INT_MAX, max(0, config('assistant.user_minute_calls'))],
         ];
