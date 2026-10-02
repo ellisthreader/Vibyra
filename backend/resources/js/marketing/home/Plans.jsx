@@ -2,23 +2,22 @@ import React, { useEffect, useState } from "react";
 import { Icon } from "./shared.jsx";
 import ProDiamond from "./ProDiamond.jsx";
 
-// Owner's plan split (2026-09-28). Keep in step with CheckoutPage.jsx,
-// BillingPage.jsx and resources/knowledge/website-faq.md.
+// Released desktop entitlements. Keep in step with CheckoutPage.jsx,
+// BillingPage.jsx, config/vibes.php and resources/knowledge/website-faq.md.
 const FREE_PERKS = topUpFrom => [
-    ["The full desktop app", " with Preview and Review"],
-    ["Unlimited terminals", ", side by side"],
-    ["Unlimited projects", " on your computer"],
-    ["Every OpenRouter model", " with Vibyra tokens"],
+    ["One project", " on your computer"],
+    ["Two running terminals", ", side by side"],
+    ["Your own AI accounts", ": use compatible coding CLIs"],
+    ["Built-in AI", " with Vibyra tokens"],
     ["Top up", topUpFrom ? ` from ${topUpFrom}, whenever you like` : " whenever you like"],
 ];
-const FREE_MISSING = ["Your own Claude, ChatGPT or Gemini accounts", "Vibyra Cloud on your iPhone"];
+const FREE_MISSING = ["Preview and Review", "Safe mode worktrees"];
 const PRO_PERKS = [
-    ["Vibyra Desktop", " with the iPhone companion coming October 2026"],
-    ["Your own AI accounts", ": Claude, ChatGPT and Gemini"],
-    ["Vibyra Cloud", ": reach your computer from anywhere"],
-    ["Agents", " that work while your computer is on and Vibyra is open"],
-    ["Vibyra AI", " built into every project"],
-    ["Tokens that never expire", ", even if you cancel"],
+    ["Unlimited terminals", " and projects"],
+    ["Preview and Review", " inside your workspace"],
+    ["Safe mode worktrees", " for separate changes"],
+    ["Vibyra AI", " with the included token allowance"],
+    ["Paid tokens never expire", ", even if you cancel"],
 ];
 
 export default function Plans() {
@@ -59,7 +58,7 @@ export default function Plans() {
         <div className="page-width pricing-layout">
             <header className="home-section-heading">
                 <h2 id="pricing-title">More room for your ideas.</h2>
-                <p>Start building for free. Go Pro for the whole Vibyra ecosystem.</p>
+                <p>Start building for free. Go Pro for more workspace features and included tokens.</p>
             </header>
             {!catalogue && !error && <div className="pricing-loading" role="status">Loading current plans…</div>}
             {error && <div className="pricing-error" role="alert"><p>We couldn’t load the current plans. Please try again.</p><button className="action action-secondary" onClick={() => setAttempt(n => n + 1)}>Retry</button></div>}
@@ -77,7 +76,7 @@ export default function Plans() {
                     <a className="plan-cta plan-cta-free" href="/signup?next=/account" data-analytics-cta="plans_signup">Start free</a>
                 </article>
                 <article className="plan-card plan-pro" aria-label="Vibyra Pro">
-                    <div className="plan-top"><div><h3>Vibyra Pro</h3><p className="plan-for">The whole Vibyra ecosystem.</p></div><ProDiamond /></div>
+                    <div className="plan-top"><div><h3>Vibyra Pro</h3><p className="plan-for">More room for your projects.</p></div><ProDiamond /></div>
                     <p className="plan-price"><strong>{money(yearly ? Math.round(plan.pence / 12) : plan.pence)}</strong><span>/ month</span></p>
                     <p className="plan-billing">{yearly ? <>{money(plan.pence)} billed once a year{saving > 0 && <> · <b>save {money(saving)}</b></>}</> : "Billed monthly"}</p>
                     <p className="plan-tokens">{yearly
@@ -88,7 +87,7 @@ export default function Plans() {
                 </article>
             </div>}
             {plan && <p className="pro-guarantee"><Icon name="shield" size={16} /><span><strong>14-day money-back guarantee on Pro.</strong> Not for you? We’ll refund your first payment.</span></p>}
-            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Remote access needs your computer on and online; the iPhone app is coming October 2026. <a href="/legal/terms">Terms</a></p>}
+            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. <a href="/legal/terms">Terms</a></p>}
         </div>
     </section>;
 }

@@ -9,12 +9,11 @@ import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
 // the offer and version ride along through sign-up and log-in in the URL.
 const PRO_OFFERS = ["pro_annual", "pro_monthly"];
 const INCLUDED = [
-    "Vibyra Desktop, with the iPhone companion coming October 2026",
-    "Your own Claude, ChatGPT and Gemini accounts",
-    "Vibyra Cloud: reach your awake, online computer when the iPhone app launches",
-    "Agents that work while your computer is on and Vibyra is open",
-    "Vibyra AI built into every project",
-    "Tokens that never expire, even if you cancel",
+    "Unlimited terminals and projects in Vibyra Desktop",
+    "Preview and Review inside your workspace",
+    "Safe mode worktrees for separate changes",
+    "Built-in AI with your included Vibyra tokens",
+    "Paid tokens never expire, even if you cancel",
 ];
 const money = p => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(p / 100);
 const renewal = months => {

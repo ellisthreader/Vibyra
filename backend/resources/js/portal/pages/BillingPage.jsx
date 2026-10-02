@@ -44,7 +44,7 @@ export default function BillingPage() {
     {user && <TokenWallet accountId={user.id} onWallet={setWallet} />}
     <div className="plan-grid" aria-busy={loading || (!offers.length && !error)}>
       <section className="account-panel"><p className="panel-label">Free</p><h2>£0</h2>
-        <p>The full desktop app with unlimited terminals and projects, and every OpenRouter model with Vibyra tokens. Linking your own AI accounts and Vibyra Cloud on iPhone come with Pro.</p>
+        <p>One project and two running terminals, with your own compatible coding CLI accounts. Built-in AI uses Vibyra tokens. Preview, Review and Safe mode worktrees are included with Pro.</p>
         <p>10 monthly free tokens for eligible accounts in our limited pilot. Check eligibility after sign-in.</p>
         {!user && <a className="portal-button portal-button--secondary" data-analytics-cta="billing_start_free" href={authPath("signup", "/billing")}>Start free</a>}
       </section>
@@ -58,7 +58,7 @@ export default function BillingPage() {
           <p className="panel-label">Vibyra Pro</p><h2>{monthly ? `${money(monthly.pence)} / month` : `${money(annual.pence)} / year`}</h2>
           {annual && monthly && <p>Or {money(annual.pence)} a year, saving {money(monthly.pence * 12 - annual.pence)}.</p>}
           <p>{(monthly ?? annual).credits} Vibyra tokens each month{annual ? ` (${annual.credits.toLocaleString("en-GB")} up front on Annual)` : ""}. Paid tokens never expire, including after cancellation.</p>
-          <p>The full Vibyra ecosystem: your own Claude, ChatGPT and Gemini accounts, Agents, Vibyra AI, and Vibyra Cloud to reach your awake computer when the iPhone companion launches in October 2026.</p>
+          <p>Unlimited terminals and projects, Preview, Review and Safe mode worktrees. Your own coding CLI accounts are also available on Free; they use your provider subscription separately from Vibyra tokens.</p>
           <div className="account-actions">{pro
             ? <button className="portal-button portal-button--primary" disabled>Your current plan</button>
             : [annual, monthly].filter(Boolean).map((o, i) => <a key={o.offerKey} className={`portal-button ${i ? "portal-button--secondary" : "portal-button--primary"}`} data-analytics-cta="billing_buy" href={checkout(o)}>{o.interval === "year" ? "Continue with Annual" : "Continue with Monthly"}</a>)}</div>

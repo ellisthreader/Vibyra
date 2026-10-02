@@ -36,15 +36,15 @@ export default function BillingStatusPage({ status }) {
       <p className="checkout-fine">Questions before you buy? Email support@vibyra.net.</p>
     </div>
   </PortalShell>;
-  return <PortalShell layout="checkout" eyebrow="" title={confirmed ? "Welcome to Vibyra Pro" : "Confirming your payment"} intro={confirmed ? "Your membership is active and your tokens are in your account." : "This usually takes a few seconds. You can keep this page open."}>
+  return <PortalShell layout="checkout" eyebrow="" title={confirmed ? "Your purchase is confirmed" : "Confirming your payment"} intro={confirmed ? "Your tokens are in your account. Any purchased membership appears in your account too." : "This usually takes a few seconds. You can keep this page open."}>
     <div className="status-panel checkout-panel"><Notice tone={confirmed ? "success" : "neutral"}>{message}</Notice>
       {!user && !loading && <a className="portal-button portal-button--primary" href="/login?next=/billing">Log in to check your account</a>}
       {confirmed ? <>
         <h2>What’s next</h2>
         <ol className="checkout-next">
-          <li><strong>Open Vibyra on your computer</strong> and sign in with this account. Pro is already on it.</li>
-          <li><strong>Link your Claude, ChatGPT and Gemini accounts</strong> and meet your Agents.</li>
-          <li><strong>Reach your computer from your iPhone</strong> anywhere through Vibyra Cloud, while it’s on and online.</li>
+          <li><strong>Open Vibyra on your computer</strong> and sign in with this account. Your purchase belongs to it.</li>
+          <li><strong>Check your membership and tokens</strong> in your account before starting funded work.</li>
+          <li><strong>Use your own coding CLI account</strong> or choose built-in AI with Vibyra tokens.</li>
         </ol>
         <div className="status-actions"><a className="portal-button portal-button--primary" href="/downloads">Download Vibyra</a><a className="portal-button portal-button--secondary" href="/billing">Your membership and tokens</a></div>
       </> : <div className="status-actions"><button className="portal-button portal-button--primary" onClick={() => window.location.reload()}>Check again</button><a className="portal-button portal-button--secondary" href="/billing">Your membership and tokens</a></div>}
