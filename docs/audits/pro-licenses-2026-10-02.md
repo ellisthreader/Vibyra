@@ -1,10 +1,11 @@
 # Pro licenses implementation and security review — 2 October 2026
 
-Status: implemented in maintained backend, desktop and mobile source. A separate
-website/backend candidate preserves the exact production baseline
-`dccf0115d404dc1116d9b835207afc9893b27f6b` on branch
-`codex/pro-licenses-20261002`. This work has **not deployed the feature or published
-a signed desktop update**. Issuance/redemption defaults off.
+Status: website/backend **live and enabled on vibyra.net**. Reviewed commit
+`07c8d918c1b4372fd90598b31bbec0548fe5a76d` deployed successfully as Railway
+`b5892c6d-04de-4d15-b48a-80de7e94791a`, based on the exact prior production
+`dccf0115d404dc1116d9b835207afc9893b27f6b`. Owner entry: `/owner` → **08 Licenses**
+→ fresh two-factor verification → **Create license**. A signed desktop update
+has **not** been published; the website signup flow is available now.
 
 ## Behavior
 
@@ -52,10 +53,10 @@ private/no-store responses. Independent reviewers performed an adversarial round
 - Maintained backend: full 292-file run initially passed 289; three stale password/
   CORS fixtures were corrected and their focused rerun passed. Subsequent license,
   OAuth, CSRF, Assistant and settlement tests passed.
-- Production candidate: 286-file full suite passed 285. The existing encoded-folder
-  preview test also fails on untouched production baseline (see baseline evidence).
-  Three opt-in tests were skipped: infrastructure, publish bridge and live provider
-  guardrails. Two additional settlement files pass, plus the final focused rerun.
+- Final production candidate: 289-file full suite passed 288. The sole encoded-folder
+  preview failure is identical on untouched production baseline. Infrastructure,
+  publish bridge and live provider guardrails remain opt-in skips. Scoped rollout,
+  referral ordering and actual OAuth signup tests pass with general membership off.
 - Disposable PostgreSQL license suite: 4 tests / 75 assertions, no deadlocks.
   Assistant concurrency harness passed duplicate, settlement, shared-wallet,
   monthly-cap and recovery races with no deadlocks.
@@ -79,7 +80,7 @@ private/no-store responses. Independent reviewers performed an adversarial round
   are Laravel 13.34.0, CommonMark 2.10.3, Flysystem 3.36.0; uuid is already 11.1.1.
 - Read-only live probes of vibyra.net and the Railway origin passed headers,
   cookie flags, sensitive-file denial, private endpoint authentication, CORS,
-  TLS and human-check checks. These probe the existing deployment, not this feature.
+  TLS and human-check checks; repeated after the exact license deployment.
 
 Evidence logs: `/private/tmp/vibyra-license-candidate-tests.txt`,
 `/private/tmp/vibyra-license-candidate-extra.txt`,
@@ -90,15 +91,37 @@ under the repository's `output/license-review/`.
 
 ## Release boundary
 
-Before activation: back up production PostgreSQL, rehearse the additive migration
-against a separate restore, deploy the reviewed exact backend commit, then enable
-`MEMBERSHIP_LICENSES_ENABLED=true` with membership v2 enabled and verify the owner
-flow. Use only synthetic accounts for live acceptance. Do not deploy the dirty
-maintained tree or overwrite the current website snapshot with its older UI.
-Publish the separately built/signed desktop client to expose its signup field;
-existing clients still obtain account entitlements through the server profile.
-Production enablement, restore rehearsal, signed client publication and real
-provider/device acceptance are not established by local fixtures.
+Deployment and recovery evidence:
+
+- Private PostgreSQL archive: 8,438,418 bytes, SHA-256
+  `e818226f09985ede393d1cb571dbbd66abfdfc6f665082eadb9e28859e2ab4dc`, retained in
+  `~/Library/Application Support/vibyra-backend-backups/licenses-20261002T104250Z/`.
+- Restored into an isolated local PostgreSQL cluster before migration. All 115
+  original business tables / 15,543 rows retained their fingerprints. Synthetic
+  issuance/redemption/revocation passed; the disposable cluster was removed.
+- All 925 immutable deployed source/build hashes match the reviewed candidate.
+  `2026_10_02_180000_create_membership_licenses` is applied.
+- Only `MEMBERSHIP_LICENSES_ENABLED=true` was activated. General membership v2,
+  free trial and existing payment rollout gates were preserved. Licenses enroll
+  eligible brand-new accounts independently; ordinary signup remains unchanged.
+- Live runtime HTTP-kernel acceptance passed ten checks: owner 2FA, real CSRF,
+  issuance, secret-free idempotent retry/list, pending signup, zero pre-verification
+  tokens, verified allocation, native Pro profile, and revocation. Synthetic owner
+  allowlist and fake mail/queue were CLI-process-only; all test database writes
+  rolled back. This establishes server route behavior, not real provider/device UI.
+- Live authenticated browser shows **08 Licenses**, the Pro licenses page and
+  Create license control. No real customer license was issued during verification.
+- Public license endpoints reject anonymous requests (401); queue workers and
+  scheduler are running. Both public-domain and Railway-origin security probes pass.
+- Runtime/public evidence is in `output/license-release/`; final suite evidence is
+  `/private/tmp/vibyra-license-release-final-suite.txt` and its failure companion.
+
+Scoped enrollment uses `Pending::createUser` in the trusted new-account transaction
+before referral rewards. Never expose the new-account flag as client input or
+convert an existing legacy wallet. Existing legacy accounts require reconciliation.
+Publish a separately built/signed desktop client to expose its new signup field;
+existing clients obtain account entitlements through the server profile. Real
+provider and physical-device acceptance remain separate from these checks.
 
 Emergency disable: set `MEMBERSHIP_LICENSES_ENABLED=false`; expiry, allowance
 lifecycle and owner revocation continue. Do not roll back/drop license tables or
