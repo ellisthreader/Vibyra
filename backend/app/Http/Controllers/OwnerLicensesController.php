@@ -14,7 +14,7 @@ final class OwnerLicensesController extends Controller
         $d = $r->validate(['page' => 'sometimes|integer|min:1|max:100000', 'search' => 'nullable|string|max:120']);
         $query = DB::table('membership_licenses as l')->leftJoin('users as u', 'u.id', '=', 'l.user_id')
             ->select('l.id', 'l.label', 'l.key_suffix', 'l.tokens', 'l.allowance', 'l.duration_months', 'l.fixed_ends_at',
-                'l.claim_by', 'l.redeemed_at', 'l.ends_at', 'l.revoked_at', 'l.created_at', 'u.email as redeemed_email');
+                'l.beta_welcome', 'l.claim_by', 'l.redeemed_at', 'l.ends_at', 'l.revoked_at', 'l.created_at', 'u.email as redeemed_email');
         if ($d['search'] ?? '') {
             $search = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $d['search']);
             $query->where(fn ($q) => $q->where('l.label', 'like', '%'.$search.'%')->orWhere('u.email', 'like', '%'.$search.'%'));
@@ -27,6 +27,7 @@ final class OwnerLicensesController extends Controller
     public function store(Request $r, Issuance $issuer)
     {
         $d = $r->validate([
+            'beta_welcome' => 'sometimes|boolean',
             'request_id' => 'required|uuid', 'label' => 'required|string|max:120',
             'tokens' => 'required|integer|min:0|max:'.config('licenses.max_tokens'),
             'allowance' => 'required|in:once,monthly',
@@ -44,6 +45,7 @@ final class OwnerLicensesController extends Controller
         abort_if($d['fixed_ends_at'] && $d['claim_by'] > $d['fixed_ends_at'], 422, 'The claim deadline cannot be after the license ends.');
         $d['duration_months'] = isset($d['duration_months']) ? (int) $d['duration_months'] : null;
         $d['tokens'] = (int) $d['tokens'];
+        if (array_key_exists('beta_welcome', $d)) $d['beta_welcome'] = (bool) $d['beta_welcome'];
         return response()->json(['ok' => true, ...$issuer->create($r->user(), $d)], 201)->header('Cache-Control', 'private, no-store');
     }
 

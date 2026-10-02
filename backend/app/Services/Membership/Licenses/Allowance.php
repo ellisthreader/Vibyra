@@ -43,7 +43,7 @@ final class Allowance
     public function summary(int $user): ?array
     {
         $l = DB::table('membership_licenses')->where('user_id', $user)->whereNull('revoked_at')
-            ->where('ends_at', '>', now())->first();
+            ->whereNotNull('redeemed_at')->where('ends_at', '>', now())->first();
         if (!$l) return null;
         $next = null;
         if ($l->allowance === 'monthly') {
@@ -54,6 +54,9 @@ final class Allowance
             if ($date->lt(Carbon::parse($l->ends_at))) $next = $date->toIso8601String();
         }
         return ['endsAt' => Carbon::parse($l->ends_at)->toIso8601String(), 'tokens' => $l->tokens,
-            'allowance' => $l->allowance, 'nextAt' => $next];
+            'allowance' => $l->allowance, 'nextAt' => $next,
+            'betaWelcome' => $l->beta_welcome && !$l->beta_welcome_seen_at
+                && \App\Models\User::whereKey($user)->whereNotNull('email_verified_at')->whereNull('guest_at')->exists()
+                ? ['id' => $l->id, 'months' => $l->duration_months ? (int) $l->duration_months : null] : null];
     }
 }

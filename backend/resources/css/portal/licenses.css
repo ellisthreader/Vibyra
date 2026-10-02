@@ -25,3 +25,6 @@
 .owner-licenses .portal-button--primary { background: var(--portal-action); }
 .license-pages button { background: transparent; color: var(--portal-text); border: 1px solid var(--portal-border); border-radius: .5rem; padding: .5rem .75rem; }
 .license-pages button:disabled { opacity: .4; }
+
+.license-form .license-beta { display: flex; align-items: center; gap: 10px; }
+.license-form .license-beta input { width: 16px; min-height: 16px; height: 16px; }

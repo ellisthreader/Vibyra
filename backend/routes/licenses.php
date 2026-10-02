@@ -13,3 +13,6 @@ Route::post('/web-api/account/license', LicenseRedemptionController::class)
     ->middleware(['auth', RequireApprovedMarket::class, 'throttle:10,1,license-redeem-ip']);
 Route::post('/api/account/license', LicenseRedemptionController::class)
     ->middleware([RequireApprovedMarket::class, 'throttle:10,1,license-redeem-ip']);
+
+Route::post('/api/account/license/welcome', \App\Http\Controllers\LicenseWelcomeController::class)
+    ->middleware('throttle:30,1,license-welcome');

@@ -99,4 +99,17 @@ class OwnerLicensesTest extends TestCase
         $this->assertDatabaseCount('membership_licenses', 0);
     }
 
+    public function test_beta_welcome_defaults_on_can_opt_out_and_changes_idempotency_terms(): void
+    {
+        $this->unlock();
+        $default = $this->postJson('/web-api/owner/licenses', $this->terms())->assertCreated()->json('id');
+        $this->assertDatabaseHas('membership_licenses', ['id' => $default, 'beta_welcome' => true]);
+        $terms = $this->terms(['beta_welcome' => false]);
+        $id = $this->postJson('/web-api/owner/licenses', $terms)->assertCreated()->json('id');
+        $this->assertDatabaseHas('membership_licenses', ['id' => $id, 'beta_welcome' => false]);
+        $this->postJson('/web-api/owner/licenses', $terms)->assertCreated()->assertJsonPath('replayed', true);
+        $this->postJson('/web-api/owner/licenses', [...$terms, 'beta_welcome' => true])->assertConflict();
+        $this->postJson('/web-api/owner/licenses', $this->terms(['beta_welcome' => 'yes']))->assertUnprocessable();
+    }
+
 }
