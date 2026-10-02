@@ -144,3 +144,11 @@ Independent adversarial review found no blocker; timing-neutral throttle wording
 avoids a false one-minute promise on endpoints with longer limits. Live synthetic
 server enrollment/start/confirm plus license flow passed 12 checks with rollback.
 The real owner's password/authenticator setup remains theirs to complete.
+
+Feedback correction is live: commit `b186ac583d3fe88413aca4f8bf35248b3591ee60`,
+Railway deployment `0cba8b30-2859-40da-9ad2-5000df74359d` SUCCESS. All 925 immutable
+runtime hashes and the public portal bundle match. Post-deploy synthetic acceptance
+passed 14 checks, including rejected passwords leaving enrollment unchanged, real
+CSRF, successful setup/confirmation and license creation/activation/revocation;
+all synthetic writes rolled back. Public security probes passed. No real password,
+authenticator setting or customer license was changed during diagnosis.
