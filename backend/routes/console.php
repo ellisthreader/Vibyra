@@ -19,6 +19,7 @@ Schedule::command('vibyra:cleanup-runtime-demos --limit=5')->everyMinute()->with
 Schedule::command('vibyra:observe-work')->everyMinute()->withoutOverlapping(2)->onOneServer();
 
 Schedule::command('vibyra:recover-vibes')->everyMinute()->withoutOverlapping(5)->onOneServer();
+Schedule::command('vibyra:recover-assistant')->everyMinute()->withoutOverlapping(5)->onOneServer();
 
 Schedule::command('vibyra:reconcile-vibes-purchases')->hourly()->withoutOverlapping(55)->onOneServer();
 Schedule::command('vibyra:rollup-analytics')->dailyAt('02:00')->withoutOverlapping(30)->onOneServer();

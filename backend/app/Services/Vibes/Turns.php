@@ -41,7 +41,8 @@ class Turns
             $active = DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at');
             $entitled = $this->wallet->planFor($userId);
             $limit = app(Plans::class)->for($entitled)['concurrentReplies'];
-            abort_if((clone $active)->count() >= $limit || (clone $active)->where('chat_id', $chat->id)->exists(), 409, 'Wait for your current reply or stop it first.');
+            abort_if((clone $active)->count() + \App\Services\Assistant\Holds::active($userId) >= $limit
+                || (clone $active)->where('chat_id', $chat->id)->exists(), 409, 'Wait for your current reply or stop it first.');
             // Rate before balance. Both windows are checked under the wallet lock
             // taken above, so two sends racing cannot each read the same headroom
             // and each take it; and checking before the grants are decremented

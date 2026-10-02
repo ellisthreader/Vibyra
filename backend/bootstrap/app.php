@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             require __DIR__.'/../routes/remote.php';
             require __DIR__.'/../routes/remote_security.php';
             require __DIR__.'/../routes/agents.php';
+            require __DIR__.'/../routes/assistant.php';
             require __DIR__.'/../routes/agents_v2.php';
             require __DIR__.'/../routes/notifications.php';
             require __DIR__.'/../routes/cloud_workspaces.php';
@@ -44,6 +45,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Agent V2 prompts, streamed text deltas and tool arguments are hashed/replayed byte-exact.
         TrimStrings::skipWhen(fn ($request) => $request->is('api/agents/v2/*'));
         ConvertEmptyStringsToNull::skipWhen(fn ($request) => $request->is('api/agents/v2/*'));
+        // Assistant prompts and tool schemas preserve intentional whitespace and empty values.
+        TrimStrings::skipWhen(fn ($request) => $request->is('api/assistant/*'));
+        ConvertEmptyStringsToNull::skipWhen(fn ($request) => $request->is('api/assistant/*'));
         // Railway terminates TLS at its edge and forwards plain HTTP, so
         // without this every generated URL comes out `http://` — including the
         // download URL handed to the desktop updater, which then takes an

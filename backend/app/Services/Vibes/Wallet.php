@@ -121,7 +121,8 @@ class Wallet
             $user = User::findOrFail($userId);
             $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
             $held = (int) DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at')->sum('reserved')
-                + \App\Services\CloudWorkspaces\Holds::units($userId);
+                + \App\Services\CloudWorkspaces\Holds::units($userId)
+                + \App\Services\Assistant\Holds::units($userId);
             $available = (int) $grants->sum('remaining');
             $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
             $plan = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';

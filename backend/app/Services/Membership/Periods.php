@@ -47,6 +47,7 @@ final class Periods
             $g = DB::table('vibes_grants')->where('reference', $p->reference)->firstOrFail();
             // Retry after settlement instead of resurrecting a refunded reservation.
             abort_if(\App\Services\CloudWorkspaces\Holds::usesGrant($p->user_id, $g->id), 503, 'Refund is waiting for hosted runtime reconciliation.');
+            abort_if(\App\Services\Assistant\Holds::usesGrant($p->user_id, $g->id), 503, 'Refund is waiting for assistant usage reconciliation.');
             foreach (DB::table('vibes_turns')->where('user_id', $p->user_id)->whereNull('settled_at')->get(['allocations']) as $turn) {
                 abort_if(collect(json_decode($turn->allocations, true))->contains('id', $g->id), 503, 'Refund is waiting for usage reconciliation.');
             }
