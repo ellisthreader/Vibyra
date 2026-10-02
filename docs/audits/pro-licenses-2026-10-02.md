@@ -33,6 +33,8 @@ a signed desktop update**. Issuance/redemption defaults off.
 
 | Risk | Problem | Consequence | Fix and evidence |
 | --- | --- | --- | --- |
+| High | Desktop rustls 0.23.44 TLS handshake advisory | Incorrect encryption-level validation | Updated maintained Cargo lock to 0.23.45; Cargo audit rerun |
+| High | Mobile brace-expansion denial-of-service advisories | Excessive expansion work/recursion | Updated maintained npm lock to 5.0.12 |
 | Medium | Mixed trial/paid balances bypassed the dedicated free AI cost cap | A tiny nontrial grant could permit excess free spending | Vibes reserves the free budget for actual trial allocations; regression test |
 | Medium | Assistant admitted spending during pending refunds/disputes | Additional token spend while refunds awaited outstanding holds | Guard under wallet lock; refusal leaves balances unchanged and prior holds can settle |
 | Medium | PostgreSQL User/FK lock ordering could deadlock paid grants against claims | Concurrent legitimate operations could fail/retry | No-key User locks retain serialization without blocking FK key-share; PostgreSQL race tests and deadlock-log check |
@@ -64,7 +66,17 @@ private/no-store responses. Independent reviewers performed an adversarial round
 - Desktop TypeScript/Vite build passed; 63 Rust account-related tests passed,
   including expiry and account-switch checks; signup serialization rerun passed.
   Desktop membership/signup unit tests and mobile license presentation test passed.
-- Composer audit and production npm audit report zero known advisories.
+- Candidate Composer/production npm audit and maintained desktop production npm
+  audit report zero known advisories. Native Cargo audit after the rustls patch has
+  no vulnerability findings; six upstream unmaintained-package warnings remain.
+- Remaining adjacent mobile finding: Expo signing tooling depends on `node-forge`
+  affected by GHSA-86w9-cpqp-85rv (RSA signature validation). Registry latest is
+  1.4.0 and the advisory affects <=1.4.0; no patched release was available during
+  this review. Do not downgrade Expo to the audit tool's suggested 44.x workaround.
+  Treat this as an outstanding high dependency advisory; it is outside the license
+  API/server path. Mobile npm reports it through four affected package entries.
+  GitHub default-branch alerts also refer to older locks; tested backend versions
+  are Laravel 13.34.0, CommonMark 2.10.3, Flysystem 3.36.0; uuid is already 11.1.1.
 - Read-only live probes of vibyra.net and the Railway origin passed headers,
   cookie flags, sensitive-file denial, private endpoint authentication, CORS,
   TLS and human-check checks. These probe the existing deployment, not this feature.
