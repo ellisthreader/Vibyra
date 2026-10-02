@@ -60,7 +60,7 @@ class OwnerTwoFactorEnrollmentController extends Controller
             }
             if (($user->provider ?: 'email') === 'email') {
                 if (! Hash::check((string) $request->input('currentPassword', ''), (string) $user->password)) {
-                    return $this->private(['ok' => false, 'error' => 'Enter your current password to set up an authenticator.'], 403);
+                    return $this->private(['ok' => false, 'error' => 'That password did not match your Vibyra account. Try again, or reset your password.'], 403);
                 }
             } elseif (($user->provider ?: 'email') !== 'google'
                 || ! $proofs->claim($user, 'web', $request->session()->getId(), (string) $request->input('enrollmentProof', ''))) {

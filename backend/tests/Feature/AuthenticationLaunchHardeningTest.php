@@ -129,7 +129,9 @@ class AuthenticationLaunchHardeningTest extends TestCase
     {
         $user = User::factory()->create(['provider' => 'email', 'email_verified_at' => now(), 'password' => 'fixture-password']);
         config(['owner_analytics.emails' => [$user->email]]);
-        $this->actingAs($user)->postJson('/web-api/owner/2fa/start', ['currentPassword' => 'wrong'])->assertForbidden();
+        $this->actingAs($user)->postJson('/web-api/owner/2fa/start', ['currentPassword' => 'wrong'])->assertForbidden()
+            ->assertJsonPath('error', 'That password did not match your Vibyra account. Try again, or reset your password.');
+        $this->assertNull($user->fresh()->two_factor_secret);
         $setup = $this->postJson('/web-api/owner/2fa/start', ['currentPassword' => 'fixture-password'])->assertOk()->json();
         $totp = app(Totp::class);
         $code = $totp->at($totp->decode($setup['secret']), intdiv(time(), Totp::PERIOD));

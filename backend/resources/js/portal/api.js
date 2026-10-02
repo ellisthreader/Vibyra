@@ -1,4 +1,5 @@
 import { decodeWallet } from "./wallet.js";
+import { requestErrorMessage } from "./requestError.js";
 const ENDPOINTS = {
   session: "/web-api/session",
   login: "/web-api/auth/login",
@@ -48,7 +49,7 @@ export async function apiRequest(path, options = {}) {
   }
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.ok === false) {
-    throw new ApiError(payload?.error ?? "Vibyra could not complete that request.", response.status, payload);
+    throw new ApiError(requestErrorMessage(response.status, payload), response.status, payload);
   }
   return payload ?? { ok: true };
 }

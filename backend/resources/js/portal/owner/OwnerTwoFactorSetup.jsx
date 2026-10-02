@@ -5,6 +5,7 @@ const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolv
 
 export default function OwnerTwoFactorSetup({ onComplete, provider = "google" }) {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ export default function OwnerTwoFactorSetup({ onComplete, provider = "google" })
     event.preventDefault(); setBusy(true); setError("");
     try {
       setSetup(await apiRequest("/web-api/owner/2fa/start", { body: { currentPassword: password } }));
-      setPassword("");
+      setPassword(""); setShowPassword(false);
     } catch (caught) { setError(caught.message); }
     finally { setBusy(false); }
   };
@@ -78,14 +79,18 @@ export default function OwnerTwoFactorSetup({ onComplete, provider = "google" })
   };
 
   return <section className="owner-panel owner-accounts-gate owner-setup">
-    <p className="owner-kicker">Protect account records</p>
+    <p className="owner-kicker">Protect owner access</p>
     <h2>Set up your authenticator</h2>
     {!setup && !recoveryCodes && <>
-      {provider === "email" ? <form onSubmit={verifyPassword}>
-        <p>Confirm your password, then add Vibyra to your authenticator app.</p>
-        <label>Current password<input type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} required /></label>
-        <button disabled={busy || !password}>{busy ? "Checking…" : "Confirm password"}</button>
-      </form> : <>
+      {provider === "email" ? <>
+        <p>Use your Vibyra account password, then add Vibyra to your authenticator app.</p>
+        <form onSubmit={verifyPassword}>
+          <label>Current password<input name="currentPassword" type={showPassword ? "text" : "password"} autoComplete="current-password" maxLength={1024} value={password} onChange={event => setPassword(event.target.value)} required /></label>
+          <button type="button" disabled={busy} aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>{showPassword ? "Hide password" : "Show password"}</button>
+          <button disabled={busy || !password}>{busy ? "Checking…" : "Confirm password"}</button>
+        </form>
+        <p><a href="/forgot-password">Forgot your Vibyra password?</a> Reset it, then return here to finish setup.</p>
+      </> : <>
       <p>Check the Google account linked to Vibyra, then add a Vibyra authenticator code. Google may reuse an existing sign-in. A separate authenticator code is required each time you open owner account records.</p>
       <button type="button" disabled={busy} onClick={verifyWithGoogle}>{busy ? "Checking…" : "Check Google account"}</button>
       </>}

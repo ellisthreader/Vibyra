@@ -8,7 +8,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? '../../mobile
 const root = resolve(import.meta.dirname, '..'), publicRoot = resolve(root, 'public');
 const out = resolve(root, '../output/license-review');
 await mkdir(out, { recursive: true });
-let pages, account = null, unlocked = false, failCreate = true;
+let pages, account = null, unlocked = false, failCreate = true, twoFactorEnabled = false;
 const created = [], redeemed = [], rows = [];
 const fixtureKey = 'VPRO-' + Array(8).fill('12345678').join('-');
 const user = { id: 123, name: 'License reviewer', email: 'owner@example.test', plan: 'free', emailVerified: true };
@@ -21,9 +21,18 @@ const server = createServer(async (req, res) => {
     const reply = (data, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(data)); };
     if (path === '/web-api/session') return reply({ user: account });
     if (path === '/web-api/auth/signup') { assert.equal(body.licenseKey, fixtureKey); account = { ...user, licenseRedemptionStatus: 'pending_verification' }; return reply({ user: account }, 201); }
+    if (path === '/web-api/owner/2fa/start') {
+      if (body.currentPassword === 'wrong-password') return reply({ error: 'That password did not match your Vibyra account. Try again, or reset your password.' }, 403);
+      if (body.currentPassword === 'rate-limited') return reply({ message: 'Too Many Attempts.' }, 429);
+      assert.equal(body.currentPassword, 'fixture-password');
+      return reply({ secret: 'FIXTUREONLY', account: user.email });
+    }
+    if (path === '/web-api/owner/2fa/confirm') {
+      twoFactorEnabled = true; return reply({ recoveryCodes: ['fixture-code'] });
+    }
     if (path === '/web-api/owner/verify-2fa') { unlocked = true; return reply({ ok: true }); }
     if (path === '/web-api/owner/licenses') {
-      if (!unlocked) return reply({ ok: false, error: 'owner_two_factor_required', enabled: true }, 428);
+      if (!unlocked) return reply({ ok: false, error: 'owner_two_factor_required', enabled: twoFactorEnabled, provider: 'email' }, 428);
       if (req.method === 'GET') return reply({ licenses: rows, page: 1, lastPage: 1, enabled: true, ownerAccessExpiresAt: Date.now() + 600000 });
       created.push(body);
       if (failCreate) { failCreate = false; return reply({ error: 'Fixture lost response' }, 504); }
@@ -73,6 +82,22 @@ try {
   assert.equal(redeemed[0].expectedAccountId, user.id);
   await page.goto(`${origin}/owner`);
   await page.getByRole('button', { name: /Licenses/ }).first().click();
+  await page.getByLabel('Current password').fill('wrong-password');
+  await page.getByRole('button', { name: 'Show password', exact: true }).click();
+  assert.equal(await page.getByLabel('Current password').getAttribute('type'), 'text');
+  await page.getByRole('button', { name: 'Hide password', exact: true }).click();
+  assert.equal(await page.getByRole('link', { name: 'Forgot your Vibyra password?' }).getAttribute('href'), '/forgot-password');
+  await page.getByRole('button', { name: 'Confirm password', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'That password did not match' }).waitFor();
+  await page.getByLabel('Current password').fill('rate-limited');
+  await page.getByRole('button', { name: 'Confirm password', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'Too many attempts. Please wait before trying again.' }).waitFor();
+  await page.screenshot({ path: `${out}/owner-enrollment-feedback.png`, fullPage: true });
+  await page.getByLabel('Current password').fill('fixture-password');
+  await page.getByRole('button', { name: 'Confirm password', exact: true }).click();
+  await page.getByLabel('Six-digit code').fill('123456');
+  await page.getByRole('button', { name: 'Enable protection' }).click();
+  await page.getByRole('button', { name: 'I saved my codes · continue to verification' }).click();
   await page.getByLabel('Verification code').fill('123456');
   await page.getByRole('button', { name: 'Verify', exact: true }).click();
   await page.getByRole('button', { name: 'Create license', exact: true }).click();

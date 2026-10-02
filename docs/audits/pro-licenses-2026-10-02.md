@@ -126,3 +126,21 @@ provider and physical-device acceptance remain separate from these checks.
 Emergency disable: set `MEMBERSHIP_LICENSES_ENABLED=false`; expiry, allowance
 lifecycle and owner revocation continue. Do not roll back/drop license tables or
 historical grants. The migration deliberately refuses destructive rollback.
+
+## Owner enrollment feedback correction — 2 October 2026
+
+Live request logs showed five password-check403 responses followed by throttle429,
+not a server exception. The deployed API parser hid Laravel's throttle message behind
+“Vibyra could not complete that request.” Authentication remained fail-closed.
+The correction uses safe status/validation feedback, explicit password-mismatch copy,
+a password visibility control and `/forgot-password` in the owner setup form.
+No password, owner, CSRF, session binding, TOTP or rate-limit requirements changed.
+
+Verification: all five focused security files passed; both maintained-source enrollment
+files passed. The 289-file candidate suite passed 288 with the same known baseline
+preview failure. Built website fixture exercises wrong-password403, throttle429,
+recovery link, password visibility, successful enrollment and the full license flow.
+Independent adversarial review found no blocker; timing-neutral throttle wording
+avoids a false one-minute promise on endpoints with longer limits. Live synthetic
+server enrollment/start/confirm plus license flow passed 12 checks with rollback.
+The real owner's password/authenticator setup remains theirs to complete.
