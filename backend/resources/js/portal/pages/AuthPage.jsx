@@ -6,12 +6,14 @@ import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
 import { authPath, go, purchaseIntent, safeNext, withIntent } from "../navigation.js";
 import { completeProviderLogin } from "../providerAuth.js";
 import { apiRequest, portalApi } from "../api.js";
+import LicenseField from "../components/LicenseField.jsx";
 import SignupWelcome from "../components/SignupWelcome.jsx";
 
 export default function AuthPage({ mode }) {
   const creating = mode === "signup";
   const { user, loading, login, loginTwoFactor, signup, refresh } = useWebsiteSession();
   const [fields, setFields] = useState({ name: "", email: "", password: "" });
+  const [licenseKey, setLicenseKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [providerStatus, setProviderStatus] = useState("");
@@ -41,7 +43,7 @@ export default function AuthPage({ mode }) {
     setBusy(true);
     setError("");
     try {
-      const payload = creating ? fields : { email: fields.email, password: fields.password };
+      const payload = creating ? { ...fields, licenseKey } : { email: fields.email, password: fields.password };
       if (creating) {
         const created = await signup(payload);
         if (next === "/account") { setWelcome({ name: created?.name || fields.name, path: withIntent(next, intent) }); return; }
@@ -76,7 +78,7 @@ export default function AuthPage({ mode }) {
     setBusy(true);
     setError("");
     try {
-      const result = await completeProviderLogin(provider, setProviderStatus);
+      const result = await completeProviderLogin(provider, setProviderStatus, creating ? { licenseKey } : {});
       await refresh();
       if (result?.isNewUser && next === "/account") {
         setWelcome({ name: result.user?.name, path: withIntent(next, intent) });
@@ -138,6 +140,7 @@ export default function AuthPage({ mode }) {
         </button>
         <small>owner.local@vibyra.test</small>
       </div>}
+      {creating && <LicenseField value={licenseKey} onChange={setLicenseKey} disabled={busy} />}
       <div className="auth-providers">
         {["google", "apple"].map((provider) => (
           <button key={provider} type="button" className="auth-provider" aria-label={`Continue with ${provider[0].toUpperCase() + provider.slice(1)}`}

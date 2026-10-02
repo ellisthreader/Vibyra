@@ -180,16 +180,15 @@ trait AuthRecoveryEndpoints
 
     public function verifyEmail(Request $request, string $id, string $hash): Response|JsonResponse
     {
-        $user = User::find($id);
-        if (! $request->hasValidSignature()
-            || ! $user
-            || ! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
-            return $this->json(['ok' => false, 'error' => 'This verification link is invalid or expired.'], 403);
-        }
+        abort_unless(ctype_digit($id) && strlen($id) < 19 && $request->hasValidSignature(), 403, 'This verification link is invalid or expired.');
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $hash) {
+            $user = User::whereKey($id)->lockForUpdate()->first();
+            abort_unless($user && hash_equals(sha1($user->getEmailForVerification()), $hash), 403, 'This verification link is invalid or expired.');
+            if (!$user->hasVerifiedEmail()) $user->markEmailAsVerified();
+            return $user;
+        }, 3);
 
-        if (! $user->hasVerifiedEmail()) {
-            $user->markEmailAsVerified();
-        }
+        app(\App\Services\Membership\Licenses\Pending::class)->complete($user);
 
         return response()->view('email-verified', [
             'appUrl' => 'vibyra://email-verified?email='.rawurlencode($user->email),

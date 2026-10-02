@@ -36,7 +36,7 @@ class WebsiteProviderAuthController extends Controller
                 'deviceName' => 'Vibyra Website',
                 'installId' => 'website:'.$request->session()->getId(),
                 'publicIp' => (string) $request->ip(),
-            ], $this->flowBinding($request), app(\App\Services\Legal\TrustedClientIp::class)->forOAuthRequest($request));
+            ], $this->flowBinding($request), app(\App\Services\Legal\TrustedClientIp::class)->forOAuthRequest($request), $request->attributes->get('license_hash'));
         } catch (ProviderIdentityException $error) {
             return response()->json(['ok' => false, 'error' => $error->getMessage()], 422);
         }

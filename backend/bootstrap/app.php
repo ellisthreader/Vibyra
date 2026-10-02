@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(\App\Http\Middleware\LicenseInput::class);
         // The first-party analytics preference is written by website JavaScript.
         \Illuminate\Cookie\Middleware\EncryptCookies::except('vibyra_analytics');
         // Mac tool results and Git porcelain status have significant spaces;
@@ -78,5 +79,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['licenseKey']);
         $exceptions->respond(fn ($response) => VibyraCors::withCorsHeaders($response, request()));
     })->create();

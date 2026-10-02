@@ -171,4 +171,17 @@ class MembershipWalletTest extends TestCase
         $this->assertSame(1999, DB::table('membership_periods')->value('refunded_minor'));
     }
 
+    public function test_tiny_license_balance_cannot_bypass_free_capacity_with_trial_allocations(): void
+    {
+        app(Allowances::class)->refresh($this->user->id);
+        app(Wallet::class)->grant($this->user->id, 'license:tiny-test', 'license', 1);
+        config(['membership.free_daily_micro_limit' => 0]);
+        $before = app(Wallet::class)->available($this->user->id);
+        try { $this->turn(); $this->fail('A tiny license grant must not bypass promotional capacity.'); }
+        catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame(503, $e->getStatusCode()); }
+        $this->assertSame($before, app(Wallet::class)->available($this->user->id));
+        $this->assertSame(0, DB::table('vibes_turns')->count());
+    }
+
+
 }

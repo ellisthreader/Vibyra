@@ -21,7 +21,7 @@ class Wallet
     public function ensure(User $user, ?int $trialCredits = null): object
     {
         return DB::transaction(function () use ($user, $trialCredits) {
-            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            User::whereKey($user->id)->lock(DB::connection()->getDriverName() === 'pgsql' ? 'for no key update' : true)->firstOrFail();
             $wallet = DB::table('vibes_wallets')->where('user_id', $user->id)->first();
             if ($wallet) return $wallet;
             $modern = \App\Services\Membership\NewAccounts::eligible($user);
@@ -124,7 +124,7 @@ class Wallet
                 + \App\Services\CloudWorkspaces\Holds::units($userId)
                 + \App\Services\Assistant\Holds::units($userId);
             $available = (int) $grants->sum('remaining');
-            $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
+            $paid = (int) $grants->whereNotIn('kind', ['trial', 'license'])->sum('remaining');
             $plan = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';
             return app(\App\Services\Membership\Snapshot::class)->adapt($userId, [
                 'version' => 1, 'available' => $available, 'held' => $held, 'total' => $available + $held,

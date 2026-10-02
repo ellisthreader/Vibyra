@@ -13,6 +13,11 @@ final class Budget
         app(Tokens::class)->prepare($user);
         return DB::transaction(function () use ($user, $request, $kind, $cost) {
             app(Tokens::class)->lock($user);
+            abort_if(DB::table('membership_periods')->where('user_id', $user)->where('disputed', true)->exists(),
+                402, 'A payment dispute needs resolving before more Vibyra-funded work.');
+            abort_if(DB::table('membership_periods')->where('user_id', $user)->whereColumn('refund_requested', '>', 'refunded_minor')->exists()
+                || DB::table('membership_orders')->where('user_id', $user)->where('refund_pending', true)->exists(),
+                503, 'A refund is being reconciled. Please try Vibyra-funded AI again shortly.');
             $guard = DB::table('assistant_controls')->where('id', 1)->lockForUpdate()->first();
             if (!$guard || $guard->tripped) Failure::raise(503, 'assistant_paused', 'The Vibyra assistant is temporarily unavailable.');
             if (DB::table('assistant_requests')->where('user_id', $user)->where('request_id', $request)->exists()) {

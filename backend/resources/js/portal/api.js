@@ -70,7 +70,7 @@ export const portalApi = {
   billingPortal: () => apiRequest(ENDPOINTS.portal, { body: {} }),
   releases: () => apiRequest(ENDPOINTS.releases),
   ownerAnalytics: (days) => apiRequest(`${ENDPOINTS.ownerAnalytics}?days=${days}`),
-  startProvider: (provider) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: {} }),
+  startProvider: (provider, declarations = {}) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: declarations }),
   providers: () => apiRequest('/web-api/auth/providers'),
   resendVerification: (email) => apiRequest('/api/auth/email/resend', { body: { email } }),
   providerStatus: (provider, flowId) => apiRequest(

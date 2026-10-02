@@ -24,8 +24,14 @@ class VibyraDesktopProviderAuthTest extends TestCase
 
     public function test_google_desktop_oauth_creates_a_real_account_session(): void
     {
+        config(['licenses.enabled' => true, 'membership.enabled' => true,
+            'membership.new_accounts_from' => now()->subDay()->toIso8601String()]);
+        $license = app(\App\Services\Membership\Licenses\Issuance::class)->create(\App\Models\User::factory()->create(), [
+            'request_id' => (string) \Illuminate\Support\Str::uuid(), 'label' => 'OAuth test', 'tokens' => 300,
+            'allowance' => 'once', 'duration_months' => 1, 'fixed_ends_at' => null, 'claim_by' => now()->addDay()]);
         $this->configureProvider('google', 'google-desktop-client');
         $start = $this->postJson('/api/auth/desktop/google/start', ['flowSecret' => str_repeat('s', 64),
+            'licenseKey' => $license['key'],
             'deviceName' => 'Office PC',
             'installId' => 'desktop-install',
             'publicIp' => '8.8.8.8',
@@ -55,6 +61,8 @@ class VibyraDesktopProviderAuthTest extends TestCase
             ->assertJsonPath('status', 'complete')
             ->assertJsonPath('isNewUser', true)
             ->assertJsonPath('user.provider', 'google')
+            ->assertJsonPath('user.billingProvider', 'license')
+            ->assertJsonPath('user.licenseRedemptionStatus', 'redeemed')
             ->json();
 
         $this->withToken($status['token'])

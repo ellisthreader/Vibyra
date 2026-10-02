@@ -16,6 +16,7 @@ final class Allowances
             $wallet = app(Wallet::class)->lock($userId);
             if ($wallet->billing_version != 2) return;
             $this->expire($userId);
+            app(Licenses\Allowance::class)->refresh($userId);
             $user = User::findOrFail($userId);
             if ($user->isGuest() || !$user->hasVerifiedEmail()) return;
             if (!$wallet->free_enrolled_at && config('membership.free_enabled')) {

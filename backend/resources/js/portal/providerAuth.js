@@ -2,14 +2,14 @@ import { portalApi } from "./api.js";
 
 const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-export async function completeProviderLogin(provider, onStatus) {
+export async function completeProviderLogin(provider, onStatus, declarations = {}) {
   const popup = window.open("", `vibyra-${provider}-login`, "popup,width=540,height=720");
   if (!popup) throw new Error("Allow pop-ups to continue with this provider.");
 
   try {
     const name = { google: "Google", apple: "Apple", microsoft: "Microsoft" }[provider] ?? "provider";
     onStatus(`Opening ${name} sign-in…`);
-    const start = await portalApi.startProvider(provider);
+    const start = await portalApi.startProvider(provider, declarations);
     if (!start.authUrl || !start.flowId) throw new Error("The sign-in provider did not start.");
     popup.location.assign(start.authUrl);
     onStatus("Finish signing in in the window that opened.");

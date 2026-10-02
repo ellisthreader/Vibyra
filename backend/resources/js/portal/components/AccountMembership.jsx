@@ -28,6 +28,7 @@ export default function AccountMembership({ user }) {
   }, [attempt]);
 
   const free = !user.membershipActive || user.plan === "free";
+  const licensed = user.billingProvider === "license";
   const currentPro = user.membershipActive && user.plan === "pro_v2";
   const planName = free ? "Free" : currentPro ? "Pro" : user.plan?.replace(/^./, (letter) => letter.toUpperCase()) || "Membership";
   const period = user.membershipEndsAt && user.membershipActive
@@ -47,10 +48,10 @@ export default function AccountMembership({ user }) {
     <div className="account-membership-grid">
       <div className="account-membership-main">
         <div className="account-membership-top"><span className="account-status"><i /> {free ? "Free account" : user.membershipCancelAtPeriodEnd ? "Cancels at period end" : "Active membership"}</span><span>VIBYRA / ACCOUNT</span></div>
-        <div className="account-membership-plan"><h3>{planName}<span>.</span></h3><p>{free ? "£0 / month" : currentPro ? offer ? `Current Pro price ${money(offer.pence)} / month` : "Current price unavailable" : "Your existing terms"}</p></div>
-        <p className="account-membership-description">{free ? "Desktop is free to download. Upgrade when you want more Vibyra tokens and project capacity." : currentPro ? "More room for projects, Vibyra-funded tasks and monthly tokens." : "Your existing membership and billing terms remain in place."}</p>
+        <div className="account-membership-plan"><h3>{planName}<span>.</span></h3><p>{free ? "£0 / month" : licensed ? "Pro license · No recurring payment" : currentPro ? offer ? `Current Pro price ${money(offer.pence)} / month` : "Current price unavailable" : "Your existing terms"}</p></div>
+        <p className="account-membership-description">{free ? "Desktop is free to download. Upgrade when you want more Vibyra tokens and project capacity." : licensed ? "Pro access with the token allowance set by your license." : currentPro ? "More room for projects, Vibyra-funded tasks and monthly tokens." : "Your existing membership and billing terms remain in place."}</p>
         {period && <p className="account-period">{period}</p>}
-        {priceError && currentPro && <p className="account-price-note" role="status">Current public pricing could not load. Your membership is unaffected. <button onClick={() => setAttempt((value) => value + 1)}>Retry</button></p>}
+        {priceError && currentPro && !licensed && <p className="account-price-note" role="status">Current public pricing could not load. Your membership is unaffected. <button onClick={() => setAttempt((value) => value + 1)}>Retry</button></p>}
         {error && <Notice tone="error">{error}</Notice>}
         <div className="account-membership-actions">
           {free && <a className="portal-button portal-button--primary" href="/billing">Explore Pro <span aria-hidden="true">↗</span></a>}

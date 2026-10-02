@@ -25,7 +25,7 @@ trait DesktopProviderAuthEndpoints
         try {
             $purpose = strtolower(trim((string) $request->input('purpose', '')));
             if ($purpose === '') {
-                $flow = app(DesktopProviderOAuthFlow::class)->start($provider, $request->all(), null, app(\App\Services\Legal\TrustedClientIp::class)->forOAuthRequest($request));
+                $flow = app(DesktopProviderOAuthFlow::class)->start($provider, $request->all(), null, app(\App\Services\Legal\TrustedClientIp::class)->forOAuthRequest($request), $request->attributes->get('license_hash'));
             } elseif ($purpose === 'deletion') {
                 $user = $this->authenticatedUser($request);
                 if (($user->provider ?: 'email') !== $provider || trim((string) $user->provider_id) === '') {
@@ -112,6 +112,7 @@ trait DesktopProviderAuthEndpoints
                 'publicIp' => $flow['publicIp'],
                 'name' => $this->providerCallbackName($request),
             ]);
+            $sessionRequest->attributes->set('license_hash', $flow['licenseHash'] ?? null);
             $sessionRequest->headers->set('User-Agent', 'Vibyra Desktop OAuth');
             $account = app(ProviderAccountService::class)->resolveWithStatus(
                 $sessionRequest,

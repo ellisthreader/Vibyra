@@ -271,3 +271,5 @@ if (config('desktop.legacy_routes_enabled')) {
 }
 
 require __DIR__.'/vibes.php';
+
+require __DIR__.'/licenses.php';

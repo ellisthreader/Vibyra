@@ -38,7 +38,7 @@ final class Snapshot
                 && (bool) config('membership.stripe_portal_configuration') && (bool) config('services.stripe.secret') && (bool) config('services.stripe.webhook_secret') && app(Offers::class)->stripeEnvironmentReady()];
         $payload['freeAllowance'] = ['eligible' => $w->free_enrolled_at !== null,
             'tokens' => config('membership.free_tokens'), 'nextAt' => $w->free_next_at,
-            'expiresAt' => DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->where('remaining', '>', 0)->min('expires_at')];
+            'expiresAt' => DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->where('kind', 'trial')->where('remaining', '>', 0)->min('expires_at')];
         $payload['activeProjectKey'] = $w->active_project_key;
         if ($membership['plan'] === 'free') $payload['usedProjects'] = min(1, $payload['usedProjects']);
         $payload['spendPolicy'] = 'balance'; $payload['limits'] = null;

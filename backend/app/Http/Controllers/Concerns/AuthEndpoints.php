@@ -86,6 +86,7 @@ trait AuthEndpoints
             $user = app(Guests::class)->claim($guest, $email, $password, $name);
             app(ReferralService::class)->registerSignup($user, $referralCode);
             $user = $user->fresh() ?? $user;
+            app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
             try {
                 $user->sendEmailVerificationNotification();
             } catch (\Throwable) {
@@ -112,6 +113,7 @@ trait AuthEndpoints
         ]);
         app(ReferralService::class)->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
+        app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
 
         try {
             $user->sendEmailVerificationNotification();

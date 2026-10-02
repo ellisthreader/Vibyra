@@ -27,7 +27,7 @@ class DesktopProviderOAuthFlow
      * hold. Every flow also records the starting network, so the callback asks
      * the person to confirm when the link was opened somewhere else.
      */
-    public function start(string $provider, array $client, ?string $binding = null, ?string $startIp = null): array
+    public function start(string $provider, array $client, ?string $binding = null, ?string $startIp = null, ?string $licenseHash = null): array
     {
         $secret = trim((string) ($client['flowSecret'] ?? ''));
         if ($binding === null && (strlen($secret) < 32 || strlen($secret) > 256)) {
@@ -41,6 +41,7 @@ class DesktopProviderOAuthFlow
             'binding' => $binding !== null ? hash('sha256', $binding) : null,
             'secretHash' => $secret !== '' ? hash('sha256', $secret) : null,
             'startIp' => $startIp,
+            'licenseHash' => $licenseHash,
         ]);
     }
 

@@ -86,6 +86,7 @@ class ProviderAccountService
             }
         }
 
+        app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
         return ['user' => $user->fresh() ?? $user, 'created' => true];
     }
 

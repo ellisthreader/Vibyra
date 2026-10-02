@@ -58,8 +58,16 @@ class Turns
                 $chat->trial_slot = $slot;
                 DB::table('vibes_chats')->where('id', $chat->id)->update(['trial_slot' => $slot]);
             }
+            $day = now()->toDateString();
+            DB::table('vibes_spend_days')->insertOrIgnore(['day' => $day]);
+            $budget = DB::table('vibes_spend_days')->where('day', $day)->lockForUpdate()->first();
             $trialAllowed = $chat->trial_slot && $q['trial'] ? max(0, Wallet::trialChatCredits() - $chat->trial_used) : 0;
-            if ($scale > 1) $trialAllowed = $q['trial'] ? $q['max'] : 0;
+            if ($scale > 1) {
+                $freeHeadroom = max(0, config('membership.free_daily_micro_limit') - $budget->free_spent - $budget->free_held);
+                $trialAllowed = $q['trial'] ? min($q['max'], intdiv($freeHeadroom, $microPerUnit)) : 0;
+                abort_if($q['trial'] && $paid + $trialAllowed < $q['max'] && $grants->sum('remaining') >= $q['max'],
+                    503, 'Free AI is at capacity. Your tokens remain available; please try again later.');
+            }
             $remaining = $q['max']; $allocations = [];
             foreach ($grants as $g) {
                 $usable = $g->kind === 'trial' ? min($g->remaining, $trialAllowed) : $g->remaining;
@@ -71,11 +79,8 @@ class Turns
                 $remaining -= $take;
             }
             abort_if($remaining > 0, 402, $q['trial'] ? 'You need more Vibes for this reply.' : 'Upgrade to use this model.');
-            $day = now()->toDateString();
-            DB::table('vibes_spend_days')->insertOrIgnore(['day' => $day]);
-            $budget = DB::table('vibes_spend_days')->where('day', $day)->lockForUpdate()->first();
             $micro = $q['max'] * $microPerUnit;
-            $freeMicro = $scale > 1 && $paid === 0 ? collect($allocations)->where('trial', true)->sum('amount') * $microPerUnit : 0;
+            $freeMicro = $scale > 1 ? collect($allocations)->where('trial', true)->sum('amount') * $microPerUnit : 0;
             abort_if($freeMicro > 0 && $budget->free_spent + $budget->free_held + $freeMicro > config('membership.free_daily_micro_limit'),
                 503, 'Free AI is at capacity. Your tokens remain available; please try again later.');
             DB::table('vibes_spend_days')->where('day', $day)->increment('free_held', $freeMicro);

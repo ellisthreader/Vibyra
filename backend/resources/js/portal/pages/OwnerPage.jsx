@@ -3,6 +3,7 @@ import useOwnerReport from "../owner/useOwnerReport.js";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
 import OwnerOverview from "../owner/OwnerOverview.jsx";
 import { DesktopDetails, MobileDetails, WebsiteDetails } from "../owner/OwnerDetails.jsx";
+import OwnerLicenses from "../owner/OwnerLicenses.jsx";
 import OwnerAccounts from "../owner/OwnerAccounts.jsx";
 import { CommercialDetails, DataQualityDetails } from "../owner/OwnerOperations.jsx";
 
@@ -14,6 +15,7 @@ const SECTIONS = [
   { key: "accounts", label: "Accounts", title: "Accounts & sessions", sub: "Verified account records and recent authenticated use." },
   { key: "commercial", label: "Commercial", title: "Commercial", sub: "Membership state and recorded cloud AI cost." },
   { key: "quality", label: "Data quality", title: "Data quality", sub: "Coverage, consent, and how fresh each source is." },
+  { key: "licenses", label: "Licenses", title: "Pro licenses", sub: "Issue, review, and revoke individual memberships." },
 ];
 const PERIODS = [7, 30, 90];
 export default function OwnerPage() {
@@ -48,10 +50,12 @@ export default function OwnerPage() {
     <main className="owner-main">
       <header className="owner-topbar"><div><span className="owner-topbar__dot" /> VIBYRA / OWNER INSIGHTS</div><div className="owner-topbar__right"><span>{user?.email ?? ""}</span><a href="/account">Account ↗</a></div></header>
       <div className="owner-content">
-        <div className="owner-heading"><div><p className="owner-kicker">{current.label} / Analytics</p><h1>{current.title}<span>.</span></h1><p>{current.sub}</p></div>
-          <div className="owner-period" aria-label="Reporting period"><span>LAST</span>{PERIODS.map((value) => <button type="button" key={value} aria-pressed={days === value} onClick={() => setDays(value)}>{value}D</button>)}</div>
+        <div className="owner-heading"><div><p className="owner-kicker">{current.label} / {section === "licenses" ? "Membership" : "Analytics"}</p><h1>{current.title}<span>.</span></h1><p>{current.sub}</p></div>
+          {section !== "licenses" && <div className="owner-period" aria-label="Reporting period"><span>LAST</span>{PERIODS.map((value) => <button type="button" key={value} aria-pressed={days === value} onClick={() => setDays(value)}>{value}D</button>)}</div>}
         </div>
         <nav className="owner-mobile-nav" aria-label="Owner sections">{SECTIONS.map((item) => <button type="button" key={item.key} aria-current={section === item.key ? "page" : undefined} onClick={() => setSection(item.key)}>{item.label}</button>)}</nav>
+        {section === "licenses" && user && <OwnerLicenses key={user.id} local={user.email === "owner.local@vibyra.test"} />}
+        {section !== "licenses" && <>
         <div className="owner-date-line"><span><i /> {dateLabel}</span><span>{snapshotLabel ?? (updatedAt ? `Updated ${updatedAt.toLocaleTimeString("en-GB")} · refreshes every minute` : "All dates in UTC")}</span><button type="button" className="portal-link-button" disabled={pending} onClick={refresh}>{pending ? "Refreshing…" : "Refresh now"}</button></div>
         {data && ["overview", "website", "desktop", "mobile"].includes(section) && !data.data_quality?.tracking_started_at && <section className="owner-state owner-state--notice" role="status"><strong>Product activity tracking has not started</strong><p>Historical website, Desktop, and Mobile usage was not recorded. A dash means data is unavailable. Existing account and Vibes cloud records are shown separately. New product activity appears after consented events reach production and {snapshotLabel ? "the aggregate snapshot is refreshed." : "this service."}</p></section>}
         {data && ["website", "desktop", "mobile"].includes(section) && data.data_quality?.tracking_started_at && !data.data_quality?.tracking_by_surface?.[section] && <section className="owner-state owner-state--notice" role="status"><strong>{current.label} tracking has not started</strong><p>There are no historical events for this surface. Counts appear once new activity reaches this server.</p></section>}
@@ -69,6 +73,7 @@ export default function OwnerPage() {
               {(data.data_quality?.notes ?? []).map((note, index) => <p key={index}>{note}</p>)}
             </section>
           </div> : null}
+        </>}
         <footer className="owner-footer"><span>Vibyra owner insights</span><span>Private · {new Date().getFullYear()}</span></footer>
       </div>
     </main>

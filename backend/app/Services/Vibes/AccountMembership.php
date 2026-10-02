@@ -13,13 +13,16 @@ class AccountMembership
     public function for(User $user, ?CarbonInterface $at = null): ?array
     {
         if ($user->exists && \App\Services\Membership\Units::modern($user->id)) {
+            app(\App\Services\Membership\Allowances::class)->refresh($user->id);
             $m = app(\App\Services\Membership\Entitlements::class)->for($user);
             $e = app(Plans::class)->for($m['plan']);
-            return ['plan' => $m['plan'], 'planBillingCycle' => 'monthly', 'membershipActive' => $m['tier'] !== 'free',
+            return ['plan' => $m['plan'], 'planBillingCycle' => ($m['offerKey'] ?? null) === 'pro_annual' ? 'annual' : 'monthly',
+                'membershipActive' => $m['tier'] !== 'free', 'membershipTrial' => (bool) ($m['trial'] ?? false),
                 'membershipEndsAt' => $m['paidUntil'], 'planRenewsAt' => null, 'creditsResetAt' => null,
+                'license' => app(\App\Services\Membership\Licenses\Allowance::class)->summary($user->id),
                 'billingProvider' => $m['provider'], 'membershipCancelAtPeriodEnd' => $m['cancelAtEnd'] ?? false,
                 'canManageStripeBilling' => $m['provider'] === 'stripe' && (bool) $user->stripe_customer_id,
-                'planPricePence' => $m['priceMinor'] ?? 0, 'billingCurrency' => strtolower($m['currency'] ?? 'GBP'),
+                'planPricePence' => (int) ($m['priceAmount'] ?? 0), 'billingCurrency' => strtolower($m['currency'] ?? 'GBP'),
                 'maxConcurrentAgents' => $e['concurrentReplies'], 'maxActiveProjects' => $e['maxProjects'] ?? 0,
                 'vibesBalance' => app(Wallet::class)->available($user->id) / 10000, 'vibesEntitlements' => $e];
         }

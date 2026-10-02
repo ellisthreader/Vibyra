@@ -61,6 +61,7 @@ class WebsiteAuthController extends Controller
         ]);
         $this->referrals->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
+        app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
 
         try {
             $user->sendEmailVerificationNotification();

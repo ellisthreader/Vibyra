@@ -69,6 +69,14 @@ class AssistantBudgetTest extends TestCase
         app(Periods::class)->grant($this->user->id, $p); $id = $this->reserve();
         try { app(Periods::class)->refund($p['reference'], 1999); $this->fail('Refund bypassed the hold'); }
         catch (HttpException $e) { $this->assertSame(503, $e->getStatusCode()); }
+        $before = $this->funds();
+        $this->postJson('/api/assistant/chat', $this->chat())->assertStatus(503);
+        $this->assertSame($before, $this->funds());
+        $this->assertDatabaseCount('assistant_requests', 1);
+        DB::table('membership_periods')->where('reference', $p['reference'])->update(['disputed' => true]);
+        $this->postJson('/api/assistant/chat', $this->chat())->assertStatus(402);
+        $this->assertSame($before, $this->funds());
+        DB::table('membership_periods')->where('reference', $p['reference'])->update(['disputed' => false]);
         app(Budget::class)->finish($id, 100); app(Periods::class)->refund($p['reference'], 1999);
         $this->assertSame(0, $this->funds());
     }
