@@ -1,3 +1,12 @@
+## 0.8.20 — 2 October 2026 (native responsiveness candidate)
+
+Mac build44 preserves0.8.19beta welcome/license changes and fixes the native
+tracing event-dispatch lock inversion. Background script/event callbacks queue
+without waiting on the main thread; filtered IPC diagnostics remain enabled.
+A real native forced-schedule regression covers events, eval and callbacks,
+with existing adversarial IPC secrecy/ACL checks retained. Artifact and installed
+acceptance are separate gates; this entry alone is not publication evidence.
+
 ## 0.8.18 — Token-funded assistant and account recovery (candidate, 2026-10-02)
 
 Prepared from the verified 0.8.17 source533219cb, Mac build42. Built-in chat,

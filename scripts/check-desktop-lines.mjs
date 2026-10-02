@@ -22,6 +22,8 @@ const EXCLUDED_PATHS = new Set([
   "desktop-tauri/src/assets/providerLogos.js",
 ]);
 const EXCLUDED_DIRECTORIES = new Set(["dist", "node_modules", "target"]);
+// Pinned third-party source; exact upstream/delta hashes live in VIBYRA-PATCH.json.
+const VENDORED_RUNTIME = "desktop-tauri/src-tauri/vendor/tauri-runtime-wry";
 
 async function collectCodeFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -29,7 +31,7 @@ async function collectCodeFiles(directory) {
   for (const entry of entries) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      if (EXCLUDED_DIRECTORIES.has(entry.name)) continue;
+      if (EXCLUDED_DIRECTORIES.has(entry.name) || repoPath(path) === VENDORED_RUNTIME) continue;
       files.push(...await collectCodeFiles(path));
     } else if (CODE_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
       files.push(path);

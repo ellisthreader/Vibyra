@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232" fill="none">
+ <defs><linearGradient id="ground" x2="740" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#101219"/><stop offset=".5" stop-color="#1d2130"/><stop offset="1" stop-color="#101219"/></linearGradient><linearGradient id="panel" y2="140" gradientUnits="userSpaceOnUse"><stop stop-color="#5b7cfa" stop-opacity=".16"/><stop offset="1" stop-color="#141722"/></linearGradient><linearGradient id="fade" y1="172" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#101219" stop-opacity="0"/><stop offset="1" stop-color="#101219"/></linearGradient></defs>
+ <path fill="url(#ground)" d="M0 0h740v232H0z"/>
+ <g transform="translate(153 66) rotate(-6 98 57)"><rect width="196" height="115" rx="13" fill="url(#panel)" stroke="#7490ff" stroke-opacity=".14"/><path d="M22 28h65M22 50h124M22 68h100" stroke="#7490ff" stroke-opacity=".17" stroke-width="3" stroke-linecap="round"/></g>
+ <g transform="translate(389 49) rotate(5 94 61)"><rect width="188" height="122" rx="13" fill="url(#panel)" stroke="#7490ff" stroke-opacity=".2"/><path d="M22 28h58M22 49h121M22 67h92M22 85h108" stroke="#7490ff" stroke-opacity=".23" stroke-width="3" stroke-linecap="round"/></g>
+ <path d="M280 169c45-77 121-71 182-14" stroke="#7490ff" stroke-opacity=".25" stroke-width="2" stroke-linecap="round"/><path d="M254 176c75-104 149-104 236-12" stroke="#5b7cfa" stroke-opacity=".1" stroke-width="9" stroke-linecap="round"/>
+ <circle cx="370" cy="117" r="5" fill="#d4b18a" fill-opacity=".8"/><g fill="#7490ff" fill-opacity=".2"><circle cx="233" cy="37" r="2"/><circle cx="484" cy="26" r="2"/><circle cx="598" cy="150" r="2"/></g><path fill="url(#fade)" d="M0 172h740v60H0z"/>
+</svg>

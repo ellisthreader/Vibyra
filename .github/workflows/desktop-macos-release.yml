@@ -77,6 +77,8 @@ jobs:
         run: npm run verify
       - name: Verify native untrusted-frame IPC boundary
         run: python3 scripts/verify-native-ipc-boundary.py
+      - name: Verify native background JavaScript dispatch
+        run: python3 scripts/verify-native-event-dispatch.py
       - name: Verify encrypted embedded phone transport
         run: cargo test --manifest-path ../host/Cargo.toml -p vibyra-host --locked
       - name: Remove independently built frontend output

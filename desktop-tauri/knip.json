@@ -13,6 +13,7 @@
     "tests/installedReferenceBootstrap.ts",
     "scripts/verify-remote-security.mjs",
     "src-tauri/examples/ipc-boundary/assets/*.js",
+    "src-tauri/examples/event-dispatch/assets/*.js",
     "src-tauri/src/window_preview/viewer*.js"
   ]
 }
