@@ -10,7 +10,7 @@ return [
         'region' => env('BACKUP_S3_REGION', 'auto'),
         'bucket' => env('BACKUP_S3_BUCKET'),
         'endpoint' => env('BACKUP_S3_ENDPOINT'),
-        'use_path_style_endpoint' => true,
+        'use_path_style_endpoint' => false,
         'visibility' => 'private',
         'throw' => true,
         'http' => ['connect_timeout' => 10, 'timeout' => 30],
