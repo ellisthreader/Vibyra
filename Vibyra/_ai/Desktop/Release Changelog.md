@@ -8,6 +8,19 @@ focus and deletion OAuth binds its flow proof. No new Agent, connector, cloud,
 notification or VM feature is enabled. Backend rollout and native artifact
 acceptance are release gates; this candidate entry is not publication evidence.
 
+## 0.8.19 — 2 October 2026 (beta welcome candidate)
+
+Approved beta-tester artwork and personalised welcome after verified license
+activation and onboarding, using actual duration/expiry. Acknowledgement is
+account/license scoped, with local suppression and retry across network failures.
+Report a problem opens the existing explicit report flow; no automatic report.
+Optional invitation keys work during email/provider signup and Account settings.
+
+Source: `codex/beta-welcome-desktop-20261002`, isolated from release baseline
+`6dab7370`; Mac build43. Artwork: `public/releases/0.8.19.svg`. Backend receipt
+API is live at `1301c5d0` with 25 rolled-back acceptance checks. Native/public
+publication is not established by this candidate entry; record its final receipts.
+
 ## 0.8.17 — Browser sign-in compatibility (candidate, 2026-10-01)
 
 Isolated candidate over reviewed 66ae2364. Google/Apple OAuth starts carry a fresh random proof and native polling returns it in a header; the backend binds completion to that attempt. Includes no unrelated dirty-main changes. Native package signing, notarization, publication and installed acceptance remain pending.

@@ -1,3 +1,4 @@
+import { RELEASE_0816 } from "./changelogRelease0816.ts";
 import { RELEASE_0819 } from "./changelogRelease0819.ts";
 import { RELEASE_0818 } from "./changelogRelease0818.ts";
 import { RELEASE_0817 } from "./changelogRelease0817.ts";
@@ -16,15 +17,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   RELEASE_0819,
   RELEASE_0818,
   RELEASE_0817,
-  {
-    version: "0.8.16", date: "2026-09-29", image: "/releases/0.8.16.svg",
-    summary: "Approve your devices and stay in control of remote access.",
-    sections: [
-      { heading: "Stronger remote sign-in", body: "Cloud connections require an approved device, a recent passkey verification and a short-lived session for this computer." },
-      { heading: "See and stop access", body: "Security settings show devices, active sessions and recent activity. A persistent Mac indicator stays visible during remote access, with a disconnect action." },
-      { heading: "Permissions you choose", body: "Screen viewing, mouse, keyboard, terminal and file access are checked separately. Disable access or revoke a device whenever you need to." },
-    ],
-  },
+  RELEASE_0816,
   { version: "0.8.14", date: "2026-09-27", image: "/releases/0.8.14.svg",
     summary: "Open project application windows from your phone.",
     sections: [{ heading: "Phone window sharing", body: "Live preview discovers project-owned Mac windows. Choose View this window on your phone to share it for viewing. Clicking and typing require a separate Mac permission." },

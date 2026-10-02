@@ -1,7 +1,7 @@
 import type { ChangelogEntry } from './changelogTypes.ts';
 
 export const RELEASE_0819: ChangelogEntry = {
-  version: '0.8.19', date: '2026-10-02', image: '/releases/0.8.19.png',
+  version: '0.8.19', date: '2026-10-02', image: '/releases/0.8.19.svg',
   summary: 'A personal welcome for the people helping shape Vibyra.',
   sections: [
     { heading: 'Welcome, beta testers', body: 'Your confirmed beta license opens a personal welcome after setup, with your Pro duration and expiry. Dismiss it once and carry on in your workspace.' },
