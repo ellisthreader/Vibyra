@@ -189,6 +189,14 @@ trait AuthRecoveryEndpoints
         }, 3);
 
         app(\App\Services\Membership\Licenses\Pending::class)->complete($user);
+        // An email signup's wallet exists before verification, so its trial and free tokens start here.
+        // The email is already verified, so a failure here must not fail the page; free tokens still arrive on the next wallet read.
+        try {
+            app(\App\Services\Membership\Trials::class)->start($user);
+            if (\App\Services\Membership\Units::modern($user->id)) app(\App\Services\Membership\Allowances::class)->refresh($user->id);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->view('email-verified', [
             'appUrl' => 'vibyra://email-verified?email='.rawurlencode($user->email),

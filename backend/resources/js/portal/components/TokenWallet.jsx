@@ -38,9 +38,10 @@ export default function TokenWallet({ accountId, onWallet }) {
       <h2>{wallet.available.toLocaleString(undefined, { maximumFractionDigits: 4 })} available</h2>
       {wallet.held > 0 && <p>{wallet.held.toLocaleString()} reserved for work in progress</p>}
       <p>{wallet.paidAvailable.toLocaleString()} paid tokens. Paid tokens never expire.</p>
-      {wallet.version === 2 && wallet.plan === "free" && <p>{wallet.freeAllowance?.eligible
-        ? `${wallet.freeAllowance.tokens} free tokens each month. Next grant: ${new Date(wallet.freeAllowance.nextAt).toLocaleDateString()}.`
-        : "Monthly free tokens are a limited pilot. Your account is not enrolled yet."}</p>}
+      {wallet.version === 2 && (wallet.freeAllowance?.active ?? (wallet.plan === "free" && wallet.freeAllowance?.eligible))
+        && <p>{`${wallet.freeAllowance.tokens} free Vibyra tokens each month for the included AI models. Next grant: ${new Date(wallet.freeAllowance.nextAt).toLocaleDateString()}.`}</p>}
+      {wallet.version === 2 && wallet.plan === "free" && !wallet.freeAllowance?.eligible
+        && <p>Free monthly tokens aren't available on this account yet.</p>}
       {wallet.freeAllowance?.expiresAt && <p>Free tokens expire {new Date(wallet.freeAllowance.expiresAt).toLocaleDateString()}.</p>}
       <p>Your own provider accounts do not spend Vibyra tokens.</p>
       {wallet.membership?.conflict && <p role="alert">More than one subscription is active. Contact support to resolve billing.</p>}

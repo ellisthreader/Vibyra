@@ -17,7 +17,7 @@ class MembershipWalletTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['membership.free_enabled' => true, 'membership.free_accounts' => 2,
+        config(['membership.free_enabled' => true, 'membership.free_accounts' => 2, 'membership.free_tokens' => 10,
             'vibes.enabled' => true, 'services.openrouter.key' => 'test-only']);
         $this->user = User::factory()->create(['email_verified_at' => now(), 'credits_balance' => 0]);
         app(Wallet::class)->ensure($this->user, 0);

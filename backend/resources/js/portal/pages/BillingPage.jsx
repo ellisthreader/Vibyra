@@ -11,6 +11,7 @@ export default function BillingPage() {
   const { user, loading } = useWebsiteSession();
   const [offers, setOffers] = useState([]);
   const [wallet, setWallet] = useState(null);
+  const [freeTokens, setFreeTokens] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -18,7 +19,7 @@ export default function BillingPage() {
   const intent = purchaseIntent();
   useEffect(() => {
     let active = true;
-    portalApi.catalogue().then(data => { if (active) { setOffers(data.offers); setError(""); } })
+    portalApi.catalogue().then(data => { if (active) { setOffers(data.offers); setFreeTokens(data.freePilotEnabled === true ? data.free?.tokens ?? null : null); setError(""); } })
       .catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [attempt]);
@@ -45,7 +46,7 @@ export default function BillingPage() {
     <div className="plan-grid" aria-busy={loading || (!offers.length && !error)}>
       <section className="account-panel"><p className="panel-label">Free</p><h2>£0</h2>
         <p>One project and two running terminals, with your own compatible coding CLI accounts. Built-in AI uses Vibyra tokens. Preview, Review and Safe mode worktrees are included with Pro.</p>
-        <p>10 monthly free tokens for eligible accounts in our limited pilot. Check eligibility after sign-in.</p>
+        {Number.isFinite(freeTokens) && freeTokens > 0 && <p>{freeTokens} free Vibyra tokens every month for eligible verified accounts. Check eligibility after sign-in.</p>}
         {!user && <a className="portal-button portal-button--secondary" data-analytics-cta="billing_start_free" href={authPath("signup", "/billing")}>Start free</a>}
       </section>
       {(() => {

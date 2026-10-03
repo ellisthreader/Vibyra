@@ -19,7 +19,10 @@ final class Allowances
             app(Licenses\Allowance::class)->refresh($userId);
             $user = User::findOrFail($userId);
             if ($user->isGuest() || !$user->hasVerifiedEmail()) return;
-            if (!$wallet->free_enrolled_at && config('membership.free_enabled')) {
+            $entitled = app(Entitlements::class)->for($user);
+            // Free tokens are for free and trial accounts; a paying subscriber never takes a pilot seat.
+            $freeEligible = $entitled['tier'] === 'free' || !empty($entitled['trial']);
+            if (!$wallet->free_enrolled_at && $freeEligible && config('membership.free_enabled')) {
                 DB::table('membership_capacity')->insertOrIgnore(['key' => 'free']);
                 $capacity = DB::table('membership_capacity')->where('key', 'free')->lockForUpdate()->first();
                 if ($capacity->enrolled < config('membership.free_accounts')) {
@@ -36,7 +39,8 @@ final class Allowances
             $start = $anchor->copy()->addMonthsNoOverflow($months);
             if ($start->isFuture()) $start = $anchor->copy()->addMonthsNoOverflow(--$months);
             $end = $anchor->copy()->addMonthsNoOverflow($months + 1);
-            if (app(Entitlements::class)->for($user)['tier'] === 'free') {
+            // The no-card trial grants no tokens of its own, so it keeps the free allowance.
+            if ($freeEligible) {
                 $ref = 'free:'.$userId.':'.$start->toDateString();
                 app(Wallet::class)->grant($userId, $ref, 'trial', config('membership.free_tokens') * Units::SCALE);
                 DB::table('vibes_grants')->where('reference', $ref)->update(['expires_at' => $end]);

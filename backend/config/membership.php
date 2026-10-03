@@ -10,8 +10,11 @@ return [
     'apple_enabled' => env('MEMBERSHIP_APPLE_ENABLED', false),
     'free_enabled' => env('MEMBERSHIP_FREE_ENABLED', false),
     'free_accounts' => (int) env('MEMBERSHIP_FREE_ACCOUNTS', 2000),
-    'free_tokens' => 10,
-    'free_daily_micro_limit' => (int) env('MEMBERSHIP_FREE_DAILY_MICRO_USD_LIMIT', 10000000),
+    // Monthly free tokens per enrolled account (1 token = $0.01 of provider cost, cheap models only).
+    // 30 is ~360 Auto replies; the most it can cost is free_accounts x free_tokens x $0.01 a month.
+    'free_tokens' => max(0, (int) env('MEMBERSHIP_FREE_TOKENS', 30)),
+    // Platform-wide daily ceiling on free-token spend, in micro-USD ($30).
+    'free_daily_micro_limit' => (int) env('MEMBERSHIP_FREE_DAILY_MICRO_USD_LIMIT', 30000000),
     'version' => '2026-09-27',
     'offers' => [
         'pro_monthly' => ['kind' => 'subscription', 'plan' => 'pro_v2', 'credits' => 300, 'pence' => 1999, 'interval' => 'month',

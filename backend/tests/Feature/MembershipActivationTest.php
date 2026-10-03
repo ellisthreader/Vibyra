@@ -35,10 +35,10 @@ class MembershipActivationTest extends TestCase
         $this->assertSame('0', $wallet->payload($u->id)['availableUnits']);
         $u->forceFill(['email_verified_at' => now()])->save();
         $first = $wallet->payload($u->id);$second = $wallet->payload($u->id);
-        $this->assertSame('100000', $first['availableUnits']);
+        $this->assertSame('300000', $first['availableUnits']);
         $this->assertSame($first['availableUnits'], $second['availableUnits']);
         $this->assertTrue($first['freeAllowance']['eligible']);
-        $this->assertSame(10, $first['freeAllowance']['tokens']);
+        $this->assertSame(30, $first['freeAllowance']['tokens']);
         $this->assertTrue($first['salesCapabilities']['stripe']);
         $this->assertSame('free', $first['membership']['tier']);
         $this->assertSame(0, DB::table('membership_periods')->where('user_id', $u->id)->count());

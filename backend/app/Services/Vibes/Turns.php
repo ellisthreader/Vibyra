@@ -78,7 +78,9 @@ class Turns
                 if ($g->kind === 'trial') $trialAllowed -= $take;
                 $remaining -= $take;
             }
-            abort_if($remaining > 0, 402, $q['trial'] ? 'You need more Vibes for this reply.' : 'Upgrade to use this model.');
+            abort_if($remaining > 0, 402, $scale > 1
+                ? ($q['trial'] ? 'You need more Vibyra tokens for this reply.' : 'This model needs paid Vibyra tokens. Top up to use it.')
+                : ($q['trial'] ? 'You need more Vibes for this reply.' : 'Upgrade to use this model.'));
             $micro = $q['max'] * $microPerUnit;
             $freeMicro = $scale > 1 ? collect($allocations)->where('trial', true)->sum('amount') * $microPerUnit : 0;
             abort_if($freeMicro > 0 && $budget->free_spent + $budget->free_held + $freeMicro > config('membership.free_daily_micro_limit'),

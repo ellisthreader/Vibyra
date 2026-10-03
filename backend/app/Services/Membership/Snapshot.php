@@ -36,7 +36,9 @@ final class Snapshot
         $payload['salesCapabilities'] = ['apple' => (bool) $payload['purchasesEnabled'],
             'stripe' => (bool) config('legal.paid_sales_enabled') && !$payload['guest'] && (bool) config('membership.enabled') && (bool) config('membership.stripe_enabled')
                 && (bool) config('membership.stripe_portal_configuration') && (bool) config('services.stripe.secret') && (bool) config('services.stripe.webhook_secret') && app(Offers::class)->stripeEnvironmentReady()];
+        // active: this account receives the monthly free tokens now (free or trial, not paying).
         $payload['freeAllowance'] = ['eligible' => $w->free_enrolled_at !== null,
+            'active' => $w->free_enrolled_at !== null && ($membership['tier'] === 'free' || !empty($membership['trial'])),
             'tokens' => config('membership.free_tokens'), 'nextAt' => $w->free_next_at,
             'expiresAt' => DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->where('kind', 'trial')->where('remaining', '>', 0)->min('expires_at')];
         $payload['activeProjectKey'] = $w->active_project_key;
