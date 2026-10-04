@@ -39,13 +39,13 @@ final class OAuthFlows
      * to this flow's callback path) and sends the browser on. The callback refuses any browser that did not press it,
      * and the person who does sees whose account they are connecting to, so a forwarded link is caught.
      */
-    public function entry(array $begun, string $providerUrl, string $callbackPath, string $provider): string
+    public function entry(array $begun, string $providerUrl, string $callbackPath, string $provider, ?string $baseUrl = null): string
     {
         $name = trim((string) preg_replace('/[\p{Cc}\p{Cf}]+/u', ' ', $provider)); // a server's own name: no control or bidi characters
         Cache::put($this->hopKey($begun['flowId']), ['url' => $providerUrl, 'nonce' => $begun['nonce'], 'path' => $callbackPath,
             'cookie' => self::cookieName($begun['state']), 'state' => $begun['state'], 'provider' => Str::limit($name, 60, '…') ?: 'this service'],
             now()->addMinutes(self::MINUTES));
-        return rtrim((string) config('app.url'), '/').'/api/connectors/begin/'.$begun['flowId'];
+        return rtrim($baseUrl ?? (string) config('app.url'), '/').'/api/connectors/begin/'.$begun['flowId'];
     }
 
     /** What the confirmation page shows, without spending the link: the provider's name and the masked account that started the flow. */

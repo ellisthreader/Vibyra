@@ -15,6 +15,8 @@
 return [
 
     'enabled' => env('CHAT_CONNECTORS_ENABLED', false),
+    // OAuth registration and browser binding share an origin independent of the marketing domain.
+    'callback_base_url' => env('CHAT_CONNECTORS_CALLBACK_BASE_URL'),
     'public_mcp_enabled' => env('CHAT_CONNECTORS_PUBLIC_MCP_ENABLED', false),
     'composio_public_enabled' => env('CHAT_CONNECTORS_COMPOSIO_PUBLIC_ENABLED', false),
     'composio_api_key' => env('CHAT_CONNECTORS_COMPOSIO_API_KEY', ''),

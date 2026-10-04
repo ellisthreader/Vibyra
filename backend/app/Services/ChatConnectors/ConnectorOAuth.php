@@ -62,7 +62,7 @@ class ConnectorOAuth
         }
         // The app opens Vibyra's own link, never the provider's page: that hop binds this browser (OAuthFlows::entry).
         return ['flowId' => $flow['flowId'], 'url' => $this->flows->entry($flow, $settings['authorize_url'].'?'.http_build_query($query),
-            parse_url($this->redirectUri($slug), PHP_URL_PATH), $this->name($slug))];
+            parse_url($this->redirectUri($slug), PHP_URL_PATH), $this->name($slug), $this->callbackBaseUrl())];
     }
 
     /**
@@ -172,7 +172,12 @@ class ConnectorOAuth
     /** The page the provider sends the browser back to; it must match what is registered with it. */
     public function redirectUri(string $slug): string
     {
-        return rtrim((string) config('app.url'), '/').'/api/connectors/callback/'.$slug;
+        return $this->callbackBaseUrl().'/api/connectors/callback/'.$slug;
+    }
+
+    private function callbackBaseUrl(): string
+    {
+        return rtrim(trim((string) config('chat_connectors.callback_base_url')) ?: (string) config('app.url'), '/');
     }
 
     private function settings(string $slug): array
