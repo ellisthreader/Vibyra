@@ -12,7 +12,7 @@
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#17191f;border:1px solid #2a2e38;border-radius:20px;overflow:hidden;">
         <tr><td style="padding:26px 32px 18px;border-bottom:1px solid #2a2e38;">
           <table role="presentation" cellspacing="0" cellpadding="0"><tr>
-            <td><img src="https://vibyra-production.up.railway.app/vibyra-cobalt.png" width="34" height="34" alt="Vibyra" style="display:block;border:0;"></td>
+            <td><img src="https://vibyra.net/vibyra-cobalt.png" width="34" height="34" alt="Vibyra" style="display:block;border:0;"></td>
             <td style="padding-left:12px;"><strong style="font-size:19px;letter-spacing:-.2px;">Vibyra</strong><br><span style="font-size:12px;color:#9299a8;">Native AI workspace</span></td>
           </tr></table>
         </td></tr>
