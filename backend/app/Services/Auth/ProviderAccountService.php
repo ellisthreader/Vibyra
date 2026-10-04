@@ -21,38 +21,36 @@ class ProviderAccountService
         return $this->resolveWithStatus($request, $provider, $identity)['user'];
     }
 
-    public function resolveWithStatus(Request $request, string $provider, array $identity): array
+    /** Matching an identity is separate from creating a new account. */
+    public function existingAccount(string $provider, array $identity, bool $allowTwoFactor = false): ?array
     {
-        $providerId = (string) $identity['subject'];
-        $user = User::where('provider', $provider)->where('provider_id', $providerId)->first();
-        if ($user) {
-            return ['user' => $user, 'created' => false];
+        $user = User::where('provider', $provider)->where('provider_id', (string) $identity['subject'])->first();
+        if (! $user && ! empty($identity['email'])) {
+            $user = User::where('email', $identity['email'])->first();
+            if ($user && ! $this->canSignInByEmail($user, $provider, $identity, $allowTwoFactor)) {
+                throw new ProviderAccountException(
+                    'An account already exists for that email. Log in with its original method.', 409
+                );
+            }
         }
+        return $user ? ['user' => $user, 'created' => false,
+            'requiresTwoFactor' => $allowTwoFactor && app(TwoFactor::class)->enabled($user)] : null;
+    }
 
+    public function resolveWithStatus(Request $request, string $provider, array $identity, bool $allowTwoFactor = false): array
+    {
+        $existing = $this->existingAccount($provider, $identity, $allowTwoFactor);
+        if ($existing) return $existing;
+        $providerId = (string) $identity['subject'];
         $referralCode = $this->referrals->normalizeCode(
             $request->input('referralCode', $request->input('ref', ''))
         );
         if ($referralCode && ! $this->referrals->referrerFor($referralCode)) {
             throw new ProviderAccountException('That invite code was not found. Check it and try again.', 422);
         }
-
         $email = $identity['email'];
         if (! $email) {
-            throw new ProviderAccountException(
-                'The provider did not return a verified email address for this new account.',
-                422
-            );
-        }
-        $existing = User::where('email', $email)->first();
-        if ($existing) {
-            if (! $this->canSignInByEmail($existing, $provider, $identity)) {
-                throw new ProviderAccountException(
-                    'An account already exists for that email. Log in with its original method.',
-                    409
-                );
-            }
-
-            return ['user' => $existing, 'created' => false];
+            throw new ProviderAccountException('The provider did not return a verified email address for this new account.', 422);
         }
 
         $name = trim((string) $request->input('name', ''))
@@ -94,14 +92,15 @@ class ProviderAccountService
      * Google verification alone can be stale for external, non-Workspace mailboxes.
      * The account's own address must be verified too: otherwise someone could
      * register a victim's email first and wait for them to arrive by Google.
-     * An account protected by two-factor keeps its password-and-code sign-in.
+     * Two-factor accounts can resolve only for callers that issue a code challenge;
+     * all legacy callers keep their password-and-code sign-in.
      */
-    private function canSignInByEmail(User $user, string $provider, array $identity): bool
+    private function canSignInByEmail(User $user, string $provider, array $identity, bool $allowTwoFactor = false): bool
     {
         return in_array($provider, ['google', 'apple'], true)
             && ($identity['emailVerified'] ?? false) === true
             && ($identity['authoritativeEmail'] ?? false) === true
             && $user->email_verified_at !== null
-            && ! app(TwoFactor::class)->enabled($user);
+            && ($allowTwoFactor || ! app(TwoFactor::class)->enabled($user));
     }
 }

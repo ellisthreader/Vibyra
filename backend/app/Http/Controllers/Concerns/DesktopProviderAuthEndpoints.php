@@ -117,8 +117,16 @@ trait DesktopProviderAuthEndpoints
             $account = app(ProviderAccountService::class)->resolveWithStatus(
                 $sessionRequest,
                 $provider,
-                $identity
+                $identity,
+                ($flow['supportsTwoFactor'] ?? false) === true
             );
+            if ($account['requiresTwoFactor'] ?? false) {
+                app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
+                    'ok' => true, 'status' => 'complete',
+                    'twoFactor' => app(\App\Services\Auth\TwoFactorChallenge::class)->issue($account['user']),
+                ]);
+                return app(\App\Services\Auth\ProviderSecondFactorPage::class)->response();
+            }
             $payload = $this->sessionPayload($sessionRequest, $account['user']);
             if ($flow['deviceName'] !== 'Vibyra Website') {
                 app(AuthLoginRecorder::class)->record($account['user'], 'desktop', $provider);

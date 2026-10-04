@@ -41,6 +41,7 @@ class DesktopProviderOAuthFlow
             'binding' => $binding !== null ? hash('sha256', $binding) : null,
             'secretHash' => $secret !== '' ? hash('sha256', $secret) : null,
             'startIp' => $startIp,
+            'supportsTwoFactor' => ($client['supportsTwoFactor'] ?? false) === true,
             'licenseHash' => $licenseHash,
         ]);
     }
