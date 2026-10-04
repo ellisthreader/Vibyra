@@ -64,6 +64,24 @@ class ConnectorCallbackOriginTest extends TestCase
         $this->assertSame('https://marketing.test/api/connectors/callback/gmail', $oauth->redirectUri('gmail'));
     }
 
+    public function test_one_provider_can_move_to_its_own_registered_origin_while_others_stay(): void
+    {
+        foreach (['gmail', 'google_calendar', 'google_drive', 'google_tasks'] as $slug)
+            config(['chat_connectors.catalogue.'.$slug.'.oauth.callback_base_url' => 'https://brand.test/']);
+        config(['chat_connectors.catalogue.github.oauth.client_id' => 'gh', 'chat_connectors.catalogue.github.oauth.client_secret' => 'gh-secret']);
+        $oauth = app(ConnectorOAuth::class);
+        foreach (['gmail', 'google_calendar', 'google_drive', 'google_tasks'] as $slug)
+            $this->assertSame('https://brand.test/api/connectors/callback/'.$slug, $oauth->redirectUri($slug));
+        $this->assertSame('https://oauth.test/api/connectors/callback/github', $oauth->redirectUri('github'));
+        // The hop moves with the callback, so the host-only binding cookie still reaches it.
+        $start = $this->postJson('/api/connectors/gmail/start', ['returnUrl' => 'vibyra://integrations/connected'])->assertOk()->json();
+        $this->assertStringStartsWith('https://brand.test/api/connectors/begin/', $start['url']);
+        $hop = $this->pressHop($start['url'], $this->visitHop($start['url']))->assertRedirect();
+        $this->assertSame('https://brand.test/api/connectors/callback/gmail', $this->queryOf($hop->headers->get('Location'))['redirect_uri']);
+        $this->assertStringStartsWith('https://oauth.test/api/connectors/begin/',
+            $this->postJson('/api/connectors/github/start', ['returnUrl' => 'vibyra://integrations/connected'])->assertOk()->json('url'));
+    }
+
     public function test_shared_remote_mcp_hops_keep_their_own_origin_without_an_explicit_override(): void
     {
         $flows = app(OAuthFlows::class);

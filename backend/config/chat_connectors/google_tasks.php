@@ -23,6 +23,7 @@ return [
                 ? env('CHAT_CONNECTORS_GOOGLE_CLIENT_ID') : null,
             'client_secret' => env('CHAT_CONNECTORS_GOOGLE_TASKS_ENABLED', false)
                 ? env('CHAT_CONNECTORS_GOOGLE_CLIENT_SECRET') : null,
+            'callback_base_url' => env('CHAT_CONNECTORS_GOOGLE_CALLBACK_BASE_URL'),
             'pkce' => true, 'access_type' => 'offline', 'prompt' => 'consent',
             'refresh_fields' => ['refresh_token', 'grant_type', 'client_id', 'client_secret'],
         ],

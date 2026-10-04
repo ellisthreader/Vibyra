@@ -62,7 +62,7 @@ class ConnectorOAuth
         }
         // The app opens Vibyra's own link, never the provider's page: that hop binds this browser (OAuthFlows::entry).
         return ['flowId' => $flow['flowId'], 'url' => $this->flows->entry($flow, $settings['authorize_url'].'?'.http_build_query($query),
-            parse_url($this->redirectUri($slug), PHP_URL_PATH), $this->name($slug), $this->callbackBaseUrl())];
+            parse_url($this->redirectUri($slug), PHP_URL_PATH), $this->name($slug), $this->callbackBaseUrl($slug))];
     }
 
     /**
@@ -172,12 +172,18 @@ class ConnectorOAuth
     /** The page the provider sends the browser back to; it must match what is registered with it. */
     public function redirectUri(string $slug): string
     {
-        return $this->callbackBaseUrl().'/api/connectors/callback/'.$slug;
+        return $this->callbackBaseUrl($slug).'/api/connectors/callback/'.$slug;
     }
 
-    private function callbackBaseUrl(): string
+    /**
+     * One provider can move to another registered origin (Google to vibyra.net) while the
+     * rest stay where their apps are registered. The confirmation hop follows, so its
+     * host-only binding cookie still reaches the callback.
+     */
+    private function callbackBaseUrl(string $slug): string
     {
-        return rtrim(trim((string) config('chat_connectors.callback_base_url')) ?: (string) config('app.url'), '/');
+        return rtrim(trim((string) ($this->settings($slug)['callback_base_url'] ?? ''))
+            ?: trim((string) config('chat_connectors.callback_base_url')) ?: (string) config('app.url'), '/');
     }
 
     private function settings(string $slug): array
