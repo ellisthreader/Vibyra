@@ -106,6 +106,14 @@ class AgentAccessNotesTest extends TestCase
         $this->assertSame('', TaskContext::accessNotes([], [], []));
     }
 
+    public function test_an_expired_sign_in_is_reported_rather_than_treated_as_ready(): void
+    {
+        $this->install($this->user, 'gmail');
+        $this->grant(['gmail']);
+        \Illuminate\Support\Facades\Cache::put('chat-connectors:reconnect:'.$this->user.':gmail', true, now()->addDay());
+        $this->assertStringContainsString("Gmail is granted to you but the person's connection is missing or expired", $this->system('Summarise my emails.'));
+    }
+
     public function test_notes_use_plurals_and_catalogue_names(): void
     {
         $notes = TaskContext::accessNotes(['gmail', 'slack'], [], []);

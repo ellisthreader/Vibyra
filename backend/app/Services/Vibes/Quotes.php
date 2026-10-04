@@ -49,6 +49,7 @@ class Quotes {
                 (int) config('chat_connectors.max_per_turn', 10), $this->selectionContext($chatId, $agent));
             if ($model === 'auto') $model = $agent->model ?? 'auto';
         }
+        $requested = $integrations;
         $named = $this->integrations->resolve($userId, $integrations);
         // Photos and files uploaded for this message. They ride in it as references and
         // are priced here from the bound fixed at upload, exactly as the job budgets them.
@@ -56,7 +57,9 @@ class Quotes {
         $seeing = $files->contains('kind', 'image');
         // Assemble before routing so history, profile and tools are all priced.
         // Tool turns cannot modify personal memory from untrusted source text.
-        $personal = $agent ? \App\Services\Agents\TaskContext::prompt($agent).$this->accessNotes($userId, $granted, $named) : $this->personal->for($userId, canSave: ! $chat->binding && $named === []);
+        $personal = $agent ? \App\Services\Agents\TaskContext::prompt($agent).$this->accessNotes($userId, $granted, $named) : ltrim($this->personal->for($userId, canSave: ! $chat->binding && $named === [])
+            // A plain chat learns what is connected and why a mention did not arrive; project chats have their own tools.
+            .($chat->binding || $terminal ? '' : app(\App\Services\ChatConnectors\ConnectionNotes::class)->forChat($userId, $requested, $named)));
         $messages = $this->messages($chatId, $text, $bound, $named, $personal, $files,
             $computer !== null, (bool) ($computer?->can_write ?? false),
             \App\Services\Agents\VmPlatform::allows($computer));
@@ -171,7 +174,8 @@ class Quotes {
     {
         $public = ['deepwiki', 'hackernews'];
         $installs = app(\App\Services\ChatConnectors\Installs::class);
-        $ready = $installs->installed($userId);
+        // An expired sign-in is attached but fails every call, so it is reported as needing a reconnect.
+        $ready = array_values(array_filter($installs->installed($userId), fn ($slug) => ! $installs->needsReconnect($userId, $slug)));
         $connected = array_values(array_diff(array_keys($installs->all($userId)), $public));
         $granted = array_values(array_unique(array_filter($granted, 'is_string')));
         return \App\Services\Agents\TaskContext::accessNotes(

@@ -90,12 +90,13 @@ final class Runs
             ->where('state', RunStates::COMPLETED)->where('conversation_seq', '<', $run->conversation_seq)
             ->orderByDesc('conversation_seq')->limit(10)->get(['id', 'prompt', 'answer'])->reverse()->values()
             ->map(fn (Run $r) => ['runId' => $r->id, 'prompt' => $r->prompt, 'answer' => $r->answer])->all();
+        $notes = app(Planning\RunNotes::class)->for($run, $agent);
         return ['id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
             'generation' => $run->lease_generation, 'leaseExpiresAt' => $run->lease_expires_at?->toIso8601String(),
             'state' => $run->state, 'prompt' => $run->prompt, 'attachments' => $run->attachments ?? [],
             'runtime' => $run->runtime_snapshot, 'eventCursor' => $run->event_seq,
-            'profile' => ['name' => $agent?->name, 'brief' => $agent?->brief, 'memory' => $agent?->memory,
-                'revision' => $run->profile_revision],
-            'history' => $history, 'tools' => $manifest];
+            'profile' => ['name' => $agent?->name, 'brief' => Planning\RunNotes::brief($agent?->brief, $notes['text']),
+                'memory' => $agent?->memory, 'revision' => $run->profile_revision],
+            'history' => $history, 'tools' => $manifest, 'connectionGaps' => $notes['gaps']];
     }
 }
