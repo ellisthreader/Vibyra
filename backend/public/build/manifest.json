@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-BhsWD3vD.css",
+    "file": "assets/app-DrIVALGZ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -54,7 +54,7 @@
     "isEntry": true
   },
   "resources/css/marketing.css": {
-    "file": "assets/marketing-ilYO6oDR.css",
+    "file": "assets/marketing-BlR2SEAQ.css",
     "name": "marketing",
     "names": [
       "marketing.css"
@@ -81,7 +81,7 @@
     ]
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-DwE_YeVo.js",
+    "file": "assets/app-BX7zyJ91.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -89,11 +89,11 @@
       "_jsx-runtime-BVko9UzU.js"
     ],
     "css": [
-      "assets/app-BhsWD3vD.css"
+      "assets/app-DrIVALGZ.css"
     ]
   },
   "resources/js/benchmarks.jsx": {
-    "file": "assets/benchmarks-CH2AAfSm.js",
+    "file": "assets/benchmarks-C1w-cOcP.js",
     "name": "benchmarks",
     "src": "resources/js/benchmarks.jsx",
     "isEntry": true,
@@ -104,11 +104,11 @@
     ],
     "css": [
       "assets/benchmarks-QUHRGWaQ.css",
-      "assets/marketing-ilYO6oDR.css"
+      "assets/marketing-BlR2SEAQ.css"
     ]
   },
   "resources/js/downloads.jsx": {
-    "file": "assets/downloads-Cxn0ZDuD.js",
+    "file": "assets/downloads-BXxoKGhI.js",
     "name": "downloads",
     "src": "resources/js/downloads.jsx",
     "isEntry": true,
@@ -121,11 +121,11 @@
     ],
     "css": [
       "assets/downloads-MbXSnXmE.css",
-      "assets/marketing-ilYO6oDR.css"
+      "assets/marketing-BlR2SEAQ.css"
     ]
   },
   "resources/js/marketing.jsx": {
-    "file": "assets/marketing-DK0RJT4T.js",
+    "file": "assets/marketing-BHojNs_f.js",
     "name": "marketing",
     "src": "resources/js/marketing.jsx",
     "isEntry": true,
@@ -138,7 +138,7 @@
     ],
     "css": [
       "assets/marketing-CDv-2xuG.css",
-      "assets/marketing-ilYO6oDR.css"
+      "assets/marketing-BlR2SEAQ.css"
     ]
   },
   "resources/js/portal.jsx": {

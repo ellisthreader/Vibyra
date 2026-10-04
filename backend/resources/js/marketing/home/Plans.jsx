@@ -4,7 +4,7 @@ import ProDiamond from "./ProDiamond.jsx";
 
 // Released desktop entitlements. Keep in step with CheckoutPage.jsx,
 // BillingPage.jsx, config/vibes.php and resources/knowledge/website-faq.md.
-const FREE_PERKS = freeTokens => ["One project", "Two terminals", ...(freeTokens > 0 ? [`${freeTokens} AI tokens a month`] : []), "Your own AI accounts"];
+const FREE_PERKS = freeTokens => ["One project", "two terminals", ...(freeTokens > 0 ? [`${freeTokens} AI tokens a month`] : []), "your own AI accounts"];
 const PRO_TOOLS = [["eye", "Live Preview"], ["review", "Code review"], ["mic", "Voice"], ["capture", "Screenshots"], ["branch", "Worktrees"], ["link", "Accounts"]];
 const PRO_EXTRAS = [["Unlimited", "projects and terminals"], ["Every model", "including Opus 5.5 and GPT-6"], ["Never expire", "paid tokens, even if you cancel"]];
 // One Vibyra token is one US cent of OpenRouter usage, charged at cost with no markup.
@@ -90,11 +90,11 @@ export default function Plans() {
                         </div>
                     </div>
                 </article>
-                <article className="plan-free" aria-label="Free">
-                    <div className="plan-free-name"><h3>Free</h3><p><strong>£0</strong> for as long as you like</p></div>
-                    <ul className="plan-free-perks">{FREE_PERKS(freeTokens).map(text => <li key={text}><Icon name="check" size={15} />{text}</li>)}</ul>
-                    <a className="plan-free-cta" href="/signup?next=/account" data-analytics-cta="plans_signup">Start free</a>
-                </article>
+                <aside className="plan-free" aria-label="Vibyra Free">
+                    <h3>Not ready for Pro? <span>Start free.</span></h3>
+                    <p>{FREE_PERKS(freeTokens).slice(0, -1).join(", ")} and {FREE_PERKS(freeTokens).at(-1)}. No card needed.</p>
+                    <a className="plan-free-cta" href="/signup?next=/account" data-analytics-cta="plans_signup">Start free<Icon name="arrow" size={15} /></a>
+                </aside>
             </div>}
             {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Free AI tokens are for eligible pilot accounts and the included models. Remote access needs your Mac awake and running Vibyra; Live Preview streaming slows after 40 GB a month. <a href="/legal/terms">Terms</a></p>}
         </div>
