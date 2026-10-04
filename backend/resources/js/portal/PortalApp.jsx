@@ -6,6 +6,7 @@ import BillingPage from "./pages/BillingPage.jsx";
 import BillingStatusPage from "./pages/BillingStatusPage.jsx";
 import CheckoutPage from "./pages/CheckoutPage.jsx";
 import AccountPage from "./pages/AccountPage.jsx";
+import DeveloperPage from "./pages/DeveloperPage.jsx";
 import OwnerPage from "./pages/OwnerPage.jsx";
 
 function PortalRoute() {
@@ -19,6 +20,7 @@ function PortalRoute() {
   if (path === "/billing/success") return <BillingStatusPage status="success" />;
   if (path === "/billing/cancel") return <BillingStatusPage status="cancel" />;
   if (path === "/billing") return <BillingPage />;
+  if (path === "/account/developer") return <DeveloperPage />;
   if (path === "/checkout") return <CheckoutPage />;
   return <AccountPage />;
 }

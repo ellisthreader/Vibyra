@@ -4,6 +4,7 @@ namespace App\Services\AgentRuns\Tools\Providers;
 
 use App\Models\AgentV2\McpServer;
 use App\Services\AgentRuns\Composio\{ComposioCatalog, ComposioTools};
+use App\Services\AgentRuns\LocalMcp\LocalMcpTools;
 use App\Services\AgentRuns\Mcp\McpTools;
 
 /**
@@ -11,8 +12,9 @@ use App\Services\AgentRuns\Mcp\McpTools;
  * as `vibes_integration_installs.integration`). A built-in provider is listed only
  * once its reads and approved writes pass through the broker with typed outcomes.
  *
- * Two kinds are dynamic: a remote MCP server is its own provider `mcp_<8 hex>`
- * (tools `mcp_<8 hex>__<name>`, pinned per server), and a reviewed Composio toolkit
+ * Three kinds are dynamic: a remote MCP server is its own provider `mcp_<8 hex>`
+ * (tools `mcp_<8 hex>__<name>`, pinned per server), a local (stdio) MCP server on the person's Mac is
+ * `lmcp_<8 hex>` (same shape, executed by the leased Mac), and a reviewed Composio toolkit
  * is `composio_<toolkit>` (tools `composio_<toolkit>__<name>`). The tool prefix is
  * how a tool name routes back to its provider without a global lookup.
  */
@@ -64,7 +66,7 @@ final class Adapters
 
     public function providerOfTool(string $tool): ?string
     {
-        if (preg_match('/^((?:mcp_[0-9a-f]{8})|(?:composio_[a-z0-9]{2,40}))__/D', $tool, $m))
+        if (preg_match('/^((?:l?mcp_[0-9a-f]{8})|(?:composio_[a-z0-9]{2,40}))__/D', $tool, $m))
             return $this->has($m[1]) && isset($this->for($m[1])->tools()[$tool]) ? $m[1] : null;
         foreach (array_keys(self::PROVIDERS) as $provider)
             if (isset($this->for($provider)->tools()[$tool])) return $provider;
@@ -75,7 +77,7 @@ final class Adapters
     public function name(string $provider): string
     {
         $adapter = $this->has($provider) ? $this->for($provider) : null;
-        if ($adapter instanceof McpTools) return $adapter->server->name;
+        if ($adapter instanceof McpTools || $adapter instanceof LocalMcpTools) return $adapter->server->name;
         return (string) config('chat_connectors.catalogue.'.$provider.'.name',
             config('agents_v2_composio.toolkits.'.substr($provider, 9).'.name', ucfirst($provider)));
     }
@@ -85,8 +87,11 @@ final class Adapters
         if (array_key_exists($provider, $this->loaded)) return $this->loaded[$provider];
         $adapter = null;
         if (preg_match('/^mcp_[0-9a-f]{8}$/D', $provider)) {
-            $server = McpServer::query()->where('slug', $provider)->first();
+            $server = McpServer::query()->where('slug', $provider)->where('kind', 'remote')->first();
             $adapter = $server ? new McpTools($server) : null;
+        } elseif (LocalMcpTools::isProvider($provider)) {
+            $server = McpServer::query()->where('slug', $provider)->where('kind', 'local')->where('status', '!=', 'removed')->first();
+            $adapter = $server ? new LocalMcpTools($server) : null;
         } elseif (preg_match('/^composio_([a-z0-9]{2,40})$/D', $provider, $m) && app(ComposioCatalog::class)->has($m[1])) {
             $adapter = new ComposioTools($m[1]);
         }

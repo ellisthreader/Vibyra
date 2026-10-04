@@ -50,6 +50,9 @@ final class Readiness
     {
         // Not an account integration (e.g. Mac folder grants): governed by its own flags, not this catalogue.
         if (in_array($provider, $this->adapters->providers(), true) && config('chat_connectors.catalogue.'.$provider) === null) return $this->yes();
+        // A local server needs no sign-in or connector credentials: only its own flag.
+        if (preg_match('/^lmcp_[0-9a-f]{8}$/D', $provider))
+            return config('agents_v2_local_mcp.enabled') ? $this->yes() : $this->no('flag_off', 'Local MCP servers are not switched on yet.');
         if (!config('chat_connectors.enabled')) return $this->no('integrations_disabled', 'Integrations are switched off in this environment.');
         if ($provider === 'mcp' || preg_match('/^mcp_[0-9a-f]{8}$/D', $provider))
             return config('agents_v2_mcp.enabled') ? $this->yes() : $this->no('flag_off', 'Remote MCP servers are not switched on yet.');

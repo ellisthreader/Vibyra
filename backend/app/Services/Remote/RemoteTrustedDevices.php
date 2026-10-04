@@ -74,6 +74,7 @@ class RemoteTrustedDevices
                 ? ['approved_at' => now(), 'approved_revision' => $revision, 'revocation_revision' => 0, 'approved_via' => 'host_proof']
                 : ['denied_at' => now(), 'revoked_at' => now(), 'revocation_revision' => $revision])->save();
             app(RemotePresence::class)->audit($device->host, $decision === 'approve' ? 'device.approved' : 'device.denied', ['device' => $device->device_name], $device->id);
+            \App\Services\Platform\AccountActivity::record($device->user_id, $decision === 'approve' ? 'device.trusted' : 'device.denied', ['device' => $device->device_name]);
             return $device;
         });
     }
@@ -111,6 +112,7 @@ class RemoteTrustedDevices
                 }
             }
             app(SecurityEvents::class)->record($session->user_id, 'DEVICE_REVOKED', ['count' => $count, 'reason' => 'all_devices']);
+            \App\Services\Platform\AccountActivity::record($session->user_id, 'device.revoked', ['count' => $count, 'reason' => 'all_devices']);
             return $count;
         });
         app(RemoteSessionRevocations::class)->deliver();
@@ -132,6 +134,7 @@ class RemoteTrustedDevices
         if ($audit && $device->host && (string) $device->host->user_id === (string) $device->user_id) {
             app(RemotePresence::class)->audit($device->host, 'device.revoked', ['device' => $device->device_name], $device->id);
         }
+        if ($audit) \App\Services\Platform\AccountActivity::record($device->user_id, 'device.revoked', ['device' => $device->device_name]);
     }
 
     public function describe(TrustedDevice $device): array

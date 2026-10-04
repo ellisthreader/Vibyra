@@ -11,7 +11,8 @@ use Tests\TestCase;
 class AgentV2RouteAuthTest extends TestCase
 {
     /** Called by GitHub/Stripe servers (signed per trigger), by a browser returning from a provider (single-use state, bound cookie), or by a server fetching our client metadata. */
-    private const PUBLIC = ['api/agents/v2/hooks/github/{trigger}', 'api/agents/v2/hooks/stripe/{trigger}', 'api/agents/v2/mcp/callback',
+    // API triggers authenticate with a separate per-trigger bearer secret.
+    private const PUBLIC = ['api/agents/v2/hooks/api/{trigger}', 'api/agents/v2/hooks/github/{trigger}', 'api/agents/v2/hooks/stripe/{trigger}', 'api/agents/v2/mcp/callback',
         'api/agents/v2/mcp/client-metadata.json', 'api/agents/v2/composio/callback'];
 
     private function agentV2Routes(): array

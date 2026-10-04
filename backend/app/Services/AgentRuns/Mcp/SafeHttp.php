@@ -22,7 +22,7 @@ final class SafeHttp
 {
     public function __construct(private readonly EndpointPolicy $policy) {}
 
-    /** @param array{headers?: array, json?: array, form?: array, query?: array} $options */
+    /** @param array{headers?: array, json?: array, form?: array, query?: array, raw?: string} $options */
     public function send(string $method, string $url, array $options = [], bool $follow = false): Response
     {
         $max = (int) config('agents_v2_mcp.max_response_bytes', 1_000_000);
@@ -61,6 +61,7 @@ final class SafeHttp
                 'on_headers' => static function (ResponseInterface $r) use ($max): void {
                     if ((int) $r->getHeaderLine('Content-Length') > $max) throw new McpError('too_large', 'The server answer is too large.');
                 }]);
+        if (isset($options['raw'])) $request = $request->withBody($options['raw'], 'application/json'); // exact bytes, e.g. a signed webhook
         $body = [];
         if (isset($options['json'])) $body['json'] = $options['json'];
         if (isset($options['form'])) [$request, $body['form_params']] = [$request->asForm(), $options['form']];

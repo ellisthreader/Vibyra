@@ -37,7 +37,7 @@ final class Hub
         $states = [];
         return array_map(function (Connection $c) use ($teammates, $used, $servers, &$states) {
             $server = $servers[$c->id] ?? null;
-            $family = $server ? 'mcp' : $c->provider;
+            $family = $server && $server->kind === 'remote' ? 'mcp' : $c->provider;
             $ready = ($states[$family] ??= $this->readiness->state($family))['readiness'] === 'ready';
             $status = $this->status($c, $ready);
             return [...$this->connections->payload($c), 'status' => $status,
@@ -50,7 +50,8 @@ final class Hub
                     'operations' => json_decode($g->operations, true) ?: [], 'revision' => (int) $g->revision])->values()->all(),
                 'lastUsedAt' => isset($used[$c->id]) ? \Illuminate\Support\Carbon::parse($used[$c->id])->toIso8601String() : null,
                 'reconnect' => in_array($status, ['reconnect_required', 'insufficient_scope'], true) ? $this->reconnect($c, $server) : null,
-                'mcp' => $server ? ['serverId' => $server->id, 'url' => $server->url, 'status' => $server->status,
+                'local' => $server?->kind === 'local' ? ['hostId' => $server->host_id, 'localId' => $server->local_id] : null,
+                'mcp' => $server ? ['kind' => $server->kind, 'serverId' => $server->id, 'url' => $server->kind === 'local' ? '' : $server->url, 'status' => $server->status,
                     'protocolVersion' => $server->protocol_version, 'toolRevision' => $server->tool_revision,
                     'pendingRevision' => $server->pending_revision] : null];
         }, $rows);
@@ -76,7 +77,7 @@ final class Hub
     private function reconnect(Connection $c, ?McpServer $server): array
     {
         $path = match (true) {
-            $server !== null => '/api/agents/v2/mcp/servers/'.$c->id.'/signin',
+            $server !== null && $server->kind === 'remote' => '/api/agents/v2/mcp/servers/'.$c->id.'/signin',
             str_starts_with($c->provider, 'composio_') => '/api/agents/v2/composio/'.substr($c->provider, 9).'/start',
             default => '/api/agents/v2/connections/'.$c->provider.'/start',
         };

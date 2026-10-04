@@ -5,6 +5,7 @@ namespace App\Services\AgentRuns;
 use App\Models\AgentV2\Connection;
 use App\Models\AgentV2\Grant;
 use App\Services\AgentRuns\Tools\ToolCatalog;
+use App\Services\Platform\AccountActivity;
 use Illuminate\Support\Facades\DB;
 
 /** Revisioned per-teammate access to one connection. Connected status alone never grants. */
@@ -33,19 +34,24 @@ final class Grants
             $grant = Grant::query()->where('user_id', $userId)->where('agent_id', $agentId)
                 ->where('connection_id', $connection->id)->whereNull('revoked_at')->lockForUpdate()->first();
             if ($grant && $grant->operations === $ops) return $grant;
+            $detail = ['provider' => $connection->provider, 'operations' => $ops];
             if ($grant) {
                 $grant->forceFill(['operations' => $ops, 'revision' => $grant->revision + 1])->save();
+                AccountActivity::record($userId, 'grant.changed', $detail);
                 return $grant;
             }
-            return Grant::query()->create(['user_id' => $userId, 'agent_id' => $agentId,
+            $created = Grant::query()->create(['user_id' => $userId, 'agent_id' => $agentId,
                 'connection_id' => $connection->id, 'operations' => $ops, 'revision' => 1]);
+            AccountActivity::record($userId, 'grant.changed', $detail);
+            return $created;
         });
     }
 
     public function revoke(int $userId, string $agentId, string $connectionId): void
     {
-        Grant::query()->where('user_id', $userId)->where('agent_id', $agentId)->where('connection_id', $connectionId)
+        $changed = Grant::query()->where('user_id', $userId)->where('agent_id', $agentId)->where('connection_id', $connectionId)
             ->whereNull('revoked_at')->update(['revoked_at' => now(), 'revision' => DB::raw('revision + 1'), 'updated_at' => now()]);
+        if ($changed > 0) AccountActivity::record($userId, 'grant.revoked', ['connection' => $connectionId]);
     }
 
     public function revokeForConnection(string $connectionId): void

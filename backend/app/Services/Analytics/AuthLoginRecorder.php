@@ -15,6 +15,7 @@ class AuthLoginRecorder
             || ! in_array($method, ['password', 'totp', 'apple', 'google'], true)) {
             return;
         }
+        \App\Services\Platform\AccountActivity::record($user, 'sign_in', ['channel' => $channel, 'method' => $method]);
         try {
             DB::table('auth_login_events')->insert([
                 'user_id' => $user->id,

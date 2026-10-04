@@ -93,6 +93,8 @@ final class Manifest
         // A browser grant is offered only to runs on a Mac whose app declares browser support.
         if ($connection?->provider === \App\Services\AgentRuns\Browser\BrowserTools::PROVIDER
             && !\App\Services\AgentRuns\Browser\BrowserGrants::usable($run, $connection)) return null;
+        if ($connection && \App\Services\AgentRuns\LocalMcp\LocalMcpTools::isProvider($connection->provider)
+            && !\App\Services\AgentRuns\LocalMcp\LocalMcpGrants::usable($run, $connection)) return null;
         return $grant && $connection ? [$grant, $connection] : null;
     }
 }

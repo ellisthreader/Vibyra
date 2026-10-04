@@ -15,7 +15,7 @@ if (in_array('--fresh', $argv, true)) Illuminate\Support\Facades\Artisan::call('
 ConcFakes::setup();
 $all = ['admission' => ConcAdmission::class, 'leases' => ConcLeases::class, 'events' => ConcEvents::class,
     'approvals' => ConcApprovals::class, 'terminal' => ConcTerminal::class, 'schedules' => ConcSchedules::class, 'connections' => ConcConnections::class, 'triggers' => ConcTriggers::class, 'sweeper' => ConcSweeper::class, 'stranded' => ConcStranded::class, 'inserts' => ConcInserts::class, 'publish' => ConcPublish::class,
-    'browser' => ConcBrowser::class, 'wire' => ConcWire::class, 'queue' => ConcQueue::class];
+    'browser' => ConcBrowser::class, 'wire' => ConcWire::class, 'queue' => ConcQueue::class, 'platform' => ConcPlatform::class, 'localmcp' => ConcLocalMcp::class];
 $names = $names ?: array_keys(array_diff_key($all, ['queue' => 1, 'wire' => 1]));
 foreach ($names as $n) {
     $class = $all[$n] ?? null;

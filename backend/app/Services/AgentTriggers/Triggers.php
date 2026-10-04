@@ -35,6 +35,7 @@ final class Triggers
         $shown = null;
         $secret = match ($kind) {
             'github.issue', 'github.pull_request' => $shown = Str::random(40),
+            'api.invoke' => $shown = 'vyh_'.Str::random(40),
             // Stripe issues the secret only after the endpoint (whose URL has this ID) exists: PATCH it in later.
             'stripe.event' => isset($data['signingSecret']) ? $this->stripeSecret($data['signingSecret']) : null,
             default => null,
@@ -102,7 +103,7 @@ final class Triggers
 
     public function payload(Trigger $t): array
     {
-        $hook = in_array($t->kind, ['github.issue', 'github.pull_request', 'stripe.event'], true)
+        $hook = in_array($t->kind, ['github.issue', 'github.pull_request', 'stripe.event', 'api.invoke'], true)
             ? url('/api/agents/v2/hooks/'.explode('.', $t->kind)[0].'/'.$t->id) : null;
         return ['id' => $t->id, 'agentId' => $t->agent_id, 'kind' => $t->kind, 'connectionId' => $t->connection_id,
             'filter' => $t->filter, 'promptTemplate' => $t->prompt_template, 'ratePerHour' => $t->rate_per_hour,

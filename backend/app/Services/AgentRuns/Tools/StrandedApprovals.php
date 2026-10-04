@@ -5,6 +5,7 @@ namespace App\Services\AgentRuns\Tools;
 use App\Models\AgentV2\{Connection, Run, ToolAction};
 use App\Services\AgentRuns\Browser\BrowserTools;
 use App\Services\AgentRuns\Computer\ComputerTools;
+use App\Services\AgentRuns\LocalMcp\LocalMcpTools;
 use App\Services\AgentRuns\{Lifecycle, RunStates};
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +56,8 @@ final class StrandedApprovals
 
     private function onMac(ToolAction $a, Connection $c): bool
     {
-        return $c->provider === BrowserTools::PROVIDER || ($c->provider === ComputerTools::PROVIDER && ComputerTools::onMac($a->tool));
+        return $c->provider === BrowserTools::PROVIDER || LocalMcpTools::isProvider($c->provider)
+            || ($c->provider === ComputerTools::PROVIDER && ComputerTools::onMac($a->tool));
     }
 
     /** A Mac action nobody claimed: only once the lease lapsed is the Mac gone (a live one may still claim it). */
@@ -68,7 +70,7 @@ final class StrandedApprovals
             if (!$fresh || $fresh->state !== 'approved' || $fresh->dispatched_at !== null || $fresh->updated_at->gt($before)) return null;
             if ($run->lease_expires_at !== null && $run->lease_expires_at->isFuture()) return null;
             if ($fresh->kind === 'write') {
-                $this->executor->finish($fresh, 'unknown', 'unknown', 'outcome_unknown', ['error' => self::MAC_NEVER[$c->provider], 'outcome' => 'outcome_unknown'], 'Outcome not confirmed');
+                $this->executor->finish($fresh, 'unknown', 'unknown', 'outcome_unknown', ['error' => self::MAC_NEVER[$c->provider] ?? LocalMcpTools::NEVER, 'outcome' => 'outcome_unknown'], 'Outcome not confirmed');
                 $state = 'unknown';
             } else {
                 $this->executor->finish($fresh, 'failed', 'failed', 'retryable', ['error' => 'The Mac did not pick this request up. Try the call again.',

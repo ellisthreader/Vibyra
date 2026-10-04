@@ -13,6 +13,7 @@ use App\Services\AgentRuns\Events;
 use App\Services\AgentRuns\Lifecycle;
 use App\Services\AgentRuns\RunStates;
 use App\Services\AgentRuns\Computer\{ComputerDispatch, ComputerPullRequest, ComputerTools};
+use App\Services\AgentRuns\LocalMcp\{LocalMcpActions, LocalMcpTools};
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -101,6 +102,10 @@ final class Approvals
             if (!$stale && $connection->provider === \App\Services\AgentRuns\Browser\BrowserTools::PROVIDER) {
                 // A browser submit stays approved; the leased Mac claims it (BrowserActions rechecks everything).
                 if (!\App\Services\AgentRuns\Browser\BrowserActions::stale($action, $run)) return null;
+                $stale = true;
+            }
+            if (!$stale && LocalMcpTools::isProvider($connection->provider)) {
+                if (!LocalMcpActions::stale($action, $run)) return null;
                 $stale = true;
             }
             $computer = !$stale && $connection->provider === ComputerTools::PROVIDER;

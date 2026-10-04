@@ -16,6 +16,7 @@ final class TriggerKinds
         'github.issue' => ['webhook', null],
         'github.pull_request' => ['webhook', null],
         'stripe.event' => ['webhook', null],
+        'api.invoke' => ['webhook', null],
         'gmail.message' => ['poll', 'gmail'],
         'calendar.event_soon' => ['poll', 'google_calendar'],
     ];
@@ -33,6 +34,7 @@ final class TriggerKinds
                 'repository' => self::optional($f, 'repository', '/^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/D', 'Use owner/repo.'),
                 'actions' => self::list($f, 'actions', '/^[a-z_]{2,40}$/D') ?: ['opened'],
                 'labels' => self::list($f, 'labels', '/^.{1,50}$/uD') ?: null]),
+            'api.invoke' => ApiInvoke::filter($f),
             'stripe.event' => ['types' => self::list($f, 'types', '/^[a-z_.*]{3,80}$/D')
                 ?: self::fail('filter.types', 'Choose at least one Stripe event type, e.g. charge.dispute.created.')],
             'gmail.message' => array_filter(['query' => self::optional($f, 'query', '/^[^\r\n]{1,150}$/uD', 'Give a Gmail search.'),

@@ -32,7 +32,7 @@ final class McpServers
         [$server, $row] = DB::transaction(function () use ($userId, $url, $name) {
             // The cap is a count, so parallel adds each passed it (six at nine of ten left fifteen servers). Count under the user row lock.
             DB::table('users')->where('id', $userId)->lockForUpdate()->first();
-            $count = McpServer::query()->where('user_id', $userId)->whereIn('connection_id', Connection::query()->select('id')
+            $count = McpServer::query()->where('user_id', $userId)->where('kind', 'remote')->whereIn('connection_id', Connection::query()->select('id')
                 ->where('user_id', $userId)->whereNull('revoked_at'))->count();
             if ($count >= (int) config('agents_v2_mcp.max_servers', 10)) ApiError::throw(409, 'limit_reached', 'Remove a server before adding another.');
             $slug = 'mcp_'.bin2hex(random_bytes(4));
@@ -46,9 +46,12 @@ final class McpServers
             $session = $this->protocol->open($url, null);
             $this->protocol->close($session);
             $row->forceFill(['credential' => Crypt::encryptString('')])->save();
-            return ['server' => $this->sync($server, $row), 'connection' => $row->fresh(), 'signIn' => null];
+            $added = ['server' => $this->sync($server, $row), 'connection' => $row->fresh(), 'signIn' => null];
+            \App\Services\Platform\AccountActivity::record($userId, 'mcp_server.added', ['name' => $server->name, 'kind' => 'remote']);
+            return $added;
         } catch (McpError $e) {
             if ($e->reason === 'unauthorized') {
+                \App\Services\Platform\AccountActivity::record($userId, 'mcp_server.added', ['name' => $server->name, 'kind' => 'remote']);
                 try { return ['server' => $server, 'connection' => $row, 'signIn' => $this->oauth->start($userId, $server, (string) $e->challenge, $returnUrl)]; }
                 catch (McpError $oauth) { $e = $oauth; }
             }

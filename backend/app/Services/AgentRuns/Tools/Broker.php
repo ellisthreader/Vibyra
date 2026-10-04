@@ -13,6 +13,7 @@ use App\Services\AgentRuns\Lifecycle;
 use App\Services\AgentRuns\RunnerFlow;
 use App\Services\AgentRuns\RunStates;
 use App\Services\AgentRuns\Computer\{ComputerBinding, ComputerTools};
+use App\Services\AgentRuns\LocalMcp\LocalMcpTools;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -49,10 +50,11 @@ final class Broker
                     throw new ToolRefused('schema_changed', 'That tool changed. Refresh the tool manifest.');
                 // Browser actions also run on the leased Mac (Phase 7): same claim flow, own binding.
                 $browser = $connection->provider === \App\Services\AgentRuns\Browser\BrowserTools::PROVIDER;
-                $computer = $browser || $connection->provider === ComputerTools::PROVIDER;
+                $local = LocalMcpTools::isProvider($connection->provider);
+                $computer = $browser || $local || $connection->provider === ComputerTools::PROVIDER;
                 // Computer calls bind the Mac snapshot / GitHub account into their exact arguments.
                 try { $args = $browser ? app(\App\Services\AgentRuns\Browser\BrowserBinding::class)->bind($run, $connection, $call['tool'], $call['arguments'])
-                    : ($computer ? app(ComputerBinding::class)->bind($run, $connection, $call['tool'], $call['arguments'])
+                    : ($computer && !$local ? app(ComputerBinding::class)->bind($run, $connection, $call['tool'], $call['arguments'])
                     : $this->catalog->validate($call['tool'], $call['arguments'])); }
                 catch (HttpException $e) { throw new ToolRefused('invalid_arguments', $e->getMessage()); }
                 if ($this->catalog->kind($call['tool']) === 'write' && ToolAction::query()->where('run_id', $run->id)

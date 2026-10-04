@@ -7,7 +7,7 @@ use App\Services\AgentRuns\Tools\Providers\JsonArgs;
 
 /**
  * A server's tool list, normalised and revisioned. Each remote tool is exposed as
- * `mcp_<8 hex>__<safe name>` with a bounded description and object schema; tools
+ * `mcp_<8 hex>__<safe name>` (at most 40 characters, see `ToolNames`) with a bounded description and object schema; tools
  * with unusable schemas or colliding names are left out (and counted). The
  * revision hashes exactly what a person reviewed: names, descriptions, schemas and
  * read-only hints. Any change means the server needs review again.
@@ -39,8 +39,8 @@ final class ToolList
         foreach (array_slice($raw, 0, (int) config('agents_v2_mcp.max_tools', 100)) as $tool) {
             $remote = $tool['name'] ?? null;
             $schema = JsonArgs::schema($tool['inputSchema'] ?? null);
-            $name = is_string($remote) ? $slug.'__'.substr(trim(preg_replace('/[^a-z0-9_]+/', '_', strtolower($remote)), '_'), 0, 48) : null;
-            if (!is_string($remote) || strlen($remote) > 128 || $schema === null || $name === $slug.'__' || isset($tools[$name])) {
+            $name = is_string($remote) ? ToolNames::make($slug, $remote) : null;
+            if (!is_string($remote) || strlen($remote) > 128 || $schema === null || $name === null || isset($tools[$name])) {
                 $skipped++;
                 continue;
             }

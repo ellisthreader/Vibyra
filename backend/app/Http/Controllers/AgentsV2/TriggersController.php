@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AgentsV2;
 use App\Http\Controllers\Controller;
 use App\Services\AgentRuns\Access;
 use App\Services\AgentRuns\ApiError;
+use App\Services\AgentTriggers\ApiInvoke;
 use App\Services\AgentTriggers\TriggerKinds;
 use App\Services\AgentTriggers\Triggers;
 use App\Services\AgentTriggers\Webhooks;
@@ -83,6 +84,12 @@ final class TriggersController extends Controller
             'delivery' => $request->header('X-GitHub-Delivery')]), 202);
     }
 
+    public function api(Request $request, string $trigger, Webhooks $webhooks)
+    {
+        return response()->json($webhooks->api($trigger, $request->getContent(), (string) $request->bearerToken(),
+            $request->header('Idempotency-Key')), 202);
+    }
+
     public function stripe(Request $request, string $trigger, Webhooks $webhooks)
     {
         return response()->json($webhooks->stripe($trigger, $request->getContent(), (string) $request->header('Stripe-Signature', '')), 202);
@@ -93,6 +100,6 @@ final class TriggersController extends Controller
     {
         $on = app(Access::class)->allows($this->authenticatedUser($request)->id);
         return $this->json(['enabled' => $on, 'routines' => $on, 'triggers' => $on,
-            'triggerKinds' => $on ? array_keys(TriggerKinds::KINDS) : []]);
+            'triggerKinds' => $on ? array_values(array_filter(array_keys(TriggerKinds::KINDS), fn ($kind) => $kind !== 'api.invoke' || ApiInvoke::enabled())) : []]);
     }
 }

@@ -22,8 +22,18 @@ final class ConcOps
             'notify' => self::notify($a),
             'takeover' => self::takeover($a),
             'old_runner' => self::oldRunner($a),
+            'webhook_attempt' => (function () use ($a) { app(\App\Services\Platform\WebhookSender::class)->attempt($a['delivery']); return ['ran' => true]; })(),
+            'webhook_emit' => (function () use ($a) { $run = \App\Models\AgentV2\Run::query()->findOrFail($a['run']); app(\App\Services\Platform\WebhookEvents::class)->emit($run, 'run.failed', $a['key']); return ['ran' => true]; })(),
+            'key_create' => self::keyCreate($a),
             default => throw new InvalidArgumentException('Unknown op '.$op),
         };
+    }
+
+    /** Part 11: creating a personal API key from many processes (the cap is a count taken under the user row lock). */
+    private static function keyCreate(array $a): array
+    {
+        try { app(\App\Services\Platform\ApiKeys::class)->create($a['user'], 'conc '.$a['n'], ['runs:read']); return ['created' => true]; }
+        catch (\Illuminate\Http\Exceptions\HttpResponseException $e) { return ['created' => false, 'code' => $e->getResponse()->getData(true)['code'] ?? null]; }
     }
 
     /** The insert-if-missing step of a finished Composio link (the OAuth flow binding in front of it is single-claim), called directly. */
@@ -47,7 +57,7 @@ final class ConcOps
         $r = ConcHttp::runner($a['fx'], 'POST', '/claim');
         if ($r['status'] !== 200) return ['claimStatus' => $r['status'], 'action' => null];
         $run = $r['json']['run'];
-        $c = ConcHttp::runner($a['fx'], 'POST', '/runs/'.$run['id'].'/browser/'.$a['action'].'/claim', ['generation' => $run['generation'], 'fingerprint' => $a['fingerprint']]);
+        $c = ConcHttp::runner($a['fx'], 'POST', '/runs/'.$run['id'].'/'.($a['path'] ?? 'browser').'/'.$a['action'].'/claim', ['generation' => $run['generation'], 'fingerprint' => $a['fingerprint']] + ($a['claim'] ?? []));
         return ['claimStatus' => 200, 'generation' => $run['generation'], 'status' => $c['status'], 'state' => $c['json']['action']['state'] ?? null, 'claimed' => $c['json']['action']['claimedGeneration'] ?? null];
     }
 

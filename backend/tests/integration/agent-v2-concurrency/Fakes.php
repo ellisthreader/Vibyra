@@ -21,7 +21,7 @@ final class ConcFakes
     {
         ConcKill::install(); // inert unless the scenario armed a kill point for this process
         // Remote MCP addresses resolve through this table instead of DNS: only the harness's own server is public.
-        app()->instance(\App\Services\Mcp\EndpointPolicy::class, new \App\Services\Mcp\EndpointPolicy(fn (string $host) => $host === 'mcp.conc.example' ? ['93.184.216.34'] : []));
+        app()->instance(\App\Services\Mcp\EndpointPolicy::class, new \App\Services\Mcp\EndpointPolicy(fn (string $host) => in_array($host, ['mcp.conc.example', 'hooks.conc.example'], true) ? ['93.184.216.34'] : []));
         Http::fake(function ($request) {
             $url = $request->url();
             if (str_starts_with($url, ConcProviders::MCP)) return ConcProviders::mcp($request);
@@ -30,6 +30,7 @@ final class ConcFakes
             if (str_contains($url, 'gmail.googleapis.com') && str_ends_with(parse_url($url, PHP_URL_PATH), '/messages/send')) return self::gmailSend($request);
             if (str_contains($url, 'api.github.com') && parse_url($url, PHP_URL_PATH) === '/user') return Http::response(['login' => 'octocat']);
             if (str_contains($url, 'gmail.googleapis.com') && $request->method() === 'GET') { self::record('GMAIL_READ', substr((string) ($request->header('Authorization')[0] ?? ''), 7)); return Http::response(['messages' => []]); }
+            if (str_starts_with($url, 'https://hooks.conc.example/')) { self::record('WEBHOOK', (string) ($request->header('Vibyra-Delivery')[0] ?? '')); return Http::response('ok', 200); } // Part 11 outbound webhooks
             if (str_contains($url, 'exp.host') && str_contains($url, '/push/send')) return self::expoSend($request);
             if (str_contains($url, 'exp.host') && str_contains($url, '/getReceipts')) return Http::response(['data' => new \stdClass]);
             if (str_contains($url, '127.0.0.1:54395')) return self::openRouter($request);

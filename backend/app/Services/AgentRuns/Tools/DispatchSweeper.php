@@ -5,6 +5,7 @@ namespace App\Services\AgentRuns\Tools;
 use App\Models\AgentV2\{Connection, Run, ToolAction};
 use App\Services\AgentRuns\Browser\BrowserTools;
 use App\Services\AgentRuns\Computer\ComputerTools;
+use App\Services\AgentRuns\LocalMcp\LocalMcpTools;
 use App\Services\AgentRuns\{Lifecycle, RunStates};
 use Illuminate\Support\Facades\{Cache, DB};
 
@@ -95,7 +96,7 @@ final class DispatchSweeper
         if ($a->phase === 'writing') return $this->unknown($a, 'The GitHub branch outcome was not confirmed. Inspect the repository before retrying.', 'Branch outcome unconfirmed', $key);
         if ($a->kind === 'write' && (!$c || $this->local($c))) {
             $mac = $c && $a->claimed_generation !== null;
-            return $this->unknown($a, $mac ? self::MAC_STOPPED[$c->provider] : 'Vibyra stopped while this change was running. Check the provider before approving it again.', 'Outcome not confirmed');
+            return $this->unknown($a, $mac ? (self::MAC_STOPPED[$c->provider] ?? LocalMcpTools::STOPPED) : 'Vibyra stopped while this change was running. Check the provider before approving it again.', 'Outcome not confirmed');
         }
         if (!$c) { // A read whose connection is gone: nothing to ask, nothing was changed.
             $this->executor->finish($a, 'failed', 'failed', 'refused', ['error' => 'The connection was removed.', 'outcome' => 'refused'], 'Connection removed');
@@ -114,6 +115,6 @@ final class DispatchSweeper
     /** Mac folder and browser actions run on the leased Mac; `open_draft_pr` and the GitHub half of a publish run on the server under the same provider. */
     private function local(Connection $c): bool
     {
-        return in_array($c->provider, [ComputerTools::PROVIDER, BrowserTools::PROVIDER], true);
+        return in_array($c->provider, [ComputerTools::PROVIDER, BrowserTools::PROVIDER], true) || LocalMcpTools::isProvider($c->provider);
     }
 }

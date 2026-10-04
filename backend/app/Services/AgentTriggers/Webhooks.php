@@ -49,6 +49,27 @@ final class Webhooks
         return $this->deliver($trigger, 'stripe:'.$event['id'], TriggerKinds::stripe($event, $trigger->filter ?? []));
     }
 
+    public function api(string $triggerId, string $raw, string $bearer, ?string $idempotencyKey): array
+    {
+        if (!ApiInvoke::enabled()) ApiError::throw(404, 'trigger_not_found', 'Unknown trigger.');
+        $trigger = $this->trigger($triggerId, ['api.invoke']);
+        if ($bearer === '' || !hash_equals($this->secret($trigger), $bearer)) ApiError::throw(401, 'invalid_secret', 'The trigger secret did not match.');
+        return $this->invoke($trigger, $raw, $idempotencyKey);
+    }
+
+    public function invoke(Trigger $trigger, string $raw, ?string $idempotencyKey): array
+    {
+        if (strlen($raw) > 65536) ApiError::throw(413, 'payload_too_large', 'Send at most 64 KB.');
+        $body = $raw === '' ? [] : json_decode($raw, true);
+        if (!is_array($body)) ApiError::throw(422, 'invalid_payload', 'The body is not a JSON object.');
+        if ($idempotencyKey !== null && !preg_match('/^[A-Za-z0-9._:-]{8,100}$/D', $idempotencyKey)) ApiError::throw(422, 'invalid_idempotency_key', 'Use 8-100 letters, digits or . _ : -');
+        if (!$this->access->allows($trigger->user_id)) return ['ok' => true, 'state' => 'ignored', 'reason' => 'agents_v2_unavailable'];
+        $match = ApiInvoke::match($body);
+        [$event, $created] = $this->intake->receive($trigger, 'api:'.($idempotencyKey ?? (string) \Illuminate\Support\Str::uuid()),
+            $match[0], $match[1], $match[2]);
+        return ['ok' => true, 'state' => $event->state, 'duplicate' => !$created, 'eventId' => $event->id];
+    }
+
     private function deliver(Trigger $trigger, string $key, ?array $match): array
     {
         if (!$match) return ['ok' => true, 'state' => 'ignored'];

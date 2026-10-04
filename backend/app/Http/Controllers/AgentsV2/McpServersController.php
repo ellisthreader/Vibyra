@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AgentV2\McpServer;
 use App\Services\AgentRuns\ApiError;
 use App\Services\AgentRuns\Connections\Connections;
-use App\Services\AgentRuns\Mcp\{McpError, McpOAuth, McpServers, McpTools};
+use App\Services\AgentRuns\LocalMcp\LocalMcpTools;
+use App\Services\AgentRuns\Mcp\{McpError, McpOAuth, McpPayload, McpServers, McpTools};
 use App\Services\ChatConnectors\OAuthFlows;
 use Illuminate\Http\Request;
 
@@ -37,13 +38,13 @@ final class McpServersController extends Controller
     public function signin(Request $request, string $id, McpServers $servers)
     {
         $data = $request->validate(['returnUrl' => 'nullable|string|max:500']);
-        return $this->json($servers->signIn($this->v2User($request)->id, $this->server($request, $id), $data['returnUrl'] ?? null));
+        return $this->json($servers->signIn($this->v2User($request)->id, $this->server($request, $id, true), $data['returnUrl'] ?? null));
     }
 
     /** Compare the live tool list with the pinned one now (tool calls also do this every time). */
     public function refresh(Request $request, string $id, McpServers $servers, Connections $connections)
     {
-        $server = $this->server($request, $id);
+        $server = $this->server($request, $id, true);
         try { $server = $servers->sync($server, $connections->find($server->user_id, $id)); }
         catch (\App\Services\ChatConnectors\ReconnectRequired) { ApiError::throw(409, 'reconnect_required', 'Sign in to this server again.'); }
         catch (McpError $e) { ApiError::throw($e->reason === 'unauthorized' ? 409 : 422,
@@ -76,29 +77,23 @@ final class McpServersController extends Controller
         return response()->json(McpOAuth::metadata())->header('Cache-Control', 'public, max-age=3600');
     }
 
-    private function server(Request $request, string $id): McpServer
+    /** Show, review and reads work for a local server too (the hub treats it as an MCP server); only a remote one can be signed in to or re-fetched here. */
+    private function server(Request $request, string $id, bool $remoteOnly = false): McpServer
     {
         $user = $this->v2User($request);
         $server = McpServer::query()->where('user_id', $user->id)->where('connection_id', $id)->where('status', '!=', 'removed')->first();
         if (!$server) ApiError::throw(404, 'connection_not_found', 'That MCP server does not exist.');
+        if ($remoteOnly && $server->kind === 'local') ApiError::throw(409, 'local_server', 'This server runs on your Mac. Check it for changes there.');
         return $server;
     }
 
     private function payload(McpServer $s): array
     {
-        $kinds = (new McpTools($s))->tools();
-        $tool = fn ($t) => ['tool' => $t['tool'], 'remoteName' => $t['remote'], 'description' => $t['description'],
-            'kind' => $kinds[$t['tool']] ?? 'write', 'readOnlyHint' => (bool) $t['readOnlyHint'], 'destructiveHint' => (bool) ($t['destructiveHint'] ?? false),
-            'inputSchema' => $t['inputSchema']];
-        $pinned = collect($s->tools ?? [])->keyBy('tool');
-        $pending = $s->pending_tools ? collect($s->pending_tools)->keyBy('tool') : null;
-        return ['connectionId' => $s->connection_id, 'serverId' => $s->id, 'provider' => $s->slug, 'url' => $s->url, 'name' => $s->name,
+        $local = $s->kind === 'local';
+        $adapter = $local ? new LocalMcpTools($s) : new McpTools($s);
+        return ['kind' => $s->kind, 'localId' => $local ? $s->local_id : null, 'hostId' => $local ? $s->host_id : null,
+            'connectionId' => $s->connection_id, 'serverId' => $s->id, 'provider' => $s->slug, 'url' => $local ? '' : $s->url, 'name' => $s->name,
             'auth' => $s->auth, 'status' => $s->status, 'protocolVersion' => $s->protocol_version, 'toolRevision' => $s->tool_revision,
-            'tools' => $pinned->values()->map($tool)->all(),
-            'pending' => $pending ? ['revision' => $s->pending_revision, 'added' => $pending->keys()->diff($pinned->keys())->values()->all(),
-                'removed' => $pinned->keys()->diff($pending->keys())->values()->all(),
-                'changed' => $pending->filter(fn ($t, $k) => isset($pinned[$k]) && \App\Services\AgentRuns\Mcp\ToolList::toolHash($t)
-                    !== \App\Services\AgentRuns\Mcp\ToolList::toolHash($pinned[$k]))->keys()->values()->all(),
-                'tools' => $pending->values()->map($tool)->all()] : null];
+            'tools' => McpPayload::tools($s, $adapter), 'pending' => McpPayload::pending($s, $adapter)];
     }
 }

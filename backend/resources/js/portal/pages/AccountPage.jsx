@@ -4,6 +4,8 @@ import RedeemLicense from "../components/RedeemLicense.jsx";
 import AccountMembership from "../components/AccountMembership.jsx";
 import AccountDownloads from "../components/AccountDownloads.jsx";
 import AccountSetup from "../components/AccountSetup.jsx";
+import ActivityPanel from "../components/ActivityPanel.jsx";
+import DeveloperLink from "../components/DeveloperLink.jsx";
 import Notice from "../components/Notice.jsx";
 import { go } from "../navigation.js";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
@@ -40,6 +42,8 @@ export default function AccountPage() {
       <RedeemLicense key={user.id} user={user} onRedeemed={refresh} />
       <AccountDownloads />
       <AccountSetup email={user.email} />
+      <DeveloperLink key={user.id} />
+      <ActivityPanel key={user.id} accountId={user.id} />
     </>}
   </PortalShell>;
 }

@@ -77,6 +77,7 @@ Route::prefix('api/agents/v2')->middleware([RequireApprovedMarket::class])->grou
 Route::prefix('api/agents/v2/hooks')->middleware('throttle:120,1,agent-v2-hooks')->group(function (): void {
     Route::post('github/{trigger}', [TriggersController::class, 'github'])->whereUuid('trigger');
     Route::post('stripe/{trigger}', [TriggersController::class, 'stripe'])->whereUuid('trigger');
+    Route::post('api/{trigger}', [TriggersController::class, 'api'])->whereUuid('trigger');
 });
 
 // Phase 6 (Stage 3): catalogue readiness, remote MCP servers, Composio linking.
@@ -87,3 +88,5 @@ require __DIR__.'/agents_v2_overview.php';
 
 // Phase 7 (Stage 4): browser grants and the leased Mac's browser actions.
 require __DIR__.'/agents_v2_browser.php';
+
+require __DIR__.'/agents_v2_local_mcp.php';
