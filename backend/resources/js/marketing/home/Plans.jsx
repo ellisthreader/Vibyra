@@ -11,14 +11,17 @@ const FREE_PERKS = topUpFrom => [
     ["Built-in AI", " with Vibyra tokens"],
     ["Top up", topUpFrom ? ` from ${topUpFrom}, whenever you like` : " whenever you like"],
 ];
-const FREE_MISSING = ["Preview and Review", "Safe mode worktrees"];
+const FREE_MISSING = ["Remote access from your iPhone", "Preview and Review", "Safe mode worktrees"];
 const PRO_PERKS = [
-    ["Unlimited terminals", " and projects"],
+    ["Unlimited projects", " and terminals"],
+    ["Every AI model", ", including Claude Opus 5.5 and GPT-6"],
     ["Preview and Review", " inside your workspace"],
     ["Safe mode worktrees", " for separate changes"],
-    ["Vibyra AI", " with the included token allowance"],
     ["Paid tokens never expire", ", even if you cancel"],
 ];
+// What a month of tokens buys, from typical prompts at current prices: about 15 tokens
+// for Claude Opus 5.5 on high effort, about 3 for Sonnet 5.5. See config/membership.php.
+const promptsFrom = monthlyTokens => ({ opus: Math.max(1, Math.round(monthlyTokens / 15)), sonnet: Math.max(10, Math.round(monthlyTokens / 30) * 10) });
 
 export default function Plans() {
     const [catalogue, setCatalogue] = useState(null);
@@ -54,6 +57,7 @@ export default function Plans() {
         {missing.length > 0 && <ul className="plan-ticks plan-missing" aria-label="Not included">{missing.map(text => <li key={text}><Icon name="close" size={14} /><span>{text}</span></li>)}</ul>}
     </div>;
     const yearly = plan === annual;
+    const prompts = plan ? promptsFrom(yearly ? plan.credits / 12 : plan.credits) : null;
     return <section className="pricing-section section-space" id="pricing" aria-labelledby="pricing-title">
         <div className="page-width pricing-layout">
             <header className="home-section-heading">
@@ -79,15 +83,16 @@ export default function Plans() {
                     <div className="plan-top"><div><h3>Vibyra Pro</h3><p className="plan-for">More room for your projects.</p></div><ProDiamond /></div>
                     <p className="plan-price"><strong>{money(yearly ? Math.round(plan.pence / 12) : plan.pence)}</strong><span>/ month</span></p>
                     <p className="plan-billing">{yearly ? <>{money(plan.pence)} billed once a year{saving > 0 && <> · <b>save {money(saving)}</b></>}</> : "Billed monthly"}</p>
-                    <p className="plan-tokens">{yearly
-                        ? <><strong>{plan.credits.toLocaleString("en-GB")} tokens</strong> up front each year</>
-                        : <><strong>{plan.credits} tokens</strong> every month</>}</p>
+                    <ul className="plan-specs" aria-label="Included with Pro">
+                        <li><strong className="plan-spec-value">Unlimited</strong><span><b>Remote time</b>Use your Mac from your iPhone, anywhere. Never uses tokens.</span></li>
+                        <li><strong className="plan-spec-value">{plan.credits.toLocaleString("en-GB")}</strong><span><b>{yearly ? "AI tokens up front each year" : "AI tokens every month"}</b>About {prompts.opus} Claude Opus 5.5 prompts on high, or {prompts.sonnet} on Sonnet 5.5, each month.</span></li>
+                    </ul>
                     <Ticks items={PRO_PERKS} lead="Everything in Free, plus" />
                     {plan.stripeEnabled === true ? <a className="plan-cta pro-buy" href={`/checkout?offer=${plan.offerKey}&version=${plan.offerVersion}`} data-analytics-cta="plans_buy">Continue with Pro</a> : <><button type="button" className="plan-cta pro-buy" disabled>Pro purchases opening soon</button><p className="plan-billing">Paid plans are not available yet.</p></>}
                 </article>
             </div>}
             {plan && <p className="pro-guarantee"><Icon name="shield" size={16} /><span><strong>14-day money-back guarantee on Pro.</strong> Not for you? We’ll refund your first payment.</span></p>}
-            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. <a href="/legal/terms">Terms</a></p>}
+            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Remote access needs your Mac awake and running Vibyra; Live Preview streaming slows after 40 GB a month. Prompt counts are typical estimates. <a href="/legal/terms">Terms</a></p>}
         </div>
     </section>;
 }

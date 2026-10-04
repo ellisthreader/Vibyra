@@ -35,4 +35,9 @@ return [
     // Whether connecting from anywhere needs a plan with `remoteAccess`
     // (config/vibes.php). Registering a computer never does.
     'require_plan' => (bool) env('VIBYRA_REMOTE_REQUIRE_PLAN', true),
+    // Remote data each account may move through the relay per calendar month (UTC). Past it the relay
+    // slows that account to `slowed_kb_per_second` (set on the relay as VIBYRA_RELAY_SLOWED_BYTES_PER_SECOND):
+    // terminals keep working, Live Preview drops to the odd frame. 40 GB keeps the worst case near £1.70.
+    'monthly_data_gb' => (float) env('VIBYRA_REMOTE_MONTHLY_DATA_GB', 40),
+    'slowed_kb_per_second' => (int) env('VIBYRA_REMOTE_SLOWED_KB_PER_SECOND', 16),
 ];

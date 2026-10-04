@@ -46,7 +46,8 @@ class RemoteAccessController extends Controller
     {
         $user = $this->authenticatedUser($request);
 
-        return $this->json(['ok' => true, 'computers' => $remote->computers($user)] + $remote->availability($user));
+        return $this->json(['ok' => true, 'computers' => $remote->computers($user),
+            'data' => app(\App\Services\Remote\RemoteDataAllowance::class)->forUser($user->id)] + $remote->availability($user));
     }
 
     public function connect(Request $request, RemoteAccess $remote, string $hostId): JsonResponse
@@ -93,7 +94,8 @@ class RemoteAccessController extends Controller
         $data = $request->validate(['relayId' => ['nullable', 'string', 'max:80'], 'events' => ['required', 'array', 'max:500']]);
         $applied = $presence->ingest($data['relayId'] ?? 'relay', $data['events']);
 
-        return $this->json(['ok' => true, 'applied' => $applied]);
+        // The relay slows these accounts until the month turns over.
+        return $this->json(['ok' => true, 'applied' => $applied, 'slowed' => app(\App\Services\Remote\RemoteDataAllowance::class)->slowedUserIds()]);
     }
 
     public function authorizeRelay(Request $request, \App\Services\Remote\RelayAuthorization $authorization): JsonResponse

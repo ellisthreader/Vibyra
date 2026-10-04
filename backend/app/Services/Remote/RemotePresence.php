@@ -29,6 +29,7 @@ class RemotePresence
                 'presence' => $this->heartbeat($relayId, $event),
                 'session.started' => $this->session($event, true),
                 'session.ended' => $this->session($event, false),
+                'usage' => app(RemoteDataAllowance::class)->record($event['bytes'] ?? null),
                 default => 0,
             });
         }
