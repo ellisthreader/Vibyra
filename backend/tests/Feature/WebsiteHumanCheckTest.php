@@ -52,6 +52,8 @@ class WebsiteHumanCheckTest extends TestCase
     public function test_legal_pages_and_disabled_check_are_not_gated(): void
     {
         $this->get('/legal/privacy')->assertOk();
+        // Google's OAuth brand review reads the home page with no crawler name.
+        $this->withHeader('User-Agent', 'Google-Site-Verification/1.0')->get('/')->assertOk()->assertSee('Vibyra');
 
         config()->set('services.turnstile.secret_key', null);
         $this->get('/downloads')->assertOk();

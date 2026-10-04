@@ -31,7 +31,8 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('marketing'))->middleware([VerifyHuman::class, RecordWebsiteView::class]);
+// Public like the legal pages: Google's OAuth brand review must read the home page, and its checker is no named crawler.
+Route::get('/', fn () => view('marketing'))->middleware(RecordWebsiteView::class);
 Route::view('/legal/privacy', 'legal.privacy')->middleware(RecordWebsiteView::class)->name('legal.privacy');
 Route::view('/legal/terms', 'legal.terms')->middleware(RecordWebsiteView::class)->name('legal.terms');
 Route::view('/login', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class])->name('login');

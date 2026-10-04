@@ -24,6 +24,7 @@
 </head>
 <body>
     <div id="marketing-root" data-download-url="{{ url('/downloads') }}"></div>
-    <noscript><p>Vibyra brings your coding agents, local previews, and project memory into one desktop workspace. <a href="/downloads">Download Vibyra Desktop</a>. Enable JavaScript to explore the interactive walkthrough.</p></noscript>
+    <noscript><p>Vibyra brings your coding agents, local previews, and project memory into one desktop workspace. <a href="/downloads">Download Vibyra Desktop</a>. Enable JavaScript to explore the interactive walkthrough.</p>
+        <p>From the Vibyra app on Mac, iPhone, or the web you can also connect your own accounts — such as Gmail, Google Calendar, Google Drive, Google Tasks, and GitHub — so Vibyra’s AI chat and teammates can answer questions about your own mail, schedule, files, and tasks. Vibyra reads a connected service only when you ask it to, and anything that sends or changes something waits for your approval. See the <a href="/legal/privacy">Privacy Policy</a> and <a href="/legal/terms">Terms of Service</a>.</p></noscript>
 </body>
 </html>
