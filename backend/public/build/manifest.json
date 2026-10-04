@@ -1,18 +1,18 @@
 {
-  "_Navigation-Cd9UmvQr.js": {
-    "file": "assets/Navigation-Cd9UmvQr.js",
+  "_Navigation-De1USZ7h.js": {
+    "file": "assets/Navigation-De1USZ7h.js",
     "name": "Navigation",
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
-      "_shared-jNpcfZh5.js"
+      "_shared-CYVGFYLE.js"
     ]
   },
-  "_PhoneWaitlist-Cji9Tzz5.js": {
-    "file": "assets/PhoneWaitlist-Cji9Tzz5.js",
+  "_PhoneWaitlist-CnldyFnW.js": {
+    "file": "assets/PhoneWaitlist-CnldyFnW.js",
     "name": "PhoneWaitlist",
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
-      "_shared-jNpcfZh5.js"
+      "_shared-CYVGFYLE.js"
     ]
   },
   "_analyticsChoice-Cm8bhJJW.css": {
@@ -30,8 +30,8 @@
     "file": "assets/jsx-runtime-BVko9UzU.js",
     "name": "jsx-runtime"
   },
-  "_shared-jNpcfZh5.js": {
-    "file": "assets/shared-jNpcfZh5.js",
+  "_shared-CYVGFYLE.js": {
+    "file": "assets/shared-CYVGFYLE.js",
     "name": "shared",
     "imports": [
       "_jsx-runtime-BVko9UzU.js"
@@ -54,7 +54,7 @@
     "isEntry": true
   },
   "resources/css/marketing.css": {
-    "file": "assets/marketing-yvDTSXRc.css",
+    "file": "assets/marketing-ilYO6oDR.css",
     "name": "marketing",
     "names": [
       "marketing.css"
@@ -93,62 +93,62 @@
     ]
   },
   "resources/js/benchmarks.jsx": {
-    "file": "assets/benchmarks-BvhPFN43.js",
+    "file": "assets/benchmarks-CH2AAfSm.js",
     "name": "benchmarks",
     "src": "resources/js/benchmarks.jsx",
     "isEntry": true,
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
-      "_Navigation-Cd9UmvQr.js",
+      "_Navigation-De1USZ7h.js",
       "_analyticsChoice-CuYmE2bM.js"
     ],
     "css": [
       "assets/benchmarks-QUHRGWaQ.css",
-      "assets/marketing-yvDTSXRc.css"
+      "assets/marketing-ilYO6oDR.css"
     ]
   },
   "resources/js/downloads.jsx": {
-    "file": "assets/downloads-xpDOucva.js",
+    "file": "assets/downloads-Cxn0ZDuD.js",
     "name": "downloads",
     "src": "resources/js/downloads.jsx",
     "isEntry": true,
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
-      "_shared-jNpcfZh5.js",
-      "_Navigation-Cd9UmvQr.js",
+      "_shared-CYVGFYLE.js",
+      "_Navigation-De1USZ7h.js",
       "_analyticsChoice-CuYmE2bM.js",
       "_useReleaseCatalog-BP22uuT9.js"
     ],
     "css": [
       "assets/downloads-MbXSnXmE.css",
-      "assets/marketing-yvDTSXRc.css"
+      "assets/marketing-ilYO6oDR.css"
     ]
   },
   "resources/js/marketing.jsx": {
-    "file": "assets/marketing-LYzI9dm1.js",
+    "file": "assets/marketing-DK0RJT4T.js",
     "name": "marketing",
     "src": "resources/js/marketing.jsx",
     "isEntry": true,
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
-      "_shared-jNpcfZh5.js",
-      "_Navigation-Cd9UmvQr.js",
-      "_PhoneWaitlist-Cji9Tzz5.js",
+      "_shared-CYVGFYLE.js",
+      "_Navigation-De1USZ7h.js",
+      "_PhoneWaitlist-CnldyFnW.js",
       "_analyticsChoice-CuYmE2bM.js"
     ],
     "css": [
       "assets/marketing-CDv-2xuG.css",
-      "assets/marketing-yvDTSXRc.css"
+      "assets/marketing-ilYO6oDR.css"
     ]
   },
   "resources/js/portal.jsx": {
-    "file": "assets/portal-CApYX4Id.js",
+    "file": "assets/portal-CWbh5Ww0.js",
     "name": "portal",
     "src": "resources/js/portal.jsx",
     "isEntry": true,
     "imports": [
       "_jsx-runtime-BVko9UzU.js",
-      "_PhoneWaitlist-Cji9Tzz5.js",
+      "_PhoneWaitlist-CnldyFnW.js",
       "_analyticsChoice-CuYmE2bM.js",
       "_useReleaseCatalog-BP22uuT9.js"
     ],

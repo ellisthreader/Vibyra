@@ -4,24 +4,11 @@ import ProDiamond from "./ProDiamond.jsx";
 
 // Released desktop entitlements. Keep in step with CheckoutPage.jsx,
 // BillingPage.jsx, config/vibes.php and resources/knowledge/website-faq.md.
-const FREE_PERKS = topUpFrom => [
-    ["One project", " on your computer"],
-    ["Two running terminals", ", side by side"],
-    ["Your own AI accounts", ": use compatible coding CLIs"],
-    ["Built-in AI", " with Vibyra tokens"],
-    ["Top up", topUpFrom ? ` from ${topUpFrom}, whenever you like` : " whenever you like"],
-];
-const FREE_MISSING = ["Remote access from your iPhone", "Preview and Review", "Safe mode worktrees"];
-const PRO_PERKS = [
-    ["Unlimited projects", " and terminals"],
-    ["Every AI model", ", including Claude Opus 5.5 and GPT-6"],
-    ["Preview and Review", " inside your workspace"],
-    ["Safe mode worktrees", " for separate changes"],
-    ["Paid tokens never expire", ", even if you cancel"],
-];
-// What a month of tokens buys, from typical prompts at current prices: about 15 tokens
-// for Claude Opus 5.5 on high effort, about 3 for Sonnet 5.5. See config/membership.php.
-const promptsFrom = monthlyTokens => ({ opus: Math.max(1, Math.round(monthlyTokens / 15)), sonnet: Math.max(10, Math.round(monthlyTokens / 30) * 10) });
+const FREE_PERKS = freeTokens => ["One project", "Two terminals", ...(freeTokens > 0 ? [`${freeTokens} AI tokens a month`] : []), "Your own AI accounts"];
+const PRO_TOOLS = [["eye", "Live Preview"], ["review", "Code review"], ["mic", "Voice"], ["capture", "Screenshots"], ["branch", "Worktrees"], ["link", "Accounts"]];
+const PRO_EXTRAS = [["Unlimited", "projects and terminals"], ["Every model", "including Opus 5.5 and GPT-6"], ["Never expire", "paid tokens, even if you cancel"]];
+// One Vibyra token is one US cent of OpenRouter usage, charged at cost with no markup.
+const dollars = tokens => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: tokens % 100 ? 2 : 0 }).format(tokens / 100);
 
 export default function Plans() {
     const [catalogue, setCatalogue] = useState(null);
@@ -49,20 +36,14 @@ export default function Plans() {
     const money = p => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(p / 100);
     const saving = annual && monthly ? monthly.pence * 12 - annual.pence : 0;
     const savePercent = saving > 0 ? Math.round(saving / (monthly.pence * 12) * 100) : 0;
-    const topUp = catalogue?.offers.filter(o => o.kind === "topup" && Number.isSafeInteger(o.pence)).sort((x, y) => x.pence - y.pence)[0];
-    const freePerks = FREE_PERKS(topUp && money(topUp.pence));
-    const Ticks = ({ items, lead, missing = [] }) => <div className="plan-list">
-        {lead && <p className="plan-list-lead">{lead}</p>}
-        <ul className="plan-ticks">{items.map(([bold, rest]) => <li key={bold}><Icon name="check" size={14} /><span><strong>{bold}</strong>{rest}</span></li>)}</ul>
-        {missing.length > 0 && <ul className="plan-ticks plan-missing" aria-label="Not included">{missing.map(text => <li key={text}><Icon name="close" size={14} /><span>{text}</span></li>)}</ul>}
-    </div>;
     const yearly = plan === annual;
-    const prompts = plan ? promptsFrom(yearly ? plan.credits / 12 : plan.credits) : null;
+    const period = yearly ? "year" : "month";
+    const freeTokens = Number.isSafeInteger(catalogue?.free?.tokens) ? catalogue.free.tokens : 0;
     return <section className="pricing-section section-space" id="pricing" aria-labelledby="pricing-title">
         <div className="page-width pricing-layout">
             <header className="home-section-heading">
                 <h2 id="pricing-title">More room for your ideas.</h2>
-                <p>Start building for free. Go Pro for more workspace features and included tokens.</p>
+                <p>Start building for free. Go Pro for remote access, every AI model and the full Vibyra ecosystem.</p>
             </header>
             {!catalogue && !error && <div className="pricing-loading" role="status">Loading current plans…</div>}
             {error && <div className="pricing-error" role="alert"><p>We couldn’t load the current plans. Please try again.</p><button className="action action-secondary" onClick={() => setAttempt(n => n + 1)}>Retry</button></div>}
@@ -70,29 +51,52 @@ export default function Plans() {
                 <button type="button" aria-pressed={!yearly} onClick={() => setCycle("monthly")}>Monthly</button>
                 <button type="button" aria-pressed={yearly} onClick={() => setCycle("annual")}>Annual{savePercent > 0 && <span>Save {savePercent}%</span>}</button>
             </div>}
-            {plan && <div className="plan-grid">
-                <article className="plan-card plan-free" aria-label="Free">
-                    <div className="plan-top"><div><h3>Free</h3><p className="plan-for">Everything you need to start building.</p></div></div>
-                    <p className="plan-price"><strong>£0</strong><span>/ month</span></p>
-                    <p className="plan-billing">Free for as long as you like</p>
-                    <p className="plan-tokens"><strong>{catalogue.free.tokens} tokens</strong> a month on eligible pilot accounts</p>
-                    <Ticks items={freePerks} missing={FREE_MISSING} />
-                    <a className="plan-cta plan-cta-free" href="/signup?next=/account" data-analytics-cta="plans_signup">Start free</a>
+            {plan && <div className="plan-stack">
+                <article className="plan-split" aria-label="Vibyra Pro">
+                    <div className="plan-offer">
+                        <ProDiamond />
+                        <h3>Vibyra Pro</h3>
+                        <p className="plan-for">Build from anywhere, with the best AI.</p>
+                        <p className="plan-price"><strong>{money(yearly ? Math.round(plan.pence / 12) : plan.pence)}</strong><span>/ month</span></p>
+                        <p className="plan-billing">{yearly ? <>{money(plan.pence)} billed once a year{saving > 0 && <> · <b>save {money(saving)}</b></>}</> : "Billed monthly"}</p>
+                        {plan.stripeEnabled === true
+                            ? <a className="plan-buy" href={`/checkout?offer=${plan.offerKey}&version=${plan.offerVersion}`} data-analytics-cta="plans_buy">Continue with Pro</a>
+                            : <><button type="button" className="plan-buy" disabled>Pro purchases opening soon</button><p className="plan-billing">Paid plans are not available yet.</p></>}
+                        <p className="plan-assure"><Icon name="shield" size={16} />14-day money-back guarantee</p>
+                    </div>
+                    <div className="plan-included">
+                        <div className="plan-band">
+                            <p className="plan-band-label">Included with Pro</p>
+                            <div className="plan-facts">
+                                <div className="plan-fact">
+                                    <img src="/media/marketing/pro-cloud.png" alt="" width="384" height="384" loading="lazy" />
+                                    <div><b>Unlimited</b><strong>Remote access</strong><span>Reach your Mac from your iPhone, through the cloud.</span></div>
+                                </div>
+                                <div className="plan-fact">
+                                    <img src="/media/marketing/pro-tokens.png" alt="" width="384" height="384" loading="lazy" />
+                                    <div><b>{plan.credits.toLocaleString("en-GB")}</b><strong>AI tokens a {period}</strong><span>That’s {dollars(plan.credits)} a {period} to spend on OpenRouter models, with no markup.</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="plan-band">
+                            <div className="plan-eco-head">
+                                <img src="/media/marketing/pro-ecosystem.png" alt="" width="384" height="384" loading="lazy" />
+                                <div><b>The Vibyra ecosystem</b><span>Every tool, built into your workspace.</span></div>
+                            </div>
+                            <ul className="plan-tools">{PRO_TOOLS.map(([icon, label]) => <li key={label}><span><Icon name={icon} size={18} /></span>{label}</li>)}</ul>
+                        </div>
+                        <div className="plan-band">
+                            <ul className="plan-extras">{PRO_EXTRAS.map(([bold, rest]) => <li key={bold}><b><Icon name="check" size={16} />{bold}</b>{rest}</li>)}</ul>
+                        </div>
+                    </div>
                 </article>
-                <article className="plan-card plan-pro" aria-label="Vibyra Pro">
-                    <div className="plan-top"><div><h3>Vibyra Pro</h3><p className="plan-for">More room for your projects.</p></div><ProDiamond /></div>
-                    <p className="plan-price"><strong>{money(yearly ? Math.round(plan.pence / 12) : plan.pence)}</strong><span>/ month</span></p>
-                    <p className="plan-billing">{yearly ? <>{money(plan.pence)} billed once a year{saving > 0 && <> · <b>save {money(saving)}</b></>}</> : "Billed monthly"}</p>
-                    <ul className="plan-specs" aria-label="Included with Pro">
-                        <li><strong className="plan-spec-value">Unlimited</strong><span><b>Remote time</b>Use your Mac from your iPhone, anywhere. Never uses tokens.</span></li>
-                        <li><strong className="plan-spec-value">{plan.credits.toLocaleString("en-GB")}</strong><span><b>{yearly ? "AI tokens up front each year" : "AI tokens every month"}</b>About {prompts.opus} Claude Opus 5.5 prompts on high, or {prompts.sonnet} on Sonnet 5.5, each month.</span></li>
-                    </ul>
-                    <Ticks items={PRO_PERKS} lead="Everything in Free, plus" />
-                    {plan.stripeEnabled === true ? <a className="plan-cta pro-buy" href={`/checkout?offer=${plan.offerKey}&version=${plan.offerVersion}`} data-analytics-cta="plans_buy">Continue with Pro</a> : <><button type="button" className="plan-cta pro-buy" disabled>Pro purchases opening soon</button><p className="plan-billing">Paid plans are not available yet.</p></>}
+                <article className="plan-free" aria-label="Free">
+                    <div className="plan-free-name"><h3>Free</h3><p><strong>£0</strong> for as long as you like</p></div>
+                    <ul className="plan-free-perks">{FREE_PERKS(freeTokens).map(text => <li key={text}><Icon name="check" size={15} />{text}</li>)}</ul>
+                    <a className="plan-free-cta" href="/signup?next=/account" data-analytics-cta="plans_signup">Start free</a>
                 </article>
             </div>}
-            {plan && <p className="pro-guarantee"><Icon name="shield" size={16} /><span><strong>14-day money-back guarantee on Pro.</strong> Not for you? We’ll refund your first payment.</span></p>}
-            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Remote access needs your Mac awake and running Vibyra; Live Preview streaming slows after 40 GB a month. Prompt counts are typical estimates. <a href="/legal/terms">Terms</a></p>}
+            {plan && <p className="pro-terms">GBP, taxes included. Pro renews {annual ? "monthly or yearly" : "monthly"} until cancelled. Free AI tokens are for eligible pilot accounts and the included models. Remote access needs your Mac awake and running Vibyra; Live Preview streaming slows after 40 GB a month. <a href="/legal/terms">Terms</a></p>}
         </div>
     </section>;
 }
