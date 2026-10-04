@@ -7,8 +7,6 @@ import ProDiamond from "./ProDiamond.jsx";
 const FREE_PERKS = freeTokens => ["One project", "two terminals", ...(freeTokens > 0 ? [`${freeTokens} AI tokens a month`] : []), "your own AI accounts"];
 const PRO_TOOLS = [["eye", "Live Preview"], ["review", "Code review"], ["mic", "Voice"], ["capture", "Screenshots"], ["branch", "Worktrees"], ["link", "Accounts"]];
 const PRO_EXTRAS = [["Unlimited", "projects and terminals"], ["Every model", "including Opus 5.5 and GPT-6"], ["Never expire", "paid tokens, even if you cancel"]];
-// One Vibyra token is one US cent of OpenRouter usage, charged at cost with no markup.
-const dollars = tokens => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: tokens % 100 ? 2 : 0 }).format(tokens / 100);
 
 export default function Plans() {
     const [catalogue, setCatalogue] = useState(null);
@@ -74,7 +72,7 @@ export default function Plans() {
                                 </div>
                                 <div className="plan-fact">
                                     <img src="/media/marketing/pro-tokens.png" alt="" width="384" height="384" loading="lazy" />
-                                    <div><b>{plan.credits.toLocaleString("en-GB")}</b><strong>AI tokens a {period}</strong><span>That’s {dollars(plan.credits)} a {period} to spend on OpenRouter models, with no markup.</span></div>
+                                    <div><b>{plan.credits.toLocaleString("en-GB")}</b><strong>AI tokens a {period}</strong><span>Spend them on any OpenRouter model you like, with no markup.</span></div>
                                 </div>
                             </div>
                         </div>
