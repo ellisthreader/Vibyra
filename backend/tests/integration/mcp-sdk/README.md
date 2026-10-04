@@ -18,3 +18,11 @@ cargo test -p vibyra-core the_official_modern_only_sdk_server_works -- --ignored
 
 These checks establish interoperability in an isolated environment. They do
 not prove a deployed endpoint, installed native client, or approved live run.
+
+For a deployed endpoint, `node verify-live.mjs https://vibyra.net /private/path/key`
+uses a disposable QA account key with exactly `runs:read` and `projects:read`.
+Keep the key in an owner-only file. This checks both official-client protocol
+modes, read access, scoped write refusal, invalid keys and required modern
+metadata. It prints no account contents or credentials. After revoking the key,
+repeat with a third argument `revoked` to confirm HTTP401. The production check
+does not migrate, seed, create keys or grant entitlements.
