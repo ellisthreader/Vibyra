@@ -14,7 +14,7 @@ class SecurityEvents
         'REMOTE_SESSION_REQUESTED' => 'Remote session requested', 'REMOTE_SESSION_AUTHORIZED' => 'Remote session authorized',
         'REMOTE_SESSION_STARTED' => 'Remote access started', 'REMOTE_SESSION_ENDED' => 'Remote access ended',
         'REMOTE_SESSION_REVOKED' => 'Remote session disconnected', 'REMOTE_SESSION_DENIED' => 'Remote session denied',
-        'PASSKEY_AUTH_SUCCESS' => 'Passkey verified', 'PASSKEY_AUTH_FAILURE' => 'Passkey verification failed',
+        'PASSKEY_AUTH_SUCCESS' => 'Passkey verified', 'FACE_ID_VERIFIED' => 'Face ID verified', 'PASSKEY_AUTH_FAILURE' => 'Passkey verification failed',
         'PASSKEY_ADDED' => 'Passkey added', 'PASSKEY_REMOVED' => 'Passkey removed',
         'REMOTE_ACCESS_DISABLED' => 'Remote access disabled', 'REMOTE_ACCESS_ENABLED' => 'Remote access enabled',
         'REMOTE_ACCESS_FAILURES' => 'Repeated remote access attempts', 'PASSWORD_CHANGED' => 'Password changed',

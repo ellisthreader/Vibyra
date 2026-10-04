@@ -32,9 +32,8 @@ class ComputerLifecycleTest extends ComputerTestCase
         $this->getJson('/api/cloud-workspaces')->assertOk()->assertJsonCount(0, 'workspaces');
     }
 
-    public function test_get_without_a_computer_and_unauthenticated(): void
+    public function test_wake_without_a_computer_and_unauthenticated(): void
     {
-        $this->getJson('/api/cloud-computer')->assertOk()->assertJsonPath('computer', null)->assertJsonPath('enabled', true);
         $this->withToken('wrong')->getJson('/api/cloud-computer')->assertUnauthorized();
         $this->withToken('cloud-test')->postJson('/api/cloud-computer/wake', ['acceptTerms' => true])->assertStatus(404)->assertJsonPath('code', 'computer_missing');
     }

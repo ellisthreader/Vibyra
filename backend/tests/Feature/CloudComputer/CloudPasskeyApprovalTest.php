@@ -131,8 +131,11 @@ class CloudPasskeyApprovalTest extends ComputerTestCase
         $second = $this->pending($host, bin2hex(random_bytes(32)));
         $this->approve($host, $second['id'], $assertion)->assertStatus(403);
         $this->assertNull(TrustedDevice::where('uuid', $second['id'])->value('approved_at'));
-        // After the window the same approval can no longer connect.
+        // Past the 5-minute window the visit still reconnects (RemoteVisit); once it has been idle for 30 minutes it cannot.
         $this->travel(301)->seconds();
+        DB::table('remote_hosts')->where('host_id', $host)->update(['online_until' => now()->addHour()]);
+        $this->connect($host, $device['id'])->assertOk();
+        $this->travel(31)->minutes();
         DB::table('remote_hosts')->where('host_id', $host)->update(['online_until' => now()->addMinute()]);
         $this->connect($host, $device['id'])->assertStatus(403)->assertJsonPath('code', 'strong_auth_required');
     }

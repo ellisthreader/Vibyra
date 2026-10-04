@@ -24,11 +24,13 @@ class Wake
             app(Wallet::class)->lock($user);
             $w = DB::table('cloud_workspaces')->where('user_id', $user)->where('kind', 'computer')->where('state', '!=', 'deleted')->lockForUpdate()->first();
             if (!$w) Computers::fail('computer_missing', 'Create your cloud computer first.', 404);
+            // A computer made before the phone agreement, or after the agreement was withdrawn or outdated, stays asleep.
+            if (!app(ConnectConsent::class)->connected($user)) Computers::fail('connect_required', 'Connect to the cloud from your iPhone first.', 409);
             if ($w->state === 'starting') return $w->id;
             if ($w->state === 'ready') Computers::fail('already_running', 'Your cloud computer is already running.', 409);
             if (!in_array($w->state, ['stopped', 'archived', 'expired'], true)) Computers::fail('not_stopped', 'Your cloud computer is still stopping. Try again shortly.', 409);
             app(Eligibility::class)->authorize($user, true);
-            if (!$w->terms_accepted_at && empty($o['acceptTerms'])) {
+            if (!$w->terms_accepted_at && empty($o['acceptTerms']) && !app(EnsureComputer::class)->termsCovered($user)) {
                 Computers::fail('terms_required', 'Accept the cloud computer storage and retention terms to wake it for the first time.', 422);
             }
             DB::table('cloud_workspace_control')->where('id', 1)->lockForUpdate()->firstOrFail();

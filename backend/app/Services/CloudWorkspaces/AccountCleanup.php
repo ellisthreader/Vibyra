@@ -8,6 +8,8 @@ final class AccountCleanup
     /** Stop/settle/delete before the account's wallet and source permissions disappear. */
     public function prepare(int $user): void
     {
+        // Sealed sync bundles live on disk, outside the cascade that removes their rows with the account.
+        app(\App\Services\CloudComputer\SyncRetention::class)->purgeUser($user);
         if (!Holds::available()) return;
         foreach (DB::table('cloud_workspaces')->where('user_id', $user)->where('state', '!=', 'deleted')->get() as $w) {
             if (in_array($w->state, Workspaces::ACTIVE, true)) {

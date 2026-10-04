@@ -32,6 +32,7 @@ Route::middleware(['web', RequireApprovedMarket::class])->group(function (): voi
     Route::get('/api/security/devices/{id}', [TrustedRemoteDeviceController::class, 'show'])->whereUuid('id');
     Route::delete('/api/security/devices/{id}', [TrustedRemoteDeviceController::class, 'destroy'])->whereUuid('id')->withoutMiddleware(RequireApprovedMarket::class);
     Route::post('/api/security/devices/{id}/challenge', [TrustedRemoteDeviceController::class, 'challenge'])->whereUuid('id');
+    Route::post('/api/security/devices/{id}/face', [TrustedRemoteDeviceController::class, 'face'])->whereUuid('id')->middleware('throttle:20,1,remote-face');
     Route::get('/api/remote/hosts/{hostId}/devices/pending', [TrustedRemoteDeviceController::class, 'pending']);
     Route::post('/api/remote/hosts/{hostId}/devices/{id}/challenge', [TrustedRemoteDeviceController::class, 'decisionChallenge'])->whereUuid('id');
     Route::post('/api/remote/hosts/{hostId}/devices/{id}/decision', [TrustedRemoteDeviceController::class, 'decide'])->whereUuid('id');

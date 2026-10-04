@@ -25,13 +25,10 @@ class RequireRemoteAccessAuthorization
         if ($device->remote_host_id !== $host->id || ! $device->trusted()) {
             throw new RemoteAccessException('This device has not been approved for this computer.', 403, 'device_not_trusted');
         }
-        $strong = DB::table('remote_strong_auth')->join('passkey_credentials', 'passkey_credentials.id', '=', 'remote_strong_auth.passkey_credential_id')
-            ->where('remote_strong_auth.app_session_id', $session->id)->where('remote_strong_auth.trusted_device_id', $device->id)
-            ->where('passkey_credentials.user_id', $session->user_id)->whereNull('passkey_credentials.revoked_at')
-            ->where('remote_strong_auth.expires_at', '>', now())
-            ->where('remote_strong_auth.verified_at', '>=', now()->subSeconds(min(300, max(1, (int) config('remote_security.strong_auth_seconds', 300)))))
-            ->where('remote_strong_auth.verified_at', '<=', now())->exists();
-        if (! $strong) throw new RemoteAccessException('Verify your passkey before connecting.', 403, 'strong_auth_required');
-        return app(RemoteDeviceProof::class)->consume($session, $device->uuid, 'connect', $request['challengeId'], $request['proof'], $permissions);
+        // One Face ID (or passkey) per visit: see RemoteVisit.
+        if (! app(RemoteVisit::class)->confirmed($session, $device)) throw new RemoteAccessException('Confirm it’s you before connecting.', 403, 'strong_auth_required');
+        $device = app(RemoteDeviceProof::class)->consume($session, $device->uuid, 'connect', $request['challengeId'], $request['proof'], $permissions);
+        app(RemoteVisit::class)->touch($session->id, $device->id);
+        return $device;
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 /**
  * Approves a pending phone of a cloud computer with a fresh passkey assertion instead of the Mac's sealed-box proof.
- * The assertion is a verified `authenticate` ceremony of this app session, account, device, host and generation,
+ * The assertion is a verified `authenticate` (or, for an account's first passkey, `register`) ceremony of this app session, account, device, host and generation,
  * at most 300 s old. Each ceremony can approve one device once; the strong-auth row it wrote stays valid for the
  * immediate connect, so one passkey tap covers approval and connect.
  */
@@ -47,7 +47,7 @@ class DevicePasskeyApproval
             $window = min(300, max(1, (int) config('remote_security.strong_auth_seconds', 300)));
             $ceremony = DB::table('remote_passkey_ceremonies')->where('id', $assertionId)->lockForUpdate()->first();
             if (! $ceremony || (int) $ceremony->user_id !== (int) $session->user_id || (int) $ceremony->app_session_id !== $session->id
-                || (int) $ceremony->trusted_device_id !== $device->id || $ceremony->purpose !== 'authenticate' || $ceremony->verified_at === null
+                || (int) $ceremony->trusted_device_id !== $device->id || ! in_array($ceremony->purpose, ['authenticate', 'register'], true) || $ceremony->verified_at === null
                 || $ceremony->invalidated_at !== null || now()->subSeconds($window)->gt($ceremony->verified_at) || now()->lt($ceremony->verified_at)) {
                 throw $refused();
             }

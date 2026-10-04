@@ -50,10 +50,25 @@ return [
     'stopped_days' => 7,
     // A stopped cloud computer's Fly volume is deleted after this many days (min 7); a warning goes out 3 days before.
     'computer_stopped_days' => max(7, (int) env('CLOUD_COMPUTER_STOPPED_DAYS', 30)),
+    // Signup Terms versions (config/legal.php) whose text covers cloud computer storage and retention. An account that
+    // accepted one of these is not asked again at its first wake. Empty (default) keeps the first-wake consent.
+    // The phone's "Connect to cloud" consent text version. Raising it asks every account to agree again before anything cloud happens.
+    // 2 (2026-10-03): the phone wording also covers conversations, 30-day disk retention and hours/tokens.
+    // 3 (2026-10-04): "only the projects you pick" are kept in Vibyra Cloud (docs/cloud-access-contract.md).
+    'connect_consent_version' => (int) env('CLOUD_CONNECT_CONSENT_VERSION', 3),
+    // "Connect to cloud" needs a Face ID proof from a key registered at sign-in (FaceKeys).
+    'connect_requires_face' => (bool) env('CLOUD_CONNECT_REQUIRES_FACE', true),
+    'computer_terms_versions' => array_filter(array_map('trim', explode(',', (string) env('CLOUD_COMPUTER_TERMS_VERSIONS', '')))),
     'archive_days' => 30,
     'checkpoint_history' => 5,
     'max_file_bytes' => 1048576,
     'max_project_bytes' => 20971520,
     'max_files' => 2000,
+    // Cloud sync (docs/cloud-sync-contract.md): sealed project bundles. A local disk by default; point CLOUD_SYNC_DISK_ROOT at a mounted volume.
+    'sync_disk' => env('CLOUD_SYNC_DISK', 'cloud-sync'),
+    'sync_max_blob_bytes' => (int) env('CLOUD_SYNC_MAX_BLOB_BYTES', 536870912),
+    // Resumable uploads keep their in-progress pieces here (default: the system temp dir).
+    'sync_parts_dir' => env('CLOUD_SYNC_PARTS_DIR'),
+    'sync_quota_bytes' => (int) env('CLOUD_SYNC_QUOTA_BYTES', 5368709120),
     'queue_connection' => env('CLOUD_WORKSPACES_QUEUE_CONNECTION', 'database'),
 ];

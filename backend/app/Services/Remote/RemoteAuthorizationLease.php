@@ -22,6 +22,7 @@ class RemoteAuthorizationLease
         $host = $session->host;
         if (! $host || $host->revoked_at || $host->authorization_generation !== $session->authorization_generation
             || $host->authorization_generation !== $device->authorization_generation) return null;
+        app(RemoteVisit::class)->touch((int) $session->app_session_id, (int) $device->id);
         $now = now()->timestamp;
         return app(RemoteSessionTokens::class)->mint([
             'sessionId' => $session->grant_id, 'jti' => $session->grant_id,

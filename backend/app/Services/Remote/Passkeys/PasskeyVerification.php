@@ -62,7 +62,7 @@ class PasskeyVerification
                 }
                 DB::table('remote_strong_auth')->updateOrInsert(
                     ['app_session_id' => $session->id, 'trusted_device_id' => $device->id],
-                    ['passkey_credential_id' => $credentialId, 'verified_at' => now(),
+                    ['method' => 'passkey', 'passkey_credential_id' => $credentialId, 'verified_at' => now(), 'visit_until' => null,
                         'expires_at' => now()->addSeconds(min(300, max(1, (int) config('remote_security.strong_auth_seconds', 300))))],
                 );
                 DB::table('remote_passkey_ceremonies')->where('id', $flow->id)->update(['verified_at' => now()]);

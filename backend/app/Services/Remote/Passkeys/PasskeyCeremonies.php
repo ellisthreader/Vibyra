@@ -75,7 +75,9 @@ class PasskeyCeremonies
     /** Rechecked at completion while the account row serializes all its registrations. */
     public function assertRegistrationAllowed(VibyraSession $session, object $device): void
     {
-        if ($device->approved_at === null) throw new RemoteAccessException('This device has not been approved for remote access.', 403);
+        if ($device->approved_at === null && ! app(\App\Services\CloudComputer\FirstCloudPasskey::class)->allows($session, $device)) {
+            throw new RemoteAccessException('This device has not been approved for remote access.', 403);
+        }
         $count = DB::table('passkey_credentials')->where('user_id', $session->user_id)->whereNull('revoked_at')->count();
         if ($count > 0 && ! $this->freshAssertion($session, $device)) {
             throw new RemoteAccessException('Verify with an existing passkey before adding another.', 403, 'strong_auth_required');

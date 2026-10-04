@@ -41,6 +41,13 @@ class TrustedRemoteDeviceController extends Controller
         return $this->attempt($request, $session, 'challenge', $id, fn () => $proof->challenge($session, $id, $data['purpose'], $data['permissions'] ?? []));
     }
 
+    public function face(Request $request, \App\Services\Remote\RemoteVisit $visits, RemoteTrustedDevices $devices, string $id): JsonResponse
+    {
+        $session = $this->account($request);
+        $data = $request->validate(['face' => ['required', 'array'], 'face.id' => ['required', 'uuid'], 'face.proof' => ['required', 'string', 'max:64']]);
+        return $this->attempt($request, $session, 'face', $id, fn () => ['device' => $devices->describe($visits->confirmWithFace($session, $id, $data['face']))]);
+    }
+
     public function pending(Request $request, RemoteTrustedDevices $devices, string $hostId): JsonResponse
     {
         $session = $this->account($request);

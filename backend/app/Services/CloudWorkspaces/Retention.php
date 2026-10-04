@@ -46,11 +46,13 @@ final class Retention
                 $w = DB::table('cloud_workspaces')->where('id', $original->id)->lockForUpdate()->firstOrFail();
                 // Never touch a computer that is not plainly stopped, or that never had a Fly resource.
                 if ($w->state !== 'stopped' || $w->retention_deleted_at || !($w->machine_id || $w->volume_id || $w->generation > 0)) return;
+                // The owner withdrew the "Connect to cloud" agreement: the disk holding their code goes as soon as it is stopped.
+                $withdrawn = app(\App\Services\CloudComputer\ConnectConsent::class)->withdrawn((int) $w->user_id);
                 $due = Carbon::parse($w->updated_at)->addDays(max(7, (int) config('cloud_workspaces.computer_stopped_days')));
-                if (now()->gte($due->copy()->subDays(self::WARN_DAYS)) && !$w->retention_warned_at) $warn = [$w, $due];
-                if (now()->lt($due)) return;
+                if (!$withdrawn && now()->gte($due->copy()->subDays(self::WARN_DAYS)) && !$w->retention_warned_at) $warn = [$w, $due];
+                if (!$withdrawn && now()->lt($due)) return;
                 // Never remove a volume silently: a warning must have actually reached the owner at least WARN_DAYS ago.
-                if (!$w->retention_warned_at || now()->lt(Carbon::parse($w->retention_warned_at)->addDays(self::WARN_DAYS))) {
+                if (!$withdrawn && (!$w->retention_warned_at || now()->lt(Carbon::parse($w->retention_warned_at)->addDays(self::WARN_DAYS)))) {
                     if (!$w->retention_warned_at && Cache::add('cloud-retention:undelivered:'.$w->id, 1, 86400)) {
                         Log::warning('cloud.computer.retention_blocked', ['workspace' => $w->id, 'user' => $w->user_id, 'reason' => 'no_delivered_warning']);
                     }
@@ -76,6 +78,8 @@ final class Retention
                 }
             } catch (\Throwable $e) { report($e); }
         }
+        // Whatever the cloud computer held is gone: cloud sync projects start over (full upload) and its sealed bundles are unreadable.
+        if ($removed) { try { app(\App\Services\CloudComputer\SyncRetention::class)->volumeRemoved($original->user_id); } catch (\Throwable $e) { report($e); } }
         if ($removed && $original->remote_host_id) {
             // The old identity must not outlive the volume; waking again binds a fresh one.
             try {

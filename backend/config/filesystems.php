@@ -42,6 +42,13 @@ return [
             'throw' => true,
         ],
 
+        // Sealed cloud-sync bundles (CLOUD_SYNC_DISK_ROOT can point at a mounted volume).
+        'cloud-sync' => [
+            'driver' => 'local',
+            'root' => env('CLOUD_SYNC_DISK_ROOT', storage_path('app/cloud-sync')),
+            'throw' => true,
+        ],
+
         'vibes-attachments' => [
             'driver' => 'local',
             'root' => env('VIBES_ATTACHMENTS_ROOT', storage_path('app/private')),

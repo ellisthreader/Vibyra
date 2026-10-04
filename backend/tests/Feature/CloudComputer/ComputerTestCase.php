@@ -32,6 +32,13 @@ abstract class ComputerTestCase extends CloudTestCase
         $this->hostKeys = sodium_crypto_box_keypair();
         $this->hostId = bin2hex(sodium_crypto_box_publickey($this->hostKeys));
         $this->cid = (string) Str::uuid();
+        $this->consent($this->user->id); // the phone's "Connect to cloud" agreement; ConnectConsentTest starts without it
+    }
+
+    protected function consent(int $user, ?int $version = null): void
+    {
+        DB::table('cloud_connect_consents')->insert(['user_id' => $user, 'version' => $version ?? (int) config('cloud_workspaces.connect_consent_version', 1),
+            'source' => 'phone', 'accepted_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
     }
 
     protected function createComputer(): array

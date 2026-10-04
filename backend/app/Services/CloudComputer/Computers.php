@@ -92,22 +92,24 @@ class Computers
     {
         $enabled = true;
         try { app(Eligibility::class)->authorize($user); } catch (\Symfony\Component\HttpKernel\Exception\HttpException) { $enabled = false; }
-        $w = $this->find($user);
-        if (!$w) return ['enabled' => $enabled, 'computer' => null];
+        $w = $this->find($user); $consent = app(ConnectConsent::class);
+        $link = ['connected' => $consent->connected($user), 'consentVersion' => $consent->current(), 'capacity' => app(AccessCapacity::class)->payload($user)];
+        if (!$w) return ['enabled' => $enabled] + $link + ['computer' => null];
         $host = $w->remote_host_id ? DB::table('remote_hosts')->where('id', $w->remote_host_id)->first() : null;
         $online = $host && !$host->revoked_at && $host->online_until && now()->lt($host->online_until);
         $state = $this->stateOf($w, (bool) $online);
         $up = in_array($state, ['running', 'idle'], true);
         $fresh = $this->isFresh($w);
         $flag = fn ($v) => $up && $v !== null ? (bool) $v : null;
-        return ['enabled' => $enabled, 'computer' => [
+        return ['enabled' => $enabled] + $link + ['computer' => [
             'workspaceId' => $w->id, 'hostId' => $host && !$host->revoked_at ? $host->host_id : null, 'state' => $state, 'online' => (bool) $online,
             'lastActiveAt' => $w->last_activity_at ? \Illuminate\Support\Carbon::parse($w->last_activity_at)->toIso8601String() : null,
             'error' => $state === 'error' ? $this->error($w) : null,
             'sessionsActive' => $fresh ? (int) $w->host_running : 0, 'approvalsWaiting' => $fresh ? (int) $w->host_waiting : 0,
             'login' => ['claude' => $flag($w->login_claude), 'codex' => $flag($w->login_codex)],
             'hours' => app(Hours::class)->summary($user),
-            'projects' => app(Projects::class)->listFor($w),
+            'projects' => app(SyncState::class)->merge($user, app(Projects::class)->listFor($w)),
+            'sync' => app(SyncState::class)->summary($user),
             // removedAt: a long-stopped computer's volume was removed to save space; "set up again" is a normal wake.
             // removeAt: when a stopped computer's volume will be removed.
             'removedAt' => $w->retention_deleted_at ? \Illuminate\Support\Carbon::parse($w->retention_deleted_at)->toIso8601String() : null,

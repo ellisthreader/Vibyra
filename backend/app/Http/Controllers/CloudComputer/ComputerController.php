@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\CloudComputer;
 
 use App\Http\Controllers\{Controller, Concerns\UserPayloads};
-use App\Services\CloudComputer\{Computers, Projects, Wake};
+use App\Services\CloudComputer\{Computers, ConnectConsent, EnsureComputer, Projects, Wake};
 use App\Services\Vibes\Wallet;
 use Illuminate\Http\Request;
 
@@ -15,12 +15,15 @@ final class ComputerController extends Controller
     {
         $user = $this->authenticatedUser($request);
         app(Wallet::class)->ensure($user);
+        // Nothing cloud happens until the phone's "Connect to cloud" agreement; after it, an entitled account just has one.
+        if (app(ConnectConsent::class)->connected($user->id)) app(EnsureComputer::class)->ensure($user->id);
         return $this->state($user->id, $computers);
     }
 
     public function create(Request $request, Computers $computers)
     {
         $user = $this->authenticatedUser($request); app(Wallet::class)->ensure($user);
+        if (!app(ConnectConsent::class)->connected($user->id)) Computers::fail('connect_required', 'Connect to the cloud from your iPhone first.', 409);
         $data = $request->validate(['id' => 'required|uuid', 'name' => 'sometimes|nullable|string|max:120']);
         $computers->create($user->id, $data['id'], isset($data['name']) ? trim($data['name']) : null);
         return $this->state($user->id, $computers);
@@ -44,6 +47,7 @@ final class ComputerController extends Controller
     public function projects(Request $request, Computers $computers, Projects $projects)
     {
         $user = $this->authenticatedUser($request);
+        if (!app(ConnectConsent::class)->connected($user->id)) Computers::fail('connect_required', 'Connect to the cloud from your iPhone first.', 409);
         $data = $request->validate(['name' => ['required', 'string', 'regex:'.Projects::NAME],
             'repo' => ['sometimes', 'nullable', 'string', 'max:200', 'regex:~^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$~', 'not_regex:~(^|/)\.{1,2}(/|$)~'],
             'branch' => ['sometimes', 'nullable', 'string', 'max:200', 'regex:~^(?!-)[A-Za-z0-9._/-]+$~', 'not_regex:~\.\.~']]);

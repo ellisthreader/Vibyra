@@ -84,6 +84,23 @@ class ComputerRetentionTest extends ComputerTestCase
         $this->assertNotNull($this->row()->retention_deleted_at);
     }
 
+    public function test_a_withdrawn_agreement_removes_the_disk_at_once_without_the_warning_wait(): void
+    {
+        $this->stopped(false); // no phone: the normal path could never deliver its warning
+        $this->deleteJson('/api/cloud-computer/connect')->assertOk();
+        $this->reconcile();
+        $this->assertContains('destroy', $this->provider->calls);
+        $this->assertNotNull($this->row()->retention_deleted_at);
+    }
+
+    public function test_an_account_that_never_agreed_keeps_the_normal_wait(): void
+    {
+        $this->stopped();
+        DB::table('cloud_connect_consents')->where('user_id', $this->user->id)->delete();
+        $this->reconcile();
+        $this->assertNotContains('destroy', $this->provider->calls);
+    }
+
     public function test_a_running_or_starting_computer_is_never_deleted(): void
     {
         $this->computerReady();

@@ -74,7 +74,9 @@ class ActivityAndListingTest extends ComputerTestCase
         $this->registerHost($token)->assertOk();
         DB::table('remote_hosts')->where('host_id', $this->hostId)->update(['online_until' => now()->addMinute()]);
         $s = $this->getJson('/api/cloud-computer')->json('computer');
-        $this->assertSame([['name' => 'app', 'repo' => 'me/app', 'branch' => 'main'], ['name' => 'tool', 'repo' => null, 'branch' => null]], $s['projects']);
+        // Cloud sync adds source/syncedAt/syncState to every project (host-only ones are source 'cloud').
+        $cloud = ['source' => 'cloud', 'syncedAt' => null, 'syncState' => null, 'allowed' => false];
+        $this->assertSame([['name' => 'app', 'repo' => 'me/app', 'branch' => 'main'] + $cloud, ['name' => 'tool', 'repo' => null, 'branch' => null] + $cloud], $s['projects']);
         $this->assertSame(['claude' => false, 'codex' => null], $s['login']);
     }
 
