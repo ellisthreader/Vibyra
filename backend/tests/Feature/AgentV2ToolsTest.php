@@ -54,9 +54,11 @@ class AgentV2ToolsTest extends TestCase
 
     public function test_a_connection_without_a_teammate_grant_is_refused(): void
     {
+        // Connected alone never grants: neither the brief nor the task asks for mail (asking does, AgentV2AccessListGrantsTest).
+        \Illuminate\Support\Facades\DB::table('agent_teammates')->where('id', $this->agent['id'])->update(['brief' => 'Keep notes.']);
         $connection = $this->gmailInstall('owner@example.com');
         $this->fakeGmail(['gmail-token-a' => self::INBOX]);
-        $this->admit();
+        $this->admit('What is new today?');
         $claimed = $this->claim();
         $this->assertSame([], $claimed['tools']['tools']);
         $this->callTool($claimed, 'gmail_search', $connection, ['query' => 'x'], 'call-1')->assertOk()

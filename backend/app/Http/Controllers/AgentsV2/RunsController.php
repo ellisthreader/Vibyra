@@ -19,7 +19,7 @@ final class RunsController extends Controller
         if (!app(PlanLimits::class)->allows($user, 'agents'))
             ApiError::throw(402, 'plan_required', \App\Http\Controllers\AgentsController::AGENTS_NEED_PRO);
         $data = $this->admissionInput($request, $user->id);
-        [$run, $created] = $admission->admit($user->id, $data);
+        [$run, $created] = $admission->admit($user->id, $data, askedInApp: true);
         return $this->json(['run' => $runs->payload($run), 'replayed' => !$created], $created ? 201 : 200);
     }
 

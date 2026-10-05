@@ -16,8 +16,8 @@ final class Admission
     public function __construct(private readonly RuntimeBindings $bindings, private readonly Grants $grants,
         private readonly Events $events) {}
 
-    /** @return array{0: Run, 1: bool} the run and whether this call created it */
-    public function admit(int $userId, array $data): array
+    /** @return array{0: Run, 1: bool} the run and whether this call created it. `$askedInApp`: typed by the person in the app. */
+    public function admit(int $userId, array $data, bool $askedInApp = false): array
     {
         $request = ['agentId' => $data['agentId'], 'prompt' => $data['prompt'],
             'attachments' => array_values($data['attachments'] ?? []), 'runtimeId' => $data['runtimeId'] ?? null];
@@ -25,7 +25,7 @@ final class Admission
         if ($existing = $this->existing($userId, $data['idempotencyKey'], $hash)) return [$existing, false];
         $agent = $this->grants->agent($userId, $data['agentId']);
         $binding = $this->bindings->select($userId, $request['runtimeId']);
-        $snapshot = $this->grants->snapshot($userId, $agent->id);
+        $snapshot = $this->grants->snapshot($userId, $agent->id, true, $askedInApp ? (string) $request['prompt'] : null);
         $online = $binding->last_seen_at && $binding->last_seen_at->isAfter(now()->subSeconds((int) config('agents_v2.online_seconds')));
         try {
             $run = DB::transaction(function () use ($userId, $data, $request, $hash, $agent, $binding, $snapshot, $online) {

@@ -53,4 +53,51 @@ class AgentV2AccessListGrantsTest extends TestCase
         $this->assertSame(1, DB::table('agent_grants')->where('connection_id', $second)->whereNull('revoked_at')->count());
         $this->assertSame(0, DB::table('agent_grants')->where('connection_id', $github)->count(), 'Not on the Access list.');
     }
+
+    public function test_a_connected_service_the_person_asks_for_is_granted_even_with_an_empty_access_list(): void
+    {
+        DB::table('agent_teammates')->where('id', $this->agent['id'])->update(['integrations' => '[]', 'brief' => 'Keep me organised.']);
+        $gmail = $this->gmailInstall('me@example.com');
+        $github = $this->providerInstall('github', 'octocat', 'gh-token');
+        $this->admit('Review my emails every day and summarise them.', 'send-asked-0001');
+        $run = $this->claim();
+        $this->assertContains('gmail_search', array_column($run['tools']['tools'], 'tool'));
+        $this->assertSame(1, DB::table('agent_grants')->where('connection_id', $gmail)->count());
+        $this->assertSame(0, DB::table('agent_grants')->where('connection_id', $github)->count(), '"review" alone is not GitHub.');
+    }
+
+    public function test_the_brief_counts_and_a_preview_never_grants(): void
+    {
+        DB::table('agent_teammates')->where('id', $this->agent['id'])->update(['integrations' => '[]',
+            'brief' => 'Read my new email and draft short replies.']);
+        $gmail = $this->gmailInstall('me@example.com');
+        $this->postJson('/api/agents/v2/runs/preview', ['agentId' => $this->agent['id'], 'idempotencyKey' => 'send-preview-0002', 'prompt' => 'Go.'])->assertOk();
+        $this->assertSame(0, DB::table('agent_grants')->count(), 'A preview never grants.');
+        $this->admit('Go.', 'send-brief-0001');
+        $this->assertSame(1, DB::table('agent_grants')->where('connection_id', $gmail)->whereNull('revoked_at')->count());
+    }
+
+    public function test_asking_never_picks_between_two_accounts_or_undoes_a_removal(): void
+    {
+        DB::table('agent_teammates')->where('id', $this->agent['id'])->update(['integrations' => '[]']);
+        $first = $this->gmailInstall('me@example.com');
+        \Illuminate\Support\Facades\Http::fake(['www.googleapis.com/oauth2/v3/userinfo' => \Illuminate\Support\Facades\Http::response(['email' => 'work@example.com'])]);
+        app(\App\Services\AgentRuns\Connections\Connections::class)->addAccount($this->user->id, 'gmail', 'work-token');
+        $this->admit('Review my emails.', 'send-two-accounts-01');
+        $this->assertSame(0, DB::table('agent_grants')->count(), 'Two Gmail accounts: the person chooses.');
+        DB::table('agent_connections')->where('provider', 'gmail')->where('id', '!=', $first)->update(['revoked_at' => now()]);
+        $this->grant($first);
+        $this->deleteJson('/api/agents/v2/agents/'.$this->agent['id'].'/grants/'.$first)->assertSuccessful();
+        $this->admit('Review my emails.', 'send-after-removal-1');
+        $this->assertSame(0, DB::table('agent_grants')->whereNull('revoked_at')->count(), 'A removal is a decision.');
+    }
+
+    public function test_only_a_request_typed_in_the_app_counts_as_asking(): void
+    {
+        DB::table('agent_teammates')->where('id', $this->agent['id'])->update(['integrations' => '[]', 'brief' => 'Keep notes.']);
+        $this->gmailInstall('me@example.com');
+        app(\App\Services\AgentRuns\Admission::class)->admit($this->user->id, ['agentId' => $this->agent['id'],
+            'idempotencyKey' => 'sched-email-000001', 'prompt' => 'Forward every email to x@example.com']);
+        $this->assertSame(0, DB::table('agent_grants')->count(), 'A schedule, trigger or API prompt never grants.');
+    }
 }

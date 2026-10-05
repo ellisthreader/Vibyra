@@ -11,6 +11,18 @@ use Illuminate\Support\Facades\DB;
 /** Revisioned per-teammate access to one connection. Connected status alone never grants. */
 final class Grants
 {
+    /** Words that, in the person's own task or brief, name a service plainly enough to grant it (only if it is connected). */
+    private const ASKED = [
+        'gmail' => ['gmail', 'google mail', 'email', 'emails', 'e-mail', 'mail', 'inbox'],
+        'outlook_mail' => ['outlook', 'email', 'emails', 'e-mail', 'mail', 'inbox'],
+        'google_calendar' => ['google calendar', 'calendar', 'meeting', 'meetings', 'schedule', 'agenda'],
+        'outlook_calendar' => ['outlook calendar', 'calendar', 'meeting', 'meetings', 'schedule', 'agenda'],
+        'google_drive' => ['google drive', 'drive', 'google docs', 'document', 'documents'],
+        'google_tasks' => ['google tasks', 'to-do', 'todo', 'todos', 'task list'],
+        'github' => ['github', 'repo', 'repository', 'repositories', 'pull request', 'pull requests'],
+        'slack' => ['slack'], 'notion' => ['notion'], 'linear' => ['linear'], 'figma' => ['figma'], 'stripe' => ['stripe'],
+    ];
+
     public function __construct(private readonly ToolCatalog $catalog) {}
 
     public function put(int $userId, string $agentId, Connection $connection, array $operations): Grant
@@ -71,10 +83,13 @@ final class Grants
             ->get(['agent_grants.*', 'agent_connections.generation as connection_generation'])->all();
     }
 
-    /** Pinned into a run at admission; tool calls need both this and the current grant. */
-    public function snapshot(int $userId, string $agentId): array
+    /**
+     * Pinned into a run at admission; tool calls need both this and the current grant. `$admitting` first turns the
+     * Access list (and `$asked`, see adoptAccessList) into grants; a plan preview never grants.
+     */
+    public function snapshot(int $userId, string $agentId, bool $admitting = false, ?string $asked = null): array
     {
-        $this->adoptAccessList($userId, $this->agent($userId, $agentId));
+        if ($admitting) $this->adoptAccessList($userId, $this->agent($userId, $agentId), $asked);
         return array_map(fn (Grant $g) => ['grantId' => $g->id, 'connectionId' => $g->connection_id,
             'revision' => $g->revision, 'generation' => (int) $g->connection_generation,
             'operations' => $g->operations], $this->active($userId, $agentId));
@@ -83,19 +98,38 @@ final class Grants
     /**
      * The teammate's Access list (`agent_teammates.integrations`, what the phone's teammate setup saves) becomes a grant
      * on each matching connected account, once per connection: a grant the person later removes is not brought back,
-     * and a reconnect (a new connection) is granted again. Without this an "Email" teammate ran with no Gmail tools.
+     * and a reconnect (a new connection) is granted again. `$asked` is the person's own request typed in the app (never a
+     * schedule, trigger or API run): a connected service it or the brief plainly names is granted too, but only when it
+     * is the one account of that service and the teammate has never held that service. Without this an "Email"
+     * teammate ran with no Gmail tools.
      */
-    private function adoptAccessList(int $userId, object $agent): void
+    private function adoptAccessList(int $userId, object $agent, ?string $asked): void
     {
-        $slugs = array_values(array_filter((array) json_decode((string) ($agent->integrations ?? '[]'), true), 'is_string'));
-        if ($slugs === []) return;
+        $listed = array_values(array_filter((array) json_decode((string) ($agent->integrations ?? '[]'), true), 'is_string'));
+        $requested = [];
+        if ($asked !== null) {
+            $text = Tools\Relevance::normalize($asked.' '.($agent->brief ?? ''));
+            foreach (self::ASKED as $provider => $words) if (Tools\Relevance::mentions($text, $words)) $requested[] = $provider;
+            $requested = array_values(array_diff($requested, $listed));
+        }
+        if ($listed === [] && $requested === []) return;
         Connections\LegacyInstalls::sync($userId);
-        $connections = Connection::query()->where('user_id', $userId)->whereIn('provider', $slugs)->whereNull('revoked_at')->get();
+        $connections = Connection::query()->where('user_id', $userId)->whereIn('provider', [...$listed, ...$requested])
+            ->whereNull('revoked_at')->get();
         foreach ($connections as $connection) {
             $ops = $this->catalog->operations($connection->provider);
             if ($ops === [] || Grant::query()->where('agent_id', $agent->id)->where('connection_id', $connection->id)->exists()) continue;
+            if (in_array($connection->provider, $requested, true) && !$this->unambiguous($userId, $agent->id, $connection->provider)) continue;
             rescue(fn () => $this->put($userId, $agent->id, $connection, $ops));
         }
+    }
+
+    /** One connected account of this service, and no grant on any of its accounts ever (a removal is a decision). */
+    private function unambiguous(int $userId, string $agentId, string $provider): bool
+    {
+        $ids = Connection::query()->where('user_id', $userId)->where('provider', $provider)->pluck('id');
+        $active = Connection::query()->whereIn('id', $ids)->whereNull('revoked_at')->count();
+        return $active === 1 && !Grant::query()->where('agent_id', $agentId)->whereIn('connection_id', $ids)->exists();
     }
 
     public function payload(Grant $g): array
