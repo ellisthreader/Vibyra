@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import PhoneWaitlist from "../PhoneWaitlist.jsx";
 import { Icon } from "../shared.jsx";
-import PocketDemo from "./PocketDemo.jsx";
+import PreviewTour from "./PreviewTour.jsx";
 
-export default function PocketDialog({ kind, onClose, opener: invokingElement }) {
+export default function PocketDialog({ kind, onClose, onWaitlist, opener: invokingElement }) {
     const dialog = useRef(null);
     const preview = kind === "preview";
     useEffect(() => {
@@ -26,11 +26,11 @@ export default function PocketDialog({ kind, onClose, opener: invokingElement })
     return (
         <dialog ref={dialog} className={`pocket-dialog ${preview ? "is-preview" : ""}`}
             aria-labelledby="pocket-dialog-title" onCancel={onClose} onClick={backdrop}>
-            <div className="pocket-dialog-head">
-                <h3 id="pocket-dialog-title">{preview ? "Build from your pocket." : "Your next desk. Your pocket."}</h3>
-                <button type="button" onClick={onClose} aria-label="Close mobile dialog"><Icon name="close" size={22} /></button>
-            </div>
-            {preview ? <PocketDemo /> : <>
+            {preview ? <PreviewTour onClose={onClose} onWaitlist={onWaitlist} /> : <>
+                <div className="pocket-dialog-head">
+                    <h3 id="pocket-dialog-title">Your next desk. Your pocket.</h3>
+                    <button type="button" onClick={onClose} aria-label="Close mobile dialog"><Icon name="close" size={22} /></button>
+                </div>
                 <p className="pocket-dialog-intro">Coming October 2026. Join the list for the iPhone launch.</p>
                 <PhoneWaitlist />
             </>}

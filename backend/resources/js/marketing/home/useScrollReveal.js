@@ -5,7 +5,7 @@ const blocks = [
     ".agent-heading", ".agent-flow",
     ".film-section .home-section-heading", ".film-frame",
     ".workspace-section .home-section-heading", ".wk-card",
-    ".pocket-scene", ".eco-head", ".eco-cell", ".fx-foot",
+    ".pk-heading", ".cmp-heading", ".cmp-scroll", ".eco-head", ".eco-cell", ".fx-foot",
     ".pricing-layout", ".qa-intro", ".qa-list",
     ".footer-cta", ".footer-grid", ".footer-bottom",
 ].join(", ");

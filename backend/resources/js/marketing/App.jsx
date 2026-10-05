@@ -5,6 +5,7 @@ import Film from "./home/Film.jsx";
 import Desktop from "./home/Desktop.jsx";
 import Mobile from "./home/Mobile.jsx";
 import Ecosystem from "./home/Ecosystem.jsx";
+import Comparison from "./home/Comparison.jsx";
 import Plans from "./home/Plans.jsx";
 import Questions from "./home/Questions.jsx";
 import useIdleSections from "./home/useIdleSections.js";
@@ -31,6 +32,7 @@ export default function App() {
                 <Desktop />
                 <Mobile />
                 <Ecosystem />
+                <Comparison />
                 <Plans />
                 <Questions />
             </main>

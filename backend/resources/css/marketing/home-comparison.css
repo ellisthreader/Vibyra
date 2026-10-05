@@ -1,0 +1,93 @@
+/* #compare: features down the side, Vibyra as one lit column. The chart is a
+ * CSS grid so the glow can span every row behind the Vibyra cells. */
+.marketing-home-cinematic .cmp-section { --cmp-blue: #8aa2ff; --cmp-rule: #ffffff12; --cmp-cols: minmax(150px, 1.5fr) repeat(5, minmax(108px, 1fr)); position: relative; }
+.marketing-home-cinematic .cmp-section.section-space { padding-top: calc(var(--site-space) * .35); }
+.marketing-home-cinematic .cmp-heading > p { max-width: 62ch; }
+.marketing-home-cinematic .cmp-heading-accent { background: linear-gradient(92deg, #b4c3ff, #6f8dff 55%, #a9bbff); -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+
+.cmp-scroll { max-width: 980px; margin: 0 auto; overflow-x: auto; scrollbar-width: thin; }
+.cmp-scroll:focus-visible { outline: 2px solid #8eabff; outline-offset: 4px; border-radius: 12px; }
+.cmp-chart { position: relative; isolation: isolate; display: grid; grid-template-columns: var(--cmp-cols); min-width: 700px; padding-bottom: 20px; }
+.cmp-row { display: contents; }
+.cmp-row > * { position: relative; z-index: 1; display: grid; place-items: center; align-content: center; min-height: 60px; padding: 0 10px; border-top: 1px solid var(--cmp-rule); text-align: center; }
+.cmp-row > .cmp-feature { justify-items: start; padding-left: 0; color: var(--site-text); font-size: 15.5px; font-weight: 500; text-align: left; }
+
+/* Column heads */
+.cmp-head > * { min-height: 96px; align-content: end; padding-bottom: 18px; border-top: 0; }
+.cmp-head b { color: var(--site-text); font-size: 15px; font-weight: 600; letter-spacing: -.01em; line-height: 1.25; }
+.cmp-head small { display: block; margin-top: 3px; color: #6d7482; font-size: 12px; line-height: 1.35; }
+.cmp-brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+
+/* The lit column */
+.cmp-glow { position: absolute; inset: 0; grid-column: 2 / 3; grid-row: 1 / auto; z-index: 0; border-radius: 26px; background: linear-gradient(180deg, #5b7cfa3d, #5b7cfa14 60%, #5b7cfa08); box-shadow: inset 0 0 0 1px #7f9bff4d, 0 30px 80px -30px #5b7cfaa6; pointer-events: none; }
+.cmp-row > .cmp-lit { border-top-color: #7f9bff1f; }
+.cmp-head > .cmp-lit { border-top: 0; }
+.cmp-tick { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--cmp-blue); color: #0b0d14; box-shadow: 0 0 18px #7f9bff8c; }
+.cmp-tick svg { stroke-width: 3; }
+
+/* Rival marks */
+.cmp-yes { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #ffffff17; color: #c3c9d6; }
+.cmp-yes svg { stroke-width: 3; }
+.cmp-no { display: block; width: 12px; height: 2px; border-radius: 2px; background: #ffffff24; }
+.cmp-soon { padding: 2px 8px; border: 1px solid #c3c9d64d; border-radius: 99px; color: var(--site-muted); font-size: 11px; font-weight: 600; }
+.cmp-row:not(.cmp-head):hover > * { background-color: #ffffff04; }
+.cmp-row:not(.cmp-head):hover > .cmp-lit { background-color: transparent; }
+
+/* Totals */
+.cmp-total > * { min-height: 64px; color: var(--site-text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cmp-total > .cmp-feature { color: var(--site-muted); font-weight: 500; }
+.cmp-total > .cmp-lit { color: #c9d4ff; font-size: 18px; }
+
+/* Entrance: the column lights, then the ticks land top to bottom. */
+@media (prefers-reduced-motion: no-preference) {
+  .cmp-chart .cmp-glow { transition: opacity 1s ease, transform 1.2s cubic-bezier(.16, 1, .3, 1); }
+  .cmp-chart .cmp-tick { transition: opacity .4s ease, transform .6s cubic-bezier(.16, 1, .3, 1); }
+  .cmp-chart .cmp-row:nth-child(3) .cmp-tick { transition-delay: .25s; }
+  .cmp-chart .cmp-row:nth-child(4) .cmp-tick { transition-delay: .31s; }
+  .cmp-chart .cmp-row:nth-child(5) .cmp-tick { transition-delay: .37s; }
+  .cmp-chart .cmp-row:nth-child(6) .cmp-tick { transition-delay: .43s; }
+  .cmp-chart .cmp-row:nth-child(7) .cmp-tick { transition-delay: .49s; }
+  .cmp-chart .cmp-row:nth-child(8) .cmp-tick { transition-delay: .55s; }
+  .cmp-chart .cmp-row:nth-child(9) .cmp-tick { transition-delay: .61s; }
+  .cmp-chart .cmp-row:nth-child(10) .cmp-tick { transition-delay: .67s; }
+  .cmp-chart .cmp-row:nth-child(11) .cmp-tick { transition-delay: .73s; }
+  [data-scroll-reveal="pending"] .cmp-glow { opacity: 0; transform: translateY(24px); }
+  [data-scroll-reveal="pending"] .cmp-tick { opacity: 0; transform: scale(.5); }
+}
+
+.cmp-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; max-width: 980px; margin: 8px auto 0; }
+.marketing-home .cmp-foot p { color: #6d7482; font-size: 13px; }
+.marketing-home .cmp-more { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 1px solid #ffffff1f; border-radius: 999px; background: #ffffff08; color: var(--site-text); font-size: 14px; font-weight: 600; transition: background .2s, border-color .2s; }
+.marketing-home .cmp-more:hover { border-color: #ffffff38; background: #ffffff10; }
+.cmp-more svg { transform: rotate(90deg); transition: transform .3s ease; }
+.cmp-more[aria-expanded="true"] svg { transform: rotate(-90deg); }
+
+/* The full snapshot: names and quiet dots. */
+.cmp-grid { max-width: 980px; margin: 28px auto 0; animation: cmp-open .5s cubic-bezier(.16, 1, .3, 1); }
+.cmp-grid-scroll { overflow-x: auto; scrollbar-width: thin; }
+.cmp-grid-scroll:focus-visible { outline: 2px solid #8eabff; outline-offset: 4px; border-radius: 8px; }
+.cmp-grid table { width: 100%; min-width: 760px; border-collapse: collapse; }
+.cmp-grid th, .cmp-grid td { height: 46px; padding: 0 6px; border-top: 1px solid var(--cmp-rule); text-align: center; }
+.cmp-grid thead th { height: 56px; padding-bottom: 12px; border-top: 0; color: var(--site-muted); font-size: 11.5px; font-weight: 500; line-height: 1.25; vertical-align: bottom; }
+.cmp-grid thead th span { display: inline-block; max-width: 80px; }
+.cmp-grid th[scope="row"], .cmp-grid thead th:first-child { width: 190px; padding-left: 4px; text-align: left; }
+.cmp-grid th[scope="row"] a { display: block; color: var(--site-text); font-size: 14px; font-weight: 500; text-decoration: none; }
+.cmp-grid th[scope="row"] a:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.cmp-grid th[scope="row"] small { display: block; color: #6d7482; font-size: 11px; font-weight: 400; white-space: nowrap; }
+.cmp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ffffff14; }
+.cmp-dot.is-yes { background: #c4cad6; }
+.cmp-dot.is-soon { background: none; box-shadow: inset 0 0 0 1.5px #c4cad6; }
+.cmp-legend { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 16px; color: #6d7482; font-size: 12.5px; }
+.cmp-legend span { display: inline-flex; align-items: center; gap: 8px; }
+@keyframes cmp-open { from { opacity: 0; transform: translateY(-8px); } }
+
+.cmp-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Phones: the feature names stay pinned while the rivals scroll. */
+@media (max-width: 760px) {
+  .marketing-home-cinematic .cmp-section { --cmp-cols: 128px repeat(5, 104px); }
+  .cmp-chart { min-width: 0; width: max-content; }
+  .cmp-row > .cmp-feature { position: sticky; left: 0; z-index: 2; padding-right: 8px; background: var(--home-dark, #0e0f12); font-size: 14px; }
+  .cmp-head b { font-size: 13.5px; }
+  .cmp-brand { font-size: 16px; }
+}

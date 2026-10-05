@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-DZl3EskF.css",
+    "file": "assets/app-LxxGP2fU.css",
     "name": "app",
     "names": [
       "app.css"
@@ -54,7 +54,7 @@
     "isEntry": true
   },
   "resources/css/marketing.css": {
-    "file": "assets/marketing-BlR2SEAQ.css",
+    "file": "assets/marketing-BRqg1A1o.css",
     "name": "marketing",
     "names": [
       "marketing.css"
@@ -81,7 +81,7 @@
     ]
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-DfyWp3Jw.js",
+    "file": "assets/app-DGVWRxJi.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -89,11 +89,11 @@
       "_jsx-runtime-BVko9UzU.js"
     ],
     "css": [
-      "assets/app-DZl3EskF.css"
+      "assets/app-LxxGP2fU.css"
     ]
   },
   "resources/js/benchmarks.jsx": {
-    "file": "assets/benchmarks-C1w-cOcP.js",
+    "file": "assets/benchmarks-L1Rlp9W3.js",
     "name": "benchmarks",
     "src": "resources/js/benchmarks.jsx",
     "isEntry": true,
@@ -104,11 +104,11 @@
     ],
     "css": [
       "assets/benchmarks-QUHRGWaQ.css",
-      "assets/marketing-BlR2SEAQ.css"
+      "assets/marketing-BRqg1A1o.css"
     ]
   },
   "resources/js/downloads.jsx": {
-    "file": "assets/downloads-BXxoKGhI.js",
+    "file": "assets/downloads-C77SNWP9.js",
     "name": "downloads",
     "src": "resources/js/downloads.jsx",
     "isEntry": true,
@@ -121,11 +121,11 @@
     ],
     "css": [
       "assets/downloads-MbXSnXmE.css",
-      "assets/marketing-BlR2SEAQ.css"
+      "assets/marketing-BRqg1A1o.css"
     ]
   },
   "resources/js/marketing.jsx": {
-    "file": "assets/marketing-BA2zd7IO.js",
+    "file": "assets/marketing-DVQ0qxwk.js",
     "name": "marketing",
     "src": "resources/js/marketing.jsx",
     "isEntry": true,
@@ -137,8 +137,8 @@
       "_analyticsChoice-CuYmE2bM.js"
     ],
     "css": [
-      "assets/marketing-CDv-2xuG.css",
-      "assets/marketing-BlR2SEAQ.css"
+      "assets/marketing-B_TKtPD6.css",
+      "assets/marketing-BRqg1A1o.css"
     ]
   },
   "resources/js/portal.jsx": {

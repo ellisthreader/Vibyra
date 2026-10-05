@@ -61,9 +61,6 @@
 
 @import './marketing/home-pocket.css';
 
-@import './marketing/home-pocket-artwork.css';
-@import './marketing/home-pocket-phone.css';
 
-@import './marketing/home-pocket-workspace.css';
 
-@import "./marketing/home-pocket-link.css";
+@import "./marketing/home-pocket-tour.css";
