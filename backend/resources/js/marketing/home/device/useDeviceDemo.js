@@ -20,9 +20,15 @@ export function useDeviceDemo() {
     const [sessionId, setSessionId] = useState("s1");
     const [sessions, setSessions] = useState(seedSessions);
     const [tool, setTool] = useState("preview");
-    const [dockOpen, setDockOpen] = useState(true);
+    const [dockOpen, setDockOpen] = useState(() => typeof window === "undefined" || window.innerWidth > 700);
     const [dockWidth, setDockWidthState] = useState(380);
     const [sidebarOpen, setSidebarOpen] = useState(() => typeof window === "undefined" || window.innerWidth > 700);
+    useEffect(() => {
+        const compact = window.matchMedia("(max-width: 700px)");
+        const fit = () => { if (compact.matches) { setSidebarOpen(false); setDockOpen(false); } };
+        compact.addEventListener("change", fit);
+        return () => compact.removeEventListener("change", fit);
+    }, []);
     const [zoomedId, setZoomedId] = useState(null);
     const [pausedIds, setPausedIds] = useState([]);
     const [size, setSize] = useState("compact");
@@ -92,6 +98,7 @@ export function useDeviceDemo() {
         }));
         setSessionId(id);
         setMode("code");
+        if (window.innerWidth <= 700) { setSidebarOpen(false); setDockOpen(false); }
         setNotice(`${agent.name} started in this sample workspace.`);
     };
 

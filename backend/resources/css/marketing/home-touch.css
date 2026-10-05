@@ -1,0 +1,46 @@
+/* Phone-sized interactive workspace: one readable pane, with touch-sized chrome.
+   Keep this after the desktop shell sheets; never scale text down to fit a phone. */
+@media (max-width: 700px) {
+  .hero-showcase .vdev { height: 540px; --chrome-h: 52px; }
+  .hero-showcase .vdev.vdev .vdev-brand { width: 44px; min-width: 44px; padding: 0; border: 0; }
+  .hero-showcase .vdev .vdev-traffic-lights { display: none; }
+  .hero-showcase .vdev .vdev-sidebar-show { margin: 0; }
+  .hero-showcase .vdev .vdev-mode-switch { position: static; transform: none; margin: 0; gap: 0; }
+  .hero-showcase .vdev .vdev-mode-switch button { min-height: 44px; padding-inline: 10px; }
+  .hero-showcase .vdev .vdev-right { gap: 0; padding-right: 2px; }
+  .hero-showcase .vdev .vdev-icon-btn { width: 44px; height: 44px; }
+  .hero-showcase .vdev .vdev-rail { width: 100%; }
+  .hero-showcase .vdev .vdev-shell:has(> .vdev-rail) > :is(.vdev-workspace, .vdev-home),
+  .hero-showcase .vdev .vdev-workspace:has(> .vdev-dock) > .vdev-stage { display: none; }
+  .hero-showcase .vdev .vdev-project-row,
+  .hero-showcase .vdev .vdev-session-open { min-height: 44px; font-size: 14px; }
+  .hero-showcase .vdev .vdev-session-close { opacity: 1; }
+  .hero-showcase .vdev .vdev-pane-title strong { font-size: 13px; }
+  .hero-showcase .vdev .vdev-pane-title small,
+  .hero-showcase .vdev .vdev-pane-state { display: none; }
+  .hero-showcase .vdev .vdev-term { font-size: 13px; line-height: 1.7; padding: 12px; }
+  .hero-showcase .vdev .vdev-cli { font-size: 12px; }
+  .hero-showcase .vdev :is(input, textarea, select) { font-size: 16px; }
+  .hero-showcase .vdev .vdev-term-input { min-height: 44px; align-items: center; }
+  .hero-showcase .vdev .vdev-dock { position: absolute; inset: var(--chrome-h) 0 0; width: 100%; min-width: 0; border: 0; }
+  .hero-showcase .vdev .vdev-dock-head { padding-inline: 4px; gap: 0; }
+  .hero-showcase .vdev .vdev-dock-tabs { overflow-x: auto; border: 0; padding: 0; gap: 0; }
+  .hero-showcase .vdev .vdev-dock-tabs button { min-height: 44px; padding-inline: 9px; font-size: 12px; }
+  .hero-showcase .vdev .vdev-dock-expand,
+  .hero-showcase .vdev .vdev-dock-grip { display: none; }
+  .hero-showcase .vdev .vdev-flow-backdrop { padding: 8px; }
+  .hero-showcase .vdev .vdev-flow > header { padding-inline: 12px; }
+  .hero-showcase .vdev .vdev-flow > header button { min-width: 44px; min-height: 44px; }
+  .hero-showcase .vdev .vdev-demo-label { display: none; }
+  .marketing-home :is(.qa-ask-row textarea, .pocket-dialog input) { font-size: 16px; }
+  .marketing-home .home-footer nav a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media (max-width: 360px) {
+  .hero-showcase .vdev .vdev-mode-switch button { padding-inline: 6px; font-size: 12px; }
+  .hero-showcase .vdev .vdev-pane-actions { gap: 0; }
+  .hero-showcase .vdev .vdev-pane-actions .vdev-icon-btn { width: 36px; }
+}
+
+@media (max-width: 800px) {
+  .mobile-nav { max-height: calc(100dvh - 66px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+}

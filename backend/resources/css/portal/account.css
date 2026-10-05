@@ -125,3 +125,10 @@
 @media (max-width: 640px) { .portal-page--account .portal-main { padding-top: 45px; }.account-jump { gap: 5px; margin-bottom: 60px; overflow-x: auto; white-space: nowrap; }.account-jump a { padding: 10px 12px; font-size: 12px; }.account-membership, .account-downloads, .account-setup { margin-bottom: 80px; }.account-section-head { align-items: start; flex-direction: column; gap: 14px; }.account-download-grid { grid-template-columns: 1fr; }.account-download-card { min-height: 245px; }.account-membership-main { min-height: 320px; padding: 24px; }.account-membership-plan { display: block; margin-top: 38px; }.account-membership-plan p { margin-top: 10px; }.account-setup-stage { min-height: 0; }.account-connection-art { height: 280px; min-height: 0; margin: 16px 0 0 5px; }.account-setup-copy { padding: 0 25px 26px; }.account-phone-availability { grid-template-columns: 1fr; gap: 22px; padding: 23px; } }
 @media (max-width: 390px) { .account-identity .portal-link-button { margin-left: 2px; }.account-art-desktop { width: 67%; }.account-art-phone { right: 1%; }.account-phone-availability .phone-waitlist-row { flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .signup-welcome-mark, .account-connection-art.is-visible .account-art-desktop, .account-connection-art.is-visible .account-art-phone, .account-connection-art.is-visible .account-art-signal { animation: none; } }
+
+/* Keep every account destination visible on phones. */
+@media (max-width: 640px) {
+    .account-jump { display: flex; flex-wrap: wrap; overflow: visible; white-space: normal; }
+    .account-jump a { display: inline-flex; align-items: center; min-height: 44px; }
+    .portal-page--account :is(input:not([type="checkbox"]), textarea, select) { font-size: 16px; }
+}

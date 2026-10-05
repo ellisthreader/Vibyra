@@ -137,3 +137,8 @@
 @media (prefers-reduced-transparency: reduce) {
     .auth-card { background: #121317; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+@media (max-width: 640px) {
+    .auth-card :is(input:not([type="checkbox"]), textarea, select) { font-size: 16px; }
+    .auth-declarations label { min-height: 44px; }
+}

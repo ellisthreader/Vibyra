@@ -45,3 +45,11 @@
   .benchmarks-page .bm-vs-bar.is-b { grid-area: bb; }
   .benchmarks-page .bm-vs-rows li > .bm-vs-val:last-child { grid-area: vb; }
 }
+
+/* Four views must fit small phones without widening the whole document. */
+@media (max-width: 640px) {
+  .benchmarks-page .bm-views { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+  .benchmarks-page .bm-views button { min-width: 0; min-height: 44px; font-size: 13px; }
+  .benchmarks-page :is(.bm-picker select, .bm-select-label select) { font-size: 16px; }
+  .benchmarks-page .bm-segment button { min-height: 44px; }
+}
