@@ -74,9 +74,28 @@ final class Grants
     /** Pinned into a run at admission; tool calls need both this and the current grant. */
     public function snapshot(int $userId, string $agentId): array
     {
+        $this->adoptAccessList($userId, $this->agent($userId, $agentId));
         return array_map(fn (Grant $g) => ['grantId' => $g->id, 'connectionId' => $g->connection_id,
             'revision' => $g->revision, 'generation' => (int) $g->connection_generation,
             'operations' => $g->operations], $this->active($userId, $agentId));
+    }
+
+    /**
+     * The teammate's Access list (`agent_teammates.integrations`, what the phone's teammate setup saves) becomes a grant
+     * on each matching connected account, once per connection: a grant the person later removes is not brought back,
+     * and a reconnect (a new connection) is granted again. Without this an "Email" teammate ran with no Gmail tools.
+     */
+    private function adoptAccessList(int $userId, object $agent): void
+    {
+        $slugs = array_values(array_filter((array) json_decode((string) ($agent->integrations ?? '[]'), true), 'is_string'));
+        if ($slugs === []) return;
+        Connections\LegacyInstalls::sync($userId);
+        $connections = Connection::query()->where('user_id', $userId)->whereIn('provider', $slugs)->whereNull('revoked_at')->get();
+        foreach ($connections as $connection) {
+            $ops = $this->catalog->operations($connection->provider);
+            if ($ops === [] || Grant::query()->where('agent_id', $agent->id)->where('connection_id', $connection->id)->exists()) continue;
+            rescue(fn () => $this->put($userId, $agent->id, $connection, $ops));
+        }
     }
 
     public function payload(Grant $g): array
