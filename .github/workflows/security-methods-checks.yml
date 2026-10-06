@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 2
       - name: Verify tested backend is unchanged from release candidate
         working-directory: .
-        run: git diff --exit-code HEAD^ HEAD -- backend
+        run: test "$(git rev-parse HEAD:backend)" = "8496bcaf7e85f9d40df816723ab7024d85927be9"
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
@@ -37,9 +37,8 @@ jobs:
           node-version: '22'
       - name: Prepare isolated application
         run: |
-          cp .env.example .env
+          php -r 'file_put_contents(".env", "APP_ENV=testing\nAPP_KEY=base64:".base64_encode(random_bytes(32))."\nAPP_URL=http://localhost\n");'
           composer install --no-interaction --prefer-dist --no-progress
-          php artisan key:generate
       - name: Build website assets
         run: |
           npm ci
