@@ -51,6 +51,60 @@ class CloudOperationsTest extends CloudTestCase
         $this->assertSame('vol', $mounted);
         $this->assertSame('destroyed', $provider->inspect((object) array_merge((array) $w, ['machine_id' => 'stale'])));
     }
+    public function test_a_full_fly_server_moves_the_disk_then_starts_on_the_copy(): void
+    {
+        $id = $this->imported(); $this->start($id); $w = app(Workspaces::class)->owned($this->user->id, $id);
+        $volumes = [['id' => 'old', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20, 'attached_machine_id' => null]];
+        $full = true; $forks = []; $deleted = []; $mounted = null;
+        Http::fake(function ($request) use ($w, &$volumes, &$full, &$forks, &$deleted, &$mounted) {
+            $url = $request->url(); $method = $request->method();
+            if (str_contains($url, '?org_slug=')) return Http::response(['apps' => [['name' => $w->app_name, 'network' => $w->app_name]]]);
+            if (str_ends_with($url, '/volumes') && $method === 'GET') return Http::response($volumes);
+            if (str_ends_with($url, '/volumes') && $method === 'POST') {
+                $forks[] = $request->data(); $copy = ['id' => 'new', 'name' => 'project', 'region' => 'lhr', 'state' => 'hydrating', 'encrypted' => true, 'size_gb' => 20];
+                $volumes[] = $copy; return Http::response($copy);
+            }
+            if (str_contains($url, '/volumes/') && $method === 'DELETE') {
+                $gone = basename(parse_url($url, PHP_URL_PATH)); $deleted[] = $gone;
+                $volumes = array_map(fn ($v) => $v['id'] === $gone ? ['state' => 'pending_destroy'] + $v : $v, $volumes); return Http::response([]);
+            }
+            if (str_ends_with($url, '/machines') && $method === 'GET') return Http::response([]);
+            if (str_ends_with($url, '/machines') && $method === 'POST') {
+                if ($full) return Http::response(['error' => "insufficient resources to create new machine with existing volume 'old'", 'status' => 'volume_placement_capacity'], 412);
+                $mounted = $request->data()['config']['mounts'][0]['volume']; return Http::response(['id' => 'machine', 'state' => 'created']);
+            }
+            return Http::response(['name' => $w->app_name]);
+        });
+        $provider = app(FlyProvider::class);
+        $attempt = function () use ($provider, $w) { try { return $provider->configure($w); } catch (\RuntimeException $e) { return $e->getMessage(); } };
+        // Fly is full next to the disk: one copy is requested on another server, and the start retries later.
+        $this->assertStringContainsString('moving', $attempt()); $this->assertStringContainsString('moving', $attempt());
+        $this->assertCount(1, $forks);
+        $this->assertSame(['old', true, 2], [$forks[0]['source_volume_id'], $forks[0]['require_unique_zone'], $forks[0]['compute']['cpus']]);
+        // Still copying: no machine yet, nothing deleted.
+        $full = false;
+        $this->assertStringContainsString('still moving', $attempt()); $this->assertNull($mounted); $this->assertSame([], $deleted);
+        // Copied: the original goes and the machine mounts the copy.
+        $volumes[1]['state'] = 'created';
+        $this->assertSame(['machine' => 'machine', 'volume' => 'new'], $attempt());
+        $this->assertSame(['old'], $deleted); $this->assertSame('new', $mounted);
+    }
+    public function test_two_project_disks_without_a_recorded_move_are_never_removed(): void
+    {
+        $id = $this->imported(); $this->start($id); $w = app(Workspaces::class)->owned($this->user->id, $id); $deleted = 0;
+        Http::fake(function ($request) use ($w, &$deleted) {
+            $url = $request->url();
+            if (str_contains($url, '?org_slug=')) return Http::response(['apps' => [['name' => $w->app_name, 'network' => $w->app_name]]]);
+            if (str_ends_with($url, '/volumes')) return Http::response([
+                ['id' => 'a', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20],
+                ['id' => 'b', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20]]);
+            if ($request->method() === 'DELETE') $deleted++;
+            return Http::response(['name' => $w->app_name]);
+        });
+        try { app(FlyProvider::class)->configure($w); $this->fail('expected a refusal'); }
+        catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame('Multiple project disks need reconciliation.', $e->getMessage()); }
+        $this->assertSame(0, $deleted);
+    }
     public function test_failed_runway_renewal_keeps_existing_hold_until_shutdown_confirmation(): void
     {
         $id = $this->imported(); [, $token] = $this->ready($id); $this->travel(5)->seconds();

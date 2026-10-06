@@ -1,10 +1,13 @@
 <?php
 namespace App\Services\CloudWorkspaces;
 
-use Illuminate\Support\Facades\{Crypt, Http};
+use Illuminate\Support\Facades\{Cache, Crypt, Http};
 
 final class FlyProvider implements CloudWorkspaceProvider
 {
+    /** Cache key (per workspace) of a project disk being copied to a Fly server with room: `{from, to}` volume ids. */
+    private const MOVE = 'cloud-disk-move:';
+
     public function preflight(): void
     {
         abort_unless(config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org')
@@ -17,12 +20,16 @@ final class FlyProvider implements CloudWorkspaceProvider
             abort_unless(in_array(config('cache.default'), ['database', 'redis'], true), 503, 'Cloud provisioning requires shared resource locks.');
         }
     }
-    private function call(string $method, string $path, ?array $body = null, bool $missing = false): mixed
+    private function send(string $method, string $path, ?array $body = null): \Illuminate\Http\Client\Response
     {
         try {
-            $r = Http::withToken(config('cloud_workspaces.fly_token'))->acceptJson()->connectTimeout(5)->timeout(12)
+            return Http::withToken(config('cloud_workspaces.fly_token'))->acceptJson()->connectTimeout(5)->timeout(12)
                 ->send($method, config('cloud_workspaces.fly_url').$path, $body === null ? [] : ['json' => $body]);
         } catch (\Throwable) { throw new \RuntimeException('Fly operation outcome is unknown; reconcile before retrying.'); }
+    }
+    private function call(string $method, string $path, ?array $body = null, bool $missing = false): mixed
+    {
+        $r = $this->send($method, $path, $body);
         if ($missing && $r->status() === 404) return null;
         if (!$r->successful()) throw new \RuntimeException('Fly request was not confirmed (status '.$r->status().').');
         return $r->json() ?? [];
@@ -39,8 +46,7 @@ final class FlyProvider implements CloudWorkspaceProvider
         // A destroyed disk stays listed (pending_destroy) for a while; it is not a second project disk.
         $matching = array_values(array_filter($volumes, fn ($v) => ($v['name'] ?? null) === 'project' && ($v['region'] ?? null) === $w->region
             && !in_array($v['state'] ?? '', ['pending_destroy', 'destroying', 'destroyed'], true)));
-        abort_if(count($matching) > 1, 503, 'Multiple project disks need reconciliation.');
-        $volume = $matching[0] ?? $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region,
+        $volume = $this->projectVolume($w, $path, $matching) ?? $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region,
             'size_gb' => config('cloud_workspaces.volume_gib'), 'encrypted' => true, 'snapshot_retention' => 5,
             'compute' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096]]);
         abort_unless(is_string($volume['id'] ?? null) && ($volume['encrypted'] ?? false) === true
@@ -56,7 +62,7 @@ final class FlyProvider implements CloudWorkspaceProvider
             abort_unless(in_array($machine['state'] ?? '', ['stopped', 'destroyed'], true), 503, 'The previous cloud computer has not stopped.');
             if ($machine['state'] !== 'destroyed') $this->call('DELETE', $path.'/machines/'.$machine['id']);
         }
-        $machine = $this->call('POST', $path.'/machines', ['name' => 'workspace-'.$w->generation, 'region' => $w->region,
+        $r = $this->send('POST', $path.'/machines', ['name' => 'workspace-'.$w->generation, 'region' => $w->region,
             'config' => ['image' => config('cloud_workspaces.image'), 'guest' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096],
                 'restart' => ['policy' => 'no'], 'auto_destroy' => false, 'services' => [],
                 'mounts' => [['volume' => $volume['id'], 'path' => '/data']],
@@ -64,8 +70,44 @@ final class FlyProvider implements CloudWorkspaceProvider
                 'env' => ['VIBYRA_API_ORIGIN' => config('cloud_workspaces.api_origin'), 'VIBYRA_WORKSPACE_ID' => $w->id,
                     'VIBYRA_GENERATION' => (string) $w->generation, 'VIBYRA_BOOTSTRAP' => Crypt::decryptString($w->bootstrap_secret),
                     'VIBYRA_LEASE_PUBLIC_KEY' => app(Leases::class)->publicKey()]]]);
+        // The Fly server holding the disk has no room for the machine: move the disk, and a later reconcile starts it there.
+        if ($r->status() === 412 && $r->json('status') === 'volume_placement_capacity') {
+            $this->moveDisk($w, $path, $volume);
+            throw new \RuntimeException('No room next to the project disk; it is moving to a Fly server with room.');
+        }
+        if (!$r->successful()) throw new \RuntimeException('Fly request was not confirmed (status '.$r->status().').');
+        $machine = $r->json() ?? [];
         abort_unless(is_string($machine['id'] ?? null), 503, 'Fly machine creation was not confirmed.');
         return ['machine' => $machine['id'], 'volume' => $volume['id']];
+    }
+    /**
+     * The project disk to mount (null: none yet). Two live ones are only expected while moveDisk copies the disk to a
+     * server with room: the copy is used once Fly has filled it, and the original is removed once no machine holds it.
+     * Any other pair waits for an operator; a disk is never removed on a guess.
+     */
+    private function projectVolume(object $w, string $path, array $live): ?array
+    {
+        if (count($live) <= 1) {
+            if (($live[0]['state'] ?? '') === 'hydrating') throw new \RuntimeException('The project disk is still being copied; retry shortly.');
+            return $live[0] ?? null;
+        }
+        $move = Cache::get(self::MOVE.$w->id); $by = array_column($live, null, 'id');
+        abort_unless(count($live) === 2 && is_array($move) && isset($by[$move['from'] ?? ''], $by[$move['to'] ?? '']), 503, 'Multiple project disks need reconciliation.');
+        $copy = $by[$move['to']]; $original = $by[$move['from']];
+        if (($copy['state'] ?? '') !== 'created') throw new \RuntimeException('The project disk is still moving to a Fly server with room; retry shortly.');
+        // A stopped predecessor may still hold the original: it is removed below, and the original on the next start.
+        if (empty($original['attached_machine_id'])) { $this->call('DELETE', $path.'/volumes/'.$original['id']); Cache::forget(self::MOVE.$w->id); }
+        return $copy;
+    }
+    /** Copies the project disk to a Fly server with room for the machine (Fly fills the copy in the background). */
+    private function moveDisk(object $w, string $path, array $volume): void
+    {
+        if ((Cache::get(self::MOVE.$w->id)['from'] ?? null) === $volume['id']) return; // already moving
+        $copy = $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region, 'source_volume_id' => $volume['id'],
+            'require_unique_zone' => true, 'compute' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096]]);
+        abort_unless(is_string($copy['id'] ?? null) && ($copy['encrypted'] ?? false) === true
+            && ($copy['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib'), 503, 'The moved project disk could not be verified.');
+        Cache::put(self::MOVE.$w->id, ['from' => $volume['id'], 'to' => $copy['id']], now()->addDays(7));
     }
     public function inspect(object $w): string
     {
