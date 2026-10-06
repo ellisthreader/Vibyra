@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\CloudComputer\{AccessController, ComputerController, ConnectController, FaceController, RepoController, RuntimeController, SyncBlobController, SyncController, SyncLoginController, SyncPartController, SyncRuntimeController};
+use App\Http\Controllers\CloudComputer\{AccessController, ComputerController, ConnectController, FaceController, MacConnectController, RepoController, RuntimeController, SyncBlobController, SyncController, SyncLoginController, SyncPartController, SyncRuntimeController};
 use App\Http\Middleware\RequireApprovedMarket;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\{RateLimiter, Route};
@@ -10,6 +10,7 @@ Route::prefix('api/cloud-computer')->middleware('throttle:120,1,cloud-computer-r
     Route::get('/', [ComputerController::class, 'show']);
     Route::post('/', [ComputerController::class, 'create'])->middleware([RequireApprovedMarket::class, 'throttle:6,1,cloud-computer-create']);
     Route::post('connect', ConnectController::class)->middleware([RequireApprovedMarket::class, 'throttle:6,1,cloud-computer-connect']);
+    Route::post('connect/mac', MacConnectController::class)->middleware([RequireApprovedMarket::class, 'throttle:6,1,cloud-computer-connect']);
     Route::post('face-key', [FaceController::class, 'enroll'])->middleware('throttle:6,1,cloud-computer-face-key');
     Route::post('face-challenge', [FaceController::class, 'challenge'])->middleware('throttle:20,1,cloud-computer-face-challenge');
     Route::delete('connect', [ConnectController::class, 'revoke'])->middleware('throttle:6,1,cloud-computer-connect');

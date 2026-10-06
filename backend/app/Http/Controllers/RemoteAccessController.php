@@ -37,7 +37,7 @@ class RemoteAccessController extends Controller
     public function challenge(Request $request, \App\Services\Remote\RemoteIdentityProof $proof): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        $data = $request->validate(['hostId' => self::HOST_ID, 'action' => ['required', 'in:register,transfer']]);
+        $data = $request->validate(['hostId' => self::HOST_ID, 'action' => ['required', 'in:register,transfer,cloud-connect']]);
         return $this->attempt(fn () => $proof->challenge($user, $this->authenticatedSession($request)->id, $data['hostId'], $data['action']))
             ->header('Cache-Control', 'no-store');
     }
