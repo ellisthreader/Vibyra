@@ -27,7 +27,7 @@ final class LiveStatusController extends Controller
     {
         $this->ready();
         $user = $this->authenticatedUser($r);
-        $row = ['key' => 'required|string|max:120', 'title' => 'required|string|max:200', 'project' => 'nullable|string|max:200'];
+        $row = ['key' => 'required|string|max:120', 'title' => 'required|string|max:200', 'project' => 'nullable|string|max:200', 'agent' => 'nullable|string|max:40'];
         $d = $r->validate([
             'name' => 'required|string|max:120',
             'attention' => 'present|array|max:6', 'working' => 'present|array|max:6', 'recent' => 'present|array|max:3',
@@ -35,7 +35,7 @@ final class LiveStatusController extends Controller
             'recent.*.key' => 'required|string|max:120', 'recent.*.title' => 'required|string|max:200', 'recent.*.outcome' => 'required|in:done,failed',
         ]);
         $clean = fn (array $rows) => array_map(fn ($x) => ['key' => Card::text($x['key'], 120), 'title' => Card::text($x['title'], 40),
-            'project' => Card::text($x['project'] ?? '', 28)], $rows);
+            'project' => Card::text($x['project'] ?? '', 28), 'agent' => Card::agent($x['agent'] ?? '') ?? ''], $rows);
         $snap = ['attention' => $clean($d['attention']), 'working' => $clean($d['working']),
             'recent' => array_map(fn ($x) => ['key' => Card::text($x['key'], 120), 'title' => Card::text($x['title'], 40), 'outcome' => $x['outcome']], $d['recent'])];
         $busy = $snap['attention'] || $snap['working'];

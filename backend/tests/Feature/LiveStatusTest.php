@@ -38,9 +38,11 @@ final class LiveStatusTest extends TestCase
 
     public function test_the_card_state_matches_the_swift_contract(): void
     {
-        $s = Card::state(['attention' => [['key' => 't:1', 'title' => 'Claude', 'project' => 'Vibyra']], 'working' => [['key' => 't:2', 'title' => 'Codex', 'project' => '']]], 1_800_000_000);
+        $s = Card::state(['attention' => [['key' => 't:1', 'title' => 'Fix login', 'project' => 'Vibyra', 'agent' => 'claude']], 'working' => [['key' => 't:2', 'title' => 'Tests', 'project' => '', 'agent' => 'codex']]], 1_800_000_000);
         $this->assertSame(['sessions' => 2, 'throughCloud' => false, 'checkedAt' => 1_800_000_000 - 978307200, 'working' => 1, 'needs' => 1,
-            'phase' => 'needs', 'headline' => 'Claude', 'project' => 'Vibyra'], $s);
+            'phase' => 'needs', 'headline' => 'Fix login', 'project' => 'Vibyra', 'agent' => 'claude', 'others' => ['codex']], $s);
+        $this->assertSame('Claude needs you', Card::alert($s)['title']);
+        $this->assertSame('claudecode', Card::agent('Claude-Code/../'));
         $this->assertSame('idle', Card::state([], 0)['phase']);
         $this->assertLessThan(4096, strlen(json_encode(Card::start($s, str_repeat('M', 200), 0))));
     }
@@ -58,14 +60,15 @@ final class LiveStatusTest extends TestCase
 
         // The phone reports the card's own token; from now on updates go there.
         $this->putJson('/api/live-status/v1/phone', ['installId' => 'phone-1', 'cardToken' => $this->card], $auth)->assertOk();
-        $this->postJson('/api/live-status/v1/mac', $this->snap([['key' => 't:1', 'title' => 'Claude', 'project' => 'Vibyra']]), $auth)->assertOk();
+        $this->postJson('/api/live-status/v1/mac', $this->snap([['key' => 't:1', 'title' => 'Claude', 'project' => 'Vibyra', 'agent' => 'claude']]), $auth)->assertOk();
         Http::assertSent(fn ($r) => str_contains($r->url(), $this->card) && $r['aps']['event'] === 'update'
+            && $r['aps']['content-state']['agent'] === 'claude'
             && $r['aps']['content-state']['phase'] === 'needs' && $r['aps']['alert']['title'] === 'Claude needs you'
             && $r->header('apns-priority')[0] === '10');
 
         // The same waiting item again: no second alert, and nothing changed so nothing is sent.
         $sent = count(Http::recorded());
-        $this->postJson('/api/live-status/v1/mac', $this->snap([['key' => 't:1', 'title' => 'Claude', 'project' => 'Vibyra']]), $auth)->assertOk();
+        $this->postJson('/api/live-status/v1/mac', $this->snap([['key' => 't:1', 'title' => 'Claude', 'project' => 'Vibyra', 'agent' => 'claude']]), $auth)->assertOk();
         $this->assertSame($sent, count(Http::recorded()));
 
         // Quiet past the idle window: the card ends.

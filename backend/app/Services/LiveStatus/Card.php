@@ -17,6 +17,7 @@ final class Card
         $needs = array_values($snap['attention'] ?? []);
         $busy = array_values($snap['working'] ?? []);
         $top = $needs[0] ?? $busy[0] ?? null;
+        $rest = array_slice(array_merge($needs, $busy), 1);
         return [
             'sessions' => count($needs) + count($busy),
             'throughCloud' => false,
@@ -26,6 +27,8 @@ final class Card
             'phase' => $needs ? 'needs' : ($busy ? 'working' : 'idle'),
             'headline' => $top ? self::text($top['title'] ?? '', 40) : null,
             'project' => $top && ($top['project'] ?? '') !== '' ? self::text($top['project'], 28) : null,
+            'agent' => $top ? self::agent($top['agent'] ?? '') : null,
+            'others' => array_values(array_filter(array_map(fn ($r) => self::agent($r['agent'] ?? ''), array_slice($rest, 0, 3)))),
         ];
     }
 
@@ -45,7 +48,8 @@ final class Card
 
     public static function alert(array $state): array
     {
-        $who = $state['headline'] ?? 'An agent';
+        $name = ['claude' => 'Claude', 'codex' => 'Codex', 'gemini' => 'Gemini'][$state['agent'] ?? ''] ?? null;
+        $who = $name ?? $state['headline'] ?? 'An agent';
         return ['title' => "$who needs you", 'body' => $state['project'] ? 'In '.$state['project'].'. Open Vibyra to answer.' : 'Open Vibyra to answer.',
             'sound' => 'default'];
     }
@@ -74,6 +78,13 @@ final class Card
     public static function end(array $state, int $now): array
     {
         return ['aps' => ['timestamp' => $now, 'event' => 'end', 'content-state' => $state, 'dismissal-date' => $now]];
+    }
+
+    /** Lower-case letters only: it can only ever name a logo. Null when empty. */
+    public static function agent(mixed $value): ?string
+    {
+        $id = strtolower(substr((string) preg_replace('/[^a-z]/i', '', (string) $value), 0, 16));
+        return $id === '' ? null : $id;
     }
 
     /** One printable line, bounded. */
