@@ -11,6 +11,8 @@
 return [
     'enabled' => (bool) env('LIVE_STATUS_ENABLED', false),
     'topic' => env('LIVE_ACTIVITY_TOPIC', 'app.vibyra.mobile.push-type.liveactivity'),
+    // Ordinary alert notifications (push type `alert`) go to the bare bundle id.
+    'alert_topic' => env('APNS_ALERT_TOPIC', 'app.vibyra.mobile'),
     'attributes_type' => 'VibyraComputerAttributes',
     'apns' => [
         'key_id' => env('APNS_KEY_ID'),

@@ -8,16 +8,16 @@ use Illuminate\Support\Str;
  * Agent V2 run hooks -> inbox item + per-device outbox rows. `record` runs from
  * RunEvent::created, i.e. inside the journal append's transaction, so an event
  * and its deliveries commit or roll back together. Nothing private is copied:
- * titles are fixed strings and the destination holds only ids.
+ * titles are the teammate's name plus a fixed state, and the destination holds only ids.
  */
 final class AgentRunNotifications
 {
-    /** hook => [work phase, preference category, generic title, kind] */
+    /** hook => [work phase, preference category, title after the teammate's name, kind] */
     private const HOOKS = [
-        'run.completed' => ['agent_completed', 'replies', 'Your teammate finished', 'completed'],
-        'run.waiting_approval' => ['agent_approval', 'attention', 'Your teammate needs approval', 'approval'],
-        'run.waiting_signin' => ['agent_signin', 'attention', 'Your teammate needs you to sign in', 'signin'],
-        'run.failed' => ['agent_failed', 'attention', 'Your teammate could not finish', 'failed'],
+        'run.completed' => ['agent_completed', 'replies', 'finished', 'completed'],
+        'run.waiting_approval' => ['agent_approval', 'attention', 'needs your approval', 'approval'],
+        'run.waiting_signin' => ['agent_signin', 'attention', 'needs you to sign in', 'signin'],
+        'run.failed' => ['agent_failed', 'failures', 'couldn\'t finish', 'failed'],
     ];
 
     public static function enabled(): bool
@@ -42,9 +42,13 @@ final class AgentRunNotifications
         $expires = $kind === 'approval'
             ? (DB::table('agent_tool_actions')->where('id', $actionId)->value('expires_at') ?? now()->addMinutes(15))
             : now()->addDay();
+        $name = \App\Services\LiveStatus\Card::text(DB::table('agent_teammates')->where('id', $run->agent_id)
+            ->where('user_id', $run->user_id)->value('name') ?? '', 60);
         $itemId = (string) Str::uuid();
         DB::table('notification_items')->insert(['id' => $itemId, 'user_id' => $run->user_id, 'event_id' => $workEvent,
-            'category' => $category, 'title' => $title, 'created_at' => now(), 'expires_at' => $expires,
+            'category' => $category, 'title' => ($name !== '' ? $name : 'Your teammate').' '.$title, 'body' => 'Agents',
+            'thread' => 'agent:'.$run->id, 'level' => $category === 'attention' ? 'time-sensitive' : 'active',
+            'created_at' => now(), 'expires_at' => $expires,
             'destination' => json_encode(['source' => 'agent_run', 'runId' => $run->id, 'agentId' => $run->agent_id,
                 'conversationId' => $run->conversation_id, 'kind' => $kind])]);
         $ids = [];

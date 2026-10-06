@@ -26,7 +26,7 @@ class AgentV2NotificationTest extends TestCase
         $this->travelTo(now()->startOfSecond());
         $this->bootV2();
         Queue::fake();
-        config(['agents_v2.notifications' => true, 'intelligence.inbox' => true, 'intelligence.push' => true,
+        config(['agents_v2.notifications' => true, 'intelligence.inbox' => true, 'intelligence.push' => true, 'intelligence.expo_token' => 'test-expo-token',
             'intelligence.expo_project' => '00000000-0000-4000-8000-000000000001']);
     }
 
@@ -55,7 +55,7 @@ class AgentV2NotificationTest extends TestCase
         $device = $this->device();
         [$run, $action] = $this->pendingApproval();
         $item = DB::table('notification_items')->where('user_id', $this->user->id)->sole();
-        $this->assertSame('Your teammate needs approval', $item->title);
+        $this->assertSame('Inbox needs your approval', $item->title);
         $this->assertSame('attention', $item->category);
         $this->assertSame(['source' => 'agent_run', 'runId' => $run['id'], 'agentId' => $this->agent['id'],
             'conversationId' => $run['conversationId'], 'kind' => 'approval'], json_decode($item->destination, true));
@@ -94,7 +94,7 @@ class AgentV2NotificationTest extends TestCase
             $json = json_encode($r->data());
             foreach (['Secret', 'Confidential', 'private-recipient', 'owner@example.com', $run['id'], $action['id'], $this->agent['id']] as $private)
                 if (str_contains($json, $private)) return false;
-            return $r['title'] === 'Your teammate needs approval' && $r['data'] === ['version' => 1, 'notificationId' => $item->id];
+            return $r['title'] === 'Inbox needs your approval' && $r['data'] === ['version' => 1, 'notificationId' => $item->id];
         });
     }
 
@@ -128,6 +128,17 @@ class AgentV2NotificationTest extends TestCase
         $this->withToken('intruder')->getJson('/api/notifications/v1/inbox/'.$id)->assertNotFound();
     }
 
+    public function test_failed_run_is_a_failure_named_after_the_teammate(): void
+    {
+        $this->device();
+        [$run] = $this->pendingApproval();
+        DB::table('notification_items')->delete();
+        app(Events::class)->append(Run::query()->findOrFail($run['id']), 'run.failed', ['code' => 'x']);
+        $item = DB::table('notification_items')->sole();
+        $this->assertSame(['failures', "Inbox couldn't finish", 'Agents', 'agent:'.$run['id'], 'active'],
+            [$item->category, $item->title, $item->body, $item->thread, $item->level]);
+    }
+
     public function test_completed_run_notifies_replies(): void
     {
         $this->admit('Summarize.');
@@ -135,7 +146,7 @@ class AgentV2NotificationTest extends TestCase
         $this->postJson($this->runnerPath('/runs/'.$claimed['id'].'/complete'), ['generation' => $claimed['generation'],
             'answer' => 'Private answer.'], $this->runnerHeaders())->assertOk();
         $item = DB::table('notification_items')->sole();
-        $this->assertSame(['replies', 'Your teammate finished'], [$item->category, $item->title]);
+        $this->assertSame(['replies', 'Inbox finished'], [$item->category, $item->title]);
         $this->assertStringNotContainsString('Private', $item->destination);
     }
 

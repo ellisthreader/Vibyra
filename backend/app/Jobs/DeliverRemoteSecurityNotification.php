@@ -3,11 +3,11 @@
 namespace App\Jobs;
 
 use App\Models\User;
-use App\Services\Notifications\Devices;
+use App\Services\Notifications\{Devices, PhonePush};
 use App\Services\Remote\SecurityEvents;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\{Crypt, DB, Http, Mail};
+use Illuminate\Support\Facades\{DB, Mail};
 use Illuminate\Support\Str;
 
 /** Never includes screen, terminal, clipboard, key or token content. */
@@ -55,17 +55,10 @@ class DeliverRemoteSecurityNotification implements ShouldQueue
             if (! config('intelligence.push') || ! $device || $device->generation !== $delivery->generation || ! app(Devices::class)->eligible($device)) {
                 $this->done('suppressed'); return;
             }
-            $response = Http::withToken((string) config('intelligence.expo_token'))->acceptJson()->timeout(10)
-                ->post('https://exp.host/--/api/v2/push/send', ['to' => Crypt::decryptString($device->token), 'title' => $title,
-                    'body' => 'Open Vibyra to review remote access.', 'sound' => 'default', 'priority' => 'high', 'ttl' => 300,
-                    'data' => ['version' => 1, 'securityEventId' => $event->uuid]]);
+            $result = app(PhonePush::class)->security($device, $title, (string) $event->uuid, (int) $delivery->generation);
             if (! $this->claimed()->exists()) return;
-            if ($response->status() === 429 || $response->serverError()) throw new \RuntimeException('Security notification delivery unavailable');
-            if (! $response->successful() || $response->json('data.status') !== 'ok') {
-                if ($response->json('data.details.error') === 'DeviceNotRegistered') DB::table('notification_devices')->where('id', $device->id)
-                    ->where('generation', $delivery->generation)->update(['revoked_at' => now()]);
-                $this->done('failed'); return;
-            }
+            if ($result['state'] === 'retry') throw new \RuntimeException('Security notification delivery unavailable');
+            if ($result['state'] !== 'accepted') { $this->done($result['state'] === 'suppressed' ? 'suppressed' : 'failed'); return; }
         }
         $this->done('accepted');
     }

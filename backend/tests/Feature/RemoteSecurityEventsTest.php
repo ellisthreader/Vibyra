@@ -34,7 +34,7 @@ class RemoteSecurityEventsTest extends TestCase
     public function test_push_is_metadata_only_and_duplicate_job_does_not_send_twice(): void
     {
         Queue::fake(); Mail::fake();
-        config(['remote_security.email_notifications' => false, 'intelligence.push' => true, 'intelligence.expo_project' => 'test-project', 'intelligence.environment' => 'test']);
+        config(['remote_security.email_notifications' => false, 'intelligence.push' => true, 'intelligence.expo_token' => 'test-expo-token', 'intelligence.expo_project' => 'test-project', 'intelligence.environment' => 'test']);
         $session = $this->account('phone');
         app(Devices::class)->register($session, ['projectId' => 'test-project', 'environment' => 'test',
             'installation' => (string) Str::uuid(), 'proof' => str_repeat('p', 32), 'token' => 'ExponentPushToken[test]']);
@@ -49,7 +49,7 @@ class RemoteSecurityEventsTest extends TestCase
     public function test_revoked_push_recipient_and_expired_alert_are_suppressed(): void
     {
         Queue::fake(); Http::fake();
-        config(['remote_security.email_notifications' => false, 'intelligence.push' => true, 'intelligence.expo_project' => 'p', 'intelligence.environment' => 'test']);
+        config(['remote_security.email_notifications' => false, 'intelligence.push' => true, 'intelligence.expo_token' => 'test-expo-token', 'intelligence.expo_project' => 'p', 'intelligence.environment' => 'test']);
         $session = $this->account('phone');
         $device = app(Devices::class)->register($session, ['projectId' => 'p', 'environment' => 'test', 'installation' => (string) Str::uuid(), 'proof' => 'proof', 'token' => 'ExponentPushToken[test]']);
         $event = app(SecurityEvents::class)->record($session->user_id, 'REMOTE_SESSION_STARTED');
@@ -61,7 +61,7 @@ class RemoteSecurityEventsTest extends TestCase
     public function test_phone_warning_is_queued_before_email_and_email_survives_disabled_push(): void
     {
         Queue::fake();
-        config(['remote_security.email_notifications' => true, 'intelligence.push' => true,
+        config(['remote_security.email_notifications' => true, 'intelligence.push' => true, 'intelligence.expo_token' => 'test-expo-token',
             'intelligence.expo_project' => 'p', 'intelligence.environment' => 'test']);
         $session = $this->account('phone');
         app(Devices::class)->register($session, ['projectId' => 'p', 'environment' => 'test',

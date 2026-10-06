@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UserPayloads;
-use App\Services\LiveStatus\{Card, Pusher};
+use App\Services\LiveStatus\{Card, MacEvents, Pusher};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Crypt, DB};
 use Illuminate\Support\Str;
@@ -39,10 +39,20 @@ final class LiveStatusController extends Controller
         $snap = ['attention' => $clean($d['attention']), 'working' => $clean($d['working']),
             'recent' => array_map(fn ($x) => ['key' => Card::text($x['key'], 120), 'title' => Card::text($x['title'], 40), 'outcome' => $x['outcome']], $d['recent'])];
         $busy = $snap['attention'] || $snap['working'];
-        $existing = DB::table('live_status_snapshots')->where('user_id', $user->id)->first();
-        DB::table('live_status_snapshots')->updateOrInsert(['user_id' => $user->id], [
-            'mac_name' => Card::text($d['name'], 64) ?: 'Your Mac', 'snapshot' => json_encode($snap),
-            'busy_at' => $busy ? now() : ($existing->busy_at ?? null), 'created_at' => $existing->created_at ?? now(), 'updated_at' => now()]);
+        $macName = Card::text($d['name'], 64) ?: 'Your Mac';
+        // The row lock serialises two reports from one account, so each change is announced once.
+        DB::transaction(function () use ($user, $snap, $busy, $macName) {
+            $existing = DB::table('live_status_snapshots')->where('user_id', $user->id)->lockForUpdate()->first();
+            // Its own savepoint: a notification fault never costs the Live Activity its snapshot.
+            try {
+                DB::transaction(fn () => app(MacEvents::class)->record($user->id, $existing, $snap, $macName));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+            DB::table('live_status_snapshots')->updateOrInsert(['user_id' => $user->id], [
+                'mac_name' => $macName, 'snapshot' => json_encode($snap),
+                'busy_at' => $busy ? now() : ($existing->busy_at ?? null), 'created_at' => $existing->created_at ?? now(), 'updated_at' => now()]);
+        });
         $this->deliverLater($user->id);
         return $this->privateJson(['ok' => true, 'phones' => DB::table('live_status_phones')->where('user_id', $user->id)->count()]);
     }

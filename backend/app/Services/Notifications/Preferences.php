@@ -11,14 +11,14 @@ final class Preferences
     public function payload(int $user): array
     {
         $p = $this->get($user);
-        return ['revision' => $p->revision, 'attention' => (bool) $p->attention, 'replies' => (bool) $p->replies,
+        return ['revision' => $p->revision, 'attention' => (bool) $p->attention, 'replies' => (bool) $p->replies, 'failures' => (bool) $p->failures,
             'smart' => (bool) $p->smart, 'advisories' => (bool) $p->advisories, 'timezone' => $p->timezone,
             'quietStart' => $p->quiet_start, 'quietEnd' => $p->quiet_end];
     }
     public function save(int $user, array $data): array
     {
         $this->get($user);
-        $update = array_intersect_key($data, array_flip(['attention', 'replies', 'smart', 'advisories', 'timezone']));
+        $update = array_intersect_key($data, array_flip(['attention', 'replies', 'failures', 'smart', 'advisories', 'timezone']));
         foreach (['quietStart' => 'quiet_start', 'quietEnd' => 'quiet_end'] as $key => $column) {
             if (array_key_exists($key, $data)) $update[$column] = $data[$key];
         }

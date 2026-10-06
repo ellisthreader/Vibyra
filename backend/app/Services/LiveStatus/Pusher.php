@@ -24,14 +24,26 @@ final class Pusher
         $over = $state['phase'] === 'idle' && $quietFor > 60 * (int) config('live_status.idle_end_minutes');
         foreach (DB::table('live_status_phones')->where('user_id', $userId)->get() as $phone) {
             try {
-                $this->toPhone($phone, $state, $snap, (string) $row->mac_name, $over, $now);
+                $this->toPhone($phone, $state, $snap, (string) $row->mac_name, $over, $now, $this->notifiedElsewhere($userId, $phone));
             } catch (\Throwable) {
                 // One phone's failure never blocks another, and never fails the Mac's request.
             }
         }
     }
 
-    private function toPhone(object $phone, array $state, array $snap, string $macName, bool $over, int $now): void
+    /**
+     * The same iPhone gets an ordinary "needs you" notification for Mac work: then the card stays a
+     * silent status (no alert on updates, no sound on push-to-start) so one event never buzzes twice.
+     */
+    private function notifiedElsewhere(int $userId, object $phone): bool
+    {
+        if (!MacEvents::enabled() || !config('intelligence.push')) return false;
+        if (!DB::table('notification_preferences')->where('user_id', $userId)->value('attention')) return false;
+        return DB::table('notification_devices')->where('user_id', $userId)->where('provider', 'apns')
+            ->where('live_install_id', $phone->install_id)->whereNull('revoked_at')->exists();
+    }
+
+    private function toPhone(object $phone, array $state, array $snap, string $macName, bool $over, int $now, bool $silent = false): void
     {
         $signature = Card::signature($state);
         if ($phone->card_token) {
@@ -42,7 +54,7 @@ final class Pusher
             // Quiet but not yet over: keep showing the last activity rather than "nothing running".
             if ($state['phase'] === 'idle') return;
             $alertKey = Card::alertKey($snap);
-            $alert = $alertKey && $alertKey !== $phone->last_alert ? Card::alert($state) : null;
+            $alert = !$silent && $alertKey && $alertKey !== $phone->last_alert ? Card::alert($state) : null;
             $heartbeat = !$phone->last_sent_at || $now - strtotime((string) $phone->last_sent_at) > 60 * (int) config('live_status.heartbeat_minutes');
             if (!$alert && $signature === $phone->last_state && !$heartbeat) return;
             $this->send($phone, $phone->card_token, Card::update($state, $alert, $now), $alert ? 10 : 5,
@@ -52,7 +64,7 @@ final class Pusher
         // No card yet: start one, but only when something is happening and not more than once every 2 minutes.
         if ($over || $state['phase'] === 'idle' || !$phone->start_token) return;
         if ($phone->last_start_at && $now - strtotime((string) $phone->last_start_at) < 120) return;
-        $this->send($phone, $phone->start_token, Card::start($state, $macName, $now), 10,
+        $this->send($phone, $phone->start_token, Card::start($state, $macName, $now, $silent), 10,
             ['last_start_at' => now(), 'last_state' => $signature, 'last_alert' => Card::alertKey($snap), 'last_sent_at' => now()],
             fn () => ['start_token' => null, 'start_hash' => null]);
     }

@@ -63,16 +63,18 @@ final class Card
         return ['aps' => $aps];
     }
 
-    /** iOS requires an alert to start a card from a push. */
-    public static function start(array $state, string $macName, int $now): array
+    /** iOS requires an alert to start a card from a push; `$silent` drops its sound. */
+    public static function start(array $state, string $macName, int $now, bool $silent = false): array
     {
+        $alert = $state['phase'] === 'needs' ? self::alert($state)
+            : ['title' => ($state['headline'] ?? 'An agent').' is working', 'body' => 'On '.self::text($macName, 40).'.'];
+        if ($silent) unset($alert['sound']);
         return ['aps' => ['timestamp' => $now, 'event' => 'start', 'content-state' => $state,
             'attributes-type' => (string) config('live_status.attributes_type'),
             'attributes' => ['scope' => 'mac', 'name' => self::text($macName, 40)],
             'stale-date' => $now + 60 * (int) config('live_status.stale_minutes'),
             'relevance-score' => $state['phase'] === 'needs' ? 100 : 50,
-            'alert' => $state['phase'] === 'needs' ? self::alert($state)
-                : ['title' => ($state['headline'] ?? 'An agent').' is working', 'body' => 'On '.self::text($macName, 40).'.']]];
+            'alert' => $alert]];
     }
 
     public static function end(array $state, int $now): array

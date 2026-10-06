@@ -109,7 +109,7 @@ class RemoteSecurityConcurrencyTest extends TestCase
     public function test_late_failed_worker_cannot_undo_replacement_delivery_acceptance(): void
     {
         [$session] = $this->approved();
-        config(['remote_security.email_notifications' => false, 'intelligence.push' => true,
+        config(['remote_security.email_notifications' => false, 'intelligence.push' => true, 'intelligence.expo_token' => 'test-expo-token',
             'intelligence.expo_project' => 'test-project', 'intelligence.environment' => 'test']);
         app(Devices::class)->register($session, ['projectId' => 'test-project', 'environment' => 'test',
             'installation' => (string) Str::uuid(), 'proof' => 'proof', 'token' => 'ExponentPushToken[test]']);
