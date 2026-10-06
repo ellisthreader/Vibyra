@@ -28,6 +28,29 @@ class CloudOperationsTest extends CloudTestCase
         $this->assertArrayNotHasKey('OPENROUTER_API_KEY', $env); $this->assertArrayNotHasKey('FLY_API_TOKEN', $env);
         $this->assertSame(Crypt::decryptString($w->bootstrap_secret), $env['VIBYRA_BOOTSTRAP']);
     }
+    public function test_fly_ignores_a_disk_being_destroyed_and_a_destroyed_predecessor_machine(): void
+    {
+        $id = $this->imported(); $this->start($id); $w = app(Workspaces::class)->owned($this->user->id, $id);
+        $mounted = null;
+        Http::fake(function ($request) use ($w, &$mounted) {
+            $url = $request->url(); $method = $request->method();
+            if (str_contains($url, '?org_slug=')) return Http::response(['apps' => [['name' => $w->app_name, 'network' => $w->app_name]]]);
+            if (str_ends_with($url, '/volumes')) return Http::response([
+                ['id' => 'old', 'name' => 'project', 'region' => 'lhr', 'state' => 'pending_destroy', 'encrypted' => true, 'size_gb' => 20],
+                ['id' => 'vol', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20]]);
+            if (str_ends_with($url, '/machines') && $method === 'GET') return Http::response([]);
+            if (str_ends_with($url, '/machines') && $method === 'POST') {
+                $mounted = $request->data()['config']['mounts'][0]['volume']; return Http::response(['id' => 'machine', 'state' => 'created']);
+            }
+            if (str_ends_with($url, '/machines/stale')) return Http::response(['id' => 'stale', 'state' => 'destroyed',
+                'config' => ['metadata' => ['vibyra_workspace' => $w->id, 'vibyra_operation' => 'an-earlier-start', 'vibyra_generation' => '0']]]);
+            return Http::response(['name' => $w->app_name]);
+        });
+        $provider = app(FlyProvider::class);
+        $this->assertSame(['machine' => 'machine', 'volume' => 'vol'], $provider->configure($w));
+        $this->assertSame('vol', $mounted);
+        $this->assertSame('destroyed', $provider->inspect((object) array_merge((array) $w, ['machine_id' => 'stale'])));
+    }
     public function test_failed_runway_renewal_keeps_existing_hold_until_shutdown_confirmation(): void
     {
         $id = $this->imported(); [, $token] = $this->ready($id); $this->travel(5)->seconds();

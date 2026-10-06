@@ -36,7 +36,9 @@ final class FlyProvider implements CloudWorkspaceProvider
         // Read organization metadata rather than assuming a name collision is ours.
         $this->verifyApp($w);
         $volumes = $this->call('GET', $path.'/volumes');
-        $matching = array_values(array_filter($volumes, fn ($v) => ($v['name'] ?? null) === 'project' && ($v['region'] ?? null) === $w->region));
+        // A destroyed disk stays listed (pending_destroy) for a while; it is not a second project disk.
+        $matching = array_values(array_filter($volumes, fn ($v) => ($v['name'] ?? null) === 'project' && ($v['region'] ?? null) === $w->region
+            && !in_array($v['state'] ?? '', ['pending_destroy', 'destroying', 'destroyed'], true)));
         abort_if(count($matching) > 1, 503, 'Multiple project disks need reconciliation.');
         $volume = $matching[0] ?? $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region,
             'size_gb' => config('cloud_workspaces.volume_gib'), 'encrypted' => true, 'snapshot_retention' => 5,
@@ -69,7 +71,8 @@ final class FlyProvider implements CloudWorkspaceProvider
     {
         if (!$w->machine_id) return 'absent';
         $m = $this->call('GET', '/apps/'.$w->app_name.'/machines/'.$w->machine_id, missing: true);
-        if ($m) $this->verifyMachine($w, $m);
+        // A failed create leaves machine_id on the predecessor it already destroyed; a destroyed machine runs nothing.
+        if ($m && ($m['state'] ?? '') !== 'destroyed') $this->verifyMachine($w, $m);
         return $m['state'] ?? 'absent';
     }
     public function recover(object $w): ?array
