@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 2
       - name: Verify tested backend is unchanged from release candidate
         working-directory: .
-        run: test "$(git rev-parse HEAD:backend)" = "8496bcaf7e85f9d40df816723ab7024d85927be9"
+        run: test "$(git rev-parse HEAD:backend)" = "ab35b74fd85912aa01713e4849d9c6ee76b4ea51"
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
