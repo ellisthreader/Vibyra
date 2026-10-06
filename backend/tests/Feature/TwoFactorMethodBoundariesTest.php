@@ -82,6 +82,21 @@ class TwoFactorMethodBoundariesTest extends TestCase
         $this->postJson('/api/account/2fa/method/confirm', [...$body, 'code' => $new], $headers)->assertStatus(422);
     }
 
+    public function test_corrupted_authenticator_never_accepts_a_code_for_an_empty_secret(): void
+    {
+        [$user, , $headers, $recovery] = $this->enroll('sms');
+        $setup = $this->postJson('/api/account/2fa/method/start', ['method' => 'totp', 'currentCode' => $recovery[0]], $headers)->assertOk()->json();
+        $totp = app(Totp::class); $slot = intdiv(time(), Totp::PERIOD);
+        $codes = $this->postJson('/api/account/2fa/method/confirm', ['enrollmentId' => $setup['enrollmentId'],
+            'code' => $totp->at($totp->decode($setup['secret']), $slot)], $headers)->assertOk()->json('recoveryCodes');
+        $user->forceFill(['two_factor_secret' => 'damaged-ciphertext'])->save();
+        $this->assertTrue(app(TwoFactor::class)->enabled($user->fresh()));
+        $login = $this->login(); $login->assertJsonMissingPath('token');
+        $id = $login->json('twoFactor.challengeId');
+        $this->postJson('/api/auth/login/2fa', ['challengeId' => $id, 'code' => $totp->at('', $slot + 1)])->assertUnauthorized();
+        $this->postJson('/api/auth/login/2fa', ['challengeId' => $id, 'code' => $codes[0]])->assertOk()->assertJsonStructure(['token']);
+    }
+
     public function test_corrupted_delivery_destination_never_bypasses_two_factor(): void
     {
         [$user, , , $recovery] = $this->enroll('email');

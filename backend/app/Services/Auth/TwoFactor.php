@@ -98,7 +98,8 @@ class TwoFactor
             return ($settings && app(TwoFactorCodes::class)->check('settings:'.$user->id,
                 app(TwoFactorIdentity::class)->state($user), $code)) || $this->spendRecoveryCode($user, $code);
         }
-        $slot = $this->totp->verify((string) $this->secret($user), $code);
+        $secret = $this->secret($user);
+        $slot = $secret !== null ? $this->totp->verify($secret, $code) : null;
         if ($slot !== null) {
             if ($user->two_factor_last_slot !== null && $slot <= (int) $user->two_factor_last_slot) {
                 return false;
