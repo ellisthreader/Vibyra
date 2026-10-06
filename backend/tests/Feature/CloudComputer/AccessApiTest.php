@@ -31,7 +31,9 @@ class AccessApiTest extends SyncTestCase
         $rows = $this->access('put', '/projects', ['projects' => [['id' => 'proj-1', 'name' => 'Vibyra iOS', 'allowed' => true], ['id' => 'proj-2', 'name' => 'Another', 'allowed' => false]]])
             ->assertOk()->json('projects');
         $this->assertSame(['Another', 'Vibyra iOS'], array_column($rows, 'name'));
-        $this->assertSame([$key, true, 'phone', ['state' => null, 'syncedAt' => null, 'bytes' => 0]], [$rows[1]['projectKey'], $rows[1]['allowed'], $rows[1]['source'], $rows[1]['cloud']]);
+        $this->assertSame([$key, true, 'phone', ['state' => null, 'syncedAt' => null, 'bytes' => 0, 'status' => ['phase' => 'waiting_cloud', 'syncedAt' => null, 'appliedAt' => null]]],
+            [$rows[1]['projectKey'], $rows[1]['allowed'], $rows[1]['source'], $rows[1]['cloud']]);
+        $this->assertNull($rows[0]['cloud']['status'], 'a project that is not ticked has no status');
         $this->assertIsString($rows[1]['decidedAt']);
         // A Mac grant for the allowed key works and shows up as the cloud state of that row.
         $this->sync('post', '/projects', ['projectKey' => $key, 'name' => 'vibyra-ios'])->assertOk();
@@ -95,7 +97,8 @@ class AccessApiTest extends SyncTestCase
         $this->assertSame([], $this->access()->json('macs'));
         $this->registerMac();
         DB::table('cloud_sync_macs')->update(['last_seen_at' => null]);
-        $this->assertSame([['id' => $this->deviceId, 'name' => 'My Mac', 'lastSeenAt' => null]], $this->access()->json('macs'));
+        $this->assertSame([['id' => $this->deviceId, 'name' => 'My Mac', 'lastSeenAt' => null, 'state' => 'offline', 'current' => null, 'lastError' => null, 'reportedAt' => null]],
+            $this->access()->json('macs'));
         // Reading the sync state with ?mac= is a check-in; an unknown Mac is ignored, not refused.
         $this->sync('get', '?mac='.strtoupper($this->deviceId))->assertOk();
         $this->sync('get', '?mac='.(string) \Illuminate\Support\Str::uuid())->assertOk();

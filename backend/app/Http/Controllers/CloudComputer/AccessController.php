@@ -54,7 +54,9 @@ final class AccessController extends Controller
         return response()->json(['ok' => true, 'projects' => app(AccessProjects::class)->rows($user),
             'providers' => app(AccessProviders::class)->payload($user), 'capacity' => app(AccessCapacity::class)->payload($user),
             // When each Mac last checked in, so the phone can say why a ticked project is still waiting.
-            'macs' => app(SyncKeys::class)->seen($user)])
+            'macs' => app(SyncKeys::class)->seen($user),
+            // The server starts Cloud itself for synced work (Wake::forSync): the phone never asks the person to wake it for that.
+            'autoWake' => true])
             ->header('Cache-Control', 'private, no-store');
     }
 }

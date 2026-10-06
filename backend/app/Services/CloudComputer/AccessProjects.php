@@ -82,12 +82,15 @@ class AccessProjects
         $synced = DB::table('cloud_sync_projects')->where('user_id', $user)->whereNull('removed_at')->get()->keyBy('project_key');
         $bytes = DB::table('cloud_sync_blobs')->where('user_id', $user)->groupBy('project_id')->selectRaw('project_id, sum(bytes) as b')->pluck('b', 'project_id');
         $iso = fn ($v) => $v ? Carbon::parse($v)->toIso8601String() : null;
+        $status = app(SyncStatus::class)->forUser($user);
         $out = [];
         foreach ($decisions->keys()->merge($synced->keys())->unique() as $key) {
             $d = $decisions[$key] ?? null; $s = $synced[$key] ?? null;
             $out[] = ['projectKey' => $key, 'name' => $d->name ?? $s->name, 'allowed' => (bool) ($d->allowed ?? false),
                 'decidedAt' => $iso($d->updated_at ?? null), 'source' => $d->source ?? null,
-                'cloud' => ['state' => $s->state ?? null, 'syncedAt' => $iso($s->applied_at ?? null), 'bytes' => $s ? (int) ($bytes[$s->id] ?? 0) : 0]];
+                'cloud' => ['state' => $s->state ?? null, 'syncedAt' => $iso($s->applied_at ?? null), 'bytes' => $s ? (int) ($bytes[$s->id] ?? 0) : 0,
+                    // The one status the phone shows (SyncStatus); null for a project that is not ticked.
+                    'status' => ($d->allowed ?? false) ? ($status[$key] ?? null) : null]];
         }
         usort($out, fn ($a, $b) => [strtolower($a['name']), $a['projectKey']] <=> [strtolower($b['name']), $b['projectKey']]);
         return $out;

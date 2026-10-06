@@ -10,7 +10,7 @@ class SyncState
     public function summary(int $user): array
     {
         return ['vmKeyReady' => app(SyncKeys::class)->vmKey($user) !== null, 'pending' => app(SyncQueue::class)->pendingCount($user),
-            'applying' => app(SyncKeys::class)->applying($user), 'usedBytes' => app(SyncRetention::class)->usedBytes($user), 'limitBytes' => app(SyncRetention::class)->limitBytes()];
+            'applying' => app(SyncKeys::class)->applying($user), 'vm' => app(SyncKeys::class)->vmHealth($user), 'usedBytes' => app(SyncRetention::class)->usedBytes($user), 'limitBytes' => app(SyncRetention::class)->limitBytes()];
     }
 
     /** Host-reported / queued projects merged with synced ones by name. Existing fields stay as they were. */
