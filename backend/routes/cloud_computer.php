@@ -34,7 +34,7 @@ Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->group(
 })->whereUuid(['workspace', 'id']);
 
 // Cloud sync (docs/cloud-sync-contract.md), account side. Works while the computer is stopped; the account must be eligible.
-RateLimiter::for('cloud-sync', fn ($request) => Limit::perMinute(240)->by('cloud-sync:'.hash('sha256', (string) $request->bearerToken())));
+// Its `cloud-sync` rate limiter lives in AppServiceProvider (a cached route file never runs its own code).
 // Storing needs an approved market; reading state and deleting stay open everywhere (the rights path).
 Route::prefix('api/cloud-computer/sync')->middleware('throttle:cloud-sync')->group(function () {
     Route::get('/', [SyncController::class, 'index']);

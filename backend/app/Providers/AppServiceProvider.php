@@ -32,6 +32,10 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Cache\RateLimiting\Limit::perMinute(240)->by('workspace:'.$request->route('workspace').':'.hash('sha256', (string) $request->bearerToken())),
             \Illuminate\Cache\RateLimiting\Limit::perMinute(3000)->by('ip:'.$request->ip()),
         ]);
+        // Cloud sync, account side (the Mac). Defined here, not in routes/cloud_computer.php: production caches its routes,
+        // and code in a cached route file never runs, so the limiter was missing and every Mac sync read answered 500.
+        \Illuminate\Support\Facades\RateLimiter::for('cloud-sync', fn (\Illuminate\Http\Request $request) =>
+            \Illuminate\Cache\RateLimiting\Limit::perMinute(240)->by('cloud-sync:'.hash('sha256', (string) $request->bearerToken())));
         // A GitHub token is minted here: bucket by the workspace and its bearer, not by a shared (NAT/relay) IP.
         \Illuminate\Support\Facades\RateLimiter::for('cloud-git-credential', fn (\Illuminate\Http\Request $request) => [
             \Illuminate\Cache\RateLimiting\Limit::perMinute(30)->by('git-cred:'.$request->route('workspace').':'.hash('sha256', (string) $request->bearerToken())),
