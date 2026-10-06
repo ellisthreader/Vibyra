@@ -39,6 +39,8 @@ final class Pusher
                 $this->send($phone, $phone->card_token, Card::end($state, $now), 5, ['card_token' => null, 'card_hash' => null, 'last_state' => null, 'last_alert' => null]);
                 return;
             }
+            // Quiet but not yet over: keep showing the last activity rather than "nothing running".
+            if ($state['phase'] === 'idle') return;
             $alertKey = Card::alertKey($snap);
             $alert = $alertKey && $alertKey !== $phone->last_alert ? Card::alert($state) : null;
             $heartbeat = !$phone->last_sent_at || $now - strtotime((string) $phone->last_sent_at) > 60 * (int) config('live_status.heartbeat_minutes');

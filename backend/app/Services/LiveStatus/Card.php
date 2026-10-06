@@ -72,7 +72,7 @@ final class Card
             'stale-date' => $now + 60 * (int) config('live_status.stale_minutes'),
             'relevance-score' => $state['phase'] === 'needs' ? 100 : 50,
             'alert' => $state['phase'] === 'needs' ? self::alert($state)
-                : ['title' => 'Agents are working on '.self::text($macName, 40), 'body' => 'Follow along on your Lock Screen.']]];
+                : ['title' => ($state['headline'] ?? 'An agent').' is working', 'body' => 'On '.self::text($macName, 40).'.']]];
     }
 
     public static function end(array $state, int $now): array

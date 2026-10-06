@@ -71,6 +71,11 @@ final class LiveStatusTest extends TestCase
         $this->postJson('/api/live-status/v1/mac', $this->snap([['key' => 't:1', 'title' => 'Claude', 'project' => 'Vibyra', 'agent' => 'claude']]), $auth)->assertOk();
         $this->assertSame($sent, count(Http::recorded()));
 
+        // Quiet but inside the window: nothing is sent, so the card never reads "nothing running".
+        $before = count(Http::recorded());
+        $this->postJson('/api/live-status/v1/mac', $this->snap(), $auth)->assertOk();
+        $this->assertSame($before, count(Http::recorded()));
+
         // Quiet past the idle window: the card ends.
         DB::table('live_status_snapshots')->update(['busy_at' => now()->subHour()]);
         $this->postJson('/api/live-status/v1/mac', $this->snap(), $auth)->assertOk();

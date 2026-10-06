@@ -21,8 +21,9 @@ return [
     ],
     // The Mac re-sends at least this often while it runs; the card goes stale after this.
     'stale_minutes' => 20,
-    // With nothing working or waiting for this long, the card ends.
-    'idle_end_minutes' => 30,
+    // With nothing working or waiting for this long, the card ends. The owner wants one card only
+    // while something runs, never a "nothing running" card; the short wait rides out quiet spells.
+    'idle_end_minutes' => 3,
     // An unchanged card is re-sent this often so its stale date moves forward.
     'heartbeat_minutes' => 8,
 ];
