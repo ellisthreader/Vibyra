@@ -123,6 +123,7 @@ class FundedTerminalsTest extends TestCase
         $snapshot = Cache::get($key);
         $snapshot['models']['inception/model-1']['reasoning'] = ['supported_efforts' => ['low', 'high'], 'default_effort' => 'low'];
         $snapshot['models']['typesafe/jev-router'] = $snapshot['models']['inception/model-1'];
+        $snapshot['models']['~inception/model-latest'] = $snapshot['models']['inception/model-1'];
         Cache::put($key, $snapshot);
         $launch = [...$this->launch('inception/model-1'), 'effort' => 'high'];
         $this->postJson('/api/vibes/terminals', $launch)->assertOk()->assertJsonPath('session.terminal_effort', 'high');
@@ -135,7 +136,14 @@ class FundedTerminalsTest extends TestCase
         $request = json_decode(DB::table('vibes_turns')->where('id', $id)->value('request'), true);
         $this->assertSame('high', $request['reasoning']['effort']);
         $this->postJson('/api/vibes/terminals', $this->launch('typesafe/jev-router'))->assertStatus(422);
-        $this->getJson('/api/vibes/terminal-models')->assertOk()->assertJsonMissing(['id' => 'typesafe/jev-router']);
+        $ids = [];
+        for ($page = 1; $page !== null; $page = $list['next']) {
+            $list = $this->getJson('/api/vibes/terminal-models?page='.$page)->assertOk()->json();
+            $ids = [...$ids, ...array_column($list['models'], 'id')];
+        }
+        $this->assertContains('inception/model-1', $ids);
+        $this->assertNotContains('typesafe/jev-router', $ids);
+        $this->assertNotContains('~inception/model-latest', $ids);
     }
 
     public function test_unknown_models_stale_prices_and_other_accounts_are_refused(): void

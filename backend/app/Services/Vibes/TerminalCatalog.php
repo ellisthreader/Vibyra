@@ -16,7 +16,7 @@ final class TerminalCatalog
         $version = hash('sha256', json_encode($snapshot));
         abort_if($revision !== null && $revision !== $version, 409, 'The model list changed. Refresh it to continue.');
         $fresh = ! $this->pricing->isStale();
-        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => self::executable($id) && in_array('text', $m['output_modalities'] ?? [], true))
+        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && in_array('text', $m['output_modalities'] ?? [], true))
             ->sortKeys()->map(fn ($m, $id) => $this->row($id, $m, $fresh))->values();
         return ['version' => 1, 'source' => 'vibyra', 'revision' => $version,
             'models' => $rows->slice(($page - 1) * 100, 100)->values()->all(),
