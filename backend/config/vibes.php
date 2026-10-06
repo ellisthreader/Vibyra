@@ -28,6 +28,19 @@ return [
     'micro_usd_per_credit' => 10000,
     'daily_micro_usd_limit' => (int) env('VIBES_DAILY_MICRO_USD_LIMIT', 25000000),
     'max_output_tokens' => 2048,
+    // Token-terminal models a real terminal message could not reach on 2026-10-06, so the picker
+    // never offers a choice that fails. No host serves the first fourteen with project tools within
+    // the listed price; OpenRouter refuses the rest for this account (agentic-harness-only free
+    // tiers, audio models, provider 400s, Meta terms not accepted). Re-test before removing one.
+    'terminal_unavailable' => [
+        'mistralai/mistral-nemo', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-4-31b-it',
+        'meta-llama/llama-4-scout', 'qwen/qwen3-14b', 'xiaomi/mimo-v2.5-pro', 'deepseek/deepseek-r1-0528',
+        'minimax/minimax-m1', 'sao10k/l3.1-euryale-70b', 'openai/gpt-5.2-chat', 'sakana/fugu-max',
+        'amazon/nova-premier-v1', 'sakana/fugu-ultra', 'sakana/fugu-ultra-v2',
+        'thinkingmachines/inkling-small:free', 'thinkingmachines/inkling:free', 'openai/gpt-audio-mini',
+        'openai/gpt-audio', 'kwaipilot/kat-coder-pro-v2.5', 'meta/muse-spark-1.1', 'meta/muse-spark-1.2',
+        'meta/muse-spark-1.3',
+    ],
     'queue_connection' => env('VIBES_QUEUE_CONNECTION', 'database'),
     'apple_bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
     'apple_environment' => env('VIBES_APPLE_ENVIRONMENT', 'Production'),

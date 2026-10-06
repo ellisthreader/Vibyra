@@ -43,6 +43,20 @@ class FundedTerminalsTest extends TestCase
         $this->assertNull($last['next']);
         $this->getJson('/api/vibes/terminal-models?page=2&revision='.str_repeat('a', 64))->assertStatus(409);
     }
+    public function test_models_no_terminal_can_reach_are_never_offered(): void
+    {
+        config(['vibes.terminal_unavailable' => ['inception/model-7']]);
+        $ids = [];
+        for ($page = 1; $page !== null; $page = $list['next']) {
+            $list = $this->getJson('/api/vibes/terminal-models?page='.$page)->assertOk()->json();
+            $ids = [...$ids, ...array_column($list['models'], 'id')];
+        }
+        $this->assertContains('inception/model-8', $ids);
+        $this->assertNotContains('inception/model-7', $ids);
+        $this->postJson('/api/vibes/terminals', $this->launch('inception/model-7'))->assertStatus(422);
+        $picked = app(\App\Services\Vibes\TerminalCatalog::class)->candidates(['inception/model-7', 'inception/model-8']);
+        $this->assertSame(['inception/model-8'], array_column($picked, 'id'), 'Auto never picks one either');
+    }
     public function test_launch_is_idempotent_fixed_to_model_and_project_and_does_not_charge(): void
     {
         $launch = $this->launch();

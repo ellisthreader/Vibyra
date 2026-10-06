@@ -16,7 +16,7 @@ final class TerminalCatalog
         $version = hash('sha256', json_encode($snapshot));
         abort_if($revision !== null && $revision !== $version, 409, 'The model list changed. Refresh it to continue.');
         $fresh = ! $this->pricing->isStale();
-        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && in_array('text', $m['output_modalities'] ?? [], true))
+        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && self::offered($id) && in_array('text', $m['output_modalities'] ?? [], true))
             ->sortKeys()->map(fn ($m, $id) => $this->row($id, $m, $fresh))->values();
         return ['version' => 1, 'source' => 'vibyra', 'revision' => $version,
             'models' => $rows->slice(($page - 1) * 100, 100)->values()->all(),
@@ -26,6 +26,7 @@ final class TerminalCatalog
     public function resolve(string $id): array
     {
         abort_unless(self::executable($id), 422, 'Choose Vibyra Auto or a specific chat or code model.');
+        abort_unless(self::offered($id), 422, "This model can't run in a terminal right now. Choose another model.");
         $price = $this->pricing->refreshPricingFor($id);
         $m = $this->pricing->all()[$id] ?? null;
         abort_unless($m && in_array('text', $m['output_modalities'] ?? [], true), 422, 'Choose a chat or code model.');
@@ -42,7 +43,7 @@ final class TerminalCatalog
         $rows = [];
         foreach ($ids as $id) {
             $model = $snapshot[$id] ?? null;
-            if (!self::executable($id) || !$model || !in_array('text', $model['output_modalities'] ?? [], true)
+            if (!self::executable($id) || !self::offered($id) || !$model || !in_array('text', $model['output_modalities'] ?? [], true)
                 || !isset($model['pricing']['prompt'], $model['pricing']['completion'])) continue;
             $row = $this->row($id, $model, true);
             $rows[] = ['id' => $id, 'name' => config('vibes.models')[$id]['name'] ?? $row['name'], 'efforts' => $row['efforts']];
@@ -54,6 +55,12 @@ final class TerminalCatalog
     public static function executable(string $id): bool
     {
         return ! preg_match('~^(?:typesafe/jev(?:[-/]|$)|openrouter/(?:auto|free|bodybuilder)(?:$|:))~i', ltrim($id, '~'));
+    }
+
+    /** Whether a terminal message can reach this model at all (`config('vibes.terminal_unavailable')`). */
+    private static function offered(string $id): bool
+    {
+        return ! in_array($id, (array) config('vibes.terminal_unavailable', []), true);
     }
 
     private function row(string $id, array $m, bool $fresh): array

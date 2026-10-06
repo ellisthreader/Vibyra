@@ -22,7 +22,8 @@ class OpenRouterReasoningTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['vibes.enabled' => true, 'vibes.funded_terminals_enabled' => true,
+        // Levels are under test here, not which models a terminal can reach.
+        config(['vibes.enabled' => true, 'vibes.funded_terminals_enabled' => true, 'vibes.terminal_unavailable' => [],
             'services.openrouter.key' => 'test', 'app.key' => 'base64:'.base64_encode(str_repeat('x', 32))]);
         $user = User::factory()->create(['email_verified_at' => now()]);
         VibyraSession::create(['user_id' => $user->id, 'token_hash' => hash('sha256', 'reasoning-test'), 'device_name' => 'iPhone']);
