@@ -93,6 +93,24 @@ class ChatCostReservationServiceTest extends TestCase
         $this->assertSame(ChatCostReservation::STATUS_RELEASED, $reservation->fresh()->status);
     }
 
+    public function test_daily_credit_cap_is_enforced_on_reservation(): void
+    {
+        config(['billing.plans.free.daily_credit_cap' => 5]);
+        $user = $this->user(['plan' => 'free', 'daily_credits_used' => 4, 'daily_credits_reset_at' => now()->addHours(4)]);
+        $reservation = app(ChatCostReservationService::class)->reserve($user, 'daily:one', 'gpt-5.4-mini', 1, 1_000);
+        $this->assertSame(5, $user->fresh()->daily_credits_used);
+
+        try {
+            app(ChatCostReservationService::class)->reserve($user, 'daily:two', 'gpt-5.4-mini', 1, 1_000);
+            $this->fail('Expected the daily credit cap to reject another reservation.');
+        } catch (BillingReservationException $error) {
+            $this->assertSame(429, $error->status);
+            $this->assertSame('billing_daily_cap', $error->errorCode);
+        }
+
+        app(ChatCostReservationService::class)->release($reservation, 'test_complete');
+    }
+
     public function test_terminal_agent_limit_is_transactional_and_releases_capacity(): void
     {
         $user = $this->user(['plan' => 'starter']);

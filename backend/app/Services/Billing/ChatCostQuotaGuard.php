@@ -24,10 +24,14 @@ class ChatCostQuotaGuard
     public function constrain(Builder $query, User $user, int $quotaCredits, int $microUsd): void
     {
         $plan = $user->plan ?: 'free';
+        $dailyCap = (int) config("billing.plans.{$plan}.daily_credit_cap", 0);
         $burstCap = (int) config("billing.plans.{$plan}.burst_credit_cap", 0);
         $weeklyCap = (int) config("billing.plans.{$plan}.weekly_credit_cap", 0);
         $monthlyCap = $this->monthlyCap($user);
 
+        if ($dailyCap > 0) {
+            $query->whereRaw('daily_credits_used + ? <= ?', [$quotaCredits, $dailyCap]);
+        }
         if ($burstCap > 0) {
             $query->whereRaw('burst_credits_used + ? <= ?', [$quotaCredits, $burstCap]);
         }
@@ -50,6 +54,7 @@ class ChatCostQuotaGuard
     ): never
     {
         $plan = $user->plan ?: 'free';
+        $dailyCap = (int) config("billing.plans.{$plan}.daily_credit_cap", 0);
         $burstCap = (int) config("billing.plans.{$plan}.burst_credit_cap", 0);
         $weeklyCap = (int) config("billing.plans.{$plan}.weekly_credit_cap", 0);
         $monthlyCap = $this->monthlyCap($user);
@@ -66,6 +71,15 @@ class ChatCostQuotaGuard
                     'weeklyCreditsCap' => $weeklyCap,
                     'weeklyCreditsResetAt' => $user->weekly_credits_reset_at?->toIso8601String(),
                 ],
+            );
+        }
+        if ($dailyCap > 0 && (int) $user->daily_credits_used + $quotaCredits > $dailyCap) {
+            throw new BillingReservationException(
+                'Your daily AI usage limit is reached. Try again after it resets.',
+                429,
+                'billing_daily_cap',
+                ['creditsUsed' => (int) $user->daily_credits_used, 'creditsCap' => $dailyCap,
+                    'estimatedCredits' => $quotaCredits, 'resetAt' => $user->daily_credits_reset_at?->toIso8601String()],
             );
         }
         if ($monthlyCap > 0

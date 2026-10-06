@@ -97,6 +97,18 @@ class VibesPurchasesTest extends TestCase
         config(['vibes.apple_private_key' => null]);
         $this->assertFalse(app(Wallet::class)->payload($u->id)['purchasesEnabled']);
     }
+
+    public function test_unverified_free_account_cannot_use_legacy_ai_before_wallet_enrollment(): void
+    {
+        $u = User::factory()->unverified()->create(['plan' => 'free']);
+        VibyraSession::create(['user_id' => $u->id, 'token_hash' => hash('sha256', 'unverified-legacy'), 'device_name' => 'Legacy']);
+        $request = Request::create('/api/chat', 'POST');
+        $request->headers->set('Authorization', 'Bearer unverified-legacy');
+        $guard = new VibesLegacyGuard;
+        $response = $guard->handle($request, fn () => response('passed', 204));
+        $this->assertSame(403, $response->status());
+        $this->assertSame('email_verification_required', $response->getData()->code);
+    }
     public function test_plan_switches_do_not_multiply_a_period_allowance_in_either_delivery_order(): void
     {
         foreach ([false, true] as $reverse) {
