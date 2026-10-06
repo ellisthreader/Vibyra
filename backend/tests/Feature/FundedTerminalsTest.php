@@ -79,6 +79,25 @@ class FundedTerminalsTest extends TestCase
         $this->postJson('/api/vibes/terminals', $launch)->assertOk();
         $this->postJson('/api/vibes/quote', ['chatId' => $launch['id'], 'text' => 'Hello', 'model' => $launch['model']])->assertOk();
     }
+    public function test_the_curated_menu_limits_new_terminals_but_not_open_ones(): void
+    {
+        $open = $this->launch('inception/model-9');
+        $this->postJson('/api/vibes/terminals', $open)->assertOk();
+        config(['vibes.terminal_models' => ['inception/model-8']]);
+        $ids = [];
+        for ($page = 1; $page !== null; $page = $list['next']) {
+            $list = $this->getJson('/api/vibes/terminal-models?page='.$page)->assertOk()->json();
+            $ids = [...$ids, ...array_column($list['models'], 'id')];
+        }
+        $this->assertSame(['inception/model-8'], $ids);
+        $this->postJson('/api/vibes/terminals', $this->launch('inception/model-7'))->assertStatus(422)
+            ->assertJsonPath('message', 'Choose a model from the list.');
+        $this->postJson('/api/vibes/terminals', $this->launch('inception/model-8'))->assertOk();
+        $picked = app(\App\Services\Vibes\TerminalCatalog::class)->candidates(['inception/model-7', 'inception/model-8']);
+        $this->assertSame(['inception/model-8'], array_column($picked, 'id'), 'Auto stays inside the menu');
+        // A terminal opened before the menu changed keeps answering.
+        $this->postJson('/api/vibes/quote', ['chatId' => $open['id'], 'text' => 'Hello', 'model' => $open['model']])->assertOk();
+    }
     public function test_models_no_terminal_can_reach_are_never_offered(): void
     {
         config(['vibes.terminal_unavailable' => ['inception/model-7']]);

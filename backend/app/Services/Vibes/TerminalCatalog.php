@@ -16,7 +16,7 @@ final class TerminalCatalog
         $version = hash('sha256', json_encode($snapshot));
         abort_if($revision !== null && $revision !== $version, 409, 'The model list changed. Refresh it to continue.');
         $fresh = ! $this->pricing->isStale();
-        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && self::offered($id) && self::choosable(self::levels($m)) && in_array('text', $m['output_modalities'] ?? [], true))
+        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && self::offered($id) && self::listed($id) && self::choosable(self::levels($m)) && in_array('text', $m['output_modalities'] ?? [], true))
             ->sortKeys()->map(fn ($m, $id) => $this->row($id, $m, $fresh))->values();
         return ['version' => 1, 'source' => 'vibyra', 'revision' => $version,
             'models' => $rows->slice(($page - 1) * 100, 100)->values()->all(),
@@ -43,7 +43,7 @@ final class TerminalCatalog
         $rows = [];
         foreach ($ids as $id) {
             $model = $snapshot[$id] ?? null;
-            if (!self::executable($id) || !self::offered($id) || !$model || !self::choosable(self::levels($model)) || !in_array('text', $model['output_modalities'] ?? [], true)
+            if (!self::executable($id) || !self::offered($id) || !$model || !self::listed($id) || !self::choosable(self::levels($model)) || !in_array('text', $model['output_modalities'] ?? [], true)
                 || !isset($model['pricing']['prompt'], $model['pricing']['completion'])) continue;
             $row = $this->row($id, $model, true);
             $rows[] = ['id' => $id, 'name' => config('vibes.models')[$id]['name'] ?? $row['name'], 'efforts' => $row['efforts']];
@@ -65,6 +65,14 @@ final class TerminalCatalog
     public static function choosable(array $efforts): bool
     {
         return count(array_diff($efforts, ['none'])) >= 2;
+    }
+
+    /** Whether the curated menu (`config('vibes.terminal_models')`) offers this model; an empty menu offers all. */
+    public static function listed(string $id): bool
+    {
+        $menu = (array) config('vibes.terminal_models', []);
+
+        return $menu === [] || in_array($id, $menu, true);
     }
 
     private static function levels(array $model): array

@@ -32,6 +32,13 @@ return [
     // never offers a choice that fails. No host serves the first fourteen with project tools within
     // the listed price; OpenRouter refuses the rest for this account (agentic-harness-only free
     // tiers, audio models, provider 400s, Meta terms not accepted). Re-test before removing one.
+    // The Vibyra-token terminal menu, curated by the owner on 2026-10-06: each lab's current main and
+    // coding models only (no o-series, mini/nano tiers, gpt-oss, image models or older generations).
+    // New launches and Auto use only these; open terminals keep their model. Add a new main model
+    // here when it ships. VIBES_TERMINAL_MODELS (comma-separated) overrides it; empty offers all.
+    'terminal_models' => env('VIBES_TERMINAL_MODELS') !== null
+        ? array_values(array_filter(explode(',', (string) env('VIBES_TERMINAL_MODELS'))))
+        : ['openai/gpt-6.1-sol', 'openai/gpt-6-astra', 'openai/gpt-6-luna', 'anthropic/claude-opus-5.5', 'anthropic/claude-sonnet-5.5', 'anthropic/claude-fable-5.1', 'google/gemini-3.1-pro-preview', 'google/gemini-3.8-flash', 'x-ai/grok-4.7', 'deepseek/deepseek-v4-pro-0813', 'deepseek/deepseek-v4.1-flash', 'qwen/qwen3.8-max-prime', 'qwen/qwen3.8-flash', 'z-ai/glm-5.3', 'z-ai/glm-5.3-prime', 'moonshotai/kimi-k3', 'bytedance-seed/seed-2.0-code'],
     'terminal_unavailable' => [
         'mistralai/mistral-nemo', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-4-31b-it',
         'meta-llama/llama-4-scout', 'qwen/qwen3-14b', 'xiaomi/mimo-v2.5-pro', 'deepseek/deepseek-r1-0528',
