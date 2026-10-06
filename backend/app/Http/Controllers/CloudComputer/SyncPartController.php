@@ -19,6 +19,7 @@ final class SyncPartController extends Controller
         $r = $this->valid($request->query(), ['offset' => 'required|integer|min:0', 'total' => 'required|integer|min:1']);
         [$stream, $declared] = $this->body($request);
         $result = $parts->receive($project, $q, (int) $r['offset'], (int) $r['total'], $stream, $declared);
+        if ($result['complete']) app(\App\Services\CloudComputer\Wake::class)->afterUpload($user);
         $body = $result['complete'] ? ['ok' => true, 'complete' => true, 'project' => $projects->fresh($project->id)]
             : ['ok' => true, 'complete' => false, 'received' => $result['received']];
         return response()->json($body)->header('Cache-Control', 'private, no-store');

@@ -45,18 +45,29 @@ final class ConnectController extends Controller
         return AccessController::items($v->validated()['projects'] ?? [], true);
     }
 
+    private function keepsAnything(int $user): bool
+    {
+        foreach (['cloud_sync_projects', 'cloud_sync_macs', 'cloud_sync_vm_keys', 'cloud_sync_logins', 'cloud_project_access'] as $table) {
+            if (DB::table($table)->where('user_id', $user)->exists()) return true;
+        }
+        $w = app(Computers::class)->find($user);
+        return $w !== null && !in_array($w->state, ['stopped', 'archived', 'expired'], true);
+    }
+
     public function revoke(Request $request, Computers $computers, ConnectConsent $consent)
     {
         $user = $this->authenticatedUser($request);
         // Same lock as Wake, so a wake already past its consent check finishes first and is then stopped here, and a later
         // one sees the withdrawal.
-        $w = DB::transaction(function () use ($user, $consent, $computers) {
+        [$w, $open] = DB::transaction(function () use ($user, $consent, $computers) {
             app(Wallet::class)->lock($user->id);
-            $consent->revoke($user->id);
+            $open = $consent->revoke($user->id);
             $w = $computers->find($user->id);
             if ($w) DB::table('cloud_computer_projects')->where('workspace_id', $w->id)->delete(); // queued clones are not redone
-            return $w;
+            return [$w, $open];
         }, 5);
+        // Idempotent: a second tap (or a retried request) finds nothing agreed and nothing kept, and changes nothing.
+        if (!$open && !$this->keepsAnything($user->id)) return $this->json(['ok' => true] + $computers->payload($user->id))->header('Cache-Control', 'private, no-store');
         // Shutdown does nothing for a computer already asleep; once stopped, Retention removes its disk without the usual wait.
         if ($w) app(Wake::class)->stop($user->id);
         app(SyncRetention::class)->purgeUser($user->id);

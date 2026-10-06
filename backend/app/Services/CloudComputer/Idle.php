@@ -5,9 +5,12 @@ use App\Services\CloudWorkspaces\Eligibility;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-/** Lifecycle::stopReason for the cloud computer: Host-reported work keeps it up, until the deadline. */
+/** Lifecycle::stopReason for the cloud computer: Host-reported work and synced work keep it up, until the deadline. */
 class Idle
 {
+    /** Synced work that stops moving (no upload, apply or Mac progress for this long) no longer holds the computer up. */
+    public const SYNC_STALL_SECONDS = 1800;
+
     public function stopReason(object $w): ?string
     {
         if (!$w->lease_until || now()->gte($w->lease_until)) return 'compute_lease_expired';
@@ -22,6 +25,9 @@ class Idle
         if (app(Computers::class)->active($w) > 0) return null;
         // Booted but the Host never reached the relay: stop with an error instead of showing "starting" forever.
         if ($this->neverConnected($w)) return 'host_unreachable';
+        // Uploads waiting to be applied, an apply under way, or a Mac still sending: stay up while it keeps moving (every upload,
+        // apply and Mac progress report refreshes last_activity_at), then the usual idle tail.
+        if (app(SyncKeys::class)->workFor((int) $w->user_id) && now()->lt(Carbon::parse($w->last_activity_at)->addSeconds(self::SYNC_STALL_SECONDS))) return null;
         if (now()->gte(Carbon::parse($w->last_activity_at)->addSeconds(config('cloud_workspaces.idle_seconds')))) return 'idle';
         return null;
     }

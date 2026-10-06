@@ -17,6 +17,7 @@ final class SyncLoginController extends Controller
         $q = $this->valid($request->query(), ['seq' => 'required|integer|min:1', 'sha256' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/']]);
         [$stream, $declared] = $this->body($request);
         $logins->receive($user, $provider, (int) $q['seq'], $q['sha256'], $stream, $declared);
+        app(\App\Services\CloudComputer\Wake::class)->afterUpload($user);
         return $this->reply($user, $logins);
     }
 

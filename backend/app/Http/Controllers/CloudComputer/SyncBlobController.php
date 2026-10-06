@@ -19,6 +19,7 @@ final class SyncBlobController extends Controller
         $q = $this->blobQuery($request);
         [$stream, $declared] = $this->body($request);
         $blobs->receive($project, 'up', $q, $stream, null, $declared);
+        app(\App\Services\CloudComputer\Wake::class)->afterUpload($user);
         return response()->json(['ok' => true, 'project' => $projects->fresh($project->id)])->header('Cache-Control', 'private, no-store');
     }
 

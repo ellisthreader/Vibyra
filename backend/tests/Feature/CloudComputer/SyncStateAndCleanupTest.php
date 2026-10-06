@@ -15,7 +15,7 @@ class SyncStateAndCleanupTest extends SyncTestCase
         $this->asRuntime($token, 'post', 'host/activity', ['running' => 0, 'waitingApproval' => 0, 'projects' => [['name' => 'cloned', 'repo' => 'o/r', 'branch' => 'main'], ['name' => 'my-app']]])->assertOk();
         $this->grant('my-app'); $this->grant('mac-only', str_repeat('5a', 16));
         $c = $this->state();
-        $this->assertSame(['vmKeyReady' => true, 'pending' => 0, 'applying' => false, 'usedBytes' => 0, 'limitBytes' => 5368709120], $c['sync']);
+        $this->assertSame(['vmKeyReady' => true, 'pending' => 0, 'applying' => false, 'vm' => ['keyOk' => null, 'lastError' => null], 'usedBytes' => 0, 'limitBytes' => 5368709120], $c['sync']);
         $by = array_column($c['projects'], null, 'name');
         $this->assertSame(['cloned', 'my-app', 'mac-only'], array_keys($by));
         $this->assertSame(['name' => 'cloned', 'repo' => 'o/r', 'branch' => 'main', 'source' => 'cloud', 'syncedAt' => null, 'syncState' => null, 'allowed' => false], $by['cloned']);
@@ -82,9 +82,11 @@ class SyncStateAndCleanupTest extends SyncTestCase
         $this->assertSame(1, DB::table('cloud_sync_blobs')->where('direction', 'down')->count());
         $this->assertCount(1, Storage::disk('cloud-sync')->allFiles());
         $this->up('one', ['seq' => 2, 'baseSeq' => 1])->assertStatus(409)->assertJsonPath('code', 'resync_required');
-        $this->up('one', ['seq' => 2])->assertOk()->assertJsonPath('project.resync', false);
         // A project granted after the volume went is a full upload too.
         $this->assertTrue($this->grant('three', str_repeat('7c', 16))['resync']);
+        $this->up('one', ['seq' => 2])->assertOk()->assertJsonPath('project.resync', false);
+        // ...and that upload starts the computer on a fresh volume to take it (Wake::forSync), with nobody waking it.
+        $this->assertSame('starting', $this->row()->state);
     }
 
     public function test_a_computer_that_keeps_its_volume_keeps_its_sync_data(): void

@@ -71,6 +71,21 @@ class SyncProjects
             'transcripts_applied_seq' => 0, 'applied_at' => null, 'up_applied_head' => null, 'resync' => true, 'updated_at' => now()]);
     }
 
+    /**
+     * "Sync again" (POST repair): the live, ticked project (or all of them) takes a full upload next, and a failed apply is
+     * cleared so it shows as waiting again. Nothing is deleted. A diverged project is left alone: a full upload would replace the
+     * edits made in Cloud. Returns how many projects were reset.
+     */
+    public function repair(int $user, ?string $key): int
+    {
+        $allowed = app(AccessProjects::class)->allowedKeys($user);
+        $q = DB::table('cloud_sync_projects')->where('user_id', $user)->whereNull('removed_at')->whereIn('project_key', $allowed)->where('state', '!=', 'diverged')
+            ->when($key !== null, fn ($q) => $q->where('project_key', $key));
+        $n = (clone $q)->update(['resync' => true, 'updated_at' => now()]);
+        (clone $q)->whereIn('state', ['error', 'skipped'])->update(['state' => 'pending', 'reason' => null]);
+        return $n;
+    }
+
     public function all(int $user): array
     {
         $bytes = DB::table('cloud_sync_blobs')->where('user_id', $user)->groupBy('project_id')->selectRaw('project_id, sum(bytes) as b')->pluck('b', 'project_id');
