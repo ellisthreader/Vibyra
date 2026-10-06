@@ -28,7 +28,9 @@ class TwoFactorChallenge
         Cache::put($this->key($id), ['user' => $user->id, 'left' => self::ATTEMPTS,
             'expires' => $expires->timestamp, 'state' => $this->state($user)], $expires);
 
-        return ['challengeId' => $id, 'expiresIn' => self::MINUTES * 60];
+        try { $delivery = $this->delivery($id, true); }
+        catch (\RuntimeException) { $delivery = [...app(TwoFactorIdentity::class)->describe($user), 'codeSent' => false]; }
+        return ['challengeId' => $id, 'expiresIn' => self::MINUTES * 60, ...($delivery ?? [])];
     }
 
     /**
@@ -52,7 +54,9 @@ class TwoFactorChallenge
                 Cache::forget($key);
                 return null;
             }
-            if (! app(TwoFactor::class)->check($user, $code)) {
+            $delivered = in_array($user->two_factor_method, ['sms', 'email'], true)
+                && app(TwoFactorCodes::class)->check('login:'.$key, $current['state'], $code);
+            if (! $delivered && ! app(TwoFactor::class)->check($user, $code, false)) {
                 $left = (int) ($current['left'] ?? 0) - 1;
                 if ($left > 0) Cache::put($key, [...$current, 'left' => $left], now()->setTimestamp($current['expires']));
                 else Cache::forget($key);
@@ -66,8 +70,25 @@ class TwoFactorChallenge
     /** A password-half proof must not survive password, setup or recovery changes. */
     private function state(User $user): string
     {
-        return hash('sha256', json_encode([$user->password, $user->two_factor_secret,
-            strtotime((string) $user->two_factor_confirmed_at), $user->two_factor_recovery_codes], JSON_THROW_ON_ERROR));
+        return app(TwoFactorIdentity::class)->state($user);
+    }
+
+    public function delivery(string $id, bool $send): ?array
+    {
+        $key = $this->key($id); $held = Cache::get($key);
+        if (! is_array($held) || ! is_int($held['user'] ?? null)) return null;
+        return DB::transaction(function () use ($held, $key, $send) {
+            $user = User::whereKey($held['user'])->lockForUpdate()->first();
+            $current = Cache::get($key);
+            if (! $user || ! is_array($current) || ($current['left'] ?? 0) <= 0
+                || $current['expires'] <= now()->timestamp || ! hash_equals($this->state($user), $current['state'])) return null;
+            $identity = app(TwoFactorIdentity::class);
+            if ($send && in_array($user->two_factor_method, ['sms', 'email'], true)) {
+                app(TwoFactorCodes::class)->send('login:'.$key, $current['state'],
+                    $user->two_factor_method, $identity->destination($user) ?? '');
+            }
+            return [...$identity->describe($user), 'codeSent' => app(TwoFactorCodes::class)->sent('login:'.$key, $current['state'])];
+        });
     }
 
     private function key(string $id): string

@@ -10,13 +10,13 @@ class RemoteAccountSecurity
 {
     /** Host locks precede identity writes/FK locks, like passkey verification.
      * Each retry receives a fresh model because rolled-back saves clear dirty state. */
-    public function updateIdentity(int $userId, callable $update): mixed
+    public function updateIdentity(int $userId, callable $update, int $attempts = 3): mixed
     {
         return DB::transaction(function () use ($userId, $update) {
             RemoteHost::where('user_id', $userId)->orderBy('id')->lockForUpdate()->get();
             $user = User::whereKey($userId)->lockForUpdate()->firstOrFail();
             return $update($user);
-        }, 3);
+        }, $attempts);
     }
 
     /** Account tokens and their remote disconnect outbox commit together. */

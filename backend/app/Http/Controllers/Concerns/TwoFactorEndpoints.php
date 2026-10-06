@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
  */
 trait TwoFactorEndpoints
 {
+    use TwoFactorMethodEndpoints;
     public function twoFactorStatus(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
@@ -109,7 +110,7 @@ trait TwoFactorEndpoints
             (string) $request->input('code', ''),
         );
         if (! $user) {
-            return $this->json(['ok' => false, 'error' => 'That code didn’t match. Try the current code from your authenticator app.'], 401);
+            return $this->json(['ok' => false, 'error' => 'The code is wrong or expired. Enter your current security code or a recovery code.'], 401);
         }
 
         $payload = $this->sessionPayload($request, $user);
@@ -125,16 +126,19 @@ trait TwoFactorEndpoints
 
         return [
             'enabled' => $on,
+            ...app(\App\Services\Auth\TwoFactorIdentity::class)->describe($user),
+            'smsAvailable' => app(\App\Services\Auth\TwoFactorDelivery::class)->smsAvailable(),
+            'emailAvailable' => $user->email_verified_at !== null,
             'available' => ($user->provider ?: 'email') === 'email',
             'confirmedAt' => $on ? optional($user->two_factor_confirmed_at)->toIso8601String() : null,
             'recoveryCodesLeft' => $on ? count(app(TwoFactor::class)->recoveryCodes($user)) : 0,
         ];
     }
 
-    private function changeSecondFactor(Request $request, callable $change): JsonResponse
+    private function changeSecondFactor(Request $request, callable $change, int $attempts = 3): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        return app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, $change);
+        return app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, $change, $attempts);
     }
 
     /** A code from the app or a recovery code; a password is never a substitute. */

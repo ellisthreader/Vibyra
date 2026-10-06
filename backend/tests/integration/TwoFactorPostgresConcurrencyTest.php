@@ -12,6 +12,53 @@ class TwoFactorPostgresConcurrencyTest extends TestCase
 {
     use \Tests\Support\RemotePostgresWorkers, \Tests\Support\TwoFactorFixture;
 
+    public function test_delivered_login_code_can_create_authority_once_across_workers(): void
+    {
+        [$user, $code] = $this->emailAccount();
+        $service = app(TwoFactorChallenge::class);
+        $id = $service->issue($user)['challengeId'];
+        $claim = fn () => app(TwoFactorChallenge::class)->claim($id, $code->value) !== null;
+        $result = $this->race([$claim, $claim]); sort($result);
+        $this->assertSame([false, true], $result);
+    }
+
+    public function test_replacement_is_committed_once_across_workers(): void
+    {
+        [$user, $code, $recovery] = $this->emailAccount();
+        $security = app(\App\Services\Remote\RemoteAccountSecurity::class);
+        $setup = $security->updateIdentity($user->id, fn ($locked) => app(\App\Services\Auth\TwoFactorEnrollment::class)
+            ->start($locked, 'synthetic-session', 'email', '', $recovery[0]), 1);
+        $claim = fn () => app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity($user->id,
+            fn ($locked) => app(\App\Services\Auth\TwoFactorEnrollment::class)
+                ->confirm($locked, 'synthetic-session', $setup['enrollmentId'], $code->value) !== null);
+        $result = $this->race([$claim, $claim]); sort($result);
+        $this->assertSame([false, true], $result);
+        $this->assertCount(10, app(TwoFactor::class)->recoveryCodes($user->fresh()));
+    }
+
+    public function test_parallel_delivered_guesses_cannot_restore_budget_or_resend_after_exhaustion(): void
+    {
+        [$user, $code] = $this->emailAccount();
+        $service = app(TwoFactorChallenge::class); $id = $service->issue($user)['challengeId'];
+        $wrong = fn () => app(TwoFactorChallenge::class)->claim($id, '000000') !== null;
+        $this->assertSame([false, false, false, false, false], $this->race(array_fill(0, 5, $wrong)));
+        $this->assertNull($service->delivery($id, true));
+        $this->assertNull($service->claim($id, $code->value));
+    }
+
+    private function emailAccount(): array
+    {
+        $user = User::factory()->create(['provider' => 'email']);
+        $user->forceFill(['two_factor_method' => 'email', 'two_factor_confirmed_at' => now(),
+            'two_factor_destination' => \Illuminate\Support\Facades\Crypt::encryptString($user->email)])->save();
+        $codes = app(TwoFactor::class)->replaceRecoveryCodes($user);
+        $capture = (object) ['value' => ''];
+        $this->mock(\App\Services\Auth\TwoFactorDelivery::class, function ($mock) use ($capture) {
+            $mock->shouldReceive('send')->andReturnUsing(function ($method, $to, $code) use ($capture) { $capture->value = $code; });
+        });
+        return [$user, $capture, $codes];
+    }
+
     protected function setUp(): void
     {
         if (getenv('DB_CONNECTION') !== 'pgsql' || getenv('REMOTE_POSTGRES_CONCURRENCY') !== '1'
@@ -25,6 +72,9 @@ class TwoFactorPostgresConcurrencyTest extends TestCase
         $this->assertSame(getenv('DB_DATABASE'), DB::connection()->getDatabaseName());
         $this->assertSame(getenv('DB_HOST'), DB::connection()->getConfig('host'));
         $this->assertEmpty(DB::connection()->getConfig('url'));
+        // The disposable schema also owns migration-created PostgreSQL functions.
+        DB::statement('DROP SCHEMA public CASCADE');
+        DB::statement('CREATE SCHEMA public');
         $this->artisan('migrate:fresh', ['--force' => true])->assertExitCode(0);
         config(['cache.default' => 'database']); Cache::purge();
     }

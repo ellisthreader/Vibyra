@@ -8,6 +8,7 @@ import { completeProviderLogin } from "../providerAuth.js";
 import { apiRequest, portalApi } from "../api.js";
 import LicenseField from "../components/LicenseField.jsx";
 import SignupWelcome from "../components/SignupWelcome.jsx";
+import TwoFactorDelivery, { twoFactorInstruction } from "../components/TwoFactorDelivery.jsx";
 
 export default function AuthPage({ mode }) {
   const creating = mode === "signup";
@@ -112,7 +113,8 @@ export default function AuthPage({ mode }) {
   if (challenge) return <AuthShell>
     <div className="auth-heading">
       <h1>Two-factor verification</h1>
-      <p>Enter the code from your authenticator app, or one of your recovery codes.</p>
+      <p>{twoFactorInstruction(challenge)}</p>
+      <TwoFactorDelivery challenge={challenge} busy={busy} />
     </div>
     {error && <Notice tone="error">{error}</Notice>}
     <form className="auth-form" onSubmit={submitCode}>

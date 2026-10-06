@@ -74,6 +74,14 @@ return [
         'portal_return_url' => env('STRIPE_PORTAL_RETURN_URL', 'https://vibyra.net/account'),
     ],
 
+    'twilio_sms' => [
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'from' => env('TWILIO_PHONE_NUMBER'),
+        'api_key' => env('TWILIO_API_KEY'),
+        'api_secret' => env('TWILIO_API_SECRET'),
+    ],
+
     'twilio_verify' => [
         'service_sid' => env('TWILIO_VERIFY_SERVICE_SID'),
         'api_key' => env('TWILIO_API_KEY'),

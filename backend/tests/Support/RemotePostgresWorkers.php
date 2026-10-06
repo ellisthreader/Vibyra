@@ -21,6 +21,8 @@ trait RemotePostgresWorkers
                 fread($pipes[1], 1);
                 try {
                     DB::purge();
+                    // DatabaseStore holds a connection object: discard it after fork/purge.
+                    \Illuminate\Support\Facades\Cache::purge();
                     DB::statement("SET statement_timeout = '8s'");
                     $result = ['value' => $operation()];
                 } catch (\Throwable $error) {

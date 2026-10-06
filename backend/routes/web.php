@@ -192,6 +192,11 @@ Route::post('/api/account/host-link', [VibyraAppController::class, 'sendHostDown
 Route::post('/api/account/phone/start', [VibyraAppController::class, 'startPhoneVerification'])->middleware('throttle:3,10');
 Route::post('/api/account/phone/check', [VibyraAppController::class, 'checkPhoneVerification'])->middleware('throttle:10,10');
 Route::post('/api/account/session/device', [VibyraAppController::class, 'updateAccountSessionDevice']);
+Route::post('/api/auth/login/2fa/code', [VibyraAppController::class, 'twoFactorLoginDelivery'])->middleware('throttle:6,1,two-factor-delivery');
+Route::post('/api/account/2fa/code', [VibyraAppController::class, 'sendTwoFactorSettingsCode'])->middleware('throttle:3,1,two-factor-settings-code');
+Route::post('/api/account/2fa/method/start', [VibyraAppController::class, 'startTwoFactorMethod'])->middleware('throttle:6,1,two-factor-method');
+Route::post('/api/account/2fa/method/code', [VibyraAppController::class, 'resendTwoFactorMethodCode'])->middleware('throttle:3,1,two-factor-method');
+Route::post('/api/account/2fa/method/confirm', [VibyraAppController::class, 'confirmTwoFactorMethod'])->middleware('throttle:10,1,two-factor-method-confirm');
 Route::get('/api/account/2fa', [VibyraAppController::class, 'twoFactorStatus']);
 Route::post('/api/account/2fa/start', [VibyraAppController::class, 'startTwoFactor'])->middleware('throttle:10,1,two-factor-start');
 Route::post('/api/account/2fa/confirm', [VibyraAppController::class, 'confirmTwoFactor'])->middleware('throttle:10,1,two-factor-confirm');
