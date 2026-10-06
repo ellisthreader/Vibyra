@@ -12,6 +12,27 @@ class TwoFactorMethodsTest extends TestCase
 {
     use RefreshDatabase, \Tests\Support\TwoFactorMethodsFixture;
     public static function methods(): array { return [['email'], ['sms']]; }
+    public static function partialKeys(): array { return [['SK'.str_repeat('b', 32), ''], ['', 'synthetic-secret']]; }
+
+    #[DataProvider('partialKeys')]
+    public function test_incomplete_api_key_pair_uses_the_complete_account_token_pair(string $key, string $secret): void
+    {
+        config(['services.twilio_sms.api_key' => $key, 'services.twilio_sms.api_secret' => $secret,
+            'services.twilio_sms.auth_token' => 'synthetic-token']);
+        app(\App\Services\Auth\TwoFactorDelivery::class)->send('sms', '+447700900123', '123456');
+        Http::assertSentCount(1);
+        $expected = 'Basic '.base64_encode('AC'.str_repeat('a', 32).':synthetic-token');
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', $expected));
+    }
+
+    public function test_complete_api_key_pair_is_used_together(): void
+    {
+        config(['services.twilio_sms.auth_token' => 'synthetic-token']);
+        app(\App\Services\Auth\TwoFactorDelivery::class)->send('sms', '+447700900123', '123456');
+        Http::assertSentCount(1);
+        $expected = 'Basic '.base64_encode('SK'.str_repeat('b', 32).':synthetic-secret');
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', $expected));
+    }
 
     #[DataProvider('methods')]
     public function test_setup_login_one_time_codes_and_recovery(string $method): void

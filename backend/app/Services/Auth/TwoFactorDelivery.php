@@ -24,9 +24,12 @@ class TwoFactorDelivery
             return;
         }
         if ($method !== 'sms' || ! $this->smsAvailable()) throw new RuntimeException('SMS is not configured.');
+        $key = config('services.twilio_sms.api_key');
+        $secret = config('services.twilio_sms.api_secret');
+        $useKey = $key && $secret;
         $response = Http::acceptJson()->asForm()->withBasicAuth(
-            config('services.twilio_sms.api_key') ?: config('services.twilio_sms.account_sid'),
-            config('services.twilio_sms.api_secret') ?: config('services.twilio_sms.auth_token'),
+            $useKey ? $key : config('services.twilio_sms.account_sid'),
+            $useKey ? $secret : config('services.twilio_sms.auth_token'),
         )->timeout(10)->post('https://api.twilio.com/2010-04-01/Accounts/'.config('services.twilio_sms.account_sid').'/Messages.json', [
             'From' => config('services.twilio_sms.from'), 'To' => $destination,
             'Body' => 'Your Vibyra security code is '.$code.'. Expires in 5 minutes. Never share this code.',
