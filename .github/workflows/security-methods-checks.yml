@@ -1,0 +1,54 @@
+name: Account security backend checks
+on:
+  push:
+    branches: ['codex/security-methods-checks-20261006']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      MAIL_MAILER: array
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify tested backend is unchanged from release candidate
+        working-directory: .
+        run: git diff --exit-code HEAD^ HEAD -- backend
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare isolated application
+        run: |
+          cp .env.example .env
+          composer install --no-interaction --prefer-dist --no-progress
+          php artisan key:generate
+      - name: Build website assets
+        run: |
+          npm ci
+          npm run build
+      - name: Full backend suite with original timing assertions
+        run: php -d memory_limit=1G vendor/bin/phpunit --log-junit security-tests.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: account-security-backend-results
+          path: backend/security-tests.xml
+          retention-days: 7
