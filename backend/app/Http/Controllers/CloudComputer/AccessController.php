@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\CloudComputer;
 
 use App\Http\Controllers\{Controller, Concerns\UserPayloads};
-use App\Services\CloudComputer\{AccessCapacity, AccessProjects, AccessProviders, SyncProjects};
+use App\Services\CloudComputer\{AccessCapacity, AccessProjects, AccessProviders, SyncKeys, SyncProjects};
 use Illuminate\Http\Request;
 
 /** What Vibyra Cloud may use (docs/cloud-access-contract.md): the phone's project ticks and the Codex login policy. */
@@ -52,7 +52,9 @@ final class AccessController extends Controller
     private function reply(int $user)
     {
         return response()->json(['ok' => true, 'projects' => app(AccessProjects::class)->rows($user),
-            'providers' => app(AccessProviders::class)->payload($user), 'capacity' => app(AccessCapacity::class)->payload($user)])
+            'providers' => app(AccessProviders::class)->payload($user), 'capacity' => app(AccessCapacity::class)->payload($user),
+            // When each Mac last checked in, so the phone can say why a ticked project is still waiting.
+            'macs' => app(SyncKeys::class)->seen($user)])
             ->header('Cache-Control', 'private, no-store');
     }
 }

@@ -89,4 +89,22 @@ class AccessApiTest extends SyncTestCase
         $this->access('put', '/providers/codex', ['carryOver' => 'allowed'])->assertOk();
         $send(2)->assertOk();
     }
+
+    public function test_access_lists_when_each_mac_last_checked_in(): void
+    {
+        $this->assertSame([], $this->access()->json('macs'));
+        $this->registerMac();
+        DB::table('cloud_sync_macs')->update(['last_seen_at' => null]);
+        $this->assertSame([['id' => $this->deviceId, 'name' => 'My Mac', 'lastSeenAt' => null]], $this->access()->json('macs'));
+        // Reading the sync state with ?mac= is a check-in; an unknown Mac is ignored, not refused.
+        $this->sync('get', '?mac='.strtoupper($this->deviceId))->assertOk();
+        $this->sync('get', '?mac='.(string) \Illuminate\Support\Str::uuid())->assertOk();
+        $seen = $this->access()->json('macs.0.lastSeenAt');
+        $this->assertNotNull($seen);
+        // At most one write a minute: a second read straight away keeps the first time.
+        $this->travel(30)->seconds(); $this->sync('get', '?mac='.$this->deviceId)->assertOk();
+        $this->assertSame($seen, $this->access()->json('macs.0.lastSeenAt'));
+        $this->travel(61)->seconds(); $this->sync('get', '?mac='.$this->deviceId)->assertOk();
+        $this->assertNotSame($seen, $this->access()->json('macs.0.lastSeenAt'));
+    }
 }

@@ -47,6 +47,19 @@ class SyncKeys
         DB::table('cloud_sync_macs')->where('id', $mac->id)->update(['last_seen_at' => now()]);
     }
 
+    /** A Mac reading the sync state: at most one write a minute per Mac. */
+    public function checkIn(object $mac): void
+    {
+        if (!$mac->last_seen_at || \Illuminate\Support\Carbon::parse($mac->last_seen_at)->lt(now()->subMinute())) $this->touchMac($mac);
+    }
+
+    /** The phone's view of the account's Macs: when each last checked in, most recent first (at most 5). */
+    public function seen(int $user): array
+    {
+        return DB::table('cloud_sync_macs')->where('user_id', $user)->orderByRaw('last_seen_at is null')->orderByDesc('last_seen_at')->orderByDesc('id')->limit(5)->get()
+            ->map(fn ($m) => ['id' => $m->device_id, 'name' => $m->name, 'lastSeenAt' => $m->last_seen_at ? \Illuminate\Support\Carbon::parse($m->last_seen_at)->toIso8601String() : null])->all();
+    }
+
     public function mac(object $m): array
     {
         return ['id' => $m->device_id, 'name' => $m->name, 'publicKey' => $m->public_key, 'lastSeenAt' => $m->last_seen_at ? \Illuminate\Support\Carbon::parse($m->last_seen_at)->toIso8601String() : null];

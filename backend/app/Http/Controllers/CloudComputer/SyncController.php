@@ -13,6 +13,9 @@ final class SyncController extends Controller
     public function index(Request $request, SyncKeys $keys, SyncProjects $projects, SyncRetention $retention, SyncLogins $logins)
     {
         $user = $this->authenticatedUser($request)->id; $this->eligible($user);
+        // `?mac=<deviceId>`: this Mac checked in (the phone shows when its Mac last did). An unknown id is ignored.
+        $mac = $request->query('mac');
+        if (is_string($mac) && strlen($mac) <= 64 && ($m = $keys->findMac($user, strtolower($mac)))) $keys->checkIn($m);
         return $this->reply(['enabled' => true, 'vmKey' => $keys->vmKey($user), 'macs' => $keys->macs($user), 'projects' => $projects->all($user),
             'usedBytes' => $retention->usedBytes($user), 'limitBytes' => $retention->limitBytes(), 'logins' => $logins->payload($user),
             'consent' => app(\App\Services\CloudComputer\ConnectConsent::class)->payload($user),
