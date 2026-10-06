@@ -16,7 +16,7 @@ final class TerminalCatalog
         $version = hash('sha256', json_encode($snapshot));
         abort_if($revision !== null && $revision !== $version, 409, 'The model list changed. Refresh it to continue.');
         $fresh = ! $this->pricing->isStale();
-        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && self::offered($id) && in_array('text', $m['output_modalities'] ?? [], true))
+        $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && self::offered($id) && self::choosable(self::levels($m)) && in_array('text', $m['output_modalities'] ?? [], true))
             ->sortKeys()->map(fn ($m, $id) => $this->row($id, $m, $fresh))->values();
         return ['version' => 1, 'source' => 'vibyra', 'revision' => $version,
             'models' => $rows->slice(($page - 1) * 100, 100)->values()->all(),
@@ -43,7 +43,7 @@ final class TerminalCatalog
         $rows = [];
         foreach ($ids as $id) {
             $model = $snapshot[$id] ?? null;
-            if (!self::executable($id) || !self::offered($id) || !$model || !in_array('text', $model['output_modalities'] ?? [], true)
+            if (!self::executable($id) || !self::offered($id) || !$model || !self::choosable(self::levels($model)) || !in_array('text', $model['output_modalities'] ?? [], true)
                 || !isset($model['pricing']['prompt'], $model['pricing']['completion'])) continue;
             $row = $this->row($id, $model, true);
             $rows[] = ['id' => $id, 'name' => config('vibes.models')[$id]['name'] ?? $row['name'], 'efforts' => $row['efforts']];
@@ -58,6 +58,20 @@ final class TerminalCatalog
     }
 
     /** Whether a terminal message can reach this model at all (`config('vibes.terminal_unavailable')`). */
+    /**
+     * Vibyra tokens offers new terminals only on models whose thinking level can be chosen: two or
+     * more levels besides off. Existing terminals and cloud computers keep resolving their model.
+     */
+    public static function choosable(array $efforts): bool
+    {
+        return count(array_diff($efforts, ['none'])) >= 2;
+    }
+
+    private static function levels(array $model): array
+    {
+        return Catalog::supportedEfforts(is_array($model['reasoning'] ?? null) ? $model['reasoning'] : null);
+    }
+
     private static function offered(string $id): bool
     {
         return ! in_array($id, (array) config('vibes.terminal_unavailable', []), true);

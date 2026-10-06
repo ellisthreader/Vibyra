@@ -64,17 +64,23 @@ class OpenRouterReasoningTest extends TestCase
         }
         foreach (config('openrouter_reasoning.models') as $id => $entry) {
             if ($id === 'x-ai/grok-4.20') continue;
+            // An on/off switch is not a level to choose, so Vibyra tokens leaves those models out.
+            if ($entry['toggle'] ?? false) { $this->assertArrayNotHasKey($id, $rows, $id); continue; }
             $this->assertSame($entry['efforts'], $rows[$id]['efforts'], $id);
             $this->assertSame($entry['default'], $rows[$id]['defaultEffort'], $id);
         }
         $this->assertSame(['low', 'high'], $rows['x-ai/grok-4.20']['efforts']);
-        $this->assertSame([], $rows['vendor/always-thinks']['efforts'], 'a fixed thinker gets no slider');
+        $this->assertArrayNotHasKey('vendor/always-thinks', $rows, 'a fixed thinker has no level to choose, so it is not offered');
     }
 
     public function test_every_offered_level_launches_and_reaches_openrouter_in_its_shape(): void
     {
         foreach (config('openrouter_reasoning.models') as $id => $entry) {
             if ($id === 'x-ai/grok-4.20') continue;
+            if ($entry['toggle'] ?? false) {
+                $this->postJson('/api/vibes/terminals', $this->launch($id, 'high'))->assertStatus(422);
+                continue;
+            }
             foreach ($entry['efforts'] as $effort) {
                 $launch = $this->launch($id, $effort);
                 $this->postJson('/api/vibes/terminals', $launch)->assertOk()->assertJsonPath('session.terminal_effort', $effort);
@@ -84,6 +90,9 @@ class OpenRouterReasoningTest extends TestCase
             $unlisted = collect(OpenRouterPricingNormalizer::EFFORTS)->diff($entry['efforts'])->first();
             if ($unlisted) $this->postJson('/api/vibes/terminals', $this->launch($id, $unlisted))->assertStatus(422);
         }
+        // Phone chats still offer on/off models: "On" is sent as enabled, never as an effort.
+        $this->assertSame(['enabled' => true], \App\Services\Billing\OpenRouterReasoning::request(['toggle' => true], 'high'));
+        $this->assertSame(['effort' => 'none'], \App\Services\Billing\OpenRouterReasoning::request(['toggle' => true], 'none'));
         // The level OpenRouter publishes is sent exactly as chosen.
         $launch = $this->launch('x-ai/grok-4.20', 'high');
         $this->postJson('/api/vibes/terminals', $launch)->assertOk();

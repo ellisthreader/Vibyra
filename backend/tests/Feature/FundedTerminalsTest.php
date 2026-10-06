@@ -26,7 +26,9 @@ class FundedTerminalsTest extends TestCase
         app(Wallet::class)->grant($this->user->id, 'funded-grant', 'topup', 100);
         $models = [];
         for ($i = 0; $i < 425; $i++) $models['inception/model-'.$i] = ['name' => 'Model '.$i, 'pricing' => ['prompt' => '0.0000001', 'completion' => '0.0000002'],
-            'supported_parameters' => $i === 0 ? [] : ['tools'], 'output_modalities' => $i === 424 ? ['text', 'image'] : ['text'], 'input_modalities' => ['text']];
+            'supported_parameters' => $i === 0 ? [] : ['tools'], 'output_modalities' => $i === 424 ? ['text', 'image'] : ['text'], 'input_modalities' => ['text'],
+            // Vibyra tokens offers only models whose effort can be chosen.
+            'reasoning' => ['mandatory' => false, 'supported_efforts' => ['low', 'high'], 'default_effort' => 'low']];
         $models['vendor/image'] = ['pricing' => ['prompt' => '0', 'completion' => '0'], 'output_modalities' => ['image']];
         Cache::put(config('billing.openrouter_pricing.cache_key'), ['synced_at' => now()->toIso8601String(), 'models' => $models]);
         Queue::fake();
@@ -42,6 +44,40 @@ class FundedTerminalsTest extends TestCase
         $last = $this->getJson('/api/vibes/terminal-models?page=5&revision='.$first['revision'])->assertOk()->assertJsonCount(25, 'models')->json();
         $this->assertNull($last['next']);
         $this->getJson('/api/vibes/terminal-models?page=2&revision='.str_repeat('a', 64))->assertStatus(409);
+    }
+    public function test_only_models_with_effort_levels_to_choose_are_offered(): void
+    {
+        $key = config('billing.openrouter_pricing.cache_key');
+        $snapshot = Cache::get($key);
+        $snapshot['models']['inception/model-2']['reasoning'] = null;                                       // cannot think
+        $snapshot['models']['inception/model-3']['reasoning'] = ['mandatory' => true];                      // always thinks, no levels
+        $snapshot['models']['inception/model-4']['reasoning'] = ['supported_efforts' => ['none', 'high']];  // only on or off
+        $snapshot['models']['inception/model-5']['reasoning'] = ['supported_efforts' => ['high']];          // one fixed level
+        Cache::put($key, $snapshot);
+        $ids = [];
+        for ($page = 1; $page !== null; $page = $list['next']) {
+            $list = $this->getJson('/api/vibes/terminal-models?page='.$page)->assertOk()->json();
+            $ids = [...$ids, ...array_column($list['models'], 'id')];
+        }
+        $this->assertContains('inception/model-6', $ids);
+        foreach ([2, 3, 4, 5] as $i) {
+            $this->assertNotContains('inception/model-'.$i, $ids);
+            $this->postJson('/api/vibes/terminals', $this->launch('inception/model-'.$i))->assertStatus(422)
+                ->assertJsonPath('message', 'Choose a model with effort levels.');
+        }
+    }
+    public function test_a_terminal_keeps_working_when_its_model_stops_being_offered(): void
+    {
+        $launch = $this->launch('inception/model-4');
+        $this->postJson('/api/vibes/terminals', $launch)->assertOk();
+        $key = config('billing.openrouter_pricing.cache_key');
+        $snapshot = Cache::get($key);
+        $snapshot['models']['inception/model-4']['reasoning'] = ['supported_efforts' => ['none', 'high']];
+        Cache::put($key, $snapshot);
+        // No longer offered for new terminals, but the open one still answers.
+        $this->postJson('/api/vibes/terminals', $this->launch('inception/model-4'))->assertStatus(422);
+        $this->postJson('/api/vibes/terminals', $launch)->assertOk();
+        $this->postJson('/api/vibes/quote', ['chatId' => $launch['id'], 'text' => 'Hello', 'model' => $launch['model']])->assertOk();
     }
     public function test_models_no_terminal_can_reach_are_never_offered(): void
     {

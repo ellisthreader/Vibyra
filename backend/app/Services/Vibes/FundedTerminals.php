@@ -29,6 +29,7 @@ final class FundedTerminals
             }
             abort_if(DB::table('vibes_chats')->where('user_id', $user)->count() >= 500, 422, 'Session limit reached.');
             $model = app(TerminalCatalog::class)->resolve($data['model']);
+            abort_unless(TerminalCatalog::choosable($model['efforts']), 422, 'Choose a model with effort levels.');
             $effort = $data['effort'] ?? null;
             $catalog = app(Catalog::class)->resolve($model['id'], app(Wallet::class)->planFor($user));
             abort_if($effort !== null && !in_array($effort, $catalog['efforts'], true), 422, 'Choose a supported effort for this model.');
