@@ -37,6 +37,7 @@ jobs:
           node-version: '22'
       - name: Prepare isolated application
         run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
           php -r 'file_put_contents(".env", "APP_ENV=testing\nAPP_KEY=base64:".base64_encode(random_bytes(32))."\nAPP_URL=http://localhost\n");'
           composer install --no-interaction --prefer-dist --no-progress
       - name: Build website assets
