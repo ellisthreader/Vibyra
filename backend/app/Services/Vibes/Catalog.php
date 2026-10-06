@@ -105,6 +105,12 @@ class Catalog
         return is_string($default) && in_array($default, $this->efforts($id), true) ? $default : null;
     }
 
+    /** The OpenRouter `reasoning` body that asks this model for the chosen level. */
+    public function reasoningRequest(string $id, string $effort): array
+    {
+        return \App\Services\Billing\OpenRouterReasoning::request($this->reasoningFor($id), $effort);
+    }
+
     private function reasoningFor(string $id): ?array
     {
         $model = $this->pricing->all()[trim($id)] ?? null;

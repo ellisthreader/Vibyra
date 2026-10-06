@@ -116,7 +116,7 @@ class Quotes {
                 'max_price' => ['prompt' => (float) $p['prompt'] * 1000000, 'completion' => (float) $p['completion'] * 1000000]]];
         // Priced above and sent here, so the turn that runs is the turn quoted.
         if ($terminal) $request['modalities'] = ['text'];
-        if ($effort !== null) $request['reasoning'] = ['effort' => $effort];
+        if ($effort !== null) $request['reasoning'] = $this->catalog->reasoningRequest($selected['id'], $effort);
         // OpenRouter reads a PDF for any model, but its default parser for a model that
         // cannot read one natively is a paid OCR engine the quote never priced. Plain
         // text extraction is free and is what the page-count bound above assumes.

@@ -42,8 +42,9 @@ class VibesEffortTest extends TestCase
                 'supported_parameters' => ['tools', 'reasoning'], 'created' => 1_780_000_000,
                 'reasoning' => ['mandatory' => true, 'default_effort' => 'high',
                     'supported_efforts' => ['low', 'medium', 'high', 'xhigh', 'max']]],
-            // Reasoning as a switch, with no levels to choose between.
-            'qwen/qwen3.8-flash' => ['pricing' => ['prompt' => '0.00000015', 'completion' => '0.00000047'],
+            // Reasoning as a switch, with no levels to choose between, on a model nobody has
+            // reviewed (`config/openrouter_reasoning.php` adds levels for reviewed ones).
+            'vendor/unreviewed-switch' => ['pricing' => ['prompt' => '0.00000015', 'completion' => '0.00000047'],
                 'supported_parameters' => ['tools', 'reasoning'], 'reasoning' => ['mandatory' => false, 'default_enabled' => true]],
         ]]);
     }
@@ -76,7 +77,7 @@ class VibesEffortTest extends TestCase
         $this->assertSame('high', $models['anthropic/claude-fable-5.1']['reasoning']['defaultEffort']);
         $this->assertTrue($models['anthropic/claude-fable-5.1']['reasoning']['mandatory']);
         // A switch, not a dial: no ladder, so the phone shows no effort control.
-        $this->assertSame([], $models['qwen/qwen3.8-flash']['reasoning']['efforts']);
+        $this->assertSame([], $models['vendor/unreviewed-switch']['reasoning']['efforts']);
     }
 
     public function test_the_chosen_effort_reaches_the_openrouter_request_body(): void
@@ -117,7 +118,7 @@ class VibesEffortTest extends TestCase
         Http::fake(['*' => Http::response(['id' => 'gen-2', 'usage' => ['cost' => 0.0001],
             'choices' => [['message' => ['content' => 'Done.']]]])]);
 
-        $quote = $this->quote('qwen/qwen3.8-flash', 'high');
+        $quote = $this->quote('vendor/unreviewed-switch', 'high');
         $this->assertNull($quote['effort']);
 
         $id = (string) Str::uuid();
