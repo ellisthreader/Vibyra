@@ -18,3 +18,9 @@ Route::post('api/notifications/v1/host-credential', [\App\Http\Controllers\HostN
 Route::post('api/notifications/v1/host-events', [\App\Http\Controllers\HostNotificationsController::class, 'ingest'])->middleware('throttle:60,1,host-notify-events');
 
 Route::post('api/vibes/terminal-decisions', [\App\Http\Controllers\TerminalDecisionController::class, 'create'])->middleware('throttle:12,1,terminal-auto');
+
+// Mac status on the iPhone while it is locked (flag LIVE_STATUS_ENABLED). See LiveStatusController.
+Route::prefix('api/live-status/v1')->group(function () {
+    Route::post('mac', [\App\Http\Controllers\LiveStatusController::class, 'mac'])->middleware('throttle:30,1,live-status-mac');
+    Route::match(['put', 'delete'], 'phone', [\App\Http\Controllers\LiveStatusController::class, 'phone'])->middleware('throttle:30,1,live-status-phone');
+});
