@@ -18,10 +18,19 @@ final class Lifecycle
                 if (now()->gte($w->deadline_at) || now()->gte(Carbon::parse($w->updated_at)->addSeconds(config('cloud_workspaces.boot_timeout_seconds')))) {
                     $w = app(Shutdown::class)->request($w->user_id, $id, 'boot_timeout');
                 } else {
-                    $resources = $provider->configure($w);
-                    DB::table('cloud_workspaces')->where('id', $id)->where('generation', $w->generation)
-                        ->update(['machine_id' => $resources['machine'], 'volume_id' => $resources['volume']]);
-                    return;
+                    try { $resources = $provider->configure($w); }
+                    catch (ProviderReview $review) {
+                        // Retrying cannot fix this: the start stops now with a reason the person can read, not at boot_timeout.
+                        // The message is Vibyra's own fixed text, never a provider response.
+                        Log::error('cloud.reconcile.review', ['workspace' => $id, 'reason' => $review->getMessage()]);
+                        $w = app(Shutdown::class)->request($w->user_id, $id, 'provider_review');
+                        $resources = null;
+                    }
+                    if ($resources) {
+                        DB::table('cloud_workspaces')->where('id', $id)->where('generation', $w->generation)
+                            ->update(['machine_id' => $resources['machine'], 'volume_id' => $resources['volume']]);
+                        return;
+                    }
                 }
             }
             if ($w->state === 'ready') {

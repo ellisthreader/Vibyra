@@ -5,8 +5,13 @@ use Illuminate\Support\Facades\{Cache, Crypt, Http};
 
 final class FlyProvider implements CloudWorkspaceProvider
 {
-    /** Cache key (per workspace) of a project disk being copied to a Fly server with room: `{from, to}` volume ids. */
+    /** Cache key (per workspace) of a project disk being copied to a Fly server with room: `{from, to, at}`, where `to` is
+     *  null until Fly confirms the copy and `at` is when the copy was asked for. */
     private const MOVE = 'cloud-disk-move:';
+    /** A disk copy can take longer than an ordinary request may wait. */
+    private const COPY_TIMEOUT = 60;
+    /** A copy asked for this long ago that never appeared is asked for again (Fly lists a new disk as soon as it makes it). */
+    private const COPY_RETRY_SECONDS = 120;
 
     public function preflight(): void
     {
@@ -20,16 +25,16 @@ final class FlyProvider implements CloudWorkspaceProvider
             abort_unless(in_array(config('cache.default'), ['database', 'redis'], true), 503, 'Cloud provisioning requires shared resource locks.');
         }
     }
-    private function send(string $method, string $path, ?array $body = null): \Illuminate\Http\Client\Response
+    private function send(string $method, string $path, ?array $body = null, int $timeout = 12): \Illuminate\Http\Client\Response
     {
         try {
-            return Http::withToken(config('cloud_workspaces.fly_token'))->acceptJson()->connectTimeout(5)->timeout(12)
+            return Http::withToken(config('cloud_workspaces.fly_token'))->acceptJson()->connectTimeout(5)->timeout($timeout)
                 ->send($method, config('cloud_workspaces.fly_url').$path, $body === null ? [] : ['json' => $body]);
         } catch (\Throwable) { throw new \RuntimeException('Fly operation outcome is unknown; reconcile before retrying.'); }
     }
-    private function call(string $method, string $path, ?array $body = null, bool $missing = false): mixed
+    private function call(string $method, string $path, ?array $body = null, bool $missing = false, int $timeout = 12): mixed
     {
-        $r = $this->send($method, $path, $body);
+        $r = $this->send($method, $path, $body, $timeout);
         if ($missing && $r->status() === 404) return null;
         if (!$r->successful()) throw new \RuntimeException('Fly request was not confirmed (status '.$r->status().').');
         return $r->json() ?? [];
@@ -55,7 +60,7 @@ final class FlyProvider implements CloudWorkspaceProvider
         // All predecessors must be stopped before the replacement generation can exist.
         foreach ($machines as $machine) {
             $metadata = $machine['config']['metadata'] ?? [];
-            abort_unless(($metadata['vibyra_workspace'] ?? null) === $w->id, 503, 'Unexpected Fly resource needs operator review.');
+            ProviderReview::unless(($metadata['vibyra_workspace'] ?? null) === $w->id, 'Unexpected Fly resource needs operator review.');
             if (($metadata['vibyra_operation'] ?? null) === $w->operation_id) {
                 $this->verifyMachine($w, $machine); return ['machine' => $machine['id'], 'volume' => $volume['id']];
             }
@@ -83,7 +88,8 @@ final class FlyProvider implements CloudWorkspaceProvider
     /**
      * The project disk to mount (null: none yet). Two live ones are only expected while moveDisk copies the disk to a
      * server with room: the copy is used once Fly has filled it, and the original is removed once no machine holds it.
-     * Any other pair waits for an operator; a disk is never removed on a guess.
+     * A copy whose reply never came (`to` still null) is recognised as the one other disk made after it was asked for,
+     * encrypted and the right size. Any other pair waits for an operator; a disk is never removed on a guess.
      */
     private function projectVolume(object $w, string $path, array $live): ?array
     {
@@ -92,22 +98,38 @@ final class FlyProvider implements CloudWorkspaceProvider
             return $live[0] ?? null;
         }
         $move = Cache::get(self::MOVE.$w->id); $by = array_column($live, null, 'id');
-        abort_unless(count($live) === 2 && is_array($move) && isset($by[$move['from'] ?? ''], $by[$move['to'] ?? '']), 503, 'Multiple project disks need reconciliation.');
+        if (count($live) === 2 && is_array($move) && isset($by[$move['from'] ?? '']) && empty($move['to'])) {
+            $other = array_values(array_filter($live, fn ($v) => $v['id'] !== $move['from']))[0];
+            $made = strtotime((string) ($other['created_at'] ?? '')) ?: 0;
+            // Fly stamps the copy after the request was sent; a minute of slack covers the two clocks.
+            if (($other['encrypted'] ?? false) === true && ($other['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib')
+                && $made >= (int) ($move['at'] ?? PHP_INT_MAX) - 60) {
+                $move['to'] = $other['id']; Cache::put(self::MOVE.$w->id, $move, now()->addDays(7));
+            }
+        }
+        ProviderReview::unless(count($live) === 2 && is_array($move) && isset($by[$move['from'] ?? ''], $by[$move['to'] ?? '']), 'Multiple project disks need reconciliation.');
         $copy = $by[$move['to']]; $original = $by[$move['from']];
         if (($copy['state'] ?? '') !== 'created') throw new \RuntimeException('The project disk is still moving to a Fly server with room; retry shortly.');
         // A stopped predecessor may still hold the original: it is removed below, and the original on the next start.
         if (empty($original['attached_machine_id'])) { $this->call('DELETE', $path.'/volumes/'.$original['id']); Cache::forget(self::MOVE.$w->id); }
         return $copy;
     }
-    /** Copies the project disk to a Fly server with room for the machine (Fly fills the copy in the background). */
+    /**
+     * Copies the project disk to a Fly server with room for the machine (Fly fills the copy in the background). The
+     * intent is recorded before the copy is asked for, so a reply that never arrives cannot leave an unexplained second
+     * disk; a copy asked for long ago that never appeared is asked for again.
+     */
     private function moveDisk(object $w, string $path, array $volume): void
     {
-        if ((Cache::get(self::MOVE.$w->id)['from'] ?? null) === $volume['id']) return; // already moving
+        $move = Cache::get(self::MOVE.$w->id);
+        if (($move['from'] ?? null) === $volume['id'] && (!empty($move['to']) || now()->getTimestamp() - (int) ($move['at'] ?? 0) < self::COPY_RETRY_SECONDS)) return; // already moving
+        $intent = ['from' => $volume['id'], 'to' => null, 'at' => now()->getTimestamp()];
+        Cache::put(self::MOVE.$w->id, $intent, now()->addDays(7));
         $copy = $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region, 'source_volume_id' => $volume['id'],
-            'require_unique_zone' => true, 'compute' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096]]);
+            'require_unique_zone' => true, 'compute' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096]], timeout: self::COPY_TIMEOUT);
         abort_unless(is_string($copy['id'] ?? null) && ($copy['encrypted'] ?? false) === true
             && ($copy['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib'), 503, 'The moved project disk could not be verified.');
-        Cache::put(self::MOVE.$w->id, ['from' => $volume['id'], 'to' => $copy['id']], now()->addDays(7));
+        Cache::put(self::MOVE.$w->id, ['to' => $copy['id']] + $intent, now()->addDays(7));
     }
     public function inspect(object $w): string
     {
@@ -163,14 +185,14 @@ final class FlyProvider implements CloudWorkspaceProvider
     }
     private function verifyApp(object $w): void
     {
-        abort_unless(collect($this->apps())->contains(fn ($a) => ($a['name'] ?? null) === $w->app_name
-            && ($a['network'] ?? null) === $w->app_name), 503, 'Fly workspace network ownership could not be verified.');
+        ProviderReview::unless(collect($this->apps())->contains(fn ($a) => ($a['name'] ?? null) === $w->app_name
+            && ($a['network'] ?? null) === $w->app_name), 'Fly workspace network ownership could not be verified.');
     }
     private function verifyMachine(object $w, array $m, bool $current = true): void
     {
         $meta = $m['config']['metadata'] ?? [];
-        abort_unless(($meta['vibyra_workspace'] ?? null) === $w->id && (!$current
+        ProviderReview::unless(($meta['vibyra_workspace'] ?? null) === $w->id && (!$current
             || (($meta['vibyra_operation'] ?? null) === $w->operation_id && (string) ($meta['vibyra_generation'] ?? '') === (string) $w->generation)),
-            503, 'Fly machine ownership could not be verified.');
+            'Fly machine ownership could not be verified.');
     }
 }

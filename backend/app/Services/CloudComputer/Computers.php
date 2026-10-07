@@ -11,6 +11,8 @@ class Computers
 {
     /** Host reports older than this no longer count as live activity. */
     public const FRESH_SECONDS = 60;
+    /** Stop reasons of a start that failed: the computer shows as `error` with a sentence, and sync does not retry it at once. */
+    public const START_FAILED = ['boot_timeout', 'boot_failed', 'host_unreachable', 'provider_review'];
 
     public static function fail(string $code, string $message, int $status, array $extra = []): never
     {
@@ -67,7 +69,7 @@ class Computers
             'ready' => !$online ? 'starting' : ($this->active($w) > 0 ? 'running' : 'idle'),
             'stopping' => 'stopping',
             'recovery_required' => 'error',
-            'stopped', 'archived', 'expired' => in_array($w->stop_reason, ['boot_timeout', 'boot_failed', 'host_unreachable'], true) ? 'error' : 'stopped',
+            'stopped', 'archived', 'expired' => in_array($w->stop_reason, self::START_FAILED, true) ? 'error' : 'stopped',
             default => 'none',
         };
     }
@@ -123,6 +125,7 @@ class Computers
             'boot_timeout' => 'Your cloud computer did not start in time. Try waking it again.',
             'boot_failed' => 'Your cloud computer could not start. Try waking it again.',
             'host_unreachable' => 'Your cloud computer started but could not connect to Vibyra Cloud. Try waking it again.',
+            'provider_review' => 'Vibyra Cloud couldn’t start: its storage needs a check by Vibyra. Your projects are safe on your Mac.',
             default => 'Your cloud computer needs attention. Stop it and wake it again.',
         };
     }

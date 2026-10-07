@@ -105,6 +105,56 @@ class CloudOperationsTest extends CloudTestCase
         catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame('Multiple project disks need reconciliation.', $e->getMessage()); }
         $this->assertSame(0, $deleted);
     }
+    /** 2026-10-07: Fly took longer to answer the copy request than the backend waited, but made the copy; every start then
+     *  stopped at "Multiple project disks". The intent is now recorded first, and the next start adopts that copy. */
+    public function test_a_disk_copy_whose_reply_never_came_is_adopted_on_the_next_start(): void
+    {
+        $id = $this->imported(); $this->start($id); $w = app(Workspaces::class)->owned($this->user->id, $id);
+        $volumes = [['id' => 'old', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20,
+            'attached_machine_id' => null, 'created_at' => now()->subDay()->toIso8601String()]];
+        $copies = 0; $deleted = []; $mounted = null;
+        Http::fake(function ($request) use ($w, &$volumes, &$copies, &$deleted, &$mounted) {
+            $url = $request->url(); $method = $request->method();
+            if (str_contains($url, '?org_slug=')) return Http::response(['apps' => [['name' => $w->app_name, 'network' => $w->app_name]]]);
+            if (str_ends_with($url, '/volumes') && $method === 'GET') return Http::response($volumes);
+            if (str_ends_with($url, '/volumes') && $method === 'POST') {
+                // Fly makes the copy, but the reply is lost.
+                $copies++; $volumes[] = ['id' => 'new', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true,
+                    'size_gb' => 20, 'attached_machine_id' => null, 'created_at' => now()->toIso8601String()];
+                throw new \Illuminate\Http\Client\ConnectionException('Operation timed out');
+            }
+            if (str_contains($url, '/volumes/') && $method === 'DELETE') { $deleted[] = basename(parse_url($url, PHP_URL_PATH)); return Http::response([]); }
+            if (str_ends_with($url, '/machines') && $method === 'GET') return Http::response([]);
+            if (str_ends_with($url, '/machines') && $method === 'POST') {
+                $volume = $request->data()['config']['mounts'][0]['volume'];
+                if ($volume === 'old') return Http::response(['error' => 'insufficient resources', 'status' => 'volume_placement_capacity'], 412);
+                $mounted = $volume; return Http::response(['id' => 'machine', 'state' => 'created']);
+            }
+            return Http::response(['name' => $w->app_name]);
+        });
+        $provider = app(FlyProvider::class);
+        try { $provider->configure($w); $this->fail('expected the unknown outcome'); }
+        catch (\RuntimeException $e) { $this->assertStringContainsString('outcome is unknown', $e->getMessage()); }
+        $this->assertSame(['machine' => 'machine', 'volume' => 'new'], $provider->configure($w));
+        $this->assertSame([1, ['old'], 'new'], [$copies, $deleted, $mounted]);
+    }
+    public function test_a_recorded_copy_never_adopts_a_disk_older_than_the_request(): void
+    {
+        $id = $this->imported(); $this->start($id); $w = app(Workspaces::class)->owned($this->user->id, $id); $deleted = 0;
+        \Illuminate\Support\Facades\Cache::put('cloud-disk-move:'.$id, ['from' => 'a', 'to' => null, 'at' => now()->getTimestamp()], now()->addDay());
+        Http::fake(function ($request) use ($w, &$deleted) {
+            $url = $request->url();
+            if (str_contains($url, '?org_slug=')) return Http::response(['apps' => [['name' => $w->app_name, 'network' => $w->app_name]]]);
+            if (str_ends_with($url, '/volumes')) return Http::response([
+                ['id' => 'a', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20, 'created_at' => now()->subDays(2)->toIso8601String()],
+                ['id' => 'b', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20, 'created_at' => now()->subDay()->toIso8601String()]]);
+            if ($request->method() === 'DELETE') $deleted++;
+            return Http::response(['name' => $w->app_name]);
+        });
+        try { app(FlyProvider::class)->configure($w); $this->fail('expected a refusal'); }
+        catch (\App\Services\CloudWorkspaces\ProviderReview $e) { $this->assertSame('Multiple project disks need reconciliation.', $e->getMessage()); }
+        $this->assertSame(0, $deleted);
+    }
     public function test_failed_runway_renewal_keeps_existing_hold_until_shutdown_confirmation(): void
     {
         $id = $this->imported(); [, $token] = $this->ready($id); $this->travel(5)->seconds();

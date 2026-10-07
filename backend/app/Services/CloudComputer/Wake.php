@@ -31,13 +31,14 @@ class Wake
      * Wakes the computer to apply synced work: an upload or login landed, the person asked for a repair, or a Mac with ticked
      * projects is waiting for the computer's first key. Every check of wake() still applies (agreement, eligibility, terms
      * already covered, start caps, capacity, allowance); a refusal is logged, never thrown. Running or starting: nothing to do.
-     * A computer that just failed to boot is left alone for 30 minutes rather than retried every two.
+     * A computer that just failed to boot is left alone for 30 minutes rather than retried every two, unless the person asked.
      */
     public function forSync(int $user, bool $asked = false): void
     {
         $w = app(Computers::class)->find($user);
         if (!$w || in_array($w->state, ['starting', 'ready'], true)) return;
-        if (in_array($w->stop_reason, ['boot_timeout', 'boot_failed', 'host_unreachable'], true) && now()->lt(\Illuminate\Support\Carbon::parse($w->updated_at)->addMinutes(30))) return;
+        // A person's own "Sync again" is never held back by an automatic retry pause.
+        if (!$asked && in_array($w->stop_reason, Computers::START_FAILED, true) && now()->lt(\Illuminate\Support\Carbon::parse($w->updated_at)->addMinutes(30))) return;
         $oldest = DB::table('cloud_sync_blobs')->where('user_id', $user)->where('direction', 'up')->whereNull('applied_at')->whereNull('failed_at')->orderBy('created_at')->value('id');
         $tries = 'cloud-sync-wake-tries:'.$user.':'.($oldest ?? 'key');
         if (!$asked && (int) Cache::get($tries, 0) >= self::SYNC_WAKE_TRIES) return;
