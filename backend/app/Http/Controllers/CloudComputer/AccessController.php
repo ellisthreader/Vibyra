@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\CloudComputer;
 
 use App\Http\Controllers\{Controller, Concerns\UserPayloads};
-use App\Services\CloudComputer\{AccessCapacity, AccessProjects, AccessProviders, SyncKeys, SyncProjects};
+use App\Services\CloudComputer\{AccessCapacity, AccessProjects, AccessProviders, SyncKeys, SyncProjects, Wake};
 use Illuminate\Http\Request;
 
 /** What Vibyra Cloud may use (docs/cloud-access-contract.md): the phone's project ticks and the Codex login policy. */
@@ -25,6 +25,7 @@ final class AccessController extends Controller
             'projects.*.projectKey' => ['required_without:projects.*.id', 'string', 'regex:'.SyncProjects::KEY],
             'projects.*.name' => 'sometimes|nullable|string|max:120', 'projects.*.allowed' => 'required|boolean']);
         $access->decide($user, self::items($d['projects']), 'phone');
+        app(Wake::class)->forPerson($user); // a project just ticked with no cloud copy yet starts Cloud for it
         return $this->reply($user);
     }
 

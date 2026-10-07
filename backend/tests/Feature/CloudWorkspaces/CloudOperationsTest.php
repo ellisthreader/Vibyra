@@ -155,6 +155,28 @@ class CloudOperationsTest extends CloudTestCase
         catch (\App\Services\CloudWorkspaces\ProviderReview $e) { $this->assertSame('Multiple project disks need reconciliation.', $e->getMessage()); }
         $this->assertSame(0, $deleted);
     }
+    /** After retention (or Delete everything) removed the Fly app and its disks, the next start makes new ones. */
+    public function test_a_start_after_the_app_and_disks_were_removed_makes_new_ones(): void
+    {
+        $id = $this->imported(); $this->start($id); $w = app(Workspaces::class)->owned($this->user->id, $id);
+        $made = []; $volumes = []; $mounted = null;
+        Http::fake(function ($request) use ($w, &$made, &$volumes, &$mounted) {
+            $url = $request->url(); $method = $request->method(); $path = parse_url($url, PHP_URL_PATH);
+            if (str_contains($url, '?org_slug=')) return Http::response(['apps' => in_array('app', $made, true) ? [['name' => $w->app_name, 'network' => $w->app_name]] : []]);
+            if ($method === 'GET' && str_ends_with($path, '/apps/'.$w->app_name)) return in_array('app', $made, true) ? Http::response(['name' => $w->app_name]) : Http::response([], 404);
+            if ($method === 'POST' && str_ends_with($path, '/apps')) { $made[] = 'app'; return Http::response(['name' => $w->app_name]); }
+            if (str_ends_with($path, '/volumes') && $method === 'GET') return Http::response($volumes);
+            if (str_ends_with($path, '/volumes') && $method === 'POST') {
+                $made[] = 'volume'; $volumes[] = $v = ['id' => 'fresh', 'name' => 'project', 'region' => 'lhr', 'state' => 'created', 'encrypted' => true, 'size_gb' => 20];
+                return Http::response($v);
+            }
+            if (str_ends_with($path, '/machines') && $method === 'GET') return Http::response([]);
+            if (str_ends_with($path, '/machines') && $method === 'POST') { $made[] = 'machine'; $mounted = $request->data()['config']['mounts'][0]['volume']; return Http::response(['id' => 'machine', 'state' => 'created']); }
+            return Http::response([], 404);
+        });
+        $this->assertSame(['machine' => 'machine', 'volume' => 'fresh'], app(FlyProvider::class)->configure($w));
+        $this->assertSame([['app', 'volume', 'machine'], 'fresh'], [$made, $mounted]);
+    }
     public function test_failed_runway_renewal_keeps_existing_hold_until_shutdown_confirmation(): void
     {
         $id = $this->imported(); [, $token] = $this->ready($id); $this->travel(5)->seconds();

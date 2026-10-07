@@ -56,6 +56,15 @@ class Wake
         app()->terminating(fn () => app(self::class)->forSync($user, $asked));
     }
 
+    /**
+     * The person just connected or ticked projects: a sleeping computer with synced work (first of all, no key yet) starts
+     * after the response, past the automatic retry pause; every check of wake() still applies.
+     */
+    public function forPerson(int $user): void
+    {
+        if ($this->syncWaiting($user)) $this->forSyncLater($user, true);
+    }
+
     /** An upload (code, conversations or a login) landed: a running computer stays up for it, a sleeping one is started. */
     public function afterUpload(int $user): void
     {

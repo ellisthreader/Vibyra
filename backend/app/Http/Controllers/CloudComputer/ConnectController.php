@@ -32,6 +32,11 @@ final class ConnectController extends Controller
         if ($picked) app(AccessProjects::class)->decide($user->id, $picked, 'phone'); // the projects ticked on the connect page
         // The connect text covers the cloud terms, so the first wake needs no extra terms sheet.
         DB::table('cloud_workspaces')->where('id', $w->id)->whereNull('terms_accepted_at')->update(['terms_accepted_at' => now(), 'updated_at' => now()]);
+        // A failed start from before this agreement (say, before a Delete everything) is history: it neither shows as an
+        // error nor holds back the start this connect makes for the ticked projects.
+        DB::table('cloud_workspaces')->where('id', $w->id)->whereIn('state', ['stopped', 'archived', 'expired'])
+            ->whereIn('stop_reason', Computers::START_FAILED)->update(['stop_reason' => null, 'updated_at' => now()]);
+        app(Wake::class)->forPerson($user->id);
         return $this->json(['ok' => true] + $computers->payload($user->id))->header('Cache-Control', 'private, no-store');
     }
 
