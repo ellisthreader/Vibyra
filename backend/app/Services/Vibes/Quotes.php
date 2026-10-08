@@ -28,7 +28,7 @@ class Quotes {
         return $selected['defaultEffort'] ?? null;
     }
 
-    public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = [], array $attachments = [], ?array $semantic = null): array
+    public function create(int $userId, string $chatId, string $text, string $model, ?string $effort = null, array $integrations = [], array $attachments = [], ?array $semantic = null, bool $partial = false): array
     {
         app(\App\Services\Membership\Allowances::class)->refresh($userId);
         $scale = \App\Services\Membership\Units::scale($userId);
@@ -139,6 +139,13 @@ class Quotes {
             $remaining = app(FundedTerminals::class)->remaining($chat) / 10000;
             $max = min($max, $remaining, TurnPrice::ceiling($scale));
             abort_if($remaining <= 0 || $max > $remaining, 402, 'This reply exceeds the terminal’s remaining token limit. Start a new terminal with a larger limit.');
+        }
+        if ($partial) {
+            $available = $paid + ($selected['trial'] ? $trialUsable : 0);
+            abort_if($available <= 0, 402, 'You’re out of usable tokens for this model. Add tokens or upgrade to continue.');
+            $limited = $available <= $max;
+            $max = min($max, $available);
+            $request['vibyraBalanceLimited'] = $limited;
         }
         $max = app(\App\Services\CloudWorkspaces\Ai::class)->quote($chat, $request, $max, $scale);
         $maxUnits = (int) ceil($max * $scale);

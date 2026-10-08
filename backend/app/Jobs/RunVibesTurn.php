@@ -62,6 +62,7 @@ class RunVibesTurn implements ShouldQueue
             [$outgoing, $attached] = app(Attachments::class)->expand($request, $t->id);
             unset($outgoing['vibyraAgent']);
             unset($outgoing['vibyraCloud']);
+            unset($outgoing['vibyraBalanceLimited']);
             $prices = $request['provider']['max_price'] ?? [];
             // Bounded with the very method `Quotes` priced this turn by, so the budget
             // the job enforces and the budget the person was quoted are one number
@@ -73,7 +74,7 @@ class RunVibesTurn implements ShouldQueue
             $outputTokens = min($request['max_tokens'] ?? 2048, (int) floor(($remainingMicro / 1.1 - $inputCost) / $completionRate));
             if ($t->step_count >= $maxSteps || $outputTokens < 128 || $t->cancel_requested) {
                 $turns->settle($t->id, $t->actual_micro_usd, 'Paused at the turn budget. Review the tool results for any completed changes. Send another message to continue.',
-                    finishReason: $t->step_count >= $maxSteps ? 'step_limit' : 'budget_limit');
+                    finishReason: $t->step_count >= $maxSteps ? 'step_limit' : (!empty($request['vibyraBalanceLimited']) ? 'usage_limit' : 'budget_limit'));
                 return;
             }
             $outgoing['max_tokens'] = $outputTokens;
@@ -132,7 +133,10 @@ class RunVibesTurn implements ShouldQueue
                 $empty = $response->successful() && ! $text;
                 $error = $empty ? 'The AI thought for too long and ran out of room to answer. You were not charged. Try a lower effort.'
                     : (! $response->successful() ? $this->refusal($response->status(), $body, $t->id, $id, false) : null);
-                $turns->settle($t->id, $t->actual_micro_usd + $micro, $text, $error, absorb: $empty);
+                $limited = !empty($request['vibyraBalanceLimited']) && $outputTokens < ($request['max_tokens'] ?? 2048)
+                    && ($body['choices'][0]['finish_reason'] ?? null) === 'length';
+                $turns->settle($t->id, $t->actual_micro_usd + $micro, $text, $error, absorb: $empty,
+                    finishReason: $limited && !$empty && !$error ? 'usage_limit' : null);
             } elseif (in_array($response->status(), [400, 401, 402, 403, 404, 422, 429])) {
                 $turns->settle($t->id, $t->actual_micro_usd, null, $this->refusal($response->status(), $body, $t->id, $id, true));
             } else {

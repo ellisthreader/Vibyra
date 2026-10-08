@@ -130,6 +130,7 @@ class Wallet
             return app(\App\Services\Membership\Snapshot::class)->adapt($userId, [
                 'version' => 1, 'available' => $available, 'held' => $held, 'total' => $available + $held,
                 'chatEnabled' => (bool) config('vibes.enabled') && trim((string) config('services.openrouter.key')) !== '',
+                'directSend' => true,
                 'paidAvailable' => $paid, 'plan' => $plan, 'paidUntil' => $w->paid_until,
                 'trialChatsRemaining' => max(0, self::trialChats() - DB::table('vibes_chats')->where('user_id', $userId)->whereNotNull('trial_slot')->count()),
                 // Published so the phone words the trial from the same numbers the

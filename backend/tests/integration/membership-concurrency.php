@@ -52,3 +52,5 @@ check(count(array_filter($r,fn($v)=>$v['ok']))===3 && app(Wallet::class)->availa
 $before=app(Wallet::class)->available($u->id);
 $r=race(array_fill(0,3,fn()=>app(Periods::class)->refund($p['reference'].':next',1000)));
 check(count(array_filter($r,fn($v)=>$v['ok']))===3 && app(Wallet::class)->available($u->id)===$before-intdiv(3000000*1000,1999),'racing refunds remove cumulative amount once');
+
+require __DIR__.'/direct-send-concurrency.php';

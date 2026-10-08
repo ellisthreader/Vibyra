@@ -114,8 +114,11 @@ class VibesController extends Controller
         abort_if(trim((string) config('services.openrouter.key')) === '', 503, 'AI chat is being prepared. Please try again later.');
         $user = $this->account($request);
         $this->maySpend($user);
-        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:'.Quotes::MAX_ENCODED_LENGTH]);
-        $turn = $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
+        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required_without:message|prohibits:message|string|max:'.Quotes::MAX_ENCODED_LENGTH,
+            'message' => 'required_without:quote|prohibits:quote|array']);
+        $turn = isset($d['message'])
+            ? app(\App\Services\Vibes\DirectTurns::class)->submit($user->id, $d['id'], $d['message'])
+            : $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
         if ($turn->status === 'queued') RunVibesTurn::dispatch($turn->id);
         return $this->json(['turn' => $turns->payload($turn)], 202);
     }

@@ -15,7 +15,7 @@ class Turns
             $scale = \App\Services\Membership\Units::scale($userId);
             $microPerUnit = intdiv(10000, $scale);
             app(\App\Services\Membership\Allowances::class)->refresh($userId);
-            $digest = hash('sha256', json_encode($q));
+            $digest = $q['directDigest'] ?? hash('sha256', json_encode($q));
             $existing = DB::table('vibes_turns')->where('id', $id)->first();
             if ($existing) {
                 abort_unless($existing->user_id == $userId && hash_equals($existing->digest, $digest), 409, 'This submission was already used.');
