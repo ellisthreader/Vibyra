@@ -1,8 +1,8 @@
 use super::preview_service::PreviewService;
 use std::{collections::HashMap, sync::mpsc::Receiver, time::Duration};
-use vibyra_host::{
-    PreviewFrame as Frame, PreviewHandler, StreamKey, UpgradeRequest, UpgradeResponse, WINDOW_BYTES,
-};
+use vibyra_host::{PreviewFrame as Frame, PreviewHandler, StreamKey, UpgradeRequest, WINDOW_BYTES};
+#[path = "preview_upgrade_response_fixture.rs"]
+mod response_fixture;
 
 pub(super) fn receive(receiver: &Receiver<Frame>) -> Frame {
     receiver.recv_timeout(Duration::from_secs(10)).unwrap()
@@ -66,14 +66,8 @@ pub(super) fn open_websocket(
             },
         )
         .unwrap();
-    let response = match receive(receiver) {
-        Frame::Data {
-            key: value,
-            sequence: 0,
-            bytes,
-        } if value == key => UpgradeResponse::decode(&bytes).unwrap(),
-        other => panic!("unexpected response metadata: {other:?}"),
-    };
+    let response =
+        response_fixture::receive_metadata(receiver, key).expect("upgrade response metadata");
     assert_eq!(response.status, 101);
     assert_eq!(
         response.headers["sec-websocket-accept"],
