@@ -68,6 +68,8 @@ class SyncStatus
         if ($s?->state === 'error') return ['phase' => 'needs_attention', 'code' => self::code($s->reason), 'message' => self::message(self::code($s->reason)),
             'fixOn' => self::FIX_ON[self::code($s->reason)] ?? 'cloud'] + $times;
         if ($s?->state === 'diverged') return ['phase' => 'diverged'] + $times;
+        $received = app(SyncUploadProgress::class)->current($s);
+        if ($received) return ['phase' => 'uploading'] + $received + $times;
         if ($current) return ['phase' => 'uploading', 'sent' => (int) ($current['sent'] ?? 0), 'total' => (int) ($current['total'] ?? 0)] + $times;
         if (($mine['phase'] ?? null) === 'error') return ['phase' => 'needs_attention', 'code' => $mine['code'] ?? 'upload_failed',
             'message' => $mine['message'] ?? self::message($mine['code'] ?? 'upload_failed'), 'fixOn' => 'mac'] + $times;

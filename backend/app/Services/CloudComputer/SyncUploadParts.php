@@ -85,17 +85,26 @@ class SyncUploadParts
                 if ($chunk === false) break;
                 if ($chunk === '') continue;
                 $added += strlen($chunk);
-                if ($added > self::MAX_PART || $have + $added > $total) { fclose($out); @unlink($part); Computers::fail('too_large', 'That piece goes past the upload size. Start again.', 413); }
+                if ($added > self::MAX_PART || $have + $added > $total) {
+                    fclose($out); @unlink($part); app(SyncUploadProgress::class)->clear($project, $q);
+                    Computers::fail('too_large', 'That piece goes past the upload size. Start again.', 413);
+                }
                 fwrite($out, $chunk);
             }
         } finally { if (is_resource($out)) fclose($out); }
         clearstatcache(true, $part);
         $now = (int) filesize($part);
-        if ($now < $total) return ['complete' => false, 'received' => $now];
+        if ($now < $total) {
+            if ($now > $have) app(SyncUploadProgress::class)->received($project, $q, $now, $total);
+            return ['complete' => false, 'received' => $now];
+        }
         // Complete: the normal path checks the checksum, seq and quota, and stores it. The part is gone either way.
         $in = fopen($part, 'rb');
         try { $blob = app(SyncBlobs::class)->receive($project, 'up', $q, $in, null, $total); }
-        finally { if (is_resource($in)) fclose($in); @unlink($part); }
+        finally {
+            if (is_resource($in)) fclose($in); @unlink($part);
+            app(SyncUploadProgress::class)->clear($project, $q);
+        }
         return ['complete' => true, 'blob' => $blob];
     }
 
