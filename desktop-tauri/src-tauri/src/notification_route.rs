@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 const MAX_AGE: u64 = 24 * 60 * 60;
+#[cfg(any(target_os = "macos", test))]
 const MAX_PENDING: usize = 32;
 
 /// IDs and an opaque native account scope only. No task text, token or email is stored by macOS.
@@ -34,10 +35,12 @@ impl NotificationRoute {
 #[derive(Default)]
 pub struct ActivationQueue {
     pending: VecDeque<NotificationRoute>,
+    #[cfg(any(target_os = "macos", test))]
     seen: VecDeque<(String, u64)>,
 }
 
 impl ActivationQueue {
+    #[cfg(any(target_os = "macos", test))]
     pub fn push(&mut self, route: NotificationRoute, now: u64) -> bool {
         self.seen
             .retain(|(_, at)| now.saturating_sub(*at) <= MAX_AGE);

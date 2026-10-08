@@ -1,2 +1,4 @@
 desktop-tauri/src-tauri/tests/fixtures/updater-fixture.bin -text
 desktop-tauri/package-lock.json text eol=lf
+docs/secret-guard-vectors.template.json text eol=lf
+docs/secret-guard-fixture-factories.json text eol=lf
