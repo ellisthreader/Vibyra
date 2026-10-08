@@ -1,0 +1,127 @@
+{
+  "about": "Seal with the fixed ephemeral secret, compare sealedLength/sealedSha256 (and sealedHex when present); open sealedHex with the recipient secret and compare plaintextSha256. Plaintext byte i = (i*31+7) mod 256. A plaintext of exactly 65536 bytes is one final chunk (no trailing empty chunk). Every `reject` stream and the two `rejectDerived` ones must fail to open.",
+  "cases": [
+    {
+      "name": "empty",
+      "plaintextLength": 0,
+      "plaintextSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b0455200000010b3127e839cfac8f048cadf60ff54adc0",
+      "sealedLength": 59,
+      "sealedSha256": "1c6ecf134ea0e976278949ec7a5b04a558d9284af1095ba0b859610adabebf7d"
+    },
+    {
+      "name": "one_byte",
+      "plaintextLength": 1,
+      "plaintextSha256": "ca358758f6d27e6cf45272937977a748fd88391db679ceda7dc7bf1f005ee879",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117d6468fe18aa333fc417f6e364646cade1",
+      "sealedLength": 60,
+      "sealedSha256": "59127924d88c21a66322ee4cd3e0172e0962ee557b4afae5684685f906aa01de"
+    },
+    {
+      "name": "chunk_exact_65536",
+      "plaintextLength": 65536,
+      "plaintextSha256": "ef4636928161808e87035fa51983821677527ccd9661991c5d0126a778b2268a",
+      "sealedLength": 65595,
+      "sealedSha256": "8746fa68ee5bee70442cf868014c861b7fe9d62b1da4583f4c0b646feff40130"
+    },
+    {
+      "name": "chunk_plus_one_65537",
+      "plaintextLength": 65537,
+      "plaintextSha256": "74f3260f4a9adaf7271c910ba2d111dbae7a176afb487e1b7f655897eadf1093",
+      "sealedLength": 65616,
+      "sealedSha256": "524e9d8c03a750cdd2b380239e9279e651008e8fd57315767f5a2ffca202530f"
+    },
+    {
+      "name": "multi_chunk_200000",
+      "plaintextLength": 200000,
+      "plaintextSha256": "8f9d1bf454d63cd9fc6edbe8f3f2331cc1f9b195c7ec90533717bf243ae966c7",
+      "sealedLength": 200119,
+      "sealedSha256": "334d719767f4d48253aae661cf30da4eaaf161fabf8f05c762abdc29543f5518"
+    },
+    {
+      "name": "thirteen_bytes",
+      "plaintextLength": 13,
+      "plaintextSha256": "dc898e8ef5663ef7a22697ee877b3c4d62ac6f2a60d87187432172e46ece2cc4",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b045520000001d7dc2bfb2723be6fca6f34e4436bebe2733af55a4934b83b82f2a97bf11",
+      "sealedLength": 72,
+      "sealedSha256": "4aa1132d3a17e12b2430fab01f9d21d2e54885ae4bf28dfe07e71e313e86c99b"
+    }
+  ],
+  "ephemeralPublicHex": "86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552",
+  "ephemeralSecretHex": "546de9341648d373a8858ed7dc271f527e01b1368c266e35b29e7ea0add0d93c",
+  "format": "VSYNC1",
+  "plaintextPattern": {
+    "byteAt": "(i * 31 + 7) mod 256"
+  },
+  "recipientPublicHex": "a8fbe332d245084f60e08e121b4537b13781052a6e1e12db06621f34489c0526",
+  "recipientSecretHex": "8d8a682e22a2cf7337286520e0b83f15965f7ac9ad3c3dbcb56d366c0b74a7c1",
+  "reject": [
+    {
+      "mutation": "first byte changed to 'X'",
+      "name": "wrong_magic",
+      "of": "one_byte",
+      "sealedHex": "5853594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117d6468fe18aa333fc417f6e364646cade1"
+    },
+    {
+      "mutation": "last byte flipped",
+      "name": "flipped_tag_byte",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117d6468fe18aa333fc417f6e364646cade0"
+    },
+    {
+      "mutation": "first ciphertext byte flipped",
+      "name": "flipped_ciphertext_byte",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117c6468fe18aa333fc417f6e364646cade1"
+    },
+    {
+      "mutation": "cut after 38 bytes",
+      "name": "truncated_header",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b045"
+    },
+    {
+      "mutation": "last byte removed",
+      "name": "truncated_chunk",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117d6468fe18aa333fc417f6e364646cad"
+    },
+    {
+      "mutation": "one 0x00 byte appended",
+      "name": "trailing_byte",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117d6468fe18aa333fc417f6e364646cade100"
+    },
+    {
+      "mutation": "the final chunk repeated after itself",
+      "name": "trailing_chunk",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000000117d6468fe18aa333fc417f6e364646cade1000000117d6468fe18aa333fc417f6e364646cade1"
+    },
+    {
+      "mutation": "first chunk length set to 65553",
+      "name": "oversize_chunk_length",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552000100117d6468fe18aa333fc417f6e364646cade1"
+    },
+    {
+      "mutation": "header with no chunks",
+      "name": "header_only",
+      "of": "one_byte",
+      "sealedHex": "5653594e43310a86129d982f37743b1ea8bde642898f8b51e9665bf069954bd823ad20e5b04552"
+    }
+  ],
+  "rejectDerived": [
+    {
+      "mutation": "drop the last chunk (header + first chunk only)",
+      "name": "missing_final_chunk",
+      "of": "chunk_plus_one_65537"
+    },
+    {
+      "mutation": "open with any secret other than recipientSecretHex",
+      "name": "wrong_recipient_key",
+      "of": "one_byte"
+    }
+  ],
+  "version": 1
+}

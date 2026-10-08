@@ -1,0 +1,5 @@
+/docs/secret-guard-vectors.json
+/docs/secret-guard-vectors.json.fixture-*
+**/target/
+**/node_modules/
+**/.env*

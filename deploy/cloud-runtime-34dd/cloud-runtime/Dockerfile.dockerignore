@@ -1,0 +1,12 @@
+**/node_modules
+**/target
+.git
+backend
+mobile
+website
+desktop-tauri/node_modules
+desktop-tauri/src
+desktop-tauri/dist
+desktop-tauri/src-tauri/target
+Vibyra
+output

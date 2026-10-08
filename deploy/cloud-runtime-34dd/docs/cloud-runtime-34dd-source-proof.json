@@ -1,0 +1,2494 @@
+{
+  "image": "registry.fly.io/vibyra-cloud-runtime:cloud-audit-login-20261008@sha256:34dd54e6db281990790f4c00b0b063273e31bd8511fe96d1a5703cc8604416ec",
+  "frozenBaseCommit": "db8401e01148694f31d977bbaa8e429d7f6e3594",
+  "sourceDirectory": "/private/tmp/vibyra-cloud-parity-runtime-20261007",
+  "audit7Exact": true,
+  "buildContextSourceFiles": {
+    ".dockerignore": {
+      "sha256": "e8a897744ea43386b2ed9ea68ac439e6ac87b6b2677bf4cd33f7235339b6158d",
+      "mode": "100644"
+    },
+    "Dockerfile": {
+      "sha256": "ed11ad0c2de62d30c8e0b40cf0d66324c76bb3f6e077afc74c6c102fe4e01cf7",
+      "mode": "100644"
+    },
+    "cloud-runtime/Dockerfile": {
+      "sha256": "2f095807a340fcc0efe65a7415f0158d7b5f261350012586115f9e2eff453c83",
+      "mode": "100644"
+    },
+    "cloud-runtime/Dockerfile.dockerignore": {
+      "sha256": "bb7644cbfa04db127887f166c8c5b5ddbd8c09567b158f116f713097c664b824",
+      "mode": "100644"
+    },
+    "cloud-runtime/bin/git-credential-vibyra": {
+      "sha256": "17f4e7526340ce5745cedc4c21dd39d85ccef329bfcd0276fe4d3b05215aa952",
+      "mode": "100755"
+    },
+    "cloud-runtime/entrypoint.sh": {
+      "sha256": "e54e1f94f7e3513e72a3952d3d634721a7d786a3ce54b67300765ce3f4e26751",
+      "mode": "100644"
+    },
+    "cloud-runtime/gitconfig": {
+      "sha256": "294d98f639767d4316f10f0f2cf58a3bc5de70d34623bd4518f789b31a1347a7",
+      "mode": "100644"
+    },
+    "cloud-runtime/hooks/pre-push": {
+      "sha256": "af9c9bff88d05dba7a6fbdb2665704e5eadc3faa1f50d7314aefb3b468cf1bc9",
+      "mode": "100755"
+    },
+    "cloud-runtime/package.json": {
+      "sha256": "6f475cded926fc9eadbf64b97075dc26c3c5905de0ae61d35ca7213b7d8ccc55",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/client.mjs": {
+      "sha256": "d076df1b5cb727a706b54775bd1ad88173c734dd3107fbeb7de953469c64f21b",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/commands.mjs": {
+      "sha256": "97b4ded654bf476ffd34b59d422d80ad28b975cb272f6e812c4c113f8f9934f1",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/computer-paths.mjs": {
+      "sha256": "25afa8ceb8accf92c8060eb76529c97d1849a0dd72026d2ccc85e5a9529452bd",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/computer.mjs": {
+      "sha256": "a3bb64b8111b050312b6ec6eef2d8d7ee2b41f90aa9bf5520606adca3105ea2d",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/credential-helper.mjs": {
+      "sha256": "13a88e151cd9be89a965443eabe8f7f1b8da83259ff031d0dfcedb5f39de4fc9",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/credential-proxy.mjs": {
+      "sha256": "fce6e526599d39539b593aaadd54eccaada8b0dd58c52e7973ecc0276e8c0294",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/egress-limit.mjs": {
+      "sha256": "357d094ce920e2bad0e34216fd34a8de4e5cc23d4f0012587860812b6baf3fec",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/files.mjs": {
+      "sha256": "63319f076d8418e81ef64184e22987ffcda0f15736482f8ddf71b598f2080155",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/git.mjs": {
+      "sha256": "129453b08432b364a93124f6feb29f9dba9e58da82300bdec994272679ea1dc0",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/graceful-stop.mjs": {
+      "sha256": "726dfc93b12ca71dce4ad8c3f31bffb5101273b611a311e9f74d5b0b2afc80cf",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/graphical-session.mjs": {
+      "sha256": "d2723ea75bda480c40a97a8d232e7d9c492e84abe850d32a5def8c327f800348",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/host-process.mjs": {
+      "sha256": "c6eefd10169a2b2e5f5194d240d14aabe84fcf8eb6c374e1e794e03be596a187",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/lease.mjs": {
+      "sha256": "d5b7bd6aa04ee058423dc497636e5c95a651bac59eab4099f46f889e05ad2237",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/main.mjs": {
+      "sha256": "3505a12105a5b58c2136148aad22e03a59e111b6ebcb9c330434167095ffa156",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/preview.mjs": {
+      "sha256": "03a13ff443b3b2c0f0e8c83fb3999fb78c4d5e1eb698b718c1173e49e4a9e242",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/projects.mjs": {
+      "sha256": "a536ad1c5bcbf2b068154b149195fadb72e14413eaf3844eff580a9fbcb570af",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/push-guard.mjs": {
+      "sha256": "bf048bbe8745bc9d120ca243dfdf76265f954d4f570a6c7edb5d29645312f55d",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/push-refs.mjs": {
+      "sha256": "1833f14e04b8e8f73738f7dcf56e98ed1e1efe8d7b925fcbd0efac47dac9f4e5",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/safe-dirs.mjs": {
+      "sha256": "80669f6220aa9404f4de976af432bf31268f197806b802b7c75b8ec84aa9292c",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-apply.mjs": {
+      "sha256": "d7fcf2a537ec1bd5a52387915f38b925a32ee9504ed96da6f3659a7965dcf287",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-client.mjs": {
+      "sha256": "cb40eedb8872fdef9dbbeb5c29694b8cbd115bc0daf6c1c98bf3a7a6fea8bd2e",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-codes.mjs": {
+      "sha256": "69c51751c25e78b3f0f3c44380a3f8851c251775a5f5d1d8eeaff1c730c403ab",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-crypto.mjs": {
+      "sha256": "c3936b1b91889058978207d45390696bec96805fb8f17a6b9f07f1bf5202a383",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-git.mjs": {
+      "sha256": "a4fca5dc4951853e84c65c7fb793a36ddb9da70c63b97046a9c59568f74219ad",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-key.mjs": {
+      "sha256": "3feffa4fed94eed9d9430ed6e7a7ee659b8f4e5c820ce1c2244adcfd1dcc03bd",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-login-tar.mjs": {
+      "sha256": "70b193d6f84a18e4649124221eba7f95890e394709380c128fa6205e6adfd625",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-login.mjs": {
+      "sha256": "941ee3a5f98298a098b1aba41878cbc26b68e9db2af90091e2532b211c89f68d",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-loop.mjs": {
+      "sha256": "81d852738616322779a2e3de0183a18f454aab8032e9be3c5e78462088fff2c1",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-process.mjs": {
+      "sha256": "496fb72c010233123bf37c3e94813263b9130f8123b2a065a4974e4e3f2c1628",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-snapshot.mjs": {
+      "sha256": "e7a96ef0bdf282bddd5649d22747a8f04323a987549c8ae2bd5aa82002c4cc0b",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-state.mjs": {
+      "sha256": "33cf5bdd68821c47ab7de5d975f47437f1b6c473c3c327b6f39c2254c464467e",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-tar.mjs": {
+      "sha256": "e3bd3a8e776fe60b7b8a2e3da185a8e22e96499fe930a5d7d60c15b6b29dbb75",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-transcripts.mjs": {
+      "sha256": "4ac564a1c481482986654c76d0c2837be9e45026806f44c6beeabc472866ea29",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-trust.mjs": {
+      "sha256": "306a607ff306e659f781e80a69ec51a7e1d53535bc97f0d833ae279d5eafb414",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-worker.mjs": {
+      "sha256": "ba6fcd9463625406746dc972dc7d1f765ec8386c2ced6f9f7fb54ecb55d70f65",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/sync-worktree.mjs": {
+      "sha256": "4df3fb115574d97bd0e0b6dc1843c7eea3ec70f94b75c7ff4ee10cfdfff8b874",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/worker-client.mjs": {
+      "sha256": "89c6a3b295ddd2e2ebf251f6a62e940958df3b5800339e55b618181d2151c85b",
+      "mode": "100644"
+    },
+    "cloud-runtime/src/worker.mjs": {
+      "sha256": "d4a77300e5a4e1292885a9fedbbc1ac9a53e224f7c3c47d0ba7c767282c2bcf0",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/computer-git.test.mjs": {
+      "sha256": "40d22e2958b32acbeda747d68487bed57b0d5df7c2cdffa44e0923cb4f6d73cc",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/computer-host.test.mjs": {
+      "sha256": "4ae4cd429c4758b2a44be1192743ab2c8842839705a905d3f8e1a08f0de1cfe1",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/container-smoke.mjs": {
+      "sha256": "c050c3a4a513aa165e9406fc08e48a30cf7e47f2ccca910be5d79ff133f503ef",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/fly-vm-checks.sh": {
+      "sha256": "b69827ea6777de2876870a891be15b921d2cb5c66ff7ccf876ff63bb57f967b7",
+      "mode": "100755"
+    },
+    "cloud-runtime/tests/fly-vm-harness.mjs": {
+      "sha256": "608928943bae608c2f4b20f1f0f0db0bb811f2b7524110e6552ae3261e5f3eac",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/git.test.mjs": {
+      "sha256": "88e6b17994bac2cf1ad8ddd32089ef5de4fac59c6637391888e87044f4938c6f",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-egress.test.mjs": {
+      "sha256": "66db9cc6cc147713adca61f40967e6b0d3db8359713690cab1e21fcda11953ca",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-vm/README.md": {
+      "sha256": "d0a131dc52af796db507be77e96c6856a8e9ac35b11a3f1426bcb466a5f93670",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-vm/capture-input.py": {
+      "sha256": "e71d298fa6a157e60e8d4fe3994edee3ba87cc0a8b05da9de8c20e2005ec0571",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-vm/lease-server.mjs": {
+      "sha256": "3e4b14ba1c5d56adb3e131f72bca971e57ff012c124a797442158a3460709d17",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-vm/native-fixture.py": {
+      "sha256": "d3437857cad408a911445ed4e57d4746c508a9c9bcf7a5fde273677cca3cc75c",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-vm/run.mjs": {
+      "sha256": "4667f074e19927bca4e917d1d5924ccf14dba657937abec40ccdc01152011a1a",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/preview-vm/smoke.mjs": {
+      "sha256": "f2645cddcd0f9363b978812f0b7d53628cbccd65f6512f050e8d6b7d7783a6a5",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/push-refs.test.mjs": {
+      "sha256": "68e35772d5806ba1430122b46937390767d646f78cb108e70ad9b0a018d81092",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/runtime.test.mjs": {
+      "sha256": "cd564512d6c8c13bd4bb7df8e61da1ec8b05862b881899c010e2c88e8ef15bff",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/security-vm.test.mjs": {
+      "sha256": "66ba46e3ce9a2c7949656d08b0a425c64eddb14e048176412bd062adc3dd7d0f",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-apply.test.mjs": {
+      "sha256": "75eef469915cd76d22499612e4b5fd948d0557c5fdcf3c439c5c72576457be20",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-crypto.test.mjs": {
+      "sha256": "f1d688b6630f5e343ec19cc7c00c8800499b89a2fb8f9f975802762b5532f984",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-helpers.mjs": {
+      "sha256": "dc41a3e8cf3831951d623bf00a106974a746212f1a39ece7f729a676cd4665c2",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-login.test.mjs": {
+      "sha256": "fa72dffabe845e4e7f3007d54aafb8e75e8618d3b2f29f3fd458c8eb94269580",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-loop.test.mjs": {
+      "sha256": "91b494cdee7874b1d855a78a33273e14c9ae6cd17d615259324461640c995f55",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-report.test.mjs": {
+      "sha256": "608f17cb43fd9e41c4fa52bec3a19852d483eaa7b689a9461e88c32c5b757921",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-return.test.mjs": {
+      "sha256": "927c5bf6c798afedd886ae375d9d4864c9a1115859aeff0435d26a2a3b1921aa",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-trust.test.mjs": {
+      "sha256": "e6a4ff079f521fd16baf7f3ea8ae57444e733f6c58733639233b474d71e5a3c2",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/sync-wiring.test.mjs": {
+      "sha256": "64555e967695144c2ce72761eeecef86bfbc2eaa44d4d43e9a0e57a405c74176",
+      "mode": "100644"
+    },
+    "cloud-runtime/tests/worker.test.mjs": {
+      "sha256": "f1573ebd65de7b4a39a7b7d24893f87da6ca5c61e5263d7c3287689eaeb78c72",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/Cargo.toml": {
+      "sha256": "5a0628c6b64df117f18adc873effa56cf1e7872759302459c2718d6b77362e18",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/Cargo.toml": {
+      "sha256": "46232e7f0e7e0fa9a01c1bad12292d316d06970fac51ca58267c36cea8320868",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/examples/scaffold_acceptance.rs": {
+      "sha256": "52a7582a2ae6144795d4b5ff4675a73884857f0aa1b144fc0b33518e93a7b144",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/agents/catalog.rs": {
+      "sha256": "9a5b9b971b5b9b1d0ddcdb42e5d264230f46afff4351309d27b6b263cad8bbba",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/agents/install.rs": {
+      "sha256": "a9b6ca51b2f1e9d198b986bfff726aeb5d65850fb1ecfad8cdfabf9ac4ad6d2b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/agents/install_tests.rs": {
+      "sha256": "ca65f2d525cf8b64f32319c2b03e291f98aed2d02a7617a713247af6ca5987d3",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/agents/mod.rs": {
+      "sha256": "8aa339d85af2cd55992c80e5f60155d6f19aa946c22c578aaef698096c3b03a4",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/brief/budget.rs": {
+      "sha256": "6bd2c287fb7f2efba227c29fc2734a85811008a6d3adbc54541902eaee76d750",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/brief/changes.rs": {
+      "sha256": "259098e6c19f695bc1028f5a2ac7130be774b8f4f0dbbadfc3f98f2e8a631a7e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/brief/mod.rs": {
+      "sha256": "a3a2f35c699ce7a3cc64c972cf7b23dfc9915943b7dfce09ed6947734159fd1b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/brief/sections.rs": {
+      "sha256": "6e4f9c5045c5a70e53075961639c7d641339093c0a8e089251efc82e13978f3b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/brief/tests.rs": {
+      "sha256": "d6d34f48379b6d3f65b7b02d0202208f40d6043fac03865f7cafac84f31a7d1d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/cloud_sync_settings.rs": {
+      "sha256": "5461dbe4ba9ec54e7224d1c71f6b376df027bf766b2022e8e28461da0799c836",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/error.rs": {
+      "sha256": "347c8250235d2c6c8233522a35e56aab1fcbb6bb18e428e33ee2480f39039383",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/base.rs": {
+      "sha256": "a1ce812a5737978e7edcfa663e76260328bf0313024759e8d6aaf055cb9ad2a7",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/base_tests.rs": {
+      "sha256": "5dd7eb2b038b3cc62df00009a10784d3493c72394d715d7dfd1e3f645db85eb6",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/comments.rs": {
+      "sha256": "3c54323f7e374a57ec646f7029eddacaa59b6c2586a38c640c277a16d9da77b4",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/comments_tests.rs": {
+      "sha256": "e966a5602b62084c2f786ff02127e8bf4702aa0ae245c74a51509678e818ae0f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/file.rs": {
+      "sha256": "f360e88b385fa09f43608a3d0838c537f7f816c7e4b87a267952829edd197b03",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/file_tests.rs": {
+      "sha256": "13b7c808853b950f86b673a2c7d2f22cc21eb1af82e6d05ed908f4fbb8dc3c85",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/index.rs": {
+      "sha256": "154363852794c00fba95538363ba2a2b69f10918139895cb8617c064f9f335ad",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/index_cache.rs": {
+      "sha256": "0623729bb6ebd9392312055ead19ce5572e6b48e45f06c391a97fc495693def1",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/index_tests.rs": {
+      "sha256": "9b4c3b35ad69b4dd4c5751d6f1a7cef50319af7a364ee1044ff62be50430d50c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/instructions.rs": {
+      "sha256": "3a535c8986412a76ddd4e05bfb2b0a0a985196fd806aa4bb5dbbb12f256351cd",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/instructions_tests.rs": {
+      "sha256": "ee2d34dfcabf2c9d33255ecdf71618ba633b898d1ea97ab4792a2917f7e6ac8a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/links.rs": {
+      "sha256": "47427ce5c1b8eb2258aad270937c0325fa6e4703f39541152a3de6cec923d79a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/links_tests.rs": {
+      "sha256": "680163f4b1f7026d9c56782558699f7484859f96c1222f31cabe8254b50d85b7",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/matcher.rs": {
+      "sha256": "a74f013b976235084209140cf917ca4c0e71490054d2307ab9d2b92e07481648",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/matcher_tests.rs": {
+      "sha256": "52b2c055cbcb2ccbfb8c6aeaab3a6e5638f7401781eb5eb99bf74b7dbaf3902a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/mod.rs": {
+      "sha256": "a331f02cd1fa44f38a0c13c25d9c0c0c138547954591f3c8ca011402f19e578d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/replace.rs": {
+      "sha256": "fd66ff841e27d3da3011253aec8d6315aa6881669572b346ca364c4beb3934de",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/replace_tests.rs": {
+      "sha256": "7f7309019af7b02464e2a221cd974723ef740e862b8a531ded00332a0b0e44da",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/scope.rs": {
+      "sha256": "e487917f02ec07b7eeeb21380a5e22c9aadb3edeac6ced3a07ebfaa42a5a43c8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/scope_tests.rs": {
+      "sha256": "6d145fd24249b7b55f0f33243a48ff9cdc2676f1e672d1f9450e91d2eb33069c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/search.rs": {
+      "sha256": "0834eac84afde227d8947b2fa19421a7d57406b887346222e869d4fce6eba7e8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/search_lines.rs": {
+      "sha256": "a3729054e4654d525c2eefbeff9c1aa0fa0a570768fbb949247192e361d1b519",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/search_tests.rs": {
+      "sha256": "b401b2d1798058e78800771a3db144704a6821c18b7c73e93528191d8caa8d6d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/test_git.rs": {
+      "sha256": "965b3e5e7988ee8e2d5e4ab9c22f158cbbca01d5ec43164cc33afb4078b7cc9a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/trash.rs": {
+      "sha256": "3096627b2a3fd108fbf4d21345054b3cc6d5eeb287cb7916571d584ac9bb6aca",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/tree_ops.rs": {
+      "sha256": "533b1a1395daa5273f10d01a8ddd8712710eb523a501de4e59e9707c898e6970",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/code/tree_ops_tests.rs": {
+      "sha256": "4927b1be6bb896e2c83a53777303216c7091216fa74cf6cc8375c8474715ee0c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/edit.rs": {
+      "sha256": "81baabd05435ffd38248d1dc33f968843ac13ab11b1b76e2cb2ddf5a52245216",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/edit_tests.rs": {
+      "sha256": "a7f3feaee7e61bdc8b52ede9540b053ec4622c3da78565509d91448a0d88a2c1",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/guard.rs": {
+      "sha256": "9d46bd47bb99d5b94070f6494f5534a10cae7a4bd8f47488f78acb9e37a39272",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/list.rs": {
+      "sha256": "be9ab1ee8ec8700d67097216f537a0c11e15e7f963fe238c513109c1d15aa0d0",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/mod.rs": {
+      "sha256": "5b939357fbb0ca98c8017c33b084c3bfea839ab6fe495e64ec79e659daec0b3e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/parse.rs": {
+      "sha256": "12a47ff16c27c7cdc5fbf29e894779eb09a98235c60bb2d3266e3ab6f3b2ca7c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/parse_tests.rs": {
+      "sha256": "499233f4191a75b0f62b6c77e681b93fad21f95c73e0e9c085ec57646514bc4f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/env_files/tests.rs": {
+      "sha256": "09aa54223f66c503158c33601ea11906419bff6d1ad72082cf5214d1daa128af",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_change_preview.rs": {
+      "sha256": "07456fa57d99bd9c98bbe0eb8897729bf853d8b828d23da619003eb852139716",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_changes.rs": {
+      "sha256": "2434c59aab783df13e59ff0f8a2274f17ce1a3e261fa04406c95867bfd93b45a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_changes_tests.rs": {
+      "sha256": "8554b4171dd7457c30304a371c8fc0b6d862a793fe2ca6ceea59fc64b781b102",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_command_policy.rs": {
+      "sha256": "582744f690c3f3541fe56dc2e70c75c3ef25ac68b44fff33ed1a578e3e7f2a6c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_memo.rs": {
+      "sha256": "e4a5aeced31792545bcb1888dc5af195ee30b14152670b0110cf319046876b64",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/blame.rs": {
+      "sha256": "3e9f41e12ea04e5c790987e23e2f59a06aa1c17ffda0c6ccab28737cfe2a86d8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/branches.rs": {
+      "sha256": "565e05db2463803cbf255c916b10f5f01d13b59ecac930c0afd824eb2f61747a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/conflict_parse.rs": {
+      "sha256": "16d2fca68e63c66bfcf17b21444cc030e8149efb1e9c6da473f9e99aa292ba17",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/conflicts.rs": {
+      "sha256": "8616356244e074cf960d0d36d9595bd374d21545dccae38ff18b6ec484b97194",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/history.rs": {
+      "sha256": "085a0f60d564f7889ea02775a0e6d993efa7c1a3d257980a2bbcbbc2b880d3ae",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/mod.rs": {
+      "sha256": "7e58db54f184175df0a8a56b552fa8e6428233091f45c8f8916aae18b0d17f72",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/refs.rs": {
+      "sha256": "9aa0775b954b1689c7b196dc6b37467925c79949f0a3439051749d1536bd4009",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/stash.rs": {
+      "sha256": "4e2986ae504434dbcd9d11bc5fa2b69d3f44177dcaa6ac8f5d9e6979ba7971f7",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/tests_branches.rs": {
+      "sha256": "f44fc2924f48965d1948b43e7293723284f7ba6cc4d4ea67795fe722b49f5ede",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/tests_conflicts.rs": {
+      "sha256": "0f3c6af6bfd0ab746de861be91b195a7eb1b5d9e0e0948a789397056c794a78f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/tests_history.rs": {
+      "sha256": "3c34d2ca8fa9094e677fb12b89cf1559b62a6b4b1a885aefcd09dda7b825e604",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/git_panel/tests_support.rs": {
+      "sha256": "f0fde0fa154672c3e459191661300511523df7e8ec7e6a9d33ef4f31e3fcde1f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/mod.rs": {
+      "sha256": "9b0fc8ea6e8b99e488fde6c29319230458a426cdf433181757f2c795414ac17f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/private.rs": {
+      "sha256": "345de7f31778cca382fe139e958cff368ed0214338ee949a136610924d8afd93",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/project_folder.rs": {
+      "sha256": "92e75a453afda467e4b456b5dcec4803985fbce254b063022b80ba47610e8a3e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/checkpoint.rs": {
+      "sha256": "73225bbe10b2243f2bc78ee4c7ccf35ca63e4fc3bb439ef5b323b13de62a1198",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/checkpoint_list.rs": {
+      "sha256": "2a699c852b56154d26bf132c0ca665f2ca946cf66c70efb68223f8bc1ac4214e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/commit.rs": {
+      "sha256": "6ee65d64f9bd2cb6358541d9bc2b7b65e8020c42414122eabb09e2a38fd871fc",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/discard.rs": {
+      "sha256": "7376d8e6cc73085f951e9ab45a870e3658e055104eb0ac432b500ce36609e5f6",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/git.rs": {
+      "sha256": "77292ee096ffb46077cc8fdf8a99bcdff0f4f3c35257cbd367813b3a17905b9a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/guard.rs": {
+      "sha256": "4e0af77e6576818f28ac676884c24ebcbc070ca152ebbe8fc807db7715e03c74",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/mod.rs": {
+      "sha256": "3287fb661a9a764cb6504f835a58a30be87fa6cb10bb3cee65d67c786d55255b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/push.rs": {
+      "sha256": "a7a68ec94abd9f8b07dabd77fd8e8d03b090401924be4ea7e5ace9e318d71a0e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/restore.rs": {
+      "sha256": "e5421f71643e599a763b5bfe3286265e50a6939977f6e9c24919ac662b32e967",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/snapshot.rs": {
+      "sha256": "eafb074beb39b93cc5744c85841b6bc98ba7a84837d90ac749096e565708b9b3",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/step.rs": {
+      "sha256": "aa05fbc31abb08972d26c6c533456eaa91613658c2ffe84b902e108fa644decf",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/tests_checkpoint.rs": {
+      "sha256": "15a2284449c35ec80d7f07778b3cb2831cbffc8cb770ec65cad90e3acefff306",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/tests_guard.rs": {
+      "sha256": "f8659b046559ca47e1ec0657469b731b9503f549f98f0cb10205864e7cdfe676",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/tests_ship.rs": {
+      "sha256": "fafe7c597d75f7882e555baeaa1571ccc323fc0d70939037da184eaaabba4c7d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/ship/tests_support.rs": {
+      "sha256": "06930b245dfcc480c6b31299c09b5bf52493516d39f77419d430ee8644ced670",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/watch.rs": {
+      "sha256": "39538202efab5761ef4e8d47392cd5a650585a799689ef8d74e0942792030ec3",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/worktree_status.rs": {
+      "sha256": "5720114edb2321182147d560467940cc5905f8e54a0d485999c9a985414ce5d6",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/worktree_status_tests.rs": {
+      "sha256": "2c27d59e7ad834a483314ee7ca599a6bb71d48c7e9b329b83a8f27f81b23dd9e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/worktrees.rs": {
+      "sha256": "0160a6de3e7aedec28924d13b627e6b119cde9eb359afe87938ef1b71df68267",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/fsx/worktrees_tests.rs": {
+      "sha256": "922fd1ab3da238d9e4efdbe6e58c104da18715da3124b3ef82cd17ebaac63493",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/appimage.rs": {
+      "sha256": "c2cf68190324460b4b8c03461ab407a202d01dca33882c5cde37b487fb7e6231",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/appimage_tests.rs": {
+      "sha256": "9ab5c9b15c9f56e58abf4e418cf7f85276c45a102876a66edac288b2df3b7190",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/mod.rs": {
+      "sha256": "646823488c769bfd508da4c80cdc020ff3734e577f5ad6037ca8fd280a76b8b2",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/probe.rs": {
+      "sha256": "24feed3e765c2c6ddea65662d3a532b9e039be857ecf6e02e193652022492732",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/program.rs": {
+      "sha256": "67bf6a415efc307d0fe8747473cb599042865d0def3495b169b38b2e341f3988",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/user_path.rs": {
+      "sha256": "fd0ec5c369bb1326b15084d2fcb0e805f846daab96ba77fa310935b939f7b751",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/user_path_merge.rs": {
+      "sha256": "266d9020373557c16491442355b4040ed845e1a7af15ee9b485bb26c6b7a5915",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/launch_env/user_path_tests.rs": {
+      "sha256": "41f5583e45f47df4c6391a43d3e3fa62accce278fae857751f888afb082984fc",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/lib.rs": {
+      "sha256": "531f5fb09cfc136032af531cd243c6a265391de5bd253aed90a965cc08c48ce4",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/conn.rs": {
+      "sha256": "86746398946a55d784c1d6e0be79f20358f5c1c48889e881f3e7dccb35f83caa",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/env.rs": {
+      "sha256": "97c2e9b0fb14e8a01dcc6e8a0e21cbec027adadb9adc2d87f7793719c8db24e9",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/error.rs": {
+      "sha256": "b3195b690e55120c22c642465bccde68c59f5b69835b02ecc940f25c3fc91fed",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/fixture/server.mjs": {
+      "sha256": "3ea2a961277807474e1cc6f8b2f26ab3aa5de7e0d1517b5b506d6a5f369d4105",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/guard.rs": {
+      "sha256": "33fc9b6588360b0cddaf8d01a661a20c1b2e008019b80d359933a4ac46182b51",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/handshake.rs": {
+      "sha256": "301b8c5f562f0e0d6abce08f710c5ed803b7373de47381f129b5a90102b868bb",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/idle.rs": {
+      "sha256": "3d3be7506babd3ef8f414110fd4b7b012c968d9a719cf0e832b9b2305992277b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/launch.rs": {
+      "sha256": "725d5758376e02494a51ffd477eca79701ec9d9c6c5e8d108aca72cee8a26eea",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/limits.rs": {
+      "sha256": "bbb430e524a8ffdf95ca5e90c41da63dd854cb0e99e496e624741c24e43e5ede",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/mod.rs": {
+      "sha256": "55907547a5644ce972db3f7b213d40b0fed4caa7bdd40a68c5825d875b4e9379",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/redact.rs": {
+      "sha256": "a8d1c96ca3fdba22de6bf155317d9a03a9c748ee7456b521a2e734775e5b88b3",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/rpc.rs": {
+      "sha256": "38d83d78bf488610b01cb892ba56685b9fc971a0962cc1159181690f88af325e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/slot.rs": {
+      "sha256": "55d077e5057b6fce020f8cbedc8e5902ca9940de74560c9b30882f07ce7bea99",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/spec.rs": {
+      "sha256": "dd5b4c2b9b31a78c7ef67402b80fbd5da714c84e088bd7234a481a476b40e5cb",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/store.rs": {
+      "sha256": "d3294f8c293e2daa289f97f198da3ce3bfe4dd18efb737152f4ff6a7aafd0dbd",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/supervisor.rs": {
+      "sha256": "d9ce973aaa0c593d2e46e6999817231ccf80450904493d70ff33ff5bc3a577ee",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_guard.rs": {
+      "sha256": "7a6c733a9f592c5799647ff5f557db0238a95460df19135f51bbe0eba0f76023",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_lifecycle.rs": {
+      "sha256": "268c001b20e2ad454ba318cef1309f83764fbabe245231829be61595473f7df0",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_protocol.rs": {
+      "sha256": "0a7fb623990525661c47b66fb1249edea138f598b2329e707c8f0ff2ebdfac69",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_real.rs": {
+      "sha256": "d76d9a6d758028d146ffd2a6ebda588f790ab633fd69a6f4b5333043c5dea387",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_safety.rs": {
+      "sha256": "b64c9c7aabc79021efb89da58e0b17e96d5db8b4157d7385567bd2b534848613",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_spec.rs": {
+      "sha256": "3535ddc79c5634c434ac5c0b22e80a4e767b0f9e99aaf9c9e18f907ecfa1d46c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tests_support.rs": {
+      "sha256": "2e9d5fd7ec70d852a12ec064b3b6cd269c1f75370a20f75d3fca70fefe5ac5a3",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/tools.rs": {
+      "sha256": "621122968a9b0a9507eb5c00a702f262bf312056f7543c317143923afa306dfc",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_mcp/wire.rs": {
+      "sha256": "c095486ff783e6331188fb6970371f7f31f3e20f2e95a636d697694383809b69",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/local_model_settings.rs": {
+      "sha256": "ccd77ff2c9c66be377ff653498e729556b3aee0b46d4474b4cafc91649a00101",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/memory/browser.rs": {
+      "sha256": "e7344772ee29209a6d51db14775388ec9fb2a56e63eda257424f44a26f7bf2ef",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/memory/discovery.rs": {
+      "sha256": "23d7911dd1cfa9a47c892d2e19c1984fd6281dc621a5a9e51de762a8e4e2723c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/memory/mod.rs": {
+      "sha256": "5b4cacd95985bbe65ac08d828470ba84c5b9fb4546b8b1483c03b06d29ace4b2",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/memory/notes.rs": {
+      "sha256": "30adbd4ccf940c51e9f371f86791f09ba2eb176977ea3ab1a159e15054621b88",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/memory/search.rs": {
+      "sha256": "836aad22312ac0d3b06a2a2c39510bd4a28ea7e97d39cb4eb4e65411f27a767e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/memory/store.rs": {
+      "sha256": "67b2dcc3bbaf8177583c6901535b84a729901695a52afb9561ec3f8d0d6e6cd6",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/notifications.rs": {
+      "sha256": "e172e799df91f18b162b5c037dbedb3fb94750cff2a969d3558847f8433b9b92",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/notifications_tests.rs": {
+      "sha256": "7c68bbdb37664965ec96ea956ddc47cc3702dfc17af768c94cf62b93611d864f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/parallel.rs": {
+      "sha256": "135475a42edf5c8f2323d50427bc4b84f9fab19d01a48618c25870599e689c49",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/performance.rs": {
+      "sha256": "80ca5c73a26ef3d1708ff88f5bbd0dbacd59dd1d5640714c0d2b607f1523908d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/performance_tests.rs": {
+      "sha256": "939207491a8468a301389afb8adcd4e0d95966ce7eae9d457e481064d7130ac0",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/authorization.rs": {
+      "sha256": "8a2a3fcc7fcb9542d3a333282096bfab8612e043a56ff5b59acf219e758653e4",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/bounded_text.rs": {
+      "sha256": "a90f04faf61e4c40e3e1716b2d60f8446c1ef3f1efff94f9133e918c819fa90b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/builtin.rs": {
+      "sha256": "1323a7ed6dcea2dfa3d3b78e1cafc2285db3542ffa00b462329db3cb384d1f60",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/companion.rs": {
+      "sha256": "13578b1a58f5d032d10411b923120cd81b264b4d9d2ab3188865348cd716b5ff",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/desktop_command.rs": {
+      "sha256": "6299d9086b3483dadd679d0c8c4c39fa4a04bbd3d912a506d7e4c880f8a6913e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/desktop_detect.rs": {
+      "sha256": "533e9ee9db1743cf6ef6e139c08821b2343e6eca131267a11b699f7f0253e524",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/desktop_run.rs": {
+      "sha256": "b6d5f1530935e5850bd36220fdc862e0624fd2e53192852691825e318ce7d08e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/desktop_script.rs": {
+      "sha256": "e345039da94e8be429687f66661144b467eebf4b8e7f9bd3e6b4984eca7fe3d3",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/detect.rs": {
+      "sha256": "702156a72d16e400944fcd99addd30cef0b4f97867b82b4a4132a7d2b99a7dfd",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/diagnose.rs": {
+      "sha256": "c0d8e02d30e5cfe38207233db8ed0e272fe5c59d672e3e15272d47648433ba55",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/diagnose_tests.rs": {
+      "sha256": "1dc4b083d55bd290aeec6cbefc6598659ab413c08ef35c08259ac72ed8ede948",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/install.rs": {
+      "sha256": "7bca35709de3002017a6a42504f64479dceae497e5710caee254464149f82cfd",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/launch_plan.rs": {
+      "sha256": "26be8f6beb97c2e8d2fed52f1a0be9b97cb8356b8b2aa6fb771fd697421a9d00",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/launch_processes.rs": {
+      "sha256": "554e2f48debb691dfe0ea8a6d1b906561c1ede888e90889757c36069672de4e0",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/launcher.rs": {
+      "sha256": "63e6a7474e86334e11a272396171dcc3209527a9d9ea256942361bdca7ab0778",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/manager.rs": {
+      "sha256": "a1c4dfbccc80f871ccf0769b156a03993702dc04f27a760a4dcd36306af4af8a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/manager_shutdown.rs": {
+      "sha256": "4cd849d7349aab0c10b7056ffeb560be1db948f3b51a78a6255a8049eadce5ef",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/manager_support.rs": {
+      "sha256": "3fc39cb69e40f7c6ba76d6a175478c0be5bd2fcfff71401385c2bccb2948006b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/mod.rs": {
+      "sha256": "6a4a4aa2595b21e9875f76b796358319d71eb253d4c5d15db1c87880cef7e0bc",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package.rs": {
+      "sha256": "2d0fd202e65bf3cf5cae1ba0463c810d11c017a26f9ad5afd8a7e8a493d9069d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package_companion.rs": {
+      "sha256": "c353bc500cc12ce2b18e2e55d1a5c398b75dd978ce15271418c0d3c6710810dd",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package_direct.rs": {
+      "sha256": "59e999cc78e22a17cedd943ccfeccd593231b0d57bddcba90990b28c2493128b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package_profile.rs": {
+      "sha256": "9137c6a5be49f1ad6a2a8ed80f011bfc961a565c2a3213f623f04c701ed5f807",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package_runtime.rs": {
+      "sha256": "c7f926c9778a133eef57ffdb5b49cb2f568b5b0259ddcda84ab69ad938f6e73a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/process.rs": {
+      "sha256": "65e8cb6611563ef59c8aad0863b7f2363c86387be59a1b7f1990cbfc94ab2a9f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/process_kill.rs": {
+      "sha256": "85db516a94275408224040c8b2eb7c564df12a796681ae0ea590b678b43dfe8d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/process_output.rs": {
+      "sha256": "ceaa9bc4a90d38ef1e8a65b10db57c8c8926c9f64d496de85128ea15db750b31",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/process_spawn.rs": {
+      "sha256": "338af587baffee7879ff38786be8044e99f1ea23c74d85eb6efbff6bdc0d112a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/refresher.rs": {
+      "sha256": "4846666275e2c4fa19cc8f95f11360ae7e0d30dcdb59893a3e79790a701e87a9",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/service.rs": {
+      "sha256": "3d27a1a357c8e0656894fef6a20a5b4763a4932a32540a7d9c0ef9e2c19c08f8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/service_install.rs": {
+      "sha256": "508ecd065d7473d782c5b2268df1cf4a7762c07fe9300c274976657024f681fa",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/stacks.rs": {
+      "sha256": "87cd214238de086d29f7fad26af93096c69f3d053edc536612b638c76290a593",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/stacks_other.rs": {
+      "sha256": "2a1c2db7defb4e927584e6f13863a59322ebd938f43cd2e57dd0f9785485bf0d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/static_assets.rs": {
+      "sha256": "fb3b952ae19cee737dd2819b8e401b16d719346523bad0e4122e89a0adf5de7b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/static_connection.rs": {
+      "sha256": "0958fcc5cf369e57eae00edc217db8c2b9c8c42a25f9e2a55217d9fcb615bb00",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/static_server.rs": {
+      "sha256": "f81a38d6b7e7eed73a00272cdb810336232053b7a4a2600decb917b20ad72433",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/target.rs": {
+      "sha256": "8da8c6027b5a2c26645102ba7d6118f43c4a41dd7956ff874e08314d19ad0280",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests.rs": {
+      "sha256": "bb61ab98983d6fcfccfc4d70416c7eee84d14d20c62095485f56d3baaa304c74",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_desktop.rs": {
+      "sha256": "c398174bf61a3ac3d16d02e14298a5217e669cf4d09dc0fa415eb1e28e329cc9",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_desktop_run.rs": {
+      "sha256": "0b6aa879419d668ff5c47948338523cccde93c8c7fdcabd4d18204cfae69da91",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_detection.rs": {
+      "sha256": "d8b3f632419fab4851c3f322e09d714bdd770652c697b763941bf1f66b54cbc1",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_reliability.rs": {
+      "sha256": "4b69864ce7026ab1a358083f52851b6ba6dddf1c4a72c46c987b7aac4944f223",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_runtime.rs": {
+      "sha256": "ef3aa0e98489c138f5b6996f2b8d705622c13941e51f4de840b2759af952e1e7",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_stacks.rs": {
+      "sha256": "be7dd8fc2f94400805458f2f9ce82c03bade25fd874a2064d01fd07d249ebc5f",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/tests_static.rs": {
+      "sha256": "6e605219c1d54204326802fac5a6a74ab6eeb9f47743dc3d6105d1647a31d411",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/types.rs": {
+      "sha256": "6d910806f3b25f228cc3c16a1aea49d1d5723a443d74b02ef4507bcb906d6911",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/types_extra.rs": {
+      "sha256": "16501b91141088c0694e461ad8343c9464dd2c6f6afeb743aff1782b981dc561",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/preview/workspace.rs": {
+      "sha256": "4f93ad211eeb651e575f4b1823e4c7ba6c846c30877e7dd8d204b00e1fcbc195",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/process_group.rs": {
+      "sha256": "892e8875071e545a803fc6489734f8d302e865b68776986d95d5c5964a440ee5",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/provider_model_settings.rs": {
+      "sha256": "5ad5bda6ef3f8ad481f304dd592aac171898cf43af7ed4ac9e440666f06f4320",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/buffer.rs": {
+      "sha256": "c5b6ee4856fac92705c6d42b00db660ebd4d84835a0e1c6a31e0fcbd302487dd",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/buffer_tests.rs": {
+      "sha256": "2e6116e19069de3cf0d502252965d4269751d8f4ee77d5c0bd0ef13d629ebd34",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/flusher.rs": {
+      "sha256": "7f36d193e97b9f25f772b14842486e2567d08773f1a080d33729211e3a8a1c04",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/hold.rs": {
+      "sha256": "a59e3766305ed43f2f512f30c23026a12924fe9bc24ee1b2ce367ac3340b1462",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/input.rs": {
+      "sha256": "682ec6579881501e8fa616437d46cc45a8fe97bfbca1d03dfb6f6b9c158cba0e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/manager.rs": {
+      "sha256": "4eaf493d783370fc322f561ee8b53fc5f0bb4f12a1516a7342d2233bfe7357b4",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/manager_info.rs": {
+      "sha256": "5f3331486c632139ddb37155d30c0ec9921c25a64ce88431f0542339c0946c26",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/manager_tests.rs": {
+      "sha256": "9d0181524aa7bef16df9bccb99e07f8a8ea4d228f80337c561140883829b5ece",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/mod.rs": {
+      "sha256": "94f813584e2544ab84ebfbe6d4be3818f00dd6c71ab2a9225eb2b44d8dc6439b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/prompt_capture.rs": {
+      "sha256": "b177efcb220a6cd692267dc5b2e5465943c37bc47e520946ded13e2a70152534",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/prompt_capture_session_tests.rs": {
+      "sha256": "2f5c8580da291ced86d4269a901a6bd2289bce7184c410ff0d1324b8f498e167",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/prompt_capture_tests.rs": {
+      "sha256": "4ae2aa52eb522f403c1480558ce54fd4107a708dc5186cc0aba6d3512c29c99e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/reader.rs": {
+      "sha256": "59e1f5339cf24b50c83864a30534d8b581330b837f67745df1c64fd36bc998d9",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/remote.rs": {
+      "sha256": "6a7a197889f424240d6d5491925c3774b47e70f36bff9c0333c9fc403cebc843",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/remote_view.rs": {
+      "sha256": "4ac769ca679d3d0513f5e34fa7636c5601ffe9447d9d580333be2a8fa8eafd67",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/session.rs": {
+      "sha256": "300d867f4290ede82f5dfd0e38b2218780ecbdcdd70d08ef6340cfed3f9ea640",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/stop_tests.rs": {
+      "sha256": "d223d725feccf53b2d66e1f0ad2decc7e43b445699b5d14a7dca26d8804a1395",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/pty/terminate.rs": {
+      "sha256": "6ddeceb4e0a261d66b74d8f63605cd3e200e473379f38da8b778d5beceaeded0",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/ring.rs": {
+      "sha256": "711d6dae5e5b52401eb2cde2e1d8053c0394380186a41c3fe94234ec084bc117",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/deploy.rs": {
+      "sha256": "e5cf0714df45c82d2b74aa5082a16ca580e6fb233c97e25ba733c675f816ab5a",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/logs.rs": {
+      "sha256": "6b474c7cbdf427c2eb6742166a4001a6c0c9eb18da56dd8c508a987fe17ad189",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/logs_tests.rs": {
+      "sha256": "ffd9542790b18514f506892909b4402ec4c43fa37a0aa9efbfa4db9f0503c369",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/mod.rs": {
+      "sha256": "b1156ce5e32f66dccab47f8cfc114ff07796c7a9c373762f333b2305a7a26382",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/ports.rs": {
+      "sha256": "87275d7ff5442673a8891ff4cb210596d48ca450469126f7f09136d4e06bb1be",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/ports_tests.rs": {
+      "sha256": "60e91c29e5915bfc65f973e59813fed44d19a35c610eae33be3c7b0dfa7c7bab",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/test_detect.rs": {
+      "sha256": "ee86903d0cb8ce5a117c488e21a84f9c7114b323e5d1e47912d86f30875b9ab8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/test_detect_tests.rs": {
+      "sha256": "133940268705c6353e4ab3583479a42d5411b77da81f2022bd656e28c11ed71e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/test_run.rs": {
+      "sha256": "0d47c917b681af17d02d86b74caf2de5d68a14a59b5be78f66d7fa381799b45d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/test_run_tests.rs": {
+      "sha256": "789aca4b5aab8dbe871d0d529c8dfbea77f3dc9d91fabafe730a49dada678ad2",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/run_panels/test_summary.rs": {
+      "sha256": "410760a425841cb115446f8b1f93bd4b49830e2a9d456b6218de9081d05f7b11",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/scaffold/mod.rs": {
+      "sha256": "16ea7153bcd22663480ec4000350795975f55647756fba1925368643d4801fd1",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/scaffold/plan.rs": {
+      "sha256": "117d11451eda84330a8d58347284bc66095a1a7882e50129ac5fbceed76a672c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/scaffold/preflight.rs": {
+      "sha256": "22649b42494ea3dabe855ea5d4d3f1c10215df0f09cb6a909a42d8fb67aa7d94",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/scaffold/run.rs": {
+      "sha256": "d4e18b91ac7df208def3f015614b5f188ba07cd4eed435b7991045d8da7c6ab8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/scaffold/seeds.rs": {
+      "sha256": "4ea6da72c77d7a11df8df40ee89514305670ce0ff2903ed1fbea6831d86ff1a5",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/scaffold/tests.rs": {
+      "sha256": "a87ace5ca92f09d2567ab014eeb656d41d92348abaff834302acb1ad36fc169c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/allow.rs": {
+      "sha256": "57d45465effc13e59823d34e9f11fae1841f5e5540b5d3fbfcc9f71106013a00",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/mod.rs": {
+      "sha256": "bca438274d3d5559e6c7495842edf10a60a0cf8cd65561676c4c16ae16225152",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/paths.rs": {
+      "sha256": "8e99223ce26ad111a6c5d785be46613bc62d98a091f3af7d079afa303d42ee1e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/patterns.rs": {
+      "sha256": "0766a6a8aa7537dcabffa484ac1c0f801294862eefb71ec347b6d1d5dd22ae17",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/scan.rs": {
+      "sha256": "04a0e1a87e6e0d358c34227e8517edb2c8d69195ff7dc7ba5a86a90f4d610ed1",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/tests.rs": {
+      "sha256": "6fa0a3061419f5dfdfc6d1185c1c4a11103f6423e8c3d95c9fe722a09151fe93",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/tests_allow.rs": {
+      "sha256": "892114df3140a4f53bcfc23b071ec89e7819fc8d1c52db74b058010ae0210fb1",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/secret_guard/values.rs": {
+      "sha256": "3f6d645ee5ca25401198b916020bf1a9e000a1df649e3de0e129c7df608c0ac0",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/settings.rs": {
+      "sha256": "6c88dc9ce589dba51c2b33309a681d76df4a445acd07e59d0867cec57c39ed13",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/settings_location.rs": {
+      "sha256": "246d16daf60843ca168286100aa7c64e31c8212267cdcae30a7984f8b3302469",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/settings_tests.rs": {
+      "sha256": "580996f523d45444c5d029476d6dee09267433eba7ef2ab5c64e8dc544fb6108",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/shell_settings.rs": {
+      "sha256": "27afb669f54c36a86561516b15726c38344f2bed1db415449b5eb075f661d5c9",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/utf8.rs": {
+      "sha256": "25535914f16a3389737e3d89d26ab5abd134f58bf2ac135eb996484b0632b37c",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace.rs": {
+      "sha256": "fbdeec43d046d66e6f7cd08e1ad1358ad7049ebf3f0d92a47ce6967e72d32122",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace_agent.rs": {
+      "sha256": "3ce390fa51c01904f50bf1547c9570778a2b9d662e7d372920562378e045d5c8",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace_agent_tests.rs": {
+      "sha256": "d07d6181c593ace9981d025d1add030f81180bfea5f75f7249f194bbbc7f473e",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace_authorization_tests.rs": {
+      "sha256": "a8ef2834a93e0cf3caf84928734994b92a59fe0a76a402ccf97518a0e278629b",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace_fingerprint.rs": {
+      "sha256": "dde163a065d5c4983a1a93644b2f28b41db4641b05143c03ac38a17efa60ee5d",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace_init.rs": {
+      "sha256": "d37c77c8c8f4155f58ea79575bceb36ac66401da6004ff7a9ba594f736708067",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-core/src/workspace_preflight.rs": {
+      "sha256": "9576afc7d317cde0e89209f8c1950db2b76b56f50ce3e06141be2c2820388d44",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/src/lib.rs": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": "100644"
+    },
+    "desktop-tauri/src-tauri/src/main.rs": {
+      "sha256": "536e506bb90914c243a12b397b9a998f85ae2cbd9ba02dfd03a9e155ca5ca0f4",
+      "mode": "100644"
+    },
+    "docs/cloud-sync-vectors.json": {
+      "sha256": "67de8f2855d7c2e957212f5872b9db77c20f543a9234d895ce8873540682d0ca",
+      "mode": "100644"
+    },
+    "docs/secret-guard-vectors.json": {
+      "sha256": "0a6023246fbfffd9edc4741da42455fe462e2827ebc5a2667053f3843e8d22b3",
+      "mode": "100644"
+    },
+    "fly.toml": {
+      "sha256": "420124584074dec9fcb8434ee703c633ad4d9eaaf3dbd9a24d4f25e35cd37e54",
+      "mode": "100644"
+    },
+    "host/.gitignore": {
+      "sha256": "deb6775709c118644ad316948957ebe178eb4569aabae2880651eac9d308ba0f",
+      "mode": "100644"
+    },
+    "host/Cargo.lock": {
+      "sha256": "b0124d6582326da062310e6e39e47c24ac27330a3aa9d78ec63af063627554c3",
+      "mode": "100644"
+    },
+    "host/Cargo.toml": {
+      "sha256": "efb05b63fe90510207a1818009b456fb445823b57ddcfc94ce899d8385ffa88a",
+      "mode": "100644"
+    },
+    "host/crates/engine/Cargo.toml": {
+      "sha256": "1152c735ef333c97a5f2b57dfa34ba1f78385d578c6a0e32784b5dda8a5ba2a8",
+      "mode": "100644"
+    },
+    "host/crates/engine/README.md": {
+      "sha256": "86cf59abcd45e34d669cca812b1f2d2dca4a874de6d748c73d0842c98e65e5f6",
+      "mode": "100644"
+    },
+    "host/crates/engine/check-lines.mjs": {
+      "sha256": "48a6c105d7b6906d3fcad6b13043b2e48d6588937be5aa1a83cf2c0157dc1588",
+      "mode": "100644"
+    },
+    "host/crates/engine/claude.args": {
+      "sha256": "4f73211b485deb04b217709236288ca40833d157f05b7bf81be0c23540f6b01a",
+      "mode": "100644"
+    },
+    "host/crates/engine/codex.args": {
+      "sha256": "4784c2653e010a34cad43906c8a8e693e6351a63771baff789fd4c31fdb936f4",
+      "mode": "100644"
+    },
+    "host/crates/engine/examples/vm_snapshot_fixture.rs": {
+      "sha256": "3300d82d9b9874ab2b0aca4652f3bf23bb91ddde25699f6dd2bd5a93eeae4469",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/activity.rs": {
+      "sha256": "1262a619b9b123e361960d6b0d979a8f2c2b9bcba0f860c711042a3229d2d548",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/agent_history.rs": {
+      "sha256": "b493b189827de7a9022ffbdf18045493aed42b3dce20840e294701814c5031ef",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/agent_history_tests.rs": {
+      "sha256": "9ed387a5028dd57511fb77cd4a25c315c5fdf22c5eb8f423d5bdabd1560976cf",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/agent_session.rs": {
+      "sha256": "e72af101db4dff7e71327a41a4d36b7ca5071b463b73833c28e56e21bb02cf04",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/agent_session_tests.rs": {
+      "sha256": "0317aa1f114641198dc1eb22a6c4ef23b53271dd4ef268265107a5ac8a71e11c",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/agent_titles.rs": {
+      "sha256": "fea939750cb398dd5bc6562db37dd6ed2f5b1f1b1cf5501523f7cc08e6d5430b",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/actions.rs": {
+      "sha256": "27e1e6149cbee00b653d1fa56a2ebbbfc1e3e6ee02c7928f58a66c8b67ab89e0",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/attempt.rs": {
+      "sha256": "bc5689141167845e35eaaa42074b1f9cfa5611547291e628c307be365bdb0a8e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/attempts.rs": {
+      "sha256": "d0a7189c57cf65c6cca265b4348a5903d9e9b9649e7b4534932bd8beeeb2cfea",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/device_code.rs": {
+      "sha256": "bcbfe6281076bd98ae40081c522a5c5adb0c5434463891dece663efd70bd6e1b",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/env.rs": {
+      "sha256": "0b891c51656a012f2b59282b9d8a7cd911c77dde4af306626aa563bb268297e0",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/fixtures.rs": {
+      "sha256": "808ecc9234e1ba9ed21b02589dd2d6deb699ef0fd3893aa18f6d115db201395f",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/mod.rs": {
+      "sha256": "a8e8ddf407a62a2454e154a9569b9f3668bbb6d6f7c9b5877240de905d757c06",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/output.rs": {
+      "sha256": "933a69b6b445836cde1074b53529cf58f72a9fd5a2c62d40c46be0b97ddc1d87",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/probe.rs": {
+      "sha256": "008f18b9d7dc01261bef7905323fe97783d3986b9735af077f581afa54d11ff3",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/snapshot.rs": {
+      "sha256": "76b9dddd53293d688de6ae33131c0866bb865d45e9e9f6bbd2c0780556bd1a3c",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/tests.rs": {
+      "sha256": "864b9920e03b38811c32258c42a86ed66c1454d7a9d761cd5004994b6b3696ca",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/tests_login.rs": {
+      "sha256": "6001452e42b5e3f2d9e38860801f6f4a45e1f670b26e5054301be2d6a38e7120",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/url.rs": {
+      "sha256": "c55a279a8b2ca528568c68889be18c017305e173bac0f54949eb0f108a0dd2e2",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/ai_accounts/view.rs": {
+      "sha256": "49e4941e5c2fce63e6cb8f373f60d6f168d63c5bb64e34830e1da5d441ebc65a",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/codex_discovery.rs": {
+      "sha256": "8c3400c9d55b3d0675d18131f827bb63816d8a0e4cf5d1eef98e626353656d4b",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/control.rs": {
+      "sha256": "02c9f3987d7ec65021f7c3949b0e86f163f6d63fde41b7712b2ee4bf68fd245b",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/account_models.rs": {
+      "sha256": "d33acfa58f5c28c65beb37288fd8ec16dc708e4231a7ffe16363d09feaa79182",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/acknowledgement.rs": {
+      "sha256": "f8a4516e16031af9b8724c40384bcd3296ba6bdb15f242cfbbf68d479abd7ad8",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/actions.rs": {
+      "sha256": "085cc819a747fc6c15db74ec360682c093eb705e793b229eb85cf4fc45362a52",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/archive.rs": {
+      "sha256": "fbb70bd9771f6158565b65b200a5e4c7c1fe8b18b57fb1fafb0594a90384617f",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/attachments.rs": {
+      "sha256": "45bd4a46f64e9c2e3537fe6a19ac0a1e0777b491238a607d6b127ce7303653cf",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/batching.rs": {
+      "sha256": "7a5aa2200ba70fba407dd6dcfb9e8cf3dcfd3e6a10733241f6bfb0fbdf47d496",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/commands.rs": {
+      "sha256": "aeb8cdd9523fb4cc0163a179277618fcbb09845cce4a57f3d188f1a967f80a63",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/create.rs": {
+      "sha256": "efe351f08d97cc3e2dd9e98a1dae2289e50977b9244def3faddcaffdb779d873",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/deltas.rs": {
+      "sha256": "79c52231ffd24bc64cbd1693281eb335551c9e7765379c9a998618d9b4810f47",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/mac_request.rs": {
+      "sha256": "97808ab4dd4c1c4d83833a4c5185a1a4e87a1627905d9b47877d15cf1ffb2b52",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/mod.rs": {
+      "sha256": "ba25b6328bdfd1841b483ca54f82c5e537f4431661b5a68f8c176717999fd071",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/model.rs": {
+      "sha256": "8b4d9d62e0776cd5e0f94ab03b43ff86670288688d1cde4072dde6a23af02867",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/model_check.rs": {
+      "sha256": "7384c046163867ad59a4a0b39c5108f4fb65787543218560dc6d0a3f3568984a",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/normalize.rs": {
+      "sha256": "fbc3e70120019efee28cdab9b41d33bcfb31487fc09cf6539104df134336b9ef",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/observed.rs": {
+      "sha256": "a7e2c28e499d3e29461759141bbe114c2ea75375fbac8851061ac9402c1729a8",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/permission_request.rs": {
+      "sha256": "a4bc4ed67ec69bf560749fece3dce950b97a938e94aceaa15ff824da7f91a6f8",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/policy.rs": {
+      "sha256": "dbda909c70ff94f9da233b4d02830fefcabf0a678a9362d3dd4c6dcd2564a6ed",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/preview_tool.rs": {
+      "sha256": "d584e172670e105dd24818484dfa0c2c7a44f93c54e1c7d11d90a3b8bd45cd9e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/preview_tool_tests.rs": {
+      "sha256": "447358d9669f7f3681d999ee598958faedd4d581b959fe2c0bce2fcd5b6317a9",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/provider_decision.rs": {
+      "sha256": "efc6f2fa753a46d64752722634510340cc0ce65db8be20cbd871e3aa555aefd0",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/provider_runtime.rs": {
+      "sha256": "6088c4ffa6cc9d6aecb7cb9f8fdbdaaec8c3d0bb30867c383b6728a432c04eb8",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/question_tool.rs": {
+      "sha256": "3a60aed99a2587a62eba4defdd92ad1060e92f9c32d77e181da20550cee6e84a",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/requests.rs": {
+      "sha256": "6dbd2a3a94a208abc5d255ce8c074804fcaa480688a0fa38c1c36a0db883689e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/resume.rs": {
+      "sha256": "a8654bf1a7016056615c2fa9c9da432f8268f4d68c98d20dff88bfebdc5b6681",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/resume_thread.rs": {
+      "sha256": "34185964fde49e8a2e7ca9dc765ad3f2484bb1f4e3898f87b53ef5f9ff29ad9a",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/run_card.rs": {
+      "sha256": "e4883adcdf2c16a60885218903cdb5bad7fa4c6f566736976aebd3e99ab1acd1",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/run_tool.rs": {
+      "sha256": "23a680502d99114084236ed07f22624ecf104bb71b3a57dd8eaa532fc4e16059",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/run_tool_tests.rs": {
+      "sha256": "15cc3563e1315e81a70e6f6e1564389e28175204862da3366de3d5ce079552e8",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/runtime.rs": {
+      "sha256": "1c87f155c5abbf2b4951e59da12a63ac6297ebaa14ad3ae52ae663d1b641dbda",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/runtime_output.rs": {
+      "sha256": "864078d16fa850ce94d52e59c6e387ddf0208da3767e4e7fee5f6b18f5773691",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/settings.rs": {
+      "sha256": "331ca5767e25ef94842c049a027d070fd75c6f15e68a1adaf55cd0f1ae5bf6d4",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/storage.rs": {
+      "sha256": "beccd1b358c2e9215c638eaf077aed3cead8ba81d63c1fa487709e8883ee9468",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/stream.rs": {
+      "sha256": "6ac4977c52d33289f0acf49e8ad33f302348dfae34152c354f907fb96ff1e344",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/terminal_attachment.rs": {
+      "sha256": "c721d40ad8faae45ba03f00bd7fdb14be3d47ef75ddbc98597c4b13a371ad43e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/terminal_attachment_tests.rs": {
+      "sha256": "e5920979163473830facdd20dfedc6f190df53704fc50e3a67c462bb829be882",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/terminal_bridge.rs": {
+      "sha256": "589ef3197c81ee7d0fe61e383832e7f04eaec19fd934557cc2e6e0e75ae816c5",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/terminal_bridge_tests.rs": {
+      "sha256": "0154f4d07c8e74c5f35a01849919e92363c9e795a2d6d2750793959df822c38e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/terminal_events.rs": {
+      "sha256": "65b152d28b10e38a20b679f5e3506dec1bbf7b3cbc7c8bbfc15f5891d8c7ba5b",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/terminal_socket.rs": {
+      "sha256": "baa967afc6a137e62f8b339af634112f36199b62b513c21d16b7c65392fb2e9a",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests.rs": {
+      "sha256": "33a7e25671ea02d9420826184d9af7cb85353d473fb334e9c7c51af772adedcf",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_acp_agent.rs": {
+      "sha256": "6d65438d04c759338f1ebc5ed4a6983904ce8c35a299ebea70487fa70d26356e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_amendment.rs": {
+      "sha256": "abdc0a9ab6ed501dc1326faab6422ec34a4c7208fd9e0c5ab18be6fb753a0f16",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_approval.rs": {
+      "sha256": "37f5ece3113f57bfd347a337edc04a12916523a45d0a901f9fff566acd028ea7",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_artifacts.rs": {
+      "sha256": "f7bfea185d61b5486bf5d4dd495df8adfb1b5fb52fdb052d6fd7cde7a76c3f02",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_errors.rs": {
+      "sha256": "0bf055c1c30d212aa80dcb606c9b271a4f1ae3dc058e78d01e3a18ff88873e01",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_failed_start.rs": {
+      "sha256": "831521d5b36c59121cae811944721616448e27747b945b22ad9b7d771db8fc03",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_output.rs": {
+      "sha256": "5792da792139653651a2c350c9c3c5f66f8e12ef5dcfae192aedddb7647c9392",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_policy.rs": {
+      "sha256": "9a942052f0bec34e09e816f26407033b3acc83137ec5dc5d1362185882cbb8a4",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_recovery.rs": {
+      "sha256": "beef5c757f2158b6dda7bd3bb3aa627d23e8bcd2b701f1f0cf8eab3ed9a3ccf5",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_redesign.rs": {
+      "sha256": "7187a14f4e65c003e63e107b1883ee6a182a2754d0b7e625eed70d2fa785dd7c",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/conversation/tests_storage_failure.rs": {
+      "sha256": "6b2861400b93a8755ea36e344cfb97bb156d91558aab4f7fb3131355ebb531d3",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/desktop_launch.rs": {
+      "sha256": "9588cfe247fd715476e885cf70f2a8e26826a97b2ff04203203d2ded4d5e0083",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/embedded.rs": {
+      "sha256": "730b8bc045ff1ea96cb31fdd9ff53cc805316b208df4f31fb8d91ec43ff8c754",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/events.rs": {
+      "sha256": "a0ae8e276de1181f9fa9905a3844107c5b4fcb30ab685f0b77762ca2ec0c8839",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/external_read.rs": {
+      "sha256": "ded1971959141fa217408f35c6776b98f7be8ae00942de82b43c92afeffede49",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/funded_bindings.rs": {
+      "sha256": "98033a093841bd3b9abaa38f6cd343aec6615a30bff48a68c03993fad8ed9687",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/git.rs": {
+      "sha256": "843cdaa4b2a2d2081b341c10da96b6e79ede0abfab43e1f58e1f0d101c28140d",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/history.rs": {
+      "sha256": "78e6e68ae1cf8c59785f35994337a5ea2e818c84af2926f434a793d107551ea5",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/journal.rs": {
+      "sha256": "a483f8655a54dc2f273c8f9afc121b9c808360359583369862aaf85a7f1e4232",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/launch.rs": {
+      "sha256": "49ea7a6bf568a240d92540e4500f1ad07d95447e3618296d931d41dc6c9d4a99",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/lib.rs": {
+      "sha256": "56cd139755a234e0904651ad7f2cf2294ba14e2e12746947f99ef7608c5edd9d",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/live_writer_tests.rs": {
+      "sha256": "48d4d03a305b22d6055b860769f1e881a8f199fbaeeb565c264b3ce869ba8b8a",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/preview.rs": {
+      "sha256": "0ca07dc70896f768c54f0d79b1fc9522f6809cd4d8d7f53ff8dd1f8dc2df4fa1",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/preview_status.rs": {
+      "sha256": "180865e782b9363ae446b7ba14197bd3e69237845a1feb1f00337705222b76e8",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/proc_identity.rs": {
+      "sha256": "b64afc16574c68fbead99c72a632e2e39a386f85c605dd4b99f8ac0d11573e52",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/proc_identity_tests.rs": {
+      "sha256": "12a86aa96db5c3a7209111bd19f30894e1fc504254f0eeb5cc8f3ec297bc0888",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/project_identity.rs": {
+      "sha256": "ef6cb776dfb6407ff7c025ad36428b25205317754010962514bd547bdb47fb23",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/project_limit_tests.rs": {
+      "sha256": "9ecf63931fdf3be81f09cb4daa3792e74c063a9252c3f6dbbb71333054f462cc",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/project_snapshot.rs": {
+      "sha256": "88d4b546edd1e2e6821171cf9f000a5d637294dbde076fc70e1e617114f4c373",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/project_snapshot_tests.rs": {
+      "sha256": "cccd7b2a215cd801d2eeea5303c4495a9ce15ef3428564a5a827ae4b83222b3c",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/projects.rs": {
+      "sha256": "a3059a69cd0924d6a8237a08c4400c7ec8656fa464f78c94dc116e376e74e415",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/provider_policy.rs": {
+      "sha256": "1647d44cd05bd046407eb71780742e777aa1f2e138eb260c1a3efd8895d7acbf",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/resume.rs": {
+      "sha256": "e8255731c348b943146a2da50999e460147d08892266827129a97889369e36db",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/resume_tests.rs": {
+      "sha256": "b75ae197ecd6d4d827b147b1577063cfd0e1a2c00e3b09ed0c25f15bee025e76",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/scaffold.rs": {
+      "sha256": "9b3696716e83e59ca6ded0c692c570789ad10e91e4beaa0b74d9b14113f9cbee",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/scaffold_plan.rs": {
+      "sha256": "73e0db5c88f0296a0c2626c296bc7e1c4a2a476734e3d40c53bf3242c489efe5",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/scaffold_run.rs": {
+      "sha256": "df377a536b3aae8a982fcf2ec5021f0b694bab0214d8f44075eafd3a9d88165b",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/scaffold_tests.rs": {
+      "sha256": "6e9a153b8c4cb959a11c8ebaa42fa7b79ddc8a83c2d92d9ef6682f335a18f6df",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/search.rs": {
+      "sha256": "26d1c788326445e1492761384c005f91f7e562c3709db7bfaea7c6b580b25efa",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/sessions.rs": {
+      "sha256": "2c50b3ee417af6eaa46094d9cc0031831f1c3845f650d085238cec7734f0c8af",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/state.rs": {
+      "sha256": "3ebf8d677f50cd10e4c20d279a94fc4854aa429b4b5fbe5a924ac12d78871058",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/vibes_path.rs": {
+      "sha256": "24621cf476d852a5797c503e584f37ae834a6583aeb80e346efe96f14e9e816e",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/vibes_tools.rs": {
+      "sha256": "88acfa10bd91137c34d3c3023bf40a7eca5ab472aa348f6ccc550ed0ac2e0137",
+      "mode": "100644"
+    },
+    "host/crates/engine/src/vibes_write.rs": {
+      "sha256": "94fddac2eee275ca370d9448592ac0b3aef931f68885a463d083603404db997c",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/agent_history.rs": {
+      "sha256": "e9d9744e459b425d5525d5f68be14e2827b3ee2905ae6328c2a18c467f0e7260",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/agent_resume.rs": {
+      "sha256": "af8032d7e22d15f01efcc2e59f87778458b41c8262563249388156eaca70fd45",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/ai_accounts_capability.rs": {
+      "sha256": "06691dc7822089aeecb78e2357ba7bce67bd06cb6cc05c589d103f45c2017a4d",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/conversation_live.rs": {
+      "sha256": "21487e388a29349ad1f5d6769a838a694b05db5d561c65facd99bbc851532f24",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/history.rs": {
+      "sha256": "3323960c2767acfde6be7c07faef65f1ec76c43fbd603225625cf2c486ff0bc2",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/lifecycle.rs": {
+      "sha256": "86d1f0a46cbc02de8d9c41c8f3d177218c0da7e291291145a9808e755914f62a",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/preview.rs": {
+      "sha256": "32432e1f52769a7bc3defe54755c7bbe4073cd8037eb66a160c8b5d0383975f4",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/project_security.rs": {
+      "sha256": "ff4746e1cc244f0f84fe38b5e225c92a35947f23712d1d29f8281dcc507246a9",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/recovery.rs": {
+      "sha256": "9a588ba0017d77a0fdfaf17ac3fe532a566797ec086e3009742983f27b25bef3",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/single_instance.rs": {
+      "sha256": "544627493830a05e06e255d383414ef4b9628f2f23c224d95a2ce1885cbf7242",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/stop_process_tree.rs": {
+      "sha256": "fde12d64a0ac24bf17d4627b95c089f6f9a534f6cfd83ecfa19923b9f2881fe7",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/support/agents.rs": {
+      "sha256": "97e2bcf2ea4ac68f7374bdc6365be850693de960b3638ddebac5a14588841f14",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/support/mod.rs": {
+      "sha256": "0b959fe585a891849eed3289414a334bc5f86085c090cbabf0e2213e11508a8f",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/symlink_race.rs": {
+      "sha256": "f87634f0bae9c72903aa3c7e682ce607a85a5ab3ec091ca2bf440ad1b8c718e8",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/vibes_tools.rs": {
+      "sha256": "fa3bbeef364e6edc0814de53980dceb7b29764a57ad2ae7372aa2791387de5b1",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/vibes_tools_paths.rs": {
+      "sha256": "c58195a6653c72d12c938f6fe2c93e7d3fc86f4164e1b6191cb85b19a3af2953",
+      "mode": "100644"
+    },
+    "host/crates/engine/tests/vibes_tools_secrets.rs": {
+      "sha256": "58a931cecaf5ac3b954fa228b2f0727b0b913c183cea4a56299e1a0f32acbecf",
+      "mode": "100644"
+    },
+    "host/crates/server/Cargo.toml": {
+      "sha256": "c8cb23482df40fec18135b4aa4359dd21d5fc9edc41ed727d9a2a4d5867474e8",
+      "mode": "100644"
+    },
+    "host/crates/server/src/account_activity.rs": {
+      "sha256": "b9b8313386685c29b6d163de3a2fc1ed223145218641868a8bd022c0f11d67d0",
+      "mode": "100644"
+    },
+    "host/crates/server/src/account_http.rs": {
+      "sha256": "8de0b5b1a07b205da015d0dacca55d8b327bcdc111ad8fa2ba1e15bcb9813148",
+      "mode": "100644"
+    },
+    "host/crates/server/src/account_source.rs": {
+      "sha256": "935cb2171b77413a7f13bac130c2005e58771d8ee2f7adf4f7d1790ca39948c0",
+      "mode": "100644"
+    },
+    "host/crates/server/src/account_tests.rs": {
+      "sha256": "9182359d8edf83c3198cd2fe8f6c737ece2bb8642d90d507cad89746f0b69aff",
+      "mode": "100644"
+    },
+    "host/crates/server/src/auth.rs": {
+      "sha256": "6f607c06dfe015335c4b3561770f9d2a571f1883bb366910f1252173f08de3bc",
+      "mode": "100644"
+    },
+    "host/crates/server/src/auth_tests.rs": {
+      "sha256": "7897da7d02f5780faebbb9a399fa047cf79b782822232397f655a17db5d2199c",
+      "mode": "100644"
+    },
+    "host/crates/server/src/backend.rs": {
+      "sha256": "7f322a4c9cb3d75b17ddc55fcebc8da11210e0c2b3a416829249ebd26c1e2361",
+      "mode": "100644"
+    },
+    "host/crates/server/src/cloud_trust.rs": {
+      "sha256": "f46ee0cd613c739ce89776532e54e0b749fe34034a2295532abbf5548d30363f",
+      "mode": "100644"
+    },
+    "host/crates/server/src/config.rs": {
+      "sha256": "43ceadf32aeebe92e436b7607fd2090b977be0599079fb7167ba6a67d0fd44b7",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection.rs": {
+      "sha256": "d3a6c169eb24a70fdc00220a4a0ada6cf6b39d80e44b351fe6f46635505ca63c",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_active.rs": {
+      "sha256": "668c4c064ecfe653d8b37b4212299588508475f5a15d3d0e6b9a7341025bce94",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_confirmation_tests.rs": {
+      "sha256": "6605de481fbd2cef2ad27ebd951517d6e5186c1a568d4fb3957cb046d4f1a275",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_loop.rs": {
+      "sha256": "2d79b6e9a62923d93b0cf15de51eba750c327b97ba92d590e261c414e798724e",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_nearby.rs": {
+      "sha256": "664ed40c61ce2223d5b99e8a4d9fffc88a2ef82ec13cedcd53496a44d23a5d25",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_queue_tests.rs": {
+      "sha256": "bf602b999fc74f82c6a5120e36c6b716866c763e33d540d72af5e70bd81edc1c",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_reliability_tests.rs": {
+      "sha256": "46dd6e700612374883f709f3e6c460fa862fc9157010cfb70e746061841e32ad",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_rpc.rs": {
+      "sha256": "74b3eaf0f1fa9f27030ee3eb365a35283d4c7e9f63dd19f98ddb575a007f525f",
+      "mode": "100644"
+    },
+    "host/crates/server/src/connection_tests.rs": {
+      "sha256": "92de52677e98ec4a60246efd521b210b751d603b5769da4f37c077d6144edad6",
+      "mode": "100644"
+    },
+    "host/crates/server/src/console.rs": {
+      "sha256": "d2e34d2a89b2f8f7a9b2d8c32bfab18773a2695f71dd59b18f126368169995e1",
+      "mode": "100644"
+    },
+    "host/crates/server/src/device_trust.rs": {
+      "sha256": "1be78c5691402af1ab41abb79c21f7a6dac19099605b505349d01707838f4153",
+      "mode": "100644"
+    },
+    "host/crates/server/src/direct.rs": {
+      "sha256": "8d1d562422d47f9b92fc62c5e801f7fe521c382d279a683e761b9fcd7f9094e3",
+      "mode": "100644"
+    },
+    "host/crates/server/src/discovery.rs": {
+      "sha256": "e2ab3c2b612941fef2be26cad97dbb49bdff1778c7fe5f6c4d3b8fa5b6a6d0d7",
+      "mode": "100644"
+    },
+    "host/crates/server/src/discovery_watch.rs": {
+      "sha256": "5c1b2912edfd771876fa3d7e466ca46bdb8eccf539691c9d044ca7180e8d038d",
+      "mode": "100644"
+    },
+    "host/crates/server/src/embedded.rs": {
+      "sha256": "0a216c1b5f7c5ac6aedf7bd82d5bab784a47cde4a62eb26f6b14cc4a231d0728",
+      "mode": "100644"
+    },
+    "host/crates/server/src/embedded_api.rs": {
+      "sha256": "9dcd4206d85f45755f0640951eab986e07c64fd5e1a80ac98bfb6bf48c8eec7e",
+      "mode": "100644"
+    },
+    "host/crates/server/src/embedded_rebind_tests.rs": {
+      "sha256": "968c50425d3ed7c725a2d08b608ab2ddeb36189e461eb61dcf32930e2618aa19",
+      "mode": "100644"
+    },
+    "host/crates/server/src/embedded_runtime.rs": {
+      "sha256": "1acab28fc56e4c26bfd3295defa06533a7608912ff45c8971148b55fc611f631",
+      "mode": "100644"
+    },
+    "host/crates/server/src/embedded_tests.rs": {
+      "sha256": "d1966ffe6e55bae75e80c206a5a396b3c1f7e417ee8aefd1da9d345ea7f4db31",
+      "mode": "100644"
+    },
+    "host/crates/server/src/identity.rs": {
+      "sha256": "822d1a5fea2856b4b464f046f48254333d55386ac2850f9c8ef993d94845ff7b",
+      "mode": "100644"
+    },
+    "host/crates/server/src/identity_contents.rs": {
+      "sha256": "e55da09bfd5fae79995df2e786d4303354e6a64be581dfb362b806ba13670ba2",
+      "mode": "100644"
+    },
+    "host/crates/server/src/identity_permissions.rs": {
+      "sha256": "d46357909dc02b29ab41692db0bd3bace84dfcf065c867930454e65512d42c4f",
+      "mode": "100644"
+    },
+    "host/crates/server/src/identity_policy.rs": {
+      "sha256": "914552a504df429328cb387571319e3d71bde0e52f1620779e7eab4ede4fff0d",
+      "mode": "100644"
+    },
+    "host/crates/server/src/identity_store.rs": {
+      "sha256": "796989b950d429276c8967a0424fdbf2dccae68c8dae4484fb950a1a9aa5ca58",
+      "mode": "100644"
+    },
+    "host/crates/server/src/identity_store_tests.rs": {
+      "sha256": "8427ae673f9bc7d5b4cdf0d7140307cf83d2b22bc3211f4dd1ea32ef148b89f0",
+      "mode": "100644"
+    },
+    "host/crates/server/src/instance.rs": {
+      "sha256": "1514026afb29ab223977812ba106f1f3948a8cf4471b34894b9166fd4421756e",
+      "mode": "100644"
+    },
+    "host/crates/server/src/invitation.rs": {
+      "sha256": "93e2df3d7d16ee7af9fa3fff0b39929dce2b4487c7fa7c338486f55208119522",
+      "mode": "100644"
+    },
+    "host/crates/server/src/lan_authorization.rs": {
+      "sha256": "ee8d33223e7f389780a477299812bf11a60770fc17874679cf0d0ac69df91ccd",
+      "mode": "100644"
+    },
+    "host/crates/server/src/lan_connection_tests.rs": {
+      "sha256": "3d2ad0eb03b466d3a02e455003cd2fb3b2a21fbd2397c957d550150d43df5cae",
+      "mode": "100644"
+    },
+    "host/crates/server/src/lan_reliability_tests.rs": {
+      "sha256": "16c850ccec77bea79417b9519cc6964790df83a8f2df2be0767e4387e747e6c2",
+      "mode": "100644"
+    },
+    "host/crates/server/src/lan_revocation_tests.rs": {
+      "sha256": "9023a53079b5b512b660d020becdda7a5f583cc07b328c83217b10e581039605",
+      "mode": "100644"
+    },
+    "host/crates/server/src/lib.rs": {
+      "sha256": "67a6fbb0626c0eb48e5f1d3e7271ea523d0995e98a6ef49bd0aa8eec9ac9dc8f",
+      "mode": "100644"
+    },
+    "host/crates/server/src/main.rs": {
+      "sha256": "411caa48e72fd75444d2fa4b610ec5589851e7685705818b16b54f6e2c06333e",
+      "mode": "100644"
+    },
+    "host/crates/server/src/notifications.rs": {
+      "sha256": "69b6c6a7959e471c69c646596523e7533aed65585660e7c929a852f7fe389896",
+      "mode": "100644"
+    },
+    "host/crates/server/src/notifications_audit_tests.rs": {
+      "sha256": "d08d8dc447364aeba5a6e37b2f0f944424d4fcbb1326d213668b5578ce46b001",
+      "mode": "100644"
+    },
+    "host/crates/server/src/ownership_proof.rs": {
+      "sha256": "408713c75bf52bec194226933bec1f803893cf5903060d1f326cbc9df1c4deab",
+      "mode": "100644"
+    },
+    "host/crates/server/src/peer_policy.rs": {
+      "sha256": "0821c8dcadc53f010d9e0812ce868f2491a3c9ce3fdbd5fb1a8f7cb1c39dc7ae",
+      "mode": "100644"
+    },
+    "host/crates/server/src/presence.rs": {
+      "sha256": "6d275d32f1cc343b9267cc1862a2ebf5b66140d0353bd6a1cf34c3d8476edfbc",
+      "mode": "100644"
+    },
+    "host/crates/server/src/presence_tests.rs": {
+      "sha256": "024010f713a2243d0cf4c0e56fec9bb05f402f85562825a32895a3af91b8a492",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_access.rs": {
+      "sha256": "1c7325d6050217172a5e703d6170de91d142d22c11ad9e52c5e61e8444716551",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_access_tests.rs": {
+      "sha256": "c2f8a68c6647a3bb62cd754b63d7a456cf7f0575bf5b9f163940bd26ead9f97e",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_connection.rs": {
+      "sha256": "5df36beca7c2b1bbaeaaf35e64ac3eb82a4f546c7d9f1faab41bd1009dcc6c09",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_connection_tests.rs": {
+      "sha256": "00ab41f4a9a3b5e6b7896f3931248c9a41303d5390e80224100506d2ae36f630",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_connection_tests/traffic.rs": {
+      "sha256": "888f858b31c802bc33f7c9c9dfc47a079acea37d026bf3a57aec555f987419bd",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_connection_tests/upgrade.rs": {
+      "sha256": "bea1dddaf38e47d931dc5680fd9c8c526a0fb69cd2af2452eb3a65c82e9fefa0",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_receive.rs": {
+      "sha256": "d886a206b5fb33b851da975ea50c374d08d1ce835a3e1bfbe6f1f3f3f2119c41",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_upgrade.rs": {
+      "sha256": "e199d94ad00b84c35b6d571456379a10229f653d4f8cc1314f18e207cd9dbfa8",
+      "mode": "100644"
+    },
+    "host/crates/server/src/preview_upgrade_tests.rs": {
+      "sha256": "3552699d285ca2ddaaad7382a474ce98031da8a5432f8807a2c340ec9d1e1ea5",
+      "mode": "100644"
+    },
+    "host/crates/server/src/quiet_approval_tests.rs": {
+      "sha256": "30d3e818b4727290480796b219a4716ee974ae045d0f78a1dfccaaf798add8f0",
+      "mode": "100644"
+    },
+    "host/crates/server/src/registration_proof.rs": {
+      "sha256": "e66e14b9e245916a26e4ed1679b930ffdae5ac5f40f0faebdea7ea4cb9a3980e",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay.rs": {
+      "sha256": "bda07f58e113fd112d77e777107264fc4869e801c909999db5f765dabde39007",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_address.rs": {
+      "sha256": "f16b2fd38d31d3b72c533cddf308074c10199ea086ce4b780fbb70ba77d6dd7d",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_connection.rs": {
+      "sha256": "b80bd06055a428e92000eb76ed2f9672af8d84d86310b2c242825b85d508c224",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_peers.rs": {
+      "sha256": "98f11121a3e6345ef88cb9e1221a27c747748d310cf1ab91ab25aa17a138dd29",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_preview_tests.rs": {
+      "sha256": "414bfe9b960b795b3221084411ca0149ebf3ed2b03b6f7790ef422661376bf88",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_preview_tests/support.rs": {
+      "sha256": "790fa40c3a54513b083718531cdbbcfe692ed0604128468e057585de63459633",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_test_support.rs": {
+      "sha256": "1f69d59808f9156f02950bcf6cc38e1838339e59ad0d8571073eaf8d55c32592",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_tests.rs": {
+      "sha256": "c72edd8d20350eace263e342ced1564c01d4670077287157b74f9e3a41e24055",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_wait_tests.rs": {
+      "sha256": "75c3b675cfd4e08983fecdfe7310c981d1560ef7994fe387d5bbc84b2da67880",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_writer.rs": {
+      "sha256": "b215b4d2252540727d787c454945476556ade3a1a56a18bc255be3d885c7d70d",
+      "mode": "100644"
+    },
+    "host/crates/server/src/relay_writer_tests.rs": {
+      "sha256": "bc6a9afb36f3cadfd3af41747a71c3f8fb3d275e5deecf83ffe56311a2e8bf5c",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_authorization.rs": {
+      "sha256": "e93fabfaa78e029ea0569daab1fc55a1710dcc12244a8056ce1c4728ef34c749",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_authorization_fixture.json": {
+      "sha256": "83c634778c4fb61bf7631ca7ef715d6255a80afb1158c82b3ce9dd94c5f3d408",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_authorization_tests.rs": {
+      "sha256": "f43d43095e4af04852e99c7ee8947b10262e31aa5e56e0cf1bcb6f65e5d004ab",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_connection_tests.rs": {
+      "sha256": "dca2c42fc233d54deab5521b568b268ed9c117958792f032ee37989cf460f76c",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_downgrade_tests.rs": {
+      "sha256": "d8a79ea1cf87d28ffddf64c32ee0a5d5404e3d45e39c3735a4e59ba348dcaaa7",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_permissions.rs": {
+      "sha256": "2dfec01c4959358dc80ecb1721cdce016d85ce355594b36bf69a88d48ad6aaee",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_restrictions.rs": {
+      "sha256": "378c3574ee12950b5405293626772898cd6b5b0af67983030ebc839435e484c5",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_revocation.rs": {
+      "sha256": "4b99b321321d226504df329b30578096efc9a6c8cc4723b765cb0ce214a4dc08",
+      "mode": "100644"
+    },
+    "host/crates/server/src/remote_test_support.rs": {
+      "sha256": "18ce148e9c9422171f13f979a78311650328a8a307e51f3fe201dd6fb04ed3fd",
+      "mode": "100644"
+    },
+    "host/crates/server/src/resend_tests.rs": {
+      "sha256": "402edb40038afb74ec16c3d4631384c431923924a689db30cb21ca210d0cb6bf",
+      "mode": "100644"
+    },
+    "host/crates/server/src/restriction_apply.rs": {
+      "sha256": "308401f5737331e447f6b17430a87a440cabb9fe85de9d1ac6f4cd4a5b463e78",
+      "mode": "100644"
+    },
+    "host/crates/server/src/restriction_checkpoint.rs": {
+      "sha256": "eff02ed1c5244313111a7842fc4c18b6599554e015805a18c5b01881f46d87f2",
+      "mode": "100644"
+    },
+    "host/crates/server/src/restriction_live_tests.rs": {
+      "sha256": "5d304fe31ba47287c964cba7f3ae8999515540fe17c2ec06fd8703ec1b0a697a",
+      "mode": "100644"
+    },
+    "host/crates/server/src/restriction_page_tests.rs": {
+      "sha256": "3a69863499880c9993748c4f0395035be832cf3f65cc182f59746e5f61bb7d8a",
+      "mode": "100644"
+    },
+    "host/crates/server/src/restriction_persistence_tests.rs": {
+      "sha256": "66cf205c6b259311c54e646a231d6ed4ef22eed9382c4d8e06ecdbec059e8b03",
+      "mode": "100644"
+    },
+    "host/crates/server/src/restriction_tests.rs": {
+      "sha256": "06c5a793eb4dbbc74317a0dec3b71b2e8467ed56e6cb45ee5e92187032f8a337",
+      "mode": "100644"
+    },
+    "host/crates/server/src/rpc_access.rs": {
+      "sha256": "4e85cbd0aa9bcff6e96576b19028f89b2ea63e27b2002f7ac599b9731e1f19ab",
+      "mode": "100644"
+    },
+    "host/crates/server/src/rpc_access_tests.rs": {
+      "sha256": "9a472eea2973385d92b685910ba4c8800daa83fc27507f198aa7a14945ab6905",
+      "mode": "100644"
+    },
+    "host/crates/server/src/state.rs": {
+      "sha256": "566856eec1c7c204743be33a657970639d6fe1ef1ab97c5345e1d57e370ecd22",
+      "mode": "100644"
+    },
+    "host/crates/server/src/test_support.rs": {
+      "sha256": "7f0f6c52c3c088a25f9155602af5781744741ae6a2245ad16a3f7e2a6dc05865",
+      "mode": "100644"
+    },
+    "host/crates/transport/Cargo.toml": {
+      "sha256": "3b24ee6147c6be23fdf5d2a6ba6550e75121fb30d0148a3677c99d7467431759",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/client.rs": {
+      "sha256": "f95ba66eff855f7790f43286c2aa08fa56b15fe02c08b4c9783b8f1b1c732335",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/device_proof.rs": {
+      "sha256": "14a044765dfcf961f4fbce3c8d933c9d0e1ec867c90cdca001c4fe043f014f5a",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/lib.rs": {
+      "sha256": "815a2953ef56f2990e47dc67db2d15abfcf56be94bb6b4e6e3a5f03f1bad12de",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/preview.rs": {
+      "sha256": "079b1a781486374d74d2deadcc23da07a22dfdc154d8499e02d64fcce86c46c9",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/preview/flow.rs": {
+      "sha256": "126938a6d5e033e9dd631e1743a76b7ba288483ebad935220bda21f1819a2f74",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/preview/frame.rs": {
+      "sha256": "85fc3132100d9ce704186265ecc8516357cd0de8b0d402595119613f9611ead0",
+      "mode": "100644"
+    },
+    "host/crates/transport/src/preview/queue.rs": {
+      "sha256": "d4a6caeb97a6a21aac96a2cda4a8b245825a8428e90a0fcd63375137875c892e",
+      "mode": "100644"
+    },
+    "host/crates/transport/tests/device_proof.rs": {
+      "sha256": "2abed5854e1906afcd15a41a3340a10d43cc392dfd257a1bdf5dfd1898a626ac",
+      "mode": "100644"
+    },
+    "host/crates/transport/tests/noise.rs": {
+      "sha256": "8f80ecf7ffd3f250cdf98252013315ab0ce00f74630d3adcd052d84d9c56c9a1",
+      "mode": "100644"
+    },
+    "host/crates/transport/tests/preview.rs": {
+      "sha256": "120b0111edf44267183d2b190aee35eadd12db4075651c5c61cf008993a8e2b3",
+      "mode": "100644"
+    },
+    "host/crates/transport/tests/preview_duplex.rs": {
+      "sha256": "e871fe1e45181ff0599fd1115cf586632cb8b33947e8c1696b20fc7c80e5a7bf",
+      "mode": "100644"
+    },
+    "host/crates/transport/tests/preview_late_credit.rs": {
+      "sha256": "48e5512a4e86580237fe1e37f5a36e1294b24a0c1c72caba951645730b734f70",
+      "mode": "100644"
+    },
+    "host/crates/transport/tests/preview_stress.rs": {
+      "sha256": "8d4b4cf50ba7db6d667d6a6bea140a86711fb368be712ea7f51236a5be0b9d3e",
+      "mode": "100644"
+    },
+    "host/docs/conversations.md": {
+      "sha256": "b9fa4288d4bd8b056842d7d9862c8eb3716cd42b49409274b954a5c9e8bd1a2e",
+      "mode": "100644"
+    },
+    "host/docs/protocol.md": {
+      "sha256": "5a62a06d5d52fc11a3798904e9e9f130cdf5b04fc9f8212ae8b9a1e7821823dd",
+      "mode": "100644"
+    },
+    "host/fixtures/remote-controls.json": {
+      "sha256": "3018b247b57500846f757e8a1dd0c4150702feccc271bb0288bd45611e802e31",
+      "mode": "100644"
+    },
+    "host/provider-bridge/claude.cjs": {
+      "sha256": "06fe5ff5e5fcb24998ff65b72e419ffe74124e9b5aacd5401a03e938cbb7fa8c",
+      "mode": "100644"
+    },
+    "host/provider-bridge/gemini.cjs": {
+      "sha256": "9b171d9d8f427f5a7988e0cdf67b310a090975bc7991c5eaa682d82d70f8445c",
+      "mode": "100644"
+    },
+    "host/provider-bridge/main.cjs": {
+      "sha256": "770186b26de5108c82a5792dadae1920e8b7bb3227930fd760df5b0a648c95f7",
+      "mode": "100644"
+    },
+    "host/provider-bridge/tools.cjs": {
+      "sha256": "63cf40d39c4eb4ac5426ef1a770d8538089d53f8d6f9d0d785e6beb140cf41b8",
+      "mode": "100644"
+    },
+    "host/provider-bridge/wire.cjs": {
+      "sha256": "057ec9528e0214c06f0b188243c7999c5afc737a6f2210c11dac01f7166dcc95",
+      "mode": "100644"
+    },
+    "host/relay/.railwayignore": {
+      "sha256": "c7a996989858b61234ca61539df93296ee9499fce8971d9c2a4e3beac313c4b8",
+      "mode": "100644"
+    },
+    "host/relay/Dockerfile": {
+      "sha256": "41d8240561c3bfe41597fa7cef80d34e2c4fefffbfc6e2d8e305d21c448fa6d3",
+      "mode": "100644"
+    },
+    "host/relay/README.md": {
+      "sha256": "83f759da9206973924c265890b7a0f0a60092b8edfd16b2d438167d1f83ee3c2",
+      "mode": "100644"
+    },
+    "host/relay/package-lock.json": {
+      "sha256": "87a3644cb5068fd9aa23897e3e6419c6b135757476acc7c0287aa29c4688675a",
+      "mode": "100644"
+    },
+    "host/relay/package.json": {
+      "sha256": "9a845b3c10c8aedd67595ab72b59f01e149cd61ba1c4994cab91ad476f630c93",
+      "mode": "100644"
+    },
+    "host/relay/railway.json": {
+      "sha256": "9a08b8c8b2ec5172cb99da6527971c411ef85a23dcd1c3f3eb24a5147a4d55fa",
+      "mode": "100644"
+    },
+    "host/relay/scripts/api-integration-fixture.php": {
+      "sha256": "ae93aec7e2706f40a1ccf5a8240ce445e8915489fcec8d383c6e5974d87892de",
+      "mode": "100644"
+    },
+    "host/relay/scripts/benchmark.mjs": {
+      "sha256": "69beb68e804ce28cb011759db400f9429ecc01c167cf0bb1d4bc26f3f9d221ad",
+      "mode": "100644"
+    },
+    "host/relay/scripts/encoding-benchmark.mjs": {
+      "sha256": "bcff3f00be99ae8d90cfa3c7d28ce81a8f538c7695eb53aa5820589dfdd48c0c",
+      "mode": "100644"
+    },
+    "host/relay/scripts/verify-api-integration.mjs": {
+      "sha256": "e446d9202bb5ef66b45b3d623267f5f85c57883876dfa004dd02036080d1702c",
+      "mode": "100644"
+    },
+    "host/relay/src/admission.mjs": {
+      "sha256": "b29d8aae2a96d339f7182343ee582a275a7e29f893b99c51370348b4da8764ca",
+      "mode": "100644"
+    },
+    "host/relay/src/allowance.mjs": {
+      "sha256": "438583414a10c6d2377af367b065d4d07f0fc6655fd74b68a0caac9442db8e50",
+      "mode": "100644"
+    },
+    "host/relay/src/authorization.mjs": {
+      "sha256": "0cd3bf1252dcbc02193106845600b0d08d76c4e77503ff6c793253cfa6c3ab1e",
+      "mode": "100644"
+    },
+    "host/relay/src/envelopes.mjs": {
+      "sha256": "934f54185e65812c14cf027a081e5168e69edb66c8f509c2ce1efd496281af8f",
+      "mode": "100644"
+    },
+    "host/relay/src/main.mjs": {
+      "sha256": "688b7e083d822b65d08220125b8704b3b86dec37b45f037d4979d7d3a4a25188",
+      "mode": "100644"
+    },
+    "host/relay/src/presence.mjs": {
+      "sha256": "c1efa05e77eaa65ba5549900913966f3e052afe192a226ff2243f16f7f9dcde8",
+      "mode": "100644"
+    },
+    "host/relay/src/registry.mjs": {
+      "sha256": "0682dc4ad93239ba5b3abc2bfe78e4479fb6f51336b9d22ab75477fa949c6735",
+      "mode": "100644"
+    },
+    "host/relay/src/relay.mjs": {
+      "sha256": "c6a65246750bcc7a64e3dee5415e76dbffd4c8d2767568efbc23a11aa8b198c5",
+      "mode": "100644"
+    },
+    "host/relay/src/revocations.mjs": {
+      "sha256": "fb0bd15ff8578212efb73387d323f1252e03bc14e00c468e6492168a0f7ebf38",
+      "mode": "100644"
+    },
+    "host/relay/src/tokens.mjs": {
+      "sha256": "7e4aa5df29523c455357818823d16040cc84d93f9bba6749761440a3cc5eb284",
+      "mode": "100644"
+    },
+    "host/relay/src/upgradePolicy.mjs": {
+      "sha256": "0970ee9408f0f10e028ed6912ea60a2c4a964c763554fa0242880dfe15991ba0",
+      "mode": "100644"
+    },
+    "host/relay/tests/allowance.test.mjs": {
+      "sha256": "96459ed7e54c873f5ee90021ee5e12d704b60a104a530c0692f946f7d436a1d6",
+      "mode": "100644"
+    },
+    "host/relay/tests/authorization-lease.test.mjs": {
+      "sha256": "495af23735987913a90bf18ab74c55e0d3544918731afd5b8cb788b45a3ef0cb",
+      "mode": "100644"
+    },
+    "host/relay/tests/authorization.test.mjs": {
+      "sha256": "49ff9aacc3e39e218b4d86a149ea470995d07c0e9eec163b32921b08012efbc6",
+      "mode": "100644"
+    },
+    "host/relay/tests/envelopes.test.mjs": {
+      "sha256": "5dfc4479a2ec4f4c038e4bc92a235f7177200f12be5c1f75ae23849b2edca62a",
+      "mode": "100644"
+    },
+    "host/relay/tests/fixtures/preview-site.mjs": {
+      "sha256": "e9e25574b5d838d894920d3ea0d327ac48ce342df8ca78a5f99720d7bc21ea0b",
+      "mode": "100644"
+    },
+    "host/relay/tests/preview-forwarding.test.mjs": {
+      "sha256": "e8dcb50e279a0744958b6fa218c8e2214360e1e302d8e4c892db13d78316f678",
+      "mode": "100644"
+    },
+    "host/relay/tests/relay.test.mjs": {
+      "sha256": "9d4276be919237d57cdf55dac38257d4cd77865f884a353d7e7ab6ba9dad1f18",
+      "mode": "100644"
+    },
+    "host/relay/tests/revocations.test.mjs": {
+      "sha256": "ad63ce90fe7de167ca76e96fb3738c5a990ec6e9240b499d3b9ca9cfc0810420",
+      "mode": "100644"
+    },
+    "host/relay/tests/rotation.test.mjs": {
+      "sha256": "e79267bf7b033c5ab5afa9ce33821b2eca52e0d92bcbfd8e0da1ab61834600ec",
+      "mode": "100644"
+    },
+    "host/relay/tests/securityHarness.mjs": {
+      "sha256": "90a516c9b37cbe20b359d0d5344c4cdefa76c0a03eda6a0baf40d83a9be6d074",
+      "mode": "100644"
+    },
+    "host/relay/tests/upgrade.test.mjs": {
+      "sha256": "021b5e9923713dd3624a558427fd135080965856d39141868a7f03eb61c2981b",
+      "mode": "100644"
+    },
+    "host/scripts/build-wasm.sh": {
+      "sha256": "4d33506abf5819e565efd6f0850c32ce07321ee7f7a7698cca6036ee554c479c",
+      "mode": "100644"
+    },
+    "host/scripts/fixtures/acp-agent.cjs": {
+      "sha256": "77589f0601e5700428aea7932230e55ef9941671f35acf15b11c73ca700a5b67",
+      "mode": "100644"
+    },
+    "host/scripts/run.sh": {
+      "sha256": "f1b49abe3db5285e2c88e6f062dbb56bd0e59786693e5134fe9c75ffe0f42ffe",
+      "mode": "100644"
+    },
+    "host/scripts/test-claude-models.mjs": {
+      "sha256": "bcf9257a42b5dbfd26dcbad15202845f3a99cb3cac18157e7f114f3b08e19100",
+      "mode": "100644"
+    },
+    "host/scripts/test-wasm-host.mjs": {
+      "sha256": "593f829cd7abb93ca0dd4730ae9e13c242d0c2c1c38a2ba8bb9094cdaa1164e2",
+      "mode": "100644"
+    },
+    "host/scripts/verify-acp-bridge.mjs": {
+      "sha256": "bd387d0fa50e8c5373f136f621ca8cfe2bfc4e42767544a6f05051ed2c54d340",
+      "mode": "100644"
+    },
+    "host/scripts/verify-codex-conversation.mjs": {
+      "sha256": "a7a9e4ba65c99990f99e67891621870a493237a265d9764e53f8ba79a6b9ac78",
+      "mode": "100644"
+    },
+    "host/scripts/verify-provider-bridge.mjs": {
+      "sha256": "5e5dbdd8f4432961cb50fed37d7f552b1e02b5238de471b1bcfb360cedf691ef",
+      "mode": "100644"
+    }
+  },
+  "sourceMapSha256": "dbe70664eb7e44b5aea599a2e439e024b6fce11c196251b80a001b85fcd7c9fa",
+  "excludedGeneratedDirectories": [
+    ".expo",
+    ".git",
+    ".vibyra-agent",
+    "__pycache__",
+    "node_modules",
+    "target",
+    "generated"
+  ],
+  "excludedSecretFiles": [
+    ".env*",
+    "*.pem",
+    "*.p12",
+    "*.key"
+  ],
+  "dockerContext": {
+    "host": "complete frozen source, without target/node_modules/env",
+    "desktop-tauri": "complete frozen Cargo stub/core context",
+    "docsVectors": [
+      "docs/cloud-sync-vectors.json",
+      "docs/secret-guard-vectors.json"
+    ],
+    "cloud-runtimeImageOverlay": [
+      "cloud-runtime/src/sync-login.mjs",
+      "cloud-runtime/src/sync-login-tar.mjs"
+    ],
+    "remainingRuntimeBase": "pinned fd4c3e53c5af7ccd9e511e22cd19c3f3b298a8c29eca779a854355dbf48fb13e",
+    "fullCloudRuntimeAndTestsPreserved": true
+  },
+  "sourceEquivalenceOnly": true,
+  "rebuildPerformed": false,
+  "pushed": false,
+  "deployed": false,
+  "excludedFrozenGeneratedFiles": [
+    "host/generated/noise/vibyra_transport.d.ts",
+    "host/generated/noise/vibyra_transport.js",
+    "host/generated/noise/vibyra_transport_bg.wasm",
+    "host/generated/noise/vibyra_transport_bg.wasm.d.ts"
+  ],
+  "buildContextEquivalence": "Every retained source/Cargo lock/build definition equals frozen context byte-for-byte; generated WASM bundles excluded and not consumed by native Cargo build.",
+  "validation": {
+    "syncLoginUnitTests": {
+      "tests": 36,
+      "passed": 36,
+      "failures": 0,
+      "command": "node scripts/materialize-secret-guard-fixtures.mjs -- node --test cloud-runtime/tests/sync-login.test.mjs"
+    },
+    "noRustRebuild": "Preserved existing immutable image; source byte equivalence only. Existing image build/test proof belongs to release owner."
+  },
+  "cleanHistoryBase": "acb21a035fdc9ebc28b25a6e159100853cf4d20e",
+  "contextPath": "deploy/cloud-runtime-34dd",
+  "materializedFixtureIsIgnored": true,
+  "fixturePreparationCommand": "node scripts/materialize-secret-guard-fixtures.mjs -- <build/test command>",
+  "fixtureMaterializedSha256": "0a6023246fbfffd9edc4741da42455fe462e2827ebc5a2667053f3843e8d22b3",
+  "preparedSourceByteEquivalent": true,
+  "trackedFixtureRepresentationChangesOnly": [
+    "docs/secret-guard-vectors.template.json",
+    "docs/secret-guard-fixture-factories.json",
+    "scripts/materialize-secret-guard-fixtures.mjs"
+  ],
+  "fixtureValidation": {
+    "materializedByteEquality": true,
+    "materializedSha256": "0a6023246fbfffd9edc4741da42455fe462e2827ebc5a2667053f3843e8d22b3",
+    "materializedCorpusIgnoredAndUntracked": true,
+    "checkDoesNotWrite": true,
+    "corruptFactoryFailsBeforeWrite": true,
+    "commandStatusPropagated": true,
+    "symlinkTargetRefused": true
+  }
+}

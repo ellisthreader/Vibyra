@@ -1,0 +1,4 @@
+app = "vibyra-cloud-runtime"
+
+[build]
+  dockerfile = "Dockerfile"

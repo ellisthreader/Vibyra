@@ -1,0 +1,117 @@
+[workspace]
+members = ["crates/vibyra-core", "crates/vibyra-sync"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+parking_lot = "0.12"
+thiserror = "2"
+
+[package]
+name = "vibyra-desktop"
+version = "0.1.0"
+description = "Vibyra Desktop — AI terminal workspace"
+authors = ["Vibyra"]
+edition = "2021"
+rust-version = "1.88"
+
+[features]
+# Only the separately identified, localhost-only native VM acceptance bundle.
+agent_vm_qa_fixture = []
+
+[lib]
+name = "vibyra_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dev-dependencies]
+# The exact verifier `tauri-plugin-updater` uses, so this crate proves the
+# shipped public key against a real signature rather than a lookalike.
+minisign-verify = "0.2"
+base64 = "0.22"
+tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
+vibyra-transport = { path = "../../host/crates/transport" }
+tokio-tungstenite = { version = "0.29", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
+hex = "0.4"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+uuid = { version = "1", features = ["v4"] }
+sha1 = "0.10"
+sha2 = "0.10"
+flate2 = "1"
+tempfile = "3"
+# 2.11.5 keeps the invoke key in the main frame and checks remote app-command ACLs.
+tauri = { version = "2.11.5", features = ["tray-icon", "tracing"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "registry"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+parking_lot = { workspace = true }
+vibyra-core = { path = "crates/vibyra-core" }
+# Cloud sync core (secrets denylist + scan live here; wiring into the app comes later).
+vibyra-sync = { path = "crates/vibyra-sync" }
+vibyra-host = { path = "../../host/crates/server", default-features = false }
+if-addrs = "0.15"
+vibyra-engine = { package = "vibyra-host-engine", path = "../../host/crates/engine" }
+dirs = "6"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+base64 = "0.22"
+time = "0.3"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "multipart", "json"] }
+getrandom = "0.3"
+# Agent browser (Phase 7): a small CDP client over the WebSocket crate the Host engine
+# already builds, and URL parsing reqwest already pulls in. No browser bundle.
+tungstenite = "0.29"
+url = "2"
+tokio = { version = "1", default-features = false, features = ["time", "rt"] }
+arboard = { version = "3.6", features = ["wayland-data-control"] }
+# Only the `system` feature: disks, networks, components and users are all
+# extra probes we never read. Pinned to 0.38, which declares MSRV 1.88 to match
+# this crate; 0.39 requires 1.95 and would raise ours.
+sysinfo = { version = "0.38", default-features = false, features = ["system"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-global-shortcut = "2"
+# Shell (Part 18): login item / autostart and vibyra:// links.
+tauri-plugin-autostart = "2"
+tauri-plugin-deep-link = "2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# One running instance receives vibyra:// links (release builds only; see shell/mod.rs).
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+dbus = "0.9"
+keyring = { version = "3.6", default-features = false, features = ["sync-secret-service"] }
+libc = "0.2"
+raw-window-handle = "0.6"
+x11rb = { version = "0.13", features = ["randr", "composite", "xtest", "res"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cpal = "=0.18.2"
+keyring = { version = "3.6", default-features = false, features = ["apple-native"] }
+libc = "0.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+keyring = { version = "3.6", default-features = false, features = ["windows-native"] }
+# Window Preview: inventory, Windows.Graphics.Capture, PrintWindow, SendInput,
+# and UI Automation for the phone keyboard (Com, Ole, Variant, Accessibility).
+windows = { version = "0.62", features = ["Foundation", "Foundation_Metadata", "Graphics", "Graphics_Capture", "Graphics_DirectX", "Graphics_DirectX_Direct3D11", "Win32_Foundation", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_Dwm", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Gdi", "Win32_NetworkManagement_IpHelper", "Win32_Networking_WinSock", "Win32_Security", "Win32_Storage_FileSystem", "Win32_Storage_Xps", "Win32_System_Com", "Win32_System_LibraryLoader", "Win32_System_Ole", "Win32_System_RemoteDesktop", "Win32_System_StationsAndDesktops", "Win32_System_Threading", "Win32_System_WinRT", "Win32_System_WinRT_Direct3D11", "Win32_System_WinRT_Graphics_Capture", "Win32_System_Variant", "Win32_UI_Accessibility", "Win32_UI_HiDpi", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }
+
+# Keep tracing secrecy without synchronous cross-thread JavaScript dispatch.
+[patch.crates-io]
+tauri-runtime-wry = { path = "vendor/tauri-runtime-wry" }

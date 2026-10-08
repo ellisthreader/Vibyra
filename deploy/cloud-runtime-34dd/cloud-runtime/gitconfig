@@ -1,0 +1,9 @@
+# Installed as /etc/gitconfig, root-owned. Seatbelt only: project code runs as the same uid as the Host
+# and can override it, so the real push boundary is the backend credential policy (vibyra/* only).
+[credential]
+	helper = /opt/vibyra/bin/git-credential-vibyra
+	useHttpPath = true
+[core]
+	hooksPath = /opt/vibyra/hooks
+[safe]
+	directory = *

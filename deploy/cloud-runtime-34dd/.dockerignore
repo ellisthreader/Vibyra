@@ -1,0 +1,10 @@
+.git
+**/target
+**/node_modules
+**/.env*
+cloud-runtime
+**/.DS_Store
+!cloud-runtime/
+!cloud-runtime/src/
+!cloud-runtime/src/sync-login.mjs
+!cloud-runtime/src/sync-login-tar.mjs

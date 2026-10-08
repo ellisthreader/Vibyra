@@ -1,0 +1,6 @@
+#!/usr/bin/env node
+import { pushViolation } from '../src/push-guard.mjs';
+let input = ''; process.stdin.setEncoding('utf8');
+for await (const chunk of process.stdin) input += chunk;
+const reason = pushViolation(input);
+if (reason) { process.stderr.write(reason + '\n'); process.exit(1); }
