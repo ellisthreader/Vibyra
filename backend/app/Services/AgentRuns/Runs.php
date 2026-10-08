@@ -26,6 +26,23 @@ final class Runs
             ->orderByDesc('conversation_seq')->limit(max(1, min(50, $limit)))->get()->all();
     }
 
+    /** Account/teammate-scoped keyset page; new admissions cannot move an older page. */
+    public function page(int $userId, string $agentId, int $limit, ?string $cursor = null): array
+    {
+        $limit = max(1, min(50, $limit));
+        $query = Run::query()->where('user_id', $userId)->where('agent_id', $agentId);
+        if ($cursor !== null) {
+            $anchor = (clone $query)->whereKey($cursor)->first();
+            if (!$anchor) ApiError::throw(422, 'invalid_cursor', 'That history page is unavailable. Refresh the task list.');
+            $query->where(fn ($q) => $q->where('conversation_seq', '<', $anchor->conversation_seq)
+                ->orWhere(fn ($q) => $q->where('conversation_seq', $anchor->conversation_seq)->where('id', '<', $anchor->id)));
+        }
+        $rows = $query->orderByDesc('conversation_seq')->orderByDesc('id')->limit($limit + 1)->get();
+        $more = $rows->count() > $limit;
+        $page = $rows->take($limit)->all();
+        return ['runs' => $page, 'nextCursor' => $more ? end($page)->id : null];
+    }
+
     /** Fences further model/tool dispatch. Late receipts from in-flight calls are kept. */
     public function cancel(int $userId, string $id): Run
     {

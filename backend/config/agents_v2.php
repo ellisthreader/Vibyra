@@ -55,4 +55,11 @@ return [
     'schedule_catch_up_minutes' => 60,
     'max_schedules' => 50,
     'max_triggers' => 25,
+    // Part 4 triggers. One run per subject (Linear issue, Slack thread, GitHub issue) while an earlier one on it is live,
+    // for this long; Linear's `webhookTimestamp` and Slack's request timestamp must be this fresh. The Slack app's single
+    // signing secret (Event Subscriptions) lives only in the environment; without it hooks/slack answers 404.
+    'subject_window_minutes' => (int) env('AGENTS_V2_SUBJECT_WINDOW_MINUTES', 60),
+    'linear_tolerance_seconds' => (int) env('AGENTS_V2_LINEAR_TOLERANCE_SECONDS', 60),
+    'slack_tolerance_seconds' => 300,
+    'slack_signing_secret' => (string) env('SLACK_SIGNING_SECRET', ''),
 ];

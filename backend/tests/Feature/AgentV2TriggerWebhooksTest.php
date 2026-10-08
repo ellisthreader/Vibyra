@@ -31,9 +31,9 @@ class AgentV2TriggerWebhooksTest extends TestCase
         return [...$created->json('trigger'), 'secret' => $created->json('webhook.secret')];
     }
 
-    private function issue(string $body = 'The login page is blank.', string $action = 'opened'): array
+    private function issue(string $body = 'The login page is blank.', string $action = 'opened', int $number = 7): array
     {
-        return ['action' => $action, 'repository' => ['full_name' => 'acme/app'], 'issue' => ['number' => 7, 'title' => 'Login broken',
+        return ['action' => $action, 'repository' => ['full_name' => 'acme/app'], 'issue' => ['number' => $number, 'title' => 'Login broken',
             'body' => $body, 'user' => ['login' => 'octocat'], 'labels' => [['name' => 'bug']], 'html_url' => 'https://github.com/acme/app/issues/7']];
     }
 
@@ -80,7 +80,8 @@ class AgentV2TriggerWebhooksTest extends TestCase
         foreach (['aaaaaaaa-1', 'aaaaaaaa-2', 'aaaaaaaa-3'] as $i => $delivery)
             $this->github($trigger, $this->issue(), $delivery)->assertStatus(202)->assertJsonPath('duplicate', $i > 0);
         $this->assertSame(1, DB::table('agent_runs')->count(), 'One signed body is one event, whatever the unsigned delivery header says.');
-        $this->github($trigger, $this->issue('A different report.'), 'aaaaaaaa-1')->assertStatus(202)->assertJsonPath('duplicate', false);
+        // A different issue (the same issue would be held by the per-subject rule while its first run is live).
+        $this->github($trigger, $this->issue('A different report.', 'opened', 8), 'aaaaaaaa-1')->assertStatus(202)->assertJsonPath('duplicate', false);
         $this->assertSame(2, DB::table('agent_runs')->count(), 'A reused delivery id does not hide a genuinely new body.');
     }
 
@@ -106,19 +107,19 @@ class AgentV2TriggerWebhooksTest extends TestCase
     public function test_the_hourly_rate_cap_and_pause_record_skipped_events(): void
     {
         $trigger = $this->githubTrigger(['ratePerHour' => 2]);
-        foreach (['dlv-0001', 'dlv-0002', 'dlv-0003'] as $d) $this->github($trigger, $this->issue('Report '.$d), $d)->assertStatus(202);
+        foreach (['dlv-0001', 'dlv-0002', 'dlv-0003'] as $i => $d) $this->github($trigger, $this->issue('Report '.$d, 'opened', 20 + $i), $d)->assertStatus(202);
         $this->assertSame(['admitted', 'admitted', 'skipped'], DB::table('agent_trigger_events')->pluck('state')->sort()->values()->all());
         $this->assertSame('rate_limited', DB::table('agent_trigger_events')->where('state', 'skipped')->value('reason'));
         $this->assertSame(2, DB::table('agent_runs')->count());
         $this->travel(61)->minutes();
         DB::table('agent_runtime_bindings')->update(['last_seen_at' => now()]);
-        $this->github($trigger, $this->issue('Report 4'), 'dlv-0004')->assertJsonPath('state', 'admitted');
+        $this->github($trigger, $this->issue('Report 4', 'opened', 24), 'dlv-0004')->assertJsonPath('state', 'admitted');
         $this->postJson('/api/agents/v2/triggers/'.$trigger['id'].'/pause', ['paused' => true])->assertOk()->assertJsonPath('trigger.paused', true);
-        $this->github($trigger, $this->issue('Report 5'), 'dlv-0005')->assertJsonPath('state', 'skipped');
+        $this->github($trigger, $this->issue('Report 5', 'opened', 25), 'dlv-0005')->assertJsonPath('state', 'skipped');
         $this->assertSame(1, DB::table('agent_trigger_events')->where('reason', 'paused')->count());
         $this->assertSame(3, DB::table('agent_runs')->count());
         $this->deleteJson('/api/agents/v2/triggers/'.$trigger['id'])->assertOk();
-        $this->github($trigger, $this->issue('Report 6'), 'dlv-0006')->assertStatus(404);
+        $this->github($trigger, $this->issue('Report 6', 'opened', 26), 'dlv-0006')->assertStatus(404);
     }
 
     public function test_stripe_events_need_a_valid_signature_and_dedupe_by_event_id(): void

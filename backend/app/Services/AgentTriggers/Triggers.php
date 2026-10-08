@@ -14,12 +14,15 @@ use Illuminate\Support\Str;
 
 /**
  * Saved triggers. GitHub webhook secrets are generated here and shown once; Stripe's
- * signing secret is pasted from the Stripe endpoint (at create or later by PATCH; hooks 404 until then). Poll triggers (Gmail, Calendar)
- * need a connection this teammate already has a read grant on.
+ * signing secret is pasted from the Stripe endpoint (at create or later by PATCH; hooks 404 until then); Linear's works the same way
+ * (its signing secret is on the webhook's page). Slack uses one app-level secret, so a Slack trigger has none. Poll triggers (Gmail,
+ * Calendar) and Slack mentions need a connection this teammate already has a read grant on; a Linear one may name one (loop guard,
+ * assignee "me").
  */
 final class Triggers
 {
-    private const READS = ['gmail' => 'gmail_search', 'google_calendar' => 'google_calendar_list_events'];
+    private const READS = ['gmail' => 'gmail_search', 'google_calendar' => 'google_calendar_list_events',
+        'linear' => 'linear_read_issue', 'slack' => 'slack_read_channel'];
 
     public function __construct(private readonly Grants $grants) {}
 
@@ -32,12 +35,14 @@ final class Triggers
         $kind = $data['kind'];
         $filter = TriggerKinds::normalize($kind, $data['filter'] ?? []);
         $connection = $this->connection($userId, $agent->id, $kind, $data['connectionId'] ?? null);
+        $this->assertAssignee($kind, $filter, $connection);
         $shown = null;
         $secret = match ($kind) {
             'github.issue', 'github.pull_request' => $shown = Str::random(40),
             'api.invoke' => $shown = 'vyh_'.Str::random(40),
             // Stripe issues the secret only after the endpoint (whose URL has this ID) exists: PATCH it in later.
             'stripe.event' => isset($data['signingSecret']) ? $this->stripeSecret($data['signingSecret']) : null,
+            'linear.issue' => isset($data['signingSecret']) ? $this->linearSecret($data['signingSecret']) : null,
             default => null,
         };
         $trigger = Trigger::query()->create(['user_id' => $userId, 'agent_id' => $agent->id, 'kind' => $kind,
@@ -54,12 +59,17 @@ final class Triggers
             if ((int) $data['revision'] !== $t->revision)
                 ApiError::throw(409, 'stale_revision', 'This trigger changed elsewhere. Reload it and try again.');
             $values = ['revision' => $t->revision + 1];
-            if (array_key_exists('filter', $data)) $values['filter'] = TriggerKinds::normalize($t->kind, $data['filter']);
+            if (array_key_exists('filter', $data)) {
+                $values['filter'] = TriggerKinds::normalize($t->kind, $data['filter']);
+                $this->assertAssignee($t->kind, $values['filter'], $t->connection_id);
+            }
             if (array_key_exists('promptTemplate', $data)) $values['prompt_template'] = $this->template($data['promptTemplate']);
             if (array_key_exists('ratePerHour', $data)) $values['rate_per_hour'] = (int) $data['ratePerHour'];
             if (array_key_exists('runtimeId', $data)) $values['runtime_binding_id'] = $this->runtime($userId, $data['runtimeId']);
             if (array_key_exists('signingSecret', $data) && $t->kind === 'stripe.event')
                 $values['secret'] = Crypt::encryptString($this->stripeSecret($data['signingSecret']));
+            if (array_key_exists('signingSecret', $data) && $t->kind === 'linear.issue')
+                $values['secret'] = Crypt::encryptString($this->linearSecret($data['signingSecret']));
             $t->forceFill($values)->save();
             return $t;
         });
@@ -105,7 +115,7 @@ final class Triggers
     {
         $runtime = $t->runtime_binding_id ? \App\Models\AgentV2\RuntimeBinding::whereKey($t->runtime_binding_id)
             ->where('user_id', $t->user_id)->first() : null;
-        $hook = in_array($t->kind, ['github.issue', 'github.pull_request', 'stripe.event', 'api.invoke'], true)
+        $hook = in_array($t->kind, ['github.issue', 'github.pull_request', 'stripe.event', 'linear.issue', 'api.invoke'], true)
             ? url('/api/agents/v2/hooks/'.explode('.', $t->kind)[0].'/'.$t->id) : null;
         return ['id' => $t->id, 'agentId' => $t->agent_id, 'kind' => $t->kind, 'connectionId' => $t->connection_id,
             'filter' => $t->filter, 'promptTemplate' => $t->prompt_template, 'ratePerHour' => $t->rate_per_hour,
@@ -126,13 +136,15 @@ final class Triggers
     private function connection(int $userId, string $agentId, string $kind, ?string $id): ?string
     {
         $provider = TriggerKinds::provider($kind);
-        if (!$provider) return null;
+        if (!$provider || (!$id && in_array($kind, TriggerKinds::OPTIONAL_CONNECTION, true))) return null;
         $row = $id ? Connection::query()->where('user_id', $userId)->whereKey($id)->whereNull('revoked_at')->first() : null;
         if (!$row || $row->provider !== $provider)
             ApiError::throw(404, 'connection_not_found', 'Choose a connected '.$provider.' account for this trigger.');
         $granted = collect($this->grants->active($userId, $agentId))
             ->first(fn ($g) => $g->connection_id === $row->id && in_array(self::READS[$provider], $g->operations ?? [], true));
         if (!$granted) ApiError::throw(409, 'not_granted', 'Let this teammate read that account first.');
+        if ($kind === 'slack.mention' && !SlackMentions::scopeReady($row))
+            ApiError::throw(409, 'reconnect_required', 'Reconnect Slack once so Vibyra can see mentions of it.');
         return $row->id;
     }
 
@@ -147,6 +159,19 @@ final class Triggers
     {
         if (!is_string($text) || trim($text) === '') ApiError::throw(422, 'empty_prompt', 'Write what the teammate should do.');
         return $text;
+    }
+
+    private function assertAssignee(string $kind, array $filter, ?string $connection): void
+    {
+        if ($kind === 'linear.issue' && ($filter['assignee'] ?? null) === 'me' && !$connection)
+            throw \Illuminate\Validation\ValidationException::withMessages(['connectionId' => 'Choose the Linear account that "me" means.']);
+    }
+
+    private function linearSecret(mixed $secret): string
+    {
+        if (!is_string($secret) || !preg_match('/^[A-Za-z0-9_-]{16,200}$/D', $secret))
+            ApiError::throw(422, 'signing_secret_required', 'Paste the signing secret from the Linear webhook (lin_wh_…).');
+        return $secret;
     }
 
     private function stripeSecret(mixed $secret): string

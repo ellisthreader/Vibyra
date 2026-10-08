@@ -16,10 +16,18 @@ final class TriggerKinds
         'github.issue' => ['webhook', null],
         'github.pull_request' => ['webhook', null],
         'stripe.event' => ['webhook', null],
+        // Roadmap Part 11: the person's own code calls it with the trigger's secret (or an API key with triggers:invoke).
         'api.invoke' => ['webhook', null],
+        // Linear: per-trigger webhook (Linear issues the signing secret; paste it). The account is optional (loop guard, assignee "me").
+        'linear.issue' => ['webhook', 'linear'],
+        // Slack: one app-level Events API endpoint (hooks/slack); routed to the account's workspace, so the account is required.
+        'slack.mention' => ['webhook', 'slack'],
         'gmail.message' => ['poll', 'gmail'],
         'calendar.event_soon' => ['poll', 'google_calendar'],
     ];
+
+    /** Kinds whose connected account is optional. */
+    public const OPTIONAL_CONNECTION = ['linear.issue'];
 
     public static function provider(string $kind): ?string
     {
@@ -33,7 +41,10 @@ final class TriggerKinds
             'github.issue', 'github.pull_request' => array_filter([
                 'repository' => self::optional($f, 'repository', '/^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/D', 'Use owner/repo.'),
                 'actions' => self::list($f, 'actions', '/^[a-z_]{2,40}$/D') ?: ['opened'],
-                'labels' => self::list($f, 'labels', '/^.{1,50}$/uD') ?: null]),
+                'labels' => self::list($f, 'labels', '/^.{1,50}$/uD') ?: null,
+                'includeOwn' => ($f['includeOwn'] ?? false) === true ? true : null]),
+            'linear.issue' => LinearEvents::filter($f),
+            'slack.mention' => SlackMentions::filter($f),
             'api.invoke' => ApiInvoke::filter($f),
             'stripe.event' => ['types' => self::list($f, 'types', '/^[a-z_.*]{3,80}$/D')
                 ?: self::fail('filter.types', 'Choose at least one Stripe event type, e.g. charge.dispute.created.')],
@@ -45,7 +56,7 @@ final class TriggerKinds
         };
     }
 
-    /** GitHub webhook body → [event key type, summary] when it matches the saved filter, else null. */
+    /** GitHub webhook body → [event key type, summary, subject, actor ids] when it matches the saved filter, else null. */
     public static function github(string $kind, string $event, array $body, array $filter): ?array
     {
         $want = $kind === 'github.issue' ? 'issues' : 'pull_request';
@@ -61,7 +72,8 @@ final class TriggerKinds
         return [$want.'.'.$action, ['repository' => $repo, 'action' => $action, 'number' => (int) ($item['number'] ?? 0),
             'title' => self::text($item['title'] ?? '', 300), 'body' => self::text($item['body'] ?? '', 4000),
             'author' => self::text($item['user']['login'] ?? '', 100), 'labels' => array_slice($labels, 0, 20),
-            'url' => self::text($item['html_url'] ?? '', 500)]];
+            'url' => self::text($item['html_url'] ?? '', 500)], 'github:'.strtolower($repo).'#'.(int) ($item['number'] ?? 0),
+            array_values(array_filter([strtolower(self::text($body['sender']['login'] ?? ($item['user']['login'] ?? ''), 100))]))];
     }
 
     /** Stripe event → [type, summary] when its type is in the saved list (`prefix.*` allowed). */
@@ -83,7 +95,7 @@ final class TriggerKinds
         return mb_substr(is_scalar($value) ? (string) $value : '', 0, $max);
     }
 
-    private static function optional(array $f, string $key, string $pattern, string $message): ?string
+    public static function optional(array $f, string $key, string $pattern, string $message): ?string
     {
         $v = $f[$key] ?? null;
         if ($v === null || $v === '') return null;
@@ -91,7 +103,7 @@ final class TriggerKinds
         return $v;
     }
 
-    private static function list(array $f, string $key, string $pattern): array
+    public static function list(array $f, string $key, string $pattern): array
     {
         $v = $f[$key] ?? [];
         if (!is_array($v) || !array_is_list($v) || count($v) > 20) self::fail('filter.'.$key, 'Give a list of up to 20 values.');
@@ -99,14 +111,14 @@ final class TriggerKinds
         return array_values(array_unique($v));
     }
 
-    private static function int(array $f, string $key, int $min, int $max, int $default): int
+    public static function int(array $f, string $key, int $min, int $max, int $default): int
     {
         $v = $f[$key] ?? $default;
         if (!is_int($v) || $v < $min || $v > $max) self::fail('filter.'.$key, "Choose $min to $max.");
         return $v;
     }
 
-    private static function fail(string $field, string $message): never
+    public static function fail(string $field, string $message): never
     {
         throw ValidationException::withMessages([$field => $message]);
     }

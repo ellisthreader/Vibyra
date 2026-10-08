@@ -5,7 +5,7 @@ namespace App\Http\Controllers\AgentsV2;
 use App\Http\Controllers\Controller;
 use App\Services\AgentRuns\Access;
 use App\Services\AgentRuns\ApiError;
-use App\Services\AgentTriggers\ApiInvoke;
+use App\Services\AgentTriggers\{ApiInvoke, SlackEvents};
 use App\Services\AgentTriggers\TriggerKinds;
 use App\Services\AgentTriggers\Triggers;
 use App\Services\AgentTriggers\Webhooks;
@@ -84,6 +84,22 @@ final class TriggersController extends Controller
             'delivery' => $request->header('X-GitHub-Delivery')]), 202);
     }
 
+    /** Linear: `Linear-Signature` is bare-hex HMAC-SHA256 of the raw body; the timestamp is inside the body. */
+    public function linear(Request $request, string $trigger, Webhooks $webhooks)
+    {
+        return response()->json($webhooks->linear($trigger, $request->getContent(), (string) $request->header('Linear-Signature', '')), 202);
+    }
+
+    /** Slack Events API (one app-level endpoint): verify, answer the challenge or enqueue; never admits inline. */
+    public function slack(Request $request, SlackEvents $slack)
+    {
+        $raw = $request->getContent();
+        $slack->verify($raw, (string) $request->header('X-Slack-Request-Timestamp', ''), (string) $request->header('X-Slack-Signature', ''));
+        $answer = $slack->accept($raw);
+        if (isset($answer['challenge'])) return response($answer['challenge'], 200)->header('Content-Type', 'text/plain');
+        return response()->json($answer, 200);
+    }
+
     public function api(Request $request, string $trigger, Webhooks $webhooks)
     {
         return response()->json($webhooks->api($trigger, $request->getContent(), (string) $request->bearerToken(),
@@ -100,6 +116,6 @@ final class TriggersController extends Controller
     {
         $on = app(Access::class)->allows($this->authenticatedUser($request)->id);
         return $this->json(['enabled' => $on, 'routines' => $on, 'triggers' => $on,
-            'triggerKinds' => $on ? array_values(array_filter(array_keys(TriggerKinds::KINDS), fn ($kind) => $kind !== 'api.invoke' || ApiInvoke::enabled())) : []]);
+            'triggerKinds' => $on ? array_values(array_filter(array_keys(TriggerKinds::KINDS), fn ($kind) => ($kind !== 'slack.mention' || (string) config('agents_v2.slack_signing_secret', '') !== '') && ($kind !== 'api.invoke' || ApiInvoke::enabled()))) : []]);
     }
 }

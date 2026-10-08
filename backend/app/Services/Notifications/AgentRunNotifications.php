@@ -20,6 +20,18 @@ final class AgentRunNotifications
         'run.failed' => ['agent_failed', 'failures', 'couldn\'t finish', 'failed'],
     ];
 
+    /** Trigger kinds' provider word → what the title says ("from Linear"). */
+    private const SOURCES = ['linear' => 'Linear', 'slack' => 'Slack', 'github' => 'GitHub', 'stripe' => 'Stripe', 'gmail' => 'Gmail',
+        'calendar' => 'Calendar'];
+
+    /** Runs a trigger started say where they came from; every other run is untouched. */
+    private static function source(string $runId): ?string
+    {
+        $kind = DB::table('agent_trigger_events')->join('agent_triggers', 'agent_triggers.id', '=', 'agent_trigger_events.trigger_id')
+            ->where('agent_trigger_events.run_id', $runId)->value('agent_triggers.kind');
+        return is_string($kind) ? (self::SOURCES[explode('.', $kind)[0]] ?? null) : null;
+    }
+
     public static function enabled(): bool
     {
         return (bool) config('agents_v2.notifications') && (bool) config('intelligence.inbox');
@@ -44,13 +56,14 @@ final class AgentRunNotifications
             : now()->addDay();
         $name = \App\Services\LiveStatus\Card::text(DB::table('agent_teammates')->where('id', $run->agent_id)
             ->where('user_id', $run->user_id)->value('name') ?? '', 60);
+        $from = self::source($run->id);
         $itemId = (string) Str::uuid();
         DB::table('notification_items')->insert(['id' => $itemId, 'user_id' => $run->user_id, 'event_id' => $workEvent,
-            'category' => $category, 'title' => ($name !== '' ? $name : 'Your teammate').' '.$title, 'body' => 'Agents',
+            'category' => $category, 'title' => ($name !== '' ? $name : 'Your teammate').' '.$title.($from !== null ? ' · from '.$from : ''), 'body' => 'Agents',
             'thread' => 'agent:'.$run->id, 'level' => $category === 'attention' ? 'time-sensitive' : 'active',
             'created_at' => now(), 'expires_at' => $expires,
             'destination' => json_encode(['source' => 'agent_run', 'runId' => $run->id, 'agentId' => $run->agent_id,
-                'conversationId' => $run->conversation_id, 'kind' => $kind])]);
+                'conversationId' => $run->conversation_id, 'kind' => $kind, ...($from !== null ? ['from' => strtolower($from)] : [])])]);
         $ids = [];
         foreach (DB::table('notification_devices')->where('user_id', $run->user_id)->whereNull('revoked_at')->get() as $d) {
             DB::table('notification_deliveries')->insertOrIgnore(['item_id' => $itemId, 'device_id' => $d->id,

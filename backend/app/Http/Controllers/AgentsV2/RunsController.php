@@ -26,8 +26,9 @@ final class RunsController extends Controller
     public function index(Request $request, Runs $runs)
     {
         $user = $this->v2User($request);
-        $data = $request->validate(['agentId' => 'required|uuid', 'limit' => 'sometimes|integer|min:1|max:50']);
-        return $this->json(['runs' => array_map(fn ($r) => $runs->payload($r), $runs->list($user->id, $data['agentId'], (int) ($data['limit'] ?? 20)))]);
+        $data = $request->validate(['agentId' => 'required|uuid', 'limit' => 'sometimes|integer|min:1|max:50', 'cursor' => 'sometimes|uuid']);
+        $page = $runs->page($user->id, $data['agentId'], (int) ($data['limit'] ?? 20), $data['cursor'] ?? null);
+        return $this->json(['runs' => array_map(fn ($r) => $runs->payload($r), $page['runs']), 'nextCursor' => $page['nextCursor']]);
     }
 
     public function show(Request $request, string $id, Runs $runs)

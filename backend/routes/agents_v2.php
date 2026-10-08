@@ -77,6 +77,8 @@ Route::prefix('api/agents/v2')->middleware([RequireApprovedMarket::class])->grou
 Route::prefix('api/agents/v2/hooks')->middleware('throttle:120,1,agent-v2-hooks')->group(function (): void {
     Route::post('github/{trigger}', [TriggersController::class, 'github'])->whereUuid('trigger');
     Route::post('stripe/{trigger}', [TriggersController::class, 'stripe'])->whereUuid('trigger');
+    Route::post('linear/{trigger}', [TriggersController::class, 'linear'])->whereUuid('trigger');
+    Route::post('slack', [TriggersController::class, 'slack']);
     Route::post('api/{trigger}', [TriggersController::class, 'api'])->whereUuid('trigger');
 });
 

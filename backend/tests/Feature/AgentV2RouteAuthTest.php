@@ -10,9 +10,10 @@ use Tests\TestCase;
 /** F-30 (security review 2026-09-30): every Agent V2 route is behind a credential door unless it is on this short public list. */
 class AgentV2RouteAuthTest extends TestCase
 {
-    /** Called by GitHub/Stripe servers (signed per trigger), by a browser returning from a provider (single-use state, bound cookie), or by a server fetching our client metadata. */
-    // API triggers authenticate with a separate per-trigger bearer secret.
-    private const PUBLIC = ['api/agents/v2/hooks/api/{trigger}', 'api/agents/v2/hooks/github/{trigger}', 'api/agents/v2/hooks/stripe/{trigger}', 'api/agents/v2/mcp/callback',
+    /** Called by GitHub/Linear/Stripe servers (signed per trigger) and Slack (one app signing secret), by a browser returning from a provider (single-use state, bound cookie), or by a server fetching our client metadata. */
+    private const PUBLIC = ['api/agents/v2/hooks/github/{trigger}', 'api/agents/v2/hooks/stripe/{trigger}', 'api/agents/v2/hooks/linear/{trigger}',
+        'api/agents/v2/hooks/api/{trigger}', // Roadmap Part 11 api.invoke: the trigger's own secret is the bearer
+        'api/agents/v2/hooks/slack', 'api/agents/v2/mcp/callback',
         'api/agents/v2/mcp/client-metadata.json', 'api/agents/v2/composio/callback'];
 
     private function agentV2Routes(): array
