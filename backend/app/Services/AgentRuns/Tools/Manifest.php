@@ -30,7 +30,8 @@ final class Manifest
     public function selection(Run $run): array
     {
         $local = [...\App\Services\AgentRuns\Outputs\OutputTools::entries($run),
-            ...\App\Services\AgentRuns\CloudFiles\FileTools::entries($run)];
+            ...\App\Services\AgentRuns\CloudFiles\FileTools::entries($run),
+            ...\App\Services\AgentWork\Proposals\ProposalTool::entries($run)];
         $cap = max(0, (int) config('agents_v2.max_tools', 10));
         $local = array_slice($local, 0, $cap);
         $selection = $this->selection->select($run, $this->candidates($run), max(0, $cap - count($local)));

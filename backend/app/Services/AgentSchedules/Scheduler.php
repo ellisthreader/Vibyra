@@ -68,7 +68,8 @@ final class Scheduler
     /** Admit (or re-find) the occurrence's run with its deterministic key. Returns the new state. */
     public function admit(Occurrence $o): string
     {
-        $s = Schedule::query()->whereKey($o->schedule_id)->first();
+        return DB::transaction(function () use ($o) {
+        $s = Schedule::query()->whereKey($o->schedule_id)->lockForUpdate()->first();
         $stop = match (true) {
             !$s || $s->deleted_at !== null => 'schedule_deleted',
             $s->paused_at !== null => 'schedule_paused',
@@ -77,11 +78,14 @@ final class Scheduler
             default => null,
         };
         if ($stop) return $this->mark($o, $stop === 'missed_window' ? 'expired' : 'skipped', $stop);
+        if ($reason = \App\Services\AgentWork\Routines::refusal($s)) return $this->mark($o, 'failed', $reason);
         $key = 'sched:'.$s->id.':'.$o->revision.':'.CarbonImmutable::parse($o->intended_at)->getTimestamp();
         $result = $this->admission->admit($s->user_id, $s->agent_id, $key, $s->prompt, $s->runtime_binding_id);
         if (!$result['run']) return $this->mark($o, 'failed', $result['code']);
+        \App\Services\AgentWork\Routines::pinRun($s, $result['run']);
         $o->forceFill(['run_id' => $result['run']->id])->save();
         return $this->mark($o, $result['run']->state === RunStates::WAITING_COMPUTER ? 'waiting' : 'admitted', null);
+        });
     }
 
     /** True when the waiting occurrence expired (its run is failed with a reason, never left hanging). */

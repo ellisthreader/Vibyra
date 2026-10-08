@@ -25,19 +25,20 @@ final class TriggerIntake
     public function __construct(private readonly SystemAdmission $admission) {}
 
     /** @return array{0: TriggerEvent, 1: bool} the event and whether this delivery created it */
-    public function receive(Trigger $trigger, string $eventKey, string $type, array $summary, ?string $subject = null, ?string $skip = null): array
+    public function receive(Trigger $trigger, string $eventKey, string $type, array $summary, ?string $subject = null, ?string $skip = null, ?array $observedAuthority = null): array
     {
         $subject = $subject === null ? null : mb_substr($subject, 0, 191);
         $eventKey = mb_substr($eventKey, 0, 191);
         if ($existing = $this->existing($trigger, $eventKey)) return [$existing, false];
         try {
-            $event = DB::transaction(function () use ($trigger, $eventKey, $type, $summary, $subject, $skip) {
+            $event = DB::transaction(function () use ($trigger, $eventKey, $type, $summary, $subject, $skip, $observedAuthority) {
                 $locked = Trigger::query()->whereKey($trigger->id)->lockForUpdate()->firstOrFail();
                 // A 'pending' event is an admission in flight (it turns 'admitted' after this transaction commits),
                 // so it counts: counting only 'admitted' let parallel deliveries each read an empty window.
                 $recent = TriggerEvent::query()->where('trigger_id', $trigger->id)->whereIn('state', ['admitted', 'pending'])
                     ->where('created_at', '>=', now()->subHour())->count();
                 [$state, $reason] = match (true) {
+                    $locked->revision !== $trigger->revision => ['skipped', 'trigger_changed'],
                     $locked->deleted_at !== null => ['skipped', 'trigger_deleted'],
                     $locked->paused_at !== null => ['skipped', 'paused'],
                     $skip !== null => ['skipped', $skip],
@@ -45,9 +46,11 @@ final class TriggerIntake
                     $recent >= $locked->rate_per_hour => ['skipped', 'rate_limited'],
                     default => ['pending', null],
                 };
-                return TriggerEvent::query()->create(['trigger_id' => $trigger->id, 'user_id' => $trigger->user_id,
+                $event = TriggerEvent::query()->create(['trigger_id' => $trigger->id, 'user_id' => $trigger->user_id,
                     'event_key' => $eventKey, 'event_type' => mb_substr($type, 0, 80), 'summary' => $summary, 'subject' => $subject,
                     'state' => $state, 'reason' => $reason]);
+                \App\Services\AgentWork\FollowUpSignals::record($locked, $event, $observedAuthority);
+                return $event;
             });
         } catch (QueryException $e) {
             if ($existing = $this->existing($trigger, $eventKey)) return [$existing, false];

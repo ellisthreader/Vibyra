@@ -71,9 +71,12 @@ final class GmailTools implements ProviderTools
     {
         $list = $this->get($token, self::BASE, array_filter(['q' => $a['query'], 'maxResults' => $a['maxResults'] ?? 10,
             'pageToken' => $a['pageToken'] ?? null]));
-        $messages = [];
-        foreach (array_slice($list['messages'] ?? [], 0, 20) as $item) {
-            if (!is_string($item['id'] ?? null)) continue;
+        $messages = []; $metadataComplete = is_array($list['messages'] ?? []);
+        $rawMessages = is_array($list['messages'] ?? []) ? ($list['messages'] ?? []) : [];
+        if (count($rawMessages) > 20) $metadataComplete = false;
+        foreach (array_slice($rawMessages, 0, 20) as $item) {
+            if (!is_string($item['id'] ?? null) || !preg_match('/^[A-Za-z0-9_-]{1,100}$/D', $item['id'])) { $metadataComplete = false; continue; }
+            if (!is_string($item['threadId'] ?? null) || !preg_match('/^[A-Za-z0-9_-]{1,100}$/D', $item['threadId'])) $metadataComplete = false;
             $detail = $this->get($token, self::BASE.'/'.rawurlencode($item['id']), ['format' => 'metadata',
                 'metadataHeaders' => ['From', 'To', 'Subject', 'Date']]);
             $messages[] = ['id' => $item['id'], 'threadId' => $item['threadId'] ?? null,
@@ -81,7 +84,7 @@ final class GmailTools implements ProviderTools
                 'date' => $this->header($detail, 'Date'), 'snippet' => mb_substr((string) ($detail['snippet'] ?? ''), 0, 300)];
         }
         $next = is_string($list['nextPageToken'] ?? null) ? $list['nextPageToken'] : null;
-        return ['result' => ['messages' => $messages, 'hasMore' => $next !== null, 'nextPageToken' => $next,
+        return ['result' => ['messages' => $messages, 'metadataComplete' => $metadataComplete, 'hasMore' => $next !== null, 'nextPageToken' => $next,
             'resultSizeEstimate' => (int) ($list['resultSizeEstimate'] ?? count($messages)),
             'coverage' => $next !== null ? 'Partial: this is one page. Pass nextPageToken to continue.' : 'Complete for this search.'],
             'summary' => 'Found '.count($messages).' Gmail messages'.($next !== null ? ' (more available)' : '')];

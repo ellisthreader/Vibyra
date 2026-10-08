@@ -26,7 +26,8 @@ final class Registration
         $b = RuntimeBinding::whereKey($s['runtimeId'])->lockForUpdate()->firstOrFail();
         $key = Str::random(64);
         $b->forceFill(['runner_key_hash' => hash('sha256', $key), 'cloud_generation' => $w->generation, 'last_seen_at' => now(),
-            'provider_version' => $d['providerVersion'] ?? null, 'capabilities' => ['controlledTools' => true, 'taskSteering' => true]])->save();
+            'provider_version' => $d['providerVersion'] ?? null, 'capabilities' => ['controlledTools' => true, 'taskSteering' => true,
+                'pinnedSkillsV1' => ($d['capabilities']['pinnedSkillsV1'] ?? false) === true]])->save();
         return ['runtimeId' => $b->id, 'runnerKey' => $key, 'selection' => $s];
     }
 }

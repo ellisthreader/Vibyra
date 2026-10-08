@@ -39,6 +39,7 @@ final class AgentRunNotifications
 
     public function record(RunEvent $event): void
     {
+        app(\App\Services\AgentWork\Signals\ProgressAlerts::class)->record($event);
         if (!self::enabled() || !isset(self::HOOKS[$event->type])) return;
         $run = DB::table('agent_runs')->where('id', $event->run_id)->first(['id', 'user_id', 'agent_id', 'conversation_id']);
         if (!$run) return;
@@ -64,14 +65,15 @@ final class AgentRunNotifications
             'created_at' => now(), 'expires_at' => $expires,
             'destination' => json_encode(['source' => 'agent_run', 'runId' => $run->id, 'agentId' => $run->agent_id,
                 'conversationId' => $run->conversation_id, 'kind' => $kind, ...($from !== null ? ['from' => strtolower($from)] : [])])]);
+        $immediate = app(\App\Services\AgentWork\Signals\NotificationPolicy::class)->registered($itemId);
         $ids = [];
         foreach (DB::table('notification_devices')->where('user_id', $run->user_id)->whereNull('revoked_at')->get() as $d) {
             DB::table('notification_deliveries')->insertOrIgnore(['item_id' => $itemId, 'device_id' => $d->id,
-                'generation' => $d->generation, 'next_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+                'generation' => $d->generation, 'state' => $immediate ? 'pending' : 'suppressed', 'next_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
             $ids[] = DB::table('notification_deliveries')->where('item_id', $itemId)->where('device_id', $d->id)->value('id');
         }
         // The scheduler (vibyra:observe-work) drains anything this misses.
-        if (config('intelligence.push')) foreach ($ids as $id) DeliverPhoneNotification::dispatch($id)->afterCommit();
+        if ($immediate && config('intelligence.push')) foreach ($ids as $id) DeliverPhoneNotification::dispatch($id)->afterCommit();
     }
 
     /** Whether the moment this item announced is still true. Never grants anything. */
@@ -85,7 +87,7 @@ final class AgentRunNotifications
             'agent_signin' => $status['runState'] === 'waiting_for_signin',
             'agent_completed' => $status['runState'] === 'completed',
             'agent_failed' => $status['runState'] === 'failed',
-            default => false,
+            default => app(\App\Services\AgentWork\Signals\ProgressAlerts::class)->current($item, $event),
         };
     }
 

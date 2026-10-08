@@ -48,6 +48,7 @@ final class Schedules
             if (!$next && $values['recurrence']['type'] === 'once') ApiError::throw(422, 'no_future_run', 'That time has already passed.');
             $schedule->forceFill([...$values, 'revision' => $schedule->revision + 1,
                 'next_run_at' => $schedule->paused_at ? null : $next])->save();
+            \App\Services\AgentWork\Routines::reviewUpdate($schedule, array_key_exists('runtimeId', $data));
             return $schedule;
         });
     }

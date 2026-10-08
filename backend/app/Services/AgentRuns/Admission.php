@@ -38,6 +38,7 @@ final class Admission
                     'grant_hash' => Canonical::hash($snapshot), 'runtime_binding_id' => $binding->id,
                     'runtime_snapshot' => RuntimeBindings::snapshot($binding), 'funding_source' => 'connected_account',
                     'state' => $online ? RunStates::QUEUED : RunStates::WAITING_COMPUTER, 'event_seq' => 0]);
+                \App\Services\AgentWork\SkillSnapshots::capture($run);
                 $this->events->append($run, 'run.admitted', ['state' => $run->state, 'fundingSource' => 'connected_account',
                     'provider' => $binding->provider, 'model' => $binding->model, 'grants' => count($snapshot)]);
                 if ($askedInApp) app(Memory\Candidates::class)->capture($run);

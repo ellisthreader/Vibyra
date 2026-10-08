@@ -42,6 +42,7 @@ final class Inbox
         if ($item->read_at || now()->gte($item->expires_at)) return false;
         $event = DB::table('work_events')->where('id', $item->event_id)->first();
         if (!$event) return false;
+        if ($event->source === 'agent_digest') return app(\App\Services\AgentWork\Signals\Digests::class)->current($item, $event);
         if ($event->source === 'agent_run') return app(AgentRunNotifications::class)->current($item, $event);
         if ($event->source === 'mac') return app(\App\Services\LiveStatus\MacEvents::class)->current($item, $event);
         if ($event->source === 'cloud_computer') return app(\App\Services\CloudWorkspaces\Git\CloudEvents::class)->current($item, $event);
@@ -100,6 +101,7 @@ final class Inbox
         return ['id' => $item->id, 'title' => $item->title, ...(($item->body ?? null) !== null ? ['body' => $item->body] : []), 'category' => $item->category,
             'destination' => json_decode($item->destination, true), 'createdAt' => $item->created_at,
             'read' => $item->read_at !== null, 'actionable' => $this->current($item),
+            'alertDisposition' => app(\App\Services\AgentWork\Signals\NotificationPolicy::class)->disposition($item),
             // Agent V2: current run/action state for the owner; a stale push never approves anything.
             ...(($status = app(AgentRunNotifications::class)->status($item)) ? ['status' => $status] : [])];
     }

@@ -118,7 +118,7 @@ final class Runs
             'state' => $run->state, 'prompt' => $run->prompt, 'attachments' => $run->attachments ?? [],
             'runtime' => $run->runtime_snapshot, 'eventCursor' => $run->event_seq,
             'profile' => ['name' => $agent?->name, 'brief' => Planning\RunNotes::brief($agent?->brief, $notes['text']),
-                'memory' => app(Memory\Recall::class)->text($run, $agent?->memory), 'revision' => $run->profile_revision],
+                'memory' => app(Memory\Recall::class)->text($run, $agent?->memory), 'revision' => $run->profile_revision, 'skills' => \App\Services\AgentWork\SkillSnapshots::forRun($run)],
             'actionCheckpoint' => Steering::actions($run), 'history' => $history, 'tools' => $manifest, 'connectionGaps' => $notes['gaps']];
     }
 }

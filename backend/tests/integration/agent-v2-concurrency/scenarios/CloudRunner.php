@@ -17,9 +17,11 @@ final class ConcCloudRunner
         [$fx, $w, $session] = ConcCloudAgents::fixture($account);
         $policy = app(Policies::class)->save($session, ConcCloudAgents::body($session, $account))['policy'];
         $registered = app(Registration::class)->register($w, ['generation' => $w->generation, 'runtimeId' => $policy['runtimeId'],
-            'provider' => 'claude', 'accountId' => $account, 'model' => 'sonnet', 'effort' => 'high']);
+            'provider' => 'claude', 'accountId' => $account, 'model' => 'sonnet', 'effort' => 'high',
+            'capabilities' => ['pinnedSkillsV1' => true]]);
         $root = dirname(__DIR__, 5);
-        $crate = $root.'/cloud-runtime/agent-runner';
+        $crate = realpath(getenv('CONC_CLOUD_CRATE') ?: $root.'/cloud-runtime/agent-runner');
+        if (!$crate) throw new RuntimeException('Cloud fixture crate not found.');
         $example = $crate.'/target/debug/examples/fixture';
         $broker = $crate.'/target/debug/vibyra-cloud-agent';
         if (!is_executable($example) || !is_executable($broker)) throw new RuntimeException('Build the cloud fixture example and runner first.');
@@ -40,11 +42,19 @@ final class ConcCloudRunner
             }
             if (!$ready) throw new RuntimeException('Owned HTTP server did not start.');
             $ids = [];
-            foreach (['STAGE3 SAVE', 'STAGE3 RESTORE'] as $prompt) {
+            $prompts = ['STAGE3 SAVE', 'STAGE3 RESTORE'];
+            if (config('agents_v2.work_enabled')) $prompts[] = 'STAGE4 PINNED SKILLS';
+            foreach ($prompts as $prompt) {
+                if ($prompt === 'STAGE4 PINNED SKILLS') $skill = app(\App\Services\Agents\Skills::class)->save($fx['user'],
+                    ['id' => (string) \Illuminate\Support\Str::uuid(), 'revision' => 0, 'name' => 'Stage Four evidence',
+                        'instructions' => 'STAGE4 ORIGINAL PINNED INSTRUCTION', 'teammateIds' => [$fx['agent']]]);
                 DB::table('cloud_workspaces')->where('id', $w->id)->update(['lease_until' => now()->addMinutes(3)]);
                 [$run] = app(Admission::class)->admit($fx['user'], ['agentId' => $fx['agent'], 'runtimeId' => $policy['runtimeId'],
                     'idempotencyKey' => strtolower(str_replace(' ', '-', $prompt)), 'prompt' => $prompt]);
                 $ids[] = $run->id;
+                if ($prompt === 'STAGE4 PINNED SKILLS') app(\App\Services\Agents\Skills::class)->save($fx['user'],
+                    ['id' => $skill['id'], 'revision' => 1, 'name' => 'Stage Four evidence',
+                        'instructions' => 'STAGE4 NEW UNREVIEWED INSTRUCTION', 'teammateIds' => [$fx['agent']]]);
                 $process = new Process([$example]); $process->setTimeout(90);
                 $process->setInput(json_encode(['origin' => 'http://'.$address, 'runtimeId' => $registered['runtimeId'], 'runnerKey' => $registered['runnerKey'],
                     'program' => $work.'/claude', 'home' => $work.'/home', 'base' => $work.'/runs', 'broker' => $broker]));

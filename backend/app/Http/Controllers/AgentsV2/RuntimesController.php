@@ -18,12 +18,13 @@ final class RuntimesController extends Controller
             'provider' => ['required', 'regex:/^[a-z0-9_-]{2,40}$/D'], 'accountRef' => 'required|string|min:1|max:128',
             'model' => 'required|string|min:1|max:120', 'effort' => 'sometimes|nullable|in:minimal,low,medium,high,xhigh,max',
             'providerVersion' => 'sometimes|nullable|string|max:60', 'capabilities' => 'required|array|max:20',
-            'capabilities.controlledTools' => 'required|boolean',
+            'capabilities.controlledTools' => 'required|boolean', 'capabilities.pinnedSkillsV1' => 'sometimes|boolean',
             // Phase 4: the Mac can run computer tools (claim + receipt endpoints).
             'capabilities.computerTools' => 'sometimes|boolean',
             // Phase 7: the Mac can run browser tools in a separate profile (claim + receipt endpoints).
             'capabilities.browserTools' => 'sometimes|boolean',
             'capabilities.taskSteering' => 'sometimes|boolean',
+            // Roadmap Part 6: the Mac runs local MCP servers (claim + receipt endpoints).
             'capabilities.localMcp' => 'sometimes|boolean']);
         return $this->json(['runtime' => $bindings->register($user->id, $data)], 201);
     }

@@ -30,6 +30,8 @@ final class Preferences
     /** Failure events use Failed even when an older event producer says attention. */
     public function allows(object $p, string $category, ?string $phase): bool
     {
+        if (!\App\Services\AgentWork\Signals\NotificationPolicy::allowed($p, (string) $phase)) return false;
+        if ($phase === 'agent_digest') return true; // Source categories were checked before aggregation.
         $key = $category === 'attention' && in_array($phase, ['failed', 'agent_failed', 'cloud_failed'], true)
             ? 'failures' : $category;
         return (bool) ($p->{$key} ?? true);

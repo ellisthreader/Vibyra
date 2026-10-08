@@ -37,7 +37,7 @@ final class Policies
             }
             $values = ['provider' => 'claude', 'account_ref' => $d['accountId'], 'model' => $d['model'], 'effort' => $d['effort'] ?? null,
                 'execution_target' => 'cloud', 'cloud_workspace_id' => $w->id, 'cloud_generation' => null,
-                'capabilities' => ['controlledTools' => true, 'taskSteering' => true], 'runner_key_hash' => hash('sha256', Str::random(64)),
+                'capabilities' => ['controlledTools' => true, 'taskSteering' => true, 'pinnedSkillsV1' => false], 'runner_key_hash' => hash('sha256', Str::random(64)),
                 'last_seen_at' => null, 'revoked_at' => null];
             if ($binding) $binding->forceFill($values + ['revision' => $binding->revision + 1])->save();
             else $binding = RuntimeBinding::create($values + ['user_id' => $user, 'host_id' => hash('sha256', 'agent-cloud:'.$w->id), 'revision' => 1]);

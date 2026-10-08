@@ -8,7 +8,11 @@ final class ConcOps
     public static function run(string $op, array $a): array
     {
         require_once __DIR__.'/CloudAgentOps.php';
+        require_once __DIR__.'/AgentWorkOps.php';
+        require_once __DIR__.'/SignalOps.php';
         return match ($op) {
+            'work_core' => ConcAgentWorkOps::run($a),
+            'signals' => ConcSignalOps::run($a),
             'cloud_agent' => ConcCloudAgentOps::run($a),
             'call' => ConcHttp::call($a['method'], $a['uri'], $a['token'] ?? null, $a['json'] ?? [], $a['headers'] ?? [], $a['raw'] ?? null),
             'runner' => ConcHttp::runner($a['fx'], $a['method'], $a['suffix'], $a['json'] ?? []),

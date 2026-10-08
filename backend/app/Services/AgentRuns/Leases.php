@@ -33,12 +33,16 @@ final class Leases
             // Pinned account: a run admitted on another AI account waits for that account.
             if (($snap['provider'] ?? null) !== $binding->provider || ($snap['accountRef'] ?? null) !== $binding->account_ref) continue;
             if (Cloud\Authority::cloud($binding) && (($snap['model'] ?? null) !== $binding->model || ($snap['effort'] ?? null) !== $binding->effort)) continue;
+            if (!\App\Services\AgentWork\RuntimePins::allowsRun($binding, $candidate) || !\App\Services\AgentWork\SkillSnapshots::supports($binding, $candidate)) continue;
             if ($this->conversationBusy($candidate)) continue;
             $claimed = DB::transaction(function () use ($candidate, $binding) {
                 app(Cloud\Authority::class)->check($binding);
+                \App\Services\AgentWork\RuntimePins::fenceBinding($binding, $candidate->id);
+                \App\Services\AgentWork\SkillSnapshots::fenceBinding($binding, $candidate->id);
                 $run = Run::query()->whereKey($candidate->id)->lockForUpdate()->first();
                 if (!$run || !in_array($run->state, RunStates::CLAIMABLE, true) || $run->cancel_requested_at
                     || ($run->lease_expires_at && $run->lease_expires_at->isFuture())) return null;
+                if (!\App\Services\AgentWork\RuntimePins::allowsRun($binding, $run)) return null;
                 if (Steering::pending($run) && ($binding->capabilities['taskSteering'] ?? false) !== true) return null;
                 if (Steering::unsettled($run)) return null;
                 // A lease that lapsed (the Mac crashed or slept) is a lost attempt; a wait releases its lease, so it is not.
@@ -81,9 +85,13 @@ final class Leases
     public function fenced(RuntimeBinding $binding, string $runId, int $generation, bool $allowCancelled = false): Run
     {
         app(Cloud\Authority::class)->check($binding);
+        \App\Services\AgentWork\RuntimePins::fenceBinding($binding, $runId);
+        \App\Services\AgentWork\SkillSnapshots::fenceBinding($binding, $runId);
         $run = Run::query()->whereKey($runId)->where('user_id', $binding->user_id)
             ->where('runtime_binding_id', $binding->id)->lockForUpdate()->first();
         if (!$run) ApiError::throw(404, 'run_not_found', 'That task does not exist.');
+        if (!\App\Services\AgentWork\RuntimePins::allowsRun($binding, $run))
+            ApiError::throw(409, 'work_runtime_changed', 'The reviewed runtime changed or this work expired.');
         $snap = $run->runtime_snapshot;
         if (($snap['provider'] ?? null) !== $binding->provider || ($snap['accountRef'] ?? null) !== $binding->account_ref
             || (Cloud\Authority::cloud($binding) && (($snap['model'] ?? null) !== $binding->model || ($snap['effort'] ?? null) !== $binding->effort)))

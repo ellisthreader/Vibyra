@@ -44,6 +44,8 @@ final class Broker
             if (!in_array($run->state, RunStates::ACTIVE, true))
                 ApiError::throw(409, 'run_not_active', 'This task is '.$run->state.'; it cannot call tools now.');
             $this->flow->resume($run);
+            if ($call['tool'] === \App\Services\AgentWork\Proposals\ProposalTool::NAME)
+                return ['replay' => app(\App\Services\AgentWork\Proposals\ProposalBroker::class)->request($run, $call)];
             if (\App\Services\AgentRuns\CloudFiles\FileTools::has($call['tool']))
                 return ['replay' => app(\App\Services\AgentRuns\CloudFiles\FileBroker::class)->request($run, $call)];
             if (\App\Services\AgentRuns\Outputs\OutputTools::has($call['tool']))

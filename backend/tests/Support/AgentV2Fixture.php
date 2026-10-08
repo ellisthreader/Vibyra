@@ -40,7 +40,7 @@ trait AgentV2Fixture
     {
         return $this->postJson('/api/agents/v2/runtimes', ['hostId' => $this->hostId, 'provider' => 'codex',
             'accountRef' => $accountRef, 'model' => 'gpt-5.5', 'effort' => 'medium', 'providerVersion' => '1.2.3',
-            'capabilities' => ['controlledTools' => $controlled]])->assertCreated()->json('runtime');
+            'capabilities' => ['controlledTools' => $controlled, 'pinnedSkillsV1' => true]])->assertCreated()->json('runtime');
     }
 
     /** A legacy install row, exactly as the existing connect/OAuth flow stores it. */

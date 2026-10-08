@@ -14,6 +14,7 @@ use App\Services\AgentRuns\Tools\Providers\GmailTools;
 use App\Services\AgentRuns\Tools\Providers\ToolFailure;
 use App\Services\ChatConnectors\ReconnectRequired;
 use Carbon\CarbonImmutable;
+use App\Services\AgentWork\{FollowUpAuthority, FollowUpObservations};
 
 /**
  * Poll triggers, run by the scheduler every minute. Gmail: each trigger polls every
@@ -52,26 +53,29 @@ final class Pollers
 
     public function poll(Trigger $t, CarbonImmutable $now): void
     {
-        $error = null;
+        $error = null; $complete = false;
+        $authority = config('agents_v2.work_enabled') ? FollowUpAuthority::snapshot($t) : null;
+        $windowStart = $t->kind === 'gmail.message' ? ($t->cursor['after'] ?? null) : null;
         try {
             $connection = $this->readable($t);
             if (is_string($connection)) $error = $connection;
-            elseif ($t->kind === 'gmail.message') $this->gmail($t, $connection, $now);
-            else $this->calendar($t, $connection, $now);
+            elseif ($t->kind === 'gmail.message') $complete = $this->gmail($t, $connection, $now, $authority);
+            else $complete = $this->calendar($t, $connection, $now, $authority);
         } catch (ReconnectRequired) {
             $error = 'reconnect_required';
             if ($row = Connection::query()->whereKey($t->connection_id)->first()) $this->connections->markReconnect($row);
         } catch (ToolFailure $e) {
             $error = mb_substr($e->reason ?: $e->outcome, 0, 60);
         }
+        FollowUpObservations::record($t, $authority, $complete && !$error, $now, is_int($windowStart) ? $windowStart : null);
         $t->forceFill(['polled_at' => $now, 'last_error' => $error])->save();
     }
 
-    private function gmail(Trigger $t, Connection $c, CarbonImmutable $now): void
+    private function gmail(Trigger $t, Connection $c, CarbonImmutable $now, ?array $authority): bool
     {
         $after = $t->cursor['after'] ?? null;
         $next = ['after' => $now->getTimestamp() - self::OVERLAP_SECONDS];
-        if (!is_int($after)) { $t->cursor = $next; return; }
+        if (!is_int($after)) { $t->cursor = $next; return false; }
         $saved = $t->filter['query'] ?? null;
         $query = ($saved ? '('.$saved.') ' : '').'after:'.$after;
         $found = app(GmailTools::class)->run('gmail_search', ['query' => $query, 'maxResults' => 20], $this->credentials->for($c), '');
@@ -80,13 +84,15 @@ final class Pollers
             $this->intake->receive($t, 'gmail:'.$m['id'], 'gmail.message', ['account' => $c->external_identity,
                 'messageId' => $m['id'], 'threadId' => $m['threadId'] ?? null, 'from' => TriggerKinds::text($m['from'] ?? '', 300),
                 'subject' => TriggerKinds::text($m['subject'] ?? '', 300), 'date' => TriggerKinds::text($m['date'] ?? '', 100),
-                'snippet' => TriggerKinds::text($m['snippet'] ?? '', 300)]);
+                'snippet' => TriggerKinds::text($m['snippet'] ?? '', 300)], null, null, $authority);
         }
         // Advance only after a successful read, so a failed poll re-reads the same window.
-        $t->cursor = $next;
+        $complete = ($found['result']['metadataComplete'] ?? false) === true && empty($found['result']['hasMore']) && empty($found['result']['nextPageToken']);
+        if ($complete) $t->cursor = $next;
+        return $complete;
     }
 
-    private function calendar(Trigger $t, Connection $c, CarbonImmutable $now): void
+    private function calendar(Trigger $t, Connection $c, CarbonImmutable $now, ?array $authority): bool
     {
         $tools = app(CalendarTools::class);
         $args = $tools->validate('google_calendar_list_events', ['calendarId' => $t->filter['calendarId'] ?? 'primary',
@@ -98,8 +104,9 @@ final class Pollers
             if (!is_string($e['start'] ?? null) || CarbonImmutable::parse($e['start'])->lessThan($now)) continue;
             $this->intake->receive($t, 'calendar:'.$e['id'].':'.$e['start'], 'calendar.event_soon', ['account' => $c->external_identity,
                 'calendarId' => $args['calendarId'], 'eventId' => $e['id'], 'title' => TriggerKinds::text($e['title'] ?? '', 250),
-                'start' => $e['start'], 'end' => $e['end'] ?? null, 'url' => TriggerKinds::text($e['url'] ?? '', 500)]);
+                'start' => $e['start'], 'end' => $e['end'] ?? null, 'url' => TriggerKinds::text($e['url'] ?? '', 500)], null, null, $authority);
         }
+        return empty($found['result']['hasMore']) && empty($found['result']['nextPageToken']);
     }
 
     /** The connection to read, or why this poll is skipped. */

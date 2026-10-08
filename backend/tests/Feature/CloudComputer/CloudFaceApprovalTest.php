@@ -86,4 +86,27 @@ class CloudFaceApprovalTest extends ComputerTestCase
         $this->approve($mac, $device['id'], $this->face())->assertStatus(422);
         $this->assertNull(DB::table('trusted_devices')->where('uuid', $device['id'])->value('approved_at'));
     }
+
+    public function test_face_proof_cannot_be_replayed_for_another_device(): void
+    {
+        $host = $this->cloudHost();
+        $this->postJson('/api/cloud-computer/face-key', ['publicKey' => bin2hex(sodium_crypto_box_publickey($this->faceKeys))])->assertOk();
+        $first = $this->pending($host); $proof = $this->face();
+        $this->approve($host, $first['id'], $proof)->assertOk();
+        $this->phoneKeys = sodium_crypto_box_keypair(); $second = $this->pending($host);
+        $this->approve($host, $second['id'], $proof)->assertForbidden();
+        $this->assertNull(DB::table('trusted_devices')->where('uuid', $second['id'])->value('approved_at'));
+    }
+
+    public function test_revoked_expired_or_replaced_requests_cannot_be_approved_with_face(): void
+    {
+        $host = $this->cloudHost();
+        $this->postJson('/api/cloud-computer/face-key', ['publicKey' => bin2hex(sodium_crypto_box_publickey($this->faceKeys))])->assertOk();
+        foreach ([['revoked_at' => now()], ['request_expires_at' => now()->subMinute()], ['authorization_generation' => 999]] as $change) {
+            $this->phoneKeys = sodium_crypto_box_keypair(); $device = $this->pending($host);
+            DB::table('trusted_devices')->where('uuid', $device['id'])->update($change);
+            $this->approve($host, $device['id'], $this->face())->assertStatus(409);
+            $this->assertNull(DB::table('trusted_devices')->where('uuid', $device['id'])->value('approved_at'));
+        }
+    }
 }

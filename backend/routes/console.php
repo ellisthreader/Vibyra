@@ -55,3 +55,4 @@ Schedule::command('vibyra:platform-webhooks-sweep')->everyMinute()->when(fn () =
 
 
 Schedule::command('vibyra:agent-cloud-wake')->everyMinute()->when(fn () => (bool) config('agents_v2.cloud_enabled'))->withoutOverlapping(5)->onOneServer();
+Schedule::command('vibyra:agent-work')->everyMinute()->when(fn () => (bool) config('agents_v2.work_enabled'))->withoutOverlapping(5)->onOneServer();
