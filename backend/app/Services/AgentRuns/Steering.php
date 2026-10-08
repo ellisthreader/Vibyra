@@ -90,7 +90,7 @@ final class Steering
     {
         if ($run->instruction_revision === 0) return [];
         return ToolAction::query()->where('run_id', $run->id)->where('kind', '!=', 'none')->orderBy('created_at')->get()
-            ->map(fn ($a) => ['id' => $a->id, 'tool' => $a->tool, 'state' => $a->state, 'arguments' => $a->arguments,
-                'result' => $a->result, 'summary' => $a->summary, 'dispatched' => $a->dispatched_at !== null])->all();
+            ->map(fn ($a) => ['id' => $a->id, 'tool' => $a->tool, 'state' => $a->state, 'arguments' => Guard\SecretGuard::enabled() ? Guard\SecretGuard::redactValue($a->arguments) : $a->arguments,
+                'result' => Guard\SecretGuard::enabled() ? Guard\SecretGuard::redactValue($a->result) : $a->result, 'summary' => $a->summary, 'dispatched' => $a->dispatched_at !== null])->all();
     }
 }

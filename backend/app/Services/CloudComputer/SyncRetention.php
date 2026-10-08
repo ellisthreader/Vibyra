@@ -27,7 +27,17 @@ class SyncRetention
     }
 
     /** Files first, then rows: a failed delete leaves the row so the next prune retries. */
-    public function deleteBlobs(iterable $blobs): void
+    public function deleteBlobs(iterable $blobs, bool $afterCommit = false): void
+    {
+        if ($afterCommit) {
+            $pending = is_array($blobs) ? $blobs : iterator_to_array($blobs);
+            DB::afterCommit(fn () => $this->deleteFiles($pending));
+            return;
+        }
+        $this->deleteFiles($blobs);
+    }
+
+    private function deleteFiles(iterable $blobs): void
     {
         $ids = [];
         foreach ($blobs as $b) {
@@ -58,10 +68,10 @@ class SyncRetention
     }
 
     /** The cloud computer no longer has what it applied (new key or removed volume): nothing sealed for it is readable. */
-    public function vmLostItsCopy(int $user): void
+    public function vmLostItsCopy(int $user, bool $afterCommit = false): void
     {
-        $this->deleteBlobs(DB::table('cloud_sync_blobs')->where('user_id', $user)->where('direction', 'up')->get());
-        app(SyncLogins::class)->vmLostItsCopy($user);
+        $this->deleteBlobs(DB::table('cloud_sync_blobs')->where('user_id', $user)->where('direction', 'up')->get(), $afterCommit);
+        app(SyncLogins::class)->vmLostItsCopy($user, $afterCommit);
         DB::table('cloud_sync_projects')->where('user_id', $user)->whereNull('removed_at')->update(['resync' => true, 'up_applied_seq' => 0, 'transcripts_applied_seq' => 0,
             'up_applied_head' => null, 'applied_at' => null, 'updated_at' => now()]);
         DB::table('cloud_sync_projects')->where('user_id', $user)->whereNull('removed_at')->where('up_seq', '>', 0)->whereIn('state', ['synced', 'diverged', 'error'])

@@ -13,6 +13,8 @@ final class ConcOps
             'seq' => self::seq($a),
             'tick' => ['tick' => app(Scheduler::class)->tick()],
             'composio_store' => self::composioStore($a),
+            'credential' => self::credential($a),
+            'install_replace' => self::installReplace($a),
             'publish_job' => self::publishJob($a),
             'takeover_claim' => self::takeoverClaim($a),
             'sweep' => ['stats' => app(\App\Services\AgentRuns\Tools\DispatchSweeper::class)->sweep()],
@@ -27,6 +29,26 @@ final class ConcOps
             'key_create' => self::keyCreate($a),
             default => throw new InvalidArgumentException('Unknown op '.$op),
         };
+    }
+
+    /** Token bytes stay inside this worker; the race reports only the expected match/refusal. */
+    private static function credential(array $a): array
+    {
+        try {
+            $row = (new \App\Models\AgentV2\Connection)->setRawAttributes($a['snapshot'], true);
+            $value = ($a['legacy'] ?? false)
+                ? app(\App\Services\ChatConnectors\Installs::class)->credential($row->user_id, $row->provider)
+                : app(\App\Services\AgentRuns\Connections\Credentials::class)->for($row);
+            return ['matched' => hash_equals($a['expected'], $value)];
+        } catch (\App\Services\AgentRuns\Tools\Providers\ToolFailure $e) { return ['refused' => $e->reason]; }
+    }
+
+    private static function installReplace(array $a): array
+    {
+        \App\Services\ChatConnectors\InstallStore::put(['user_id' => $a['user'], 'integration' => 'gmail'], [
+            'account_label' => $a['identity'], 'credential' => \Illuminate\Support\Facades\Crypt::encryptString('replacement'),
+            'connected_at' => $a['at'], 'updated_at' => now(), 'refresh_token' => null, 'expires_at' => null]);
+        return ['reconnected' => true];
     }
 
     /** Part 11: creating a personal API key from many processes (the cap is a count taken under the user row lock). */
@@ -148,4 +170,23 @@ final class ConcOps
         $rows = DB::table('agent_run_events')->where('run_id', $a['run'])->count();
         return ['seen' => count($seen), 'contiguous' => $seen === range(1, count($seen)) || $seen === [], 'last' => $cursor, 'rowsAtEnd' => $rows];
     }
+
+    private static function privacyAppend(array $a): array
+    {
+        $n = 0;
+        try {
+            foreach (range(1, $a['count']) as $i) {
+                app(\App\Services\AgentRuns\Events::class)->append(\App\Models\AgentV2\Run::query()->findOrFail($a['runs'][$i % count($a['runs'])]), 'run.note', ['i' => $i]);
+                $n++;
+            }
+        } catch (Throwable $e) { return ['appended' => $n, 'stopped' => class_basename($e)]; }
+        return ['appended' => $n, 'stopped' => null];
+    }
+
+    private static function accountDelete(array $a): array
+    {
+        usleep((int) ($a['delayMs'] ?? 0) * 1000);
+        return ['deleted' => app(\App\Services\Account\AccountDeletion::class)->delete(\App\Models\User::query()->findOrFail($a['user']))];
+    }
+
 }

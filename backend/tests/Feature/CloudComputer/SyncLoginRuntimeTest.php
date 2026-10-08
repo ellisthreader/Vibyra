@@ -32,7 +32,7 @@ class SyncLoginRuntimeTest extends SyncTestCase
         $this->send(2)->assertOk();
         $items = $this->pending();
         $this->assertCount(1, $items);
-        $this->assertSame(['id', 'project', 'provider', 'kind', 'seq', 'bytes', 'sha256'], array_keys($items[0]));
+        $this->assertSame(['id', 'project', 'provider', 'origin', 'kind', 'seq', 'bytes', 'sha256'], array_keys($items[0]));
         $this->assertSame([null, 'codex', 'login', 2, strlen($this->sealed), hash('sha256', $this->sealed)], [$items[0]['project'], $items[0]['provider'], $items[0]['kind'], $items[0]['seq'], $items[0]['bytes'], $items[0]['sha256']]);
         $url = '/api/cloud-runtime/'.$this->cid.'/sync/blobs/'.$items[0]['id'];
         $get = fn (?string $range) => $this->call('GET', $url, [], [], [], array_filter(['HTTP_AUTHORIZATION' => 'Bearer '.$this->token, 'HTTP_RANGE' => $range]));
@@ -127,6 +127,6 @@ class SyncLoginRuntimeTest extends SyncTestCase
         $this->send(2)->assertOk();
         $this->asRuntime($this->token, 'post', 'sync/key', ['publicKey' => str_repeat('d4', 32)])->assertOk();
         $this->assertSame([], $this->files());
-        $this->assertSame(['seq' => 2, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null], $this->sync('get', '/')->json('logins.codex'));
+        $this->assertSame(['seq' => 2, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null], $this->sync('get', '/')->json('logins.codex'));
     }
 }

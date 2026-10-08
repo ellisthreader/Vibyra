@@ -5,6 +5,19 @@ use Illuminate\Support\Facades\{DB, Storage};
 
 class SyncUploadTest extends SyncTestCase
 {
+    public function test_final_quota_refusal_does_not_prune_files_inside_a_rollback(): void
+    {
+        $this->grant('my-app');
+        $retention = \Mockery::mock(\App\Services\CloudComputer\SyncRetention::class)->makePartial();
+        $retention->shouldReceive('usedBytes')->andReturn(0, 8192, 8192);
+        $retention->shouldReceive('limitBytes')->andReturn(4096);
+        $retention->shouldNotReceive('prune');
+        app()->instance(\App\Services\CloudComputer\SyncRetention::class, $retention);
+        $this->up('my-app')->assertStatus(413)->assertJsonPath('code', 'quota_exceeded');
+        $this->assertSame(0, \Illuminate\Support\Facades\DB::table('cloud_sync_blobs')->count());
+        $this->assertSame([], \Illuminate\Support\Facades\Storage::disk('cloud-sync')->allFiles());
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

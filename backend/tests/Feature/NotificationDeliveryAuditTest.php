@@ -93,4 +93,19 @@ final class NotificationDeliveryAuditTest extends TestCase
         $this->artisan('vibyra:observe-work')->assertSuccessful();
         Queue::assertPushed(ClassifyDecision::class,1);
     }
+
+    public function test_uncertain_push_is_not_sent_again(): void
+    {
+        [$u,$turn]=$this->cloud();DB::table('vibes_turns')->where('id',$turn)->update(['status'=>'completed']);$this->publish($turn);
+        $calls=0;
+        Http::fake(function () use (&$calls) { $calls++;throw new \Illuminate\Http\Client\ConnectionException('response lost'); });
+        $id=DB::table('notification_deliveries')->value('id');
+        (new DeliverPhoneNotification($id))->handle();
+        $this->travel(20)->minutes();
+        (new DeliverPhoneNotification($id))->handle();
+        $this->assertSame(1,$calls);
+        $this->assertDatabaseHas('notification_deliveries',['id'=>$id,'state'=>'failed','error'=>'DeliveryUnconfirmed']);
+        $this->assertSame(1,DB::table('notification_items')->count());
+    }
+
 }

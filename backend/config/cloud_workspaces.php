@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'github_app' => [
+        'app_id' => env('CLOUD_GITHUB_APP_ID'),
+        'private_key' => env('CLOUD_GITHUB_APP_PRIVATE_KEY'),
+        // Requires GitHub-side rules verified for every eligible repository.
+        'push_enabled' => (bool) env('CLOUD_GITHUB_APP_PUSH_ENABLED', false),
+    ],
     'enabled' => env('CLOUD_WORKSPACES_ENABLED', false),
     'ui_enabled' => env('CLOUD_WORKSPACES_UI_ENABLED', false),
     'starts_enabled' => env('CLOUD_WORKSPACES_STARTS_ENABLED', false),

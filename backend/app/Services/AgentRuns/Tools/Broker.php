@@ -2,6 +2,8 @@
 
 namespace App\Services\AgentRuns\Tools;
 
+use App\Services\AgentRuns\Guard\SecretGuard;
+
 use App\Models\AgentV2\Run;
 use App\Models\AgentV2\RuntimeBinding;
 use App\Models\AgentV2\ToolAction;
@@ -85,10 +87,11 @@ final class Broker
             $this->events->append($run, 'tool.requested', ['actionId' => $action->id, 'callId' => $action->call_id,
                 'tool' => $action->tool, 'kind' => $action->kind, 'connectionId' => $connection->id]);
             if ($write) {
-                $action->forceFill(['fingerprint' => Approvals::fingerprint($action, $run->user_id)])->save();
+                $action->forceFill(['fingerprint' => Approvals::fingerprint($action, $run->user_id),
+                    'secret_kinds' => SecretGuard::enabled() ? (SecretGuard::kindsIn($args) ?: null) : null])->save();
                 $this->events->append($run, 'approval.requested', ['actionId' => $action->id, 'tool' => $action->tool,
                     'connectionId' => $connection->id, 'account' => $connection->external_identity,
-                    'arguments' => $args, 'fingerprint' => $action->fingerprint,
+                    'arguments' => SecretGuard::enabled() ? SecretGuard::redactValue($args) : $args, 'fingerprint' => $action->fingerprint,
                     'expiresAt' => $action->expires_at->toIso8601String()]);
                 $this->lifecycle->move($run, RunStates::WAITING_APPROVAL, null, ['actionId' => $action->id, 'tool' => $action->tool]);
                 return ['replay' => $action];
@@ -140,7 +143,7 @@ final class Broker
         // person reads it from the run (`actions[].fingerprint`, `approval.requested`), and a Mac action is claimed after approval.
         if ($a->state === 'pending_approval') return [...$body, 'expiresAt' => $a->expires_at?->toIso8601String()];
         if (in_array($a->state, ['completed', 'failed', 'unknown', 'refused', 'declined', 'expired', 'cancelled'], true))
-            return [...$body, 'result' => (object) ($a->result ?? []), 'receipt' => $this->receipt($a)]; // a refusal has one only when the sweeper closed it
+            return [...$body, 'result' => (object) (SecretGuard::enabled() ? SecretGuard::redactValue($a->result ?? []) : ($a->result ?? [])), 'receipt' => $this->receipt($a)]; // a refusal has one only when the sweeper closed it
         return $body;
     }
 

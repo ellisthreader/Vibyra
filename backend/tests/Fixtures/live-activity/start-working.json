@@ -1,0 +1,23 @@
+{
+    "aps": {
+        "timestamp": 1760000000,
+        "event": "start",
+        "content-state": {
+            "phase": "working",
+            "since": 1759999808
+        },
+        "attributes-type": "VibyraRunAttributes",
+        "attributes": {
+            "runId": "0b9f6a3e-1111-4b0e-9d11-000000000001",
+            "agentId": "0b9f6a3e-2222-4b0e-9d11-000000000002",
+            "name": "Review",
+            "avatar": "review"
+        },
+        "stale-date": 1760002700,
+        "relevance-score": 50,
+        "alert": {
+            "title": "Review is working",
+            "body": "Open Vibyra to follow along."
+        }
+    }
+}

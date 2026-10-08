@@ -5,8 +5,8 @@ use App\Http\Middleware\RequireApprovedMarket;
 use Illuminate\Support\Facades\Route;
 
 // The account's cloud computer (headless vibyra-host on the hosted VM). Phone/Mac side, bearer session.
-// Every cloud-computer limiter is per account (AppServiceProvider): a phone and a Mac on one home IP do not share a bucket.
-Route::prefix('api/cloud-computer')->middleware('throttle:cloud-computer-read')->group(function () {
+// Normal quotas are per session bearer; a generous shared IP ceiling also covers invalid bearer rotation.
+Route::prefix('api/cloud-computer')->middleware(['throttle:cloud-account-ip', 'throttle:cloud-computer-read'])->group(function () {
     Route::get('/', [ComputerController::class, 'show']);
     Route::post('/', [ComputerController::class, 'create'])->middleware([RequireApprovedMarket::class, 'throttle:cloud-computer-create']);
     Route::post('connect', ConnectController::class)->middleware([RequireApprovedMarket::class, 'throttle:cloud-computer-connect']);
@@ -38,7 +38,7 @@ Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->group(
 // Cloud sync (docs/cloud-sync-contract.md), account side. Works while the computer is stopped; the account must be eligible.
 // Its `cloud-sync` rate limiter lives in AppServiceProvider (a cached route file never runs its own code).
 // Storing needs an approved market; reading state and deleting stay open everywhere (the rights path).
-Route::prefix('api/cloud-computer/sync')->middleware('throttle:cloud-sync')->group(function () {
+Route::prefix('api/cloud-computer/sync')->middleware(['throttle:cloud-account-ip', 'throttle:cloud-sync'])->group(function () {
     Route::get('/', [SyncController::class, 'index']);
     Route::put('macs/{deviceId}', [SyncController::class, 'putMac'])->whereUuid('deviceId')->middleware(RequireApprovedMarket::class);
     Route::put('macs/{deviceId}/status', [SyncController::class, 'report'])->whereUuid('deviceId');

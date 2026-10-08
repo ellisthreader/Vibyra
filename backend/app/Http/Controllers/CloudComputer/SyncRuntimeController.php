@@ -14,7 +14,7 @@ final class SyncRuntimeController extends Controller
     {
         $w = $this->computerFor($request, $workspace);
         $d = $this->valid($request->all(), ['publicKey' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/']]);
-        $keys->setVmKey($w->user_id, $d['publicKey']);
+        app(\App\Services\CloudWorkspaces\Runtime::class)->withCurrent($w, fn ($current) => $keys->setVmKey($current->user_id, $d['publicKey']));
         return $this->reply([]);
     }
 
@@ -41,7 +41,7 @@ final class SyncRuntimeController extends Controller
         $d = $this->valid($request->all(), ['applying' => 'required|boolean', 'keyOk' => 'sometimes|nullable|boolean', 'lastError' => 'sometimes|nullable|array',
             'lastError.code' => 'required_with:lastError|string|max:60', 'lastError.message' => 'sometimes|nullable|string|max:300', 'lastError.project' => 'sometimes|nullable|string|max:64']);
         $error = isset($d['lastError']) ? array_filter(['code' => $d['lastError']['code'], 'message' => $d['lastError']['message'] ?? null, 'project' => $d['lastError']['project'] ?? null], fn ($v) => $v !== null) : null;
-        $keys->setApplying($w->user_id, (bool) $d['applying'], isset($d['keyOk']) ? (bool) $d['keyOk'] : null, $error, $request->has('lastError') && $error === null);
+        app(\App\Services\CloudWorkspaces\Runtime::class)->withCurrent($w, fn ($current) => $keys->setApplying($current->user_id, (bool) $d['applying'], isset($d['keyOk']) ? (bool) $d['keyOk'] : null, $error, $request->has('lastError') && $error === null));
         return $this->reply([]);
     }
 
@@ -57,7 +57,7 @@ final class SyncRuntimeController extends Controller
         $d = $this->valid($request->all(), ['ok' => 'required|boolean', 'head' => ['sometimes', 'nullable', 'string', 'regex:/^[a-f0-9]{40}$/'], 'state' => 'sometimes|nullable|in:synced,diverged',
             'error' => 'sometimes|nullable|string|max:300', 'needFull' => 'sometimes|boolean',
             'code' => 'sometimes|nullable|string|max:60', 'message' => 'sometimes|nullable|string|max:300']);
-        if (!$logins->applied($w->user_id, $id, $d)) $queue->applied($w->user_id, $id, $d);
+        if (!$logins->applied($w->user_id, $id, $d, $w)) $queue->applied($w->user_id, $id, $d, $w);
         return $this->reply([]);
     }
 
@@ -68,7 +68,7 @@ final class SyncRuntimeController extends Controller
         $q = $this->blobQuery($request);
         $mac = $keys->findMac($w->user_id, strtolower((string) $request->query('mac'))) ?? Computers::fail('unknown_mac', 'That Mac is not registered for cloud sync.', 404);
         [$stream, $declared] = $this->body($request);
-        $blobs->receive($project, 'down', $q, $stream, $mac, $declared);
+        $blobs->receive($project, 'down', $q, $stream, $mac, $declared, $w);
         return $this->reply([]);
     }
 

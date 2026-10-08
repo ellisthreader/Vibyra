@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 /** The Mac's "Keep projects ready for your iPhone": the phone's agreement, proven with the Mac's own computer key. */
 class MacConnectTest extends SyncTestCase
 {
+    use MacConnectSelections;
+
     private string $macKeys;
     private string $macId;
 

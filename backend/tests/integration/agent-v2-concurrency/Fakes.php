@@ -24,6 +24,10 @@ final class ConcFakes
         app()->instance(\App\Services\Mcp\EndpointPolicy::class, new \App\Services\Mcp\EndpointPolicy(fn (string $host) => in_array($host, ['mcp.conc.example', 'hooks.conc.example'], true) ? ['93.184.216.34'] : []));
         Http::fake(function ($request) {
             $url = $request->url();
+            if ($url === 'https://oauth2.googleapis.com/token') {
+                self::record('GOOGLE_REFRESH', (string) $request['refresh_token'], null, 150);
+                return Http::response(['access_token' => 'refreshed-'.$request['refresh_token'], 'expires_in' => 3600]);
+            }
             if (str_starts_with($url, ConcProviders::MCP)) return ConcProviders::mcp($request);
             if (str_contains($url, 'api.github.com/repos/octo/app/') && ($answer = ConcProviders::github($request))) return $answer;
             if (str_contains($url, 'gmail.googleapis.com') && $request->method() === 'GET' && str_contains((string) ($request->data()['q'] ?? ''), 'rfc822msgid:')) return ConcProviders::gmailLookup($request);

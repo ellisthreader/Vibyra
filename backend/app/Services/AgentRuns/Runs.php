@@ -76,7 +76,9 @@ final class Runs
         return ['id' => $a->id, 'callId' => $a->call_id, 'tool' => $a->tool, 'kind' => $a->kind,
             'provider' => $c?->provider ?? app(Tools\ToolProviders::class)->of($a->tool), 'account' => $c?->external_identity,
             'connectionId' => $a->connection_id, 'state' => $a->state, 'summary' => $a->summary,
-            'arguments' => $a->kind === 'write' ? (object) ($a->arguments ?? []) : null,
+            'arguments' => $a->kind === 'write' ? (object) (Guard\SecretGuard::enabled()
+                ? Guard\SecretGuard::redactValue($a->arguments ?? []) : ($a->arguments ?? [])) : null,
+            'containsSecret' => !empty($a->secret_kinds), 'secretKinds' => $a->secret_kinds ?? [],
             'fingerprint' => $a->state === 'pending_approval' ? $a->fingerprint : null,
             'expiresAt' => $a->state === 'pending_approval' ? $a->expires_at?->toIso8601String() : null,
             'receipt' => $r ? ['status' => $r->status, 'outcome' => $r->outcome,

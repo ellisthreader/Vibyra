@@ -96,4 +96,15 @@ final class ConcFixture
         if ($r['status'] !== $status) throw new RuntimeException('Fixture call expected '.$status.', got '.$r['status'].' '.json_encode($r['json']));
         return $r['json'];
     }
+
+    public static function github(array $fx, array $ops = ['github_create_issue']): string
+    {
+        DB::table('vibes_integration_installs')->updateOrInsert(['user_id' => $fx['user'], 'integration' => 'github'], [
+            'credential' => Crypt::encryptString('tok-gh-'.$fx['user']), 'account_label' => '@octo-'.$fx['user'], 'connected_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+        LegacyInstalls::sync($fx['user']);
+        $id = (string) DB::table('agent_connections')->where('user_id', $fx['user'])->where('provider', 'github')->whereNull('revoked_at')->value('id');
+        self::ok(ConcHttp::call('PUT', '/api/agents/v2/agents/'.$fx['agent'].'/grants/'.$id, $fx['token'], ['operations' => $ops]), 200);
+        return $id;
+    }
+
 }

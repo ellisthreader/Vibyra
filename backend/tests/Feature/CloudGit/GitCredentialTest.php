@@ -9,6 +9,7 @@ class GitCredentialTest extends CloudGitTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->configureApp();
         $this->makeComputer();
         $this->queueProject('octo/hello');
     }
@@ -45,16 +46,17 @@ class GitCredentialTest extends CloudGitTestCase
         // Same bearer from another IP shares the bucket (the key is the workspace, not the address).
         $this->withServerVariables(['REMOTE_ADDR' => '9.9.9.9'])->credential(['repo' => 'octo/hello', 'op' => 'fetch'])->assertStatus(429);
     }
-    public function test_fetch_and_agent_branch_push_issue_a_token_within_ten_minutes(): void
+    public function test_fetch_and_agent_branch_push_issue_a_repository_token_with_github_expiry(): void
     {
         $this->connectGithub(); $this->fakeRepo();
         foreach ([['op' => 'fetch'], ['op' => 'push', 'branch' => 'vibyra/fix-login']] as $q) {
             $r = $this->credential(['repo' => 'octo/hello', ...$q])->assertOk();
             $this->assertSame('x-access-token', $r->json('username'));
-            $this->assertSame(self::TOKEN, $r->json('password'));
+            $this->assertSame(self::APP_TOKEN, $r->json('password'));
+            $this->assertNotSame(self::TOKEN, $r->json('password'));
             $this->assertStringContainsString('no-store', $r->headers->get('Cache-Control'));
             $ttl = now()->diffInSeconds(\Illuminate\Support\Carbon::parse($r->json('expiresAt')), false);
-            $this->assertTrue($ttl > 0 && $ttl <= 600, 'ttl '.$ttl);
+            $this->assertTrue($ttl > 0 && $ttl <= 3600, 'ttl '.$ttl);
         }
     }
     public function test_push_matrix_refuses_default_non_vibyra_and_protected_branches(): void
@@ -111,9 +113,11 @@ class GitCredentialTest extends CloudGitTestCase
         $audit = array_values(array_filter($lines, fn ($l) => str_contains($l, 'cloud.git.credential')));
         $this->assertCount(2, $audit);
         $this->assertStringNotContainsString(self::TOKEN, implode("\n", $lines));
+        $this->assertStringNotContainsString(self::APP_TOKEN, implode("\n", $lines));
         foreach (DB::select("select name from sqlite_master where type='table'") as $t) {
             if ($t->name === 'vibes_integration_installs') continue;
             $this->assertStringNotContainsString(self::TOKEN, json_encode(DB::table($t->name)->get()), $t->name);
+            $this->assertStringNotContainsString(self::APP_TOKEN, json_encode(DB::table($t->name)->get()), $t->name);
         }
     }
     public function test_no_other_route_or_source_path_mints_a_push_token(): void
@@ -121,8 +125,8 @@ class GitCredentialTest extends CloudGitTestCase
         $uris = collect(app('router')->getRoutes()->getRoutes())->filter(fn ($r) => str_ends_with($r->uri(), 'git/credential'))->map->uri()->all();
         $this->assertSame(['api/cloud-runtime/{workspace}/git/credential'], array_values($uris));
         // Only these files may decrypt the stored GitHub credential; the connector paths stay read/PR-through-API on the server.
-        // BranchDelivery uses it server-side for an exact-approved API write and never returns it; Runtime::bootstrap is the pre-existing clone-source path.
-        $allowed = ['Services/Agents/BranchPublication/BranchDelivery.php', 'Services/CloudWorkspaces/Git/Repos.php', 'Services/CloudWorkspaces/Runtime.php'];
+        // BranchDelivery keeps owner OAuth server-side; Runtime::bootstrap now uses read-only App tokens.
+        $allowed = ['Services/Agents/BranchPublication/BranchDelivery.php', 'Services/CloudWorkspaces/Git/Repos.php'];
         $hits = [];
         $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(app_path()));
         foreach ($it as $f) {

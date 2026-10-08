@@ -129,4 +129,22 @@ class AgentV2GithubToolsTest extends TestCase
         $this->gh('github_list_issues', $list, 'r5')->assertJsonPath('action.result.outcome', 'reconnect_required');
         $this->assertSame('waiting_for_signin', $this->runState($run['id']));
     }
+
+    public function test_wrong_target_comment_receipt_is_unknown_and_cannot_be_posted_again(): void
+    {
+        $this->start(['github_comment_issue']);
+        $this->route('POST', self::REPO.'/issues/7/comments$#', Http::response(['id' => 99,
+            'html_url' => 'https://github.com/qa-org/sandbox/issues/8#issuecomment-99'], 201));
+        $args = ['repository' => 'qa-org/sandbox', 'number' => 7, 'body' => 'Approved comment.'];
+        $action = $this->gh('github_comment_issue', $args, 'wrong-target')->json('action');
+        $this->assertSame($args, \App\Models\AgentV2\ToolAction::findOrFail($action['id'])->arguments);
+        $this->decide($action)->assertJsonPath('action.state', 'unknown')
+            ->assertJsonPath('action.result.outcome', 'outcome_unknown');
+        $this->decide($action)->assertOk()->assertJsonPath('action.state', 'unknown');
+        $this->gh('github_comment_issue', $args, 'new-call-id')->assertJsonPath('action.state', 'refused')
+            ->assertJsonPath('action.result.reason', 'outcome_unknown');
+        $this->assertSame(1, $this->sent('POST', self::REPO.'/issues/7/comments$#'));
+        Http::assertSent(fn ($r) => $r->method() === 'POST' && $r->hasHeader('Authorization', 'Bearer gh-token')
+            && $r->data() === ['body' => 'Approved comment.']);
+    }
 }

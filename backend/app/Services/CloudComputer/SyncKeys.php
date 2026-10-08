@@ -140,7 +140,7 @@ class SyncKeys
             if (!$row) DB::table('cloud_sync_vm_keys')->insert(['user_id' => $user, 'public_key' => $publicKey, 'created_at' => now(), 'updated_at' => now()]);
             elseif ($row->public_key === $publicKey) return;
             else DB::table('cloud_sync_vm_keys')->where('user_id', $user)->update(['public_key' => $publicKey, 'updated_at' => now()]);
-            if ($row && $row->public_key) app(SyncRetention::class)->vmLostItsCopy($user);
+            if ($row && $row->public_key) app(SyncRetention::class)->vmLostItsCopy($user, true);
         });
     }
 

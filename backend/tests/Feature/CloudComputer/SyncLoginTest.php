@@ -19,9 +19,9 @@ class SyncLoginTest extends SyncTestCase
 
     public function test_index_reports_empty_logins_then_an_accepted_upload(): void
     {
-        $this->assertSame(['codex' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null]], $this->sync('get', '/')->assertOk()->json('logins'));
+        $this->assertSame(['codex' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null], 'claude' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null]], $this->sync('get', '/')->assertOk()->json('logins'));
         $this->login(['seq' => 3])->assertOk()->assertJsonPath('ok', true)->assertJsonPath('logins.codex.seq', 3);
-        $this->assertSame(['seq' => 3, 'appliedSeq' => 0, 'pending' => true, 'appliedAt' => null], $this->sync('get', '/')->json('logins.codex'));
+        $this->assertSame(['seq' => 3, 'appliedSeq' => 0, 'pending' => true, 'appliedAt' => null, 'origin' => null], $this->sync('get', '/')->json('logins.codex'));
         $this->assertCount(1, $this->files());
         $this->assertStringContainsString('/logins/', $this->files()[0]);
     }
@@ -44,7 +44,8 @@ class SyncLoginTest extends SyncTestCase
         $this->login([], '')->assertStatus(422);
         $this->assertSame([], $this->files());
         $this->assertSame(0, $this->sync('get', '/')->json('logins.codex.seq'));
-        $this->raw('PUT', '/api/cloud-computer/sync/login/claude?seq=1&sha256='.str_repeat('0', 64), 'x', 'cloud-test')->assertStatus(422)->assertJsonPath('code', 'invalid_request');
+        $this->raw('PUT', '/api/cloud-computer/sync/login/gemini?seq=1&sha256='.str_repeat('0', 64), 'x', 'cloud-test')->assertStatus(422)->assertJsonPath('code', 'invalid_request');
+        $this->login(['origin' => 'mac'])->assertStatus(422)->assertJsonPath('code', 'invalid_request');
     }
 
     public function test_the_size_cap_is_256_kib(): void
@@ -73,7 +74,7 @@ class SyncLoginTest extends SyncTestCase
         $this->sync('delete', '/login/codex')->assertOk();
         $this->login(['seq' => 4])->assertStatus(409);
         $this->login(['seq' => 5])->assertOk();
-        $this->sync('delete', '/login/claude')->assertStatus(422);
+        $this->sync('delete', '/login/gemini')->assertStatus(422);
     }
 
     public function test_accounts_never_see_or_replace_each_others_logins(): void
@@ -120,4 +121,19 @@ class SyncLoginTest extends SyncTestCase
         for ($i = 1; $i <= 30; $i++) $this->login(['seq' => $i])->assertOk();
         $this->login(['seq' => 31])->assertStatus(429);
     }
+
+    public function test_stale_login_cleanup_cannot_clear_a_newer_upload(): void
+    {
+        $this->login(['seq' => 1])->assertOk();
+        $old = DB::table('cloud_sync_logins')->where('user_id', $this->user->id)->first();
+        $this->login(['seq' => 2])->assertOk();
+        (new \ReflectionMethod(\App\Services\CloudComputer\SyncLogins::class, 'dropBlob'))
+            ->invoke(app(\App\Services\CloudComputer\SyncLogins::class), $old, ['applied_seq' => 1]);
+        $current = DB::table('cloud_sync_logins')->where('id', $old->id)->first();
+        $this->assertSame(2, (int) $current->seq);
+        $this->assertNotNull($current->blob_id);
+        $this->assertSame(0, (int) $current->applied_seq);
+        Storage::disk('cloud-sync')->assertExists($current->path);
+    }
+
 }

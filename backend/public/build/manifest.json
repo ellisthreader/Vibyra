@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-C_r1DSPQ.css",
+    "file": "assets/app-DrIVALGZ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -81,7 +81,7 @@
     ]
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-Cs3MN8MP.js",
+    "file": "assets/app-BX7zyJ91.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -89,7 +89,7 @@
       "_jsx-runtime-BVko9UzU.js"
     ],
     "css": [
-      "assets/app-C_r1DSPQ.css"
+      "assets/app-DrIVALGZ.css"
     ]
   },
   "resources/js/benchmarks.jsx": {

@@ -162,4 +162,37 @@ class AgentModelQuoteTest extends TestCase
         $this->assertDatabaseHas('vibes_tools', ['id' => $tool->id, 'action_state' => 'expired', 'action_answer' => null]);
         Http::assertNotSent(fn ($request) => $request->method() === 'POST' && str_contains($request->url(), 'api.github.com'));
     }
+
+    public function test_agent_quote_reaches_a_named_connector_after_the_first_ten_grants(): void
+    {
+        config(['chat_connectors.enabled' => true]);
+        Http::fake(['api.linear.app/graphql' => Http::response(['data' => ['viewer' => ['name' => 'Ellis']]])]);
+        app(\App\Services\ChatConnectors\Installs::class)->connect($this->user, 'linear', 'fixture-token');
+        $grants = ['github', 'stripe', 'figma', 'gmail', 'google_calendar', 'google_drive',
+            'outlook_mail', 'outlook_calendar', 'onedrive', 'slack', 'notion', 'linear'];
+        DB::table('agent_teammates')->where('chat_id', $this->chat)->update(['integrations' => json_encode($grants)]);
+        $quote = app(Quotes::class)->create($this->user, $this->chat, 'Review @linear issues.', 'auto');
+        $this->assertSame(['linear'], $quote['integrations']);
+        $data = json_decode(Crypt::decryptString($quote['quote']), true);
+        $names = array_column(array_column($data['request']['tools'], 'function'), 'name');
+        $this->assertContains('linear_search_issues', $names);
+        $this->assertNotContains('github_list_repositories', $names);
+    }
+
+    public function test_teammate_can_save_more_grants_than_one_turn_offers(): void
+    {
+        $grants = ['github', 'stripe', 'figma', 'gmail', 'google_calendar', 'google_drive',
+            'outlook_mail', 'outlook_calendar', 'onedrive', 'teams', 'sharepoint',
+            'slack', 'notion', 'linear'];
+        foreach ($grants as $slug) DB::table('vibes_integration_installs')->insert([
+            'user_id' => $this->user, 'integration' => $slug,
+            'credential' => Crypt::encryptString('fixture-token'), 'account_label' => 'Fixture',
+            'connected_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $saved = app(Teammates::class)->save($this->user, ['id' => (string) Str::uuid(),
+            'name' => 'Researcher', 'brief' => 'Use connected services.', 'avatar' => 'review',
+            'budget' => 20, 'integrations' => $grants]);
+        $this->assertSame($grants, $saved['integrations']);
+    }
+
 }

@@ -33,11 +33,14 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Cache\RateLimiting\Limit::perMinute(240)->by('workspace:'.$request->route('workspace').':'.hash('sha256', (string) $request->bearerToken())),
             \Illuminate\Cache\RateLimiting\Limit::perMinute(3000)->by('ip:'.$request->ip()),
         ]);
+        // Shared account-side ceiling cannot be reset by rotating invalid bearer strings.
+        \Illuminate\Support\Facades\RateLimiter::for('cloud-account-ip', fn (\Illuminate\Http\Request $request) =>
+            \Illuminate\Cache\RateLimiting\Limit::perMinute(600)->by('cloud-account-ip:'.$request->ip()));
         // Cloud sync, account side (the Mac). Defined here, not in routes/cloud_computer.php: production caches its routes,
         // and code in a cached route file never runs, so the limiter was missing and every Mac sync read answered 500.
         \Illuminate\Support\Facades\RateLimiter::for('cloud-sync', fn (\Illuminate\Http\Request $request) =>
             \Illuminate\Cache\RateLimiting\Limit::perMinute(240)->by('cloud-sync:'.hash('sha256', (string) $request->bearerToken())));
-        // The cloud computer's phone/Mac routes, per account: `throttle:N,1,prefix` keyed by IP, so a phone and a Mac on one home
+        // The cloud computer's phone/Mac routes, per session bearer: `throttle:N,1,prefix` keyed by IP, so a phone and a Mac on one home
         // network (or strangers behind one carrier address) shared a bucket. A request with no bearer falls back to its IP.
         foreach (['cloud-computer-read' => 120, 'cloud-computer-create' => 6, 'cloud-computer-connect' => 6, 'cloud-computer-face-key' => 6,
             'cloud-computer-face-challenge' => 20, 'cloud-computer-wake' => 6, 'cloud-computer-repos' => 30, 'cloud-computer-projects' => 30,

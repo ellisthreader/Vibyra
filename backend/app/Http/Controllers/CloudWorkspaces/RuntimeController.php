@@ -11,7 +11,13 @@ final class RuntimeController extends Controller
     public function bootstrap(Request $request, string $workspace, Runtime $runtime)
     {
         $data = $request->validate(['machineId' => 'required|string|max:80', 'generation' => 'required|integer|min:1']);
-        return response()->json(['ok' => true, ...$runtime->bootstrap($workspace, (string) $request->bearerToken(), $data['machineId'], $data['generation'])]);
+        try {
+            return response()->json(['ok' => true, ...$runtime->bootstrap($workspace, (string) $request->bearerToken(), $data['machineId'], $data['generation'])])
+                ->header('Cache-Control', 'no-store');
+        } catch (\App\Services\CloudWorkspaces\Git\GitRefused $e) {
+            return response()->json(['ok' => false, 'code' => $e->errorCode, 'message' => $e->getMessage()], $e->status)
+                ->header('Cache-Control', 'no-store');
+        }
     }
     public function heartbeat(Request $request, string $workspace, Runtime $runtime)
     {

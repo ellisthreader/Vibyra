@@ -1,0 +1,12 @@
+{
+    "aps": {
+        "timestamp": 1760000000,
+        "event": "update",
+        "content-state": {
+            "phase": "queued",
+            "since": 1759999808
+        },
+        "stale-date": 1760002700,
+        "relevance-score": 30
+    }
+}

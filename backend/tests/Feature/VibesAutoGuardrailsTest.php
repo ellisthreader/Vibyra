@@ -128,4 +128,17 @@ class VibesAutoGuardrailsTest extends TestCase
         $this->assertStringNotContainsString('cheap model', $continued);
     }
 
+
+    public function test_sonnet_55_uses_live_pricing_and_stays_out_of_trial_auto(): void
+    {
+        $id = 'anthropic/claude-sonnet-5.5';
+        $paid = app(Candidates::class)->for(Situation::of(1200, 50, false, false, 0, 0));
+        $candidate = collect($paid)->firstWhere('id', $id);
+        $this->assertNotNull($candidate);
+        $this->assertSame(['low', 'medium', 'high', 'xhigh', 'max'], $candidate['efforts']);
+        $trial = app(Candidates::class)->for(Situation::of(1200, 3, true, false, 0, 0));
+        $this->assertNotContains($id, array_column($trial, 'id'));
+        $this->assertContains('openai/gpt-6-luna', array_column($trial, 'id'));
+    }
+
 }

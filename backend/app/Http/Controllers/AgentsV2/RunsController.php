@@ -61,7 +61,7 @@ final class RunsController extends Controller
     {
         $user = $this->v2User($request);
         $data = $request->validate(['fingerprint' => ['required', 'regex:/^[a-f0-9]{64}$/D'],
-            'decision' => 'required|in:allow,decline']);
-        return $this->json(['action' => $broker->outcome($approvals->decide($user->id, $id, $data['fingerprint'], $data['decision']))]);
+            'decision' => 'required|in:allow,decline', 'confirmSecret' => 'sometimes|boolean']);
+        return $this->json(['action' => $broker->outcome($approvals->decide($user->id, $id, $data['fingerprint'], $data['decision'], (bool) ($data['confirmSecret'] ?? false)))]);
     }
 }

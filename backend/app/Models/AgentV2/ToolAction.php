@@ -16,6 +16,6 @@ final class ToolAction extends Model
 
     protected function casts(): array
     {
-        return ['arguments' => 'array', 'result' => 'array', 'expires_at' => 'datetime', 'dispatched_at' => 'datetime', 'connection_generation' => 'integer', 'grant_revision' => 'integer'];
+        return ['arguments' => 'array', 'result' => 'array', 'secret_kinds' => 'array', 'expires_at' => 'datetime', 'dispatched_at' => 'datetime', 'connection_generation' => 'integer', 'grant_revision' => 'integer'];
     }
 }

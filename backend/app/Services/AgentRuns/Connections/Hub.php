@@ -51,10 +51,19 @@ final class Hub
                 'lastUsedAt' => isset($used[$c->id]) ? \Illuminate\Support\Carbon::parse($used[$c->id])->toIso8601String() : null,
                 'reconnect' => in_array($status, ['reconnect_required', 'insufficient_scope'], true) ? $this->reconnect($c, $server) : null,
                 'local' => $server?->kind === 'local' ? ['hostId' => $server->host_id, 'localId' => $server->local_id] : null,
+                'mentions' => $c->provider === 'slack' ? $this->mentions($c) : null,
                 'mcp' => $server ? ['kind' => $server->kind, 'serverId' => $server->id, 'url' => $server->kind === 'local' ? '' : $server->url, 'status' => $server->status,
                     'protocolVersion' => $server->protocol_version, 'toolRevision' => $server->tool_revision,
                     'pendingRevision' => $server->pending_revision] : null];
         }, $rows);
+    }
+
+    /** Slack mention triggers need the app_mentions:read bot scope; accounts connected before it was asked for reconnect once. */
+    private function mentions(Connection $c): array
+    {
+        if (in_array('app_mentions:read', $c->scopes ?? [], true)) return ['state' => 'ready', 'message' => null, 'reconnect' => null];
+        return ['state' => 'reconnect_required', 'message' => 'Reconnect Slack once so Vibyra can see mentions of it.',
+            'reconnect' => $this->reconnect($c, null)];
     }
 
     private function status(Connection $c, bool $ready): string

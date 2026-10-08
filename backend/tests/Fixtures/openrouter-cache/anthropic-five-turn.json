@@ -1,0 +1,246 @@
+{
+ "pricing": {
+  "model": "anthropic/claude-sonnet-5.5",
+  "per_token_usd": {
+   "prompt": 0.000002,
+   "completion": 0.00001,
+   "input_cache_read": 2e-7,
+   "input_cache_write": 0.0000025
+  },
+  "note": "Response-shaped fixtures, not live recordings. Prefix 6000 tokens, 400 new tokens per turn, 300 completion tokens."
+ },
+ "cold": [
+  {
+   "id": "gen-fixture-1",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 1."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 6400,
+    "completion_tokens": 300,
+    "total_tokens": 6700,
+    "cost": 0.0158,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-2",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 2."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 6800,
+    "completion_tokens": 300,
+    "total_tokens": 7100,
+    "cost": 0.0166,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-3",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 3."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 7200,
+    "completion_tokens": 300,
+    "total_tokens": 7500,
+    "cost": 0.0174,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-4",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 4."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 7600,
+    "completion_tokens": 300,
+    "total_tokens": 7900,
+    "cost": 0.0182,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-5",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 5."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 8000,
+    "completion_tokens": 300,
+    "total_tokens": 8300,
+    "cost": 0.019,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 0
+    }
+   }
+  }
+ ],
+ "warm": [
+  {
+   "id": "gen-fixture-1",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 1."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 6400,
+    "completion_tokens": 300,
+    "total_tokens": 6700,
+    "cost": 0.019,
+    "prompt_tokens_details": {
+     "cached_tokens": 0,
+     "cache_write_tokens": 6400
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-2",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 2."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 6800,
+    "completion_tokens": 300,
+    "total_tokens": 7100,
+    "cost": 0.00528,
+    "prompt_tokens_details": {
+     "cached_tokens": 6400,
+     "cache_write_tokens": 400
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-3",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 3."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 7200,
+    "completion_tokens": 300,
+    "total_tokens": 7500,
+    "cost": 0.00536,
+    "prompt_tokens_details": {
+     "cached_tokens": 6800,
+     "cache_write_tokens": 400
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-4",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 4."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 7600,
+    "completion_tokens": 300,
+    "total_tokens": 7900,
+    "cost": 0.00544,
+    "prompt_tokens_details": {
+     "cached_tokens": 7200,
+     "cache_write_tokens": 400
+    }
+   }
+  },
+  {
+   "id": "gen-fixture-5",
+   "model": "anthropic/claude-sonnet-5.5",
+   "choices": [
+    {
+     "message": {
+      "role": "assistant",
+      "content": "Answer 5."
+     },
+     "finish_reason": "stop"
+    }
+   ],
+   "usage": {
+    "prompt_tokens": 8000,
+    "completion_tokens": 300,
+    "total_tokens": 8300,
+    "cost": 0.00552,
+    "prompt_tokens_details": {
+     "cached_tokens": 7600,
+     "cache_write_tokens": 400
+    }
+   }
+  }
+ ]
+}

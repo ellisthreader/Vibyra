@@ -1,0 +1,17 @@
+{
+    "aps": {
+        "timestamp": 1760000000,
+        "event": "update",
+        "content-state": {
+            "phase": "needs_signin",
+            "since": 1759999808
+        },
+        "stale-date": 1760000900,
+        "relevance-score": 100,
+        "alert": {
+            "title": "Review needs you to sign in",
+            "body": "Open Vibyra to continue.",
+            "sound": "default"
+        }
+    }
+}

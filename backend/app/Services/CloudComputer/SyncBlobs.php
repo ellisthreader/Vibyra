@@ -11,7 +11,7 @@ class SyncBlobs
      * @param array{kind:string,seq:int,baseSeq:int,head:?string,sha256:string} $q
      * @param resource $stream  the raw request body
      */
-    public function receive(object $project, string $direction, array $q, $stream, ?object $mac, ?int $declared): object
+    public function receive(object $project, string $direction, array $q, $stream, ?object $mac, ?int $declared, ?object $runtime = null): object
     {
         $cap = (int) config('cloud_workspaces.sync_max_blob_bytes');
         if ($declared !== null && $declared > $cap) Computers::fail('too_large', 'This project is too large to sync.', 413);
@@ -27,7 +27,12 @@ class SyncBlobs
             app(SyncUpload::class)->store($tmp, $path);
         } catch (\Throwable $e) { @unlink($tmp); throw $e; }
         try {
-            $replaced = DB::transaction(function () use ($project, $direction, $q, $mac, $id, $path, $spooled) {
+            $replaced = DB::transaction(function () use ($project, $direction, $q, $mac, $id, $path, $spooled, $runtime) {
+                // Quota spans every project. Serialize the final admission,
+                // then check the project after taking the account lock.
+                app(\App\Services\Vibes\Wallet::class)->lock((int) $project->user_id);
+                if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime);
+                $this->checkQuota($project, $spooled['bytes'], false);
                 $p = DB::table('cloud_sync_projects')->where('id', $project->id)->lockForUpdate()->first();
                 if (!$p || $p->removed_at) Computers::fail('unknown_project', 'This project is not synced.', 404);
                 $this->checkSeq($p, $direction, $q);
@@ -68,11 +73,13 @@ class SyncBlobs
         }
     }
 
-    private function checkQuota(object $p, int $bytes): void
+    private function checkQuota(object $p, int $bytes, bool $prune = true): void
     {
         $retention = app(SyncRetention::class); $limit = $retention->limitBytes();
         if ($retention->usedBytes($p->user_id) + $bytes <= $limit) return;
-        $retention->prune($p->id, SyncRetention::KEEP - 1); // what the new blob would push out anyway
+        // Pruning deletes physical files. It must happen before, never inside,
+        // a transaction that can roll back and resurrect their database rows.
+        if ($prune) $retention->prune($p->id, SyncRetention::KEEP - 1); // what the new blob would push out anyway
         if ($retention->usedBytes($p->user_id) + $bytes > $limit) Computers::fail('quota_exceeded', 'Your cloud storage for synced projects is full.', 413);
     }
 

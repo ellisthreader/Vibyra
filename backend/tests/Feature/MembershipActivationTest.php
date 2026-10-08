@@ -81,4 +81,28 @@ class MembershipActivationTest extends TestCase
         config(['legal.paid_sales_enabled' => false]);
         foreach ($this->getJson('/api/billing/catalogue')->assertOk()->json('offers') as $o) $this->assertFalse($o['stripeEnabled']);
     }
+
+    public function test_new_verified_account_gets_published_free_terms_once_with_pro_trial_explicitly_disabled(): void
+    {
+        $u = User::factory()->create(['plan' => 'free', 'credits_balance' => 0, 'email_verified_at' => null]);
+        $wallet = app(Wallet::class);
+        $this->assertSame(2, (int) $wallet->ensure($u)->billing_version);
+        $this->assertSame('0', $wallet->payload($u->id)['availableUnits']);
+        $u->forceFill(['email_verified_at' => now()])->save();
+        $first = $wallet->payload($u->id);$second = $wallet->payload($u->id);
+        $this->assertSame('300000', $first['availableUnits']);
+        $this->assertSame($first['availableUnits'], $second['availableUnits']);
+        $this->assertTrue($first['freeAllowance']['eligible']);
+        $this->assertSame(30, $first['freeAllowance']['tokens']);
+        $this->assertTrue($first['salesCapabilities']['stripe']);
+        $this->assertSame('free', $first['membership']['tier']);
+        $this->assertSame(0, DB::table('membership_periods')->where('user_id', $u->id)->count());
+        $limits = app(PlanLimits::class)->for($u);
+        $this->assertTrue($limits['enforced']);
+        $this->assertSame(2, $limits['maxTerminals']);
+        $this->assertSame(1, $limits['maxProjects']);
+        $this->assertFalse($limits['preview']);$this->assertFalse($limits['review']);
+        $this->assertFalse($limits['safeWorktrees']);
+    }
+
 }

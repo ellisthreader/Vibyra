@@ -97,15 +97,23 @@ class SyncLogins
     }
 
     /** The cloud computer's result. Returns false when `$id` is not a login blob (the caller falls through to project blobs). The file goes either way. */
-    public function applied(int $user, string $id, array $d): bool
+    public function applied(int $user, string $id, array $d, ?object $runtime = null): bool
     {
-        $r = DB::table('cloud_sync_logins')->where('user_id', $user)->where('blob_id', $id)->first();
-        if (!$r) return false;
-        $ok = (bool) ($d['ok'] ?? true);
-        $meta = $ok ? ['applied_seq' => max((int) $r->applied_seq, (int) $r->seq), 'applied_at' => now(), 'failed_at' => null, 'error' => null]
-            : ['failed_at' => now(), 'error' => mb_substr((string) ($d['error'] ?? 'apply_failed'), 0, 200)];
-        $this->dropBlob($r, $meta);
-        return true;
+        return DB::transaction(function () use ($user, $id, $d, $runtime) {
+            app(\App\Services\Vibes\Wallet::class)->lock($user);
+            if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime);
+            $r = DB::table('cloud_sync_logins')->where('user_id', $user)->where('blob_id', $id)->lockForUpdate()->first();
+            if (!$r) return false;
+            $ok = (bool) ($d['ok'] ?? true);
+            $meta = $ok ? ['applied_seq' => max((int) $r->applied_seq, (int) $r->seq), 'applied_at' => now(), 'failed_at' => null, 'error' => null]
+                : ['failed_at' => now(), 'error' => mb_substr((string) ($d['error'] ?? 'apply_failed'), 0, 200)];
+            DB::table('cloud_sync_logins')->where('id', $r->id)->where('seq', $r->seq)->where('blob_id', $r->blob_id)->where('path', $r->path)
+                ->update($meta + ['updated_at' => now()]);
+            // The authority check and acknowledgement commit together. Physical cleanup
+            // only follows a successful commit and uses this exact immutable snapshot.
+            $this->dropBlob($r, [], true);
+            return true;
+        }, 5);
     }
 
     /** Scheduled: a login blob never stays more than 24 hours. Returns how many went. */
@@ -117,10 +125,10 @@ class SyncLogins
     }
 
     /** The cloud computer lost its copy (new key or removed volume): a pending blob is unreadable and nothing was applied. */
-    public function vmLostItsCopy(int $user): void
+    public function vmLostItsCopy(int $user, bool $afterCommit = false): void
     {
         foreach (DB::table('cloud_sync_logins')->where('user_id', $user)->get() as $r) {
-            $this->dropBlob($r->blob_id ? $r : null);
+            $this->dropBlob($r->blob_id ? $r : null, [], $afterCommit);
             DB::table('cloud_sync_logins')->where('id', $r->id)->update(['applied_seq' => 0, 'applied_at' => null, 'updated_at' => now()]);
         }
     }
@@ -150,7 +158,16 @@ class SyncLogins
     }
 
     /** File first, then the pointer: a failed delete leaves the row so the sweep retries. */
-    private function dropBlob(?object $r, array $meta = []): void
+    private function dropBlob(?object $r, array $meta = [], bool $afterCommit = false): void
+    {
+        if ($afterCommit) {
+            DB::afterCommit(fn () => $this->dropBlobNow($r, $meta));
+            return;
+        }
+        $this->dropBlobNow($r, $meta);
+    }
+
+    private function dropBlobNow(?object $r, array $meta): void
     {
         if (!$r || !$r->blob_id) return;
         if ($r->path && !$this->deleteFile($r->path)) return;

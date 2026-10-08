@@ -14,6 +14,21 @@ final class Runtime
             && in_array($w->state, Workspaces::ACTIVE, true), 401, 'Runtime authority expired.');
         return $w;
     }
+    /** Recheck the authenticated snapshot while the caller holds the account wallet lock. */
+    public function current(object $initial): object
+    {
+        $w = DB::table('cloud_workspaces')->where('id', $initial->id)->lockForUpdate()->first();
+        abort_unless($w && $w->generation === $initial->generation && $w->runtime_token_hash === $initial->runtime_token_hash
+            && in_array($w->state, Workspaces::ACTIVE, true), 401, 'Runtime generation changed.');
+        return $w;
+    }
+    public function withCurrent(object $initial, callable $operation): mixed
+    {
+        return DB::transaction(function () use ($initial, $operation) {
+            app(Wallet::class)->lock($initial->user_id);
+            return $operation($this->current($initial));
+        }, 5);
+    }
     public function bootstrap(string $id, string $secret, string $machine, int $generation): array
     {
         return DB::transaction(function () use ($id, $secret, $machine, $generation) {
@@ -30,11 +45,12 @@ final class Runtime
                 // The VM volume is the source of truth; nothing is uploaded or cloned by the control plane.
                 $source = ['type' => 'computer']; $project = ['files' => [], 'base' => []];
             } elseif ($github) {
-                $installs = app(\App\Services\ChatConnectors\Installs::class);
-                abort_unless(in_array('github', $installs->installed($w->user_id), true), 409, 'GitHub is no longer connected.');
+                $repos = app(\App\Services\CloudWorkspaces\Git\Repos::class);
+                $repos->lookup($w->user_id, $w->repo, $repos->token($w->user_id));
+                $credential = app(\App\Services\CloudWorkspaces\Git\InstallationTokens::class)->mint($w->repo, 'fetch');
                 $saved = $w->checkpoint ? app(Artifacts::class)->read($w) : ['files' => []];
                 // Fetched fresh for this boot only; never stored, never logged.
-                $source = ['type' => 'github', 'repo' => $w->repo, 'ref' => $w->ref, 'baseCommit' => $w->base_commit, 'token' => $installs->credential($w->user_id, 'github')];
+                $source = ['type' => 'github', 'repo' => $w->repo, 'ref' => $w->ref, 'baseCommit' => $w->base_commit, 'token' => $credential['password'], 'expiresAt' => $credential['expiresAt']];
                 $project = ['files' => $saved['files'], 'base' => $saved['base'] ?? []];
             } else { $source = ['type' => 'upload']; $project = app(Artifacts::class)->read($w); }
             return ['mode' => ($w->kind ?? 'project') === 'computer' ? 'computer' : 'project', 'token' => $token, 'checkpoint' => $w->checkpoint, 'source' => $source, 'project' => $project,

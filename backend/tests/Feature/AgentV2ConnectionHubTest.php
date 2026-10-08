@@ -95,4 +95,23 @@ class AgentV2ConnectionHubTest extends TestCase
         $this->assertSame('xoxp-user', Crypt::decryptString($row->credential));
         $this->assertSame(['search:read', 'chat:write'], $row->scopes);
     }
+
+    public function test_slack_add_account_also_records_the_bots_granted_scopes_so_mentions_can_be_judged(): void
+    {
+        config(['app.url' => 'https://vibyra.test', 'chat_connectors.catalogue.slack.oauth.client_id' => 'sid',
+            'chat_connectors.catalogue.slack.oauth.client_secret' => 'ss']);
+        $start = $this->postJson('/api/agents/v2/connections/slack/start')->assertOk()->json();
+        $query = $this->queryOf($this->openSignIn($start['url']));
+        $this->assertStringContainsString('app_mentions:read', $query['scope']);
+        Http::fake(['slack.com/api/oauth.v2.access' => Http::response(['ok' => true, 'access_token' => 'xoxb-bot', 'scope' => 'chat:write,app_mentions:read',
+            'authed_user' => ['id' => 'U1', 'access_token' => 'xoxp-user', 'scope' => 'search:read,chat:write']]),
+            'slack.com/api/auth.test' => Http::response(['ok' => true, 'team' => 'Acme', 'team_id' => 'T0123ABCD', 'user_id' => 'U1'])]);
+        $this->get('/api/connectors/callback/slack?state='.$query['state'].'&code=abc');
+        $flow = $this->getJson('/api/agents/v2/connections/flows/'.$start['flowId'])->assertJsonPath('status', 'connected')->json('connection');
+        $this->assertContains('app_mentions:read', Connection::query()->findOrFail($flow['id'])->scopes);
+        $hub = collect($this->getJson('/api/agents/v2/connections')->json('connections'))->firstWhere('id', $flow['id']);
+        $this->assertSame('ready', $hub['mentions']['state']);
+        $this->assertSame('Acme · T0123ABCD/U1', $hub['accountLabel']);
+    }
+
 }

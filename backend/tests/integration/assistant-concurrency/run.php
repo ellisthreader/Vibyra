@@ -38,6 +38,13 @@ function race(array $jobs): array {
     DB::purge(); $results = [];
     foreach ($files as $path) { $results[] = json_decode(file_get_contents($path), true); unlink($path); }
     return $results;
+
+
+
+
+
+
+
 }
 function successes(array $rows): int { return count(array_filter($rows, fn ($r) => $r['ok'] ?? false)); }
 $u = account(10000); $request = (string) Str::uuid();
@@ -82,3 +89,19 @@ $r = race([fn () => app(Budget::class)->reserve($e->id, (string) Str::uuid(), 'c
 check(successes($r) === 0, 'refunded unknown outcomes retain risk across accounts with monthly spend ceiling disabled');
 check(app(Wallet::class)->available($e->id) === 20000 && app(Wallet::class)->available($f->id) === 20000,
     'exposure refusal and uncertain settlement leave customer balances intact');
+
+
+function capped(int $capUnits): User {
+    $u = account(1000000);
+    DB::table('vibes_wallets')->where('user_id', $u->id)->update(['cap_day_units' => $capUnits, 'cap_timezone' => 'UTC', 'consented_at' => now()]);
+    return $u;
+}
+
+function capRow(int $user, string $kind = 'day'): object { return DB::table('wallet_spend_periods')->where('user_id', $user)->where('kind', $kind)->first(); }
+
+function turnQuote(int $user, int $max): array {
+    $chat = (string) Str::uuid();
+    DB::table('vibes_chats')->insert(['id' => $chat, 'user_id' => $user, 'title' => 'QA', 'created_at' => now(), 'updated_at' => now()]);
+    return ['unitScale' => 10000, 'chatId' => $chat, 'model' => 'test', 'text' => 'Hi', 'request' => [],
+        'expires' => now()->addMinute()->timestamp, 'revision' => 0, 'trial' => true, 'max' => $max];
+}

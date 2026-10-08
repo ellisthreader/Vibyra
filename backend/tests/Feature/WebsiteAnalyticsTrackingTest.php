@@ -133,4 +133,46 @@ class WebsiteAnalyticsTrackingTest extends TestCase
         $this->assertTrue($scheduled->onOneServer);
         $this->assertTrue($scheduled->withoutOverlapping);
     }
+
+    public function test_page_tracking_requires_explicit_cookie_consent(): void
+    {
+        $this->get('/')->assertOk();
+        $this->withUnencryptedCookie('vibyra_analytics', 'deny')->get('/downloads')->assertOk();
+        $this->assertDatabaseCount('analytics_events', 0);
+
+        $this->withUnencryptedCookie('vibyra_analytics', 'allow')->get('/')->assertOk();
+        $this->assertDatabaseCount('analytics_events', 1);
+        $this->assertNotNull(DB::table('analytics_events')->value('visitor_hash'));
+        $this->assertNull(DB::table('analytics_events')->value('user_id'));
+    }
+
+    public function test_daily_rollups_require_a_group_of_distinct_visitors_and_store_no_identifiers(): void
+    {
+        for ($index = 0; $index < 5; $index++) {
+            DB::table('analytics_events')->insert([
+                'event_id' => (string) Str::uuid(), 'surface' => 'website',
+                'event' => 'website_page_view', 'dimension' => '/',
+                'visitor_hash' => str_repeat((string) $index, 64),
+                'occurred_at' => now('UTC')->subDay(), 'created_at' => now(),
+            ]);
+        }
+        for ($index = 0; $index < 5; $index++) {
+            DB::table('analytics_events')->insert([
+                'event_id' => (string) Str::uuid(), 'surface' => 'mobile',
+                'event' => 'mobile_app_opened',
+                'consent_subject_hash' => str_repeat('a', 64),
+                'occurred_at' => now('UTC')->subDay(), 'created_at' => now(),
+            ]);
+        }
+        $this->artisan('vibyra:rollup-analytics')->assertExitCode(0);
+        $this->assertDatabaseCount('analytics_daily_rollups', 1);
+        $this->assertDatabaseHas('analytics_daily_rollups', [
+            'surface' => 'website', 'event' => 'website_page_view', 'events_count' => 5,
+        ]);
+        $this->assertEqualsCanonicalizing(
+            ['id', 'day', 'surface', 'event', 'events_count', 'engaged_seconds', 'created_at'],
+            \Illuminate\Support\Facades\Schema::getColumnListing('analytics_daily_rollups'),
+        );
+    }
+
 }

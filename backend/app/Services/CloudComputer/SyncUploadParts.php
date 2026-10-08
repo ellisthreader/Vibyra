@@ -56,6 +56,18 @@ class SyncUploadParts
      */
     public function receive(object $project, array $q, int $offset, int $total, $stream, ?int $declared): array
     {
+        // Admission spans projects and appends must agree on one current offset.
+        // Keep this filesystem lock before any completion wallet/database lock.
+        $lock = fopen($this->dir().'/'.(int) $project->user_id.'.lock', 'c');
+        if ($lock === false) throw new \RuntimeException('Cloud upload lock is unavailable.');
+        try {
+            if (!flock($lock, LOCK_EX)) throw new \RuntimeException('Cloud upload lock is unavailable.');
+            return $this->receiveLocked($project, $q, $offset, $total, $stream, $declared);
+        } finally { flock($lock, LOCK_UN); fclose($lock); }
+    }
+
+    private function receiveLocked(object $project, array $q, int $offset, int $total, $stream, ?int $declared): array
+    {
         $cap = (int) config('cloud_workspaces.sync_max_blob_bytes');
         if ($total < 1) Computers::fail('invalid_request', 'The upload size is missing.', 422);
         if ($total > $cap) Computers::fail('too_large', 'This project is too large to sync ('.number_format($cap / 1048576).' MiB per upload).', 413);

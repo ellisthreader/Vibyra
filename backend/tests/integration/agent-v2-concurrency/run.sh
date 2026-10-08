@@ -5,7 +5,7 @@
 #   tests/integration/agent-v2-concurrency/run.sh all                everything, including queue (kill -9 tests, ~1 min) and wire
 #   tests/integration/agent-v2-concurrency/run.sh upgrade            production-branch migrations, then ours on top, rollback, re-apply
 #
-# Scenarios: admission leases events approvals terminal connections schedules triggers sweeper stranded inserts publish browser queue wire.
+# Scenarios: admission leases events approvals terminal connections credentials schedules triggers sweeper stranded inserts publish browser queue wire.
 # It starts its own cluster (TCP on 127.0.0.1 only, trust auth, no unix socket), exports every setting as an
 # environment variable (the owner's backend/.env is never edited, and its database is never used: boot.php
 # refuses anything but a local vibyra_v2_conc* Postgres), runs, then stops and deletes the cluster.
@@ -81,14 +81,14 @@ fi
 echo "== migrate from scratch on PostgreSQL $("$PGBIN/psql" -h 127.0.0.1 -p "$PORT" -U postgres -Atc 'show server_version')"
 php artisan migrate:fresh --force | grep -E "FAIL|rror" || echo "all migrations applied"
 ARGS=("$@")
-[ "${1:-}" = "all" ] && ARGS=(admission leases events approvals terminal connections schedules triggers sweeper stranded inserts publish browser queue wire)
+[ "${1:-}" = "all" ] && ARGS=(admission leases events approvals terminal connections credentials schedules triggers sweeper stranded inserts publish browser queue wire)
 set +e
 php tests/integration/agent-v2-concurrency/run.php ${ARGS[@]+"${ARGS[@]}"}
 STATUS=$?
 set -e
 echo
 echo "== Postgres server log: errors by kind (unique violations are expected where a duplicate race is handled)"
-grep -E "ERROR|FATAL" "$CONC_PG_LOG" | sed -E 's/^.*(ERROR|FATAL): *//' | cut -c1-130 | sort | uniq -c | sort -rn | head -8
+{ grep -E "ERROR|FATAL" "$CONC_PG_LOG" | sed -E 's/^.*(ERROR|FATAL): *//' | cut -c1-130 | sort | uniq -c | sort -rn | head -8; } || true # a clean server log is success
 echo "deadlocks: $(grep -c 'deadlock detected' "$CONC_PG_LOG" || true)   lock waits over 500 ms: $(grep -c 'still waiting' "$CONC_PG_LOG" || true)"
 grep -A4 "still waiting" "$CONC_PG_LOG" | grep -E "still waiting|STATEMENT" | cut -c1-220 | head -8 || true
 exit $STATUS

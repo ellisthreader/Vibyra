@@ -178,4 +178,51 @@ class WebsiteReleaseAccessTest extends TestCase
             'expected_extension' => 'dmg', 'require_complete_metadata' => true,
         ];
     }
+
+    public function test_release_download_supports_bounded_and_suffix_ranges(): void
+    {
+        Storage::disk('releases')->put('private/windows/Vibyra.exe', 'windows-binary');
+        $response = $this->withHeader('Range', 'bytes=1-4')->get('/downloads/windows');
+        $response->assertStatus(206)->assertHeader('Content-Range', 'bytes 1-4/14')
+            ->assertHeader('Content-Length', '4');
+        $this->assertSame('indo', $response->streamedContent());
+        $suffix = $this->withHeader('Range', 'bytes=-6')->get('/downloads/windows');
+        $suffix->assertStatus(206);
+        $this->assertSame('binary', $suffix->streamedContent());
+        $this->withHeader('Range', 'bytes=99-100')->get('/downloads/windows')
+            ->assertStatus(416)->assertHeader('Content-Range', 'bytes */14');
+    }
+
+    public function test_download_uses_the_same_disk_that_was_verified(): void
+    {
+        Storage::disk('releases')->put('private/windows/Vibyra.exe', 'windows-binary');
+        $this->mock(\App\Services\ReleaseStorage::class, function ($mock): void {
+            $mock->shouldReceive('diskFor')->once()->with('private/windows/Vibyra.exe')->andReturn('releases');
+        });
+        $response = $this->get('/downloads/windows')->assertOk();
+        $this->assertSame('windows-binary', $response->streamedContent());
+    }
+
+    public function test_browser_download_failure_has_recovery_links_and_keeps_503_status(): void
+    {
+        $this->withHeader('Accept', 'text/html,application/xhtml+xml')
+            ->get('/downloads/windows')
+            ->assertStatus(503)
+            ->assertHeader('Content-Type', 'text/html; charset=utf-8')
+            ->assertSee('Download temporarily unavailable')
+            ->assertSee('href="/downloads/windows"', false)
+            ->assertSee('href="/downloads"', false);
+    }
+
+    public function test_unavailable_installer_keeps_json_for_clients_and_updaters(): void
+    {
+        $this->withHeader('Accept', '*/*')->get('/downloads/windows')->assertStatus(503)
+            ->assertJsonPath('code', 'release_unavailable');
+        $this->getJson('/downloads/windows')->assertStatus(503)
+            ->assertJsonPath('code', 'release_unavailable');
+        config(['releases.platforms.macos-arm64.updater' => ['path' => 'missing.app.tar.gz']]);
+        $this->withHeader('Accept', 'text/html')->get('/downloads/macos-arm64/update')
+            ->assertStatus(503)->assertJsonPath('code', 'release_unavailable');
+    }
+
 }

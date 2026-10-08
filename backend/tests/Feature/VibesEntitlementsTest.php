@@ -173,4 +173,16 @@ class VibesEntitlementsTest extends TestCase
         $this->assertNull($entitlements['maxProjects']);
         $this->assertTrue($entitlements['fullCatalogue']);
     }
+
+    public function test_free_is_one_project(): void
+    {
+        $user = $this->account();
+        $first = (string) Str::uuid();
+        $this->attach($user, 'project-a', $first)->assertOk();
+        $this->attach($user, 'project-b')->assertStatus(402);
+        // Moving the same chat to another project keeps the account at one project.
+        $this->attach($user, 'project-b', $first)->assertOk();
+        $this->assertSame(1, app(Wallet::class)->projectCount($user->id));
+    }
+
 }

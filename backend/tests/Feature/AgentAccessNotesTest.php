@@ -308,7 +308,8 @@ class AgentAccessNotesTest extends TestCase
         Http::fake(['slack.com/api/*' => Http::response(['ok' => false, 'error' => 'channel_not_found'])]);
         $out = app(ConnectorTools::class)->run($this->user, 'slack', 'slack_channels', []);
         $this->assertStringNotContainsString('Settings → Integrations', $out['result']['error']);
-        $this->assertSame('Slack could not be reached just now.', $out['result']['error']);
+        // Match the current live connector's precise channel refusal, not an outage.
+        $this->assertSame('Slack could not find that channel, or the bot cannot see it (private channels need an invite).', $out['result']['error']);
     }
 
     public function test_a_pasted_key_the_provider_rejects_is_refused_as_a_wrong_key_not_an_expiry(): void

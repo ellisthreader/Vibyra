@@ -47,7 +47,9 @@ final class Drafts
             $a->forceFill(['arguments' => $args, 'draft_revision' => (int) $a->draft_revision + 1,
                 'draft_original_connection_id' => $a->draft_original_connection_id ?? $a->connection_id,
                 'connection_id' => $selectedConnection->id, 'connection_generation' => $selectedConnection->generation,
-                'grant_id' => $selectedGrant->id, 'grant_revision' => $selectedGrant->revision])->save();
+                'grant_id' => $selectedGrant->id, 'grant_revision' => $selectedGrant->revision,
+                'secret_kinds' => \App\Services\AgentRuns\Guard\SecretGuard::enabled()
+                    ? (\App\Services\AgentRuns\Guard\SecretGuard::kindsIn($args) ?: null) : null])->save();
             // args_hash remains the original model call hash: its retry replays this action, never recreates the old draft.
             $a->forceFill(['fingerprint' => Approvals::fingerprint($a, $userId)])->save();
             $this->saveRevision($a);
@@ -60,7 +62,9 @@ final class Drafts
     {
         $run = Run::query()->whereKey($a->run_id)->firstOrFail();
         return ['id' => $a->id, 'runId' => $a->run_id, 'agentId' => Run::query()->whereKey($a->run_id)->value('agent_id'),
-            'revision' => (int) $a->draft_revision, 'state' => $a->state, 'arguments' => $a->arguments,
+            'revision' => (int) $a->draft_revision, 'state' => $a->state, 'arguments' => \App\Services\AgentRuns\Guard\SecretGuard::enabled()
+                ? \App\Services\AgentRuns\Guard\SecretGuard::redactValue($a->arguments) : $a->arguments,
+            'containsSecret' => !empty($a->secret_kinds), 'secretKinds' => $a->secret_kinds ?? [],
             'account' => Connection::query()->whereKey($a->connection_id)->where('user_id', $a->user_id)->value('external_identity'),
             'connectionId' => $a->connection_id, 'senders' => app(DraftSenders::class)->choices($run),
             'attachments' => $a->arguments['attachments'] ?? [], 'editableFields' => ['from', 'to', 'subject', 'body', 'attachments'], 'fingerprint' => $a->fingerprint,

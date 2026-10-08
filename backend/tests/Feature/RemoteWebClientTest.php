@@ -50,4 +50,35 @@ class RemoteWebClientTest extends TestCase
         $this->withHeader('If-None-Match', '"'.$assets[$js]['sha256'].'"')->get('/app/'.$js)->assertStatus(304);
     }
 
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['web_client.enabled' => true]);
+    }
+
+    public function test_web_client_is_off_by_default_and_answers_404_everywhere(): void
+    {
+        config(['web_client.enabled' => false]);
+        foreach (['/app', '/app/', '/app/index.html', '/app/__vibyra/transport.html'] as $path) $this->get($path)->assertNotFound();
+        $this->assertFalse((bool) (require base_path('config/web_client.php'))['enabled']);
+    }
+
+    public function test_policy_names_only_this_origin_and_the_configured_api_origin(): void
+    {
+        config(['web_client.api_origin' => 'https://api.example.test']);
+        $this->assertStringContainsString("connect-src 'self' https://api.example.test;", $this->get('/app')->headers->get('Content-Security-Policy'));
+        config(['web_client.api_origin' => 'http://insecure.example.test']);
+        $this->assertStringContainsString("connect-src 'self';", $this->get('/app')->headers->get('Content-Security-Policy'));
+        $this->get('/app')->assertHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
+    }
+
+    public function test_content_hashed_files_are_cached_for_good_and_the_rest_revalidate(): void
+    {
+        $assets = json_decode(file_get_contents(resource_path('mobile-web/assets.json')), true);
+        $js = array_key_first(array_filter($assets, fn ($entry, $path) => $entry['mime'] === 'text/javascript' && str_contains($path, 'index-'), ARRAY_FILTER_USE_BOTH));
+        $this->assertStringContainsString('immutable', $this->get('/app/'.$js)->headers->get('Cache-Control'));
+        $this->assertStringNotContainsString('immutable', $this->get('/app/metadata.json')->headers->get('Cache-Control'));
+    }
+
 }

@@ -37,9 +37,9 @@ final class Approvals
             ...((int) $a->draft_revision > 1 ? ['draftRevision' => (int) $a->draft_revision] : [])]);
     }
 
-    public function decide(int $userId, string $actionId, string $fingerprint, string $decision): ToolAction
+    public function decide(int $userId, string $actionId, string $fingerprint, string $decision, bool $confirmSecret = false): ToolAction
     {
-        $approved = DB::transaction(function () use ($userId, $actionId, $fingerprint, $decision) {
+        $approved = DB::transaction(function () use ($userId, $actionId, $fingerprint, $decision, $confirmSecret) {
             // Lock order is run → action everywhere (cancel, broker, Mac claims). Taking the action first deadlocked
             // with a concurrent cancel on Postgres: one of the two callers got a 500 and the cancel could be the victim.
             $runId = ToolAction::query()->whereKey($actionId)->where('user_id', $userId)->value('run_id');
@@ -63,6 +63,8 @@ final class Approvals
                 $this->close($action, $run, 'declined', 'decline', 'Declined');
                 return null;
             }
+            if (!empty($action->secret_kinds) && !$confirmSecret)
+                ApiError::throw(422, 'secret_confirmation_required', 'This action contains something that looks like a secret. Confirm it to send it anyway.');
             $action->forceFill(['state' => 'approved', 'decision' => 'allow'])->save();
             $this->events->append($run, 'approval.decided', ['actionId' => $action->id, 'decision' => 'allow']);
             if ($run->state === RunStates::WAITING_APPROVAL) $this->lifecycle->move($run, RunStates::RUNNING);

@@ -184,4 +184,32 @@ class VibyraDesktopProviderDeletionTest extends TestCase
     {
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
+
+    public function test_web_provider_deletion_is_bound_to_the_cookie_session(): void
+    {
+        $this->configureProvider('google', 'google-desktop-client');
+        [$user] = $this->providerUser('google', 'expected-subject');
+        $this->postJson('/web-api/account/provider/google/start')->assertUnauthorized();
+
+        $this->actingAs($user);
+        $start = $this->postJson('/web-api/account/provider/google/start')
+            ->assertOk()->json();
+        $this->getJson('/web-api/account/provider/google/status/other-flow')
+            ->assertStatus(410);
+        $this->getJson("/web-api/account/provider/google/status/{$start['flowId']}")
+            ->assertOk()->assertJsonPath('status', 'pending');
+
+        $query = $this->authorizationQuery($start['authUrl']);
+        $this->fakeIdentity('google', 'google-desktop-client', 'expected-subject', $query['nonce']);
+        $this->get('/api/auth/desktop/google/callback?'.http_build_query([
+            'state' => $query['state'], 'code' => 'google-code',
+        ]))->assertOk();
+        $this->getJson("/web-api/account/provider/google/status/{$start['flowId']}")
+            ->assertOk()->assertJsonPath('deleted', true);
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->getJson("/web-api/account/provider/google/status/{$start['flowId']}")
+            ->assertStatus(410);
+    }
+
 }

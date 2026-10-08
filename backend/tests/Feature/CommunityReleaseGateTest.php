@@ -114,4 +114,39 @@ class CommunityReleaseGateTest extends TestCase
         app(RuntimeDeploymentProvider::class)->deploy($deployment);
         $this->assertSame(PublishedProjectDeployment::STATUS_STOPPED, $deployment->fresh()->status);
     }
+
+    public function test_default_off_closes_public_community_and_publishing_routes(): void
+    {
+        $status = $this->getJson('/api/community/status')->assertOk()
+            ->assertJsonPath('communityEnabled', false);
+        $this->assertStringContainsString('no-store', (string) $status->headers->get('Cache-Control'));
+
+        foreach (['/api/community/projects', '/api/community/projects/any/preview',
+            '/api/community/projects/any/demo/index.html'] as $url) {
+            $response = $this->getJson($url)->assertStatus(503)
+                ->assertJsonPath('code', 'community_unavailable');
+            $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+        }
+        foreach (['/api/projects/publish', '/api/community/projects/any/comments',
+            '/api/community/projects/any/reaction', '/api/community/assets/generate'] as $url) {
+            $this->postJson($url)->assertStatus(503)->assertJsonPath('code', 'community_unavailable');
+        }
+        $this->patchJson('/api/projects/any/listing')->assertStatus(503);
+        $this->get('/legal/community')->assertOk();
+    }
+
+    public function test_explicit_release_restores_listing_and_status(): void
+    {
+        config(['legal.community_enabled' => true]);
+        $this->getJson('/api/community/status')->assertJsonPath('communityEnabled', true);
+        $this->getJson('/api/community/projects')->assertOk()->assertJsonCount(0, 'projects');
+    }
+
+    public function test_status_stays_accessible_outside_launch_market(): void
+    {
+        config(['legal.enforce_market_access' => true]);
+        $this->withServerVariables(['REMOTE_ADDR' => '1.2.3.4'])
+            ->getJson('/api/community/status')->assertOk()->assertJsonPath('communityEnabled', false);
+    }
+
 }

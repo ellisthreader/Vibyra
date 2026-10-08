@@ -3,23 +3,11 @@ namespace App\Services\CloudWorkspaces\Git;
 
 use Illuminate\Support\Facades\Log;
 
-/**
- * The only place a GitHub token leaves the server for a git remote, and only to
- * the owner's cloud computer, only for a repo the owner's connection reaches,
- * and for push only on `vibyra/<task>` branches that are not the default.
- *
- * SCOPE RISK: the connector holds a classic OAuth token with `repo` scope, and
- * GitHub does not expire such tokens, so `expiresAt` is a client-side contract
- * (<= 10 min), not a GitHub-enforced expiry. A narrower GitHub App installation
- * token (contents + pull_requests per repo) would make it real; branch
- * protection on the default branch is the server-side backstop. NOT implemented:
- * until then the token is still the owner's full OAuth token, now limited only to
- * repos in this computer's project list (queued clones or Host-reported origins).
+/** Owner authorization and branch admission precede exact-repo App token minting.
+ * GitHub installation write tokens are not branch scoped; push defaults off.
  */
 final class Credentials
 {
-    public const TTL_MINUTES = 10;
-
     public function __construct(private readonly Repos $repos) {}
 
     public function mint(object $workspace, string $repo, string $op, ?string $branch): array
@@ -49,9 +37,10 @@ final class Credentials
             $this->audit($workspace, $repo, $op, $branch, $e->errorCode);
             throw $e;
         }
-        $expires = now()->addMinutes(self::TTL_MINUTES);
+        try { $credential = app(InstallationTokens::class)->mint($repo, $op); }
+        catch (GitRefused $e) { $this->audit($workspace, $repo, $op, $branch, $e->errorCode); throw $e; }
         $this->audit($workspace, $repo, $op, $branch, 'issued');
-        return ['username' => 'x-access-token', 'password' => $token, 'expiresAt' => $expires->toIso8601String()];
+        return $credential;
     }
 
     /** Metadata only: never the token, never file content. */

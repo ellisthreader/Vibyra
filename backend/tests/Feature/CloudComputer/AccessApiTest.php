@@ -16,7 +16,8 @@ class AccessApiTest extends SyncTestCase
     {
         config(['cloud_workspaces.idle_seconds' => 300, 'cloud_workspaces.max_background_seconds' => 28800]);
         $r = $this->access()->assertOk()->assertJsonPath('ok', true)->assertJsonPath('projects', [])->json();
-        $this->assertSame(['codex' => ['carryOver' => 'allowed', 'sent' => false, 'appliedAt' => null], 'claude' => ['carryOver' => 'unsupported']], $r['providers']);
+        $this->assertSame(['codex' => ['enabled' => true, 'carryOver' => 'allowed', 'sent' => false, 'appliedAt' => null, 'cloudLogin' => ['appliedAt' => null, 'pending' => false]],
+            'claude' => ['enabled' => true, 'carryOver' => 'unsupported', 'cloudLogin' => ['appliedAt' => null, 'pending' => false]]], $r['providers']);
         $this->assertSame(['computers' => ['used' => 0, 'limit' => 1], 'hours' => $r['capacity']['hours'], 'storage' => ['usedBytes' => 0, 'limitBytes' => 5368709120],
             'sessions' => ['active' => 0, 'limit' => null], 'idleStopSeconds' => 300, 'maxSessionSeconds' => 28800, 'projectLimit' => 100], $r['capacity']);
         $this->assertSame(['allowanceSeconds', 'usedSeconds', 'resetsAt', 'overage'], array_keys($r['capacity']['hours']));

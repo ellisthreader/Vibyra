@@ -257,4 +257,15 @@ class ChatConnectorsTest extends TestCase
             ->validate('stripe', 'stripe_create_customer', ['email' => 'not-an-address']);
     }
 
+
+    public function test_an_install_row_for_a_retired_integration_is_ignored(): void
+    {
+        $user = User::first();
+        DB::table('vibes_integration_installs')->insert(['user_id' => $user->id, 'integration' => 'deepwiki',
+            'credential' => 'x', 'account_label' => 'Old', 'connected_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+        $ids = array_column($this->getJson('/api/connectors')->assertOk()->json('integrations'), 'id');
+        $this->assertNotContains('deepwiki', $ids);
+        $this->assertSame([], app(\App\Services\ChatConnectors\Installs::class)->installed($user->id));
+    }
+
 }

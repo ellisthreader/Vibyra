@@ -16,7 +16,7 @@ final class RuntimeController extends Controller
     {
         $w = $this->computer($request, $workspace);
         $data = $request->validate(['hostId' => self::HOST]);
-        return $this->attempt(fn () => $hosts->challenge($w, $data['hostId']))->header('Cache-Control', 'no-store');
+        return $this->attempt(fn () => app(Runtime::class)->withCurrent($w, fn ($current) => $hosts->challenge($current, $data['hostId'])))->header('Cache-Control', 'no-store');
     }
 
     public function register(Request $request, string $workspace, HostRegistration $hosts)
@@ -24,7 +24,7 @@ final class RuntimeController extends Controller
         $w = $this->computer($request, $workspace);
         $data = $request->validate(['hostId' => self::HOST, 'name' => ['required', 'string', 'max:80'], 'platform' => ['nullable', 'string', 'max:32'],
             'version' => ['nullable', 'string', 'max:40'], 'challengeId' => ['required', 'uuid'], 'proof' => ['required', 'string', 'max:64'], 'wantTrusted' => ['sometimes', 'boolean']]);
-        return $this->attempt(fn () => $hosts->register($w, $data))->header('Cache-Control', 'no-store');
+        return $this->attempt(fn () => app(Runtime::class)->withCurrent($w, fn ($current) => $hosts->register($current, $data)))->header('Cache-Control', 'no-store');
     }
 
     public function activity(Request $request, string $workspace, HostActivity $activity)
@@ -33,7 +33,7 @@ final class RuntimeController extends Controller
         $data = $request->validate(['running' => 'required|integer|min:0|max:50', 'waitingApproval' => 'required|integer|min:0|max:50', 'login' => 'sometimes|array',
             'login.claude' => 'sometimes|nullable|boolean', 'login.codex' => 'sometimes|nullable|boolean', 'projects' => 'sometimes|array|max:100',
             'providerPolicyVersion' => 'sometimes|integer|in:1']);
-        $activity->record($w, $data);
+        app(Runtime::class)->withCurrent($w, fn ($current) => $activity->record($current, $data));
         return response()->json(['ok' => true, 'disabledProviders' => app(AccessProviders::class)->disabledProviders((int) $w->user_id)]);
     }
 
@@ -45,7 +45,8 @@ final class RuntimeController extends Controller
     public function done(Request $request, string $workspace, string $id, Projects $projects)
     {
         $data = $request->validate(['ok' => 'sometimes|boolean', 'error' => 'sometimes|nullable|string|max:300']);
-        $projects->done($this->computer($request, $workspace), $id, (bool) ($data['ok'] ?? true), $data['error'] ?? null);
+        $w = $this->computer($request, $workspace);
+        app(Runtime::class)->withCurrent($w, fn ($current) => $projects->done($current, $id, (bool) ($data['ok'] ?? true), $data['error'] ?? null));
         return response()->json(['ok' => true]);
     }
 

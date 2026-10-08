@@ -2,13 +2,23 @@
 namespace Tests\Feature\CloudWorkspaces;
 
 use App\Services\CloudWorkspaces\{Runtime, Workspaces};
-use Illuminate\Support\Facades\{Crypt, DB};
+use Illuminate\Support\Facades\{Crypt, DB, Http};
 use Illuminate\Support\Str;
 
 class GithubSourceTest extends CloudTestCase
 {
     private function connectGithub(): void
     {
+        static $pem;
+        if (!$pem) openssl_pkey_export(openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]), $pem);
+        config(['cloud_workspaces.github_app.app_id' => '123', 'cloud_workspaces.github_app.private_key' => $pem]);
+        Http::fake([
+            'api.github.com/repos/octo/hello' => Http::response(['default_branch' => 'main', 'permissions' => ['push' => true]]),
+            'api.github.com/repos/octo/hello/installation' => Http::response(['id' => 42, 'repository_selection' => 'selected']),
+            'api.github.com/app/installations/42/access_tokens' => Http::response(['token' => 'ghs_repository_fixture',
+                'expires_at' => now()->addHour()->toIso8601String(), 'permissions' => ['contents' => 'read'],
+                'repositories' => [['full_name' => 'octo/hello']]]),
+        ]);
         DB::table('vibes_integration_installs')->insert(['user_id' => $this->user->id, 'integration' => 'github',
             'credential' => Crypt::encryptString('gho_secret_fixture'), 'account_label' => 'octocat',
             'connected_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
@@ -57,8 +67,18 @@ class GithubSourceTest extends CloudTestCase
     {
         $this->connectGithub();
         $boot = $this->bootstrap($this->createGithub());
-        $this->assertSame(['type' => 'github', 'repo' => 'octo/hello', 'ref' => 'main', 'baseCommit' => null, 'token' => 'gho_secret_fixture'], $boot['source']);
+        $this->assertSame(['type' => 'github', 'repo' => 'octo/hello', 'ref' => 'main', 'baseCommit' => null, 'token' => 'ghs_repository_fixture', 'expiresAt' => now()->addHour()->toIso8601String()], $boot['source']);
         $this->assertSame(['files' => [], 'base' => []], $boot['project']);
+        $this->assertStringNotContainsString('gho_secret_fixture', json_encode($boot));
+        Http::assertSent(fn ($request) => $request->method() === 'POST' && $request['repositories'] === ['hello'] && $request['permissions'] === ['contents' => 'read']);
+    }
+    public function test_legacy_github_bootstrap_refuses_unconfigured_app_without_oauth_fallback(): void
+    {
+        $this->connectGithub();
+        config(['cloud_workspaces.github_app.app_id' => null]);
+        $this->expectException(\App\Services\CloudWorkspaces\Git\GitRefused::class);
+        $this->expectExceptionMessage('Cloud GitHub App setup is required');
+        $this->bootstrap($this->createGithub());
     }
     public function test_upload_bootstrap_has_no_token_even_when_github_is_connected(): void
     {
