@@ -24,7 +24,7 @@ trait CommunityPublishingPreviewEndpoints
         if (trim((string) $project->preview_html) === '') {
             return response($this->previewUnavailableHtml($project), 404)->withHeaders([
                 'Content-Type' => 'text/html; charset=UTF-8',
-                'Content-Security-Policy' => "sandbox; default-src 'none'; style-src 'unsafe-inline'; img-src data: https:;",
+                'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; img-src data: https:;",
                 'X-Content-Type-Options' => 'nosniff',
                 'Referrer-Policy' => 'no-referrer',
             ]);
@@ -34,7 +34,7 @@ trait CommunityPublishingPreviewEndpoints
 
         return response($html, 200)->withHeaders([
             'Content-Type' => 'text/html; charset=UTF-8',
-            'Content-Security-Policy' => "sandbox; default-src 'none'; script-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src https: data:;",
+            'Content-Security-Policy' => "default-src 'none'; script-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src https: data:;",
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'no-referrer',
             'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
@@ -54,7 +54,7 @@ trait CommunityPublishingPreviewEndpoints
                 $body = base64_decode($body, true) ?: '';
             }
 
-            $contentType = $this->safeHostedDemoContentType((string) ($file['contentType'] ?? 'application/octet-stream'));
+            $contentType = (string) ($file['contentType'] ?? 'application/octet-stream');
             $body = $this->rewriteHostedDemoText($body, $contentType, $deployment, $project, (string) ($file['path'] ?? ''));
 
             return response($body, 200)->withHeaders($this->hostedDemoHeaders($contentType));

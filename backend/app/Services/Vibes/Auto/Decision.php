@@ -12,7 +12,7 @@ final class Decision
     public function __construct(
         public readonly string $model,
         public readonly ?string $effort,
-        public readonly int|float $credits,
+        public readonly int $credits,
         public readonly string $reason,
         public readonly Demand $demand,
         /** True when the first choice was stepped back to fit the budget. */

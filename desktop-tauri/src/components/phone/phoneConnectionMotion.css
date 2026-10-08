@@ -1,0 +1,18 @@
+.phone-connect--connected { width: 360px; overflow: hidden; }
+.phone-connect__result { text-align: center; padding: 10px 0 0; }
+.phone-connect__confirmation { width: 88px; height: 88px; position: relative; display: grid; place-items: center; margin: 0 auto 23px; }
+.phone-connect__ring { position: absolute; inset: 0; width: 88px; height: 88px; stroke-width: 1.25; transform: rotate(-90deg); overflow: visible; fill: none; animation: phone-ring-appear 220ms 100ms ease-out both; }
+.phone-connect__track { stroke: var(--accent); opacity: .12; }
+.phone-connect__draw { stroke: var(--accent); opacity: .5; stroke-dasharray: 1; animation: phone-ring-draw 460ms 140ms cubic-bezier(.22,1,.36,1) both; }
+.phone-connect__disc { width: 66px; height: 66px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--action); animation: phone-confirm-disc 430ms 80ms cubic-bezier(.16,1,.3,1) both; }
+.phone-connect__disc svg { width: 32px; height: 32px; stroke-width: 2.3; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.phone-connect__disc path { stroke-dasharray: 1; animation: phone-ring-draw 260ms 250ms cubic-bezier(.4,0,.2,1) both; }
+.phone-connect__result h2 { margin: 0; font-size: 26px; line-height: 1.25; letter-spacing: -.75px; font-weight: 600; outline: none; animation: phone-confirm-copy 300ms 190ms cubic-bezier(.16,1,.3,1) both; }
+.phone-connect__result > p { margin: 8px 0 25px; font-size: 13px; color: var(--muted); line-height: 1.5; animation: phone-confirm-copy 300ms 230ms cubic-bezier(.16,1,.3,1) both; }
+.phone-connect__done { width: 100%; animation: phone-confirm-copy 240ms 290ms ease-out both; }
+.phone-connect__result .phone-connect__error { margin: 0 0 18px; text-align: left; }
+@keyframes phone-confirm-disc { from { opacity: 0; transform: scale(.78); } to { opacity: 1; transform: scale(1); } }
+@keyframes phone-ring-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes phone-ring-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes phone-confirm-copy { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .phone-connect--connected * { animation: none !important; } }

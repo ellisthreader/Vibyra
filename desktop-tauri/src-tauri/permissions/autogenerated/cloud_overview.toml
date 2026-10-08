@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-cloud-overview"
+description = "Enables the cloud_overview command without any pre-configured scope."
+commands.allow = ["cloud_overview"]
+
+[[permission]]
+identifier = "deny-cloud-overview"
+description = "Denies the cloud_overview command without any pre-configured scope."
+commands.deny = ["cloud_overview"]

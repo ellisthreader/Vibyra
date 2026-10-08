@@ -1,0 +1,39 @@
+.homeview { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; background: var(--workspace); }
+.homeview__inner { max-width: 1160px; margin: 0 auto; padding: 24px 56px 48px; display: flex; flex-direction: column; gap: 30px; }
+.homeview__hero { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 0 36px; border-bottom: 1px solid var(--line); }
+.homeview__hi { position: relative; z-index: 1; display: grid; gap: 12px; justify-items: center; text-align: center; width: 100%; }
+.homeview__eyebrow { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .06em; }
+.homeview__hi h1 { max-width: 100%; font-size: clamp(38px, 4vw, 54px); font-weight: 450; letter-spacing: -.045em; line-height: 1.08; overflow-wrap: anywhere; }
+.homeview__hi h1 span { display: inline-block; color: var(--accent); font-weight: 540; }
+.homeview__hi p { max-width: 450px; font-size: 13px; color: var(--muted); line-height: 1.75; margin-top: 3px; }
+.homeview__actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.homeview__actions .btn { min-height: 44px; padding: 0 20px; border-radius: 12px; font-size: 12px; }
+.homeview__actions .btn--primary > svg:last-child { margin-left: 16px; }
+.homeview__open { background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.home-begin { display: flex; align-items: center; gap: 24px; padding: 12px 0; }
+.home-begin__number { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--accent); align-self: flex-start; padding-top: 4px; }
+.home-begin h2 { font-size: 15px; font-weight: 550; letter-spacing: -.02em; }
+.home-begin p { margin-top: 8px; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.home-begin__line { height: 1px; flex: 1; background: var(--line); margin-left: 20px; }
+.homeview__attn { display: flex; align-items: center; gap: 9px; align-self: flex-start; color: var(--amber); font-size: 13px; }
+.home-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.home-section-head h2 { display: flex; align-items: center; gap: 9px; font-size: 15px; font-weight: 620; letter-spacing: -.015em; }
+.home-section-head > span { color: var(--dim); font-size: 12px; }
+.home-section-count { color: var(--dim); font-size: 11px; font-weight: 500; padding: 2px 6px; border: 1px solid var(--line); border-radius: 5px; }
+.launch { position: relative; margin-bottom: 16px; }
+.launch__bar { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.launch__bar:focus-within { border-color: var(--accent-border); box-shadow: 0 0 0 3px var(--accent-soft); }
+.launch__prompt { display: flex; color: var(--dim); }
+.launch__input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); font-size: 13px; }
+.launch__input:focus { outline: none; }
+.launch__input::placeholder { color: var(--dim); }
+.launch__drop { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: var(--elevated); border: 1px solid var(--border); border-radius: var(--r-menu); box-shadow: var(--e-menu); padding: 5px; display: grid; gap: 2px; z-index: 60; }
+.launch__row { display: flex; align-items: center; gap: 9px; padding: 11px 10px; border-radius: 7px; color: var(--muted); font-size: 13px; text-align: left; }
+.launch__row strong { color: var(--text); font-weight: 600; }
+.launch__row small { color: var(--dim); font-size: 11px; margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+.launch__row--sel { background: var(--hover-strong); }
+.launch__mono { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; background: var(--hover); color: var(--muted); flex-shrink: 0; }
+@media (max-width: 1100px) { .homeview__inner { padding: 36px 28px; gap: 28px; } }
+
+@media (max-width: 760px) { .homeview__inner { padding: 24px 22px; } .home-section-head > span { display: none; } .homeview__hi h1 { font-size: 38px; } }
+@media (max-height: 720px) { .homeview__inner { padding-top: 22px; } .homeview__hi h1 { font-size: 38px; } .homeview__hero { padding-bottom: 28px; } }

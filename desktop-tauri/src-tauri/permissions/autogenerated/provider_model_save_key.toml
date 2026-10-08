@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-provider-model-save-key"
+description = "Enables the provider_model_save_key command without any pre-configured scope."
+commands.allow = ["provider_model_save_key"]
+
+[[permission]]
+identifier = "deny-provider-model-save-key"
+description = "Denies the provider_model_save_key command without any pre-configured scope."
+commands.deny = ["provider_model_save_key"]

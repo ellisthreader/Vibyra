@@ -19,37 +19,5 @@ Schedule::command('vibyra:cleanup-runtime-demos --limit=5')->everyMinute()->with
 Schedule::command('vibyra:observe-work')->everyMinute()->withoutOverlapping(2)->onOneServer();
 
 Schedule::command('vibyra:recover-vibes')->everyMinute()->withoutOverlapping(5)->onOneServer();
-Schedule::command('vibyra:recover-assistant')->everyMinute()->withoutOverlapping(5)->onOneServer();
 
 Schedule::command('vibyra:reconcile-vibes-purchases')->hourly()->withoutOverlapping(55)->onOneServer();
-Schedule::command('vibyra:rollup-analytics')->dailyAt('02:00')->withoutOverlapping(30)->onOneServer();
-Schedule::command('vibyra:prune-analytics')->dailyAt('02:15')->withoutOverlapping(30)->onOneServer();
-
-Schedule::call(function () {
-    \Illuminate\Support\Facades\DB::table('vibes_wallets')->where('billing_version', 2)->orderBy('user_id')
-        ->chunk(200, function ($wallets) {
-            foreach ($wallets as $w) app(\App\Services\Membership\Allowances::class)->refresh($w->user_id);
-        });
-})->hourly()->name('membership-allowances')->withoutOverlapping();
-
-Schedule::command('vibyra:membership-remote-leases')->everyMinute()->withoutOverlapping();
-
-Schedule::command('vibyra:membership-replay')->everyTenMinutes()
-    ->when(fn () => filled(config('services.stripe.secret')))->withoutOverlapping()->onOneServer();
-Schedule::command('vibyra:remote-revocations')->everyMinute()->withoutOverlapping();
-Schedule::command('vibyra:security-notifications')->everyMinute()->withoutOverlapping()->onOneServer();
-// A run killed mid-way (e.g. by a deploy) must not hold the overlap lock for the default 24 h: computers would stay "stopping".
-Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping(2)->onOneServer();
-Schedule::command('vibyra:cloud-sync-prune')->hourly()->withoutOverlapping(55)->onOneServer();
-Schedule::command('vibyra:cloud-provider-audit')->everyMinute()->when(fn () => config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org'))->withoutOverlapping()->onOneServer();
-
-Schedule::command('vibyra:agent-v2-routines')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
-// An approved write stranded `dispatching` by a dead process is closed as unknown (never re-sent) so the task can finish or be cancelled.
-Schedule::command('vibyra:agent-v2-sweep-dispatching')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
-// F-04: old run journals and attachment files age out; orphaned rows left by a deleted account are swept (daily, any flag state).
-Schedule::command('vibyra:agent-v2-retention')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
-
-Schedule::command('vibyra:backup-attachments')->dailyAt('02:45')->withoutOverlapping(30)->onOneServer();
-
-Schedule::command('vibyra:platform-webhooks-sweep')->everyMinute()->when(fn () => (bool) config('platform.webhooks'))->withoutOverlapping(5)->onOneServer();
-

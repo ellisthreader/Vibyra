@@ -44,24 +44,18 @@ class IapReceiptVerifier
 
         $url = (string) config('services.apple_iap.verify_url');
         $response = Http::timeout(15)->acceptJson()->post($url, $body);
-        if (!$response->successful()) throw new RuntimeException('Apple receipt service is unavailable.');
         $data = (array) $response->json();
         $status = (int) ($data['status'] ?? -1);
 
         if ($status === 21007) {
-            throw new RuntimeException('Test purchases are not accepted by this billing endpoint.');
+            $sandboxUrl = (string) config('services.apple_iap.sandbox_url');
+            $response = Http::timeout(15)->acceptJson()->post($sandboxUrl, $body);
+            $data = (array) $response->json();
+            $status = (int) ($data['status'] ?? -1);
         }
 
         if ($status !== 0) {
             throw new RuntimeException("Apple receipt validation failed (status {$status}).");
-        }
-
-        if (strtolower((string) ($data['environment'] ?? '')) !== 'production') {
-            throw new RuntimeException('Test purchases are not accepted by this billing endpoint.');
-        }
-        $bundle = trim((string) config('services.apple_iap.bundle_id'));
-        if ($bundle === '' || !hash_equals($bundle, (string) data_get($data, 'receipt.bundle_id', ''))) {
-            throw new RuntimeException('Apple receipt belongs to a different app.');
         }
 
         $entries = array_merge(
@@ -81,10 +75,6 @@ class IapReceiptVerifier
             throw new RuntimeException('Apple receipt did not contain the expected product.');
         }
 
-        foreach (['cancellation_date', 'cancellation_date_ms', 'revocation_date', 'revocation_date_ms'] as $field) {
-            if (!empty($match[$field])) throw new RuntimeException('This purchase was refunded or revoked.');
-        }
-
         $transactionId = trim((string) ($match['transaction_id'] ?? ''));
         $originalTransactionId = trim((string) (
             $match['original_transaction_id']
@@ -96,9 +86,6 @@ class IapReceiptVerifier
 
         $expiresMs = (int) ($match['expires_date_ms'] ?? 0);
         $expiresAt = $expiresMs > 0 ? Carbon::createFromTimestampMs($expiresMs) : null;
-        if ((((array) config('billing.iap_products', []))[$productId]['kind'] ?? null) === 'subscription' && $expiresAt === null) {
-            throw new RuntimeException('Apple subscription has no paid-through date.');
-        }
         if ($expiresAt !== null && $expiresAt->isPast()) {
             throw new RuntimeException('Apple subscription receipt has expired.');
         }

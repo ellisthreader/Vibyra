@@ -1,0 +1,17 @@
+.teammate-output { padding: 14px; margin-block: 10px; border: 1px solid var(--border); border-radius: 12px; min-width: 0; color: var(--text); }
+.teammate-output h3 { margin: 0 0 6px; font-size: 15px; overflow-wrap: anywhere; }
+.teammate-output small { opacity: .65; }
+.teammate-output-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.teammate-output label { display: grid; gap: 6px; margin-block: 10px; }
+.teammate-output input:not([type=checkbox]), .teammate-output textarea { width: 100%; min-width: 0; box-sizing: border-box; padding: 8px; color: inherit; background: transparent; border: 1px solid var(--border); border-radius: 6px; }
+.teammate-output textarea { min-height: 120px; resize: vertical; }
+.teammate-output .teammate-output-check { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; }
+.teammate-output-check input[type=checkbox] { width: auto; flex: 0 0 auto; }
+.teammate-output-check span { overflow-wrap: anywhere; }
+.teammate-output-table { overflow: auto; margin-block: 10px; }
+.teammate-output table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.teammate-output th, .teammate-output td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.teammate-output-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.teammate-outputs-library { padding: 0 16px 8px; }
+.teammate-outputs-library > section { max-height: 55vh; overflow: auto; padding-top: 10px; }
+.teammate-outputs-library > section > div:first-child { display: flex; align-items: center; justify-content: space-between; }

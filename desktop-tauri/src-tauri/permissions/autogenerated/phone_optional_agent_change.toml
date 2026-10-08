@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-optional-agent-change"
+description = "Enables the phone_optional_agent_change command without any pre-configured scope."
+commands.allow = ["phone_optional_agent_change"]
+
+[[permission]]
+identifier = "deny-phone-optional-agent-change"
+description = "Denies the phone_optional_agent_change command without any pre-configured scope."
+commands.deny = ["phone_optional_agent_change"]

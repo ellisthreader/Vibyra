@@ -3,11 +3,17 @@
 namespace App\Services\ChatConnectors\Connectors;
 
 use App\Services\ChatConnectors\Connector;
-use App\Services\ChatConnectors\Github\{ReadTools, PullRequests, Activity, Files, Prompt, Issues, WriteTools};
+use App\Services\ChatConnectors\Github\{ReadTools, PullRequests, Activity, Files, Prompt};
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
-/** Bounded reads and exact-approved writes; PR creation is a disabled pilot. */
+/**
+ * Reading is most of what this does; the one thing it may change is that an issue
+ * now exists. It cannot close, edit, comment on or delete anything already there,
+ * and it never touches code — a reply that could push a commit or close someone's
+ * bug is a reply nobody would let near a real repository, and `writes` in the
+ * catalogue says exactly that.
+ */
 class GithubConnector implements Connector
 {
     private const BASE = 'https://api.github.com';
@@ -16,7 +22,7 @@ class GithubConnector implements Connector
     public function definitions(): array
     {
         $string = ['type' => 'string'];
-        return [...ReadTools::definitions(), ...WriteTools::definitions(), ...array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
+        return [...ReadTools::definitions(), ...array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
             ['name' => 'github_list_repositories', 'description' => 'List the repositories this token can see, most recently updated first.',
                 // An empty property list has to serialise as an object, not as a JSON array.
                 'parameters' => ['type' => 'object', 'properties' => new \stdClass, 'required' => [], 'additionalProperties' => false]],
@@ -26,12 +32,15 @@ class GithubConnector implements Connector
             ['name' => 'github_recent_commits', 'description' => 'Read the most recent commits on an owner/name repository, optionally on one branch.',
                 'parameters' => ['type' => 'object', 'properties' => ['repository' => $string, 'branch' => $string],
                     'required' => ['repository'], 'additionalProperties' => false]],
+            ['name' => 'github_create_issue', 'description' => 'Open a new issue on an owner/name repository. This is the only thing that changes anything: it cannot close, edit or comment on an existing issue.',
+                'parameters' => ['type' => 'object', 'properties' => ['repository' => $string, 'title' => $string, 'body' => $string],
+                    'required' => ['repository', 'title'], 'additionalProperties' => false]],
         ])];
     }
 
     public function writes(): array
     {
-        return WriteTools::names();
+        return ['github_create_issue'];
     }
 
     public function reads(): array
@@ -42,7 +51,6 @@ class GithubConnector implements Connector
     public function validate(string $operation, array $arguments): array
     {
         if (in_array($operation, ReadTools::NAMES, true)) return ReadTools::validate($operation, $arguments);
-        if (in_array($operation, WriteTools::names(), true)) return WriteTools::validate($operation, $arguments);
         if ($operation === 'github_list_repositories') return [];
         $repository = $arguments['repository'] ?? null;
         if ($operation === 'github_search_issues') {
@@ -58,6 +66,16 @@ class GithubConnector implements Connector
             abort_unless($branch === null || (is_string($branch) && strlen($branch) <= 100), 422, 'That branch name is too long.');
             return array_intersect_key($arguments, array_flip(['repository', 'branch']));
         }
+        if ($operation === 'github_create_issue') {
+            abort_unless(is_string($repository) && preg_match(self::REPOSITORY, $repository), 422, 'A repository has to be written as owner/name.');
+            $title = $arguments['title'] ?? null;
+            abort_unless(is_string($title) && trim($title) !== '' && strlen($title) <= 250,
+                422, 'Say what the issue is, in 250 characters or fewer.');
+            $body = $arguments['body'] ?? null;
+            abort_unless($body === null || (is_string($body) && strlen($body) <= 8000), 422, 'That issue body is too long.');
+            return array_filter(array_intersect_key($arguments, array_flip(['repository', 'title', 'body'])),
+                fn ($value) => is_string($value) && trim($value) !== '');
+        }
         abort(422, 'That GitHub tool is not available.');
     }
 
@@ -65,23 +83,18 @@ class GithubConnector implements Connector
     {
         if (in_array($operation, ReadTools::NAMES, true)) {
             $result = match ($operation) {
-                'github_issue' => app(Issues::class)->read($arguments, $credential),
                 'github_pull_request' => app(PullRequests::class)->read($arguments, $credential),
                 'github_pull_request_files' => app(PullRequests::class)->files($arguments, $credential),
                 'github_repository_activity' => app(Activity::class)->read($arguments, $credential),
                 'github_read_file' => app(Files::class)->read($arguments, $credential),
             };
             $label = match ($operation) {
-                'github_issue' => 'issue #'.$arguments['number'],
                 'github_pull_request' => 'pull request #'.$arguments['number'],
                 'github_pull_request_files' => 'changed files for PR #'.$arguments['number'],
                 'github_repository_activity' => 'repository activity',
                 'github_read_file' => 'file '.$arguments['path'],
             };
             return ['result' => $result, 'summary' => (isset($result['error']) ? 'Could not read ' : 'Read ').$label.' on '.$arguments['repository']];
-        }
-        if (in_array($operation, WriteTools::names(), true)) {
-            return app(WriteTools::class)->run($operation, $arguments, $credential);
         }
         if ($operation === 'github_list_repositories') {
             $body = $this->get($credential, '/user/repos', ['per_page' => 20, 'sort' => 'updated']);
@@ -121,6 +134,21 @@ class GithubConnector implements Connector
             ], array_slice($body, 0, 15));
             return ['result' => ['commits' => $commits], 'summary' => 'Read the latest commits on '.$repository];
         }
+        if ($operation === 'github_create_issue') {
+            $repository = $arguments['repository'];
+            $issue = $this->post($credential, '/repos/'.$repository.'/issues',
+                ['title' => trim($arguments['title'])] + (isset($arguments['body']) ? ['body' => trim($arguments['body'])] : []));
+            // A token with read-only Issues access is the common case here, and the
+            // difference between "GitHub is down" and "this key may not write" is
+            // the difference between trying again and going to fix the token.
+            if ($issue === null) {
+                return ['result' => ['error' => 'GitHub did not open that issue. The token may be read-only, or may not reach '
+                    .$repository.'.'], 'summary' => 'Could not open an issue on '.$repository];
+            }
+            return ['result' => ['opened' => true, 'number' => (int) ($issue['number'] ?? 0),
+                'title' => (string) ($issue['title'] ?? ''), 'url' => $issue['html_url'] ?? null],
+                'summary' => 'Opened issue #'.($issue['number'] ?? '?').' on '.$repository];
+        }
         return $this->unreachable();
     }
 
@@ -149,6 +177,15 @@ class GithubConnector implements Connector
     private function get(string $credential, string $path, array $query = []): ?array
     {
         $response = $this->request($credential)->get(self::BASE.$path, $query);
+        if (!$response->successful()) return null;
+        $body = $response->json();
+        return is_array($body) ? $body : null;
+    }
+
+    /** The created resource, or null when GitHub refused or could not be reached. */
+    private function post(string $credential, string $path, array $payload): ?array
+    {
+        $response = $this->request($credential)->post(self::BASE.$path, $payload);
         if (!$response->successful()) return null;
         $body = $response->json();
         return is_array($body) ? $body : null;

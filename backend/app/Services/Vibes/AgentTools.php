@@ -4,9 +4,6 @@ namespace App\Services\Vibes;
 
 use App\Jobs\RunVibesTurn;
 use App\Services\ChatConnectors\ConnectorTools;
-use App\Services\Agents\VmTestAction;
-use App\Services\Agents\VmPlatform;
-use App\Services\Agents\BranchPublication\BranchAction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -16,25 +13,46 @@ class AgentTools
     {
         return ['list_files', 'read_file', 'search_files', 'git_status', 'git_diff'];
     }
+
     public static function readDefinitions(): array
     {
         return [...array_values(array_filter(self::definitions(), fn ($tool) => in_array($tool['function']['name'], self::readNames(), true))),
-            ...ProjectToolDefinitions::git()];
+            ...self::gitDefinitions()];
     }
 
-    public static function computerDefinitions(bool $canWrite, bool $canTest = false, bool $canPublish = false): array
+    public static function computerDefinitions(bool $canWrite): array
     {
         $reads = self::readDefinitions();
         if (!$canWrite) return $reads;
         return [...$reads, ...array_values(array_filter(self::definitions(),
-            fn ($tool) => $tool['function']['name'] === 'write_file')),
-            ...($canTest ? [VmTestAction::definition()] : []),
-            ...($canPublish ? BranchAction::definitions() : [])];
+            fn ($tool) => $tool['function']['name'] === 'write_file'))];
     }
 
     public static function definitions(): array
     {
-        return ProjectToolDefinitions::basic();
+        $string = ['type' => 'string'];
+        return array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], [
+            ['name' => 'list_files', 'description' => 'List files in the authorized project, excluding secrets and dependencies.',
+                'parameters' => ['type' => 'object', 'properties' => ['path' => $string], 'required' => ['path'], 'additionalProperties' => false]],
+            ['name' => 'read_file', 'description' => 'Read a UTF-8 project file. Returns content and sha256. Do not edit truncated files.',
+                'parameters' => ['type' => 'object', 'properties' => ['path' => $string], 'required' => ['path'], 'additionalProperties' => false]],
+            ['name' => 'write_file', 'description' => 'Write a project file, at most 8 KB. Requires explicit user approval. Use sha256 from read_file, or new for a new file. Refused on a project opened read-only.',
+                'parameters' => ['type' => 'object', 'properties' => ['path' => $string, 'content' => $string, 'expectedSha256' => $string],
+                    'required' => ['path', 'content', 'expectedSha256'], 'additionalProperties' => false]],
+            ['name' => 'search_files', 'description' => 'Search the authorized project for text, case-insensitively. Returns matching path, line number and a short excerpt per hit; bounded and possibly truncated.',
+                'parameters' => ['type' => 'object', 'properties' => ['query' => $string], 'required' => ['query'], 'additionalProperties' => false]],
+        ]);
+    }
+
+    private static function gitDefinitions(): array
+    {
+        $tools = [
+            ['name' => 'git_status', 'description' => 'List changed files in the authorized project Git repository. Excludes private paths and caps the list.',
+                'parameters' => ['type' => 'object', 'properties' => (object) [], 'required' => [], 'additionalProperties' => false]],
+            ['name' => 'git_diff', 'description' => 'Read a bounded text diff for one changed file in the authorized project Git repository.',
+                'parameters' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string']], 'required' => ['path'], 'additionalProperties' => false]],
+        ];
+        return array_map(fn ($tool) => ['type' => 'function', 'function' => $tool], $tools);
     }
 
     public function awaitTools(object $turn, array $message, int $micro): void
@@ -51,9 +69,7 @@ class AgentTools
             abort_unless(!empty($request['tools']), 422, 'This conversation has no project tool access.');
             $calls = $message['tool_calls'] ?? [];
             abort_unless(is_array($calls), 422, 'Invalid tool requests.');
-            // A bounded Gmail search can return ten messages, which the model may
-            // read in one parallel batch. Keep the batch capped at that same bound.
-            abort_if(count($calls) > 10 || count($calls) === 0, 422, 'Too many tool requests.');
+            abort_if(count($calls) > 4 || count($calls) === 0, 422, 'Too many tool requests.');
             // The allowlist is the set this turn actually offered, so a tool cannot be
             // accepted here unless the priced request already contained its schema.
             $offered = array_column(array_column($request['tools'], 'function'), 'name');
@@ -77,23 +93,10 @@ class AgentTools
                     $canWrite = DB::table('agent_workspaces')->where('id', $workspace)
                         ->where('user_id', $turn->user_id)->where('agent_id', $request['vibyraAgent']['id'] ?? '')
                         ->whereNull('revoked_at')->value('can_write');
-                    $canTest = $name === 'run_test' && VmPlatform::allows(
-                        DB::table('agent_workspaces')->where('id', $workspace)
-                            ->where('user_id', $turn->user_id)->whereNull('revoked_at')->first());
-                    $publish = in_array($name, [BranchAction::PREVIEW, BranchAction::PUBLISH], true)
-                        && $canWrite && config('agents.git_publish_enabled')
-                        && in_array('github', $request['vibyraAgent']['integrations'] ?? [], true)
-                        && in_array('github', app(ConnectorTools::class)->resolve($turn->user_id, ['github']), true);
                     abort_unless(in_array($name, self::readNames(), true)
-                        || ($name === 'write_file' && $canWrite) || $canTest || $publish, 422,
-                        'This computer grant does not allow that project action.');
+                        || ($name === 'write_file' && $canWrite), 422, 'This computer grant is read-only.');
                 }
-                $safe = $integration !== null ? app(ConnectorTools::class)->validate($integration, $name, $args)
-                    : (in_array($name, [BranchAction::PREVIEW, BranchAction::PUBLISH], true)
-                        ? ($name === BranchAction::PUBLISH
-                            ? BranchAction::proposal($args, (string) $workspace, $turn->id)
-                            : BranchAction::arguments($name, $args, (string) $workspace))
-                        : $this->fileArguments($name, $args));
+                $safe = $integration !== null ? app(ConnectorTools::class)->validate($integration, $name, $args) : $this->fileArguments($name, $args);
                 DB::table('vibes_tools')->insert(['id' => (string) Str::uuid(), 'turn_id' => $turn->id,
                     'provider_id' => $call['id'], 'operation' => $name, 'integration' => $integration,
                     'agent_workspace_id' => $integration === null ? $workspace : null, 'arguments' => json_encode($safe),
@@ -105,13 +108,9 @@ class AgentTools
         });
     }
 
+    /** The project tools' own argument check, unchanged and still the only file path gate. */
     private function fileArguments(string $name, array $args): array
     {
-        if ($name === 'cloud_run_command') {
-            abort_unless(count($args) === 1 && is_string($args['command'] ?? null) && strlen($args['command']) <= 500, 422, 'Invalid cloud command.');
-            return ['command' => $args['command']];
-        }
-        if ($name === 'run_test') return VmTestAction::arguments($args);
         abort_unless(in_array($name, ['list_files', 'read_file', 'write_file', 'search_files', 'git_status', 'git_diff'], true), 422, 'Unsupported AI tool.');
         if ($name === 'git_status') {
             abort_unless($args === [], 422, 'Git status takes no arguments.');
@@ -127,17 +126,13 @@ class AgentTools
             && is_string($args['expectedSha256'] ?? null), 422, 'Invalid file edit.');
         return array_intersect_key($args, array_flip(['path', 'content', 'expectedSha256']));
     }
-    public function respond(int $userId, string $id, string $decision, array $result, ?string $cloudAction = null): void
+
+    public function respond(int $userId, string $id, string $decision, array $result): void
     {
-        $turnId = DB::transaction(function () use ($userId, $id, $decision, $result, $cloudAction) {
+        $turnId = DB::transaction(function () use ($userId, $id, $decision, $result) {
             app(Wallet::class)->lock($userId);
             $tool = DB::table('vibes_tools')->where('id', $id)->firstOrFail();
             $turn = DB::table('vibes_turns')->where('id', $tool->turn_id)->where('user_id', $userId)->firstOrFail();
-            $chat = DB::table('vibes_chats')->where('id', $turn->chat_id)->firstOrFail();
-            if ($chat->cloud_workspace_id ?? null) {
-                abort_unless($cloudAction && DB::table('cloud_actions')->where('id', $cloudAction)->where('tool_id', $id)
-                    ->where('workspace_id', $chat->cloud_workspace_id)->where('state', 'completed')->exists(), 403, 'Only the authorized cloud runtime can answer this tool.');
-            }
             $encoded = json_encode($result, JSON_THROW_ON_ERROR);
             if ($tool->result !== null) {
                 abort_unless($tool->decision === $decision && $tool->result === $encoded, 409, 'This tool already has a different response.');
@@ -183,8 +178,7 @@ class AgentTools
 
     public static function expires(object $tool): \Illuminate\Support\Carbon
     {
-        $seconds = $tool->agent_workspace_id && in_array($tool->operation,
-            [...self::readNames(), BranchAction::PREVIEW], true)
+        $seconds = $tool->agent_workspace_id && $tool->operation !== 'write_file'
             ? \App\Services\Agents\Workspaces::WAIT_SECONDS : 900;
         return \Illuminate\Support\Carbon::parse($tool->created_at)->addSeconds($seconds);
     }

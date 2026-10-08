@@ -2,8 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Community\CommunityAvailability;
-
 use App\Contracts\RuntimeDeploymentProvider;
 use App\Jobs\DeployRuntimeDemoJob;
 use App\Models\PublishedProject;
@@ -18,11 +16,6 @@ class DeployRuntimeDemos extends Command
 
     public function handle(RuntimeDeploymentProvider $provider): int
     {
-        if (! app(CommunityAvailability::class)->enabled()) {
-            $this->info('Community sharing is disabled; runtime demos will not deploy.');
-
-            return self::SUCCESS;
-        }
         $limit = max(1, min(5, (int) $this->option('limit')));
         $deployments = PublishedProjectDeployment::query()
             ->where('provider', PublishedProjectDeployment::PROVIDER_RAILWAY)

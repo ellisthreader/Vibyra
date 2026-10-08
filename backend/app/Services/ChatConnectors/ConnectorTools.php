@@ -61,10 +61,9 @@ class ConnectorTools
             return ['result' => (array) ($outcome['result'] ?? []), 'summary' => (string) ($outcome['summary'] ?? $operation)];
         } catch (\Throwable $e) {
             $name = (string) config('chat_connectors.catalogue.'.$slug.'.name', $slug);
-            if (! $e instanceof ReconnectRequired && $this->installs->needsReconnect($userId, $slug)) $e = ReconnectRequired::for($slug);
-            $message = $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ReconnectRequired
+            $message = $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException
                 ? $e->getMessage() : $name.' could not be reached just now.';
-            return ['result' => ['error' => $message], 'summary' => $name.($e instanceof ReconnectRequired ? ' needs to be reconnected' : ' could not answer')];
+            return ['result' => ['error' => $message], 'summary' => $name.' could not answer'];
         }
     }
 }

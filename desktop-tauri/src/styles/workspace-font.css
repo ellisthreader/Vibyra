@@ -1,0 +1,3 @@
+@font-face { font-family:'DM Sans'; src:url('../assets/fonts/DMSans.ttf') format('truetype'); font-weight:100 1000; font-display:swap; }
+/* The workspace shares the system UI face (SF Pro on Mac, bundled Inter elsewhere). */
+.app .chrome,.app .pstrip,.app .teammates-workspace,.app .project-workspace { font-family:var(--font-ui); }

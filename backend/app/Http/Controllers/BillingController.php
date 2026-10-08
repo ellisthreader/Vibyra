@@ -72,11 +72,6 @@ class BillingController extends Controller
         $kind = (string) $request->input('kind', 'subscription');
 
         $stripe = $this->stripe();
-        if ($stripe && $request->has('offerKey')) {
-            $input = $request->validate(['offerKey' => 'required|string|max:40', 'offerVersion' => 'required|string|max:40', 'requestId' => 'required|uuid', 'accountScope' => 'nullable|uuid']);
-            return $this->json(['ok' => true, 'url' => app(\App\Services\Membership\Checkout::class)->create($user, $input, $stripe)]);
-        }
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Refresh the membership page to use the current offers.');
         if (! $stripe) {
             return $this->json(['ok' => false, 'error' => 'Stripe is not configured on the backend.'], 503);
         }
@@ -103,7 +98,10 @@ class BillingController extends Controller
         }
 
         try {
-            $session = $stripe->billingPortal->sessions->create(app(\App\Services\Membership\Portal::class)->parameters($user));
+            $session = $stripe->billingPortal->sessions->create([
+                'customer' => $user->stripe_customer_id,
+                'return_url' => (string) config('services.stripe.portal_return_url'),
+            ]);
         } catch (Throwable $e) {
             Log::error('Stripe portal session failed', ['error' => $e->getMessage()]);
 
@@ -131,15 +129,7 @@ class BillingController extends Controller
             return response()->json(['ok' => false, 'error' => 'Invalid payload.'], 400);
         }
 
-        if (app()->environment('production') && !($event->livemode ?? false)) {
-            return response()->json(['ok' => false, 'error' => 'Test payments are not accepted.'], 400);
-        }
-
         try {
-            if ((config('membership.enabled') || \Illuminate\Support\Facades\DB::table('membership_periods')->exists())
-                && ($stripe = $this->stripe()) && app(\App\Services\Membership\StripeEvents::class)->handle($event, $stripe)) {
-                return response()->json(['ok' => true]);
-            }
             $this->stripeWebhookProcessor->process(
                 $event,
                 fn () => $this->handleWebhookEvent($event)
@@ -183,7 +173,6 @@ class BillingController extends Controller
                 $verified,
                 function ($lockedUser, $claimedReceipt, string $canonicalTransactionId) use (
                     $product,
-                    $verified,
                     $platform,
                     $productId
                 ): void {
@@ -196,7 +185,6 @@ class BillingController extends Controller
                             null,
                             "iap-subscription:{$platform}:{$canonicalTransactionId}"
                         );
-                        $lockedUser->forceFill(['membership_ends_at' => $verified['expiresAt']])->save();
 
                         return;
                     }

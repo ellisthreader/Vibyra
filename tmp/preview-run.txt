@@ -1,0 +1,135 @@
+﻿[32m✔ desktop preview uses a project-scoped capability instead of the phone bearer [90m(195.3177ms)[39m[39m
+[32m✔ desktop preview requires an explicit or selected project [90m(0.8587ms)[39m[39m
+[32m✔ desktop preview only proxies an already tracked server during inspection [90m(0.3735ms)[39m[39m
+[32m✔ desktop preview returns the verified Expo run plan when Metro is not running [90m(163.848ms)[39m[39m
+[32m✔ desktop preview refuses startup without a freshly detected target [90m(70.0589ms)[39m[39m
+[32m✔ desktop preview runs targets concurrently and keeps visual URLs target-pinned [90m(1499.6516ms)[39m[39m
+[32m✔ concurrent preview targets launch on distinct reserved ports [90m(1088.8555ms)[39m[39m
+[32m✔ desktop preview serves nested build assets from the entry root [90m(54.911ms)[39m[39m
+[32m✔ desktop preview mounts dist/index.html as its static root [90m(15.3534ms)[39m[39m
+[32m✔ desktop preview mounts build/index.html as its static root [90m(18.6783ms)[39m[39m
+[32m✔ desktop preview mounts out/index.html as its static root [90m(15.362ms)[39m[39m
+[32m✔ desktop preview mounts .output/public/index.html as its static root [90m(22.8513ms)[39m[39m
+[32m✔ desktop preview mounts public/index.html as its static root [90m(16.6768ms)[39m[39m
+[32m✔ desktop preview mounts web/index.html as its static root [90m(15.8339ms)[39m[39m
+[32m✔ desktop preview mounts www/index.html as its static root [90m(16.8449ms)[39m[39m
+[32m✔ desktop preview mounts client/dist/index.html as its static root [90m(18.9338ms)[39m[39m
+[32m✔ desktop preview mounts frontend/dist/index.html as its static root [90m(19.9144ms)[39m[39m
+[32m✔ desktop preview mounts website/dist/index.html as its static root [90m(19.1778ms)[39m[39m
+[32m✔ desktop preview mounts site/dist/index.html as its static root [90m(23.2103ms)[39m[39m
+[32m✔ desktop preview mounts ui/dist/index.html as its static root [90m(19.0359ms)[39m[39m
+[32m✔ desktop preview mounts dashboard/dist/index.html as its static root [90m(21.7782ms)[39m[39m
+[32m✔ desktop preview mounts apps/web/dist/index.html as its static root [90m(28.4664ms)[39m[39m
+[32m✔ desktop preview mounts apps/client/dist/index.html as its static root [90m(28.5866ms)[39m[39m
+[32m✔ desktop preview mounts packages/app/dist/index.html as its static root [90m(28.1651ms)[39m[39m
+[32m✔ desktop preview mounts packages/web/dist/index.html as its static root [90m(18.4658ms)[39m[39m
+[32m✔ desktop preview mounts storybook-static/index.html as its static root [90m(18.1179ms)[39m[39m
+[32m✔ desktop preview mounts docs/index.html as its static root [90m(17.6675ms)[39m[39m
+[32m✔ desktop preview mounts game/index.html as its static root [90m(24.8214ms)[39m[39m
+[32m✔ desktop preview mounts demo/index.html as its static root [90m(19.5644ms)[39m[39m
+[32m✔ desktop preview mounts app/index.html as its static root [90m(20.9035ms)[39m[39m
+[32m✔ desktop preview keeps root entry absolute assets at the project root [90m(15.914ms)[39m[39m
+[32m✔ desktop preview skips source-only Vite root entries [90m(60.5457ms)[39m[39m
+[32m✔ desktop preview does not serve stray root index files for Laravel Vite projects [90m(53.668ms)[39m[39m
+[32m✔ desktop preview redirects source-only Vite projects to a verified running dev server [90m(81.4223ms)[39m[39m
+[32m✔ desktop preview ignores unrelated servers on a dev-server port [90m(75.5539ms)[39m[39m
+[32m✔ approved preview server start runs the fixed dev command and verifies the URL [90m(937.1147ms)[39m[39m
+[32m✔ approved preview server start follows the fallback port Vite prints [90m(932.5609ms)[39m[39m
+[32m✔ approved preview server start parses decorated Vite fallback output [90m(890.5292ms)[39m[39m
+[32m✔ approved preview server start does not require a root source-only index before launch [90m(883.0411ms)[39m[39m
+[32m✔ approved preview server start discovers a nested frontend app [90m(936.2748ms)[39m[39m
+[32m✔ approved preview server start discovers a nested website app [90m(891.3416ms)[39m[39m
+[32m✔ approved preview server start supports Next dev scripts [90m(889.4094ms)[39m[39m
+[32m✔ Expo web profile outranks generic project wrapper scripts [90m(908.2257ms)[39m[39m
+[32m✔ approved preview server start supports Expo web dev scripts [90m(921.3477ms)[39m[39m
+[32m✔ approved preview server start supports SvelteKit dev scripts [90m(902.9772ms)[39m[39m
+[32m✔ approved preview server start supports Astro dev scripts [90m(876.3609ms)[39m[39m
+[32m✔ approved preview server start supports Nuxt dev scripts [90m(910.8359ms)[39m[39m
+[32m✔ approved preview server start supports Angular dev scripts [90m(1223.5102ms)[39m[39m
+[32m✔ approved preview server start supports Vue CLI dev scripts [90m(980.358ms)[39m[39m
+[32m✔ approved preview server start supports Create React App dev scripts [90m(869.9908ms)[39m[39m
+[32m✔ approved preview server start supports Remix Vite dev scripts [90m(886.2236ms)[39m[39m
+[32m✔ approved preview server start runs Laravel PHP and Vite asset servers [90m(919.4544ms)[39m[39m
+[32m✔ preview profiles cover additional frameworks and guarded project scripts [90m(2.0676ms)[39m[39m
+[32m✔ runtime preview detection covers Python, Flutter, Rails, Hugo, and PHP roots [90m(528.7383ms)[39m[39m
+[32m✔ preview detection explains package-only and non-web Python projects [90m(40.3132ms)[39m[39m
+[32m✔ approved Django preview starts the selected project runtime [90m(939.5774ms)[39m[39m
+[32m✔ approved custom Node web script starts without framework-specific metadata [90m(4002.2061ms)[39m[39m
+[32m✔ approved Laravel preview startup tolerates delayed PHP and Vite readiness [90m(1937.9461ms)[39m[39m
+[32m✔ approved Laravel preview startup rejects application error pages [90m(929.0726ms)[39m[39m
+[32m✔ approved Laravel preview startup removes a stale generated hot file [90m(954.9323ms)[39m[39m
+[32m✔ approved Laravel preview startup reports public hot ownership failures immediately [90m(634.9093ms)[39m[39m
+[32m✔ approved Laravel preview tracks the actual Vite fallback port [90m(1284.4993ms)[39m[39m
+[32m✔ started preview servers are proxied through the desktop bridge [90m(41.8715ms)[39m[39m
+[32m✔ preview server proxy injects runtime error overlay once before app scripts [90m(13.8933ms)[39m[39m
+[32m✔ preview server proxy renders HTTP error pages as visible diagnostics [90m(22.1489ms)[39m[39m
+[32m✔ static preview links fall forward to a tracked preview server [90m(8.8957ms)[39m[39m
+[32m✔ Laravel Vite proxy keeps app routes and public media on the preview server [90m(51.6102ms)[39m[39m
+[32m✔ external preview proxy turns Vite module 500 HTML into executable diagnostics [90m(18.1014ms)[39m[39m
+[32m✔ preview server proxy preserves range requests and media response headers [90m(18.7155ms)[39m[39m
+[32m✔ preview server proxy rewrites runtime root asset strings in JavaScript [90m(13.8008ms)[39m[39m
+[32m✔ preview server proxy unwraps duplicated preview prefixes for runtime assets [90m(14.7386ms)[39m[39m
+[32m✔ preview referer fallback proxies root app paths before phone auth [90m(27.5312ms)[39m[39m
+[32m✔ root preview assets require an authenticated preview referer [90m(10.7924ms)[39m[39m
+[32m✔ preview server proxy forwards Inertia login requests with body, cookies, and rewritten redirects [90m(59.8369ms)[39m[39m
+[32m✔ preview server proxy derives decoded Laravel XSRF header from preview cookies [90m(29.3638ms)[39m[39m
+[32m✔ preview server proxy rewrites browser form actions into the tokenized preview route [90m(22.5496ms)[39m[39m
+[32m✔ trusted preview referer can proxy root form posts before phone auth [90m(83.3485ms)[39m[39m
+[32m✔ external preview proxy rewrites nested Vite imports and assets against the upstream server [90m(57.5143ms)[39m[39m
+[32m✔ external preview proxy rejects unsupported and untracked targets by default [90m(3.1701ms)[39m[39m
+[32m✔ external preview proxy accepts only the tracked origin for a scoped capability [90m(16.9962ms)[39m[39m
+[32m✔ target-pinned credentials may proxy another tracked service in the same project [90m(20.0273ms)[39m[39m
+[32m✔ legacy arbitrary preview proxy requires the explicit emergency rollback flag [90m(16.2776ms)[39m[39m
+[32m✔ external preview proxy returns redirects without following them [90m(9.7666ms)[39m[39m
+[32m✔ approved preview server start rejects unsafe matching scripts [90m(144.2443ms)[39m[39m
+[32m✔ approved preview server start avoids an occupied declared port [90m(1282.7718ms)[39m[39m
+[32m✔ preview proxy rejects oversized request bodies before contacting upstream [90m(19.9252ms)[39m[39m
+[32m✔ preview proxy rejects upstream responses above the configured size [90m(17.8158ms)[39m[39m
+[32m✔ preview proxy terminates chunked responses that cross the size limit [90m(47.131ms)[39m[39m
+[32m✔ preview proxy times out stalled upstream requests [90m(58.412ms)[39m[39m
+[32m✔ preview proxy enforces the configured concurrency limit [90m(115.1941ms)[39m[39m
+[32m✔ preview proxy streams binary bodies while preserving range headers [90m(30.8894ms)[39m[39m
+[32m✔ desktop preview skips source-only Vite entries in non-build roots [90m(575.4022ms)[39m[39m
+[32m✔ desktop preview rewrites nested page absolute assets to the build root [90m(23.5457ms)[39m[39m
+[32m✔ desktop preview resolves existing folder ids without cached project state [90m(977.7761ms)[39m[39m
+[32m✔ desktop preview blocks project traversal and returns placeholder images for missing image assets [90m(31.6399ms)[39m[39m
+[32m✔ desktop preview serves static game exports with 3D, media, and WASM assets [90m(87.8166ms)[39m[39m
+[32m✔ desktop preview returns no runnable preview for Lua-only app folders [90m(70.5407ms)[39m[39m
+[32m✔ desktop preview serves important asset MIME types [90m(39.4041ms)[39m[39m
+[32m✔ phone preview handlers issue scoped credentials instead of the global token [90m(185.7869ms)[39m[39m
+[32m✔ concurrent phone preview requests only commit the newest capability [90m(145.8507ms)[39m[39m
+[32m✔ phone preview server URLs use scoped credentials [90m(1215.6715ms)[39m[39m
+[32m✔ agent apply preview URLs use a scoped project capability [90m(103.0735ms)[39m[39m
+[32m✔ capabilities isolate projects, expire, replace, revoke, and retain legacy compatibility [90m(0.7364ms)[39m[39m
+[32m✔ preview capabilities may pin a target while project-only callers remain compatible [90m(0.2296ms)[39m[39m
+[32m✔ legacy global preview tokens can be retired independently [90m(0.3723ms)[39m[39m
+[32m✔ disconnect, session expiry, and approved replacement pairing revoke scoped previews [90m(585.9885ms)[39m[39m
+[32m✔ legacy global-token preview routes follow the retirement flag [90m(10.8968ms)[39m[39m
+[32m✔ revoked scoped preview links are rejected by the preview route [90m(3.7929ms)[39m[39m
+[32m✔ publish demo bundle includes static entry dependencies and binary assets [90m(61.4253ms)[39m[39m
+[32m✔ publish demo bundle skips env, credential, and unsafe directory references [90m(26.5725ms)[39m[39m
+[32m✔ publish demo bundle rejects source-only Vite entries [90m(27.3642ms)[39m[39m
+[32m✔ publish demo bundle runs build script when no built entry exists [90m(795.5958ms)[39m[39m
+[32m✔ publish demo bundle builds a recognized nested frontend package [90m(592.1615ms)[39m[39m
+[32m✔ publish demo bundle prefers a nested React frontend over a Laravel root package [90m(640.7538ms)[39m[39m
+[32m✔ publish demo bundle installs missing dependencies before building [90m(299.2087ms)[39m[39m
+[32m✔ publish demo bundle reports install failure before build [90m(119.169ms)[39m[39m
+[32m✔ publish demo bundle skips dependency install when node_modules exists [90m(562.8532ms)[39m[39m
+[32m✔ publish demo bundle returns the frontend build error instead of hiding it [90m(528.7341ms)[39m[39m
+[32m✔ publish demo bundle reports when a successful build creates no browser output [90m(430.7772ms)[39m[39m
+[32m✔ publish demo bundle explains when automatic building is disabled [90m(36.3762ms)[39m[39m
+[32m✔ publish demo bundle creates a Laravel Vite Inertia static shell from manifest assets [90m(27.3512ms)[39m[39m
+[32m✔ publish demo bundle keeps Laravel private and backend files out of static shell bundles [90m(26.6627ms)[39m[39m
+[32m✔ publish demo bundle fails clearly when required dependencies exceed caps [90m(9.7611ms)[39m[39m
+[32m✔ publish demo bundle reports the asset and per-file size limit [90m(9.3805ms)[39m[39m
+[32m✔ publish demo bundle rejects missing required local references [90m(9.6049ms)[39m[39m
+[32m✔ publish demo bundle returns a structured failure when no project is selected [90m(0.3439ms)[39m[39m
+[32m✔ publish demo bundle fails and reports optional file cap truncation [90m(13.8729ms)[39m[39m
+[34mℹ tests 127[39m
+[34mℹ suites 0[39m
+[34mℹ pass 127[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 32110.9228[39m

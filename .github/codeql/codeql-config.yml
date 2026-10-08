@@ -1,0 +1,9 @@
+name: Vibyra CodeQL configuration
+
+paths-ignore:
+  - node_modules
+  - backend/vendor
+  - .expo
+  - .vibyra-agent
+  - tmp
+  - Vibyra

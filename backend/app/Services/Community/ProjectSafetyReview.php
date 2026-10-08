@@ -41,11 +41,6 @@ class ProjectSafetyReview
         $previewHtml = (string) Arr::get($input, 'previewHtml', '');
         $sourceFiles = $this->normalizeSourceFiles(Arr::get($input, 'sourceFiles', []));
         $sourceReview = (array) Arr::get($input, 'sourceReview', []);
-        $rawFiles = (array) Arr::get($input, 'sourceFiles', []);
-        $sourceReview['truncated'] = (bool) ($sourceReview['truncated'] ?? false) || count($rawFiles) > self::SOURCE_FILE_MAX_COUNT;
-        foreach ($rawFiles as $file) {
-            $sourceReview['truncated'] = $sourceReview['truncated'] || mb_strlen((string) ($file['body'] ?? '')) > self::SOURCE_FILE_MAX_CHARACTERS;
-        }
 
         if ($this->publishReviewTemporarilyDisabled()) {
             $ignoredFindings = [];

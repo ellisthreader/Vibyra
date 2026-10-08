@@ -1,0 +1,12 @@
+.teammate-cloud-runtime { font-size: 13px; line-height: 1.5; min-width: 0; }
+.teammate-cloud-runtime > div[role="group"] { align-items: center; }
+.teammate-cloud-runtime button { border: 1px solid var(--border-subtle,#7775); border-radius: 8px; background: var(--bg-elevated,#8881); color: inherit; padding: 7px 11px; cursor: pointer; font: inherit; }
+.teammate-cloud-runtime button[aria-pressed="true"] { border-color: var(--accent,#4965ea); background: #4965ea22; }
+.teammate-cloud-runtime button:disabled { opacity: .5; cursor: default; }
+.teammate-cloud-runtime label { display: grid; gap: 5px; min-width: 130px; flex: 1; }
+.teammate-cloud-runtime input, .teammate-cloud-runtime select { box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid var(--border-subtle,#7775); border-radius: 8px; padding: 8px; color: inherit; background: var(--bg,#8881); font: inherit; }
+.teammate-cloud-runtime small { font-size: 12px; overflow-wrap: anywhere; }
+.teammate-cloud-runtime [role="region"] { border: 1px solid var(--border-subtle,#7775); border-radius: 12px; padding: 14px; background: #4965ea08; }
+.teammate-cloud-runtime [role="region"] p { margin: 0 0 10px; }
+.teammate-cloud-runtime [role="region"] button { background: #4965ea; color: #fff; border-color: transparent; }
+.teammate-cloud-runtime [role="alert"] { color: var(--error,#d24e4e); }

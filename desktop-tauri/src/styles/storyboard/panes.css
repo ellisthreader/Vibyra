@@ -1,0 +1,25 @@
+/* Storyboard terminals (frames 2–3): 12px panes, one header for every pane —
+   initials tile, title, agent, state pill — and a cobalt ring on the active one. */
+.app .pane { border-radius: 12px; background: var(--term-screen); border-color: var(--line); }
+.app .pane--focused { border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.app .pane--focused::after { box-shadow: none; }
+.app .pane--attn { border-color: color-mix(in srgb, var(--amber) 55%, transparent); box-shadow: 0 0 0 3px var(--amber-soft); }
+.app .pane__header { gap: 8px; padding: 0 6px 0 10px; background: transparent; border-bottom: 1px solid var(--line-soft); }
+.app .pane--focused .pane__header, .app .pane--attn .pane__header { background: transparent; }
+.app .pane__header { cursor: default; user-select: none; }
+.app .pane__tile { width: 22px; height: 22px; border-radius: 6px; font-size: 10px; }
+.app .pane__title strong { font-size: 12.5px; font-weight: 600; letter-spacing: 0; color: var(--term-text); }
+.app .pane__meta { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--dim); }
+.app .pane__state.sb-pill { margin-left: auto; font-size: 11px; font-weight: 500; }
+.app .pane__state + .pane__account, .app .pane__state + .pane__actions { margin-left: 0; }
+.app .pane__actions { margin-left: 0; gap: 0; }
+.app .pane__actions .icon-btn { width: 26px; height: 26px; color: var(--dim); }
+.app .pane__actions .icon-btn:hover { color: var(--text); }
+.app .adaptive-stage .pane__header { min-height: 34px; }
+
+/* Full-size view: the other terminals as tabs joined to the pane below. */
+.app .adaptive-tabs { gap: 4px; padding: 0 12px; margin-bottom: -9px; position: relative; z-index: 2; flex-wrap: nowrap; }
+.app .adaptive-tabs button { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; font-size: 12px; color: var(--muted); background: none; }
+.app .adaptive-tabs button:hover { color: var(--text); background: var(--hover); }
+.app .adaptive-tabs button[aria-pressed=true] { background: var(--term-screen); color: var(--text); border-color: var(--line); }
+.app .adaptive-max .pane--focused { box-shadow: none; border-color: var(--line); }

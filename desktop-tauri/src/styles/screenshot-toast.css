@@ -1,0 +1,23 @@
+/* Corner thumbnail after a capture: a picture, and three round buttons on hover. */
+:root[data-toast], :root[data-toast] body, :root[data-toast] #root { background: transparent !important; overflow: hidden; }
+.shot-toast { position: fixed; inset: 0; padding: 20px; animation: shot-toast-in .26s cubic-bezier(.2, .8, .2, 1) both; }
+.shot-toast[data-leaving="true"] { animation: shot-toast-out .19s ease-in both; }
+.shot-toast__card { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 14px; background: #14161b;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .16), 0 14px 32px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .35); }
+.shot-toast__image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.shot-toast__image img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.shot-toast__scrim { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .16s ease;
+  background: linear-gradient(to top, rgba(8, 9, 12, .74), rgba(8, 9, 12, 0) 58%); }
+.shot-toast__bar { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; gap: 8px; opacity: 0; transform: translateY(4px); transition: opacity .16s ease, transform .16s ease; }
+.shot-toast__glass { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; color: #fff; cursor: pointer;
+  background: rgba(255, 255, 255, .16); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%); }
+.shot-toast__glass:hover { background: rgba(255, 255, 255, .3); }
+.shot-toast__glass:active { transform: scale(.94); }
+.shot-toast__close { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; opacity: 0; transition: opacity .16s ease; }
+.shot-toast:hover .shot-toast__scrim, .shot-toast:focus-within .shot-toast__scrim, .shot-toast:hover .shot-toast__close, .shot-toast:focus-within .shot-toast__close { opacity: 1; }
+.shot-toast:hover .shot-toast__bar, .shot-toast:focus-within .shot-toast__bar { opacity: 1; transform: none; }
+.shot-toast__note { position: absolute; left: 8px; right: 38px; top: 8px; margin: 0; padding: 6px 9px; border-radius: 9px; color: #fff; font-size: 11px; line-height: 1.35;
+  background: rgba(20, 22, 27, .82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+@keyframes shot-toast-in { from { opacity: 0; transform: translateX(36px); } }
+@keyframes shot-toast-out { to { opacity: 0; transform: translateX(36px); } }
+@media (prefers-reduced-motion: reduce) { .shot-toast, .shot-toast[data-leaving="true"] { animation: none; } }

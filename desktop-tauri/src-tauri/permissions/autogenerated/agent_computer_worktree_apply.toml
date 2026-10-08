@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-computer-worktree-apply"
+description = "Enables the agent_computer_worktree_apply command without any pre-configured scope."
+commands.allow = ["agent_computer_worktree_apply"]
+
+[[permission]]
+identifier = "deny-agent-computer-worktree-apply"
+description = "Denies the agent_computer_worktree_apply command without any pre-configured scope."
+commands.deny = ["agent_computer_worktree_apply"]

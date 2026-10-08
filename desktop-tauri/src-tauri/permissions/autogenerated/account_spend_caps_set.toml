@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-spend-caps-set"
+description = "Enables the account_spend_caps_set command without any pre-configured scope."
+commands.allow = ["account_spend_caps_set"]
+
+[[permission]]
+identifier = "deny-account-spend-caps-set"
+description = "Denies the account_spend_caps_set command without any pre-configured scope."
+commands.deny = ["account_spend_caps_set"]

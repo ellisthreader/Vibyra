@@ -1,0 +1,53 @@
+{
+  "priorReviewedSourceCommit": "202f940db55a7e99d925a3a07745db1d57d8d93a",
+  "semanticVersion": "0.8.23",
+  "bundleVersion": "94",
+  "intentionalNativeChanges": [
+    "Atomic receipt matching prevents stale account/same-account replacement revocation",
+    "Strict ineligible overview checks original socket and pre-read receipt under account authority"
+  ],
+  "packagingChanges": [
+    "Checksum-verifying deterministic fixture factories/template replaces tracked literal corpus",
+    "Ordinary npm preverify and defensive Mac CI prerequisite reconstruct exact original ignored corpus",
+    "CFBundleVersion 94 only; semantic/package version unchanged"
+  ],
+  "fixtureCorpus": {
+    "sha256": "0a6023246fbfffd9edc4741da42455fe462e2827ebc5a2667053f3843e8d22b3",
+    "gitTracked": false,
+    "materialization": "npm preverify and defensive Mac CI prerequisite; original corpus physically absent before final npm verify"
+  },
+  "validation": {
+    "typecheck": "passed after final frontend refinement",
+    "lineGate": "passed; 0 first-party files over 200",
+    "frontend": "704 passed, 1 skipped, 0 failed; final receipt-first management scope",
+    "whatsNew": "14 passed",
+    "knip": "passed after final frontend refinement",
+    "fullVerify": "passed exact build94 with CARGO_INCREMENTAL=0 RUST_TEST_THREADS=4; includes native conditional receipt fences and deterministic fixture reconstruction",
+    "dependencyAudit": "desktop 0; relay 0; shared mobile 16 high advisory entries from braces/node-forge unpatched roots; no critical",
+    "freshDependencyInstall": "both isolated npm ci passed",
+    "native": "core 240 passed/2 ignored; desktop 739 passed/16 ignored; updater 2 passed; sync 5 unit + 5 guardrail + 7 smoke passed",
+    "managementFocused": "12 native focused passed; stale same-account and empty-read replacement revocation fenced",
+    "build": "final frontend-only refinement production build passed",
+    "rootSecurityReview": "approved existing-management native implementation and persistence after reviewing real server envelopes; native physical acceptance remains pending"
+  },
+  "verificationProofs": {
+    "finalBuild94WorkspaceVerify": {
+      "localPath": "/private/tmp/vibyra-cloud-mac94-stamped-final-verify-20261008.log",
+      "sha256": "b2577a9b075aa18d0a044c7f3642ba85ae99bb52425b36d16318f38fbee298d9",
+      "bytes": 170145
+    },
+    "conditionalRevokeFocused": {
+      "localPath": "/private/tmp/vibyra-cloud-management-revocation-tests-20261008.log",
+      "sha256": "9a830a05708c72741d68080e7933d61b9c0437e51db9609c6efaecbe7c6eae4b",
+      "bytes": 3252
+    }
+  },
+  "vendorFilesPreserved": 22,
+  "remainingGates": [
+    "new exact-source Mac local build and native provider/revocation/cold-start acceptance",
+    "protected arm64/x64 CI",
+    "notarization/updater signatures",
+    "public feed/download verification after acceptance"
+  ],
+  "historyRequirement": "Root must commit the accepted final tree with a clean parent; do not push original inherited fixture ancestors"
+}

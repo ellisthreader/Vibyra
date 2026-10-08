@@ -1,0 +1,21 @@
+/* Local MCP servers (Settings): the same calm rows as the connections hub. Tokens only. */
+.local-mcp-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.hub-pill--muted{background:var(--elevated);color:var(--muted)}
+.local-mcp-command{display:block;font-family:var(--font-mono,ui-monospace,monospace);font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.local-mcp-error{color:var(--danger)}
+.local-mcp-scrim{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px}
+.local-mcp-dialog{width:min(560px,100%);max-height:calc(100vh - 48px);overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--r-panel);padding:20px 22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 18px 48px rgba(0,0,0,.35)}
+.local-mcp-dialog h3{margin:0;font-size:15px;font-weight:650}
+.local-mcp-field{display:flex;flex-direction:column;gap:4px;border:0;padding:0;margin:0;min-width:0}
+.local-mcp-field>span,.local-mcp-field>legend{font-size:12px;font-weight:600;color:var(--text);padding:0}
+.local-mcp-field small{color:var(--muted);font-size:12px}
+.local-mcp-field textarea{resize:vertical;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px}
+.local-mcp-field .hub-paste{font-weight:400}
+.local-mcp-env{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.local-mcp-env .input{flex:1;min-width:0}
+.local-mcp-env label{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--muted);white-space:nowrap}
+.local-mcp-run{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:10px;background:var(--rail);padding:10px 12px;font-size:12px}
+.local-mcp-run code{font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;word-break:break-all;white-space:pre-wrap;color:var(--text)}
+.local-mcp-run small{color:var(--muted);line-height:1.45}
+.local-mcp-agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--text)}
+.local-mcp-agree input{margin-top:2px}

@@ -1,0 +1,125 @@
+/* Ctrl+K command palette. */
+
+.pal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: grid;
+  place-items: start center;
+  padding-top: 12vh;
+  z-index: 100;
+  animation: fade-in 140ms var(--e-standard);
+}
+
+.pal {
+  width: min(520px, 90vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--e-panel), var(--e-inset-hi);
+  overflow: hidden;
+  animation: fade-up 200ms var(--e-hero);
+}
+
+.pal__query {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pal__prompt {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.pal__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 560;
+}
+
+.pal__input:focus {
+  outline: none;
+}
+
+.pal__input::placeholder {
+  color: var(--dim);
+}
+
+.pal__list {
+  overflow-y: auto;
+  padding: 6px;
+  min-height: 0;
+}
+
+.pal__empty {
+  padding: 18px 12px;
+  color: var(--dim);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.pal__group {
+  font-size: 9.5px;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 9px 10px 3px;
+}
+
+.pal__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--r-shell);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.pal__row--sel {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.pal__row--attn.pal__row--sel {
+  background: var(--amber-soft);
+}
+
+.pal__spark {
+  width: 20px;
+  text-align: center;
+  color: var(--dim);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.pal__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pal__hint {
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 640;
+  flex-shrink: 0;
+}

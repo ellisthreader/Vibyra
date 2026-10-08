@@ -1,0 +1,187 @@
+use keyring::{Entry, Error};
+use parking_lot::Mutex;
+
+const SERVICE: &str = "com.vibyra.desktop";
+const DEV_SERVICE: &str = "com.vibyra.desktop.dev.local";
+const VIBYRA_SESSION_ACCOUNT: &str = "vibyra-account-session";
+const DISCORD_REPORT_WEBHOOK_ACCOUNT: &str = "discord-report-webhook";
+
+pub struct SecretStore;
+
+// Host keys use the native credential store; public metadata stays on disk.
+impl vibyra_host::IdentityKeyStore for SecretStore {
+    fn read(&self, public_key: &str) -> Result<Option<String>, String> {
+        #[cfg(test)]
+        return host_identity_test_store::read(public_key);
+        #[cfg(not(test))]
+        read_secret(&format!("host-identity-{public_key}"))
+    }
+
+    fn write(&self, public_key: &str, private_key: &str) -> Result<(), String> {
+        #[cfg(test)]
+        return host_identity_test_store::write(public_key, private_key);
+        #[cfg(not(test))]
+        write_secret(&format!("host-identity-{public_key}"), Some(private_key))
+    }
+}
+
+#[cfg(test)]
+#[path = "host_identity_test_store.rs"]
+mod host_identity_test_store;
+
+/// The session token as last read from the store, until the next session
+/// write. Launch reads the token, verifies it, and adopts it — which wrote the
+/// same bytes straight back: a Keychain write on every launch, and a second
+/// access prompt whenever the item's ACL does not yet include this build.
+static SESSION_JUST_READ: Mutex<Option<String>> = Mutex::new(None);
+
+impl SecretStore {
+    pub fn read_account_session(&self) -> Result<Option<String>, String> {
+        let token = read_secret(VIBYRA_SESSION_ACCOUNT)?;
+        SESSION_JUST_READ.lock().clone_from(&token);
+        Ok(token)
+    }
+
+    /// Skips only the one write that would put back exactly what the store
+    /// was just read as holding; any other write goes through and forgets it.
+    pub fn write_account_session(&self, token: Option<&str>) -> Result<(), String> {
+        let just_read = SESSION_JUST_READ.lock().take();
+        if already_stored(token, just_read.as_deref()) {
+            return Ok(());
+        }
+        write_secret(VIBYRA_SESSION_ACCOUNT, token)
+    }
+
+    pub fn read_report_webhook(&self) -> Result<Option<String>, String> {
+        read_secret(DISCORD_REPORT_WEBHOOK_ACCOUNT)
+    }
+
+    pub fn write_report_webhook(&self, webhook: Option<&str>) -> Result<(), String> {
+        write_secret(DISCORD_REPORT_WEBHOOK_ACCOUNT, webhook)
+    }
+
+    pub fn read_agent_runner_key(&self, grant_id: &str) -> Result<Option<String>, String> {
+        read_secret(&format!("agent-runner-{grant_id}"))
+    }
+
+    pub fn write_agent_runner_key(&self, grant_id: &str, key: Option<&str>) -> Result<(), String> {
+        write_secret(&format!("agent-runner-{grant_id}"), key)
+    }
+    /// A generic named secret (a local MCP server's environment value). The name is
+    /// namespaced under `named-` so it can never address one of the typed accounts above.
+    pub fn read_named(&self, name: &str) -> Result<Option<String>, String> {
+        read_secret(&named_account(name)?)
+    }
+
+    /// `None` (or blank) deletes the item.
+    pub fn write_named(&self, name: &str, value: Option<&str>) -> Result<(), String> {
+        write_secret(&named_account(name)?, value)
+    }
+}
+
+/// `named-<name>`; names are short plain tokens so a caller cannot reach another account.
+fn named_account(name: &str) -> Result<String, String> {
+    let plain = !name.is_empty()
+        && name.len() <= 160
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | ':' | '/'));
+    if !plain || name.contains("..") {
+        return Err("That secret name is not allowed.".into());
+    }
+    Ok(format!("named-{name}"))
+}
+
+fn read_secret(account: &str) -> Result<Option<String>, String> {
+    match entry(account)?.get_password() {
+        Ok(value) => Ok(normalize_key(value)),
+        Err(Error::NoEntry) => Ok(None),
+        Err(error) => Err(message(error)),
+    }
+}
+
+fn write_secret(account: &str, value: Option<&str>) -> Result<(), String> {
+    let entry = entry(account)?;
+    match value.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) => entry.set_password(value).map_err(message),
+        None => match entry.delete_credential() {
+            Ok(()) | Err(Error::NoEntry) => Ok(()),
+            Err(error) => Err(message(error)),
+        },
+    }
+}
+
+fn entry(account: &str) -> Result<Entry, String> {
+    let local_api = std::env::var("VIBYRA_DESKTOP_API_URL")
+        .ok()
+        .is_some_and(|url| {
+            url.starts_with("http://127.0.0.1:") || url.starts_with("http://localhost:")
+        });
+    let service = if local_api {
+        std::env::var("VIBYRA_DESKTOP_SECRET_SERVICE")
+            .ok()
+            .filter(|value| value.starts_with("com.vibyra.desktop.dev.") && value.len() <= 100)
+    } else {
+        None
+    };
+    Entry::new(
+        service
+            .as_deref()
+            .unwrap_or(if local_api { DEV_SERVICE } else { SERVICE }),
+        account,
+    )
+    .map_err(message)
+}
+
+fn already_stored(token: Option<&str>, just_read: Option<&str>) -> bool {
+    let token = token.map(str::trim).filter(|token| !token.is_empty());
+    token.is_some() && token == just_read
+}
+
+fn normalize_key(key: String) -> Option<String> {
+    let key = key.trim();
+    (!key.is_empty()).then(|| key.to_owned())
+}
+
+fn message(error: Error) -> String {
+    format!("operating-system credential store is unavailable: {error}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{already_stored, named_account, normalize_key};
+
+    #[test]
+    fn named_secrets_are_namespaced_and_names_are_plain() {
+        assert_eq!(
+            named_account("local-mcp/abc/API_KEY").unwrap(),
+            "named-local-mcp/abc/API_KEY"
+        );
+        for bad in [
+            "",
+            "a b",
+            "x\n",
+            "../vibyra-account-session",
+            &"a".repeat(161),
+        ] {
+            assert!(named_account(bad).is_err(), "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn only_rewriting_the_token_just_read_is_skipped() {
+        assert!(already_stored(Some(" tok "), Some("tok")));
+        assert!(!already_stored(Some("new"), Some("tok")));
+        assert!(!already_stored(Some("tok"), None));
+        assert!(!already_stored(None, None));
+    }
+
+    #[test]
+    fn key_normalization_drops_empty_values() {
+        assert_eq!(normalize_key("  ".into()), None);
+        assert_eq!(
+            normalize_key(" sk-test \n".into()).as_deref(),
+            Some("sk-test")
+        );
+    }
+}

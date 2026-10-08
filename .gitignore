@@ -1,8 +1,24 @@
+node_modules/
+.expo/
 backend/.env
-backend/.env.*
-backend/vendor/
-backend/node_modules/
-backend/storage/logs/
-backend/storage/framework/
-backend/bootstrap/cache/*.php
-backend/.phpunit.result.cache
+.env
+dist/
+build/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+
+# Obsidian vault local state. Keep notes, ignore app/workspace metadata.
+Vibyra/.obsidian/
+Vibyra/.trash/
+Vibyra/_attachments/
+Vibyra/_ai/Runs/
+Vibyra/Prompt Transcripts.md
+
+# Runtime and temporary preview artifacts are not application source.
+/tmp/
+/.vibyra-agent/
+
+# Construct exact synthetic detector fixtures locally; never commit issued credentials.
+/docs/secret-guard-vectors.json

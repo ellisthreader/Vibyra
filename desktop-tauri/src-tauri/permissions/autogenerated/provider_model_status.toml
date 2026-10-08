@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-provider-model-status"
+description = "Enables the provider_model_status command without any pre-configured scope."
+commands.allow = ["provider_model_status"]
+
+[[permission]]
+identifier = "deny-provider-model-status"
+description = "Denies the provider_model_status command without any pre-configured scope."
+commands.deny = ["provider_model_status"]

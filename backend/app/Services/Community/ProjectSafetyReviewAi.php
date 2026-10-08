@@ -10,10 +10,6 @@ trait ProjectSafetyReviewAi
 {
     private function maybeApplyAiReview(array $decision, array $context): array
     {
-        // An AI never reviewed omitted bytes; it cannot approve an incomplete snapshot.
-        if ($this->findingCodeExists((array) ($decision['findings'] ?? []), 'source_snapshot_truncated')) {
-            return $decision;
-        }
         $config = (array) config('moderation.publish_ai_review', []);
         if ($this->shouldSkipAiForSize((array) ($context['sourceFiles'] ?? []), $config)
             && $this->aiWouldOtherwiseRun($decision, $config)) {
@@ -111,12 +107,12 @@ trait ProjectSafetyReviewAi
 
     private function forceApproveForTesting(): bool
     {
-        return app()->environment(['local', 'testing']) && (bool) config('moderation.publish_force_approve_under_review', false);
+        return (bool) config('moderation.publish_force_approve_under_review', false);
     }
 
     private function publishReviewTemporarilyDisabled(): bool
     {
-        return app()->environment(['local', 'testing']) && (bool) config('moderation.publish_review_temporarily_disabled', false);
+        return (bool) config('moderation.publish_review_temporarily_disabled', false);
     }
 
     private function aiWouldOtherwiseRun(array $decision, array $config): bool

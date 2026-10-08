@@ -1,0 +1,66 @@
+/* Storyboard sidebar: workspace and search, Home and Needs you, Projects with
+   lettered tiles, then the footer. One 30px row everywhere; selection is a fill. */
+.app .frame-rail, .app .teammate-rail.pstrip { padding: 8px 10px 10px; }
+.frame-identity { display: grid; gap: 8px; padding: 0 0 4px; }
+.frame-identity__account { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border-radius: 9px; text-align: left; color: var(--text); }
+.frame-identity__account:hover { background: var(--hover); }
+.frame-identity__logo { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 8px; background: var(--surface-tint); border: 1px solid var(--line); }
+.frame-identity__logo img { width: 15px; height: 13px; object-fit: contain; }
+.frame-identity__copy { display: grid; min-width: 0; }
+.frame-identity__copy strong { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frame-identity__copy small { font-size: 11px; color: var(--dim); }
+.frame-search { display: flex; align-items: center; gap: 8px; height: 30px; margin: 0 2px; padding: 0 8px 0 10px; border-radius: 8px; background: var(--hover); border: 1px solid var(--line-soft); color: var(--dim); font-size: 13px; text-align: left; }
+.frame-search span { flex: 1; }
+.frame-search kbd { font: 11px var(--font-ui); padding: 1px 5px; border-radius: 5px; background: var(--hover-strong); color: var(--muted); }
+.frame-search:hover { color: var(--muted); border-color: var(--line); }
+.frame-nav { display: grid; gap: 2px; margin: 8px 0 4px; }
+.app .frame-rail .pstrip__row, .app .teammate-rail .pstrip__row { min-height: 30px; font-size: 13px; border-radius: 8px; color: var(--muted); }
+.app .frame-rail .pstrip__row:disabled { cursor: default; }
+.app .frame-rail .pstrip__row:disabled:hover { background: none; color: var(--muted); }
+.frame-badge { font-size: 11px; line-height: 16px; padding: 0 6px; border-radius: 999px; background: var(--amber-soft); color: var(--amber); }
+
+/* Projects heading: name and count; + and × take the count's place on hover. */
+.app .workspace-tree__heading { min-height: 0; padding: 14px 10px 6px; font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--dim); }
+.app .workspace-tree__heading-actions { position: relative; }
+.workspace-tree__heading-count { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--dim); pointer-events: none; transition: opacity 120ms var(--sb-ease-settle); }
+.app .workspace-tree__heading .icon-btn { width: 22px; height: 22px; opacity: 0; transition: opacity 120ms var(--sb-ease-settle); }
+.app .workspace-tree__heading:hover .icon-btn, .app .workspace-tree__heading:focus-within .icon-btn { opacity: 1; }
+.app .workspace-tree__heading:hover .workspace-tree__heading-count, .app .workspace-tree__heading:focus-within .workspace-tree__heading-count { opacity: 0; }
+
+.app .workspace-tree { padding: 0; }
+.app .workspace-tree section { margin-bottom: 2px; }
+.app .workspace-tree__row { min-height: 30px; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 13px; letter-spacing: 0; }
+.app .workspace-tree__row.is-active { font-weight: 500; }
+.app .workspace-tree__count { min-width: 0; height: auto; padding: 0 2px; background: none; color: var(--dim); font-size: 11px; }
+.app .workspace-tree__row.is-active .workspace-tree__count { background: none; }
+.app .workspace-tree__disclosure-space { width: 22px; }
+.app .workspace-tree__disclosure { top: 3px; right: 26px; opacity: 0; transition: opacity 120ms var(--sb-ease-settle); }
+.app .workspace-tree section:hover > .workspace-tree__disclosure, .app .workspace-tree__disclosure:focus-visible { opacity: 1; }
+.app .workspace-tree__sessions { padding: 2px 0 4px; }
+.app .focus-rail .workspace-tree__sessions .pstrip__row { min-height: 30px; padding-left: 38px; font-size: 13px; gap: 10px; }
+.app .workspace-tree__sessions .pstrip__row > .pstrip__dot:first-child { display: none; }
+.app .workspace-tree__sessions .pstrip__trail--rest { visibility: visible; }
+.app .workspace-tree__sessions .pstrip__row--active { background: var(--hover-strong); color: var(--text); }
+.app .frame-rail--away .workspace-tree__sessions .pstrip__row--active { background: none; color: var(--muted); }
+.app .workspace-tree__new { min-height: 30px; padding-left: 38px; gap: 8px; font-size: 13px; }
+.app .workspace-tree__new .workspace-tree__mark { flex-basis: 12px; }
+
+/* Working is the cobalt nerve; waiting is amber; quiet rows carry no dot. */
+.app .pstrip__dot--working { background: var(--accent); }
+.app .pstrip__dot--done { background: var(--success); }
+
+.project-tile { display: inline-grid; place-items: center; flex: none; font-weight: 600; line-height: 1; }
+.project-tile--cobalt { background: #2b3352; color: #c9d3ff; }
+.project-tile--amber { background: #3a2f22; color: #f0c48a; }
+.project-tile--green { background: #213a33; color: #8fe0bf; }
+.project-tile--violet { background: #33294a; color: #cdb5ff; }
+.project-tile--teal { background: #1f3640; color: #8fd6e8; }
+.project-tile--rose { background: #40262c; color: #f2a6b3; }
+:root[data-theme="light"] .project-tile--cobalt { background: #e3e8fb; color: #2449b8; }
+:root[data-theme="light"] .project-tile--amber { background: #f6ead8; color: #8a520b; }
+:root[data-theme="light"] .project-tile--green { background: #dcf1e8; color: #11694a; }
+:root[data-theme="light"] .project-tile--violet { background: #ece5fb; color: #5b35b5; }
+:root[data-theme="light"] .project-tile--teal { background: #dcf0f5; color: #12627a; }
+:root[data-theme="light"] .project-tile--rose { background: #f9e1e5; color: #a32a43; }
+
+.app .frame-rail .pstrip__footer, .app .teammate-rail .pstrip__footer { display: grid; gap: 2px; padding-top: 8px; border-top: 1px solid var(--line-soft); }

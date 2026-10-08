@@ -7,17 +7,10 @@ final class Devices
 {
     public function register(VibyraSession $session, array $data): array
     {
-        $apns = ($data['provider'] ?? 'expo') === 'apns';
-        if ($apns) {
-            // A raw APNs token: no Expo project; the environment is only the first host to try.
-            abort_unless(app(\App\Services\LiveStatus\Apns::class)->alertsEnabled(), 503, 'Phone notifications are not configured yet.');
-            $data['token'] = strtolower($data['token']);
-        } else {
-            abort_unless(config('intelligence.push') && config('intelligence.expo_project'), 503, 'Phone notifications are not configured yet.');
-            abort_unless($data['projectId'] === config('intelligence.expo_project')
-                && $data['environment'] === config('intelligence.environment'), 422, 'Wrong notification build environment.');
-        }
-        return DB::transaction(function () use ($session, $data, $apns) {
+        abort_unless(config('intelligence.push') && config('intelligence.expo_project'), 503, 'Phone notifications are not configured yet.');
+        abort_unless($data['projectId'] === config('intelligence.expo_project')
+            && $data['environment'] === config('intelligence.environment'), 422, 'Wrong notification build environment.');
+        return DB::transaction(function () use ($session, $data) {
             DB::table('users')->where('id', $session->user_id)->lockForUpdate()->firstOrFail();
             $hash = hash_hmac('sha256', $data['token'], config('app.key'));
             $proof = hash('sha256', $data['proof']);
@@ -35,13 +28,10 @@ final class Devices
                 DB::table('notification_devices')->where('id', $token->id)->delete();
             }
             $id = $same->id ?? (string) Str::uuid();
-            $sameToken = $same && $same->token_hash === $hash;
             DB::table('notification_devices')->updateOrInsert(['id' => $id], [
                 'user_id' => $session->user_id, 'session_id' => $session->id, 'installation' => $data['installation'],
                 'proof_hash' => $proof, 'token' => Crypt::encryptString($data['token']), 'token_hash' => $hash,
                 'generation' => $same && $same->session_id === $session->id && $same->token_hash === $hash && !$same->revoked_at ? $same->generation : ($same->generation ?? 0) + 1, 'environment' => $data['environment'],
-                'provider' => $apns ? 'apns' : 'expo', 'apns_host' => $apns && $sameToken ? $same->apns_host : null,
-                'live_install_id' => $apns ? ($data['liveInstallId'] ?? null) : null,
                 'revoked_at' => null, 'visible_run' => null, 'present_until' => null, 'created_at' => $same->created_at ?? now(), 'updated_at' => now(),
             ]);
             app(Preferences::class)->get($session->user_id);
@@ -50,9 +40,7 @@ final class Devices
     }
     public function eligible(object $d): bool
     {
-        if ($d->revoked_at) return false;
-        // APNs devices carry a host hint, not a build environment; Expo devices must match the server.
-        if (($d->provider ?? 'expo') !== 'apns' && $d->environment !== config('intelligence.environment')) return false;
+        if ($d->revoked_at || $d->environment !== config('intelligence.environment')) return false;
         $s = VibyraSession::find($d->session_id);
         return $s && $s->user_id === $d->user_id && !$s->revoked_at
             && $s->idle_expires_at && $s->absolute_expires_at

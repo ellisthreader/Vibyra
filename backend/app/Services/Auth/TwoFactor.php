@@ -5,7 +5,6 @@ namespace App\Services\Auth;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Two-factor authentication as the rest of the app sees it: start a setup, confirm
@@ -24,8 +23,7 @@ class TwoFactor
 
     public function enabled(User $user): bool
     {
-        // A damaged encrypted factor must never downgrade sign-in to password only.
-        return $user->two_factor_confirmed_at !== null;
+        return $user->two_factor_confirmed_at !== null && $this->secret($user) !== null;
     }
 
     /** A setup waiting for its first code. Starting again replaces it. */
@@ -33,7 +31,6 @@ class TwoFactor
     {
         $secret = $this->totp->secret();
         $user->forceFill([
-            'two_factor_method' => 'totp', 'two_factor_destination' => null,
             'two_factor_secret' => Crypt::encryptString($secret),
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
@@ -78,28 +75,17 @@ class TwoFactor
         return $codes;
     }
 
-    /** Stale callers cannot replay a slot or restore a replaced recovery-code set. */
-    public function check(User $user, string $code, bool $settings = true): bool
-    {
-        [$accepted, $locked] = DB::transaction(function () use ($user, $code, $settings): array {
-            $locked = User::whereKey($user->getKey())->lockForUpdate()->first();
-            return [$locked !== null && $this->checkLocked($locked, $code, $settings), $locked];
-        }, 3);
-        if ($locked) $user->setRawAttributes($locked->getAttributes(), true);
-        return $accepted;
-    }
-
-    private function checkLocked(User $user, string $code, bool $settings): bool
+    /**
+     * A code at login: the app's six digits, or one recovery code, which is spent.
+     * Everything else -- a repeat of a code already used, a code for an account with
+     * no second factor -- is false, and the caller says nothing about which.
+     */
+    public function check(User $user, string $code): bool
     {
         if (! $this->enabled($user)) {
             return false;
         }
-        if (($user->two_factor_method ?: 'totp') !== 'totp') {
-            return ($settings && app(TwoFactorCodes::class)->check('settings:'.$user->id,
-                app(TwoFactorIdentity::class)->state($user), $code)) || $this->spendRecoveryCode($user, $code);
-        }
-        $secret = $this->secret($user);
-        $slot = $secret !== null ? $this->totp->verify($secret, $code) : null;
+        $slot = $this->totp->verify((string) $this->secret($user), $code);
         if ($slot !== null) {
             if ($user->two_factor_last_slot !== null && $slot <= (int) $user->two_factor_last_slot) {
                 return false;
@@ -140,8 +126,6 @@ class TwoFactor
     public function disable(User $user): void
     {
         $user->forceFill([
-            'two_factor_method' => 'totp', 'two_factor_destination' => null,
-            'two_factor_revision' => (string) \Illuminate\Support\Str::uuid(),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,

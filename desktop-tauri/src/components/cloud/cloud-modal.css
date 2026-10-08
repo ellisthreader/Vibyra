@@ -1,0 +1,28 @@
+/* The phone composition sits at reading width on desktop; the sheet owns long-list scrolling. */
+.cc-backdrop { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 20px; background: #0008; backdrop-filter: blur(12px); }
+.cc-modal.cc-page { position: relative; inset: auto; width: min(560px, 100%); height: min(860px, calc(100dvh - 40px)); border-radius: 26px; overflow: hidden; box-shadow: 0 32px 100px #0008, 0 0 0 1px #ffffff18; }
+.cc-modal .cc-sheet__head { padding-inline: 24px; }
+.cc-modal .cc-answer { padding-inline: 24px; }
+.cc-modal .cc-footer { padding-inline: 24px; }
+.cc-modal .cc-bar { min-height: 44px; padding-top: 4px; flex-shrink: 0; }
+.cc-modal .cc-title { font-size: 24px; line-height: 29px; }
+.cc-modal .cc-stage:not(.is-full) { flex-shrink: 0; }
+.cc-modal .cc-sheet:not(.is-fill) { padding-top: 6px; }
+.cc-modal .cc-sheet { max-height: 100%; }
+.cc-modal .cc-aside { flex-shrink: 0; font-size: 12px; gap: 8px; }
+.cc-modal .cc-link { min-height: 30px; }
+.cc-modal .cc-row__name { white-space: normal; overflow-wrap: anywhere; }
+.cc-modal .cc-consent__choice { color: var(--sky-text); width: 100%; }
+.cc-button--retry { margin-bottom: 10px; background: #ffffff16; }
+.cc-modal.is-background *, .cc-modal.is-background *::before, .cc-modal.is-background *::after { animation-play-state: paused !important; }
+@media (max-height: 720px) {
+  .cc-modal .cc-scene-frame.is-compact { height: 150px; }
+  .cc-modal .cc-scene-frame.is-compact > .cc-scene { transform: translateY(-114px) scale(.44); }
+  .cc-modal .cc-sheet__head { padding-top: 16px; }
+  .cc-modal .cc-title { font-size: 22px; line-height: 27px; }
+  .cc-modal .cc-steps { margin-bottom: 12px; }
+  .cc-modal .cc-sheet { padding-bottom: 16px; }
+  .cc-modal .cc-scene-frame:not(.is-compact) { height: 280px; }
+  .cc-modal .cc-scene-frame:not(.is-compact) > .cc-scene { transform: translateY(-50px) scale(.72); }
+}
+@media (prefers-reduced-motion: reduce) { .cc-modal *, .cc-modal *::before, .cc-modal *::after { animation: none !important; transition: none !important; } }

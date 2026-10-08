@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-optional-agents"
+description = "Enables the phone_optional_agents command without any pre-configured scope."
+commands.allow = ["phone_optional_agents"]
+
+[[permission]]
+identifier = "deny-phone-optional-agents"
+description = "Denies the phone_optional_agents command without any pre-configured scope."
+commands.deny = ["phone_optional_agents"]

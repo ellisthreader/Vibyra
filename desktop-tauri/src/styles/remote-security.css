@@ -1,0 +1,5 @@
+/* Remote access status lives in the notification corner, as a toast that
+   stays while the connection does. Toasts lift above it by its height. */
+.corner-status { position: fixed; right: 14px; bottom: 14px; z-index: 90; width: min(360px, calc(100vw - 28px)); animation: fade-up 200ms var(--e-hero); }
+.vtoast__action--danger { color: var(--danger); }
+.vtoast__action--danger:hover { background: var(--danger-soft); border-color: transparent; }

@@ -1,0 +1,191 @@
+@import "./decision-switch.css";
+
+/* The decision dialog: one question the person must answer before work goes
+ * on — a phone asking in, a command a model wrote, quitting with sessions
+ * running. Same family as the Pro and Safe mode prompts: a small labelled mark,
+ * one large question, the facts in one quiet card, actions bottom right. */
+
+.modal.decision {
+  position: relative;
+  width: min(440px, 92vw);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--line-soft) inset, 0 28px 90px rgba(0, 0, 0, 0.35);
+}
+.decision--wide { width: min(520px, 92vw) !important; }
+/* A faint wash behind the heading, tinted by what kind of question it is. */
+.decision::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 140px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 15% -40%, color-mix(in srgb, var(--decision-tone) 22%, transparent), transparent 70%);
+}
+.decision { --decision-tone: var(--accent); }
+.decision--danger { --decision-tone: var(--danger); }
+
+.decision__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px 0;
+}
+.decision__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--decision-tone);
+  font-size: 11.5px;
+  font-weight: 640;
+}
+.decision__mark-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--decision-tone) 15%, transparent);
+}
+.decision__top .icon-btn { margin: -4px -6px -4px 0; }
+
+.decision__content { position: relative; padding: 14px 22px 2px; overflow-y: auto; min-height: 0; }
+.decision__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 21px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+.decision__lead { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+
+/* The facts: one card, rows split by hairlines. */
+.decision__card {
+  margin: 18px 0 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--workspace);
+  overflow: hidden;
+}
+.decision__row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 11px;
+  align-items: start;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.decision__row + .decision__row { border-top: 1px solid var(--line-soft); }
+.decision__row small { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; }
+.decision__tick {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: -1px;
+  border-radius: 50%;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.decision__tick--off { color: var(--muted); background: var(--hover); }
+.decision__tick--warn { color: var(--danger); background: var(--danger-soft); }
+
+/* Who is asking: the device, the code to match, where it came from. */
+.decision__who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.decision__who-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--elevated);
+  border: 1px solid var(--line-soft);
+}
+.decision__who strong { display: block; color: var(--text); font-size: 13px; font-weight: 620; overflow-wrap: anywhere; }
+.decision__who > div > span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+.decision__key { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.02em; }
+
+.decision__code {
+  margin: 0;
+  text-align: center;
+  word-spacing: 0.1em;
+  padding: 18px 14px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+}
+
+.decision__pre {
+  margin: 0;
+  padding: 13px 14px;
+  max-height: 220px;
+  overflow: auto;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--term-text);
+  background: var(--term-screen);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+/* An extra the person can opt into, kept apart from what they are allowing. */
+.decision__option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.decision__option:hover { background: var(--hover); }
+.decision__option strong { display: block; color: var(--text); font-size: 12.5px; font-weight: 600; }
+.decision__option small { display: block; margin-top: 3px; color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+.decision__note { margin: 12px 0 0; color: var(--muted); font-size: 11.5px; line-height: 1.55; }
+.decision__error { margin: 12px 0 0; color: var(--danger); font-size: 11.5px; overflow-wrap: anywhere; }
+
+.decision__actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 20px 22px 22px;
+}
+.decision__actions .btn { min-height: 36px; padding-inline: 16px; border-radius: 9px; }
+.decision__actions-spacer { margin-right: auto; }
+
+@media (prefers-reduced-motion: reduce) { .modal.decision { animation: none; } }
+
+/* Quitting: the sessions that will stop, each with a live dot. */
+.close-confirm__list { max-height: 196px; overflow-y: auto; }
+.close-confirm__list .decision__row { grid-template-columns: 8px minmax(0, 1fr); align-items: center; padding-block: 9px; }
+.close-confirm__list .decision__row > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.close-confirm__live { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.decision__tick--warn { font-size: 11px; font-weight: 800; }
+.decision__caption { margin: 0; padding: 11px 14px 3px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.decision__caption + .decision__row { border-top: 0; }

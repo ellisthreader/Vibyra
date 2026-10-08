@@ -1,0 +1,195 @@
+/* Auth buttons, reveal utility, wait states, and motion preferences. */
+
+.auth-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 560;
+  cursor: pointer;
+  box-shadow: none;
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.auth-choice:hover:enabled {
+  background: var(--hover-strong);
+  border-color: var(--accent-border);
+  box-shadow: none;
+}
+
+.auth-choice:active:enabled {
+  transform: translateY(0) scale(0.985);
+}
+
+.auth-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.auth-choice--open {
+  border-color: var(--accent-border);
+}
+
+.auth-choice__mark {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.auth-choice__mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.auth-choice__mark--apple {
+  color: var(--text);
+}
+
+.auth-choice__mark--email {
+  color: var(--muted);
+}
+
+.auth-choice__chevron {
+  width: 7px;
+  height: 7px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.5;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.auth-choice--open .auth-choice__chevron {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+/* Collapsible sections animate through grid rows for a real height tween. */
+.auth-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-reveal--open {
+  grid-template-rows: 1fr;
+}
+
+.auth-reveal__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.auth-reveal__inner > * {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 240ms ease 40ms, transform 260ms cubic-bezier(0.22, 1, 0.36, 1) 40ms;
+}
+
+.auth-reveal--open .auth-reveal__inner > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.auth-provider-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 22px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.auth-provider-status__error {
+  color: var(--danger);
+  animation: auth-up 240ms ease both;
+}
+
+.auth-spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  animation: auth-spin 0.8s linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 132px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.auth-wait--error {
+  color: var(--danger);
+}
+
+.auth-wait--error .auth-submit {
+  width: auto;
+  min-width: 132px;
+}
+
+/* Auth follows the workspace theme. */
+.auth .window-controls button {
+  color: var(--muted);
+}
+
+.auth .window-controls button:hover {
+  background: var(--line);
+  color: var(--text);
+}
+
+.auth .window-controls button.close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.auth :focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth__backdrop,
+  .auth-card__halo,
+  .auth-card__logo,
+  .auth-card > * {
+    animation: none;
+  }
+
+  .auth-reveal,
+  .auth-reveal__inner > *,
+  .auth-choice,
+  .auth-choice__chevron {
+    transition-duration: 1ms;
+  }
+
+  .auth-spinner {
+    animation-duration: 1.6s;
+  }
+}

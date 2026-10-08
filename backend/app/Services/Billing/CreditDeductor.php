@@ -76,7 +76,6 @@ class CreditDeductor
         ?string $reference = null,
         ?array $meta = null,
     ): CreditLedger {
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Use the unified token wallet for this account.');
         $result = $this->calculator->actualCredits($modelKey, $openRouterUsd, $inputTokens, $outputTokens, $agentMode);
         $credits = (int) $result['credits'];
 
@@ -116,7 +115,6 @@ class CreditDeductor
 
     public function grant(User $user, int $credits, string $kind, ?string $reference = null, ?array $meta = null): CreditLedger
     {
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Use the unified token wallet for this account.');
         return DB::transaction(function () use ($user, $credits, $kind, $reference, $meta) {
             $fresh = User::lockForUpdate()->find($user->id);
             $newBalance = (int) $fresh->credits_balance + $credits;
@@ -136,7 +134,6 @@ class CreditDeductor
 
     public function spend(User $user, int $credits, string $kind, ?string $reference = null, ?array $meta = null): CreditLedger
     {
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Use the unified token wallet for this account.');
         return DB::transaction(function () use ($user, $credits, $kind, $reference, $meta) {
             $fresh = User::lockForUpdate()->find($user->id);
             $newBalance = max(0, (int) $fresh->credits_balance - $credits);
@@ -170,7 +167,6 @@ class CreditDeductor
         ?array $meta = null,
         ?string $reference = null
     ): CreditLedger {
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Use the unified token wallet for this account.');
         return DB::transaction(function () use ($user, $monthlyAllowance, $meta, $reference) {
             $fresh = User::lockForUpdate()->find($user->id);
             $fresh->forceFill([

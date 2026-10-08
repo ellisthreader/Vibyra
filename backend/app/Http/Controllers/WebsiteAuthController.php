@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\Auth\TwoFactor;
 use App\Services\Auth\TwoFactorChallenge;
-use App\Services\Analytics\Recorder;
-use App\Services\Analytics\AuthLoginRecorder;
 use App\Services\ContentModeration;
 use App\Services\Referrals\ReferralService;
 use App\Services\WebsiteAccountPayload;
@@ -25,7 +23,6 @@ class WebsiteAuthController extends Controller
 
     public function signup(Request $request): JsonResponse
     {
-        app(Recorder::class)->consented($request, 'website_signup_attempted');
         $email = $this->normalizedEmail($request->input('email'));
         $password = (string) $request->input('password', '');
         $name = trim((string) $request->input('name', ''));
@@ -44,7 +41,7 @@ class WebsiteAuthController extends Controller
         }
 
         $this->moderation->assertLocalTextAllowed($name, 'auth.name');
-        $user = app(\App\Services\Membership\Licenses\Pending::class)->createUser([
+        $user = User::create([
             'name' => $name !== '' ? $name : $this->nameFromEmail($email),
             'email' => $email,
             'provider' => 'email',
@@ -58,7 +55,7 @@ class WebsiteAuthController extends Controller
             'onboarding_complete' => false,
             'remembered_desktops' => [],
             'app_state' => [],
-        ], $request);
+        ]);
         $this->referrals->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
 
@@ -69,7 +66,6 @@ class WebsiteAuthController extends Controller
         }
 
         $this->establishSession($request, $user);
-        app(Recorder::class)->signup($request);
 
         return response()->json(['ok' => true, 'user' => $this->payload->for($user)], 201);
     }
@@ -85,16 +81,21 @@ class WebsiteAuthController extends Controller
             return response()->json(['ok' => false, 'error' => 'Email or password is incorrect.'], 401);
         }
 
+        /*
+         * The website is the same account as the phone, so it has to ask the same
+         * second question. Without this, a password alone would still open a web
+         * session and the second factor would be a lock on one of two doors.
+         */
         if (app(TwoFactor::class)->enabled($user)) {
             return response()->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
         }
 
         $this->establishSession($request, $user);
-        app(AuthLoginRecorder::class)->record($user, 'website', 'password');
 
         return response()->json(['ok' => true, 'user' => $this->payload->for($user)]);
     }
 
+    /** The code that finishes a login the password only got halfway through. */
     public function loginTwoFactor(Request $request): JsonResponse
     {
         $user = app(TwoFactorChallenge::class)->claim(
@@ -105,11 +106,8 @@ class WebsiteAuthController extends Controller
             return response()->json(['ok' => false,
                 'error' => 'That code didn’t match. Try the current code from your authenticator app.'], 401);
         }
+
         $this->establishSession($request, $user);
-        $request->session()->put('owner_2fa_verified_at', now()->timestamp);
-        $request->session()->put('owner_second_factor_verified_at', now()->timestamp);
-        $request->session()->put('owner_second_factor_user_id', $user->id);
-        app(AuthLoginRecorder::class)->record($user, 'website', 'totp');
 
         return response()->json(['ok' => true, 'user' => $this->payload->for($user)]);
     }

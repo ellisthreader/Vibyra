@@ -1,0 +1,145 @@
+/* The sound cue picker on each Settings > Notifications event row: the
+   trigger that replaces the native `select`, and the listbox it opens.
+
+   The trigger is an outline, never a fill — the settings groups behind it are
+   transparent, so a filled control reads as a hole punched in the panel.
+
+   `.cuepick-menu` and its children are portalled to `document.body`, so they
+   render at the document root and must not rely on any settings ancestor. */
+
+/* ---------- trigger ---------- */
+
+.cuepick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100px;
+  min-height: 26px;
+  padding: 0 7px 0 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-control);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--t-ui) var(--e-standard),
+    background-color var(--t-ui) var(--e-standard),
+    color var(--t-ui) var(--e-standard);
+}
+
+.cuepick:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--hover);
+}
+
+.cuepick[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+
+.cuepick:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.cuepick:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 2px;
+}
+
+/* The widest label ("Complete") inks about 54px at this size, so 100px is
+   content plus air rather than a hole; the ellipsis is a guard, not a
+   behaviour — a truncated cue name is one of the defects this replaces. */
+.cuepick__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cuepick__chev {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--dim);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: color var(--t-ui) var(--e-standard);
+}
+
+.cuepick:hover:not(:disabled) .cuepick__chev,
+.cuepick[aria-expanded="true"] .cuepick__chev {
+  color: var(--muted);
+}
+
+/* ---------- menu ---------- */
+
+.cuepick-menu {
+  position: fixed;
+  z-index: 1200;
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu);
+  outline: none;
+}
+
+.cuepick-menu__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  scroll-margin: 5px;
+  transition:
+    background-color var(--t-ui) var(--e-standard),
+    color var(--t-ui) var(--e-standard);
+}
+
+.cuepick-menu__option[data-active="true"] {
+  background: var(--hover);
+}
+
+.cuepick-menu__option[aria-selected="true"] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* "No sound" is set apart by a rule, not by dimmed italics: in a listbox, dim
+   plus italic is how an unavailable option is spelled, and Silent is a choice
+   like any other. */
+.cuepick-menu__option[data-cue="none"] {
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+
+.cuepick-menu__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The app's own check glyph, not a font character: a "✓" matches neither the
+   icon sheet's stroke weight nor its optical size. */
+.cuepick-menu__tick {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--accent);
+}

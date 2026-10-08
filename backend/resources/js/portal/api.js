@@ -1,5 +1,3 @@
-import { decodeWallet } from "./wallet.js";
-import { requestErrorMessage } from "./requestError.js";
 const ENDPOINTS = {
   session: "/web-api/session",
   login: "/web-api/auth/login",
@@ -10,7 +8,6 @@ const ENDPOINTS = {
   checkout: "/web-api/billing/checkout",
   portal: "/web-api/billing/portal",
   releases: "/web-api/releases",
-  ownerAnalytics: "/web-api/owner/analytics",
 };
 
 export class ApiError extends Error {
@@ -32,24 +29,16 @@ export async function apiRequest(path, options = {}) {
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (!["GET", "HEAD"].includes(method.toUpperCase())) headers["X-CSRF-TOKEN"] = csrfToken();
 
-  let response;
-  try {
-    response = await fetch(path, {
-      ...options,
-      method,
-      headers,
-      credentials: "same-origin",
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    });
-  } catch (error) {
-    if (error?.name !== "AbortError" && typeof window !== "undefined") {
-      window.dispatchEvent(new Event("vibyra:network-error"));
-    }
-    throw error;
-  }
+  const response = await fetch(path, {
+    ...options,
+    method,
+    headers,
+    credentials: "same-origin",
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.ok === false) {
-    throw new ApiError(requestErrorMessage(response.status, payload), response.status, payload);
+    throw new ApiError(payload?.error ?? "Vibyra could not complete that request.", response.status, payload);
   }
   return payload ?? { ok: true };
 }
@@ -60,20 +49,13 @@ export const portalApi = {
   loginTwoFactor: (challengeId, code) => apiRequest(ENDPOINTS.loginTwoFactor, { body: { challengeId, code } }),
   signup: (fields) => apiRequest(ENDPOINTS.signup, { body: fields }),
   logout: () => apiRequest(ENDPOINTS.logout, { method: "DELETE" }),
-  catalogue: () => apiRequest('/api/billing/catalogue?version=2'),
-  wallet: () => apiRequest('/web-api/billing/account?version=2').then(data => ({ wallet: decodeWallet(data.wallet) })),
-  activity: (before) => apiRequest('/web-api/billing/activity' + (before ? '?before=' + encodeURIComponent(before) : '')),
-  buyOffer: (offer, requestId, accountScope) => apiRequest(ENDPOINTS.checkout, { body: { offerKey: offer.offerKey, offerVersion: offer.offerVersion, requestId, accountScope } }),
   plans: () => apiRequest(ENDPOINTS.plans),
   checkout: (plan, cycle) => apiRequest(ENDPOINTS.checkout, {
     body: { kind: "subscription", plan, cycle },
   }),
   billingPortal: () => apiRequest(ENDPOINTS.portal, { body: {} }),
   releases: () => apiRequest(ENDPOINTS.releases),
-  ownerAnalytics: (days) => apiRequest(`${ENDPOINTS.ownerAnalytics}?days=${days}`),
-  startProvider: (provider, declarations = {}) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: declarations }),
-  providers: () => apiRequest('/web-api/auth/providers'),
-  resendVerification: (email) => apiRequest('/api/auth/email/resend', { body: { email } }),
+  startProvider: (provider) => apiRequest(`/web-api/auth/provider/${provider}/start`, { body: {} }),
   providerStatus: (provider, flowId) => apiRequest(
     `/web-api/auth/provider/${provider}/status/${encodeURIComponent(flowId)}`
   ),

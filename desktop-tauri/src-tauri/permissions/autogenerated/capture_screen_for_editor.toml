@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-capture-screen-for-editor"
+description = "Enables the capture_screen_for_editor command without any pre-configured scope."
+commands.allow = ["capture_screen_for_editor"]
+
+[[permission]]
+identifier = "deny-capture-screen-for-editor"
+description = "Denies the capture_screen_for_editor command without any pre-configured scope."
+commands.deny = ["capture_screen_for_editor"]

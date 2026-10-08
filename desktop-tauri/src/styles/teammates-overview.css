@@ -1,0 +1,63 @@
+/* Agent v2 Phase 8 on the Mac: task plan card, activity feed, starter teammates and their suggestions. Tokens only. */
+.teammate-plan{display:flex;flex-direction:column;gap:8px;margin:0 0 8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--rail);font-size:12px;color:var(--text);min-width:0}
+.teammate-plan>header{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.teammate-plan>header strong{font-size:12px;font-weight:600}
+.teammate-plan-summary{color:var(--muted)}.teammate-plan-summary[data-tone=warn]{color:var(--amber)}
+.teammate-plan ul,.teammate-suggestions ul,.teammate-templates ul{list-style:none;margin:0;padding:0}
+.teammate-plan-services,.teammate-plan-gaps{display:flex;flex-direction:column;gap:6px}
+.teammate-plan li,.teammate-suggestions li{display:flex;align-items:center;gap:10px;min-width:0}
+.teammate-plan li>span:not(.hub-mark),.teammate-suggestions li>span:not(.hub-mark):not(.hub-pill){flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.teammate-plan-title{display:block}
+.teammate-plan small,.teammate-suggestions small{display:block;color:var(--muted);font-size:11px;line-height:1.45}
+.teammate-plan-gaps li{padding:8px 10px;border-radius:8px;background:var(--workspace)}
+.teammate-plan-gaps li[data-blocking=true]{box-shadow:inset 2px 0 0 var(--amber)}
+.teammate-plan-note,.teammate-plan-quiet{margin:0 0 6px;font-size:11px;line-height:1.5;color:var(--muted)}
+.teammate-plan li>button,.teammate-suggestions button,.teammate-templates button,.teammate-activity button.teammate-activity-link,.teammate-activity-more,.teammate-activity-head>button:not(.icon-btn){flex-shrink:0;padding:6px 10px;border:1px solid var(--line);border-radius:7px;background:var(--hover-strong);color:var(--text);font-size:12px;cursor:pointer}
+.teammate-tag{margin-left:4px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:10.5px;font-weight:600}
+.teammate-suggestions{display:flex;flex-direction:column;gap:12px;margin:0 0 26px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--rail)}
+.teammate-suggestions>header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.teammate-suggestions>header>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.teammate-suggestions h3{margin:0;font-size:14px;font-weight:600}
+.teammate-suggestions ul{display:flex;flex-direction:column}
+.teammate-suggestions li{padding:10px 0;border-top:1px solid var(--line)}
+.teammate-suggestions li strong{font-size:13px;font-weight:600}
+.teammate-suggestions-icon{flex-shrink:0;width:22px;color:var(--muted)}
+.teammate-templates{display:flex;flex-direction:column;gap:10px;padding:0 32px 18px;border-bottom:1px solid var(--line);flex-shrink:0}
+.teammate-templates h3{margin:0 0 4px;font-size:14px;font-weight:600}
+.teammate-templates ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.teammate-templates li button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;background:var(--rail);text-align:left}
+.teammate-templates li button:hover:not(:disabled){background:var(--hover)}
+.teammate-templates li img{width:32px;height:32px;object-fit:contain;flex-shrink:0}
+.teammate-templates li span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.teammate-templates li strong{font-size:13px;font-weight:600}
+.teammate-templates li small{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.teammate-activity{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;color:var(--text)}
+.teammate-activity-head{display:flex;align-items:center;gap:12px;padding:22px 32px 14px;flex-shrink:0}
+.teammate-activity-head>div{flex:1;min-width:0}
+.teammate-activity-head h2{margin:0;font-size:22px;font-weight:550;letter-spacing:-.5px}
+.teammate-activity-head p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.teammate-activity-filters{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:0 32px 14px;border-bottom:1px solid var(--line);flex-shrink:0}
+.teammate-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 320px;min-width:0}
+.teammate-chips button{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--muted);font-size:12px;cursor:pointer}
+.teammate-chips button[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent-border);color:var(--text)}
+.teammate-chips .hub-mark{width:16px;height:16px;border-radius:4px}
+.teammate-activity-filters label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.teammate-activity-filters select{max-width:220px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--workspace);color:var(--text);font-size:12px}
+.teammate-activity-list{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:6px 32px 28px}
+.teammate-activity-list>*{max-width:760px;margin-left:auto;margin-right:auto}
+.teammate-activity-list ul{list-style:none;margin-top:0;margin-bottom:0;padding:0}
+.teammate-activity-row{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.teammate-activity-row>.hub-mark{margin-top:1px}
+.teammate-activity-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding:0;border:0;background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.teammate-activity-main:disabled{cursor:default;opacity:1}
+.teammate-activity-title{display:flex;align-items:center;gap:8px;min-width:0}
+.teammate-activity-title strong{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.teammate-activity-main small{color:var(--muted);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.teammate-activity-summary{color:var(--text)!important}
+.teammate-activity-who{display:flex;align-items:center;gap:6px;font-size:11px!important}
+.teammate-activity-who img{width:16px;height:16px;object-fit:contain}
+.teammate-activity-who time{margin-left:auto;color:var(--dim);flex-shrink:0}
+.teammate-activity-slot{flex:0 0 52px;display:flex;justify-content:flex-end}
+.teammate-activity-empty{margin:40px auto;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+.teammate-activity-more{display:block;margin:18px auto 0!important}
+@container(max-width:700px){.teammate-activity-head,.teammate-activity-filters,.teammate-activity-list,.teammate-templates{padding-left:16px;padding-right:16px}}

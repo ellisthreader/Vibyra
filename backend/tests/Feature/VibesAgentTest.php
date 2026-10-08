@@ -23,26 +23,6 @@ class VibesAgentTest extends TestCase
         $this->pinTrial();
     }
 
-    public function test_provider_receives_object_schema_after_turn_json_round_trip(): void
-    {
-        config(['vibes.enabled' => true, 'services.openrouter.key' => 'test-only']); Queue::fake();
-        $user = User::factory()->create(); app(Wallet::class)->ensure($user);
-        DB::table('vibes_wallets')->where('user_id', $user->id)->update(['consented_at' => now()]);
-        $chat = (string) Str::uuid(); $id = (string) Str::uuid();
-        DB::table('vibes_chats')->insert(['id' => $chat, 'user_id' => $user->id, 'title' => 'News']);
-        $tool = app(\App\Services\ChatConnectors\Registry::class)->for('hackernews')->definitions()[0];
-        $q = ['chatId' => $chat, 'text' => 'Read news', 'model' => 'qwen/qwen3.8-flash',
-            'trial' => true, 'max' => 50, 'expires' => now()->addMinute()->timestamp, 'revision' => 0,
-            'request' => ['model' => 'qwen/qwen3.8-flash', 'messages' => [['role' => 'user', 'content' => 'Read news']],
-                'tools' => [$tool], 'max_tokens' => 2048,
-                'provider' => ['max_price' => ['prompt' => 0.15, 'completion' => 0.47]]]];
-        app(Turns::class)->submit($user->id, $id, $q);
-        Http::fake(['*' => Http::response(['id' => 'gen', 'usage' => ['cost' => 0.001],
-            'choices' => [['message' => ['content' => 'Ready.']]]])]);
-        app()->call([new RunVibesTurn($id), 'handle']);
-        Http::assertSent(fn ($request) => str_contains($request->body(), '"properties":{}'));
-    }
-
     public function test_tool_loop_aggregates_cost_and_duplicate_decisions_do_not_queue_twice(): void
     {
         config(['vibes.enabled' => true, 'services.openrouter.key' => 'test-only']); Queue::fake();

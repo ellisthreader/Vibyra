@@ -34,12 +34,8 @@ class OpenRouterPricingCatalog
     public function snapshot(): ?array
     {
         $snapshot = Cache::get($this->snapshotCacheKey());
-        if (! $this->validSnapshot($snapshot)) {
-            return null;
-        }
-        $snapshot['models'] = OpenRouterReasoning::apply($snapshot['models']);
 
-        return $snapshot;
+        return $this->validSnapshot($snapshot) ? $snapshot : null;
     }
 
     public function all(): array

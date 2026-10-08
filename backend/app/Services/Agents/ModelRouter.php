@@ -14,7 +14,7 @@ final class ModelRouter
     {
         $s = new Situation($situation->inputBound, min($situation->budget, (int) $agent->budget),
             $situation->trialOnly, $situation->needsTools, $situation->historyBytes,
-            $situation->historyTurns, $situation->needsVision, $situation->paidBudget, $situation->scale);
+            $situation->historyTurns, $situation->needsVision, $situation->paidBudget);
         // Only the person's task and saved job inform routing, never tool output.
         $demand = Demand::from(Signals::of($text."\n".mb_substr($agent->brief, 0, 4000), $s->historyBytes, $s->historyTurns));
         $demand = \App\Services\Decisions\SemanticDemand::apply($demand, $semantic);
@@ -64,6 +64,6 @@ final class ModelRouter
             $cost += TurnPrice::usd($nextInput, 'none', $row['price']);
             $fits = $fits && Candidates::fits($row, $nextInput, 'none');
         }
-        return [max(1, (int) ceil($cost * 100 * $s->scale)) / $s->scale, $fits];
+        return [max(1, (int) ceil($cost * 100)), $fits];
     }
 }

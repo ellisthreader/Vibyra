@@ -15,15 +15,7 @@ class ProviderIdentityVerifier
             throw new ProviderIdentityException('The identity provider is not configured.');
         }
 
-        $claims = $this->tokens->verify($token, $settings['jwks'], $provider === 'microsoft');
-        if ($provider === 'microsoft') {
-            $tenant = (string) ($claims['tid'] ?? '');
-            if (! preg_match('/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i', $tenant)
-                || ($claims['ver'] ?? null) !== '2.0') {
-                throw new ProviderIdentityException('The Microsoft identity token is invalid.');
-            }
-            $settings['issuer'] = ['https://login.microsoftonline.com/'.$tenant.'/v2.0'];
-        }
+        $claims = $this->tokens->verify($token, $settings['jwks']);
         $this->assertStandardClaims($claims, $settings);
         if ($nonce !== null && $nonce !== '') {
             $claimNonce = (string) ($claims['nonce'] ?? '');
@@ -33,10 +25,6 @@ class ProviderIdentityVerifier
         }
 
         $email = $this->verifiedEmail($claims);
-        if ($provider === 'microsoft') {
-            // Microsoft does not assert mailbox ownership in its email claim.
-            $email = $this->contactEmail($claims);
-        }
         if ($provider === 'google' && $email === null) {
             throw new ProviderIdentityException('Google did not return a verified email address.');
         }
@@ -46,13 +34,6 @@ class ProviderIdentityVerifier
             'subject' => (string) $claims['sub'],
             'email' => $email,
             'name' => $this->claimString($claims, 'name'),
-            'emailVerified' => $email !== null && $provider !== 'microsoft',
-            'authoritativeEmail' => $email !== null && match ($provider) {
-                'google' => str_ends_with($email, '@gmail.com')
-                    || (is_string($claims['hd'] ?? null) && trim($claims['hd']) !== ''),
-                'apple' => true,
-                default => false,
-            },
         ];
     }
 
@@ -68,11 +49,6 @@ class ProviderIdentityVerifier
                 'issuer' => ['https://accounts.google.com', 'accounts.google.com'],
                 'audiences' => $this->configuredAudiences('services.google_auth.audiences'),
                 'jwks' => (string) config('services.google_auth.jwks_url'),
-            ],
-            'microsoft' => [
-                'issuer' => [],
-                'audiences' => $this->configuredAudiences('services.microsoft_auth.audiences'),
-                'jwks' => (string) config('services.microsoft_auth.jwks_url'),
             ],
             default => throw new ProviderIdentityException('Unsupported login provider.'),
         };
@@ -107,17 +83,6 @@ class ProviderIdentityVerifier
         $verified = filter_var($claims['email_verified'] ?? false, FILTER_VALIDATE_BOOL);
 
         return $email && $verified ? $email : null;
-    }
-
-    private function contactEmail(array $claims): ?string
-    {
-        foreach (['email', 'preferred_username'] as $key) {
-            $value = filter_var(strtolower(trim((string) ($claims[$key] ?? ''))), FILTER_VALIDATE_EMAIL);
-            if ($value) {
-                return $value;
-            }
-        }
-        return null;
     }
 
     private function configuredAudiences(string $key): array

@@ -1,0 +1,175 @@
+/* Email form and shared auth controls. Shared semantic theme tokens. */
+
+.auth-reveal--form .auth-email {
+  padding-top: 16px;
+}
+
+.auth-email {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-email__modes {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+/* Sliding pill behind the active mode. */
+.auth-email__modes::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  border-radius: 7px;
+  background: var(--elevated);
+  box-shadow: none;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-email__modes[data-mode="signup"]::before {
+  transform: translateX(100%);
+}
+
+.auth-email__modes button {
+  position: relative;
+  height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 560;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.auth-email__modes button:hover {
+  color: var(--text);
+}
+
+.auth-email__modes button.is-active {
+  color: var(--text);
+}
+
+.auth-email__lead {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.auth-email .auth-reveal {
+  margin-top: -10px;
+}
+
+.auth-email .auth-reveal .auth-input {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.auth-input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.auth-input::placeholder {
+  color: var(--dim);
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.auth-email__feedback {
+  min-height: 18px;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.auth-email__error,
+.auth-email__notice {
+  display: inline-block;
+  animation: auth-up 240ms ease both;
+}
+
+.auth-email__error {
+  color: var(--danger);
+}
+
+.auth-email__notice {
+  color: var(--success);
+}
+
+.auth-submit {
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: var(--action);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 620;
+  cursor: pointer;
+  box-shadow: none;
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease, filter 160ms ease;
+}
+
+.auth-submit:hover:enabled {
+  background: var(--action-hover);
+  box-shadow: none;
+}
+
+.auth-submit:active:enabled {
+  transform: translateY(0) scale(0.985);
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-link {
+  align-self: center;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 140ms ease;
+}
+
+.auth-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.auth__legal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 24px 18px;
+  font-size: 12px;
+  color: var(--dim);
+  z-index: 1;
+}

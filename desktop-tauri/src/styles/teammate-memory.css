@@ -1,0 +1,21 @@
+.structured-memory { display: grid; gap: 12px; margin-top: 24px; }
+.structured-memory p { margin: 0; }
+.structured-memory__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.structured-memory__heading h3 { margin: 0; }
+.structured-memory__account { font-weight: 600; overflow-wrap: anywhere; }
+.structured-memory__list { display: grid; gap: 16px; padding: 0; margin: 0; list-style: none; }
+.structured-memory__list li { display: grid; gap: 10px; border-top: 1px solid var(--border-subtle, #80808040); padding: 16px 0; }
+.structured-memory__fact { white-space: pre-wrap; overflow-wrap: anywhere; }
+.structured-memory__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.structured-memory button { justify-self: start; }
+.structured-memory textarea { min-height: 78px; }
+
+.teammate-email-draft { display: grid; gap: 12px; margin: 12px 0; }
+.teammate-email-draft label { display: grid; gap: 6px; }
+.teammate-email-draft input, .teammate-email-draft textarea { width: 100%; box-sizing: border-box; }
+.teammate-email-draft textarea { min-height: 160px; resize: vertical; }
+
+.teammate-email-draft select { min-width: 0; max-width: 100%; width: 100%; min-height: 36px; }
+.teammate-email-draft [aria-label="Email attachments"] { display: grid; gap: 8px; min-width: 0; }
+.teammate-email-draft [aria-label="Email attachments"] > div { display: flex; gap: 8px; align-items: start; min-width: 0; }
+.teammate-email-draft [aria-label="Email attachments"] span { flex: 1; min-width: 0; overflow-wrap: anywhere; }

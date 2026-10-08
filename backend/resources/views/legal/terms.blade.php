@@ -7,7 +7,7 @@
     <div class="eyebrow">Legal</div>
     <h1>Terms of Service</h1>
     <p class="lead">These terms govern your use of Vibyra's website, mobile app, desktop app, connected services, AI features, and community.</p>
-    <p class="updated">Effective and last updated: 27 September 2026</p>
+    <p class="updated">Effective and last updated: 8 August 2026</p>
 
     <section>
         <h2>1. Agreement and eligibility</h2>
@@ -46,8 +46,7 @@
     <section>
         <h2>7. Plans, credits, and payments</h2>
         <p>Paid plans, billing periods, included credits, usage limits, renewal terms, and prices are shown before purchase. Taxes may apply. Subscriptions renew until cancelled through the applicable billing channel. Credits are service usage units, not money, and cannot be transferred or redeemed for cash unless law requires otherwise.</p>
-        <p>Vibyra Pro comes with a 14-day money-back guarantee: if Pro is not right for you, email <a href="mailto:support@vibyra.net">support@vibyra.net</a> within 14 days of your first Pro payment and we will refund that payment in full. Purchases made through the App Store or Google Play are refunded through that store.</p>
-        <p>Beyond that guarantee, refund and cancellation rights depend on applicable law and the payment platform used. App Store or Google Play purchases are also governed by that store's billing rules.</p>
+        <p>Refund and cancellation rights depend on applicable law and the payment platform used. App Store or Google Play purchases are also governed by that store's billing rules.</p>
     </section>
 
     <section>
@@ -64,6 +63,6 @@
     <section>
         <h2>10. Ending use and general terms</h2>
         <p>You may stop using Vibyra or delete your account at any time. We may suspend or terminate access for a material or repeated breach, serious security risk, non-payment, or legal requirement. Provisions that by their nature should survive will continue after termination.</p>
-        <p>Applicable law governs these terms without limiting mandatory consumer protections where you live. If one provision is unenforceable, the rest remain effective. Delay in enforcement is not a waiver. Contact <a href="mailto:support@vibyra.net">support@vibyra.net</a> with questions or formal notices.</p>
+        <p>Applicable law governs these terms without limiting mandatory consumer protections where you live. If one provision is unenforceable, the rest remain effective. Delay in enforcement is not a waiver. Contact <a href="mailto:support@vibyra.app">support@vibyra.app</a> with questions or formal notices.</p>
     </section>
 @endsection

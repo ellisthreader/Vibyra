@@ -1,9 +1,9 @@
 <?php
 namespace App\Jobs;
-use App\Services\Notifications\{Devices, Inbox, PhonePush, Preferences};
+use App\Services\Notifications\{Devices, Inbox, Preferences};
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\{Crypt, DB, Http};
 final class DeliverPhoneNotification implements ShouldQueue
 {
     use Queueable;
@@ -22,8 +22,7 @@ final class DeliverPhoneNotification implements ShouldQueue
         if (!$item || !$device || $device->user_id !== $item->user_id || $device->generation !== $d->generation
             || !app(Devices::class)->eligible($device) || !app(Inbox::class)->current($item)) { $this->done('suppressed'); return; }
         $p = app(Preferences::class)->get($item->user_id);
-        $phase = DB::table('work_events')->where('id', $item->event_id)->value('phase');
-        if (!app(Preferences::class)->allows($p, $item->category, $phase)) { $this->done('suppressed'); return; }
+        if (!$p->{$item->category}) { $this->done('suppressed'); return; }
         if (app(Preferences::class)->quiet($p)) {
             $this->done('pending', ['next_at' => now()->addMinutes(5)]); return;
         }
@@ -33,21 +32,22 @@ final class DeliverPhoneNotification implements ShouldQueue
         }
         $ttl = app(Inbox::class)->deliveryTtl($item);
         if ($ttl < 1) { $this->done('suppressed'); return; }
-        // Overflow stays in the inbox; the person still sees it on the next open.
-        if (app(PhonePush::class)->rateLimited((int) $item->user_id)) { $this->done('suppressed', ['error' => 'RateLimited']); return; }
         try {
-            $r = app(PhonePush::class)->item($device, $item, $ttl, (int) $d->generation);
-        } catch (\Throwable) {
-            // No receipt means it may already have reached the phone. Keep the
-            // inbox item, but never replay an uncertain OS notification.
-            $this->done('failed', ['error' => 'DeliveryUnconfirmed']); return;
-        }
-        match ($r['state']) {
-            'retry' => $this->retry($d),
-            'ticketed' => $this->done('ticketed', ['ticket' => $r['ticket'], 'next_at' => now()->addMinutes(15)]),
-            'accepted' => $this->done('accepted', ['error' => null]),
-            default => $this->done($r['state'], ['error' => $r['error'] ?? null]),
-        };
+            $r = Http::withToken((string) config('intelligence.expo_token'))->acceptJson()->timeout(10)
+                ->post('https://exp.host/--/api/v2/push/send', ['to' => Crypt::decryptString($device->token),
+                    'title' => $item->title, 'body' => 'Open Vibyra to review.', 'sound' => 'default',
+                    'ttl' => $ttl,
+                    'data' => ['version' => 1, 'notificationId' => $item->id]]);
+            if ($r->status() === 429 || $r->serverError()) { $this->retry($d); return; }
+            $body = $r->json('data');
+            if ($r->successful() && ($body['status'] ?? null) === 'ok' && is_string($body['id'] ?? null)) {
+                $this->done('ticketed', ['ticket' => $body['id'], 'next_at' => now()->addMinutes(15)]); return;
+            }
+            $error = $body['details']['error'] ?? 'PushRejected';
+            if ($error === 'DeviceNotRegistered') DB::table('notification_devices')->where('id', $device->id)
+                ->where('generation', $d->generation)->update(['revoked_at' => now()]);
+            $this->done('failed', ['error' => in_array($error, ['DeviceNotRegistered','InvalidCredentials','MessageTooBig']) ? $error : 'PushRejected']);
+        } catch (\Throwable) { $this->retry($d); }
     }
     private function retry(object $d): void
     {

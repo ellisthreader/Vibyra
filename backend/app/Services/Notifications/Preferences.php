@@ -11,14 +11,14 @@ final class Preferences
     public function payload(int $user): array
     {
         $p = $this->get($user);
-        return ['revision' => $p->revision, 'attention' => (bool) $p->attention, 'replies' => (bool) $p->replies, 'failures' => (bool) $p->failures,
+        return ['revision' => $p->revision, 'attention' => (bool) $p->attention, 'replies' => (bool) $p->replies,
             'smart' => (bool) $p->smart, 'advisories' => (bool) $p->advisories, 'timezone' => $p->timezone,
             'quietStart' => $p->quiet_start, 'quietEnd' => $p->quiet_end];
     }
     public function save(int $user, array $data): array
     {
         $this->get($user);
-        $update = array_intersect_key($data, array_flip(['attention', 'replies', 'failures', 'smart', 'advisories', 'timezone']));
+        $update = array_intersect_key($data, array_flip(['attention', 'replies', 'smart', 'advisories', 'timezone']));
         foreach (['quietStart' => 'quiet_start', 'quietEnd' => 'quiet_end'] as $key => $column) {
             if (array_key_exists($key, $data)) $update[$column] = $data[$key];
         }
@@ -26,13 +26,6 @@ final class Preferences
         abort_unless(DB::table('notification_preferences')->where('user_id', $user)->where('revision', $data['revision'])->update($update),
             409, 'Notification settings changed. Refresh before saving.');
         return $this->payload($user);
-    }
-    /** Failure events use Failed even when an older event producer says attention. */
-    public function allows(object $p, string $category, ?string $phase): bool
-    {
-        $key = $category === 'attention' && in_array($phase, ['failed', 'agent_failed', 'cloud_failed'], true)
-            ? 'failures' : $category;
-        return (bool) ($p->{$key} ?? true);
     }
     public function quiet(object $p): bool
     {

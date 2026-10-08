@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-browser-takeovers"
+description = "Enables the agent_browser_takeovers command without any pre-configured scope."
+commands.allow = ["agent_browser_takeovers"]
+
+[[permission]]
+identifier = "deny-agent-browser-takeovers"
+description = "Denies the agent_browser_takeovers command without any pre-configured scope."
+commands.deny = ["agent_browser_takeovers"]

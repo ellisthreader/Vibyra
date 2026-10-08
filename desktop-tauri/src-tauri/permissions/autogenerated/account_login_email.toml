@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-login-email"
+description = "Enables the account_login_email command without any pre-configured scope."
+commands.allow = ["account_login_email"]
+
+[[permission]]
+identifier = "deny-account-login-email"
+description = "Denies the account_login_email command without any pre-configured scope."
+commands.deny = ["account_login_email"]

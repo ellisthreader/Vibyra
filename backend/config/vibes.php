@@ -1,12 +1,6 @@
 <?php
 
 return [
-    'funded_terminals_enabled' => env('VIBYRA_FUNDED_TERMINALS_ENABLED', false),
-
-    // Free vs Pro workspace limits (terminals at once, safe-mode worktrees, Agents).
-    // Off, every plan reports them unlimited, so clients and the server can ship
-    // before the switch. The server enforces Agents; nothing else here reads it yet.
-    'plan_limits_enabled' => env('VIBYRA_PLAN_LIMITS_ENABLED', false),
     'enabled' => env('VIBES_ENABLED', false),
     // Whether Vibes can be tried with no account. Off by default: a guest grant
     // is real money, and `devicecheck_*` below is what keeps one device to one.
@@ -28,26 +22,6 @@ return [
     'micro_usd_per_credit' => 10000,
     'daily_micro_usd_limit' => (int) env('VIBES_DAILY_MICRO_USD_LIMIT', 25000000),
     'max_output_tokens' => 2048,
-    // Token-terminal models a real terminal message could not reach on 2026-10-06, so the picker
-    // never offers a choice that fails. No host serves the first fourteen with project tools within
-    // the listed price; OpenRouter refuses the rest for this account (agentic-harness-only free
-    // tiers, audio models, provider 400s, Meta terms not accepted). Re-test before removing one.
-    // The Vibyra-token terminal menu, curated by the owner on 2026-10-06: each lab's current main and
-    // coding models only (no o-series, mini/nano tiers, gpt-oss, image models or older generations).
-    // New launches and Auto use only these; open terminals keep their model. Add a new main model
-    // here when it ships. VIBES_TERMINAL_MODELS (comma-separated) overrides it; empty offers all.
-    'terminal_models' => env('VIBES_TERMINAL_MODELS') !== null
-        ? array_values(array_filter(explode(',', (string) env('VIBES_TERMINAL_MODELS'))))
-        : ['openai/gpt-6.1-sol', 'openai/gpt-6-astra', 'openai/gpt-6-luna', 'anthropic/claude-opus-5.5', 'anthropic/claude-sonnet-5.5', 'anthropic/claude-fable-5.1', 'google/gemini-3.1-pro-preview', 'google/gemini-3.8-flash', 'x-ai/grok-4.7', 'deepseek/deepseek-v4-pro-0813', 'deepseek/deepseek-v4.1-flash', 'qwen/qwen3.8-max-prime', 'qwen/qwen3.8-flash', 'z-ai/glm-5.3', 'z-ai/glm-5.3-prime', 'moonshotai/kimi-k3', 'bytedance-seed/seed-2.0-code'],
-    'terminal_unavailable' => [
-        'mistralai/mistral-nemo', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-4-31b-it',
-        'meta-llama/llama-4-scout', 'qwen/qwen3-14b', 'xiaomi/mimo-v2.5-pro', 'deepseek/deepseek-r1-0528',
-        'minimax/minimax-m1', 'sao10k/l3.1-euryale-70b', 'openai/gpt-5.2-chat', 'sakana/fugu-max',
-        'amazon/nova-premier-v1', 'sakana/fugu-ultra', 'sakana/fugu-ultra-v2',
-        'thinkingmachines/inkling-small:free', 'thinkingmachines/inkling:free', 'openai/gpt-audio-mini',
-        'openai/gpt-audio', 'kwaipilot/kat-coder-pro-v2.5', 'meta/muse-spark-1.1', 'meta/muse-spark-1.2',
-        'meta/muse-spark-1.3',
-    ],
     'queue_connection' => env('VIBES_QUEUE_CONNECTION', 'database'),
     'apple_bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
     'apple_environment' => env('VIBES_APPLE_ENVIRONMENT', 'Production'),
@@ -92,27 +66,14 @@ return [
     // other entitlement is Pro's on both, so the upgrade page can switch sizes and
     // change nothing but the figures.
     'plans' => [
-        // maxTerminals counts every running terminal (agent or shell), so typing an
-        // agent CLI into a plain shell is not a way round it. Legacy paid plans keep
-        // Pro's workspace so nobody who paid loses anything.
-        'pro_v2' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
-            'sessionCredits' => 400, 'weekCredits' => 1000, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
-            'preview' => true, 'review' => true,
-            // Included cloud-computer hours per membership month; the owner sets it, 0 promises nothing.
-            'cloudHours' => (float) env('CLOUD_INCLUDED_HOURS_PRO', 0)],
-        // Free is one project (desktop and Vibyra AI alike); Preview and Review are Pro.
         'free' => ['maxProjects' => 1, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
-            'sessionCredits' => 60, 'weekCredits' => 150, 'maxTerminals' => 2, 'safeWorktrees' => false, 'agents' => false,
-            'preview' => false, 'review' => false, 'cloudHours' => 0],
+            'sessionCredits' => 60, 'weekCredits' => 150],
         'starter' => ['maxProjects' => 3, 'concurrentReplies' => 1, 'fullCatalogue' => true, 'remoteAccess' => false,
-            'sessionCredits' => 70, 'weekCredits' => 175, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
-            'preview' => true, 'review' => true],
+            'sessionCredits' => 70, 'weekCredits' => 175],
         'builder' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
-            'sessionCredits' => 200, 'weekCredits' => 500, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
-            'preview' => true, 'review' => true],
+            'sessionCredits' => 200, 'weekCredits' => 500],
         'pro' => ['maxProjects' => null, 'concurrentReplies' => 3, 'fullCatalogue' => true, 'remoteAccess' => true,
-            'sessionCredits' => 400, 'weekCredits' => 1000, 'maxTerminals' => null, 'safeWorktrees' => true, 'agents' => true,
-            'preview' => true, 'review' => true],
+            'sessionCredits' => 400, 'weekCredits' => 1000],
     ],
 
     // The two rolling usage windows, in the units `UsageWindows` measures them in.
@@ -183,15 +144,9 @@ return [
     // them. Catalogue models from the live OpenRouter snapshot carry no tier and
     // the phone groups them separately.
     'models' => [
-        'openai/gpt-6-sol' => ['family' => 'OpenAI', 'name' => 'GPT-6 Sol', 'trial' => false,
-            'tier' => 'best', 'released' => '2026-09-22', 'blurb' => 'Coding and reasoning for complex projects.'],
-        'openai/gpt-6-luna' => ['family' => 'OpenAI', 'name' => 'GPT-6 Luna', 'trial' => false,
-            'tier' => 'fast', 'released' => '2026-09-22', 'blurb' => 'Fast, focused coding and everyday tasks.'],
-        'anthropic/claude-opus-5.5' => ['family' => 'Claude', 'name' => 'Claude Opus 5.5', 'trial' => false,
-            'tier' => 'best', 'released' => '2026-09-22', 'blurb' => 'Long-running coding and careful project changes.'],
         // Best for building.
         'openai/gpt-6-astra' => ['family' => 'OpenAI', 'name' => 'GPT-6 Astra', 'trial' => false,
-            'tier' => 'best', 'released' => '2026-09-03', 'blurb' => 'Deepest reasoning for hard, multi-file work.'],
+            'tier' => 'best', 'released' => '2026-07-14', 'blurb' => 'Deepest reasoning for hard, multi-file work.'],
         'anthropic/claude-opus-5' => ['family' => 'Claude', 'name' => 'Opus 5', 'trial' => false,
             'tier' => 'best', 'released' => '2026-05-20', 'blurb' => 'Long, careful refactors and large codebases.'],
         'anthropic/claude-sonnet-5' => ['family' => 'Claude', 'name' => 'Sonnet 5', 'trial' => false,

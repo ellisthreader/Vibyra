@@ -9,8 +9,8 @@ export function FinalCta() {
         <SectionTitle>Keep the build moving.</SectionTitle>
         <p className="text-lg text-ink-muted">Start free. Connect your phone when you are ready.</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Button href="/downloads" data-analytics-cta="home_get_vibyra" className="max-sm:w-full">Get Vibyra</Button>
-          <Button href="/login" data-analytics-cta="home_login" variant="ghost" className="max-sm:w-full">Log in</Button>
+          <Button href="/downloads" className="max-sm:w-full">Get Vibyra</Button>
+          <Button href="/login" variant="ghost" className="max-sm:w-full">Log in</Button>
         </div>
       </Container>
     </Section>

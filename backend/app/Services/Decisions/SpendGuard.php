@@ -16,11 +16,7 @@ final class SpendGuard
             }
             $d = DB::table('ai_decisions')->where('id', $id)->lockForUpdate()->first();
             if (!$d || $d->state !== 'pending' || now()->gte($d->deadline)) return false;
-            if ($d->purpose === 'terminal') {
-                // The terminal Auto action carries explicit per-request consent, separate from background advice.
-                $input = json_decode(\Illuminate\Support\Facades\Crypt::decryptString($d->input), true);
-                if (($input['consent'] ?? false) !== true || !config('intelligence.terminal_auto') || config('intelligence.jev_mode') !== 'active') return false;
-            } elseif (!DB::table('notification_preferences')->where('user_id', $d->user_id)->value('smart')) return false;
+            if (!DB::table('notification_preferences')->where('user_id', $d->user_id)->value('smart')) return false;
             $reserve = max(1, (int) config('intelligence.call_reserve_micro_usd'));
             $day = now()->utc()->format('Ymd'); $minute = now()->utc()->format('YmdHi');
             $limits = [
@@ -40,7 +36,7 @@ final class SpendGuard
                     'calls' => DB::raw('calls + 1'), 'reserved_micro_usd' => DB::raw('reserved_micro_usd + '.$reserve)]);
             }
             // Never refund uncertain/failed calls. Reservations survive worker death, retries and audit pruning.
-            DB::table('decision_spend_controls')->where('id', 1)->update(['owner' => $id, 'busy_until' => now()->addSeconds($d->purpose === 'terminal' ? 20 : 10)]);
+            DB::table('decision_spend_controls')->where('id', 1)->update(['owner' => $id, 'busy_until' => now()->addSeconds(10)]);
             return (bool) DB::table('ai_decisions')->where('id', $id)->where('state', 'pending')
                 ->update(['state' => 'classifying', 'claimed_at' => now()]);
         }, 3);

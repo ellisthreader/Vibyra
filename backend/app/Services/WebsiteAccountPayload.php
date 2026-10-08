@@ -11,14 +11,12 @@ class WebsiteAccountPayload
 
     public function for(User $user): array
     {
-        if (\App\Services\Membership\NewAccounts::eligible($user)) app(\App\Services\Vibes\Wallet::class)->ensure($user);
         return [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'provider' => $user->provider ?: 'email',
             'emailVerified' => $user->hasVerifiedEmail(),
-            'licenseRedemptionStatus' => app(\App\Services\Membership\Licenses\Pending::class)->status($user->id),
             'plan' => $user->plan ?: 'free',
             'planBillingCycle' => $user->plan_billing_cycle ?: 'monthly',
             'membershipActive' => $this->entitlement->active($user),
@@ -28,7 +26,6 @@ class WebsiteAccountPayload
             'canManageStripeBilling' => $user->billing_provider === 'stripe'
                 && (string) ($user->stripe_customer_id ?? '') !== '',
             ...(app(\App\Services\Vibes\AccountMembership::class)->for($user) ?? []),
-            'planLimits' => app(\App\Services\Membership\PlanLimits::class)->for($user),
         ];
     }
 }

@@ -116,7 +116,7 @@ return [
 
     'recovery_links' => [
         'mode' => env('RECOVERY_LINK_MODE', 'dual'),
-        'verified_url' => env('RECOVERY_VERIFIED_URL', 'https://vibyra.net/reset-password'),
+        'verified_url' => env('RECOVERY_VERIFIED_URL', 'https://links.vibyra.app/reset-password'),
         'apple_app_id' => env('RECOVERY_APPLE_APP_ID'),
         'android_package' => env('RECOVERY_ANDROID_PACKAGE', 'app.vibyra.mobile'),
         'android_sha256_cert_fingerprints' => array_values(array_filter(array_map(

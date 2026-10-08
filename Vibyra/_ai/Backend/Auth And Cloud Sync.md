@@ -1,0 +1,127 @@
+# Backend - Auth And Cloud Sync
+
+Read this for backend auth, app session state, and mobile cloud sync behavior.
+
+## Files
+
+- `backend/app/Http/Controllers/Concerns/SessionState.php`
+- `backend/app/Http/Controllers/Concerns/ChatHistory.php`
+- `backend/routes/web.php`
+- `src/utils/appApi.ts`
+- `src/context/useCloudSync.ts`
+- `src/context/useAppState.ts`
+
+## Auth
+
+Bearer tokens are issued at login/signup. `authenticatedUser($request)` resolves the current user for protected routes.
+
+App-session expiry should return the user to login without wiping local workspace/chat state. The native desktop owns a separate bearer session in its OS credential store and returns to its own auth gate when that session expires. Account profile writes use `POST /api/account/profile`. Destructive `DELETE /api/account` is provider-aware: email accounts require the current password; Apple/Google accounts require a freshly verified identity token whose provider subject matches the stored `provider_id`. Apple deletion also consumes a new single-use nonce challenge.
+
+Account session management is backed by real `vibyra_sessions` rows. Session creation stores `deviceName`, optional `installId` as `device_identifier`, request IP, user agent, `created_at`, and `last_used_at`; authenticated requests refresh `last_used_at` plus request metadata. Required migrations include `2026_05_21_000002_add_device_metadata_to_vibyra_sessions_table.php` and `2026_05_21_000003_add_device_identifier_to_vibyra_sessions_table.php`; run `php artisan migrate --force` if login/signup reports a missing session metadata column. Routes: `GET /api/account/sessions` lists current-user `devices` grouped by `device_identifier` (legacy rows group by device name, user agent, and IP) and also returns raw `sessions` for compatibility. Device payloads include `current`, `location`, `createdAt`, `updatedAt`, and `sessionCount`, with the current device sorted first. `DELETE /api/account/devices/{deviceId}` revokes all sessions for one device; `DELETE /api/account/sessions/{sessionId}` revokes one raw session; `DELETE /api/account/sessions` revokes all sessions including the current token. Private, loopback, and reserved IPs are surfaced as `Local network`.
+
+App-session lifecycle is owned by `App\Services\Auth\SessionAuthenticator` and `SessionTokenRotator`. Migration `2026_06_09_000030_add_lifecycle_fields_to_vibyra_sessions_table.php` adds sliding idle expiry, fixed absolute expiry, token-rotation grace, and revocation metadata. `DELETE /api/auth/logout` revokes only the presented session; `POST /api/auth/session/rotate` returns a replacement bearer token while the prior token remains valid briefly. Rotation is explicit so streaming and older callers are not silently invalidated. Rollout controls are in `config/session_security.php`: lifecycle `off|observe|enforce`, rotation `off|manual`, timeout minutes, and previous-token grace seconds. Account session/device revocation now preserves rows with `revoked_at` and `revocation_reason`; active listings exclude them.
+
+Mobile sign-out starts `DELETE /api/auth/logout` with the captured bearer token,
+clears in-memory account/workspace/desktop state immediately, then verifies secure
+secret deletion with one retry. Backend revocation is best effort so an offline
+server cannot prevent local logout; account deletion awaits the same cleanup.
+
+Mobile derives one label in `src/utils/deviceIdentity.ts` from Expo native
+constants, with platform fallbacks when a custom name is unavailable. It sends
+that value during auth and pairing. On authenticated startup,
+`POST /api/account/session/device` refreshes the current session's
+`device_name` and stable `device_identifier`, allowing older generic session
+rows to show the phone label in Settings without requiring a new login.
+
+Public-IP account session locations use MaxMind GeoLite2 City locally through `App\Services\SessionLocationResolver`; it returns `City, Country` or country-only when available and caches resolved labels for 7 days. When the database is missing or unreadable it returns the public IP but does not cache that fallback; cache keys include the database modification time so installing or refreshing the database takes effect immediately. Do not call a hosted geolocation API on login/session listing. `php artisan maxmind:update` downloads `GeoLite2-City.mmdb` to `storage/app/maxmind/` using the current MaxMind permalink with Basic Auth from `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY`, skips when the database is fresh (`MAXMIND_UPDATE_DAYS`, default 7), and uses a file lock to prevent repeated concurrent downloads. `routes/console.php` schedules it weekly.
+
+Desktop local development and Railway-style proxy deployment can present `request()->ip()`/`REMOTE_ADDR` as `127.0.0.1` or a private LAN/proxy address. `UserPayloads::sessionRequestIp()` uses the real socket IP when it is public; only when the socket IP is private/local may it trust the first valid public candidate from `publicIp`, `X-Vibyra-Public-IP`, `CF-Connecting-IP`, `X-Real-IP`, or `X-Forwarded-For`. This prevents desktop `/api/session` and `/api/account/sessions` refreshes from overwriting a real public session IP back to localhost while still ignoring client-spoofed forwarded IPs on normal public requests. CORS must allow `X-Vibyra-Public-IP` for browser-origin desktop account calls.
+
+`VibyraAppController` composes both `UserPayloads` and `AccountEndpoints`. Keep the auth response helper named `UserPayloads::sessionPayload(Request, User)` and the account-device row helper named `AccountEndpoints::accountSessionPayload(VibyraSession, bool)`; if both traits define `sessionPayload`, PHP fatals before protected routes or tests can run.
+
+If mobile web login fails with `POST http://<LAN-IP>:8000/api/auth/login net::ERR_CONNECTION_REFUSED`, check whether the Laravel backend is listening on port 8000. From the repo root, `npm run backend` starts `php artisan serve --host=0.0.0.0 --port=8000`, matching `EXPO_PUBLIC_API_URL`.
+
+If desktop/mobile login fails with `SQLSTATE[HY000]: General error: 11 database disk image is malformed` against `backend/database/database.sqlite`, treat the local SQLite file as corrupt. First preserve it with a timestamped `.bak`, then recreate `backend/database/database.sqlite` and run `php artisan migrate --force` from `backend/`. Do not start with `php artisan optimize:clear` after an empty DB reset because `CACHE_STORE=database` can make that command fail until the `cache` table exists. After migrations, verify with `PRAGMA integrity_check`, confirm `sessions`, `cache`, `users`, and `vibyra_sessions` exist, then run `php artisan optimize:clear`.
+
+Native desktop email login goes through enumerated Tauri IPC commands into
+`desktop-tauri/src-tauri/src/account_api.rs` and `account_auth.rs`; the renderer
+never receives the bearer token or an arbitrary backend URL. Production uses
+the Railway HTTPS API, while `VIBYRA_DESKTOP_API_URL` development overrides are
+restricted to loopback or HTTPS. Read `Desktop/Tauri Account Authentication.md`
+before changing this contract.
+
+Mobile provider login uses `expo-apple-authentication` and
+`@react-native-google-signin/google-signin`. The mobile client sends provider
+identity tokens, never `installId` as identity. Backend
+`ProviderIdentityVerifier` verifies RS256 signatures with cached JWKS and fails
+closed on issuer, configured audience, expiry, subject, verified-email, or
+Apple nonce mismatch. `POST /api/auth/provider/challenge` issues single-use
+Apple nonce challenges. Configure `GOOGLE_AUTH_CLIENT_IDS` and
+`APPLE_AUTH_CLIENT_IDS` as comma-separated accepted audiences.
+
+Desktop Google/Apple login uses backend-owned authorization-code flows under
+`/api/auth/desktop/{provider}/start`, `/callback`, and `/status/{flowId}`.
+`DesktopProviderOAuthFlow` stores short-lived state, nonce, PKCE verifier, and
+desktop device metadata; `DesktopProviderTokenExchange` exchanges the code;
+the existing `ProviderIdentityVerifier` still performs final JWT/JWKS
+verification. Callback results are picked up once by the polling desktop and
+become normal `vibyra_sessions` bearer sessions. Configure the exact HTTPS
+callbacks plus `GOOGLE_DESKTOP_CLIENT_ID/SECRET` and
+`APPLE_DESKTOP_CLIENT_ID` with either a client secret or Team/Key/private-key
+fields. Provider secrets and identity tokens never pass through the Tauri
+renderer.
+Signup and provider-login responses include `isNewUser`: true only when that
+request created the account, false for an existing provider identity. Desktop
+uses it solely for the current-launch first welcome; it is not persisted as
+account state.
+
+Email signup sends `VibyraVerifyEmail`; resend is
+`POST /api/auth/email/resend`, and the signed verification route redirects to
+`vibyra://email-verified`. Password recovery uses
+`POST /api/auth/password/forgot`, the HTTPS
+`GET /api/auth/password/open` bridge into `vibyra://reset-password`, and
+`POST /api/auth/password/reset`; a successful reset revokes existing app
+sessions. Auth entry routes have per-minute throttles and generic recovery
+responses to avoid account enumeration. Production requires an HTTPS
+`APP_URL` and working mail transport.
+Verification resend invokes the real `VibyraVerifyEmail` notification and is
+limited server-side to one request per normalized email address every 60
+seconds. Responses include `retryAfter` so Desktop can display the same
+cooldown while it refreshes native account state.
+
+Verified account phone numbers use Twilio Verify rather than local OTP storage.
+Authenticated `POST /api/account/phone/start` accepts an E.164 `phoneNumber`,
+sends an SMS challenge, and stores only `pending_phone_number` after provider
+acceptance. `POST /api/account/phone/check` accepts the code, asks Twilio to
+approve it, then promotes the pending value to unique
+`phone_number`/`phone_verified_at`. Configure `TWILIO_VERIFY_SERVICE_SID`,
+`TWILIO_API_KEY`, and `TWILIO_API_SECRET`; missing credentials fail closed.
+Start with `AccountVerificationEndpoints.php` and `PhoneVerificationService.php`.
+
+## Session State
+
+`POST /api/session/state` accepts `{ onboardingComplete, rememberedDesktops, appState }` and persists per user.
+
+Editable project memory has focused authenticated CRUD routes under
+`/api/project-memory/{projectId}`. Mutations update only
+`app_state.projectMemories`; `/api/session/state` merges project-memory records
+by `updatedAt` so stale full-state mobile sync cannot erase newer desktop
+memory. The canonical limits remain eight entries per project and 220
+characters per entry; `brief` entries cannot be deleted.
+
+Full Markdown memory is backend-owned in `project_memory_vaults` and
+`project_memory_nodes`, separate from legacy `app_state`. Authenticated vault
+routes provide flat folder/document nodes through `GET .../vault`, node
+`POST`/`PATCH`/`DELETE`, and normalized Markdown manifests through
+`POST .../imports`; imports never accept local filesystem paths. Node updates
+support version checks, non-empty folder deletion requires `recursive`, and
+imports enforce relative `.md` paths plus file/count/size limits. Start in
+`ProjectMemoryEndpoints.php` and `App\Services\ProjectMemory\`.
+
+`POST /api/session/state` merges incoming `appState` over existing keys rather
+than replacing the entire object, so older clients preserve fields they do not
+send. The eight-entry compatibility projection always retains brief entries.
+
+The mobile `useCloudSync` debounce writes remote app state. On backend failure it backs off before retrying to avoid repeated background logs.
+
+Any new background Laravel request should pass `{ background: true }` to `appApiRequest`; user-initiated requests should not.

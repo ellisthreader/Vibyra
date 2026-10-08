@@ -1,0 +1,3 @@
+display_name: VibyraOptimse
+short_description: Audits permission boundaries, approval UI, code organization, and source file-size limits.
+default_prompt: Audit this app for permission breaches and code organization issues. Add balanced approval/deny flows where needed, keep source files under the project line limit, and validate with typecheck and syntax checks.

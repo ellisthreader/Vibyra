@@ -5,8 +5,6 @@ namespace App\Services\Vibes;
 /** Render one consistent pricing snapshot; never read the database cache once per row. */
 final class CatalogMenu
 {
-    private ?array $published = null;
-    private ?bool $publicationActive = null;
     public function __construct(private Catalog $catalog, private array $snapshot, private bool $fresh) {}
 
     public function models(): array
@@ -26,8 +24,6 @@ final class CatalogMenu
 
     private function row(string $id, array $entry): array
     {
-        $this->published ??= app(\App\Services\ModelCatalog\PublishedCatalog::class)->models();
-        $this->publicationActive ??= app(\App\Services\ModelCatalog\PublishedCatalog::class)->active();
         $model = $this->snapshot[$id] ?? [];
         $price = $model['pricing'] ?? [];
         $known = $this->fresh && isset($price['prompt'], $price['completion']);
@@ -37,7 +33,6 @@ final class CatalogMenu
         $entry['trial'] = $this->catalog->includedFree($id, $price);
 
         return ['id' => $id, ...$entry, 'available' => $known,
-            ...($this->publicationActive ? ['pickerEligible' => isset($this->published[$id]), 'artwork' => $this->published[$id]['artwork'] ?? null] : []),
             'inputPerMillion' => $known ? (float) $price['prompt'] * 1000000 : null,
             'outputPerMillion' => $known ? (float) $price['completion'] * 1000000 : null,
             'reasoning' => ['efforts' => $efforts,

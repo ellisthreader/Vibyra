@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-project-mutate"
+description = "Enables the phone_project_mutate command without any pre-configured scope."
+commands.allow = ["phone_project_mutate"]
+
+[[permission]]
+identifier = "deny-phone-project-mutate"
+description = "Denies the phone_project_mutate command without any pre-configured scope."
+commands.deny = ["phone_project_mutate"]

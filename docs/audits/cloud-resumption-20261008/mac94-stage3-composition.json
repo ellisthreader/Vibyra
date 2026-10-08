@@ -1,0 +1,237 @@
+{
+  "stage3ArchiveSha256": "5ddc8a80336021c144d6ef501874502653dbb802359a502ed478a2bc978d45dc",
+  "paths": [
+    {
+      "path": "desktop-tauri/package-lock.json",
+      "stage3Sha256": "68d977a3d5657d647e774ccb6b2bc5ac1654415116209410f30e75b67600b612",
+      "reviewSha256": "9af187b5f2046722b73757fae91052374be83df054dd22c39857006a4e184aed",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/package.json",
+      "stage3Sha256": "c018ba0924960e4a26e7234831773d1c5e16bee9182fe259ae00bf1f17d2c2fa",
+      "reviewSha256": "f562e3c907569b4a24e927f788f04128dcc6b3a8bb5f3af0dbe53937147c8d8d",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/src-tauri/src/commands/teammates.rs",
+      "stage3Sha256": "ac86b475db8d2259cf2ac15734468871c10ce39bebf5d43ad6da46af68c403e0",
+      "reviewSha256": "ebaf3c45fc23a99709920ca7ab3efc8d640b9837874349bc53b3af232e10cc2f",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/src-tauri/src/commands/teammates_v2_cloud_routes.rs",
+      "stage3Sha256": "f73f80d010eb33d9e08ff623cd4e6204b7fcb803c850e9dc194b590e63c9b96a",
+      "reviewSha256": "6a5a3f58988e699f8001131544bfa1077887fe9d65e6d3eca07c0c33961e8b20",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/src-tauri/tauri.conf.json",
+      "stage3Sha256": "e8c3ae2f2548a0c5391f1bd288f2dc3e5226ec55f7d6574f7fbb139a9b590ccb",
+      "reviewSha256": "2b178d0e63eafa5daa5103a5b6d089f00f36d41244313d5cf2ad20da71bd880a",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/src-tauri/tauri.macos.conf.json",
+      "stage3Sha256": "278b85e69db9f6554bd46b1425defc31410632d86e67c5dfebbc0cddeeb56bce",
+      "reviewSha256": "ea8be4bb9329349ce8326efb3afc908ba9b7315737f0164b997d73cbbed1e8c1",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/AgentRuntime.tsx",
+      "stage3Sha256": "f0914ae87736c7e8eb0e5fc9cf24232707b60bac5a46f40ac7413ae7f837f169",
+      "reviewSha256": "f0914ae87736c7e8eb0e5fc9cf24232707b60bac5a46f40ac7413ae7f837f169",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/Routines.tsx",
+      "stage3Sha256": "8c5b5bb44fa8b91157da8051532b789e91f98d39f8bab1384d7349bd441ef0a3",
+      "reviewSha256": "8c5b5bb44fa8b91157da8051532b789e91f98d39f8bab1384d7349bd441ef0a3",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/RuntimeMemory.tsx",
+      "stage3Sha256": "8735dee6309a7fec9ddca085f73b55e100f377890995476aed558e5d4ee8026c",
+      "reviewSha256": "8735dee6309a7fec9ddca085f73b55e100f377890995476aed558e5d4ee8026c",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/ScheduleItem.tsx",
+      "stage3Sha256": "656e16e92d44cb71384a053afc98bbf5ac6854a3942e8b84943284f09685f751",
+      "reviewSha256": "656e16e92d44cb71384a053afc98bbf5ac6854a3942e8b84943284f09685f751",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/Setup.tsx",
+      "stage3Sha256": "27de349f2d55d55574f510a2a2fd168358901869b42ec9022ecf6b413e93fba8",
+      "reviewSha256": "27de349f2d55d55574f510a2a2fd168358901869b42ec9022ecf6b413e93fba8",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/StructuredMemory.tsx",
+      "stage3Sha256": "e9c6025e40678cea225c9170b93e763460f6a9439ee1d9ea5e62619cef9dfb94",
+      "reviewSha256": "e9c6025e40678cea225c9170b93e763460f6a9439ee1d9ea5e62619cef9dfb94",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/ThreadComposer.tsx",
+      "stage3Sha256": "cd92e19d86bb21cf11f45ba8c5df7d6139599bf149257dc785c42d685f37cfd6",
+      "reviewSha256": "f5bfdbe05bc56bffd13d0332990309c2805702fb557c1b4762f7f47280d5513e",
+      "merge": true
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/runsV2.ts",
+      "stage3Sha256": "ff1a99396c86c37450249876cf3c0ef5b25baf7c4c4b658676f29b3c8c1e0581",
+      "reviewSha256": "ff1a99396c86c37450249876cf3c0ef5b25baf7c4c4b658676f29b3c8c1e0581",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/useAgentRuntime.ts",
+      "stage3Sha256": "8a64238b58e2a35a551360d742ffb774673c82e59849b647343dd58c432fd2e9",
+      "reviewSha256": "8a64238b58e2a35a551360d742ffb774673c82e59849b647343dd58c432fd2e9",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/useRuntimeLifecycle.ts",
+      "stage3Sha256": "504cd2d7cc7e60a7088219d7c4fe944e6ac70c59e79cbaa6ece12a32de6a1a9a",
+      "reviewSha256": "504cd2d7cc7e60a7088219d7c4fe944e6ac70c59e79cbaa6ece12a32de6a1a9a",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/components/teammates/useThread.ts",
+      "stage3Sha256": "1247bc9d30a8ccb58e466ea8f7585c9a04b86103393be634a1e5e632d24ea79c",
+      "reviewSha256": "1247bc9d30a8ccb58e466ea8f7585c9a04b86103393be634a1e5e632d24ea79c",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/src/styles/agent-cloud-runtime.css",
+      "stage3Sha256": "e999b8ae2ff6fb1afea4d5b6014c6a8444189a6b2b24b3cf7537ea876960c253",
+      "reviewSha256": "e999b8ae2ff6fb1afea4d5b6014c6a8444189a6b2b24b3cf7537ea876960c253",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/tests/agentCloudRuntimeFixture.tsx",
+      "stage3Sha256": "a7d53265381de9998b01ab16d062b156c711d62ce9da453bbcb4f197238c1948",
+      "reviewSha256": "a7d53265381de9998b01ab16d062b156c711d62ce9da453bbcb4f197238c1948",
+      "merge": false
+    },
+    {
+      "path": "desktop-tauri/tests/teammateRoutines.test.mjs",
+      "stage3Sha256": "491aee7b2bac92291be4f2fd8b120244b542e0e595a0ba63734c1e4670261050",
+      "reviewSha256": "491aee7b2bac92291be4f2fd8b120244b542e0e595a0ba63734c1e4670261050",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/cloudPreviewScope.ts",
+      "stage3Sha256": "ac4065669e30e5f812dc318df4f7dec8183351cdb9f58ca086d1c7327f98bb34",
+      "reviewSha256": "ac4065669e30e5f812dc318df4f7dec8183351cdb9f58ca086d1c7327f98bb34",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/cloudRuntimeClient.ts",
+      "stage3Sha256": "d2828cd43757d25d68caa66de21b14a83d9261b7c292c97cb65b672d1b189afa",
+      "reviewSha256": "d2828cd43757d25d68caa66de21b14a83d9261b7c292c97cb65b672d1b189afa",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/cloudRuntimeModel.ts",
+      "stage3Sha256": "333bda8fe45c9f4619c5a5de65b57c7818f106329cc59f04f3d0cc2f7a3feeef",
+      "reviewSha256": "333bda8fe45c9f4619c5a5de65b57c7818f106329cc59f04f3d0cc2f7a3feeef",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/cloudRuntimeQuote.ts",
+      "stage3Sha256": "6a84bbb9fd537cafdcdac550c4cd32e338f084824c89cfd4698285bb87184fff",
+      "reviewSha256": "6a84bbb9fd537cafdcdac550c4cd32e338f084824c89cfd4698285bb87184fff",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/cloudRuntimeStore.ts",
+      "stage3Sha256": "5d836078f1337efe000c78b3e67927f4fc822fb5a753f833f30c26d9f359810d",
+      "reviewSha256": "5d836078f1337efe000c78b3e67927f4fc822fb5a753f833f30c26d9f359810d",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/planModel.ts",
+      "stage3Sha256": "3ac31a2c63638445fe756974e08f2ec0e25bd28659610eb81e2af2aae30564c6",
+      "reviewSha256": "3ac31a2c63638445fe756974e08f2ec0e25bd28659610eb81e2af2aae30564c6",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/routinesModel.ts",
+      "stage3Sha256": "fe7f2d0fe2db6dad2d84d1d32ab86b74d3180adf732670dcfd4757bab521c31b",
+      "reviewSha256": "fe7f2d0fe2db6dad2d84d1d32ab86b74d3180adf732670dcfd4757bab521c31b",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/runAdmission.ts",
+      "stage3Sha256": "33ed4f2c9350e881ce7bdb48079f6a60ef3fbcb966fee491765ff3e04c3eb191",
+      "reviewSha256": "33ed4f2c9350e881ce7bdb48079f6a60ef3fbcb966fee491765ff3e04c3eb191",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/runCore.ts",
+      "stage3Sha256": "74473f1aa994b4251e5a47d229150389f70c641ae764ad7bf3a20a6b885dc1df",
+      "reviewSha256": "74473f1aa994b4251e5a47d229150389f70c641ae764ad7bf3a20a6b885dc1df",
+      "merge": false
+    },
+    {
+      "path": "mobile/src/agents/v2/stageTwoModel.ts",
+      "stage3Sha256": "7418338e7580c603e71746285dfc6b07431222b593bffe8834daeec51ea97f65",
+      "reviewSha256": "7418338e7580c603e71746285dfc6b07431222b593bffe8834daeec51ea97f65",
+      "merge": false
+    },
+    {
+      "path": "mobile/tests/agentCloudFixtureData.ts",
+      "stage3Sha256": "e1a360ecb7be419880e354b60a467181990a8989363b33c0f2d33269e8c6bd6f",
+      "reviewSha256": "e1a360ecb7be419880e354b60a467181990a8989363b33c0f2d33269e8c6bd6f",
+      "merge": false
+    }
+  ],
+  "semanticVersion": "0.8.24",
+  "bundleVersion": "94",
+  "routeMerge": "ThreadComposer setup uses native Cloud management/live scope, otherwise phone pairing",
+  "releaseEntry": "Peer archive has no current release entry/art; new combined0.8.24 entry/art authored",
+  "validation": {
+    "command": "CARGO_INCREMENTAL=0 RUST_TEST_THREADS=4 npm --prefix desktop-tauri run verify",
+    "exitCode": 0,
+    "log": "/private/tmp/vibyra-cloud-stage3-mac94-final-verify-20261008.log",
+    "frontend": {
+      "passed": 705,
+      "failed": 0,
+      "skipped": 1
+    },
+    "nativeCore": {
+      "passed": 240,
+      "failed": 0,
+      "ignored": 2
+    },
+    "nativeDesktop": {
+      "passed": 740,
+      "failed": 0,
+      "ignored": 16
+    },
+    "otherNativeCrates": {
+      "passed": 23,
+      "failed": 0
+    },
+    "gates": [
+      "TypeScript",
+      "Knip",
+      "canonical first-party 200-line gate",
+      "rustfmt",
+      "workspace all-target Clippy -D warnings"
+    ],
+    "keyRotationFailOld": "3 of4 regressions failed before fix",
+    "keyRotationPassNew": "4 of4 passed after fix",
+    "publicRelease": false,
+    "physicalProviderAcceptance": "pending root-owned native acceptance"
+  },
+  "mergeExceptions": [
+    "package metadata retains fixed dependency locks and fixture preparation",
+    "semantic version0.8.24; both Tauri base/Mac bundleVersion94",
+    "teammates request method extracted unchanged for canonical 200-line gate; prior Stage2 formatting retained",
+    "ThreadComposer routes native authorized Cloud setup to dedicated Cloud tab, otherwise iPhone pairing",
+    "Stage3 Cloud route helper receives rustfmt-only whitespace changes"
+  ]
+}

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-take-screenshot-editor-capture"
+description = "Enables the take_screenshot_editor_capture command without any pre-configured scope."
+commands.allow = ["take_screenshot_editor_capture"]
+
+[[permission]]
+identifier = "deny-take-screenshot-editor-capture"
+description = "Denies the take_screenshot_editor_capture command without any pre-configured scope."
+commands.deny = ["take_screenshot_editor_capture"]

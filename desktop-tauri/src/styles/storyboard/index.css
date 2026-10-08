@@ -1,0 +1,9 @@
+/* The approved Mac storyboard (2026-10-04), layered over the existing sheets.
+   See docs/mac-storyboard-redesign-plan.md. */
+@import "./frame.css";
+@import "./sidebar.css";
+@import "./shell.css";
+@import "./home.css";
+@import "./needs.css";
+@import "./panes.css";
+@import "./agents.css";

@@ -142,7 +142,6 @@ class ReferralService
 
     private function grantIfMissing(User $user, int $credits, string $kind, string $reference, array $meta): void
     {
-        if (\App\Services\Membership\Units::modern($user->id)) return;
         if ($credits <= 0 || CreditLedger::where('user_id', $user->id)->where('reference', $reference)->exists()) {
             return;
         }

@@ -1,0 +1,90 @@
+/* A short default report path; optional metadata stays behind one disclosure. */
+
+.report-modal {
+  width: min(600px, 94vw);
+  max-height: min(720px, 90vh);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--line-soft) inset, 0 28px 90px rgba(0, 0, 0, 0.35);
+}
+
+.report__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 22px 22px 4px;
+}
+
+.report__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.report__heading h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+}
+
+.report__heading p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.report__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  padding: 20px 22px;
+  overflow-y: auto;
+}
+
+.report__primary {
+  display: grid;
+  gap: 16px;
+}
+
+.report__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.report__label {
+  font-size: 12.5px;
+  font-weight: 620;
+  color: var(--text);
+}
+
+.report__label em {
+  margin-left: 5px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.report__field > .input {
+  width: 100%;
+}
+
+.report__textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.45;
+  font-family: inherit;
+}
+
+@media (max-width: 620px) {
+  .report__header,
+  .report__body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

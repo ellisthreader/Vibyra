@@ -1,0 +1,13 @@
+.teammate-steering{margin:8px 0;color:var(--muted);font-size:12px}
+.teammate-steering-toggle{border:0;background:none;color:var(--muted);padding:4px 0;cursor:pointer;font:inherit}
+.teammate-steering-toggle:hover{color:var(--text)}
+.teammate-steering section{margin-top:8px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--workspace);overflow-wrap:anywhere}
+.teammate-steering p{margin:7px 0;line-height:1.5}
+.teammate-steering-revision{border-bottom:1px solid var(--line);padding:6px 0;white-space:pre-wrap}
+.teammate-steering-revision strong,.teammate-steering label{color:var(--text);font-weight:600}
+.teammate-steering form{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.teammate-steering textarea{box-sizing:border-box;width:100%;min-height:76px;resize:vertical;background:var(--workspace);border:1px solid var(--line);border-radius:7px;padding:10px;color:var(--text);font:inherit;line-height:1.5}
+.teammate-steering form button{align-self:flex-end;border:1px solid var(--accent-border);border-radius:7px;padding:7px 12px;background:var(--accent-soft);color:var(--text);font:inherit;cursor:pointer}
+.teammate-steering button:disabled{opacity:.5;cursor:default}
+.teammate-steering-error{color:var(--danger)}
+.teammate-steering :focus-visible{outline:2px solid var(--accent);outline-offset:3px}

@@ -41,26 +41,6 @@ final class Attachments
 
     public function store(int $userId, UploadedFile $file): object
     {
-        [$kind, $name, $contents, $mime, $tokens] = $this->prepare($file);
-        $id = (string) Str::uuid();
-        $path = 'vibes-attachments/'.$userId.'/'.$id;
-        abort_unless(Storage::disk(config('vibes.attachments_disk', 'local'))->put($path, $contents),
-            503, 'The attachment could not be saved. Try again.');
-        DB::table('vibes_attachments')->insert(['id' => $id, 'user_id' => $userId, 'kind' => $kind, 'mime' => $mime,
-            'name' => $name, 'bytes' => strlen($contents), 'tokens' => $tokens, 'path' => $path,
-            'created_at' => now(), 'updated_at' => now()]);
-
-        return DB::table('vibes_attachments')->where('id', $id)->first();
-    }
-
-    /**
-     * Validated, normalized content: photos re-encoded (no location data), text
-     * checked as UTF-8 and bounded, PDFs kept. Agent V2 attachments reuse it.
-     *
-     * @return array{0: string, 1: string, 2: string, 3: string, 4: int} kind, name, contents, mime, tokens
-     */
-    public function prepare(UploadedFile $file): array
-    {
         $name = mb_substr(basename((string) $file->getClientOriginalName()) ?: 'attachment', 0, 200);
         $contents = (string) file_get_contents($file->getRealPath());
         $kind = $this->kind((string) $file->getMimeType(), $name, $contents);
@@ -70,8 +50,15 @@ final class Attachments
             'pdf' => [$contents, 'application/pdf', $this->pdfTokens($contents)],
             default => $this->text($contents),
         };
+        $id = (string) Str::uuid();
+        $path = 'vibes-attachments/'.$userId.'/'.$id;
+        abort_unless(Storage::disk(config('vibes.attachments_disk', 'local'))->put($path, $contents),
+            503, 'The attachment could not be saved. Try again.');
+        DB::table('vibes_attachments')->insert(['id' => $id, 'user_id' => $userId, 'kind' => $kind, 'mime' => $mime,
+            'name' => $name, 'bytes' => strlen($contents), 'tokens' => $tokens, 'path' => $path,
+            'created_at' => now(), 'updated_at' => now()]);
 
-        return [$kind, $name, $contents, $mime, $tokens];
+        return DB::table('vibes_attachments')->where('id', $id)->first();
     }
 
     public function payload(object $a): array

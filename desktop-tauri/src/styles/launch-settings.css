@@ -1,0 +1,181 @@
+/* The launcher is one card on the empty stage, read top to bottom: a header
+ * naming the project, the model tiles, a short stack of settings rows, and a
+ * footer that holds the one action. Everything left-aligned, one hairline
+ * between parts, no explanatory copy beyond a single line per row. */
+
+.terminal-stage .grid-empty.launch-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+  padding: clamp(24px, 9vh, 96px) 32px 48px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.launch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 620px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .18), 0 24px 56px -32px rgba(0, 0, 0, .55), var(--e-inset-hi);
+}
+
+.launch-card__head { padding: 22px 24px 4px; }
+.launch-card__head h2 { margin: 0; color: var(--text); font-size: 18px; font-weight: 600; letter-spacing: -.3px; }
+.launch-card__head p { margin: 4px 0 0; color: var(--muted); font-size: 12.5px; }
+
+.launch-card__rows { display: grid; border-top: 1px solid var(--line-soft); }
+.launch-card__rows > * + * { border-top: 1px solid var(--line-soft); }
+
+/* --- the row primitive --- */
+
+.launch-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 58px;
+  padding: 10px 24px;
+}
+
+.launch-row__label { display: grid; min-width: 0; gap: 2px; }
+.launch-row__label strong { color: var(--text); font-size: 13px; font-weight: 560; }
+.launch-row__label small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.launch-row__label small.is-warning { color: var(--amber); }
+
+/* --- footer: Safe mode on the left, Launch on the right --- */
+
+.launch-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 14px 24px;
+  border-top: 1px solid var(--line-soft);
+  border-radius: 0 0 13px 13px;
+  background: var(--rail);
+}
+
+.launch-card__go {
+  display: inline-flex;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 14px 0 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.launch-card__go kbd {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, .16);
+  color: inherit;
+  font: 500 11px var(--font-ui);
+  opacity: .9;
+}
+
+.launch-card__go:disabled { opacity: .7; cursor: progress; }
+
+.launch-safe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 4px 8px 4px 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+}
+
+.launch-safe__copy { display: grid; min-width: 0; gap: 1px; }
+.launch-safe__copy strong { color: var(--text); font-size: 13px; font-weight: 560; }
+.launch-safe__copy small { color: var(--muted); font-size: 11.5px; }
+
+.launch-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--elevated);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: background var(--t-ui) var(--e-standard);
+}
+
+.launch-switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard);
+}
+
+.launch-safe--active .launch-switch { background: var(--action); box-shadow: none; }
+.launch-safe--active .launch-switch i { background: var(--on-action); transform: translateX(14px); }
+
+/* No repository to branch from: the switch reads as unavailable, not broken. */
+.launch-safe:disabled { cursor: default; }
+.launch-safe:disabled .launch-switch { opacity: .45; }
+.launch-safe:disabled .launch-safe__copy strong { color: var(--muted); }
+
+/* --- segmented choices --- */
+
+.launch-segments {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--workspace);
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+}
+
+.launch-choice {
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 560;
+  white-space: nowrap;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.launch-choice:hover:not(:disabled) { color: var(--text); }
+.launch-choice--active { color: var(--text); background: var(--elevated); box-shadow: 0 1px 2px rgba(0, 0, 0, .18); }
+.launch-choice:disabled { cursor: not-allowed; opacity: .45; }
+
+/* --- advanced, folded --- */
+
+.launch-advanced summary { cursor: pointer; list-style: none; transition: background var(--t-base) var(--e-standard); }
+.launch-advanced summary::-webkit-details-marker { display: none; }
+.launch-advanced summary:hover { background: var(--hover); }
+
+.launch-advanced__chevron { display: grid; place-items: center; flex: 0 0 auto; width: 24px; height: 24px; color: var(--muted); }
+.launch-advanced__chevron svg { transition: transform var(--t-ui) var(--e-standard); }
+.launch-advanced[open] .launch-advanced__chevron svg { transform: rotate(180deg); }
+.launch-advanced__body { display: grid; animation: launch-advanced-in var(--t-soft) var(--e-standard); }
+.launch-advanced__body > * { border-top: 1px solid var(--line-soft); }
+
+@keyframes launch-advanced-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launch-card *, .launch-card *::before, .launch-card *::after { animation: none !important; transition: none !important; }
+}

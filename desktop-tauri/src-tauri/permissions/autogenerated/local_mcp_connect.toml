@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-local-mcp-connect"
+description = "Enables the local_mcp_connect command without any pre-configured scope."
+commands.allow = ["local_mcp_connect"]
+
+[[permission]]
+identifier = "deny-local-mcp-connect"
+description = "Denies the local_mcp_connect command without any pre-configured scope."
+commands.deny = ["local_mcp_connect"]

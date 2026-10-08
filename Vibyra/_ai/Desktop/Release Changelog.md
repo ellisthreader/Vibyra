@@ -1,0 +1,248 @@
+## 0.8.24 — 8 October 2026 (combined Cloud audit release candidate, Mac build94)
+
+Preserves the exact installed Stage3 build93 Cloud agent allowance review, bounded
+runtime, preview, routines and memory features. Adds fresh Cloud-only Claude/Codex
+Allow approvals and keeps account management available when an approved phone
+switches to Cloud. New login uploads bind encryption to the current Cloud VM key;
+key rotation retries reseal before admission. Selected-repository GitHub App access
+is a read-only pilot, with repository writes disabled. Art: `public/releases/0.8.24.svg`.
+
+This private source candidate is not a public release. Exact-source signed CI,
+notarization, installation and physical provider acceptance require separate receipts.
+
+## 0.8.23 — 8 October 2026 (Cloud audit release candidate)
+
+Cloud accounts use fresh Claude and Codex browser approvals from Settings → Cloud,
+with status, Allow and Stop controls. The Mac never copies its own Codex login.
+The selected-repository GitHub App pilot supplies read-only credentials; repository
+writes stay disabled. Cloud updates are fenced to the current runtime generation.
+
+This isolated release candidate preserves the verified local build92 source and its
+Stage2/Integrations features. Local signing and installation are separate from
+exact-source CI, notarization, public publication and live provider acceptance.
+
+## 0.8.22 — 8 October 2026 (Cloud parity candidate, Mac build91)
+
+Phone pairing contains no Cloud controls or calls. Dedicated Cloud setup and the
+updates page match the current iOS sky, project choices, Accounts and Capacity.
+Desktop Cloud is available only while a trusted phone is connected; losing the
+phone leaves authorized background work running. Existing grants and data choices
+are preserved, start failures can be retried, and Ready requires a Cloud receipt.
+
+Prepared from exact installed build90 source with its notification changes retained.
+Installation and public release receipts are recorded separately; this entry alone
+does not establish delivery or physical iPhone acceptance.
+
+## 0.8.21 — 2 October 2026 (voice readiness candidate)
+
+Mac build45 retains the native freeze fix and announces Listening only after
+native microphone startup succeeds. Startup failures remain visible; canceling
+an old startup cannot discard a newer voice recording. Delayed-start, failure
+and cancellation regressions cover the real store and serialized IPC adapter.
+Exact artifact, publication and physical audio acceptance remain separate.
+
+## 0.8.20 — 2 October 2026 (native responsiveness candidate)
+
+Mac build44 preserves0.8.19beta welcome/license changes and fixes the native
+tracing event-dispatch lock inversion. Background script/event callbacks queue
+without waiting on the main thread; filtered IPC diagnostics remain enabled.
+A real native forced-schedule regression covers events, eval and callbacks,
+with existing adversarial IPC secrecy/ACL checks retained. Artifact and installed
+acceptance are separate gates; this entry alone is not publication evidence.
+
+## 0.8.18 — Token-funded assistant and account recovery (candidate, 2026-10-02)
+
+Prepared from the verified 0.8.17 source533219cb, Mac build42. Built-in chat,
+dictation and speech use the backend-held key and shared Vibyra token wallet.
+Email reauthentication failures preserve sessions and running terminals; explicit
+Terminal selection ends temporary chat previews; account modal callbacks preserve
+focus and deletion OAuth binds its flow proof. No new Agent, connector, cloud,
+notification or VM feature is enabled. Backend rollout and native artifact
+acceptance are release gates; this candidate entry is not publication evidence.
+
+## 0.8.19 — 2 October 2026 (beta welcome candidate)
+
+Approved beta-tester artwork and personalised welcome after verified license
+activation and onboarding, using actual duration/expiry. Acknowledgement is
+account/license scoped, with local suppression and retry across network failures.
+Report a problem opens the existing explicit report flow; no automatic report.
+Optional invitation keys work during email/provider signup and Account settings.
+
+Source: `codex/beta-welcome-desktop-20261002`, isolated from release baseline
+`6dab7370`; Mac build43. Artwork: `public/releases/0.8.19.svg`. Backend receipt
+API is live at `1301c5d0` with 25 rolled-back acceptance checks. Native/public
+publication is not established by this candidate entry; record its final receipts.
+
+## 0.8.17 — Browser sign-in compatibility (candidate, 2026-10-01)
+
+Isolated candidate over reviewed 66ae2364. Google/Apple OAuth starts carry a fresh random proof and native polling returns it in a header; the backend binds completion to that attempt. Includes no unrelated dirty-main changes. Native package signing, notarization, publication and installed acceptance remain pending.
+
+## 0.8.16 — Remote access security (candidate, 2026-09-29)
+
+Build 29 preserves installed 0.8.15 build 26 features and adds approved device trust, passkey-protected Cloud sessions, scoped signed leases, independent permissions, active-session warnings, revocation and native restrictive synchronization. Nearby access requires local approval while security state is unavailable. Candidate publication and installation are recorded separately after verification.
+
+# Desktop - Release Changelog
+
+Every desktop release that reached users, newest first. This is the durable record:
+`desktop-tauri/src/lib/changelog.ts` is what the app shows, and this note is
+what survives the app. They must agree — `tests/whatsNew.test.mjs` fails the
+release gate when the shipping version is missing from either.
+
+Add the entry here in the same commit that adds it to `changelog.ts`, before
+the release is built. See [[Mac Setup]] for the publishing steps.
+
+---
+
+## 0.8.13 — 27 September 2026 (local Mac preview update)
+
+Candidate build 17 adds generic owner-selected native Mac-window preview,
+separate view/control grants and the trusted iPhone viewer. Retains 0.8.12
+phone recovery and approval fixes. This is a local test installation, not
+an updater-feed publication. Art: `public/releases/0.8.13.svg`.
+
+## 0.8.12 — 27 September 2026 (local Mac update)
+
+Installed local build 16 adds phone recovery of saved Codex conversations and the full
+connected-runner model catalogue, explicit permissions and Safe mode. Retains
+the installed 0.8.10 approval amendment fixes. Unused missing-rollout terminals can start in place without replacing any used history. Local build only; no feed publication.
+Art: `public/releases/0.8.12.svg`. Installation acceptance is recorded in
+[[Mac Setup]] and [[App/Saved Terminal Recovery]].
+
+## 0.8.8 — 24 September 2026 (Linux and Mac)
+
+Codex Terminal's private Unix socket completes its WebSocket handshake in
+blocking mode before switching to nonblocking live traffic. This fixes the
+broken pipe during `Resuming session…` when the accepted socket is not yet
+ready for the upgrade. The isolated real-CLI acceptance reproduced the 0.8.7
+failure with Codex 0.156.1 and passes after the fix, including terminal input,
+phone input, reattachment and cold resume. Art: `public/releases/0.8.8.svg`.
+Published GitHub tag `v0.8.8` at `38428b52` with all 16 signed Mac/Linux
+assets: https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.8. Workflow
+`36019587299` passed Linux AppImage/Deb native smoke and both signed Mac jobs;
+Windows retains eight unrelated Unix-assumption fixture failures. All four
+artifacts embed frontend SHA-256
+`be1494e46ea173162ecfb4de2087215bc3b1ecab7d49e520e432b6bc1a4db01d`.
+The Railway release volume filled during the Debian upload. The 0.8.8
+AppImage is stored with a verified remote hash, but the Debian file is partial
+and neither Mac archive is stored there. Automatic deletion of obsolete
+0.8.5 files was denied with “agents cannot delete files”; current 0.8.7 feeds
+remain unchanged. Finish the volume cleanup through a human operation, then
+complete the four feed updates and verify old-client offers and current-version
+204 responses before calling the in-app rollout live.
+
+## 0.8.7 — 24 September 2026 (Linux and Mac)
+
+Terminal launches recover after an interrupted reply: the app checks the
+original native request receipt without dispatching the old settings again,
+reveals an already created conversation, and starts the newly requested
+terminal with a fresh request ID. If the native store cannot be checked, it
+preserves the receipt and shows the underlying error. Art:
+`public/releases/0.8.7.svg`. Published tag `v0.8.7` at `4c2c64e5`:
+https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.7. Release run
+`36010131960` passed the shared frontend, Linux native AppImage/Deb smoke,
+and both Developer ID signed Mac jobs. Windows retained eight unrelated
+Unix-assumption fixture failures and was not published. Both Mac feeds offer
+0.8.7 to 0.8.5 clients; AppImage and Deb feeds offer 0.8.7 to 0.8.6 clients.
+All four current-version routes return 204, and download headers match the
+signed artifacts' SHA-256 and sizes. The Mac beta remains unnotarized.
+
+## 0.8.6 — 24 September 2026 (Linux)
+
+Published tag `v0.8.6` at `11490e34e90228c1e6310d54ccad0078fe555c3a`:
+https://github.com/ellisthreader/Vibyra/releases/tag/v0.8.6. Signed Linux
+AppImage and Debian feeds serve 0.8.6. Native WebKitGTK verified the shared
+GPT-6 / Claude Opus 5.5 notice, fresh-terminal focus, ordered PTY typing,
+Backspace and Shift+Tab. The Linux update also carries the complete 0.8.5
+shared desktop workspace, Vibyra AI Chat and Agents. Full artifact hashes,
+feed probes, and the separate Windows test limitation are in
+`docs/desktop-linux-0.8.6-terminal-incident.md`. Art:
+`public/releases/0.8.6.svg`.
+
+## 0.8.5 — 24 September 2026 (Linux and Mac)
+
+Published Linux AppImage and Debian, Apple Silicon and Intel Mac packages from
+tag `v0.8.5`. The shared workspace, Agents conversations, project Preview,
+terminal responsiveness, sign-in and report recovery shipped. Full publication
+evidence is in `docs/desktop-0.8.5-linux-mac-release-plan.md`. Art:
+`public/releases/0.8.5.svg`.
+
+## 0.8.2 — 23 September 2026 (Linux)
+
+Published Linux AppImage and Debian update, tag `v0.8.2`. Transient Google
+sign-in recovery, authenticated bug report delivery after a failed readiness
+check, and project right-click rename/close were verified in native Ubuntu
+WebKitGTK smoke. Art: `public/releases/0.8.2.svg`.
+
+## 0.8.1 — 23 September 2026 (Linux)
+
+Published Linux AppImage and Debian update, tag `v0.8.1`. Restored ordered,
+responsive PTY typing, Backspace and Shift+Tab, native Linux decorations, and
+report UI entry. Art: `public/releases/0.8.1.svg`.
+
+## 0.8.0 — 23 September 2026 (Linux)
+
+First signed Linux AppImage and Debian release with shared desktop presentation,
+Linux native adapters, updater and package smoke. Tag `v0.8.0`; its release art
+is `public/releases/0.8.0.png`.
+
+## 0.7.9 — 22 September 2026
+
+Signed local Agents update installed as build 9; native acceptance is recorded in
+`docs/desktop-agents-completion.md`. Not a published updater release.
+
+- Compact roster, bounded conversations, inline decisions and minimal composer.
+- Provider, skills, memory and budget configuration; durable account-scoped drafts.
+- Exact send recovery, balance refusal recovery, full history pagination and preserved scroll.
+
+## 0.7.8 — 22 September 2026
+
+Commit `91d7615a0b1c` · run `35662386678` · art `public/releases/0.7.8.svg`
+
+Signing in, signing out, and the account your agents actually use.
+
+- **Two-step sign-in.** Accounts with two-factor authentication can complete
+  sign-in on the Mac; the code can be submitted or backed out of, instead of
+  stranding the screen.
+- **Signing out actually ends the session.** Signing this Mac out from Devices,
+  or deleting the account, returns to the sign-in screen rather than leaving the
+  window in a session that no longer exists.
+- **One account's terminals never reach the next.** The saved session — which
+  holds the departing account's terminals and, with scrollback saving on, their
+  output — is discarded on sign-out.
+- **Launch setup shows the account it will use.** A project that picked its own
+  provider account can no longer start under a different one.
+- **App notices stop collapsing into a count.** System notices are separate
+  sentences, so two arriving together no longer become "2 app notices".
+
+## 0.7.7 — 21 September 2026
+
+Commit `1b5cb491caa0` · run `35630896716` · art `public/releases/0.7.7.svg`
+
+A quieter updater, and the What's New window.
+
+- **One update notice, not three.** An update announced itself as a banner plus
+  two sticky toasts, all overlapping in the same corner. One card now, which
+  tracks the download and stays until it is closed.
+- **You can see what changed.** Every update opens the What's New window once,
+  from a changelog that travels inside the build it describes.
+
+## 0.7.6 — 21 September 2026
+
+Commit `e65fefb1798d` · run `35624679035` · no art (predates the ritual)
+
+First Mac release since 0.1.10 on 9 September, and the first signed with a real
+Developer ID certificate rather than ad-hoc — so Screen Recording and microphone
+permissions now survive an update instead of needing re-granting each time.
+
+Carried months of accumulated work: the Workspaces sidebar keeping every project
+in view, the redesigned Settings, dictation in chat, and shared Mac-to-iPhone
+conversations.
+
+## 0.1.10 and earlier
+
+Published before this log existed. 0.1.10 (9 September) added IPv6-only network
+support for the iPhone connection; 0.1.9 introduced it. All ad-hoc signed.
+
+## 0.8.14 — 27 September 2026 (local Mac update)
+
+The installed Mac source carries phone project-window viewing and readiness improvements. This local version was not verified as published to the updater feed.

@@ -2,7 +2,7 @@
 
 namespace App\Services\Agents;
 
-use App\Services\ChatConnectors\Installs;
+use App\Services\ChatConnectors\ConnectorTools;
 use App\Services\Vibes\Wallet;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -47,8 +47,7 @@ class Teammates
                 app(\App\Services\Vibes\Catalog::class)->resolve($fields['model'], app(Wallet::class)->planFor($user));
             if ($skillIds !== null) abort_unless(DB::table('agent_skills')->where('user_id', $user)->whereIn('id', $skillIds)->count() === count($skillIds), 422, 'Choose skills from your library.');
             $named = json_decode($fields['integrations'], true);
-            abort_unless(array_diff($named, app(Installs::class)->installed($user)) === [],
-                422, 'Connect each selected tool before giving it to your teammate.');
+            abort_unless(count(app(ConnectorTools::class)->resolve($user, $named)) === count($named), 422, 'Connect each selected tool before giving it to your teammate.');
             if (isset($existing)) {
                 DB::table('agent_teammates')->where('id', $id)->update([...$fields, 'revision' => $existing->revision + 1, 'updated_at' => now()]);
                 DB::table('vibes_chats')->where('id', $existing->chat_id)->update(['title' => $fields['name'], 'revision' => DB::raw('revision + 1')]);

@@ -1,0 +1,29 @@
+[package]
+name = "vibyra-sync"
+version = "0.1.0"
+description = "Vibyra cloud sync core: encrypted project snapshots from the Mac to the cloud computer and cloud changes back. No UI-toolkit dependencies."
+edition = "2021"
+rust-version = "1.88"
+
+[lib]
+name = "vibyra_sync"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+x25519-dalek = { version = "2", default-features = false, features = ["static_secrets"] }
+hkdf = "0.12"
+sha1 = "0.10"
+sha2 = "0.10"
+chacha20poly1305 = "0.10"
+getrandom = "0.3"
+flate2 = "1"
+tar = { version = "0.4", default-features = false }
+uuid = { version = "1", features = ["v4"] }
+dirs = "6"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "blocking", "json"] }
+notify = "8"
+
+[dev-dependencies]
+tempfile = "3"
+tiny_http = "0.12"

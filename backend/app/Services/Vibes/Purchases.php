@@ -12,11 +12,6 @@ class Purchases
     // Accept only the authoritative result from AppleStore, never decoded client claims.
     public function apply(int $userId, array $t): void
     {
-        $modern = app(\App\Services\Membership\Offers::class)->apple($t['productId'] ?? '');
-        if ($modern) {
-            DB::transaction(fn () => app(\App\Services\Membership\ApplePurchases::class)->apply($userId, $t, $modern), 5);
-            return;
-        }
         DB::transaction(function () use ($userId, $t) {
             $w = $this->wallet->lock($userId);
             $product = config('vibes.products')[$t['productId'] ?? ''] ?? null;
@@ -44,7 +39,7 @@ class Purchases
                     'purchased_at' => $purchased, 'granted_credits' => $credits,
                 ]);
                 // Historical purchases retain their paid credits, even if the subscription has ended.
-                if ($credits > 0) $this->wallet->grant($userId, $ref, $product['kind'], $credits * \App\Services\Membership\Units::scale($userId));
+                if ($credits > 0) $this->wallet->grant($userId, $ref, $product['kind'], $credits);
             }
             if (isset($t['revocationDate'])) {
                 $grant = DB::table('vibes_grants')->where('reference', $ref)->first();

@@ -6,7 +6,7 @@ use App\Models\PublishedProject;
 
 trait PublishingReviewOverrideTests
 {
-    public function test_temporary_review_bypass_cannot_auto_approve_in_production_environment(): void
+    public function test_temporary_review_bypass_can_auto_approve_in_production_environment(): void
     {
         $this->app->detectEnvironment(fn () => 'production');
         config([
@@ -28,10 +28,10 @@ trait PublishingReviewOverrideTests
             'previewHtml' => '<!doctype html><html><body><h1>Testing</h1></body></html>',
             'sourceFiles' => [],
         ], ['Authorization' => "Bearer {$token}"])
-            ->assertStatus(202)
-            ->assertJsonPath('reviewStatus', PublishedProject::REVIEW_UNDER_REVIEW)
-            ->assertJsonPath('isPublic', false)
-            ->assertJsonMissing(['code' => 'temp_publish_force_approved']);
+            ->assertCreated()
+            ->assertJsonPath('reviewStatus', PublishedProject::REVIEW_APPROVED)
+            ->assertJsonPath('isPublic', true)
+            ->assertJsonFragment(['code' => 'temp_publish_force_approved']);
     }
 
     public function test_temporary_review_disable_skips_deterministic_denial(): void

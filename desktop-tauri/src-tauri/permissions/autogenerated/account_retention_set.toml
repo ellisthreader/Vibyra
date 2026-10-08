@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-retention-set"
+description = "Enables the account_retention_set command without any pre-configured scope."
+commands.allow = ["account_retention_set"]
+
+[[permission]]
+identifier = "deny-account-retention-set"
+description = "Denies the account_retention_set command without any pre-configured scope."
+commands.deny = ["account_retention_set"]

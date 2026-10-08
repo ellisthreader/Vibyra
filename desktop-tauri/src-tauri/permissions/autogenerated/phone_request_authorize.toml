@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-request-authorize"
+description = "Enables the phone_request_authorize command without any pre-configured scope."
+commands.allow = ["phone_request_authorize"]
+
+[[permission]]
+identifier = "deny-phone-request-authorize"
+description = "Denies the phone_request_authorize command without any pre-configured scope."
+commands.deny = ["phone_request_authorize"]

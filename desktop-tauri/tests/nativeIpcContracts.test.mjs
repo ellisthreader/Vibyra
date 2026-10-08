@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { nativeRegistry } from './nativeRegistry.mjs';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+function sources(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const file = path.join(directory, entry.name);
+    return entry.isDirectory() ? sources(file) : /\.tsx?$/.test(entry.name) ? [file] : [];
+  });
+}
+
+test('the desktop native registry implements every literal frontend command', () => {
+  const registry = nativeRegistry();
+  const handlers = registry.slice(registry.indexOf('tauri::generate_handler!['));
+  const registered = new Set([...handlers.matchAll(/\b\w+::(\w+),/g)].map(match => match[1]));
+  const missing = [];
+  const commands = new Set();
+  for (const file of sources(path.join(root, 'src'))) {
+    const source = fs.readFileSync(file, 'utf8');
+    // Also check the two serialized voice/speech wrappers at their call sites.
+    const pattern = /\b(?:invoke|voiceAction|queue)\s*(?:<[^;]*?>\s*)?\(\s*(['"])([a-z][a-z0-9_]+)\1/g;
+    for (const match of source.matchAll(pattern)) {
+      const command = match[2];
+      commands.add(command);
+      if (!registered.has(command)) missing.push(`${path.relative(root, file)}: ${command}`);
+    }
+  }
+  assert.ok(commands.size > 100, 'The frontend command scan must cover the application.');
+  assert.deepEqual(missing, [], 'A desktop feature calls an unregistered native command.');
+});
+
+
+test('screenshot editor has only exact local capture/edit permissions', () => {
+  const capability = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/capabilities/screenshot-editor.json')));
+  assert.deepEqual(capability.webviews, ['screenshot-editor']);
+  assert.equal(capability.local, true);
+  assert.equal(capability.windows, undefined);
+  assert.equal(capability.remote, undefined);
+  assert.deepEqual(capability.permissions, [
+    'core:default', 'core:window:allow-close', 'core:window:allow-destroy', 'core:event:allow-emit-to',
+    'allow-take-screenshot-editor-capture', 'allow-finish-screenshot-edit',
+    'allow-copy-screenshot', 'allow-save-screenshot',
+  ]);
+  const toast = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/capabilities/screenshot-toast.json')));
+  assert.deepEqual(toast.webviews, ['screenshot-toast']);
+  assert.equal(toast.local, true);
+  assert.equal(toast.windows, undefined);
+  assert.equal(toast.remote, undefined);
+  assert.deepEqual(toast.permissions, [
+    'core:event:allow-listen', 'core:event:allow-unlisten',
+    'allow-screenshot-toast-shot', 'allow-close-screenshot-toast', 'allow-open-screenshot-markup',
+    'allow-copy-saved-screenshot', 'allow-reveal-screenshot',
+  ]);
+  const main = JSON.parse(fs.readFileSync(path.join(root, 'src-tauri/capabilities/default.json')));
+  assert.deepEqual(main.webviews, ['main']);
+  assert.equal(main.local, true);
+  assert.equal(main.remote, undefined);
+});

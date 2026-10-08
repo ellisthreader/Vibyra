@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-report-channel-ready"
+description = "Enables the report_channel_ready command without any pre-configured scope."
+commands.allow = ["report_channel_ready"]
+
+[[permission]]
+identifier = "deny-report-channel-ready"
+description = "Denies the report_channel_ready command without any pre-configured scope."
+commands.deny = ["report_channel_ready"]

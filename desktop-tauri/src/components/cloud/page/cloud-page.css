@@ -1,0 +1,123 @@
+.settings-pane--cloud { background: #060910; }
+.settings-pane__body--cloud { padding: 0 !important; max-width: none !important; }
+.cloud-page { position: relative; isolation: isolate; min-height: 100%; color: #f4f6ff; background: #060910; font-family: var(--font-ui); padding: 0 24px 30px; box-sizing: border-box; }
+.cloud-page button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cloud-page button:disabled { cursor: default; opacity: .48; }
+.cloud-page button:focus-visible, .cloud-page summary:focus-visible { outline: 2px solid #a9bcff; outline-offset: 4px; }
+.cloud-page__sky { position: absolute; top: 0; left: 0; right: 0; height: 330px; overflow: hidden; z-index: -1; pointer-events: none; mask-image: linear-gradient(#000 64%, transparent); }
+.cloud-page__sky .cc-sky { background: radial-gradient(ellipse at 50% -10%, #707b9d88, #18203855 43%, transparent 77%), #070a14; }
+.cloud-page__sky .cc-sky__stars { height: 370px; }
+.cloud-page--sub .cloud-page__sky { opacity: .28; }
+.cloud-page--sub .cc-sky__stars { display: none; }
+.cloud-page__header { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: center; min-height: 68px; margin: 0 -4px; background: #080c168a; backdrop-filter: blur(12px); }
+.cloud-page__header.is-scrolled { background: #080c16fa; }
+.cloud-page__header h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 650; letter-spacing: -.45px; }
+.cloud-page__header > button { position: absolute; right: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #ffffff16; background: #ffffff0d; color: #f4f6ff; font-size: 28px; line-height: 28px; padding: 0 0 3px; }
+.cloud-page__content { position: relative; max-width: 570px; margin: 0 auto; }
+.cloud-page__hero { display: flex; align-items: center; flex-direction: column; margin: 0 -24px; }
+.cloud-page__stage { position: relative; pointer-events: none; width: 100%; height: 196px; overflow: hidden; }
+.cloud-page__cloud { position: absolute; top: 22px; left: calc(50% - 110px); width: 220px; height: 150px; animation: cloud-page-bob 8.4s ease-in-out infinite; }
+.cloud-page__far { position: absolute; animation: cloud-page-drift 26s ease-in-out infinite alternate; }
+.cloud-page__far--1 { animation-duration: 34s; }
+.cloud-page__far--2 { animation-duration: 22s; }
+.cloud-page__sea { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; width: 100%; }
+.cloud-page__digits { position: absolute; top: 78px; left: 0; right: 0; height: 30px; color: #22306a; font-size: 24px; line-height: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.6px; text-align: center; }
+.cloud-page__digits span { position: absolute; inset: 0; }
+.cloud-page__digits-fill { color: #fff; transition: clip-path .9s ease-out; }
+.cloud-page__cloud .cc-cloud__level { transition-duration: .9s; }
+.cloud-page__words { text-align: center; margin-top: 4px; padding: 0 28px; }
+.cloud-page__words h2 { font-size: 24px; line-height: 29px; font-weight: 700; letter-spacing: -.5px; margin: 0; text-wrap: balance; }
+.cloud-page__words p { font-size: 15px; line-height: 20px; color: #e8eeff99; margin: 8px 0 0; }
+.cloud-page__action { display: inline-flex; justify-content: center; align-items: center; min-height: 36px; padding: 7px 20px; margin-top: 14px; border: 0; border-radius: 20px; background: #ffffff1f; color: #f4f6ff; font-size: 14px !important; line-height: 20px !important; font-weight: 600 !important; }
+.cloud-page__action:hover { background: #ffffff2c; }
+.cloud-page__action--small { margin: 0; min-height: 30px; padding: 5px 12px; white-space: nowrap; color: #a7b8ff; background: #5e78ef24; font-size: 12px !important; }
+.cloud-page__action--primary { color: white; background: #526fe8; }
+.cloud-page__action--primary:hover { background: #6380f7; }
+.cloud-page__action--danger { background: #fc607521; color: #ff7a8d; }
+.cloud-page__section-head { display: flex; align-items: center; justify-content: space-between; margin: 27px 16px 9px; }
+.cloud-page__section-head h2, .cloud-page__label { font-size: 13px; line-height: 18px; font-weight: 650; color: #aeb4c2; margin: 0; }
+.cloud-page__section-head button, .cloud-page__resume button, .cloud-page__text-action { padding: 0; border: 0; background: none; color: #7d96ff; font-weight: 600 !important; font-size: 14px !important; text-align: left; }
+.cloud-page__label { margin: 25px 16px 9px; }
+.cloud-page__group { background: #ffffff0c; border: 1px solid #ffffff1d; border-radius: 20px; overflow: hidden; }
+.cloud-page__project { position: relative; display: flex; align-items: center; gap: 14px; min-height: 70px; padding: 13px 16px; box-sizing: border-box; }
+.cloud-page__project + .cloud-page__project:before { content: ''; position: absolute; left: 70px; right: 0; top: 0; height: 1px; background: #ffffff1b; }
+.cloud-page__project-icon { display: flex; align-items: center; justify-content: center; flex: none; height: 40px; width: 40px; border-radius: 12px; background: #4876e9; color: white; font-size: 17px; font-weight: 800; box-shadow: 0 3px 8px #0002; }
+.cloud-page__project-icon--1 { background: #2e9b6c; }
+.cloud-page__project-icon--2 { background: #8965cf; }
+.cloud-page__project-icon--3 { background: #ac6946; }
+.cloud-page__project-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.cloud-page__project-copy > strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 15px; font-weight: 550; color: #f4f6ff; }
+.cloud-page__project-copy > span { color: #adb4c2; font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+.cloud-page__project[data-state='stuck'] .cloud-page__project-copy > span, .cloud-page__project[data-state='paused'] .cloud-page__project-copy > span { color: #e1b979; }
+.cloud-page__project-copy .cloud-page__text-action { margin-top: 5px; font-size: 12px !important; }
+.cloud-page__mark { min-width: 26px; text-align: center; font-size: 23px; color: #c9d5ff; }
+.cloud-page__project[data-state='waiting'] .cloud-page__mark { font-size: 20px; color: #9ca6bd; }
+.cloud-page__project[data-state='running'] .cloud-page__mark { font-size: 12px; color: #7794ff; }
+.cloud-page__project[data-state='stuck'] .cloud-page__mark { color: #e1b979; }
+.cloud-page__progress { display: flex; align-items: center; gap: 14px; margin-top: 7px; min-height: 12px; }
+.cloud-page__progress progress { appearance: none; -webkit-appearance: none; flex: 1; min-width: 30px; max-width: 220px; border: 0; border-radius: 8px; height: 4px; overflow: hidden; background: #ffffff1b; accent-color: #6c85ff; }
+.cloud-page__progress progress::-webkit-progress-bar { background: #ffffff1b; border-radius: 8px; }
+.cloud-page__progress progress::-webkit-progress-value { background: #6c85ff; border-radius: 8px; transition: width .7s ease; }
+.cloud-page__progress progress::-moz-progress-bar { background: #6c85ff; border-radius: 8px; }
+.cloud-page__progress small { margin-left: auto; font-size: 11px; color: #adb4c2; white-space: nowrap; }
+.cloud-page__empty { padding: 22px 24px; text-align: center; font-size: 14px; line-height: 20px; color: #adb4c2; }
+.cloud-page__empty p { margin: 0; }
+.cloud-page__nav-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 16px; min-height: 54px; border: 0; background: none; color: #f4f6ff; text-align: left; }
+.cloud-page__nav-row:hover, .cloud-page__project-choice:hover { background: #ffffff05; }
+.cloud-page__nav-row + .cloud-page__nav-row, .cloud-page__detail-row + .cloud-page__detail-row, .cloud-page__account + .cloud-page__account { border-top: 1px solid #ffffff19; }
+.cloud-page__nav-row > span:first-child { flex: 1; min-width: 0; }
+.cloud-page__nav-row strong { font-size: 15px; font-weight: 550; line-height: 21px; display: block; }
+.cloud-page__nav-row small, .cloud-page__detail-row small { font-size: 13px; line-height: 19px; display: block; color: #adb4c2; margin-top: 2px; }
+.cloud-page__chevron { color: #838b9b; font-size: 25px; font-weight: 300; line-height: 20px; }
+.cloud-page__delete-link { margin-top: 26px; }
+.cloud-page__nav-row.is-danger { color: #ff687d; text-align: center; }
+.cloud-page__nav-row.is-danger strong { font-weight: 600; }
+.cloud-page__project-choice { width: 100%; border: 0; background: transparent; color: inherit; }
+.cloud-page__tick { width: 23px; height: 23px; display: flex; flex: none; align-items: center; justify-content: center; border-radius: 50%; border: 1.5px solid #e8eeff4d; box-sizing: border-box; font-size: 13px; font-weight: 700; }
+.cloud-page__tick.is-on { background: #607df6; border-color: #607df6; color: white; }
+.cloud-page__back { display: flex; gap: 5px; align-items: center; border: 0; background: none; color: #8ca3ff; font-size: 25px !important; padding: 7px 0; margin-bottom: 16px; }
+.cloud-page__back span { font-size: 14px; font-weight: 600; }
+.cloud-page__sub-title { color: #f4f6ff; font-size: 20px; line-height: 27px; letter-spacing: -.3px; margin: 8px 0 12px; font-weight: 650; }
+.cloud-page__description { color: #aeb6c7; font-size: 14px; line-height: 21px; margin: 0 0 18px; }
+.cloud-page__detail-row { display: flex; align-items: center; justify-content: space-between; gap: 22px; min-height: 62px; padding: 14px 16px; color: #e9edfa; font-size: 13px; line-height: 19px; }
+.cloud-page__detail-row > span:first-child { flex: 1; min-width: 0; }
+.cloud-page__detail-row > span:last-child:not(:first-child) { text-align: right; }
+.cloud-page__detail-row strong { font-size: 14px; font-weight: 550; }
+.cloud-page__footnote { padding: 0 16px; font-size: 12px; line-height: 18px; color: #939eb4; }
+.cloud-page__switch { width: 38px; height: 23px; flex: none; border: 0; border-radius: 15px; background: #646c8055; padding: 3px; transition: background .16s; }
+.cloud-page__switch > span { display: block; width: 17px; height: 17px; border-radius: 50%; background: #edf1fe; transition: transform .16s; box-shadow: 0 1px 3px #0003; }
+.cloud-page__switch.is-on { background: #607df6; }
+.cloud-page__switch.is-on > span { transform: translateX(15px); }
+.cloud-page__account-action { padding: 0 16px 15px; text-align: right; }
+.cloud-page__danger-row { width: 100%; padding: 17px; color: #ff687d; font-size: 15px !important; font-weight: 600 !important; margin-top: 14px; }
+.cloud-page__error { display: flex; align-items: center; gap: 14px; color: #ff9d9d; border: 1px solid #ff9d9d22; background: #ff9d9d08; padding: 13px 16px; border-radius: 14px; font-size: 13px; line-height: 19px; margin-top: 18px; overflow-wrap: anywhere; }
+.cloud-page__error > span { flex: 1; }
+.cloud-page__error button { flex: none; }
+.cloud-page__resume { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 16px; border-radius: 14px; margin-top: 20px; background: #e1b97910; color: #e1b979; font-size: 13px; }
+.cloud-page__confirm-backdrop { position: fixed; z-index: 500; inset: 0; display: grid; place-items: center; padding: 24px; background: #03050ebd; backdrop-filter: blur(10px); }
+.cloud-page__confirm { width: min(100%, 410px); border: 1px solid #ffffff22; border-radius: 24px; background: #121827; padding: 24px; box-shadow: 0 20px 80px #0008; }
+.cloud-page__confirm h3 { color: #f4f6ff; font-size: 19px; line-height: 25px; margin: 0 0 12px; font-weight: 650; }
+.cloud-page__confirm p { color: #b3bdcf; font-size: 14px; line-height: 21px; margin: 0; }
+.cloud-page__confirm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.cloud-page__path { overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 12px !important; }
+.cloud-page__file { margin-top: 24px; }
+.cloud-page__file h3 { font-size: 14px; overflow-wrap: anywhere; }
+.cloud-page__file details { border: 1px solid #ffffff16; border-radius: 12px; margin-top: 10px; overflow: hidden; }
+.cloud-page__file summary { padding: 12px; cursor: pointer; font-size: 13px; color: #cbd5ee; }
+.cloud-page__file pre { max-height: 280px; overflow: auto; background: #02040a66; padding: 14px; margin: 0; color: #c5cede; font-size: 11px; }
+.cloud-page__file details p { padding: 0 14px; color: #9daac4; font-size: 13px; }
+.cloud-page__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.cloud-page[data-visible='false'] *, .cloud-page--sub .cc-sky__stars { animation-play-state: paused !important; }
+@keyframes cloud-page-bob { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(4px); } 75% { transform: translateY(-4px); } }
+@keyframes cloud-page-drift { from { transform: translateX(-14px); } to { transform: translateX(14px); } }
+@media (max-width: 1000px) { .cloud-page { padding-right: 20px; padding-left: 20px; } .cloud-page__hero { margin-right: -20px; margin-left: -20px; } }
+@media (max-height: 680px) {
+  .cloud-page__header { min-height: 54px; }
+  .cloud-page__stage { height: 152px; }
+  .cloud-page__cloud { top: -3px; }
+  .cloud-page__words h2 { font-size: 22px; line-height: 27px; }
+  .cloud-page__words p { margin-top: 6px; font-size: 14px; line-height: 18px; }
+  .cloud-page__hero > .cloud-page__action { min-height: 32px; margin-top: 10px; padding-top: 5px; padding-bottom: 5px; }
+  .cloud-page__section-head { margin-top: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .cloud-page *, .cloud-page *:before, .cloud-page *:after { animation: none !important; transition: none !important; } }

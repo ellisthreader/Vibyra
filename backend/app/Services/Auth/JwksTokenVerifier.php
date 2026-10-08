@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class JwksTokenVerifier
 {
-    public function verify(string $token, string $jwksUrl, bool $tenantAware = false): array
+    public function verify(string $token, string $jwksUrl): array
     {
         [$header, $claims, $signature, $signingInput] = $this->decode($token);
         if (($header['alg'] ?? null) !== 'RS256' || ! is_string($header['kid'] ?? null)) {
@@ -15,14 +15,6 @@ class JwksTokenVerifier
         }
 
         $key = $this->findKey($jwksUrl, $header['kid']);
-        if ($tenantAware) {
-            $tenant = (string) ($claims['tid'] ?? '');
-            $keyIssuer = (string) ($key['issuer'] ?? '');
-            $expected = str_replace('{tenantid}', $tenant, $keyIssuer);
-            if ($keyIssuer === '' || ! hash_equals($expected, (string) ($claims['iss'] ?? ''))) {
-                throw new ProviderIdentityException('The identity token signing key issuer is invalid.');
-            }
-        }
         $verified = openssl_verify(
             $signingInput,
             $signature,

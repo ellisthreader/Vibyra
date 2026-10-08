@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-terminal-authorize"
+description = "Enables the phone_terminal_authorize command without any pre-configured scope."
+commands.allow = ["phone_terminal_authorize"]
+
+[[permission]]
+identifier = "deny-phone-terminal-authorize"
+description = "Denies the phone_terminal_authorize command without any pre-configured scope."
+commands.deny = ["phone_terminal_authorize"]

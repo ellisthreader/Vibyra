@@ -6,7 +6,6 @@ use App\Models\{User, VibyraSession};
 use App\Services\ChatConnectors\Installs;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\{Crypt, DB, Http};
-use Tests\Support\OAuthHop;
 use Tests\TestCase;
 
 /**
@@ -17,7 +16,7 @@ use Tests\TestCase;
  */
 class ConnectorTokenRenewalTest extends TestCase
 {
-    use RefreshDatabase, OAuthHop;
+    use RefreshDatabase;
 
     private User $user;
 
@@ -37,7 +36,7 @@ class ConnectorTokenRenewalTest extends TestCase
     private function connectFigma(int $expiresIn = 7776000): void
     {
         $start = $this->postJson('/api/connectors/figma/start', ['returnUrl' => 'vibyra://integrations/connected'])->assertOk()->json();
-        $query = $this->queryOf($this->openSignIn($start['url']));
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
         Http::fake([
             'api.figma.com/v1/oauth/token' => Http::response(['access_token' => 'figd_first', 'token_type' => 'bearer',
                 'expires_in' => $expiresIn, 'refresh_token' => 'figr_renewal']),
@@ -112,7 +111,7 @@ class ConnectorTokenRenewalTest extends TestCase
         config(['chat_connectors.catalogue.github.oauth.client_id' => 'gh-client',
             'chat_connectors.catalogue.github.oauth.client_secret' => 'gh-secret']);
         $start = $this->postJson('/api/connectors/github/start', ['returnUrl' => 'vibyra://integrations/connected'])->assertOk()->json();
-        $query = $this->queryOf($this->openSignIn($start['url']));
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
         Http::fake([
             'github.com/login/oauth/access_token' => Http::response(['access_token' => 'gho_signed_in', 'token_type' => 'bearer']),
             'api.github.com/user' => Http::response(['login' => 'ellis']),

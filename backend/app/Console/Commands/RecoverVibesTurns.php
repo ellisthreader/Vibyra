@@ -32,19 +32,14 @@ class RecoverVibesTurns extends Command
                 $oldestDeadline ??= \Illuminate\Support\Carbon::parse($t->updated_at)->addMinutes(15)->timestamp;
                 if (now()->timestamp >= $oldestDeadline) {
                     $inFlight = DB::table('vibes_tools')->where('turn_id', $t->id)->whereNull('result')
-                        ->whereNotNull('agent_workspace_id')
-                        ->whereIn('operation', ['write_file', 'publish_branch'])
-                        ->whereIn('action_state', ['dispatching', 'publishing', 'writing'])->exists();
+                        ->whereNotNull('agent_workspace_id')->where('operation', 'write_file')
+                        ->where('action_state', 'dispatching')->exists();
                     if ($inFlight) DB::table('vibes_tools')->where('turn_id', $t->id)->whereNull('result')
-                        ->whereNotNull('agent_workspace_id')
-                        ->whereIn('operation', ['write_file', 'publish_branch'])
-                        ->whereIn('action_state', ['dispatching', 'publishing', 'writing'])->update(['action_state' => 'unknown',
-                            'summary' => 'Mac or GitHub write outcome unconfirmed.', 'updated_at' => now()]);
-                    $publication = DB::table('vibes_tools')->where('turn_id', $t->id)
-                        ->where('operation', 'publish_branch')->where('action_state', 'unknown')->exists();
+                        ->whereNotNull('agent_workspace_id')->where('operation', 'write_file')
+                        ->where('action_state', 'dispatching')->update(['action_state' => 'unknown',
+                            'summary' => 'Computer edit outcome unconfirmed.', 'updated_at' => now()]);
                     $turns->settle($t->id, $t->actual_micro_usd, null, $inFlight
-                        ? ($publication ? 'The approved GitHub branch outcome is unconfirmed. Inspect the repository before trying again.'
-                            : 'The Mac could not confirm an approved edit. Check the file before trying again.')
+                        ? 'The computer could not confirm an approved edit. Check the file before trying again.'
                         : 'A tool request expired. Confirmed AI usage was charged; unused Vibes were returned.');
                 }
                 return;

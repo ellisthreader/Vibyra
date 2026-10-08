@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-workspace-worktrees"
+description = "Enables the workspace_worktrees command without any pre-configured scope."
+commands.allow = ["workspace_worktrees"]
+
+[[permission]]
+identifier = "deny-workspace-worktrees"
+description = "Denies the workspace_worktrees command without any pre-configured scope."
+commands.deny = ["workspace_worktrees"]

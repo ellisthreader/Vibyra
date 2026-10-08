@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\BillingCheckoutActions;
-use App\Services\Analytics\Recorder;
 use App\Services\Billing\CreditDeductor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,27 +23,15 @@ class WebsiteBillingController extends Controller
         }
 
         $stripe = $this->stripe();
-        if ($stripe && $request->has('offerKey')) {
-            $input = $request->validate(['offerKey' => 'required|string|max:40', 'offerVersion' => 'required|string|max:40', 'requestId' => 'required|uuid', 'accountScope' => 'nullable|uuid']);
-            $url = app(\App\Services\Membership\Checkout::class)->create($user, $input, $stripe);
-            app(Recorder::class)->consented($request, 'website_checkout_started', app(\App\Services\Membership\Offers::class)->get($input['offerKey'], $input['offerVersion'])['kind']);
-            return $this->json(['ok' => true, 'url' => $url]);
-        }
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Refresh the membership page to use the current offers.');
         if (! $stripe) {
             return $this->json(['ok' => false, 'error' => 'Stripe is not configured on the backend.'], 503);
         }
 
-        $kind = (string) $request->input('kind', 'subscription');
-        $response = match ($kind) {
+        return match ((string) $request->input('kind', 'subscription')) {
             'subscription' => $this->createSubscriptionCheckout($stripe, $user, $request),
             'topup' => $this->createTopupCheckout($stripe, $user, $request),
             default => $this->json(['ok' => false, 'error' => 'Unknown checkout kind.'], 422),
         };
-        if ($response->getStatusCode() === 200 && ($response->getData(true)['ok'] ?? false) === true) {
-            app(Recorder::class)->consented($request, 'website_checkout_started', $kind);
-        }
-        return $response;
     }
 
     public function portal(Request $request): JsonResponse
@@ -63,7 +50,10 @@ class WebsiteBillingController extends Controller
         }
 
         try {
-            $session = $stripe->billingPortal->sessions->create(app(\App\Services\Membership\Portal::class)->parameters($user));
+            $session = $stripe->billingPortal->sessions->create([
+                'customer' => $user->stripe_customer_id,
+                'return_url' => (string) config('services.stripe.portal_return_url'),
+            ]);
         } catch (Throwable $error) {
             Log::error('Stripe portal session failed', ['error' => $error->getMessage()]);
 

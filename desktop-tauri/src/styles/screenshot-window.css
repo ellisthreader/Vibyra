@@ -1,0 +1,7 @@
+.screenshot-editor__identity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.screenshot-editor__name { padding-left: 11px; border-left: 1px solid var(--line); color: var(--text); font-size: 12px; font-weight: 650; white-space: nowrap; }
+.screenshot-colors[data-inactive="true"] { opacity: .35; }
+
+@media (max-width: 900px) {
+  .screenshot-editor__name { display: none; }
+}

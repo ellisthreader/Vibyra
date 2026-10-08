@@ -47,20 +47,8 @@ return [
         'webhook_url' => env('VIBYRA_REPORT_WEBHOOK_URL'),
     ],
 
-    // Cloudflare Turnstile human check in front of website pages. Local
-    // development falls back to Cloudflare's always-pass test keys; elsewhere
-    // the check stays off until real keys are set, so it can't lock people out.
-    'turnstile' => [
-        'enabled' => env('TURNSTILE_ENABLED', env('APP_ENV') === 'local'),
-        'site_key' => env('TURNSTILE_SITE_KEY', env('APP_ENV') === 'local' ? '1x00000000000000000000AA' : null),
-        'secret_key' => env('TURNSTILE_SECRET_KEY', env('APP_ENV') === 'local' ? '1x0000000000000000000000000000000AA' : null),
-    ],
-
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
-        'chat_url' => env('OPENAI_CHAT_URL', 'https://api.openai.com/v1/chat/completions'),
-        'faq_model' => env('OPENAI_FAQ_MODEL', 'gpt-5-nano'),
-        'faq_reasoning' => env('OPENAI_FAQ_REASONING', 'low'),
         'moderation_url' => env('OPENAI_MODERATION_URL', 'https://api.openai.com/v1/moderations'),
         'moderation_model' => env('OPENAI_MODERATION_MODEL', 'omni-moderation-latest'),
     ],
@@ -69,17 +57,9 @@ return [
         'secret' => env('STRIPE_SECRET_KEY'),
         'publishable' => env('STRIPE_PUBLISHABLE_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-        'success_url' => env('STRIPE_SUCCESS_URL', 'https://vibyra.net/billing/success'),
-        'cancel_url' => env('STRIPE_CANCEL_URL', 'https://vibyra.net/billing/cancel'),
-        'portal_return_url' => env('STRIPE_PORTAL_RETURN_URL', 'https://vibyra.net/account'),
-    ],
-
-    'twilio_sms' => [
-        'auth_token' => env('TWILIO_AUTH_TOKEN'),
-        'account_sid' => env('TWILIO_ACCOUNT_SID'),
-        'from' => env('TWILIO_PHONE_NUMBER'),
-        'api_key' => env('TWILIO_API_KEY'),
-        'api_secret' => env('TWILIO_API_SECRET'),
+        'success_url' => env('STRIPE_SUCCESS_URL', 'https://vibyra.app/billing/success'),
+        'cancel_url' => env('STRIPE_CANCEL_URL', 'https://vibyra.app/billing/cancel'),
+        'portal_return_url' => env('STRIPE_PORTAL_RETURN_URL', 'https://vibyra.app/account'),
     ],
 
     'twilio_verify' => [
@@ -90,7 +70,6 @@ return [
 
     'apple_iap' => [
         'shared_secret' => env('APPLE_IAP_SHARED_SECRET'),
-        'bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
         'verify_url' => env('APPLE_IAP_VERIFY_URL', 'https://buy.itunes.apple.com/verifyReceipt'),
         'sandbox_url' => env('APPLE_IAP_SANDBOX_URL', 'https://sandbox.itunes.apple.com/verifyReceipt'),
     ],
@@ -120,13 +99,6 @@ return [
         'jwks_url' => env('APPLE_AUTH_JWKS_URL', 'https://appleid.apple.com/auth/keys'),
     ],
 
-    'microsoft_auth' => [
-        'audiences' => array_values(array_filter([
-            trim((string) env('MICROSOFT_DESKTOP_CLIENT_ID', '')),
-        ])),
-        'jwks_url' => env('MICROSOFT_AUTH_JWKS_URL', 'https://login.microsoftonline.com/common/discovery/v2.0/keys'),
-    ],
-
     'google_desktop_oauth' => [
         'client_id' => env('GOOGLE_DESKTOP_CLIENT_ID'),
         'client_secret' => env('GOOGLE_DESKTOP_CLIENT_SECRET'),
@@ -144,14 +116,6 @@ return [
         'redirect_uri' => env('APPLE_DESKTOP_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/api/auth/desktop/apple/callback'),
         'authorize_url' => env('APPLE_DESKTOP_AUTHORIZE_URL', 'https://appleid.apple.com/auth/authorize'),
         'token_url' => env('APPLE_DESKTOP_TOKEN_URL', 'https://appleid.apple.com/auth/token'),
-    ],
-
-    'microsoft_desktop_oauth' => [
-        'client_id' => env('MICROSOFT_DESKTOP_CLIENT_ID'),
-        'client_secret' => env('MICROSOFT_DESKTOP_CLIENT_SECRET'),
-        'redirect_uri' => env('MICROSOFT_DESKTOP_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/api/auth/desktop/microsoft/callback'),
-        'authorize_url' => env('MICROSOFT_DESKTOP_AUTHORIZE_URL', 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'),
-        'token_url' => env('MICROSOFT_DESKTOP_TOKEN_URL', 'https://login.microsoftonline.com/common/oauth2/v2.0/token'),
     ],
 
     'railway' => [

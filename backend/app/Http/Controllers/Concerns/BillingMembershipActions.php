@@ -10,12 +10,6 @@ trait BillingMembershipActions
     public function changeMembership(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        if (\App\Services\Membership\Units::modern($user->id)) {
-            $provider = app(\App\Services\Membership\Entitlements::class)->for($user)['provider'];
-            if ($provider === 'stripe') return $this->portal($request);
-            if ($provider === 'iap-apple') return $this->json(['ok' => true, 'url' => 'https://apps.apple.com/account/subscriptions']);
-            return $this->json(['ok' => false, 'error' => 'There is no active membership to manage.'], 422);
-        }
         $plan = strtolower((string) $request->input('plan'));
         $cycle = strtolower((string) $request->input('cycle', 'monthly'));
         if (! in_array($plan, ['starter', 'builder', 'pro'], true)) {
@@ -26,6 +20,14 @@ trait BillingMembershipActions
         }
 
         $provider = strtolower((string) ($user->billing_provider ?? ''));
+        if ($provider === 'manual') {
+            $this->applySubscription($user, $plan, $cycle, 'manual');
+            return $this->json([
+                'ok' => true,
+                'status' => 'completed',
+                'user' => $this->userPayload($user->fresh()),
+            ]);
+        }
         if ($provider === 'stripe') {
             return $this->portal($request);
         }

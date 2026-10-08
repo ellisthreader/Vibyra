@@ -1,0 +1,6 @@
+/* The Code shell: the sidebar beside the page. No status bar (owner
+   2026-10-05). A grid keeps every page's own layout untouched. */
+.app .product-code-shell { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.app .product-code-shell[hidden] { display: none; }
+.app .product-code-shell > *, .app .product-code-shell > [style*="contents"] > * { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; }
+.app .product-code-shell > .pstrip { grid-column: 1; grid-row: 1; }

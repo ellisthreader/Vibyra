@@ -4,14 +4,9 @@ return [
     'inbox' => (bool) env('NOTIFICATIONS_INBOX_ENABLED', false),
     'push' => (bool) env('NOTIFICATIONS_PUSH_ENABLED', false),
     'jev_mode' => env('JEV_DECISIONS_MODE', 'off'),
-    'terminal_auto' => (bool) env('JEV_TERMINAL_AUTO_ENABLED', false),
     'auto_work' => (bool) env('JEV_AUTO_WORK_ENABLED', false),
     'auto_teammate' => (bool) env('JEV_AUTO_TEAMMATE_ENABLED', false),
     'progress_mode' => env('JEV_PROGRESS_MODE', 'off'),
-    // Mac terminal/chat notifications from the menu-bar snapshot diff (Services/LiveStatus/MacEvents).
-    'mac_events' => (bool) env('MAC_NOTIFICATIONS_ENABLED', false),
-    // Pushed alerts per account per rolling hour, all sources; the rest stay in the inbox.
-    'alert_rate_per_hour' => 20,
     'host_events' => (bool) env('HOST_NOTIFICATION_EVENTS_ENABLED', false),
     'jev_url' => 'https://openrouter.ai/api/alpha/decisions',
     'jev_model' => 'typesafe/jev-1.13',

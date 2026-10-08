@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-teammate-request"
+description = "Enables the teammate_request command without any pre-configured scope."
+commands.allow = ["teammate_request"]
+
+[[permission]]
+identifier = "deny-teammate-request"
+description = "Denies the teammate_request command without any pre-configured scope."
+commands.deny = ["teammate_request"]

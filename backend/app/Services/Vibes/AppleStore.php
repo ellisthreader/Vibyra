@@ -14,14 +14,6 @@ class AppleStore
         // This JWS comes directly from Apple's authenticated HTTPS API, never the phone.
         $transaction = $this->payload($data['signedTransactionInfo'] ?? '');
         abort_unless(($transaction['transactionId'] ?? '') === $id, 502, 'Apple returned a different transaction.');
-        $offer = app(\App\Services\Membership\Offers::class)->apple($transaction['productId'] ?? '');
-        if ($offer && $offer['kind'] === 'subscription') {
-            foreach ($this->subscriptions($transaction['originalTransactionId']) as $current) {
-                if (($current['originalTransactionId'] ?? null) === $transaction['originalTransactionId'] && isset($current['verifiedRenewal'])) {
-                    $transaction['verifiedRenewal'] = $current['verifiedRenewal'];
-                }
-            }
-        }
         return $transaction;
     }
 
@@ -31,13 +23,7 @@ class AppleStore
         $transactions = [];
         foreach ($data['data'] ?? [] as $group) {
             foreach ($group['lastTransactions'] ?? [] as $item) {
-                $transaction = $this->payload($item['signedTransactionInfo'] ?? '');
-                if (!empty($item['signedRenewalInfo'])) {
-                    $renewal = $this->renewal($item['signedRenewalInfo']);
-                    abort_unless(($renewal['originalTransactionId'] ?? null) === $transaction['originalTransactionId'], 502, 'Apple renewal account mismatch.');
-                    $transaction['verifiedRenewal'] = $renewal;
-                }
-                $transactions[] = $transaction;
+                $transactions[] = $this->payload($item['signedTransactionInfo'] ?? '');
             }
         }
         return $transactions;
@@ -71,17 +57,6 @@ class AppleStore
         $data = json_decode(base64_decode(strtr($parts[1], '-_', '+/'), true), true, flags: JSON_THROW_ON_ERROR);
         abort_unless(($data['bundleId'] ?? null) === config('vibes.apple_bundle_id')
             && ($data['environment'] ?? null) === config('vibes.apple_environment'), 422, 'Wrong purchase environment or application.');
-        return $data;
-    }
-
-    /** Only called on authenticated Apple API responses, never notification input. */
-    private function renewal(string $jws): array
-    {
-        $parts = explode('.', $jws);
-        abort_unless(count($parts) === 3, 502, 'Invalid Apple renewal response.');
-        $data = json_decode(base64_decode(strtr($parts[1], '-_', '+/'), true), true, flags: JSON_THROW_ON_ERROR);
-        abort_unless(($data['environment'] ?? null) === config('vibes.apple_environment')
-            && in_array($data['autoRenewStatus'] ?? null, [0, 1], true) && is_int($data['signedDate'] ?? null), 502, 'Invalid Apple renewal status.');
         return $data;
     }
 

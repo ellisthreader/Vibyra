@@ -29,22 +29,21 @@ class RelayGateway
     }
 
     /**
-     * Cuts a computer (and every phone on it) off the relay now. Delivery failures remain in the durable outbox.
-     * Authoritative renewal independently bounds existing authorization to 180 seconds.
+     * Cuts a computer (and every phone on it) off the relay now. Best effort:
+     * the tokens are short-lived, so a relay that cannot be reached only
+     * delays revocation by minutes rather than defeating it.
      */
-    public function disconnect(string $hostId, ?string $clientId = null, ?int $generation = null, ?string $grantId = null): bool
+    public function disconnect(string $hostId, ?string $clientId = null): bool
     {
         $admin = $this->adminUrl();
         if ($admin === null) {
             return false;
         }
         try {
-            $response = Http::withToken((string) config('remote.relay_admin_secret', config('remote.relay_secret')))->connectTimeout(1)->timeout(2)
-                ->post("{$admin}/admin/disconnect", array_filter(['hostId' => $hostId, 'clientId' => $clientId, 'generation' => $generation, 'grantId' => $grantId]));
+            $response = Http::withToken((string) config('remote.relay_secret'))->timeout(5)
+                ->post("{$admin}/admin/disconnect", array_filter(['hostId' => $hostId, 'clientId' => $clientId]));
 
-            return $response->ok() && $response->json('disconnected') === true
-                && ($generation === null || $response->json('generation') === $generation)
-                && ($grantId === null || $response->json('grantId') === $grantId);
+            return $response->ok() && $response->json('disconnected') === true;
         } catch (\Throwable $error) {
             Log::warning('Relay disconnect failed.', ['hostId' => $hostId, 'error' => $error->getMessage()]);
 

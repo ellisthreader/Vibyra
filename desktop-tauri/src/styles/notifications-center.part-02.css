@@ -1,0 +1,19 @@
+/* Content-sized rows: actions never compete with metadata for space. */
+.nrow { position:relative; display:grid; grid-template-columns:20px minmax(0,1fr) auto; align-items:start; gap:10px; padding:14px 10px; flex:none; min-width:0; border-bottom:1px solid var(--line); }
+.nrow:last-child { border-bottom:0; }
+.nrow:hover { background:var(--hover); }
+.nrow__mark { margin-top:1px; }
+.nrow:not(.nrow--unread) .nrow__mark { opacity:.65; }
+.nrow__text { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.nrow__head { display:flex; align-items:baseline; gap:7px; min-width:0; }
+.nrow__head h4 { min-width:0; margin:0; font-size:12.5px; font-weight:550; line-height:1.45; color:var(--text); white-space:normal; overflow-wrap:anywhere; }
+.nrow--unread .nrow__head h4 { font-weight:620; }
+.nrow__count { flex:none; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.nrow__body { margin:0; font-size:11.5px; font-weight:400; line-height:1.55; color:var(--muted); white-space:normal; overflow-wrap:anywhere; }
+.nrow__meta { display:flex; flex-wrap:wrap; align-items:center; gap:5px; color:var(--dim); font-size:10px; line-height:1.5; font-weight:400; }
+.nrow__sep { opacity:.6; }
+.nrow__action { align-self:flex-start; max-width:100%; margin:3px 0 0; padding:5px 0; border:0; border-radius:3px; background:transparent; color:var(--accent); font-size:11px; line-height:1.4; font-weight:550; text-align:left; white-space:normal; overflow-wrap:anywhere; }
+.nrow__action:hover { text-decoration:underline; text-underline-offset:3px; }
+.nrow__action:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.nrow__close { width:22px; height:22px; opacity:.5; }
+.nrow:hover .nrow__close,.nrow__close:focus-visible { opacity:1; }

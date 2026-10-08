@@ -51,9 +51,6 @@ class GooglePlayReceiptVerifier
         }
 
         $payload = (array) $response->json();
-        if (isset($payload['testPurchase']) || (array_key_exists('purchaseType', $payload) && (int) $payload['purchaseType'] === 0)) {
-            throw new RuntimeException('Test purchases are not accepted by this billing endpoint.');
-        }
 
         return $kind === 'subscription'
             ? $this->validateSubscription($productId, $purchaseToken, $payload)

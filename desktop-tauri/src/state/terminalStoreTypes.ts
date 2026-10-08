@@ -1,0 +1,103 @@
+import type { ActivityState } from "../lib/activity";
+import type { ResolvedAgent, Visibility } from "../types";
+
+export interface PaneState {
+  id: number;
+  projectId: string;
+  agentId: string;
+  title: string;
+  model: string | null;
+  permissionMode: "standard" | "full";
+  reasoningEffort: string | null;
+  sourceCwd: string | null;
+  /** Actual native working folder, including an existing safe worktree. */
+  resumeCwd?: string | null;
+  workspaceMode: "safe" | "shared";
+  safeSnapshotFingerprint: string | null;
+  customTitle: string | null;
+  /** Named after the work: the agent’s own title for the conversation, else its first
+   * request. Absent until there is one; a name the person typed always wins. */
+  autoTitle?: string | null;
+  osc: string | null;
+  accent: string;
+  status: "running" | "exited" | "suspended";
+  exitCode: number | null;
+  visibility: Visibility;
+  lastFocusedAt: number;
+  /** Current process start; absent for a restored pane whose original start is unknown. */
+  openedAt?: number;
+  /** Restored output for a suspended pane; absent once it is running. */
+  snapshot?: string | null;
+  /** The agent's own conversation id, for agents that accept one at launch. */
+  agentSessionId: string | null;
+  /**
+   * The provider account this pane is running as; null for the first account
+   * and for agents that have none. Fixed for the life of the process — a CLI
+   * reads its credentials once — so it is what the pane's badge reports.
+   */
+  accountId: string | null;
+}
+
+export interface SpawnAgentOptions {
+  phoneRequestId?: string;
+  savedPaneId?: number;
+  cwd?: string | null;
+  resumeCwd?: string | null;
+  model?: string | null;
+  permissionMode?: "standard" | "full";
+  reasoningEffort?: string | null;
+  title?: string;
+  /** The work-derived name a relaunched pane keeps while its new process is still quiet. */
+  autoTitle?: string | null;
+  workspaceMode?: "safe" | "shared";
+  safeSnapshotFingerprint?: string;
+  /** Take this pane's slot instead of appending, so grid order survives. */
+  replaces?: number;
+  /** Continue the agent's previous conversation instead of starting one. */
+  resume?: boolean;
+  /** Output from the run being resumed, shown above the new process's own. */
+  replaySnapshot?: string | null;
+  /** Reuse this conversation id instead of minting a new one. */
+  agentSessionId?: string | null;
+  /** Which provider account to run as; null means the first one. */
+  accountId?: string | null;
+}
+
+/** Everything `spawnSsh` needs beyond the target and its project. */
+export interface SpawnSshOptions {
+  phoneRequestId?: string;
+  savedPaneId?: number;
+  replaces?: number;
+  replaySnapshot?: string | null;
+}
+
+export interface TerminalStore {
+  panes: PaneState[];
+  focusedId: number | null;
+  zoomedId: number | null;
+  activity: Record<number, ActivityState>;
+  sessionReady: boolean;
+  relaunching: number[];
+  relaunchErrors: Record<number, string>;
+  /** Resolves to the new pane's id, or null when the launch failed and the
+   * error went to the workspace banner instead. */
+  spawnAgent: (agent: ResolvedAgent, projectId: string, options?: SpawnAgentOptions) => Promise<number | null>;
+  spawnSsh: (target: string, projectId: string, options?: SpawnSshOptions) => Promise<number | void>;
+  restart: (id: number) => Promise<void>;
+  /** Relaunch one pane on a different provider account, in place. */
+  switchAccount: (id: number, accountId: string | null) => Promise<void>;
+  resume: (id: number, phoneRequestId?: string) => Promise<number | void>;
+  restoreSession: () => Promise<void>;
+  close: (id: number, phoneRequestId?: string) => Promise<void>;
+  hibernate: (id: number) => Promise<void>;
+  wake: (id: number) => Promise<void>;
+  toggleZoom: (id: number) => void;
+  setFocus: (id: number) => void;
+  markFocused: (id: number) => void;
+  rename: (id: number, title: string) => void;
+  setOsc: (id: number, title: string) => void;
+  /** Sets the work-derived names of several panes at once, one store update. */
+  setAutoTitles: (titles: Record<number, string>) => void;
+  markExited: (id: number, code: number | null) => void;
+  applyActivity: (next: Record<number, ActivityState>) => void;
+}

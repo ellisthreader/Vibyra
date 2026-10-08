@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-publish-workspace"
+description = "Enables the phone_publish_workspace command without any pre-configured scope."
+commands.allow = ["phone_publish_workspace"]
+
+[[permission]]
+identifier = "deny-phone-publish-workspace"
+description = "Denies the phone_publish_workspace command without any pre-configured scope."
+commands.deny = ["phone_publish_workspace"]

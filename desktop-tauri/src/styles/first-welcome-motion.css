@@ -1,0 +1,23 @@
+/* Chapter dissolves surround one continuous, clock-driven product performance. */
+.first-welcome__atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse at 50% 58%, var(--accent-soft), transparent 63%); opacity: .55; }
+.first-welcome__atmosphere::before { content: ""; position: absolute; inset: 20% 0 0; background-image: linear-gradient(var(--line-soft) 1px, transparent 1px), linear-gradient(90deg, var(--line-soft) 1px, transparent 1px); background-size: 80px 80px; mask-image: radial-gradient(ellipse at 50% 50%, #000, transparent 65%); opacity: .42; }
+.first-welcome[data-step="0"] .first-welcome__atmosphere::before, .first-welcome[data-step="4"] .first-welcome__atmosphere::before { opacity: 0; }
+.first-welcome__scene { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(12px); transition: opacity 500ms ease, transform 750ms var(--e-hero), visibility 0s 750ms; }
+.first-welcome__scene[data-position="past"] { transform: translateY(-12px); }
+.first-welcome__scene[data-position="active"] { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.first-welcome__scene--bookend[data-position="active"] { pointer-events: auto; }
+.first-welcome[data-step="0"] .welcome-product, .first-welcome[data-step="4"] .welcome-product { opacity: 0; visibility: hidden; pointer-events: none; }
+.welcome-product { transition: opacity 700ms ease, visibility 0s; }
+.first-welcome__note { transition: opacity 350ms ease; }
+.first-welcome--leaving { opacity: 0; transform: scale(.92); transition: opacity 800ms ease, transform 850ms var(--e-hero); pointer-events: none; }
+.first-welcome-focus { animation: welcomeFocus 1000ms ease; }
+@keyframes welcomeFocus { from { box-shadow: 0 0 0 0 var(--accent-border); } to { box-shadow: 0 0 0 12px transparent; } }
+.app--welcome-handoff > .shell { animation: welcomeHome 850ms var(--e-hero); }
+@keyframes welcomeHome { from { opacity: .6; transform: scale(1.025); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .first-welcome, .first-welcome *, .first-welcome *::before, .first-welcome *::after,
+  .first-welcome-focus { animation: none !important; transition: none !important; }
+  .first-welcome__scene { transform: none; }
+  .first-welcome__atmosphere, .welcome-demo-cursor { display: none; }
+  .app--welcome-handoff > .shell { animation: none; }
+}

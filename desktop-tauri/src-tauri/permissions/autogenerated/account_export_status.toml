@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-export-status"
+description = "Enables the account_export_status command without any pre-configured scope."
+commands.allow = ["account_export_status"]
+
+[[permission]]
+identifier = "deny-account-export-status"
+description = "Denies the account_export_status command without any pre-configured scope."
+commands.deny = ["account_export_status"]

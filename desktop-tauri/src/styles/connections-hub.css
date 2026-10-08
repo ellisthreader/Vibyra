@@ -1,0 +1,55 @@
+/* Agent v2 connections hub (Settings) and per-teammate accounts (Access tab). Tokens only. */
+.hub-mark{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:6px;background:var(--elevated);color:var(--text);font-size:11px;font-weight:650;border:1px solid var(--line)}
+.hub-note{color:var(--muted);font-size:12px;margin:4px 0;display:flex;align-items:center;gap:8px}
+.hub-error{color:var(--danger);font-size:12px;margin:6px 0}
+.hub-group{border:1px solid var(--line);border-radius:var(--r-panel);background:var(--surface);margin-bottom:12px;overflow:hidden}
+.hub-group>header{display:flex;align-items:center;gap:10px;padding:12px 16px}
+.hub-group>header h4{flex:1;margin:0;font-size:14px;font-weight:600;color:var(--text)}
+.hub-account{display:flex;flex-direction:column;gap:6px;padding:12px 16px;border-top:1px solid var(--line)}
+.hub-account small,.teammate-account small{color:var(--muted);font-size:12px;line-height:1.45}
+.hub-account__head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.hub-account__head strong{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-pill{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:600;background:var(--elevated);color:var(--muted)}
+.hub-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.hub-pill--ok{background:var(--success-soft);color:var(--success)}
+.hub-pill--error{background:var(--danger-soft);color:var(--danger)}
+.hub-pill--warn{background:var(--amber-soft);color:var(--amber)}
+.hub-actions,.hub-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+.hub-confirm{background:var(--danger-soft);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text)}
+.hub-confirm span{flex:1;min-width:180px}
+.hub-mcp{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.hub-review{border:1px solid var(--amber);border-radius:10px;padding:10px 12px;background:var(--rail);font-size:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.hub-review p{margin:0;color:var(--text)}
+.hub-review ul{margin:0;padding-left:16px;color:var(--muted)}
+.hub-tool{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0}
+.hub-tool>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hub-tool strong{font-size:12.5px;font-weight:600}
+.hub-mcp>.btn{align-self:flex-start}
+.hub-mcp__note{color:var(--muted);font-size:11.5px;line-height:1.4}
+.hub-catalogue{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-panel);background:var(--surface);overflow:hidden}
+.hub-provider{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+.hub-provider:first-child{border-top:0}
+.hub-provider>span:not(.hub-mark){display:flex;flex-direction:column;gap:2px;flex:1;min-width:160px}
+.hub-provider strong{font-size:13px;font-weight:600}
+.hub-provider small{color:var(--muted);font-size:12px}
+.hub-provider--off{opacity:.7}
+.hub-paste{display:flex;gap:8px;align-items:center;width:100%}
+.hub-paste .input{flex:1;min-width:0}
+.teammate-accounts{display:flex;flex-direction:column;gap:10px;margin-top:28px}
+.teammate-accounts h3{margin:0}
+.teammate-accounts__group{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--rail)}
+.teammate-accounts__group>header{display:flex;align-items:center;gap:9px;padding:10px 14px;font-size:13px}
+.teammate-accounts__group>header strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.teammate-accounts .hub-popular{margin:18px 0 6px}
+.teammate-account{display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-top:1px solid var(--line)}
+.teammate-account--none{background:transparent}
+.teammate-account--reads,.teammate-account--some{box-shadow:inset 2px 0 0 var(--accent)}
+.teammate-account__ops{display:flex;flex-wrap:wrap;gap:6px 18px}
+.teammate-accounts .teammate-account__ops label{display:flex;flex-direction:row;align-items:center;gap:7px;font-size:12.5px;color:var(--text)}
+.teammate-accounts .teammate-account__ops input{width:auto;margin:0;padding:0}
+.teammate-accounts .teammate-account__ops small{margin-left:2px}
+.hub-popular{margin:16px 0 20px}
+.hub-popular .hub-catalogue{margin-bottom:0}
+.hub-popular h4{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--text)}
+/* A glyph drawn in a dark brand colour (Slack, Datadog) disappears on the dark tile: it gets a light one in the dark theme. */
+:root:not([data-theme="light"]) .hub-mark--lift{background:#f4f5f7}

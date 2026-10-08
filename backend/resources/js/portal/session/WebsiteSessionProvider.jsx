@@ -27,11 +27,14 @@ export function WebsiteSessionProvider({ children }) {
     refresh().catch(() => setLoading(false));
   }, [refresh]);
 
+  // A login either signs in or comes back asking for a code. The caller is handed
+  // the challenge rather than an error, because nothing has gone wrong: the password
+  // was right and the account simply asks a second question.
   const login = useCallback(async (fields) => {
     const payload = await portalApi.login(fields);
     if (payload.twoFactor?.challengeId) return { twoFactor: payload.twoFactor };
     setUser(payload.user ?? null);
-    return payload.user;
+    return { user: payload.user ?? null };
   }, []);
 
   const loginTwoFactor = useCallback(async (challengeId, code) => {

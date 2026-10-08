@@ -1,0 +1,161 @@
+use std::path::Path;
+
+use serde::{Deserialize, Serialize};
+use vibyra_core::fsx::write_private_atomic;
+use vibyra_core::{CoreError, CoreResult};
+
+// The saved workspace: enough to rebuild the panes, their order and their
+// on-screen output, but never a live process. Restored panes come back
+// suspended and are relaunched only when the user asks.
+
+pub const VERSION: u32 = 1;
+
+/// Ceilings on what a single save may cost. Terminal output is unbounded in
+/// principle — a noisy build loop can fill the 4 MiB scrollback ring of every
+/// pane — so the file is capped rather than left to track it.
+pub(crate) const MAX_SNAPSHOT_BYTES: usize = 256 * 1024;
+const MAX_TOTAL_BYTES: usize = 8 * 1024 * 1024;
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PersistedPane {
+    /// Live session id at save time, or 0 for a pane that is already
+    /// suspended. Used only to fetch the snapshot during the save itself — it
+    /// is never restored, because ids reset to 1 on every launch.
+    pub id: u64,
+    pub project_id: String,
+    pub agent_id: String,
+    pub title: String,
+    pub custom_title: Option<String>,
+    pub model: Option<String>,
+    pub permission_mode: String,
+    pub reasoning_effort: Option<String>,
+    pub source_cwd: Option<String>,
+    pub resume_cwd: Option<String>,
+    pub workspace_mode: String,
+    pub accent: String,
+    pub snapshot: Option<String>,
+    /// The agent's own conversation id, so Resume names exactly the one this
+    /// pane left rather than whichever is newest in the folder.
+    pub agent_session_id: Option<String>,
+    /// The provider account this pane ran as, so it resumes on the same login.
+    /// Absent in files written before accounts existed, which `serde(default)`
+    /// reads as the first account — exactly what those panes used.
+    pub account_id: Option<String>,
+}
+
+/// `version` is deliberately required: a file without one is from an unknown
+/// build and is discarded rather than guessed at.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalSession {
+    pub version: u32,
+    #[serde(default)]
+    pub saved_at_ms: u64,
+    #[serde(default)]
+    pub panes: Vec<PersistedPane>,
+}
+
+impl Default for TerminalSession {
+    fn default() -> Self {
+        Self {
+            version: VERSION,
+            saved_at_ms: 0,
+            panes: Vec::new(),
+        }
+    }
+}
+
+/// Keeps the **tail** of the output — the most recent lines are the ones worth
+/// reading back — landing on a character boundary so a multi-byte character is
+/// never split into invalid UTF-8.
+pub fn trim_snapshot(snapshot: String) -> String {
+    if snapshot.len() <= MAX_SNAPSHOT_BYTES {
+        return snapshot;
+    }
+    let mut cut = snapshot.len() - MAX_SNAPSHOT_BYTES;
+    while cut < snapshot.len() && !snapshot.is_char_boundary(cut) {
+        cut += 1;
+    }
+    snapshot[cut..].to_owned()
+}
+
+/// Applies every ceiling. Over-budget panes keep their metadata and lose only
+/// their snapshot, so a busy workspace still restores its layout in full.
+pub fn normalize(mut session: TerminalSession) -> TerminalSession {
+    session.version = VERSION;
+    let mut budget = MAX_TOTAL_BYTES;
+    for pane in &mut session.panes {
+        let Some(snapshot) = pane.snapshot.take() else {
+            continue;
+        };
+        let snapshot = trim_snapshot(snapshot);
+        if snapshot.len() > budget {
+            continue;
+        }
+        budget -= snapshot.len();
+        pane.snapshot = Some(snapshot);
+    }
+    session
+}
+
+/// Only a missing file is an empty workspace. A damaged save must not be
+/// mistaken for an empty layout and overwritten by the next checkpoint.
+pub fn load(path: &Path) -> CoreResult<TerminalSession> {
+    let raw = match std::fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(TerminalSession::default())
+        }
+        Err(error) => return Err(error.into()),
+    };
+    let session: TerminalSession = serde_json::from_str(&raw).map_err(|error| {
+        CoreError::Settings(format!(
+            "Saved terminals could not be read; the original file was kept: {error}"
+        ))
+    })?;
+    if session.version != VERSION {
+        return Err(CoreError::Settings(
+            "Saved terminals use an unsupported version; the original file was kept".into(),
+        ));
+    }
+    Ok(session)
+}
+
+pub fn save(path: &Path, session: TerminalSession) -> CoreResult<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let session = normalize(session);
+    let digest = unchanged::digest(&session)?;
+    if unchanged::already_written(path, digest) {
+        return Ok(());
+    }
+    let raw = serde_json::to_vec_pretty(&session)
+        .map_err(|error| CoreError::Settings(error.to_string()))?;
+    write_private_atomic(path, &raw)?;
+    unchanged::written(path, digest);
+    Ok(())
+}
+
+pub fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|since| since.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+pub fn clear(path: &Path) -> CoreResult<()> {
+    unchanged::forget(path);
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
+#[cfg(test)]
+pub(crate) const TEST_MAX_SNAPSHOT_BYTES: usize = MAX_SNAPSHOT_BYTES;
+
+#[path = "session_store_unchanged.rs"]
+mod unchanged;

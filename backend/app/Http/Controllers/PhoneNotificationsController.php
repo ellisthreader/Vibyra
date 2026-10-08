@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\UserPayloads;
-use App\Services\LiveStatus\Apns;
 use App\Services\Notifications\{Devices, Inbox, Preferences};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,23 +11,20 @@ final class PhoneNotificationsController extends Controller
     {
         $user = $this->authenticatedUser($r);
         $data = $r->isMethod('patch') ? $r->validate(['revision' => 'required|integer|min:1',
-            'attention' => 'sometimes|boolean', 'replies' => 'sometimes|boolean', 'failures' => 'sometimes|boolean', 'smart' => 'sometimes|boolean',
+            'attention' => 'sometimes|boolean', 'replies' => 'sometimes|boolean', 'smart' => 'sometimes|boolean',
             'advisories' => 'sometimes|boolean', 'timezone' => 'sometimes|timezone',
             'quietStart' => 'present|nullable|integer|min:0|max:1439', 'quietEnd' => 'present|nullable|integer|min:0|max:1439']) : null;
         return $this->privateJson(['preferences' => $data ? $p->save($user->id, $data) : $p->payload($user->id),
             'deviceId' => DB::table('notification_devices')->where('user_id', $user->id)->where('session_id', $this->authenticatedSession($r)->id)->whereNull('revoked_at')->value('id'),
             'capabilities' => ['inbox' => (bool) config('intelligence.inbox'), 'push' => (bool) config('intelligence.push'),
-                'smart' => config('intelligence.jev_mode') !== 'off', 'apns' => app(Apns::class)->alertsEnabled()]]);
+                'smart' => config('intelligence.jev_mode') !== 'off']]);
     }
     public function register(Request $r, Devices $devices)
     {
         $this->authenticatedUser($r);
-        $common = ['installation' => 'required|uuid', 'proof' => 'required|string|min:32|max:128', 'provider' => 'sometimes|in:expo,apns'];
-        $data = $r->input('provider') === 'apns'
-            ? $r->validate([...$common, 'token' => ['required', 'string', 'regex:/^[0-9a-fA-F]{64,200}$/'],
-                'environment' => 'required|in:sandbox,production', 'liveInstallId' => ['nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9-]+$/']])
-            : $r->validate([...$common, 'token' => ['required','string','max:256','regex:/^(ExponentPushToken|ExpoPushToken)\[[a-zA-Z0-9_-]+\]$/'],
-                'projectId' => 'required|uuid', 'environment' => 'required|in:development,production']);
+        $data = $r->validate(['installation' => 'required|uuid', 'proof' => 'required|string|min:32|max:128',
+            'token' => ['required','string','max:256','regex:/^(ExponentPushToken|ExpoPushToken)\[[a-zA-Z0-9_-]+\]$/'],
+            'projectId' => 'required|uuid', 'environment' => 'required|in:development,production']);
         return $this->privateJson($devices->register($this->authenticatedSession($r), $data));
     }
     public function revoke(Request $r, string $id)

@@ -1,0 +1,65 @@
+/* Everything an account row needs below its title: the question the provider
+   CLI is asking, the box that answers it, and the command an install runs.
+   Kept out of settings-integrations.css so the pane's layout and its connect
+   flow stay separately readable. */
+
+.integration-account__foot {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin: 10px 0 0 53px;
+  max-width: 470px;
+}
+
+.integration-account__foot:empty {
+  display: none;
+}
+
+.integration-reply {
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  display: grid;
+  gap: 8px;
+  padding: 10px 11px;
+  width: 100%;
+}
+
+/* Verbatim CLI output, so it reads as the machine talking rather than as
+   Vibyra's own copy. */
+.integration-reply__prompt {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.integration-reply__row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.integration-reply__row .input {
+  flex: 1;
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.integration-install-hint {
+  color: var(--dim);
+  font-size: 10.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.integration-install-hint code {
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 700px) {
+  .integration-account__foot {
+    margin-left: 0;
+  }
+}

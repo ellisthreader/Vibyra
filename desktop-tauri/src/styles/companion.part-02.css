@@ -1,0 +1,177 @@
+.chat-error {
+  font-size: 11px;
+  font-weight: 560;
+  color: var(--danger);
+  padding: 4px 2px;
+}
+
+.chat-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--bg);
+  padding: 8px;
+  transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.chat-input:focus-within {
+  border-color: var(--accent-border);
+}
+
+.chat-input__area {
+  width: 100%;
+  min-height: 34px;
+  max-height: 120px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 540;
+  line-height: 1.5;
+  resize: none;
+}
+
+.chat-input__area:focus {
+  outline: none;
+}
+
+.chat-input__area::placeholder {
+  color: var(--dim);
+}
+
+.chat-input__row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.chat-input__row .btn {
+  min-height: 26px;
+  padding: 0 10px;
+  font-size: 11.5px;
+}
+
+.chat-input__clear {
+  border-color: transparent;
+  color: var(--dim);
+}
+
+/* --- memory --- */
+
+.memory-area {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  resize: none;
+  transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.memory-area:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.memory-area::placeholder {
+  color: var(--dim);
+  font-family: var(--font-ui);
+}
+
+.memory-status {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: right;
+  transition: color var(--t-ui) var(--e-standard);
+}
+
+.memory-status--saving {
+  color: var(--accent);
+}
+
+/* --- agent marks (shared) --- */
+
+.agent-mark {
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--mark-accent, var(--accent)) 13%, transparent);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.agent-mark img {
+  display: block;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.agent-mark--letter {
+  color: var(--mark-accent, var(--accent));
+  font-size: 0.46em;
+  font-weight: 760;
+}
+
+/* --- agent picker (the terminal adder) --- */
+
+.picker {
+  width: min(600px, 92vw);
+}
+
+.picker__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 16px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-shell);
+  background: var(--bg);
+  color: var(--dim);
+}
+
+.picker__search:focus-within {
+  border-color: var(--accent-border);
+}
+
+.picker__search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 560;
+  outline: none;
+}
+
+.picker__search input::placeholder {
+  color: var(--dim);
+}
+
+.picker__scroll {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px 14px;
+  overflow-y: auto;
+}
+
+.picker__section-head {
+  font-size: 9.5px;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 10px 8px 4px;
+}

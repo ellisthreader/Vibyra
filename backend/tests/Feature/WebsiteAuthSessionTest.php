@@ -7,9 +7,6 @@ use App\Models\VibyraSession;
 use App\Services\Auth\DesktopProviderOAuthFlow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Notification;
-use App\Notifications\VibyraVerifyEmail;
 use Tests\TestCase;
 
 class WebsiteAuthSessionTest extends TestCase
@@ -81,7 +78,6 @@ class WebsiteAuthSessionTest extends TestCase
     {
         config([
             'services.google_desktop_oauth.client_id' => 'google-client',
-            'services.google_desktop_oauth.client_secret' => 'google-secret',
             'services.google_desktop_oauth.redirect_uri' => 'https://example.test/callback',
         ]);
         $user = User::factory()->create([
@@ -99,8 +95,7 @@ class WebsiteAuthSessionTest extends TestCase
             'absolute_expires_at' => now()->addDay(),
         ]);
         $flows = app(DesktopProviderOAuthFlow::class);
-        $this->withSession(['provider_flow_binding' => str_repeat('b', 48)]);
-        $flow = $flows->start('google', ['deviceName' => 'Vibyra Website'], 'website:'.str_repeat('b', 48));
+        $flow = $flows->start('google', ['deviceName' => 'Vibyra Website']);
         $flows->finish($flow['flowId'], [
             'ok' => true,
             'status' => 'complete',
@@ -117,53 +112,5 @@ class WebsiteAuthSessionTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertDatabaseCount('vibyra_sessions', 0);
-    }
-
-    public function test_provider_catalogue_only_marks_complete_oauth_configurations_available(): void
-    {
-        config([
-            'services.google_desktop_oauth.client_id' => 'google-client',
-            'services.google_desktop_oauth.client_secret' => '',
-            'services.google_desktop_oauth.redirect_uri' => 'https://vibyra.test/google',
-            'services.apple_desktop_oauth.client_id' => 'apple-service',
-            'services.apple_desktop_oauth.client_secret' => '',
-            'services.apple_desktop_oauth.team_id' => 'TEAM123',
-            'services.apple_desktop_oauth.key_id' => 'KEY123',
-            'services.apple_desktop_oauth.private_key' => 'key',
-            'services.apple_desktop_oauth.redirect_uri' => 'https://vibyra.test/apple',
-            'services.microsoft_desktop_oauth.client_id' => '',
-        ]);
-
-        $this->getJson('/web-api/auth/providers')->assertOk()
-            ->assertJsonPath('providers.google', false)
-            ->assertJsonPath('providers.apple', true)
-            ->assertJsonPath('providers.microsoft', false);
-    }
-
-    public function test_microsoft_email_verification_returns_to_web_account(): void
-    {
-        $user = User::factory()->create([
-            'provider' => 'microsoft',
-            'provider_id' => 'microsoft-user',
-            'email_verified_at' => null,
-        ]);
-        $url = URL::temporarySignedRoute('verification.verify', now()->addHour(), [
-            'id' => $user->id,
-            'hash' => sha1($user->getEmailForVerification()),
-        ]);
-
-        $this->get($url)->assertOk()->assertSee('Your email is verified');
-        $this->assertTrue($user->fresh()->hasVerifiedEmail());
-    }
-
-    public function test_microsoft_member_can_resend_email_verification(): void
-    {
-        Notification::fake();
-        $user = User::factory()->create([
-            'provider' => 'microsoft', 'provider_id' => 'microsoft-user', 'email_verified_at' => null,
-        ]);
-
-        $this->postJson('/api/auth/email/resend', ['email' => $user->email])->assertOk();
-        Notification::assertSentTo($user, VibyraVerifyEmail::class);
     }
 }

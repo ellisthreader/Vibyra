@@ -1,0 +1,12 @@
+.settings-pane--cloud { background: #05070e; min-height: 0; }
+.settings-pane__body--cloud { padding: 0 !important; min-height: 0; overflow: auto; }
+.cloud-entry { --sky-core: #c9d5ff; --sky-action: #4667e8; --sky-text: #f4f6ff; min-height: 100%; position: relative; color: #f4f6ff; font-family: var(--font-ui); }
+.cloud-entry__header { position: relative; height: 58px; display: flex; align-items: center; justify-content: center; padding: 0 20px; }
+.cloud-entry__header h2 { font-size: 17px; font-weight: 600; letter-spacing: -.35px; margin: 0; color: inherit; }
+.cloud-entry__close { position: absolute; right: 16px; border: 0; border-radius: 50%; width: 30px; height: 30px; font: 24px/1 var(--font-ui); background: #ffffff18; color: #f4f6ff; cursor: pointer; }
+.cloud-entry__body { position: relative; max-width: 400px; margin: 0 auto; padding: 22px 28px 50px; text-align: center; }
+.cloud-entry__art { display: flex; justify-content: center; padding: 10px 0 18px; }
+.cloud-entry__body h3 { font-size: 26px; line-height: 32px; letter-spacing: -.6px; margin: 0 0 12px; color: inherit; }
+.cloud-entry__body p { font-size: 15px; line-height: 23px; color: #e8eeff99; margin: 0 0 24px; }
+.cloud-entry__body .cc-error { color: #ff8f80; margin-top: 16px; }
+.cloud-entry button:focus-visible { outline: 2px solid #c9d5ff; outline-offset: 3px; }

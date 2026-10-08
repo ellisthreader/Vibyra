@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vibyra Preview Diagnostics"
+  short_description: "Diagnose desktop and mobile Preview failures"
+  default_prompt: "Use $vibyra-preview-diagnostics to trace and fix this Vibyra Preview failure end to end."

@@ -1,7 +1,0 @@
-/* Off-screen sections keep their artwork but stop burning compositor time. */
-.section-idle,
-.section-idle *,
-.section-idle *::before,
-.section-idle *::after {
-  animation-play-state: paused !important;
-}

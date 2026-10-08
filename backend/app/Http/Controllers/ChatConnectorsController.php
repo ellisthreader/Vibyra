@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\UserPayloads;
 use App\Services\ChatConnectors\Github\Repositories;
-use App\Services\ChatConnectors\{Catalogue, ConnectorOAuth, Installs, OAuthFlows, Registry};
+use App\Services\ChatConnectors\{Catalogue, ConnectorOAuth, Installs, Registry};
 use Illuminate\Http\Request;
 
 class ChatConnectorsController extends Controller
@@ -54,22 +54,16 @@ class ChatConnectorsController extends Controller
 
     /**
      * Where the provider sends the browser back. It arrives with no app session, so
-     * the account is the one recorded when the sign-in started, and only a browser that
-     * opened the sign-in's own link (ConnectorHopController) may finish it. The token is proved
+     * the account is the one recorded when the sign-in started. The token is proved
      * and stored exactly as a pasted key would be; then the browser goes on to the
      * app, which closes the sign-in sheet, or, opened any other way, gets a page.
      */
     public function callback(Request $request, string $integration, ConnectorOAuth $oauth, Installs $installs)
     {
         [$flow, $grant] = $oauth->finish($integration, (string) $request->query('state', ''),
-            (string) $request->query('code', ''), (string) $request->query('error', ''), OAuthFlows::presented($request));
+            (string) $request->query('code', ''), (string) $request->query('error', ''));
         if ($flow && $grant !== null) {
-            try {
-                // Agent V2 "add another account" keeps the ordinary-chat install untouched.
-                if (($flow['mode'] ?? 'install') === 'add_account') $oauth->succeed($flow, ['connectionId' =>
-                    app(\App\Services\AgentRuns\Connections\Connections::class)->addAccount((int) $flow['userId'], $integration, $grant['access'], $grant)->id]);
-                else { $installs->connect((int) $flow['userId'], $integration, $grant['access'], $grant); $oauth->succeed($flow); }
-            }
+            try { $installs->connect((int) $flow['userId'], $integration, $grant['access'], $grant); $oauth->succeed($flow); }
             catch (\Throwable $e) { $oauth->fail($flow, 'The connection could not be saved. Please try again.'); }
         }
         $name = $oauth->name($integration);

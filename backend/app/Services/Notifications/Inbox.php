@@ -12,8 +12,7 @@ final class Inbox
             if (!$event || $event->published_at) return;
             $p = DB::table('notification_preferences')->where('user_id', $event->user_id)->first();
             $category = match ($event->phase) {
-                'failed' => 'failures',
-                'approval_pending', 'question_pending', 'budget_limit', 'step_limit', 'outcome_unknown' => 'attention',
+                'approval_pending', 'question_pending', 'failed', 'budget_limit', 'step_limit', 'outcome_unknown' => 'attention',
                 'reply_ready' => 'replies', 'possible_loop', 'possible_blocker' => 'advisories', default => null,
             };
             if ($p && $category && $event->created_at >= $p->activated_at) {
@@ -21,10 +20,7 @@ final class Inbox
                 $id = (string) Str::uuid();
                 DB::table('notification_items')->insertOrIgnore(['id' => $id, 'user_id' => $event->user_id,
                     'event_id' => $event->id, 'category' => $category,
-                    'title' => match ($category) { 'replies' => 'Your reply is ready', 'advisories' => 'Your task may need a review',
-                        'failures' => 'A task couldn\'t finish', default => 'Vibyra needs your attention' },
-                    // Only a blocked agent breaks through Focus; everything else is an ordinary alert.
-                    'level' => in_array($event->phase, ['approval_pending', 'question_pending'], true) ? 'time-sensitive' : 'active',
+                    'title' => $category === 'replies' ? 'Your reply is ready' : ($category === 'advisories' ? 'Your task may need a review' : 'Vibyra needs your attention'),
                     'destination' => json_encode(['source' => $event->source, 'runId' => $event->run_id,
                         ...array_intersect_key($data, array_flip(['chatId', 'agentId', 'turnId', 'hostId', 'sessionId']))]),
                     'created_at' => now(), 'expires_at' => now()->addHours($category === 'replies' ? 24 : 1)]);
@@ -42,9 +38,6 @@ final class Inbox
         if ($item->read_at || now()->gte($item->expires_at)) return false;
         $event = DB::table('work_events')->where('id', $item->event_id)->first();
         if (!$event) return false;
-        if ($event->source === 'agent_run') return app(AgentRunNotifications::class)->current($item, $event);
-        if ($event->source === 'mac') return app(\App\Services\LiveStatus\MacEvents::class)->current($item, $event);
-        if ($event->source === 'cloud_computer') return app(\App\Services\CloudWorkspaces\Git\CloudEvents::class)->current($item, $event);
         $progress = DB::table('work_progress')->where('source', $event->source)->where('run_id', $event->run_id)->first();
         $data = json_decode($event->metadata, true);
         $advisory = in_array($event->phase, ['possible_loop','possible_blocker']);
@@ -84,9 +77,7 @@ final class Inbox
         $event = DB::table('work_events')->where('id', $item->event_id)->first();
         if (!$event) return 0;
         $data = json_decode($event->metadata, true);
-        if ($event->source === 'mac') {
-            // Mac items end with their expiry; "needs you" is also checked as current before sending.
-        } elseif ($event->source === 'host_conversation') {
+        if ($event->source === 'host_conversation') {
             $expires = $expires->min(\Illuminate\Support\Carbon::parse($data['occurredAt'])->addSeconds(120));
         } elseif ($event->phase === 'approval_pending') {
             $created = DB::table('vibes_tools')->whereIn('id', $data['pending'] ?? [])->min('created_at');
@@ -97,10 +88,8 @@ final class Inbox
     }
     public function payload(object $item): array
     {
-        return ['id' => $item->id, 'title' => $item->title, ...(($item->body ?? null) !== null ? ['body' => $item->body] : []), 'category' => $item->category,
+        return ['id' => $item->id, 'title' => $item->title, 'category' => $item->category,
             'destination' => json_decode($item->destination, true), 'createdAt' => $item->created_at,
-            'read' => $item->read_at !== null, 'actionable' => $this->current($item),
-            // Agent V2: current run/action state for the owner; a stale push never approves anything.
-            ...(($status = app(AgentRunNotifications::class)->status($item)) ? ['status' => $status] : [])];
+            'read' => $item->read_at !== null, 'actionable' => $this->current($item)];
     }
 }

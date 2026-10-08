@@ -1,0 +1,76 @@
+/* The launcher's right-edge controls: a stepper for how many terminals and a
+ * select-shaped button for which account. Both sit flush right in their row. */
+
+/* --- terminal count: ± around an exact number --- */
+
+.launch-stepper {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--workspace);
+}
+
+.launch-stepper button {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  min-height: 32px;
+  color: var(--muted);
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.launch-stepper button:hover:not(:disabled) { color: var(--text); background: var(--hover-strong); }
+.launch-stepper button:disabled { opacity: .35; cursor: default; }
+.launch-stepper button:first-child { border-radius: 8px 0 0 8px; }
+.launch-stepper button:last-child { border-radius: 0 8px 8px 0; }
+
+.launch-stepper__value {
+  min-width: 44px;
+  border-right: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+  color: var(--text) !important;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.launch-stepper__value[aria-expanded="true"] { color: var(--accent) !important; }
+
+.launch-count__menu { grid-template-columns: repeat(4, 1fr); gap: 4px; width: 232px; }
+.launch-count__menu button {
+  min-height: 40px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+}
+
+.launch-count__menu button:hover { color: var(--text); background: var(--hover-strong); }
+.launch-count__menu button.is-active { color: var(--on-action); background: var(--action); }
+
+/* --- account: a select-shaped button that opens the shared menu --- */
+
+.launch-select {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  max-width: 60%;
+  min-height: 32px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--workspace);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+  transition: background var(--t-base) var(--e-standard), border-color var(--t-base) var(--e-standard);
+}
+
+.launch-select:hover, .launch-select[aria-expanded="true"] { background: var(--hover-strong); border-color: var(--border); }
+.launch-select > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.launch-select > svg { flex: 0 0 auto; color: var(--muted); }
+.launch-select[aria-expanded="true"] > svg { color: var(--accent); }

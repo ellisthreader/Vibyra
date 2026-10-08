@@ -1,0 +1,40 @@
+/* Chat view: one full-page chat with its threads as tabs, like the ChatGPT and
+   Claude apps. Flat (owner rule): hairlines and fills, no glows or shadows. */
+.chat-threads { display:flex; flex-direction:column; flex:1; min-height:0; height:100%; background:var(--bg); }
+.chat-threads__bar { display:flex; align-items:center; gap:12px; height:46px; flex:none; padding:0 10px 0 12px; border-bottom:1px solid var(--line-soft); }
+.chat-threads__tabs { display:flex; align-items:center; gap:2px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none; }
+.chat-threads__tabs::-webkit-scrollbar { display:none; }
+.chat-thread { position:relative; display:flex; align-items:center; gap:7px; flex:0 1 auto; min-width:92px; max-width:220px; height:30px; padding:0 4px 0 10px; border:1px solid transparent; border-radius:8px; color:var(--muted); font:500 12.5px/1 var(--font-ui); letter-spacing:-.06px; cursor:pointer; user-select:none; transition:background var(--t-base), color var(--t-base); }
+.chat-thread:hover { background:var(--hover); color:var(--text); }
+.chat-thread.is-on { background:var(--surface); border-color:var(--line); color:var(--text); }
+.chat-thread:focus-visible { outline:2px solid var(--accent-border); outline-offset:1px; }
+.chat-thread.is-paused .chat-thread__logo { opacity:.55; }
+.chat-thread.is-new { padding-right:12px; min-width:0; cursor:default; }
+.chat-thread__logo { display:inline-grid !important; place-items:center; flex:none; width:16px !important; height:16px !important; border:0 !important; box-shadow:none !important; background:none !important; overflow:hidden; }
+.chat-thread__logo > * { max-width:100%; max-height:100%; }
+.chat-thread__title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chat-thread__close { flex:none; display:grid; place-items:center; width:20px; height:20px; padding:0; border:0; border-radius:5px; background:none; color:var(--dim); opacity:0; cursor:pointer; transition:opacity var(--t-base), background var(--t-base); }
+.chat-thread:hover .chat-thread__close, .chat-thread.is-on .chat-thread__close, .chat-thread__close:focus-visible { opacity:1; }
+.chat-thread__close:hover { background:var(--hover-strong); color:var(--text); }
+.chat-threads__new { flex:none; display:grid; place-items:center; width:30px; height:30px; margin-left:2px; padding:0; border:0; border-radius:8px; background:none; color:var(--muted); cursor:pointer; }
+.chat-threads__new:hover { background:var(--hover-strong); color:var(--text); }
+.chat-threads__tools { display:flex; align-items:center; gap:2px; flex:none; }
+.chat-threads__tool { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border:0; border-radius:8px; background:none; color:var(--muted); font:500 12.5px var(--font-ui); cursor:pointer; }
+.chat-threads__tool:hover:not(:disabled), .chat-threads__tool[aria-expanded=true] { background:var(--hover-strong); color:var(--text); }
+.chat-threads__tool:disabled { opacity:.45; cursor:default; }
+.chat-threads__chevron { display:inline-flex; color:var(--dim); transform:rotate(90deg); }
+.chat-threads__history { position:relative; }
+.chat-threads__menu { position:absolute; right:0; top:calc(100% + 6px); z-index:30; display:flex; flex-direction:column; width:300px; max-height:min(420px, 60vh); overflow:auto; padding:6px; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--e-menu); }
+.chat-threads__menu button { display:flex; align-items:center; gap:9px; height:34px; padding:0 9px; border:0; border-radius:7px; background:none; color:var(--text); font:13px var(--font-ui); text-align:left; cursor:pointer; }
+.chat-threads__menu button:hover { background:var(--hover-strong); }
+.chat-threads__menu small { flex:none; color:var(--dim); font-size:11.5px; }
+.chat-threads__page { position:relative; flex:1; min-height:0; display:flex; }
+.chat-threads__thread { flex:1; min-width:0; min-height:0; display:flex; }
+.chat-threads__thread[hidden] { display:none; }
+.chat-threads__launch { flex:1; display:grid; place-items:center; padding:32px 16px; overflow:auto; }
+
+/* The thread itself: no card, no frame; the page is the chat. */
+.chat-threads .conversation-terminal--threaded { flex:1; height:auto; min-height:0; border:0; border-radius:0; box-shadow:none; background:var(--bg); }
+.chat-threads .conversation-terminal--threaded .pane__header { min-height:44px; padding:0 18px; background:transparent; border-bottom:0; }
+.chat-threads .conversation-terminal--threaded .pane__title strong { font:600 13.5px var(--font-ui); letter-spacing:-.1px; }
+.chat-threads .conversation-terminal--threaded .pane__header { justify-content:flex-end; min-height:40px; gap:6px; }

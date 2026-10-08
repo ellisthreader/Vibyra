@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-terminal-title-hints"
+description = "Enables the terminal_title_hints command without any pre-configured scope."
+commands.allow = ["terminal_title_hints"]
+
+[[permission]]
+identifier = "deny-terminal-title-hints"
+description = "Denies the terminal_title_hints command without any pre-configured scope."
+commands.deny = ["terminal_title_hints"]

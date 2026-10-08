@@ -1,0 +1,195 @@
+import { useVoiceLifecycle } from "../../lib/useVoiceLifecycle";
+import { useProductMode } from '../../state/productModeStore';
+import { TeammatesWorkspace } from '../teammates/TeammatesWorkspace';
+import { lazy, Suspense, useCallback, useState, useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
+
+import { BetaWelcome } from "../beta/BetaWelcome";
+import { useBetaWelcome } from "../../lib/useBetaWelcome";
+import { FirstWelcome } from "../auth/FirstWelcome";
+import { NewModelsNotice } from "../home/NewModelsNotice";
+import { CloseConfirmModal } from "./CloseConfirmModal";
+import { ProjectStrip } from "./ProjectStrip";
+import { ProjectWorkspace } from "./ProjectWorkspace";
+import { ScreenshotTray } from "./ScreenshotTray";
+import { TitleBar } from "./TitleBar";
+import { UpdateBanner } from "./UpdateBanner";
+import { BrowserTakeover } from "../teammates/BrowserTakeover";
+import { WhatsNew } from "./WhatsNew";
+import { VoiceHud } from "./VoiceHud";
+import { PlanUpgradeModal } from "../plan/PlanUpgradeModal";
+import { RemoteSecurityMonitor } from "../phone/RemoteSecurityMonitor";
+import { PhoneApprovalModal } from "../phone/PhoneApprovalModal";
+import { Toasts } from "../notifications/Toasts";
+import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
+import { newModelsNoticeHidden } from "../../lib/newModelsNotice";
+import { isLinux, isMac } from "../../lib/platform";
+import { openNewProject } from "../../state/newProject";
+import { useActivityTicker } from "../../lib/useActivityTicker";
+import { useMenuBarStatus } from "../../lib/useMenuBarStatus";
+import { useBackgroundThrottle } from "../../lib/useBackgroundThrottle";
+import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
+import { useSessionLifecycle } from "../../lib/useSessionLifecycle";
+import { useSpendWatch } from "../../lib/useSpendWatch";
+import { useUpdateWatch } from "../../lib/useUpdateWatch";
+import { useNotificationRuntime } from "../../lib/useNotificationRuntime";
+import { usePhoneWatch } from "../../lib/usePhoneWatch";
+import { useWorkspaceRuntime } from "../../lib/useWorkspaceRuntime";
+import { useAccountStore } from "../../state/accountStore";
+import { useLaunchApprovalStore } from "../../state/launchApprovalStore";
+import { useProjectStore } from "../../state/projectStore";
+import { useReportStore } from "../../state/reportStore";
+import { useRunConfirmStore } from "../../state/runConfirmStore";
+import { useScreenshotStore } from "../../state/screenshotStore";
+import { useSettingsStore } from "../../state/settingsStore";
+import { useWorkspaceStore } from "../../state/workspaceStore";
+import { useAgentAttentionPoll } from "../../lib/useAgentAttention";
+
+const AgentPickerModal = lazy(() => import("../agents/AgentPickerModal")
+  .then((module) => ({ default: module.AgentPickerModal })));
+const CommandPalette = lazy(() => import("./CommandPalette")
+  .then((module) => ({ default: module.CommandPalette })));
+const FilePreviewModal = lazy(() => import("../files/FilePreviewModal")
+  .then((module) => ({ default: module.FilePreviewModal })));
+const HomeView = lazy(() => import("../home/HomeView")
+  .then((module) => ({ default: module.HomeView })));
+const NeedsYouView = lazy(() => import("../home/NeedsYouView")
+  .then((module) => ({ default: module.NeedsYouView })));
+const NewProjectPage = lazy(() => import("../home/NewProjectPage")
+  .then((module) => ({ default: module.NewProjectPage })));
+const LaunchApprovalModal = lazy(() => import("../rail/LaunchApprovalModal")
+  .then((module) => ({ default: module.LaunchApprovalModal })));
+const RunConfirmModal = lazy(() => import("../companion/RunConfirmModal")
+  .then((module) => ({ default: module.RunConfirmModal })));
+const ReportModal = lazy(() => import("../report/ReportModal")
+  .then((module) => ({ default: module.ReportModal })));
+const SavedHistory = lazy(() => import("./SavedHistory")
+  .then((module) => ({ default: module.SavedHistory })));
+const SettingsModal = lazy(() => import("../settings/SettingsModal")
+  .then((module) => ({ default: module.SettingsModal })));
+
+/** The authenticated workspace. Mounted only after the account gate passes,
+ * so projects, agents, models, and workspace state initialise post sign-in. */
+export function WorkspaceApp() {
+  const productMode = useProductMode(s => s.mode);
+  const profile = useAccountStore((s) => s.snapshot.profile);
+  // Only whether settings exist: the whole object would re-render the entire
+  // workspace on every settings write.
+  const settingsLoaded = useSettingsStore((s) => s.settings !== null);
+  const view = useProjectStore((s) => s.view);
+  const activeId = useProjectStore((s) => s.activeId);
+  const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
+  const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
+  const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
+  const historyOpen = useWorkspaceStore((s) => s.historyOpen);
+  const projectsSidebarOpen = useWorkspaceStore((s) => s.projectsSidebarOpen);
+  const filePreviewOpen = useWorkspaceStore((s) => s.preview !== null);
+  const launchApprovalOpen = useLaunchApprovalStore((s) => s.pending !== null);
+  const runConfirmOpen = useRunConfirmStore((s) => s.pending !== null);
+  const reportOpen = useReportStore((s) => s.open);
+  const [welcomeOpen, setWelcomeOpen] = useState(() => !hasSeenFirstWelcome(profile));
+  const [welcomeHandoff, setWelcomeHandoff] = useState(false);
+  const [newModelsOpen, setNewModelsOpen] = useState(() => (isMac || isLinux) && !newModelsNoticeHidden());
+
+  const beta = useBetaWelcome(profile, settingsLoaded && !welcomeOpen && !welcomeHandoff);
+  useVoiceLifecycle(profile?.welcomeKey);
+  useGlobalShortcuts();
+  useWorkspaceRuntime();
+  useNotificationRuntime();
+  useSessionLifecycle();
+  useActivityTicker();
+  useMenuBarStatus();
+  useBackgroundThrottle();
+  useUpdateWatch();
+  usePhoneWatch();
+  useAgentAttentionPoll();
+  useSpendWatch();
+  useEffect(() => {
+    const saved = listen<import('../../types').Screenshot>('screenshot:saved', event => useScreenshotStore.getState().addShot(event.payload));
+    const report = listen<string>('screenshot:report', event => useReportStore.getState().applyScreenshot(event.payload));
+    const closed = listen('screenshot:closed', () => useReportStore.getState().cancelScreenshot());
+    const error = listen<string>('screenshot:error', event => useWorkspaceStore.getState().setError(event.payload));
+    return () => { void saved.then(off => off()); void report.then(off => off()); void closed.then(off => off()); void error.then(off => off()); };
+  }, []);
+
+  const beginWelcomeHandoff = useCallback(() => {
+    useProductMode.getState().choose("work");
+    useProjectStore.getState().goHome();
+    setWelcomeHandoff(true);
+  }, []);
+  const finishWelcome = useCallback((handoff: boolean) => {
+    setWelcomeOpen(false);
+    if (!handoff) return;
+    window.requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>("[data-welcome-focus]");
+      target?.focus({ preventScroll: true });
+      target?.classList.add("first-welcome-focus");
+      window.setTimeout(() => target?.classList.remove("first-welcome-focus"), 1_300);
+      window.setTimeout(() => setWelcomeHandoff(false), 700);
+    });
+  }, []);
+  const startWithNewModels = useCallback(() => {
+    setNewModelsOpen(false);
+    useProductMode.getState().choose("work");
+    openNewProject();
+  }, []);
+
+  if (!settingsLoaded) {
+    return <div className="boot">Starting Vibyra…</div>;
+  }
+
+  const showProject = view !== "home" && view !== "needs-you" && activeId !== null;
+
+  return (
+    <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""} ${productMode === "work" && !projectsSidebarOpen ? "app--projects-hidden" : ""}`}>
+      <TitleBar />
+      <div className="shell">
+        <div className="product-code-shell" hidden={productMode !== "work"}>
+        <ProjectStrip />
+        {view === "new-project" && <Suspense fallback={null}><NewProjectPage /></Suspense>}
+        <div style={{ display: view === "new-project" ? "none" : "contents" }}>
+        {showProject ? (
+          <>
+            <ProjectWorkspace active={productMode === "work" && view !== "new-project"} />
+          </>
+        ) : (
+          <Suspense fallback={null}>{view === "needs-you" ? <NeedsYouView /> : <HomeView />}</Suspense>
+        )}
+        </div>
+        </div>
+        <TeammatesWorkspace active={productMode === "agent"} />
+      </div>
+      <UpdateBanner />
+      <BrowserTakeover />
+      <Toasts />
+      <WhatsNew deferred={welcomeOpen || welcomeHandoff || beta.pending || beta.priorityBlocked || newModelsOpen} />
+      <VoiceHud />
+      <CloseConfirmModal />
+      <PhoneApprovalModal />
+      <RemoteSecurityMonitor />
+      <PlanUpgradeModal />
+      <ScreenshotTray />
+      <Suspense fallback={null}>
+        {paletteOpen ? <CommandPalette /> : null}
+        {historyOpen ? <SavedHistory /> : null}
+        {agentPickerOpen ? <AgentPickerModal /> : null}
+        {launchApprovalOpen ? <LaunchApprovalModal /> : null}
+        {runConfirmOpen ? <RunConfirmModal /> : null}
+        {settingsOpen ? <SettingsModal /> : null}
+        {reportOpen ? <ReportModal /> : null}
+        {filePreviewOpen ? <FilePreviewModal /> : null}
+      </Suspense>
+      {welcomeOpen && profile ? (
+        <FirstWelcome
+          profile={profile}
+          onFinish={finishWelcome}
+          onHandoffStart={beginWelcomeHandoff}
+        />
+      ) : null}
+      {beta.open && profile && beta.receipt ? <BetaWelcome name={profile.name} receipt={beta.receipt} onDismiss={beta.dismiss} onReport={() => { beta.dismiss(); void useReportStore.getState().begin(); }} /> : null}
+      {!welcomeOpen && !welcomeHandoff && !beta.pending && !beta.priorityBlocked && newModelsOpen ? <NewModelsNotice
+        onClose={() => setNewModelsOpen(false)} onStart={startWithNewModels}
+      /> : null}
+    </div>
+  );
+}

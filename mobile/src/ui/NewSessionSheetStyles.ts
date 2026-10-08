@@ -1,0 +1,47 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  content: { gap: 22, paddingTop: 8 },
+  context: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 2 },
+  folder: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contextText: { flex: 1, gap: 3 },
+  project: { fontSize: 20, lineHeight: 25, fontWeight: '700', letterSpacing: -0.5 },
+  computer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  host: { flex: 1, fontSize: 13, lineHeight: 18, letterSpacing: -0.05 },
+  nameField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+  },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 48,
+    fontSize: 16,
+    letterSpacing: -0.2,
+    paddingVertical: 11,
+    outlineWidth: 0,
+  },
+  section: { gap: 8 },
+  label: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: -0.05,
+    marginLeft: 16,
+    marginBottom: -1,
+  },
+  card: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  separator: { height: StyleSheet.hairlineWidth, marginLeft: 64 },
+  note: { fontSize: 12, lineHeight: 17, textAlign: 'center' },
+});

@@ -89,7 +89,7 @@ final class Router
         $outputPerMillion = (float) $row['price']['completion'] * 1_000_000;
         $profile = Profiles::of($row['id'], $row['model']['context_length'] ?? null, $outputPerMillion);
         $effort = Ladder::choose($row['efforts'], $demand->deliberation);
-        $credits = TurnPrice::credits($situation->inputBound, $effort, $row['price'], $situation->scale);
+        $credits = TurnPrice::credits($situation->inputBound, $effort, $row['price']);
 
         // How much of the capability demand is specifically a demand for code. A hard
         // question about an essay still needs a strong model, just not a coding one.
@@ -115,7 +115,7 @@ final class Router
         // never which model was the better fit in the first place - and with the
         // balance in here as well, a stepped-back choice was indistinguishable from
         // a first choice, so the quote could not honestly say which it was.
-        $share = min(1.0, TurnPrice::usd($situation->inputBound, $effort, $row['price'], $situation->scale)
+        $share = min(1.0, TurnPrice::usd($situation->inputBound, $effort, $row['price'])
             / (TurnPrice::CEILING / 100));
         $cost = 0.55 * sqrt($share) * (0.15 + 0.85 * (1.0 - $demand->pressure()));
 
@@ -135,7 +135,7 @@ final class Router
             $cheaper = Ladder::cheaper($candidate['efforts'], $effort);
             if ($cheaper === null) return null;
             $effort = $cheaper;
-            $credits = TurnPrice::credits($situation->inputBound, $effort, $candidate['price'], $situation->scale);
+            $credits = TurnPrice::credits($situation->inputBound, $effort, $candidate['price']);
         }
 
         return ['effort' => $effort, 'credits' => $credits];
@@ -147,7 +147,7 @@ final class Router
             $effort = $row['efforts'][0] ?? null;
 
             return array_replace($row, ['effort' => $effort,
-                'credits' => TurnPrice::credits($situation->inputBound, $effort, $row['price'], $situation->scale)]);
+                'credits' => TurnPrice::credits($situation->inputBound, $effort, $row['price'])]);
         }, $ranked);
         usort($priced, fn (array $a, array $b) => $a['credits'] <=> $b['credits']);
 

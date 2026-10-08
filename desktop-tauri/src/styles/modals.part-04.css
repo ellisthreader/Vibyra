@@ -1,0 +1,63 @@
+/* narrow-window fallback: nav collapses to a top strip */
+@media (max-width: 700px) {
+  .settings-modal {
+    flex-direction: column;
+    height: min(640px, 90vh);
+    max-height: min(640px, 90vh);
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 8px 10px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .settings-nav__title,
+  .settings-nav__foot {
+    display: none;
+  }
+
+  .settings-nav__list {
+    flex-direction: row;
+  }
+
+  .settings-nav__item {
+    white-space: nowrap;
+  }
+}
+
+/* --- keycaps (shared beyond settings) --- */
+
+/* One cap per key, spaced the way they sit under your hand. */
+.keycaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* A moulded cap: face lighter than the card it rests on, a lit top edge, and
+   a lip underneath for the side wall. Never a well cut into the surface. */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 7px;
+  border: 1px solid var(--key-edge);
+  border-radius: 6px;
+  background-color: var(--key-face);
+  background-image: var(--key-gloss);
+  box-shadow: 0 1px 0 var(--key-lip), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color: var(--key-text);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 640;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}

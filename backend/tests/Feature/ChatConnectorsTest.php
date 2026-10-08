@@ -41,15 +41,12 @@ class ChatConnectorsTest extends TestCase
     public function test_the_catalogue_is_readable_without_an_account_and_never_returns_a_credential(): void
     {
         $body = $this->withToken('')->getJson('/api/connectors')->assertOk()->json();
-        $this->assertSame(['github', 'stripe', 'figma', 'gmail', 'google_calendar', 'google_drive',
-            'outlook_mail', 'outlook_calendar', 'onedrive', 'teams', 'sharepoint', 'google_tasks', 'deepwiki', 'hackernews', 'slack', 'notion', 'linear'],
-            array_column($body['integrations'], 'id'));
+        $this->assertSame(['github', 'stripe', 'figma'], array_column($body['integrations'], 'id'));
         foreach ($body['integrations'] as $integration) {
             $this->assertFalse($integration['installed']);
             $this->assertArrayNotHasKey('credential_value', $integration);
             $this->assertSame(['kind', 'configured', 'label', 'placeholder', 'help', 'url'], array_keys($integration['credential']));
-            $this->assertSame(in_array($integration['id'], ['deepwiki', 'hackernews'], true)
-                ? 'public' : 'oauth', $integration['credential']['kind']);
+            $this->assertSame('oauth', $integration['credential']['kind']);
             $this->assertFalse($integration['credential']['configured']);
         }
         $entries = array_column($body['integrations'], null, 'id');
@@ -255,17 +252,6 @@ class ChatConnectorsTest extends TestCase
         $this->expectExceptionMessage('A Stripe customer needs a real email address.');
         app(\App\Services\ChatConnectors\ConnectorTools::class)
             ->validate('stripe', 'stripe_create_customer', ['email' => 'not-an-address']);
-    }
-
-
-    public function test_an_install_row_for_a_retired_integration_is_ignored(): void
-    {
-        $user = User::first();
-        DB::table('vibes_integration_installs')->insert(['user_id' => $user->id, 'integration' => 'deepwiki',
-            'credential' => 'x', 'account_label' => 'Old', 'connected_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
-        $ids = array_column($this->getJson('/api/connectors')->assertOk()->json('integrations'), 'id');
-        $this->assertNotContains('deepwiki', $ids);
-        $this->assertSame([], app(\App\Services\ChatConnectors\Installs::class)->installed($user->id));
     }
 
 }

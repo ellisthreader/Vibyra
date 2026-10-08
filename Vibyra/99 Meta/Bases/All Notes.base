@@ -1,0 +1,45 @@
+﻿filters:
+  and:
+    - 'file.ext == "md"'
+properties:
+  type:
+    displayName: "Type"
+  status:
+    displayName: "Status"
+  project:
+    displayName: "Project"
+  category:
+    displayName: "Category"
+views:
+  - type: table
+    name: "All Notes"
+    order:
+      - file.name
+      - file.folder
+      - type
+      - status
+      - project
+      - category
+      - file.mtime
+  - type: table
+    name: "Active Projects"
+    filters:
+      and:
+        - 'type == "project"'
+        - 'status == "active"'
+    order:
+      - file.name
+      - priority
+      - next_action
+      - file.folder
+  - type: table
+    name: "Needs Review"
+    filters:
+      or:
+        - 'status == "review"'
+        - 'status == "open"'
+    order:
+      - file.name
+      - type
+      - status
+      - file.folder

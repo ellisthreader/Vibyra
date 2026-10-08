@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "screenshot-editor",
+  "description": "Screenshot editing in its own desktop window",
+  "webviews": ["screenshot-editor"],
+  "local": true,
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-destroy",
+    "core:event:allow-emit-to",
+    "allow-take-screenshot-editor-capture",
+    "allow-finish-screenshot-edit",
+    "allow-copy-screenshot",
+    "allow-save-screenshot"
+  ]
+}

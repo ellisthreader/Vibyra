@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-redeem-license"
+description = "Enables the account_redeem_license command without any pre-configured scope."
+commands.allow = ["account_redeem_license"]
+
+[[permission]]
+identifier = "deny-account-redeem-license"
+description = "Denies the account_redeem_license command without any pre-configured scope."
+commands.deny = ["account_redeem_license"]

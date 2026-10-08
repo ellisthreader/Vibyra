@@ -1,0 +1,100 @@
+use std::collections::BTreeMap;
+
+/// Variables that name the AppImage mount itself. They mean nothing to a child
+/// process and only mislead tools that look for them.
+const OWNED: &[&str] = &["APPDIR", "APPIMAGE", "APPIMAGE_UUID", "ARGV0", "OWD"];
+
+/// What a child needs applied to undo the AppImage's environment capture.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EnvFix {
+    /// Variables to drop entirely — everything they named lived in the mount.
+    pub remove: Vec<String>,
+    /// Variables to rewrite, keeping only the entries outside the mount.
+    pub set: Vec<(String, String)>,
+}
+
+impl EnvFix {
+    pub fn is_empty(&self) -> bool {
+        self.remove.is_empty() && self.set.is_empty()
+    }
+}
+
+/// Plans the fix for one environment.
+///
+/// The AppImage runtime prepends its mount to every loader search path it
+/// knows — `LD_LIBRARY_PATH`, `PYTHONHOME`, `PERLLIB`, `GTK_PATH`, `GST_*`,
+/// `XDG_DATA_DIRS`, `PATH` — so the bundled GTK/WebKit stack wins for
+/// *Vibyra*. A terminal Vibyra spawns inherits all of it and stops behaving
+/// like the user's own shell: `python3` dies with "No module named
+/// 'encodings'" because `PYTHONHOME` points at a tree with no stdlib, and
+/// anything dynamically linked can bind the bundle's libraries instead of the
+/// system's.
+///
+/// Rather than enumerate the variables a given runtime version happens to set,
+/// this drops the *path entries under the mount* from whatever is present and
+/// keeps the rest. `XDG_DATA_DIRS` therefore keeps its system entries, while
+/// `PYTHONHOME` — which is nothing but the mount — disappears. A build that is
+/// not running from an AppImage produces an empty fix and costs nothing.
+pub fn plan<I>(appdir: &str, vars: I) -> EnvFix
+where
+    I: IntoIterator<Item = (String, String)>,
+{
+    let appdir = appdir.trim_end_matches('/');
+    let mut fix = EnvFix::default();
+    if appdir.is_empty() {
+        return fix;
+    }
+    // Sorted so the plan — and the tests over it — do not depend on the order
+    // the process environment happens to enumerate in.
+    let sorted: BTreeMap<String, String> = vars.into_iter().collect();
+    for (key, value) in sorted {
+        if OWNED.contains(&key.as_str()) {
+            fix.remove.push(key);
+            continue;
+        }
+        if !value.contains(appdir) {
+            continue;
+        }
+        let kept: Vec<&str> = value
+            .split(':')
+            .filter(|entry| !entry.is_empty() && !under(entry, appdir))
+            .collect();
+        if kept.is_empty() {
+            fix.remove.push(key);
+            continue;
+        }
+        // `contains` is only a cheap prefilter — a sibling mount whose name
+        // starts with ours matches it while owning none of the entries. Record
+        // a rewrite only when one was actually dropped.
+        let rewritten = kept.join(":");
+        if rewritten != value {
+            fix.set.push((key, rewritten));
+        }
+    }
+    fix
+}
+
+/// True when `entry` is the mount or lives inside it. Compared against
+/// `appdir/` rather than `appdir` so a sibling mount whose name merely starts
+/// with the same characters is never swept up.
+fn under(entry: &str, appdir: &str) -> bool {
+    entry == appdir || entry.starts_with(&format!("{appdir}/"))
+}
+
+/// The fix for this process, or an empty fix when Vibyra was not launched from
+/// an AppImage. Recomputed per spawn: it is a single pass over the environment,
+/// and the app itself adds mount-scoped variables after startup.
+pub fn current() -> EnvFix {
+    let Ok(appdir) = std::env::var("APPDIR") else {
+        return EnvFix::default();
+    };
+    plan(
+        &appdir,
+        std::env::vars_os()
+            .filter_map(|(key, value)| Some((key.into_string().ok()?, value.into_string().ok()?))),
+    )
+}
+
+#[cfg(test)]
+#[path = "appimage_tests.rs"]
+mod tests;

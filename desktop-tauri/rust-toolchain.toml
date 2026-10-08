@@ -1,0 +1,5 @@
+# Keep native builds reproducible instead of following an unknown future stable.
+[toolchain]
+channel = "1.97.1"
+profile = "minimal"
+components = ["rustfmt", "clippy"]

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Services\ReleaseArtifact;
 use App\Services\ReleaseChannel;
-use App\Services\Analytics\Recorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -43,11 +42,7 @@ class ReleaseDownloadController extends Controller
 
     public function download(string $platform): JsonResponse|StreamedResponse
     {
-        if (! in_array($platform, self::PLATFORMS, true)) {
-            abort(404);
-        }
-        app(Recorder::class)->consented(request(), 'website_download_requested', $platform);
-        return $this->stream($platform, ReleaseChannel::download($platform), true);
+        return $this->stream($platform, ReleaseChannel::download($platform));
     }
 
     /**
@@ -61,10 +56,10 @@ class ReleaseDownloadController extends Controller
             abort(404);
         }
 
-        return $this->stream($platform, ReleaseChannel::updater($platform), false);
+        return $this->stream($platform, ReleaseChannel::updater($platform));
     }
 
-    private function stream(string $platform, array $release, bool $countWebsiteDownload): JsonResponse|StreamedResponse
+    private function stream(string $platform, array $release): JsonResponse|StreamedResponse
     {
         if (! in_array($platform, self::PLATFORMS, true)) {
             abort(404);
@@ -87,13 +82,8 @@ class ReleaseDownloadController extends Controller
                 'X-Checksum-SHA256' => (string) ($release['sha256'] ?? ''),
             ];
 
-            $response = Storage::disk((string) config('releases.disk', 'local'))
+            return Storage::disk((string) config('releases.disk', 'local'))
                 ->download($path, $filename, $headers);
-            if ($countWebsiteDownload) {
-                app(Recorder::class)->website(request(), 'website_download', $platform);
-            }
-
-            return $response;
         } catch (Throwable) {
             return $this->unavailable();
         }
@@ -123,7 +113,6 @@ class ReleaseDownloadController extends Controller
             'sizeBytes' => max(0, $size),
             'sha256' => (string) ($release['sha256'] ?? ''),
             'minimumSystemVersion' => (string) ($release['minimum_system_version'] ?? ''),
-            'notarized' => $release['notarized'] ?? null,
             'available' => $available,
             'downloadUrl' => "/downloads/{$platform}",
         ];

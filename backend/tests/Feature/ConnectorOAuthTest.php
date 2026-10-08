@@ -5,12 +5,11 @@ namespace Tests\Feature;
 use App\Models\{User, VibyraSession};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\{DB, Http};
-use Tests\Support\OAuthHop;
 use Tests\TestCase;
 
 class ConnectorOAuthTest extends TestCase
 {
-    use RefreshDatabase, OAuthHop;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -31,7 +30,8 @@ class ConnectorOAuthTest extends TestCase
     private function startGithub(string $returnUrl = 'vibyra://integrations/connected'): array
     {
         $start = $this->postJson('/api/connectors/github/start', ['returnUrl' => $returnUrl])->assertOk()->json();
-        return [$start, $this->queryOf($this->openSignIn($start['url']))];
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
+        return [$start, $query];
     }
 
     public function test_signing_in_is_offered_only_where_this_server_can_complete_it(): void
@@ -51,7 +51,7 @@ class ConnectorOAuthTest extends TestCase
     {
         $this->withGithubSignIn();
         [$start, $query] = $this->startGithub();
-        $this->assertStringStartsWith('https://vibyra.test/api/connectors/begin/', $start['url'], 'The app opens Vibyra\'s link first.');
+        $this->assertStringStartsWith('https://github.com/login/oauth/authorize?', $start['url']);
         $this->assertSame('gh-client', $query['client_id']);
         $this->assertSame('https://vibyra.test/api/connectors/callback/github', $query['redirect_uri']);
         $this->assertSame('repo', $query['scope']);
@@ -129,9 +129,8 @@ class ConnectorOAuthTest extends TestCase
         config(['app.url' => 'https://vibyra.test', 'chat_connectors.catalogue.stripe.oauth.client_id' => 'ca_platform',
             'chat_connectors.catalogue.stripe.oauth.client_secret' => 'sk_platform']);
         $start = $this->postJson('/api/connectors/stripe/start', ['returnUrl' => 'exp://127.0.0.1:8082/--/integrations/connected'])->json();
-        $provider = $this->openSignIn($start['url']);
-        $this->assertStringStartsWith('https://connect.stripe.com/oauth/authorize?', $provider);
-        $query = $this->queryOf($provider);
+        $this->assertStringStartsWith('https://connect.stripe.com/oauth/authorize?', $start['url']);
+        parse_str((string) parse_url($start['url'], PHP_URL_QUERY), $query);
         $this->assertSame('read_write', $query['scope']);
         Http::fake([
             'connect.stripe.com/oauth/token' => Http::response(['access_token' => 'sk_connected', 'stripe_user_id' => 'acct_1']),

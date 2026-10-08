@@ -1,0 +1,141 @@
+pub mod account;
+pub mod account_activity;
+pub mod account_billing;
+pub mod account_privacy;
+pub mod account_security;
+pub mod agent_conversations;
+#[cfg(test)]
+mod agent_conversations_tests;
+pub mod agent_install;
+pub mod agents;
+pub mod ai;
+mod ai_clamp;
+pub mod ai_memory;
+pub mod ai_service;
+mod ai_sse;
+#[cfg(test)]
+mod ai_sse_tests;
+mod ai_stream;
+mod ai_stream_read;
+#[cfg(not(target_os = "macos"))]
+mod audio_play;
+pub mod clipboard;
+pub mod cloud_files;
+pub(crate) mod cloud_guard;
+pub mod cloud_logins;
+pub mod cloud_mac_connect;
+pub(crate) mod cloud_management_guard;
+pub mod cloud_merge;
+pub mod cloud_page;
+pub mod cloud_sync;
+pub mod cloud_sync_access;
+pub mod cloud_sync_changes;
+pub mod cloud_sync_collect;
+pub mod cloud_sync_file_version;
+pub mod cloud_sync_review;
+pub mod fs;
+pub mod github_publish;
+pub mod local_mcp;
+pub mod memory;
+pub mod memory_browser;
+pub mod menu_bar;
+pub mod model_watch;
+pub mod native_notifications;
+pub mod perf;
+pub mod preview;
+pub mod preview_share;
+pub mod preview_windows;
+pub mod project_brief;
+pub mod provider_accounts;
+pub mod registry;
+pub mod render;
+pub mod report;
+pub mod scaffold;
+pub mod screenshot;
+#[cfg(target_os = "linux")]
+mod screenshot_capture;
+#[cfg(target_os = "windows")]
+#[path = "screenshot_capture_windows.rs"]
+mod screenshot_capture;
+#[cfg(target_os = "macos")]
+#[path = "screenshot_capture_macos.rs"]
+mod screenshot_capture;
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+#[path = "screenshot_capture_unsupported.rs"]
+mod screenshot_capture;
+mod screenshot_png;
+#[cfg(target_os = "linux")]
+mod screenshot_portal;
+pub mod screenshot_reveal;
+#[cfg(test)]
+mod screenshot_tests;
+pub mod screenshot_toast;
+#[cfg(target_os = "linux")]
+mod screenshot_x11;
+pub mod session;
+pub mod settings;
+pub mod shortcuts;
+pub mod speech;
+pub mod speech_synthesis;
+pub mod terminal;
+pub(crate) mod terminal_args;
+mod terminal_create_service;
+mod terminal_launch;
+#[cfg(test)]
+mod terminal_launch_tests;
+pub mod terminal_lifecycle;
+mod terminal_prepare;
+pub mod voice;
+pub mod voice_cue;
+mod worktree_access;
+
+use vibyra_core::{CoreError, CoreResult};
+
+// Tauri runs `async fn` commands on the async runtime, so any command that
+// blocks — filesystem walks, `git`, provider CLIs — must hand that work to a
+// blocking thread instead of stalling a runtime worker. Commands declared
+// `fn` are worse still: they run inline on the IPC thread and freeze the UI.
+// Every command that touches disk, spawns a process, or waits on one routes
+// through one of these two helpers.
+
+pub(crate) async fn run_blocking<T: Send + 'static>(
+    task: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(task)
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+pub(crate) async fn run_blocking_core<T: Send + 'static>(
+    task: impl FnOnce() -> CoreResult<T> + Send + 'static,
+) -> CoreResult<T> {
+    tauri::async_runtime::spawn_blocking(task)
+        .await
+        .map_err(|error| CoreError::Task(error.to_string()))?
+}
+
+pub mod phone;
+mod phone_controls;
+mod phone_effect_commands;
+mod phone_effects;
+mod phone_project_effects;
+pub mod phone_remote;
+pub(crate) mod plan_access;
+pub mod remote_security;
+pub mod remote_security_actions;
+mod remote_security_scope;
+
+pub mod shared_chat_models;
+pub mod shared_chats;
+pub mod shared_cli;
+
+pub mod teammates;
+
+pub mod teammate_upload;
+
+#[cfg(test)]
+mod phone_effect_tests;
+
+pub mod phone_optional_agents;
+pub mod provider_model;
+mod provider_model_http;

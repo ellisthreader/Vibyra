@@ -1,0 +1,234 @@
+{
+  "baseCommit": "33a7d9acbca7877701fb4e78eeda8bc11f7e36d9",
+  "branch": "review/cloud-audit-mac-0823-20261008",
+  "installedSourceFiles": 3306,
+  "changedFrozenFiles": {
+    "desktop-tauri/knip.json": {
+      "installedSourceSha256": "7c994baf9fbf0339dcebe41bf639901fce8ef46fe9811489f8078b157a1496fa",
+      "reviewSourceSha256": "8ee77c8326b3f478663ac24105bea9d518f461080e1d35adf05c0aff4c7f045f"
+    },
+    "desktop-tauri/package-lock.json": {
+      "installedSourceSha256": "13729a7ed191530834680977889f20ea26ccaf8ddc35711cecde322506019822",
+      "reviewSourceSha256": "eda778dd714114f1e41dbaeea8153c9c9c32ac4b3bf33c88394f8fbb2120a8d3"
+    },
+    "desktop-tauri/package.json": {
+      "installedSourceSha256": "c62e39949a9e8c3f0f09105689a99d92fc7c53013c2f59737adc69f1bf98c74c",
+      "reviewSourceSha256": "66ae16959f5bdf49da628128959278de41b009c6b4251545bb3c3bc5b5cebeca"
+    },
+    "desktop-tauri/tests/cloudTab.test.mjs": {
+      "installedSourceSha256": "608a36990d45600b3cff7a000ae51097fd541cf6823966de1b8bf3a2ed2a602e",
+      "reviewSourceSha256": "ce14e1245e3cade852fc83c62ba9cdeb8f29952b4c913bc93a2326769b92be76"
+    },
+    "desktop-tauri/src-tauri/tauri.conf.json": {
+      "installedSourceSha256": "02a0c958b2d60906bfbb510f16f90781ad4b3579d4a00abd9338c554511a92bb",
+      "reviewSourceSha256": "757cefed61e202d563407a1571bfbdb722f29236e8720b46c070d94084a95275"
+    },
+    "desktop-tauri/src-tauri/crates/vibyra-sync/src/engine/cloud_logins.rs": {
+      "installedSourceSha256": "378fb0f2e6fe621135ddd5984cd626da622cc0d8509aa7c11a2a857e29bf8084",
+      "reviewSourceSha256": "74893927229cc189de42ae39377e838edf587dcc9ed6af908bf12a74141cd799"
+    },
+    "desktop-tauri/src-tauri/src/lib.rs": {
+      "installedSourceSha256": "57c654c9370cf3407e95130fa980d67def38fb2cbb3a6f56be6669fd2d61dbe8",
+      "reviewSourceSha256": "79978776b4e55591d91e462c70c72dd8a364fdf84f5bc2ce4c120cc727b00e9f"
+    },
+    "desktop-tauri/src-tauri/src/state.rs": {
+      "installedSourceSha256": "92c95b8288da2d92c00ed639368215963ac6993e14fca9c5c1d05468fe91afaf",
+      "reviewSourceSha256": "cc1582924ced8f3dfe34b836afa0abc6e9b339facb997aafbf2567335beb5755"
+    },
+    "desktop-tauri/src-tauri/src/account_endpoints.rs": {
+      "installedSourceSha256": "453056976655bd0be4cc56d03e2526462c6bafcb70bbc185f484ec27721688dc",
+      "reviewSourceSha256": "c31594c6230ff47a7058794a1516c0f479813970cfd2bacdb4e5f97750f5c05c"
+    },
+    "desktop-tauri/src-tauri/src/account_auth.rs": {
+      "installedSourceSha256": "8bee64ba19a59159e59c99602f0706f5f523fefb7551717c180631f166aacc33",
+      "reviewSourceSha256": "8d2ebb005957bc499e5bfe89195fcdeb47e4b5c726307baf5c96c87296bc9eab"
+    },
+    "desktop-tauri/src-tauri/src/cloud_logins/start.rs": {
+      "installedSourceSha256": "a48814a114a9f0a35c3d7478e5f4aa45a94873b60c3fb6781aae10feea06f6a6",
+      "reviewSourceSha256": "5f0b0a12ac834c8f1d549977f5b283517625262602e249c695c7ebbe20f85d85"
+    },
+    "desktop-tauri/src-tauri/src/cloud_logins/run.rs": {
+      "installedSourceSha256": "afa0d3ecc06c1651f5bdbb704340cfc5d18bb06fadc79ad48df26003164eefd6",
+      "reviewSourceSha256": "383521cfc76462c6be5eea864a84f5a56ab170934139268500a94796f19c6a79"
+    },
+    "desktop-tauri/src-tauri/src/cloud_logins/mod.rs": {
+      "installedSourceSha256": "7034beb09f8a567b35ee683f6cb0dcc5ed8b15c29a9e64d5ec74941a2e9393ed",
+      "reviewSourceSha256": "29fbd9504e2fca46658089d72640edacb9b9d8ad100715597cf14b00f120da22"
+    },
+    "desktop-tauri/src-tauri/src/agent_v2/mod.rs": {
+      "installedSourceSha256": "2f8816eddc281fa3e052075f94f4935eca5c077000fe79362497bf0e49d41131",
+      "reviewSourceSha256": "e14ce7c072987717cd6aa1ea0af191ecd32cc11fc0a288b404605307c73cadf7"
+    },
+    "desktop-tauri/src-tauri/src/agent_v2/api.rs": {
+      "installedSourceSha256": "2b554334487547bb6249905d8fd1caa5e5fe8740e83c8e283c417b15f7f72c98",
+      "reviewSourceSha256": "152998ef398d56d22cd0032d7d751397f756adc1a98f8b0cbb3accdebcb183fe"
+    },
+    "desktop-tauri/src-tauri/src/commands/cloud_guard.rs": {
+      "installedSourceSha256": "6d5be476a7d8a180e1abd2f4b38041429331e2a02de9d6dc9224da06c791a6d0",
+      "reviewSourceSha256": "d12b9bf97e86b9ae8a77761d588080325dd6c4eb05d45efb77d4890e29638ead"
+    },
+    "desktop-tauri/src-tauri/src/commands/phone_remote.rs": {
+      "installedSourceSha256": "3bb5570ae4acd9ec0936264f247963328e170f6f23d1ed847a17daf80ef49f06",
+      "reviewSourceSha256": "7c5dc4f9e272c3362c564bf1b842cb25e943574464f69fe8c0f03cea4975634d"
+    },
+    "desktop-tauri/src-tauri/src/commands/teammates.rs": {
+      "installedSourceSha256": "1aefd37558bd36d71927cb5a661bc248f3171d892e58422564802f7754f4dcd9",
+      "reviewSourceSha256": "a29c521cb72741bf8f54b76f3be94d2c1aca59253f657161ea34e6f7b3a76a27"
+    },
+    "desktop-tauri/src-tauri/src/commands/phone_controls.rs": {
+      "installedSourceSha256": "920f5f1edfd141333a84f1c3a0de7bcda077788533e034a439731d18fac961a0",
+      "reviewSourceSha256": "37052cd874fbacf3a12cf96a340a60c35131b7f5c5d1091cb9c9b98f02b0dcc4"
+    },
+    "desktop-tauri/src-tauri/src/commands/cloud_logins.rs": {
+      "installedSourceSha256": "76c5f684cf9bdc9705796a72d61538a8f369fc08b24dab24501fecb1adfb7e92",
+      "reviewSourceSha256": "9f9b274a6cbfce9d97aa4a07417ac8763c140feb6727808a494111440bb798cf"
+    },
+    "desktop-tauri/src-tauri/src/commands/phone.rs": {
+      "installedSourceSha256": "2bcf704c1572469fd7a865f270877db9cfad1d20c0408cb964fe4fe6b5aae7bb",
+      "reviewSourceSha256": "4ba778312731f0351ac6a319e2bb7c8ed6427cf06be7337080f2c5245fad7b51"
+    },
+    "desktop-tauri/src-tauri/src/commands/cloud_page.rs": {
+      "installedSourceSha256": "a54215027beec1f093656a8b5312b381bcbe45b53f888dc07f74bd21a4616413",
+      "reviewSourceSha256": "0f4c87384aaf4fc7f20affe81884d544cd47511dd9112c2a4baf39bb65827035"
+    },
+    "desktop-tauri/src-tauri/src/commands/mod.rs": {
+      "installedSourceSha256": "824edb0aa3b5e3ecc039866e789c89d68353769d37a07976d17dfb7cc4f172fd",
+      "reviewSourceSha256": "d5d975147d4914ad95d58536fc4408468a933bcb95237ba93dc5ce57ea4a490e"
+    },
+    "desktop-tauri/src-tauri/src/commands/teammates_v2_stage2_routes.rs": {
+      "installedSourceSha256": "66e6ab7a810a8bb0508b0e949b9ec5555316a7a6d34a4365b3066934205b0b1e",
+      "reviewSourceSha256": "8dce1fd2c05ac78c1f101cc82c68c75840cbfbc3157fb5257e4de3a4f99c58a8"
+    },
+    "desktop-tauri/src-tauri/src/commands/cloud_mac_connect.rs": {
+      "installedSourceSha256": "62786828483d2da4da13723dbab4154bcd7ac307ec1c3a9812ff8e2279af9aa4",
+      "reviewSourceSha256": "375dbdbc166685504027789eed32511e1975c058b59f1f4c29dd24934651cf33"
+    },
+    "desktop-tauri/src-tauri/src/commands/cloud_sync.rs": {
+      "installedSourceSha256": "2c71923fb404edd33c8cb84b09189ff8e4f0cdfd60da3a18d1f4794665e752f6",
+      "reviewSourceSha256": "4218b1832572925bd0c99a4d3dfb3a73bd5f3f654ca7f2efd0816f72912a215f"
+    },
+    "desktop-tauri/src/state/cloudAvailability.ts": {
+      "installedSourceSha256": "b3a6767c1ee2a62ba1562a931b77043b76610345dad5af689e819c35a4218b29",
+      "reviewSourceSha256": "67d0f53cede8a2d32b2f86eed8d2530cb47f16d99efb36ac699ba450f3e3311f"
+    },
+    "desktop-tauri/src/components/settings/brandMark.ts": {
+      "installedSourceSha256": "942e7b99d20c3a7e7ca8579ed77c13acc1df9a4ad404279a11d36bd20d5e11a5",
+      "reviewSourceSha256": "7326d839ff9ad0f8da969b2a4b2ddd97aa4c6196ae2ec2c6d4df1085d82ed5d3"
+    },
+    "desktop-tauri/src/components/settings/HubMark.tsx": {
+      "installedSourceSha256": "d3aa81819423c8e524faa627dd0dc5b3a71b9018a49d58720febee39421a1e4e",
+      "reviewSourceSha256": "53e2aee078cc47995d6041715a1631b4932fa675e77c5b2bea9da65dfa16c86e"
+    },
+    "desktop-tauri/src/components/settings/SettingsCloudPane.tsx": {
+      "installedSourceSha256": "530109c4a84a375d1c3c4f7160c7963b838d2e61d67fc9ec6f635440ca5c0f2e",
+      "reviewSourceSha256": "364f8eee7bcacec1e1561aae447183b5c53440a7888c56778441ede639fdfd42"
+    },
+    "desktop-tauri/src/components/cloud/useCloudHas.ts": {
+      "installedSourceSha256": "addf44f50ef7254981ee6a08766c8d2f54861df26c25bea934e2fa72a5b8fff4",
+      "reviewSourceSha256": "397482d991e9ebfb8615c0c42a38257e1d2ca3d6360ddcba410a34a31fec8d08"
+    },
+    "desktop-tauri/src/components/cloud/ConnectCloudFlow.tsx": {
+      "installedSourceSha256": "64debf676997b6e7b382c08c2152da89ebff8365ce06e35c0186bf83150b4464",
+      "reviewSourceSha256": "2bbaee729a4da4eb64bd02c879bb8c3944dcae5cea4bf1f54252f0c1414cecab"
+    },
+    "desktop-tauri/src/components/cloud/useCloudConnect.ts": {
+      "installedSourceSha256": "d5d5f1910b4bdcab6da3bc08959a1a97d94edd7b25e00ce783a717232f2d53fa",
+      "reviewSourceSha256": "96a126e54dfad4dacf9ea91ff0a1d056356964940dd3fc0544f8bcd85bded4ac"
+    },
+    "desktop-tauri/src/lib/cloudAvailability.ts": {
+      "installedSourceSha256": "ab1572d4ffd8305f442b6aa45cf293256c943e1b7265723a40c2a6dd6807acd9",
+      "reviewSourceSha256": "1477b71023c2ea923bea5fc5b291cf2ad250eeef3e89980af336b7f9b656f57a"
+    },
+    "desktop-tauri/src/lib/changelog.ts": {
+      "installedSourceSha256": "8c53bb6a06ef9c537206af1f5dcd4bf62851411e8c4c3cc6aeb82e18ff5655a5",
+      "reviewSourceSha256": "4d094e97efabf7c479d3e0c504cef5ec3ccdb9911f6e03be6072b9943f7b8dd9"
+    },
+    "desktop-tauri/src/ipc/phone.ts": {
+      "installedSourceSha256": "14fb0c07ab71018e5c86d6efa14f374c21382840e1ca498c6931d4192ebbc656",
+      "reviewSourceSha256": "f74af6ff5a97e507feabd5b514dce8052ee5eeecf4121b2afeb6112f04e14493"
+    },
+    "host/crates/server/src/trusted_connections.rs": {
+      "installedSourceSha256": "63f70c4e52edb64c5fbe1f8641fabba8c2677a21d85ce31111ebbc114a4ca787",
+      "reviewSourceSha256": "bc0fdd9e4d0cd77bb0eb012d04d7379ea7c22d22e01dfc316d9148927d630e6f"
+    },
+    "mobile/package.json": {
+      "installedSourceSha256": "3bab83c218a02f2840e7bfb8c9dc811d2face85acb546fe93426b9f078e7cd8a",
+      "reviewSourceSha256": "be424006dd2065f3bea3d11e74fad36e1606ac1c8d773e04c0ae5c8a89084bdd"
+    }
+  },
+  "vendorFilesPreserved": 22,
+  "sourceType": "isolated Git review branch; not CI, notarized, published or installed",
+  "sourceDependencyPolicy": "retain compatible committed root workflows, line script and matching mobile lockfile; remove 16 retired Desktop sources absent from frozen source",
+  "validation": {
+    "typecheck": "passed after final frontend refinement",
+    "lineGate": "passed; 0 first-party files over 200",
+    "frontend": "704 passed, 1 skipped, 0 failed; final receipt-first management scope",
+    "whatsNew": "14 passed",
+    "knip": "passed after final frontend refinement",
+    "fullVerify": "passed exact build94 with CARGO_INCREMENTAL=0 RUST_TEST_THREADS=4; includes native conditional receipt fences and deterministic fixture reconstruction",
+    "dependencyAudit": "desktop 0; relay 0; shared mobile 16 high advisory entries from braces/node-forge unpatched roots; no critical",
+    "freshDependencyInstall": "both isolated npm ci passed",
+    "native": "core 240 passed/2 ignored; desktop 739 passed/16 ignored; updater 2 passed; sync 5 unit + 5 guardrail + 7 smoke passed",
+    "managementFocused": "12 native focused passed; stale same-account and empty-read replacement revocation fenced",
+    "build": "final frontend-only refinement production build passed",
+    "rootSecurityReview": "approved existing-management native implementation and persistence after reviewing real server envelopes; native physical acceptance remains pending"
+  },
+  "workflow": "compatible committed workflow with timeout-only 90\u2192120 minute allowance; all gates retained",
+  "preservedFrozenFiles": 3268,
+  "remainingGates": [
+    "new exact-source Mac local build and native provider/revocation/cold-start acceptance",
+    "protected arm64/x64 CI",
+    "notarization/updater signatures",
+    "public feed/download verification after acceptance"
+  ],
+  "generatedAt": "2026-10-08T13:53:23.324279+00:00",
+  "verificationProofs": {
+    "finalWorkspaceVerify": {
+      "localPath": "/private/tmp/vibyra-cloud-mac-management-final-verify-20261008.log",
+      "sha256": "cf6925d5e85d545bb5cff84af48ecb7109fb8c330371d71bf283e7f6557144f6",
+      "bytes": 169346
+    },
+    "finalFrontend": {
+      "localPath": "/private/tmp/vibyra-cloud-management-final-frontend-20261008.log",
+      "sha256": "c3dd0ce0a46d0636416d001d6370a5417403699ae6b91a6369bae03d21fde98c",
+      "bytes": 59382
+    },
+    "finalFrontendBuild": {
+      "localPath": "/private/tmp/vibyra-cloud-management-final-build-20261008.log",
+      "sha256": "c76e29fd7225f07c83d7518958f90e042ba46fc3b49abb876fd669cf38542b8d",
+      "bytes": 9836
+    },
+    "nativeGrantFocused": {
+      "localPath": "/private/tmp/vibyra-cloud-management-native-tests-20261008.log",
+      "sha256": "be0b1839b3bfe03d8d0e5e86affc7b4e41c93d14818b9209cdcb0fe95aebab37",
+      "bytes": 3043
+    },
+    "singlePhoneOldFailure": {
+      "localPath": "/private/tmp/vibyra-cloud-single-phone-authority-proof-20261008.log",
+      "sha256": "47b2df5527bb4f7b4f9712319bebc599191d744981c52be94ff4dfe93f556e60",
+      "bytes": 254
+    },
+    "singlePhoneNewFixturePass": {
+      "localPath": "/private/tmp/vibyra-cloud-single-phone-authority-pass-20261008.log",
+      "sha256": "8a873de9705a0e33f6c8ef4e091daa6e56673279ddb3b306ca9bcce1fb73f9a3",
+      "bytes": 234
+    },
+    "finalBuild94WorkspaceVerify": {
+      "localPath": "/private/tmp/vibyra-cloud-mac94-stamped-final-verify-20261008.log",
+      "sha256": "b2577a9b075aa18d0a044c7f3642ba85ae99bb52425b36d16318f38fbee298d9",
+      "bytes": 170145
+    },
+    "conditionalRevokeFocused": {
+      "localPath": "/private/tmp/vibyra-cloud-management-revocation-tests-20261008.log",
+      "sha256": "9a830a05708c72741d68080e7933d61b9c0437e51db9609c6efaecbe7c6eae4b",
+      "bytes": 3252
+    }
+  },
+  "version": "0.8.23",
+  "bundleVersion": "94",
+  "fixtureCorpus": {
+    "sha256": "0a6023246fbfffd9edc4741da42455fe462e2827ebc5a2667053f3843e8d22b3",
+    "gitTracked": false,
+    "materialization": "npm preverify and defensive Mac CI prerequisite; original corpus physically absent before final npm verify"
+  }
+}

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pick-memory-files"
+description = "Enables the pick_memory_files command without any pre-configured scope."
+commands.allow = ["pick_memory_files"]
+
+[[permission]]
+identifier = "deny-pick-memory-files"
+description = "Denies the pick_memory_files command without any pre-configured scope."
+commands.deny = ["pick_memory_files"]

@@ -18,23 +18,18 @@ class Wallet
      * request, and — the part that matters — what stops a guest who signs up from
      * being handed a second trial on top of whatever is left of the first.
      */
-    public function ensure(User $user, ?int $trialCredits = null, bool $licenseSignup = false): object
+    public function ensure(User $user, ?int $trialCredits = null): object
     {
-        return DB::transaction(function () use ($user, $trialCredits, $licenseSignup) {
-            User::whereKey($user->id)->lock(DB::connection()->getDriverName() === 'pgsql' ? 'for no key update' : true)->firstOrFail();
+        return DB::transaction(function () use ($user, $trialCredits) {
+            User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             $wallet = DB::table('vibes_wallets')->where('user_id', $user->id)->first();
             if ($wallet) return $wallet;
-            $modern = ($licenseSignup && config('licenses.enabled') && !$user->isGuest() && ($user->plan ?: 'free') === 'free' && !$user->membership_ends_at)
-                || \App\Services\Membership\NewAccounts::eligible($user);
             DB::table('vibes_wallets')->insert([
-                'billing_version' => $modern ? 2 : 1,
                 'user_id' => $user->id, 'account_token' => (string) Str::uuid(),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
             $this->grant($user->id, 'welcome:'.$user->id, 'trial',
-                $modern ? 0 : ($trialCredits === null ? self::trialCredits() : max(0, $trialCredits)));
-            if ($modern) $user->forceFill(['credits_balance' => 0, 'plan_renews_at' => null])->save();
-            if ($modern) app(\App\Services\Membership\Trials::class)->start($user);
+                $trialCredits === null ? self::trialCredits() : max(0, $trialCredits));
             return $this->lock($user->id);
         }, 3);
     }
@@ -88,14 +83,13 @@ class Wallet
     {
         DB::table('vibes_ledger')->insert([
             'user_id' => $userId, 'reference' => $reference, 'kind' => $kind,
-            'delta' => $delta, 'unit_scale' => \App\Services\Membership\Units::scale($userId), 'metadata' => json_encode($meta, JSON_THROW_ON_ERROR), 'created_at' => now(),
+            'delta' => $delta, 'metadata' => json_encode($meta, JSON_THROW_ON_ERROR), 'created_at' => now(),
         ]);
     }
 
     /** Current entitled plan; an expired paid period is always 'free'. */
     public function planFor(int $userId): string
     {
-        if (\App\Services\Membership\Units::modern($userId)) return app(\App\Services\Membership\Entitlements::class)->for(User::findOrFail($userId))['plan'];
         $w = DB::table('vibes_wallets')->where('user_id', $userId)->first();
         return $w && $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';
     }
@@ -117,20 +111,16 @@ class Wallet
         $windows = app(UsageWindows::class);
 
         return DB::transaction(function () use ($userId, $plans, $windows) {
-            app(\App\Services\Membership\Allowances::class)->refresh($userId);
             $w = $this->lock($userId);
             $user = User::findOrFail($userId);
             $grants = DB::table('vibes_grants')->where('user_id', $userId)->whereNull('revoked_at')->get();
-            $held = (int) DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at')->sum('reserved')
-                + \App\Services\CloudWorkspaces\Holds::units($userId)
-                + \App\Services\Assistant\Holds::units($userId);
+            $held = (int) DB::table('vibes_turns')->where('user_id', $userId)->whereNull('settled_at')->sum('reserved');
             $available = (int) $grants->sum('remaining');
-            $paid = (int) $grants->whereNotIn('kind', ['trial', 'license'])->sum('remaining');
+            $paid = (int) $grants->where('kind', '!=', 'trial')->sum('remaining');
             $plan = $w->paid_until && now()->lt($w->paid_until) ? $w->plan : 'free';
-            return app(\App\Services\Membership\Snapshot::class)->adapt($userId, [
+            return [
                 'version' => 1, 'available' => $available, 'held' => $held, 'total' => $available + $held,
                 'chatEnabled' => (bool) config('vibes.enabled') && trim((string) config('services.openrouter.key')) !== '',
-                'directSend' => true,
                 'paidAvailable' => $paid, 'plan' => $plan, 'paidUntil' => $w->paid_until,
                 'trialChatsRemaining' => max(0, self::trialChats() - DB::table('vibes_chats')->where('user_id', $userId)->whereNotNull('trial_slot')->count()),
                 // Published so the phone words the trial from the same numbers the
@@ -156,7 +146,7 @@ class Wallet
                 // How fast this plan may spend, measured the same way `Turns::submit`
                 // refuses. The phone draws its meters from these and invents nothing.
                 'limits' => $windows->payload($userId, $plan),
-            ]);
+            ];
         });
     }
 }

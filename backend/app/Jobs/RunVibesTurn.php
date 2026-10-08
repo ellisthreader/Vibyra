@@ -44,10 +44,6 @@ class RunVibesTurn implements ShouldQueue
         }
         try {
             $request = json_decode($t->request, true);
-            try { app(\App\Services\CloudWorkspaces\Ai::class)->dispatch($t, $request); }
-            catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-                $turns->settle($t->id, $t->actual_micro_usd, null, $e->getMessage()); return;
-            }
             $meta = $request['vibyraAgent'] ?? null;
             if ($meta) {
                 try { \App\Services\Agents\TaskContext::validate($t->user_id, $meta); }
@@ -61,8 +57,6 @@ class RunVibesTurn implements ShouldQueue
             // files themselves, and only those linked to this turn.
             [$outgoing, $attached] = app(Attachments::class)->expand($request, $t->id);
             unset($outgoing['vibyraAgent']);
-            unset($outgoing['vibyraCloud']);
-            unset($outgoing['vibyraBalanceLimited']);
             $prices = $request['provider']['max_price'] ?? [];
             // Bounded with the very method `Quotes` priced this turn by, so the budget
             // the job enforces and the budget the person was quoted are one number
@@ -70,27 +64,16 @@ class RunVibesTurn implements ShouldQueue
             $inputCost = (TurnPrice::inputBound($request['messages'] ?? [], $request['tools'] ?? []) + $attached)
                 * ($prices['prompt'] ?? 100);
             $completionRate = max(0.001, (float) ($prices['completion'] ?? 100));
-            $remainingMicro = $t->reserved * \App\Services\Membership\Units::microPerUnit($t) - $t->actual_micro_usd;
+            $remainingMicro = $t->reserved * 10000 - $t->actual_micro_usd;
             $outputTokens = min($request['max_tokens'] ?? 2048, (int) floor(($remainingMicro / 1.1 - $inputCost) / $completionRate));
             if ($t->step_count >= $maxSteps || $outputTokens < 128 || $t->cancel_requested) {
                 $turns->settle($t->id, $t->actual_micro_usd, 'Paused at the turn budget. Review the tool results for any completed changes. Send another message to continue.',
-                    finishReason: $t->step_count >= $maxSteps ? 'step_limit' : (!empty($request['vibyraBalanceLimited']) ? 'usage_limit' : 'budget_limit'));
+                    finishReason: $t->step_count >= $maxSteps ? 'step_limit' : 'budget_limit');
                 return;
             }
             $outgoing['max_tokens'] = $outputTokens;
             // The last priced model step must turn collected evidence into an answer.
             if ($t->step_count === $maxSteps - 1) unset($outgoing['tools'], $outgoing['tool_choice']);
-            // Quote and turn JSON are decoded as PHP arrays. An empty JSON Schema
-            // properties object becomes [], which AI providers reject as a schema.
-            if (isset($outgoing['tools'])) {
-                foreach ($outgoing['tools'] as &$tool) {
-                    if (($tool['function']['parameters']['type'] ?? null) === 'object'
-                        && ($tool['function']['parameters']['properties'] ?? null) === []) {
-                        $tool['function']['parameters']['properties'] = new \stdClass;
-                    }
-                }
-                unset($tool);
-            }
             DB::table('vibes_turns')->where('id', $t->id)->increment('step_count');
             $response = Http::withToken(config('services.openrouter.key'))->acceptJson()->timeout(65)
                 ->withHeaders(['HTTP-Referer' => 'https://vibyra.app', 'X-OpenRouter-Title' => 'Vibyra'])
@@ -113,10 +96,6 @@ class RunVibesTurn implements ShouldQueue
                     } catch (\Symfony\Component\HttpKernel\Exception\HttpException | \JsonException $e) {
                         // Validation rolls back the entire batch before any tool runs.
                         // Usage is known: this is not an uncertain-cost reconciliation.
-                        Log::warning('vibes.tools.invalid', ['turn' => $t->id,
-                            'reason' => $e instanceof \JsonException ? 'json' : $e->getMessage(),
-                            'names' => array_map(fn ($call) => $call['function']['name'] ?? null,
-                                $body['choices'][0]['message']['tool_calls'] ?? [])]);
                         $turns->settle($t->id, $t->actual_micro_usd + $micro, null,
                             'The AI requested an invalid tool action. No tools from that request ran. Please try again. You were not charged.', absorb: true);
                         return;
@@ -124,7 +103,6 @@ class RunVibesTurn implements ShouldQueue
                     // Integration calls are answered here rather than by the phone, which also
                     // re-queues this turn; a call the phone owes still parks as before.
                     app(ConnectorRunner::class)->run($t->id, (int) $t->user_id);
-                    app(\App\Services\CloudWorkspaces\Tools::class)->enqueue($t->id);
                     return;
                 }
                 // A call that succeeded but came back empty is a budgeting failure on
@@ -133,10 +111,7 @@ class RunVibesTurn implements ShouldQueue
                 $empty = $response->successful() && ! $text;
                 $error = $empty ? 'The AI thought for too long and ran out of room to answer. You were not charged. Try a lower effort.'
                     : (! $response->successful() ? $this->refusal($response->status(), $body, $t->id, $id, false) : null);
-                $limited = !empty($request['vibyraBalanceLimited']) && $outputTokens < ($request['max_tokens'] ?? 2048)
-                    && ($body['choices'][0]['finish_reason'] ?? null) === 'length';
-                $turns->settle($t->id, $t->actual_micro_usd + $micro, $text, $error, absorb: $empty,
-                    finishReason: $limited && !$empty && !$error ? 'usage_limit' : null);
+                $turns->settle($t->id, $t->actual_micro_usd + $micro, $text, $error, absorb: $empty);
             } elseif (in_array($response->status(), [400, 401, 402, 403, 404, 422, 429])) {
                 $turns->settle($t->id, $t->actual_micro_usd, null, $this->refusal($response->status(), $body, $t->id, $id, true));
             } else {

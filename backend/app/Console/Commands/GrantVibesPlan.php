@@ -55,12 +55,6 @@ class GrantVibesPlan extends Command
             return self::FAILURE;
         }
 
-        if ($users->contains(fn ($user) => \App\Services\Membership\NewAccounts::eligible($user))
-            || DB::table('vibes_wallets')->whereIn('user_id', $users->pluck('id'))->where('billing_version', 2)->exists()) {
-            $this->error('This legacy grant command cannot change membership v2 accounts.');
-            return self::FAILURE;
-        }
-
         foreach ($users as $user) {
             $reference = sprintf('manual:%s:%d:%s', $plan, $user->id, now()->toDateString());
             $label = $user->email ?: ($user->isGuest() ? 'guest' : 'no email');
@@ -72,7 +66,6 @@ class GrantVibesPlan extends Command
                 if ($verifying) $user->forceFill(['email_verified_at' => now()])->save();
                 $wallet->ensure($user);
                 $wallet->lock($user->id);
-                abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Legacy grants cannot change membership v2 accounts.');
                 DB::table('vibes_wallets')->where('user_id', $user->id)->update([
                     'plan' => $plan, 'paid_until' => $plan === 'free' ? null : $until, 'updated_at' => now(),
                 ]);

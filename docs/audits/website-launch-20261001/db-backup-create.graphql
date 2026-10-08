@@ -1,7 +1,0 @@
-# Attempted once 2026-10-01; provider rejected Not Authorized. No workflow started.
-mutation {
-  volumeInstanceBackupCreate(
-    volumeInstanceId: "28502c90-efb6-4489-b35c-e605957feaf2"
-    name: "Website launch safety 2026-10-01"
-  ) { workflowId }
-}

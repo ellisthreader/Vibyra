@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-clear-agent-install"
+description = "Enables the clear_agent_install command without any pre-configured scope."
+commands.allow = ["clear_agent_install"]
+
+[[permission]]
+identifier = "deny-clear-agent-install"
+description = "Denies the clear_agent_install command without any pre-configured scope."
+commands.deny = ["clear_agent_install"]

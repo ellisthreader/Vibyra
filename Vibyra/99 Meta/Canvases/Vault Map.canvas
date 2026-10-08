@@ -1,0 +1,19 @@
+﻿{
+  "nodes": [
+    { "id": "a111111111111111", "type": "file", "x": 0, "y": 0, "width": 360, "height": 180, "file": "Home.md" },
+    { "id": "b222222222222222", "type": "file", "x": -520, "y": -260, "width": 320, "height": 160, "file": "00 Inbox/Inbox.md" },
+    { "id": "c333333333333333", "type": "file", "x": -520, "y": 0, "width": 320, "height": 180, "file": "01 Projects/Projects.md" },
+    { "id": "d444444444444444", "type": "file", "x": -520, "y": 280, "width": 320, "height": 160, "file": "02 Areas/Areas.md" },
+    { "id": "e555555555555555", "type": "file", "x": 520, "y": -260, "width": 320, "height": 160, "file": "03 Resources/Resources.md" },
+    { "id": "f666666666666666", "type": "file", "x": 520, "y": 0, "width": 320, "height": 160, "file": "05 Daily/Daily Notes.md" },
+    { "id": "a777777777777777", "type": "file", "x": 520, "y": 260, "width": 320, "height": 160, "file": "99 Meta/Meta.md" }
+  ],
+  "edges": [
+    { "id": "b111111111111111", "fromNode": "a111111111111111", "toNode": "b222222222222222", "toEnd": "arrow" },
+    { "id": "c111111111111111", "fromNode": "a111111111111111", "toNode": "c333333333333333", "toEnd": "arrow" },
+    { "id": "d111111111111111", "fromNode": "a111111111111111", "toNode": "d444444444444444", "toEnd": "arrow" },
+    { "id": "e111111111111111", "fromNode": "a111111111111111", "toNode": "e555555555555555", "toEnd": "arrow" },
+    { "id": "f111111111111111", "fromNode": "a111111111111111", "toNode": "f666666666666666", "toEnd": "arrow" },
+    { "id": "a222222222222222", "fromNode": "a111111111111111", "toNode": "a777777777777777", "toEnd": "arrow" }
+  ]
+}

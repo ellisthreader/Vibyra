@@ -4,7 +4,7 @@ namespace App\Services\ChatConnectors\Github;
 
 final class ReadTools
 {
-    public const NAMES = ['github_issue', 'github_pull_request', 'github_pull_request_files', 'github_repository_activity', 'github_read_file'];
+    public const NAMES = ['github_pull_request', 'github_pull_request_files', 'github_repository_activity', 'github_read_file'];
 
     public static function definitions(): array
     {
@@ -13,7 +13,6 @@ final class ReadTools
         $page = ['page' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 100]];
         $pr = $repo + ['number' => ['type' => 'integer', 'minimum' => 1]];
         $items = [
-            ['github_issue', 'Read an issue body and one bounded page of comments. Use nextPage until all comments are read before treating discussion as complete. A PR number uses github_pull_request instead.', $pr + $page, ['repository', 'number']],
             ['github_pull_request', 'Read PR description, immutable head/base SHAs, review decisions and CI evidence. Then read changed-file patches to assess risks and tests. Never infer test coverage from a green status alone.', $pr, ['repository', 'number']],
             ['github_pull_request_files', 'Read a page of changed files and bounded patches. Follow nextPage when present; patchMissing or patchTruncated means incomplete evidence.', $pr + $page, ['repository', 'number']],
             ['github_repository_activity', 'Read commits on the selected/default branch and merged PRs in an inclusive UTC date window. Defaults to the last 7 days. Follow nextPage; commits and merged PRs are distinct, not proof of deployment.', $repo + $page + ['since' => $string, 'until' => $string, 'branch' => $string], ['repository']],
@@ -25,15 +24,14 @@ final class ReadTools
 
     public static function validate(string $operation, array $args): array
     {
-        // Neither segment may be a dot segment: `../user` would be normalised to /user by the HTTP client (F-17).
         abort_unless(is_string($args['repository'] ?? null) && preg_match('#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#D', $args['repository'])
-            && array_intersect(explode('/', $args['repository']), ['.', '..']) === [], 422, 'Use an owner/name repository.');
+            && !in_array(explode('/', $args['repository'])[1], ['.', '..']), 422, 'Use an owner/name repository.');
         $safe = ['repository' => $args['repository']];
-        if ($operation === 'github_issue' || str_starts_with($operation, 'github_pull_request')) {
+        if (str_starts_with($operation, 'github_pull_request')) {
             abort_unless(is_int($args['number'] ?? null) && $args['number'] > 0, 422, 'Choose a pull request number.');
             $safe['number'] = $args['number'];
         }
-        if (in_array($operation, ['github_issue', 'github_pull_request_files', 'github_repository_activity'], true)) {
+        if (in_array($operation, ['github_pull_request_files', 'github_repository_activity'])) {
             $page = $args['page'] ?? 1;
             abort_unless(is_int($page) && $page >= 1 && $page <= 100, 422, 'Page must be between 1 and 100.');
             $safe['page'] = $page;

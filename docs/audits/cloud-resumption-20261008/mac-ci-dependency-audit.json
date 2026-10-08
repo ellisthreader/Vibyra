@@ -1,0 +1,86 @@
+{
+  "desktop": {
+    "before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 1,
+      "critical": 0,
+      "total": 2
+    },
+    "after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "unpatchedRootAdvisories": []
+  },
+  "mobile": {
+    "before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 18,
+      "critical": 1,
+      "total": 19
+    },
+    "after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 16,
+      "critical": 0,
+      "total": 16
+    },
+    "unpatchedRootAdvisories": [
+      [
+        "braces",
+        {
+          "severity": "high",
+          "references": [
+            "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm"
+          ]
+        }
+      ],
+      [
+        "node-forge",
+        {
+          "severity": "high",
+          "references": [
+            "https://github.com/advisories/GHSA-86w9-cpqp-85rv"
+          ]
+        }
+      ]
+    ]
+  },
+  "relay": {
+    "before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "unpatchedRootAdvisories": []
+  },
+  "interpretation": "Registry dependency advisories, not demonstrated application exploits. Desktop/relay have no reported advisories. Shared mobile build graph retains unpatched braces/node-forge; current npm latest has no patched releases. No major framework change or installed phone replacement is claimed.",
+  "shellQuoteRegression": {
+    "beforeVersion": "1.10.0",
+    "afterVersion": "1.11.0",
+    "primaryPublishedAttackVector": "token with line terminator after a comment token",
+    "patchedResult": "TypeError; rejected",
+    "shellCommandExecuted": false
+  }
+}

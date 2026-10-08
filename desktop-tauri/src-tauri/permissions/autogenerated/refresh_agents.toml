@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-refresh-agents"
+description = "Enables the refresh_agents command without any pre-configured scope."
+commands.allow = ["refresh_agents"]
+
+[[permission]]
+identifier = "deny-refresh-agents"
+description = "Denies the refresh_agents command without any pre-configured scope."
+commands.deny = ["refresh_agents"]

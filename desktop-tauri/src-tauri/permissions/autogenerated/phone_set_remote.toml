@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-set-remote"
+description = "Enables the phone_set_remote command without any pre-configured scope."
+commands.allow = ["phone_set_remote"]
+
+[[permission]]
+identifier = "deny-phone-set-remote"
+description = "Denies the phone_set_remote command without any pre-configured scope."
+commands.deny = ["phone_set_remote"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-license-welcome"
+description = "Enables the account_license_welcome command without any pre-configured scope."
+commands.allow = ["account_license_welcome"]
+
+[[permission]]
+identifier = "deny-account-license-welcome"
+description = "Denies the account_license_welcome command without any pre-configured scope."
+commands.deny = ["account_license_welcome"]

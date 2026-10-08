@@ -18,7 +18,7 @@ class RefreshCredits extends Command
     {
         $now = Carbon::now();
         $this->endScheduledMemberships($deductor, $now, (bool) $this->option('dry-run'));
-        $query = User::whereNotIn('id', \Illuminate\Support\Facades\DB::table('vibes_wallets')->where('billing_version', 2)->select('user_id'))->whereNotNull('plan_renews_at')->where('plan_renews_at', '<=', $now);
+        $query = User::whereNotNull('plan_renews_at')->where('plan_renews_at', '<=', $now);
         $count = (clone $query)->count();
         $this->info("Refreshing {$count} user(s).");
         $dry = (bool) $this->option('dry-run');
@@ -76,7 +76,6 @@ class RefreshCredits extends Command
             ->where('membership_ends_at', '<=', $now)
             ->cursor()
             ->each(function (User $user) use ($deductor, $dry) {
-                if (\App\Services\Membership\Units::modern($user->id)) return;
                 $this->line("  user={$user->id} paid term ended; reverting to free");
                 if ($dry) return;
                 $user->forceFill([

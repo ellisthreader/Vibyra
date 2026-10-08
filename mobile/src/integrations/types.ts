@@ -1,0 +1,60 @@
+/**
+ * Browser authorization. Older servers may still advertise the retired token UI.
+ * `device` is the third kind: nothing to sign in to, because the integration is
+ * something on the person's own computer (a vault of notes, a logged-in CLI),
+ * reported by the computer itself rather than by the server's catalogue.
+ */
+export interface IntegrationCredential {
+  kind?: 'token' | 'oauth' | 'device' | 'public';
+  configured?: boolean;
+  label: string;
+  placeholder: string;
+  help: string;
+  url: string;
+}
+export interface Integration {
+  id: string;
+  /** What to type in a message to point a reply at this integration, `@github`. */
+  mention: string;
+  name: string;
+  tagline: string;
+  blurb: string;
+  category: string;
+  abilities: string[];
+  /** Plainly what the integration can see, and what it may change. `writes` null means nothing. */
+  reads: string | null;
+  writes: string | null;
+  credential: IntegrationCredential;
+  installed: boolean;
+  account: string | null;
+  connectedAt: string | null;
+}
+/** `enabled` is the server's own switch. The list is readable either way. */
+export interface IntegrationCatalogue {
+  enabled: boolean;
+  integrations: Integration[];
+}
+/** A sign-in begun on the server: the provider's page to open, and the flow to read back. */
+export interface IntegrationFlow {
+  flowId: string;
+  url: string;
+}
+export interface IntegrationFlowState {
+  status: 'pending' | 'connected' | 'failed' | 'expired';
+  error?: string;
+  catalogue: IntegrationCatalogue;
+}
+/** Provider approval changes integrations, never the Vibyra login. */
+export interface IntegrationAuthorization {
+  catalogue: IntegrationCatalogue;
+}
+export interface IntegrationsApi {
+  catalogue(): Promise<IntegrationCatalogue>;
+  connect(id: string, credential: string): Promise<IntegrationCatalogue>;
+  disconnect(id: string): Promise<IntegrationCatalogue>;
+  /** Begin a sign-in on the provider's page; the browser returns to `returnUrl`. */
+  start?(id: string, returnUrl: string): Promise<IntegrationFlow>;
+  flow?(flowId: string): Promise<IntegrationFlowState>;
+  /** The whole sign-in, where something other than the system browser performs it (the fixture). */
+  authorize?(id: string): Promise<IntegrationAuthorization>;
+}

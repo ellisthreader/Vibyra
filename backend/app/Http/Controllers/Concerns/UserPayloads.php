@@ -71,7 +71,6 @@ trait UserPayloads
     }
     private function userPayload(User $user): array
     {
-        if (\App\Services\Membership\NewAccounts::eligible($user)) app(\App\Services\Vibes\Wallet::class)->ensure($user);
         $plan = $user->plan ?: 'free';
         $cycle = $user->plan_billing_cycle ?: 'monthly';
         $planConfig = (array) config("billing.plans.{$plan}", []);
@@ -86,7 +85,6 @@ trait UserPayloads
             'createdAt' => optional($user->created_at)->toIso8601String(),
             'provider' => $user->provider ?: 'email',
             'emailVerified' => $user->hasVerifiedEmail(),
-            'licenseRedemptionStatus' => app(\App\Services\Membership\Licenses\Pending::class)->status($user->id),
             'twoFactorEnabled' => app(\App\Services\Auth\TwoFactor::class)->enabled($user),
             'phoneNumber' => $user->phone_number,
             'phoneVerified' => $user->phone_verified_at !== null,
@@ -126,7 +124,6 @@ trait UserPayloads
             'rememberedDesktops' => $this->normalizeRememberedDesktops($user->remembered_desktops),
             'appState' => is_array($user->app_state) ? $user->app_state : [],
             ...(app(\App\Services\Vibes\AccountMembership::class)->for($user) ?? []),
-            'planLimits' => app(\App\Services\Membership\PlanLimits::class)->for($user),
         ];
     }
 

@@ -1,0 +1,10 @@
+
+> vibyra@0.1.0 desktop
+> ./Vibyra\ Desktop
+
+Vibyra Desktop is running
+Pair code: KJQ6RB
+Desktop screen: http://127.0.0.1:4317/desktop
+Phone URL: http://192.168.1.109:4317
+[511743:0609/184501.979042:ERROR:content/browser/browser_main_loop.cc:290] GLib-GObject: ../../../gobject/gsignal.c:2685: instance '0xfac015111d0' has no handler with id '4657'
+/home/ellis/Desktop/SaaS/node_modules/electron/dist/electron exited with signal SIGTERM

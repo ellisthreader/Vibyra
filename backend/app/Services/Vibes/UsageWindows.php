@@ -64,7 +64,6 @@ class UsageWindows
      */
     public function guard(int $userId, string $plan, int $credits): void
     {
-        if (\App\Services\Membership\Units::modern($userId)) return;
         $entitlements = $this->plans->for($plan);
         $this->enforce($userId, self::sessionStart(), self::sessionHours() * 60,
             $entitlements['sessionCredits'], $credits, self::sessionHours().'-hour');

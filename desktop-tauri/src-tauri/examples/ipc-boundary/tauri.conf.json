@@ -1,0 +1,14 @@
+{
+  "productName": "Vibyra IPC Boundary Fixture",
+  "version": "0.0.0",
+  "identifier": "app.vibyra.fixture.ipc-boundary",
+  "build": { "frontendDist": "assets" },
+  "app": {
+    "windows": [],
+    "security": {
+      "capabilities": ["default", "screenshot-editor"],
+      "csp": "default-src 'self'; script-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:*; style-src 'self'; frame-src http://127.0.0.1:*"
+    }
+  },
+  "bundle": { "active": false, "icon": ["../../icons/icon.png"] }
+}

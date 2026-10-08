@@ -23,6 +23,4 @@ Route::prefix('api/agents/v1')->middleware('throttle:90,1,agent-api')->group(fun
         ->whereUuid('id')->whereUuid('tool');
     Route::post('workspaces/{id}/tools/{tool}/result', [\App\Http\Controllers\AgentWorkspacesController::class, 'result'])
         ->whereUuid('id')->whereUuid('tool');
-    Route::post('workspaces/{id}/tools/{tool}/publish', [\App\Http\Controllers\AgentWorkspacesController::class, 'publish'])
-        ->whereUuid('id')->whereUuid('tool');
 });

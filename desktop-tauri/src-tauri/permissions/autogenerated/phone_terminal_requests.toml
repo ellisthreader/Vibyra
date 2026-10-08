@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-terminal-requests"
+description = "Enables the phone_terminal_requests command without any pre-configured scope."
+commands.allow = ["phone_terminal_requests"]
+
+[[permission]]
+identifier = "deny-phone-terminal-requests"
+description = "Denies the phone_terminal_requests command without any pre-configured scope."
+commands.deny = ["phone_terminal_requests"]

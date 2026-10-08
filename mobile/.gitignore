@@ -1,0 +1,4 @@
+/src/generated/
+/dist/
+/.expo/
+/node_modules/

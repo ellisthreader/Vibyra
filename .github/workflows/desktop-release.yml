@@ -1,0 +1,277 @@
+name: Rust desktop beta packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      macos_only:
+        description: Build the Mac in-app update only
+        type: boolean
+        default: false
+      sign_notarized_only:
+        description: Sign verified notarized archives for this exact source revision
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  frontend:
+    if: ${{ !inputs.macos_only && !inputs.sign_notarized_only }}
+    uses: ./.github/workflows/desktop-frontend.yml
+
+  package:
+    needs: frontend
+    if: ${{ !inputs.macos_only && !inputs.sign_notarized_only }}
+    name: ${{ matrix.label }} Rust package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            command: npm run app:build:windows
+            source: src-tauri/target/release/bundle/nsis/*-setup.exe
+            suffix: x64-setup.exe
+          - os: ubuntu-22.04
+            label: Linux
+            command: npm run app:build:linux
+            source: src-tauri/target/release/bundle/appimage/*.AppImage
+            suffix: x86_64.AppImage
+          - os: macos-26
+            label: macOS-arm64
+            command: npm run app:build:macos
+            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
+            suffix: macos-arm64.app.tar.gz
+          - os: macos-26-intel
+            label: macOS-x64
+            command: npm run app:build:macos
+            source: src-tauri/target/release/bundle/macos/*.app.tar.gz
+            suffix: macos-x64.app.tar.gz
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Install Linux build and smoke-test dependencies
+        if: runner.os == 'Linux'
+        run: bash scripts/setup-linux.sh --ci
+      - name: Require stable Mac signing identity
+        if: runner.os == 'macOS'
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: node scripts/macos-signing.mjs --check-env
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Install locked shared conversation dependencies
+        run: npm ci --prefix ../mobile
+      - name: Install locked Preview fixture dependencies
+        run: npm ci --prefix ../host/relay
+      - name: Confirm pinned Rust toolchain
+        run: rustup show active-toolchain
+      - name: Run Mac release gates
+        if: runner.os == 'macOS'
+        # Serial test cases preserve timing assertions and internal race threads.
+        env:
+          RUST_TEST_THREADS: '1'
+        run: npm run verify
+      - name: Run Windows release gates
+        if: runner.os == 'Windows'
+        run: npm run verify
+      - name: Run Linux release gates
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" npm run verify
+      - name: Remove independently built frontend output
+        run: >-
+          node -e "require('node:fs').rmSync('dist', { recursive: true, force: true })"
+      - name: Download the shared frontend archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: vibyra-desktop-frontend-${{ github.run_id }}
+          path: desktop-tauri
+      - name: Verify shared frontend bytes, version and revision
+        run: node scripts/frontend-artifact.mjs verify
+      - name: Read the version being released
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "output=Vibyra-Desktop-$version-${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build native package
+        run: >-
+          ${{ matrix.command }} -- --config
+          '{"build":{"beforeBuildCommand":"node scripts/frontend-artifact.mjs verify"}}'
+        env:
+          # Without these the bundler silently skips the .sig files and the
+          # release cannot be offered as an in-app update.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      - name: Verify stable Mac permission identity before staging
+        if: runner.os == 'macOS'
+        run: node scripts/macos-signing.mjs src-tauri/target/release/bundle/macos/Vibyra.app
+      - name: Stage versioned artifact, checksum and update signature
+        shell: bash
+        run: |
+          mkdir -p release
+          output="${{ steps.version.outputs.output }}"
+          matches=( ${{ matrix.source }} )
+          test "${#matches[@]}" = 1
+          cp "${matches[0]}" "release/$output"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            shasum -a 256 "release/$output" > "release/$output.sha256"
+          else
+            sha256sum "release/$output" > "release/$output.sha256"
+          fi
+          # The updater refuses an unsigned package, so a missing .sig here is
+          # a failed release, not a warning.
+          test -f "${matches[0]}.sig"
+          cp "${matches[0]}.sig" "release/$output.sig"
+          cp release/frontend-manifest.json "release/$output.frontend.json"
+      - name: Build signed Debian package from the same frontend
+        if: runner.os == 'Linux'
+        run: >-
+          npm exec -- tauri build --bundles deb --config
+          '{"build":{"beforeBuildCommand":"node scripts/frontend-artifact.mjs verify"}}'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Stage signed Debian package
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          package="Vibyra-Desktop-${{ steps.version.outputs.version }}-amd64.deb"
+          matches=( src-tauri/target/release/bundle/deb/*.deb )
+          test "${#matches[@]}" = 1
+          test -f "${matches[0]}.sig"
+          cp "${matches[0]}" "release/$package"
+          sha256sum "release/$package" > "release/$package.sha256"
+          cp "${matches[0]}.sig" "release/$package.sig"
+          cp release/frontend-manifest.json "release/$package.frontend.json"
+          dpkg-deb --info "release/$package" | grep -F "Version: ${{ steps.version.outputs.version }}"
+      - name: Verify macOS signing, microphone entitlement, helper and launch
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          app=src-tauri/target/release/bundle/macos/Vibyra.app
+          codesign --verify --deep --strict "$app"
+          codesign -d --entitlements - --xml "$app" > /tmp/vibyra-entitlements.plist
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' /tmp/vibyra-entitlements.plist | grep -qx true
+          /usr/libexec/PlistBuddy -c 'Print :NSMicrophoneUsageDescription' "$app/Contents/Info.plist"
+          python3 scripts/verify-agent-command-helper.py --app "$app"
+          "$app/Contents/MacOS/Vibyra" &
+          pid=$!
+          sleep 12
+          kill -0 "$pid"
+          kill "$pid"
+          wait "$pid" || true
+      - name: Install pinned native Linux WebDriver
+        if: runner.os == 'Linux'
+        run: cargo install tauri-driver --locked --version 2.0.6
+      - name: Smoke-test Linux AppImage launch
+        if: runner.os == 'Linux'
+        run: >-
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
+          node scripts/smoke-linux.mjs "release/${{ steps.version.outputs.output }}"
+      - name: Verify signed Linux terminal typing through a real PTY
+        if: runner.os == 'Linux'
+        run: >-
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24"
+          node scripts/smoke-linux-terminal.mjs "release/${{ steps.version.outputs.output }}" release/linux-smoke/terminal
+      - name: Preserve native Linux screenshots and logs
+        if: ${{ always() && runner.os == 'Linux' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-linux-native-smoke-${{ github.sha }}
+          path: desktop-tauri/release/linux-smoke/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Smoke-test Windows installer and app launch
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $PWD "release/${{ steps.version.outputs.output }}"
+          $install = Start-Process $installer -ArgumentList '/S' -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
+          $binaryName = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).mainBinaryName
+          if (-not $binaryName) { throw 'The packaged binary name is missing.' }
+          $app = Get-ChildItem $env:LOCALAPPDATA -Recurse -File -Filter "$binaryName.exe" |
+            Select-Object -First 1
+          if (-not $app) { throw 'The Vibyra executable was not installed.' }
+          $process = Start-Process $app.FullName -PassThru
+          Start-Sleep -Seconds 12
+          if ($process.HasExited) { throw "Vibyra exited with $($process.ExitCode)" }
+          Stop-Process -Id $process.Id -Force
+      - name: Summarise the values needed to publish this release
+        shell: bash
+        run: |
+          output="${{ steps.version.outputs.output }}"
+          {
+            echo "### ${{ matrix.label }} — Vibyra ${{ steps.version.outputs.version }}"
+            echo
+            echo "Set these on the backend, then upload \`$output\` to the release volume:"
+            echo
+            echo '```'
+            echo "VERSION=${{ steps.version.outputs.version }}"
+            echo "FILENAME=$output"
+            echo "SIZE=$(wc -c < "release/$output")"
+            echo "SHA256=$(cut -d' ' -f1 < "release/$output.sha256")"
+            echo "SIGNATURE=$(cat "release/$output.sig")"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            package="Vibyra-Desktop-${{ steps.version.outputs.version }}-amd64.deb"
+            {
+              echo
+              echo "### Debian package"
+              echo '```'
+              echo "VERSION=${{ steps.version.outputs.version }}"
+              echo "FILENAME=$package"
+              echo "SIZE=$(wc -c < "release/$package")"
+              echo "SHA256=$(cut -d' ' -f1 < "release/$package.sha256")"
+              echo "SIGNATURE=$(cat "release/$package.sig")"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload package and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-rust-beta-${{ matrix.label }}-${{ github.sha }}
+          path: |
+            desktop-tauri/release/${{ steps.version.outputs.output }}
+            desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
+            desktop-tauri/release/${{ steps.version.outputs.output }}.sig
+            desktop-tauri/release/${{ steps.version.outputs.output }}.frontend.json
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb.sha256
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb.sig
+            desktop-tauri/release/Vibyra-Desktop-*-amd64.deb.frontend.json
+          if-no-files-found: error
+          retention-days: 30
+
+  macos:
+    if: ${{ inputs.macos_only && !inputs.sign_notarized_only }}
+    uses: ./.github/workflows/desktop-macos-release.yml
+    secrets: inherit
+
+  notarized:
+    if: ${{ inputs.sign_notarized_only }}
+    uses: ./.github/workflows/desktop-notarized-update.yml
+    secrets: inherit

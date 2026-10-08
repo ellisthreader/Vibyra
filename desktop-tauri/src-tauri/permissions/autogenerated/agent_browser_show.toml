@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-browser-show"
+description = "Enables the agent_browser_show command without any pre-configured scope."
+commands.allow = ["agent_browser_show"]
+
+[[permission]]
+identifier = "deny-agent-browser-show"
+description = "Denies the agent_browser_show command without any pre-configured scope."
+commands.deny = ["agent_browser_show"]

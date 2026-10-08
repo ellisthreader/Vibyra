@@ -1,0 +1,36 @@
+/* Agent V2 browser tools (Phase 7): the Access tab site list and the app-wide sign-in card. */
+
+.teammate-browser-sites__list { list-style: none; margin: 0 0 12px; padding: 0; }
+.teammate-browser-sites__list .teammate-connection { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.teammate-browser-sites__list .teammate-connection:last-child { border-bottom: 0; }
+.teammate-browser-sites__list strong { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.teammate-browser-sites__add { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.teammate-browser-sites__add input { flex: 1; min-width: 0; }
+.teammate-browser-sites__add button { flex-shrink: 0; margin-right: 0; }
+.teammate-browser-sites .teammate-browser-sites__note { margin: 0 0 12px; font-size: 11.5px; line-height: 1.4; color: var(--muted); }
+
+/* Top-right so it never stacks under the bottom-right update card (z 91). */
+.browser-takeover {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 360px;
+  max-width: calc(100vw - 28px);
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu), var(--e-inset-hi);
+  overflow: hidden;
+  animation: fade-up 200ms var(--e-hero);
+}
+.browser-takeover::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--accent); }
+.browser-takeover h3 { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--text); }
+.browser-takeover p { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+.browser-takeover__site { color: var(--text); font-weight: 500; }
+.browser-takeover p.browser-takeover__error { color: var(--danger); }
+.browser-takeover__actions { display: flex; gap: 8px; justify-content: flex-end; }

@@ -13,12 +13,6 @@ trait BillingCancellationActions
     public function cancelMembership(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        if (\App\Services\Membership\Units::modern($user->id)) {
-            $provider = app(\App\Services\Membership\Entitlements::class)->for($user)['provider'];
-            if ($provider === 'stripe') return $this->portal($request);
-            if ($provider === 'iap-apple') return $this->json(['ok' => true, 'url' => 'https://apps.apple.com/account/subscriptions']);
-            return $this->json(['ok' => false, 'error' => 'There is no active membership to manage.'], 422);
-        }
         $reason = strtolower(trim((string) $request->input('reason')));
         $details = trim((string) $request->input('details', ''));
         $allowed = ['too_expensive', 'not_using_enough', 'missing_features', 'technical_issues', 'switching_service', 'temporary_break', 'other'];
@@ -114,7 +108,10 @@ trait BillingCancellationActions
             return [null, 'No Stripe customer is attached to this membership.', 422];
         }
         try {
-            $session = $stripe->billingPortal->sessions->create(app(\App\Services\Membership\Portal::class)->parameters($user));
+            $session = $stripe->billingPortal->sessions->create([
+                'customer' => $user->stripe_customer_id,
+                'return_url' => (string) config('services.stripe.portal_return_url'),
+            ]);
             return [$session->url, null, 200];
         } catch (Throwable) {
             return [null, 'Could not open the secure cancellation portal.', 502];

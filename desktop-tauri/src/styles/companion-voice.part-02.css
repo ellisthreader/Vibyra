@@ -1,0 +1,179 @@
+/* Voice mode, continued: the colour each state wears, the strip that stands in
+   for the circle while the transcript is up, and the marks on the chat side. */
+
+/* One set of tokens per state, so every layer of the circle — halo, ring, core,
+   page wash — changes together and the state is legible at a glance from the
+   colour alone, before a word is read. */
+.voice-mode,
+.orb,
+.voice-strip {
+  --voice-accent: var(--accent);
+  --voice-halo: rgba(91, 124, 250, 0.42);
+  --voice-ring: rgba(91, 124, 250, 0.45);
+  --voice-core: radial-gradient(circle at 34% 28%, #7d9bff, #3f5fd8 62%, #2b3f9c);
+  --voice-sheen: rgba(255, 255, 255, 0.18);
+  --voice-on-core: rgba(255, 255, 255, 0.92);
+  --voice-wash: rgba(91, 124, 250, 0.1);
+}
+
+:root[data-theme="light"] .voice-mode,
+:root[data-theme="light"] .orb,
+:root[data-theme="light"] .voice-strip {
+  --voice-halo: rgba(49, 91, 216, 0.3);
+  --voice-ring: rgba(49, 91, 216, 0.34);
+  --voice-core: radial-gradient(circle at 34% 28%, #6d8bff, #315bd8 60%, #2449b8);
+  --voice-sheen: rgba(255, 255, 255, 0.4);
+  --voice-wash: rgba(49, 91, 216, 0.07);
+}
+
+.voice-mode[data-phase="speaking"],
+.orb[data-phase="speaking"],
+.voice-strip[data-phase="speaking"] {
+  --voice-accent: var(--success);
+  --voice-halo: rgba(55, 199, 138, 0.4);
+  --voice-ring: rgba(55, 199, 138, 0.45);
+  --voice-core: radial-gradient(circle at 34% 28%, #5fe0ac, #1f9d70 62%, #146a4c);
+  --voice-wash: rgba(55, 199, 138, 0.1);
+}
+
+:root[data-theme="light"] .voice-mode[data-phase="speaking"],
+:root[data-theme="light"] .orb[data-phase="speaking"],
+:root[data-theme="light"] .voice-strip[data-phase="speaking"] {
+  --voice-halo: rgba(20, 122, 87, 0.26);
+  --voice-ring: rgba(20, 122, 87, 0.3);
+  --voice-core: radial-gradient(circle at 34% 28%, #3fc496, #147a57 60%, #0d5a40);
+  --voice-wash: rgba(20, 122, 87, 0.07);
+}
+
+.voice-mode[data-phase="error"],
+.orb[data-phase="error"],
+.voice-strip[data-phase="error"] {
+  --voice-accent: var(--danger);
+  --voice-halo: rgba(240, 100, 114, 0.34);
+  --voice-ring: rgba(240, 100, 114, 0.42);
+  --voice-core: radial-gradient(circle at 34% 28%, #f58e9a, #c9364b 62%, #8f2333);
+  --voice-wash: rgba(240, 100, 114, 0.09);
+}
+
+.voice-mode[data-phase="error"] .voice-mode__state {
+  max-width: 280px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* ---------- the strip behind the transcript ---------- */
+
+/* Same object, shrunk to a line: the conversation is still running, and the
+   way back to it is the thing you press. */
+.voice-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 14px 8px;
+  padding: 6px 8px 6px 6px;
+  border: 1px solid var(--voice-ring);
+  border-radius: 999px;
+  background: var(--voice-wash);
+}
+
+.voice-strip__back {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border-radius: 999px;
+  text-align: left;
+}
+
+.voice-strip__back:hover {
+  background: var(--hover);
+}
+
+.voice-strip__orb {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--voice-core);
+  box-shadow: 0 0 0 calc(2px + var(--level, 0) * 5px) var(--voice-halo);
+  transition: box-shadow 110ms ease-out;
+}
+
+.voice-strip__state {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-strip__end {
+  flex: none;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 560;
+}
+
+.voice-strip__end:hover {
+  background: var(--hover-strong);
+  color: var(--text);
+}
+
+/* ---------- the marks on the chat side ---------- */
+
+/* The tab keeps a live dot while a conversation runs, so leaving Chat for
+   Worktrees or Preview never loses the fact that Vibyra is still listening. */
+/* ::before, because ::after on a tab is already the active underline. A
+   badge in the corner rather than inline, so the label never shifts. */
+.companion__tab--talking::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: talk-tab 1.6s ease-in-out infinite;
+}
+
+@keyframes talk-tab {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.chat-voice-button.is-talking {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* The reply being read aloud is tinted in the transcript, so the circle and
+   the thread are obviously one conversation. The padding is cancelled by an
+   equal negative margin, so the words do not move when it starts or stops. */
+.chat-turn--speaking .chat-turn__token {
+  color: var(--success);
+}
+
+.chat-turn--speaking .chat-turn__bubble {
+  margin: -8px -12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--success-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-mode { animation: none; }
+  .orb__glow, .orb__core, .voice-strip__orb { transition: none; }
+  .orb__ripple { display: none; }
+
+  .orb__bars i,
+  .companion__tab--talking::before {
+    animation: none;
+    opacity: 0.8;
+  }
+}

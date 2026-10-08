@@ -56,12 +56,11 @@ trait AccountVerificationEndpoints
         }
 
         try {
-            $user = app(\App\Services\Remote\RemoteAccountSecurity::class)->updateIdentity((int) $user->id, function (User $user) use ($phoneNumber) {
-                $changed = $user->phone_number !== $phoneNumber || $user->phone_verified_at === null;
-                $user->forceFill(['phone_number' => $phoneNumber, 'phone_verified_at' => now(), 'pending_phone_number' => null])->save();
-                if ($changed) app(\App\Services\Remote\RemoteAccountSecurity::class)->revoke((int) $user->id, reason: 'verified_phone_changed');
-                return $user;
-            });
+            $user->forceFill([
+                'phone_number' => $phoneNumber,
+                'phone_verified_at' => now(),
+                'pending_phone_number' => null,
+            ])->save();
         } catch (QueryException) {
             return $this->json(['ok' => false, 'error' => 'That phone number is already linked to another account.'], 409);
         }

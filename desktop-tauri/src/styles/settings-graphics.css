@@ -1,0 +1,53 @@
+/* Graphics-mode picker in Settings → General. Three stacked choices rather
+   than a select, because each one needs its trade-off spelled out. */
+
+.graphics-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.graphics-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--elevated);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard);
+}
+
+.graphics-mode:hover {
+  border-color: var(--line-accent);
+}
+
+.graphics-mode--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.graphics-mode__label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.graphics-mode__hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.settings-note {
+  margin: 0;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}

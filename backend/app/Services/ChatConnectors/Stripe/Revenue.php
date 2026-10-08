@@ -20,7 +20,7 @@ final class Revenue
             'signature' => $signature, 'since' => (new DateTimeImmutable($a['since'], $zone))->getTimestamp(),
             'until' => min(time() + 1, (new DateTimeImmutable($a['until'], $zone))->modify('+1 day')->getTimestamp()),
             'totals' => [], 'seen' => [], 'scanned' => 0, 'matched' => 0, 'excluded' => 0, 'untagged' => 0,
-            'last' => null, 'modes' => Auth::testMode($token) ? ['test' => true] : [], 'pages' => 0, 'startedAt' => gmdate('c'),
+            'last' => null, 'modes' => str_starts_with($token, 'sk_test_') ? ['test' => true] : [], 'pages' => 0, 'startedAt' => gmdate('c'),
         ];
         if (!is_array($state) || ($state['signature'] ?? null) !== $signature)
             return ['error' => 'This report expired, belongs to another connection, or its filters changed. Start a new report.'];

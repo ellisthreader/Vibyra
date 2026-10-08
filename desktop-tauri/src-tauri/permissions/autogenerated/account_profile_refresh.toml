@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-account-profile-refresh"
+description = "Enables the account_profile_refresh command without any pre-configured scope."
+commands.allow = ["account_profile_refresh"]
+
+[[permission]]
+identifier = "deny-account-profile-refresh"
+description = "Denies the account_profile_refresh command without any pre-configured scope."
+commands.deny = ["account_profile_refresh"]

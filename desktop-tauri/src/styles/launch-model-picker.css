@@ -1,0 +1,126 @@
+/* Model tiles: the one place the launcher is allowed to be loud. Three usual
+ * models plus More, each tile artwork-led, the chosen one ringed in cobalt.
+ * Every menu the launcher opens shares one floating surface (`.launch-menu`). */
+
+.launch-model { position: relative; padding: 16px 24px 20px; }
+
+.launch-model__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px; }
+
+.launch-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 108px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--workspace);
+  text-align: left;
+  transition: border-color var(--t-base) var(--e-standard), background var(--t-base) var(--e-standard), box-shadow var(--t-base) var(--e-standard);
+}
+
+.launch-tile:hover { border-color: var(--border); background: var(--hover); }
+.launch-tile--active { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+.launch-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.launch-tile__copy { display: grid; width: 100%; min-width: 0; gap: 2px; margin-top: auto; }
+.launch-tile__copy strong { overflow: hidden; color: var(--text); font-size: 12.5px; font-weight: 600; letter-spacing: -.1px; text-overflow: ellipsis; white-space: nowrap; }
+.launch-tile__copy small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.launch-tile__badge { position: absolute; top: 12px; right: 12px; padding: 1px 6px; border: 1px solid color-mix(in srgb, var(--pick-accent) 45%, transparent); border-radius: 999px; color: var(--pick-accent); font-size: 9px; font-style: normal; font-weight: 760; letter-spacing: .06em; text-transform: uppercase; }
+.launch-tile--active .launch-tile__badge { right: 34px; }
+
+.launch-tile__check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.launch-tile--more { border-style: dashed; background: transparent; }
+.launch-tile--more:hover, .launch-tile--more[aria-expanded="true"] { border-style: solid; }
+.launch-tile__more {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--hover-strong);
+  color: var(--muted);
+}
+
+.launch-model__connect {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  margin: 16px 24px 20px;
+  width: calc(100% - 48px);
+  padding: 16px 18px;
+  border: 1px solid var(--accent-border);
+  border-radius: 11px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-align: left;
+}
+
+.launch-model__connect:disabled { opacity: .6; }
+.launch-model__connect > span { display: grid; gap: 2px; }
+.launch-model__connect strong { font-size: 14px; font-weight: 600; }
+.launch-model__connect small { color: var(--muted); font-size: 12px; }
+
+
+/* --- the shared floating surface --- */
+
+.launch-menu {
+  position: absolute;
+  z-index: 61;
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--elevated);
+  box-shadow: var(--e-menu), var(--e-inset-hi);
+  animation: fade-up 160ms var(--e-hero);
+}
+
+.launch-menu--right { top: calc(100% - 6px); right: 20px; min-width: 240px; }
+
+.launch-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 42px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.launch-option:hover { background: var(--hover-strong); }
+.launch-option[aria-selected="true"] { background: var(--accent-soft); }
+.launch-option[aria-selected="true"] > svg:last-child { color: var(--accent); }
+.launch-option > svg:last-child { flex: 0 0 auto; margin-left: auto; }
+
+.launch-option__copy { display: grid; min-width: 0; gap: 1px; }
+.launch-option__copy strong { overflow: hidden; font-weight: 560; text-overflow: ellipsis; white-space: nowrap; }
+.launch-option__copy small { overflow: hidden; color: var(--muted); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+
+.launch-option--more { justify-content: center; min-height: 38px; margin-top: 2px; border-top: 1px solid var(--line-soft); border-radius: 0 0 8px 8px; color: var(--muted); }
+.launch-option--more:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) { .launch-menu { animation: none; } .launch-tile { transition: none; } }

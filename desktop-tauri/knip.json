@@ -1,0 +1,31 @@
+{
+  "ignoreIssues": {
+    "src/assets/providerLogos.js": [
+      "exports"
+    ]
+  },
+  "entry": [
+    "tests/*.test.mjs",
+    "tests/*Fixture.tsx",
+    "scripts/frontend-artifact.mjs",
+    "scripts/verify-notarized-signatures.mjs",
+    "tests/assistantLiveFixture.ts",
+    "tests/installedReferenceBootstrap.ts",
+    "scripts/verify-remote-security.mjs",
+    "src-tauri/examples/ipc-boundary/assets/*.js",
+    "src-tauri/examples/event-dispatch/assets/*.js",
+    "src-tauri/src/window_preview/viewer*.js",
+    "src-tauri/src/agent_v2_browser_*.js",
+    "tests/teammate*Checks.mjs",
+    "src-tauri/crates/vibyra-core/src/local_mcp/fixture/server.mjs",
+    "scripts/verify-dialogs.mjs",
+    "scripts/verify-cloud-tab.mjs",
+    "scripts/verify-stage-two-draft.mjs",
+    "tests/stageTwoDraftApi.ts",
+    "scripts/verify-phone-reconnect.mjs",
+    "scripts/verify-settings-providers.mjs",
+    "scripts/verify-cloud-updates.mjs",
+    "scripts/build-notification-proof.mjs",
+    "scripts/verify-agent-notification-focus.mjs"
+  ]
+}

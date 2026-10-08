@@ -26,7 +26,6 @@ class ChatCostReservationService
         array $meta = [],
         ?int $quotaCredits = null,
     ): ChatCostReservation {
-        abort_if(\App\Services\Membership\Units::modern($user->id), 409, 'Use the unified token wallet for funded work.');
         $quotaCredits = max(0, $quotaCredits ?? $credits);
         return DB::transaction(function () use (
             $user,

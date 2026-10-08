@@ -1,0 +1,11 @@
+.home-recents__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.home-recent { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; row-gap: 5px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; text-align: left; background: var(--surface); min-width: 0; transition: border-color 180ms, background 180ms, transform 220ms; }
+.home-recent:hover { background: var(--hover); border-color: var(--border); transform: translateY(-2px); }
+.home-recent__top { grid-column: 1; grid-row: 1 / 4; display: flex; align-items: flex-start; padding-top: 2px; }
+.home-recent__state { position: absolute; right: 16px; bottom: 17px; color: var(--muted); font-size: 10px; }
+.home-recent__state--live { color: var(--success); }
+.home-recent__label { grid-column: 2; font-size: 13px; font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-recent__project { grid-column: 2; font-size: 11px; color: var(--muted); }
+.home-recent__bottom { grid-column: 2; margin-top: 8px; color: var(--dim); font-size: 10px; padding-right: 50px; }
+.home-recent__bottom svg { display: none; }
+@media (max-width: 800px) { .home-recents__grid { grid-template-columns: 1fr; } }

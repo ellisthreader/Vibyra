@@ -1,0 +1,78 @@
+name: Non-Mac desktop security validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: ${{ matrix.label }} compile and security gates
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+          - os: ubuntu-22.04
+            label: Linux
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      RUST_TEST_THREADS: "2"
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    steps:
+      - name: Check out exact dispatched revision
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Set up pinned Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: |
+            desktop-tauri/package-lock.json
+            mobile/package-lock.json
+            host/relay/package-lock.json
+      - name: Install Linux native and headless display dependencies
+        if: runner.os == 'Linux'
+        run: bash scripts/setup-linux.sh --ci
+      - name: Install locked desktop dependencies
+        run: npm ci
+      - name: Install locked shared conversation dependencies
+        run: npm ci --prefix ../mobile
+      - name: Install locked relay fixture dependencies
+        run: npm ci --prefix ../host/relay
+      - name: Confirm repository Rust toolchain
+        run: rustup show active-toolchain
+      - name: Compile native platform and run all security gates
+        if: runner.os != 'Linux'
+        run: npm run verify
+      - name: Compile Linux native platform and run all security gates
+        if: runner.os == 'Linux'
+        shell: bash
+        run: dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" npm run verify
+      - name: Exercise real Linux WebKit IPC isolation
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p validation
+          dbus-run-session -- xvfb-run -a -s "-screen 0 1440x900x24" python3 scripts/verify-native-ipc-boundary.py | tee validation/native-ipc.log
+      - name: Record exact revision after successful validation
+        env:
+          VALIDATED_SHA: ${{ github.sha }}
+        run: >-
+          node -e "const fs=require('node:fs');fs.mkdirSync('validation',{recursive:true});fs.writeFileSync('validation/result.json',JSON.stringify({sha:process.env.VALIDATED_SHA,platform:process.platform,verify:true,strictAllTargetClippy:true,nativeIpc:process.platform==='linux'?'passed':'not exercised'},null,2))"
+      - name: Preserve validation receipts only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: vibyra-nonmac-validation-${{ matrix.label }}-${{ github.sha }}
+          path: desktop-tauri/validation/
+          if-no-files-found: ignore
+          retention-days: 14

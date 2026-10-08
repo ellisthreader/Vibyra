@@ -1,0 +1,106 @@
+/* The notification volume slider in Settings → Notifications: speaker glyphs, a
+   five-step rail, and the value spelled out beside it. Loads after controls.css
+   and owns every `.volslider` rule; nothing else in the app draws a track. */
+
+/* The cluster takes the row. At 116px the track was a widget parked in the
+   corner of an otherwise empty line, and five steps could never be legible
+   across it. */
+.volslider {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 10px;
+}
+
+/* `--dim` all but disappeared at the low end on the pale light panel. */
+.volslider__glyph {
+  flex: none;
+  color: var(--muted);
+}
+
+/* The rail is 4px but the hit area is not: the track box is tall enough to grab
+   with a pointer and to carry a focus ring that clears the thumb. */
+.volslider__track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 140px;
+  height: 16px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.volslider__track:focus-visible {
+  border-radius: 999px;
+  outline-offset: 3px;
+}
+
+/* Inset by half a thumb, so the rail begins on the first step and ends on the
+   last. Offsetting the fill inside a full-width rail instead left 6px of empty
+   rail showing at the loudest step, which reads as a rendering fault. */
+.volslider__rail {
+  position: relative;
+  flex: 1;
+  width: calc(100% - 12px);
+  margin: 0 6px;
+  height: 4px;
+  /* Settings groups are transparent over --elevated, so a --bg rail would read
+     as a hole punched in the panel — and `--hover-strong` is four units off
+     `--elevated` in dark, which left the unfilled half invisible and the ticks
+     floating beside the fill like loose dots. Mixing from the text colour is
+     one value that stays legible on both grounds. */
+  background: color-mix(in srgb, var(--text) 15%, transparent);
+  border-radius: 999px;
+}
+
+.volslider__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: calc(100% * var(--volslider-pos));
+  background: var(--action);
+  border-radius: inherit;
+  transition: width var(--t-base) var(--e-standard);
+}
+
+.volslider__thumb {
+  position: absolute;
+  top: 50%;
+  left: calc(100% * var(--volslider-pos));
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--on-action);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.26);
+  transform: translate(-50%, -50%);
+  transition: left var(--t-base) var(--e-standard),
+    width var(--t-ui) var(--e-standard), height var(--t-ui) var(--e-standard);
+}
+
+:root[data-theme="light"] .volslider__thumb {
+  box-shadow: 0 1px 2px rgba(28, 31, 42, 0.16);
+}
+
+/* A keyboard step should glide; a drag must not lag behind the pointer. */
+.volslider__track[data-dragging="true"] .volslider__thumb,
+.volslider__track[data-dragging="true"] .volslider__fill {
+  transition: none;
+}
+
+.volslider__track:hover .volslider__thumb {
+  width: 14px;
+  height: 14px;
+}
+
+/* Fixed width, right aligned: the word changes length on every step and the
+   cluster must not reflow while it is being dragged. */
+.volslider__value {
+  min-width: 52px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}

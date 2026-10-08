@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-phone-remote-transfer"
+description = "Enables the phone_remote_transfer command without any pre-configured scope."
+commands.allow = ["phone_remote_transfer"]
+
+[[permission]]
+identifier = "deny-phone-remote-transfer"
+description = "Denies the phone_remote_transfer command without any pre-configured scope."
+commands.deny = ["phone_remote_transfer"]

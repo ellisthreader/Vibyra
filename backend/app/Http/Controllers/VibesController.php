@@ -85,7 +85,7 @@ class VibesController extends Controller
                 if (!$existing) DB::table('vibes_chats')->insert([...$data, 'user_id' => $id, 'created_at' => now(), 'updated_at' => now()]);
             });
         }
-        return $this->json(['chats' => DB::table('vibes_chats')->where('user_id', $id)->whereNull('agent_id')->select('vibes_chats.*')->selectRaw('(SELECT COALESCE(SUM(charged * (10000 / unit_scale)), 0) FROM vibes_turns WHERE chat_id = vibes_chats.id) AS terminal_charged_micro')->orderByDesc('updated_at')->limit(500)->get()]);
+        return $this->json(['chats' => DB::table('vibes_chats')->where('user_id', $id)->whereNull('agent_id')->orderByDesc('updated_at')->limit(100)->get()]);
     }
 
     public function quote(Request $request, Quotes $quotes)
@@ -96,7 +96,7 @@ class VibesController extends Controller
         $this->maySpend($user);
         // The effort is checked against the chosen model's own published ladder in
         // Quotes; this only keeps values outside OpenRouter's vocabulary off the wire.
-        $d = $request->validate(['chatId' => 'required|uuid', 'text' => 'required|string|max:4000', 'model' => 'required|string|max:200',
+        $d = $request->validate(['chatId' => 'required|uuid', 'text' => 'required|string|max:4000', 'model' => 'required|string|max:150',
             'effort' => ['nullable', 'string', Rule::in(OpenRouterPricingNormalizer::EFFORTS)],
             // Which integrations were named in the message. Quotes keeps only the ones this
             // account has really connected, so an unknown or uninstalled slug is ignored.
@@ -114,11 +114,8 @@ class VibesController extends Controller
         abort_if(trim((string) config('services.openrouter.key')) === '', 503, 'AI chat is being prepared. Please try again later.');
         $user = $this->account($request);
         $this->maySpend($user);
-        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required_without:message|prohibits:message|string|max:'.Quotes::MAX_ENCODED_LENGTH,
-            'message' => 'required_without:quote|prohibits:quote|array']);
-        $turn = isset($d['message'])
-            ? app(\App\Services\Vibes\DirectTurns::class)->submit($user->id, $d['id'], $d['message'])
-            : $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
+        $d = $request->validate(['id' => 'required|uuid', 'quote' => 'required|string|max:'.Quotes::MAX_ENCODED_LENGTH]);
+        $turn = $turns->submit($user->id, $d['id'], $quotes->decode($d['quote'], $user->id));
         if ($turn->status === 'queued') RunVibesTurn::dispatch($turn->id);
         return $this->json(['turn' => $turns->payload($turn)], 202);
     }
@@ -145,9 +142,6 @@ class VibesController extends Controller
             $beforeDispatch = DB::table('vibes_turns')->where('id', $turn)->whereIn('status', ['queued', 'waiting'])
                 ->whereNull('settled_at')->update(['status' => 'cancelled', 'cancel_requested' => true]);
             DB::table('vibes_turns')->where('id', $turn)->whereNull('settled_at')->update(['cancel_requested' => true]);
-            if (\App\Services\CloudWorkspaces\Holds::available()) DB::table('cloud_actions')->whereIn('tool_id',
-                DB::table('vibes_tools')->where('turn_id', $turn)->select('id'))->whereIn('state', ['queued', 'running'])
-                ->update(['state' => 'cancelled', 'updated_at' => now()]);
             if ($beforeDispatch) $turns->settle($turn, (int) DB::table('vibes_turns')->where('id', $turn)->value('actual_micro_usd'), null, 'Stopped. Only confirmed AI usage was charged.');
         });
         return $this->json(['ok' => true]);

@@ -14,30 +14,15 @@ return [
     // Shared with the relay (VIBYRA_RELAY_SECRET there). Signs every token and
     // authenticates the presence events the relay posts back. 32+ characters.
     'relay_secret' => env('VIBYRA_RELAY_SECRET'),
-    'relay_signing_secret' => env('VIBYRA_RELAY_SIGNING_SECRET', env('VIBYRA_RELAY_SECRET')),
-    'relay_signing_key_id' => env('VIBYRA_RELAY_SIGNING_KEY_ID', 'current'),
-    'relay_signing_previous_secret' => env('VIBYRA_RELAY_SIGNING_PREVIOUS_SECRET'),
-    'relay_signing_previous_key_id' => env('VIBYRA_RELAY_SIGNING_PREVIOUS_KEY_ID'),
-    'relay_signing_previous_until' => (int) env('VIBYRA_RELAY_SIGNING_PREVIOUS_UNTIL', 0),
-    'relay_report_secret' => env('VIBYRA_RELAY_REPORT_SECRET', env('VIBYRA_RELAY_SECRET')),
-    'relay_admin_secret' => env('VIBYRA_RELAY_ADMIN_SECRET', env('VIBYRA_RELAY_SECRET')),
     // How long a computer's registration token and a phone's connection token
     // stay valid. Both are checked once, when the socket registers; the
-    // connection additionally renews authoritative authorization every 60 seconds,
-    // with a maximum 180-second lease during control API failure.
+    // connection they open lives on until either side closes it.
     'host_token_seconds' => (int) env('VIBYRA_RELAY_HOST_TOKEN_SECONDS', 600),
     'client_token_seconds' => (int) env('VIBYRA_RELAY_CLIENT_TOKEN_SECONDS', 300),
-    // Hard lifetime for an established client connection; renewal cannot extend it.
-    'session_max_seconds' => (int) env('VIBYRA_REMOTE_SESSION_MAX_SECONDS', 28800),
     // A computer counts as online while its relay heartbeat is this fresh.
     'presence_seconds' => (int) env('VIBYRA_RELAY_PRESENCE_SECONDS', 90),
     'max_hosts_per_user' => 16,
     // Whether connecting from anywhere needs a plan with `remoteAccess`
     // (config/vibes.php). Registering a computer never does.
     'require_plan' => (bool) env('VIBYRA_REMOTE_REQUIRE_PLAN', true),
-    // Remote data each account may move through the relay per calendar month (UTC). Past it the relay
-    // slows that account to `slowed_kb_per_second` (set on the relay as VIBYRA_RELAY_SLOWED_BYTES_PER_SECOND):
-    // terminals keep working, Live Preview drops to the odd frame. 40 GB keeps the worst case near £1.70.
-    'monthly_data_gb' => (float) env('VIBYRA_REMOTE_MONTHLY_DATA_GB', 40),
-    'slowed_kb_per_second' => (int) env('VIBYRA_REMOTE_SLOWED_KB_PER_SECOND', 16),
 ];

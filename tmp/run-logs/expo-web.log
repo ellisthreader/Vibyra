@@ -1,0 +1,33 @@
+env: load .env
+env: export EXPO_PUBLIC_API_URL EXPO_PUBLIC_DESKTOP_URL EXPO_PUBLIC_FAKE_BUILDS
+Starting project at /home/ellis/Desktop/SaaS
+🔍 [expo-iap] Config values: horizonAppId=undefined, isHorizonEnabled=false, isOnsideEnabled=false
+📦 [expo-iap] Using OpenIAP from CocoaPods
+Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+The following packages should be updated for best compatibility with the installed expo version:
+  expo@54.0.33 - expected version: ~54.0.35
+  expo-asset@12.0.12 - expected version: ~12.0.13
+  babel-preset-expo@55.0.18 - expected version: ~54.0.10
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 62.2% (215/459)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 63.3% (538/686)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 77.4% (874/994)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.7% (1214/1242)
+Web Bundled 14352ms node_modules/expo/AppEntry.js (1259 modules)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 155ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web Bundled 97ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 335ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 71ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console

@@ -1,0 +1,44 @@
+/* Storyboard frame: one title bar over the main column. The brand column is
+   the top of the sidebar (traffic lights only), so the sidebar reads as one
+   full-height column and the bar's hairline starts where the main column does. */
+:root { --sb-pill-w: 88px; --sb-ease-glide: cubic-bezier(.32,.72,0,1); --sb-ease-settle: cubic-bezier(.2,.8,.2,1); }
+:root { --sb-raised: #2a2e38; --sb-avatar-bg: #2b3352; --sb-avatar-fg: #c9d3ff; }
+:root[data-theme="light"] { --sb-raised: #ffffff; --sb-avatar-bg: #e3e8fb; --sb-avatar-fg: #315bd8; }
+
+.app .chrome { border-bottom: 0; background: var(--workspace); }
+.app .chrome::after { content: ""; position: absolute; left: var(--rail-w); right: 0; bottom: 0; height: 1px; background: var(--line); pointer-events: none; }
+.app.app--projects-hidden .chrome::after { left: 0; }
+.app .chrome__brand { background: var(--rail); border-right: 1px solid var(--line); }
+.app.app--projects-hidden .chrome__brand { border-right: 0; background: var(--workspace); }
+
+.app .chrome__drag { justify-content: flex-start; padding: 0 0 0 24px; min-width: 0; }
+.title-trail { pointer-events: none; display: flex; align-items: center; min-width: 0; max-width: calc(50% - var(--sb-pill-w) - 24px); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.title-trail__part { display: inline-flex; align-items: center; min-width: 0; }
+.title-trail__part:last-child { overflow: hidden; }
+.title-trail__part > span, .title-trail__part > b { overflow: hidden; text-overflow: ellipsis; }
+.title-trail b { color: var(--text); font-weight: 600; }
+.title-trail__sep { margin: 0 7px; color: var(--dim); opacity: .7; }
+
+/* Code / Agents: a track with one raised pill that glides to the selection. */
+.app .product-mode-switch { gap: 0; }
+.app .product-mode-tabs { position: relative; gap: 0; padding: 3px; border-radius: 9px; background: var(--hover); border: 1px solid var(--line); }
+.app .product-mode-switch button { position: relative; z-index: 1; width: var(--sb-pill-w); height: 26px; padding: 0; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--muted); background: none; transition: color 180ms var(--sb-ease-settle); }
+.app .product-mode-switch button[aria-selected=true] { color: var(--text); background: none; }
+.app .product-mode-switch button:hover:not([aria-selected=true]) { color: var(--text); }
+.product-mode-indicator { position: absolute; top: 3px; left: 3px; width: var(--sb-pill-w); height: 26px; border-radius: 6px; background: var(--sb-raised); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 1px 2px rgba(0,0,0,.35); transition: transform 240ms var(--sb-ease-glide); pointer-events: none; }
+.product-mode-tabs[data-mode="agent"] .product-mode-indicator { transform: translateX(var(--sb-pill-w)); }
+:root[data-theme="light"] .product-mode-indicator { box-shadow: 0 1px 2px rgba(28,31,42,.14), 0 0 0 1px rgba(28,31,42,.06); }
+
+.app .chrome__right { gap: 8px; padding-right: 16px; }
+.chrome__new-terminal { height: 30px; padding: 0 12px; gap: 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-tint); color: var(--text); font-size: 12px; font-weight: 500; }
+.chrome__new-terminal:hover { background: var(--hover-strong); }
+.title-account { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--sb-avatar-bg); color: var(--sb-avatar-fg); font-size: 12px; font-weight: 600; }
+.title-account:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Buttons dip while held, so every click feels physical. */
+.app .btn:active, .app .icon-btn:active, .app .pstrip__row:active { transform: scale(.97); }
+.app .btn, .app .icon-btn { transition: background 100ms var(--sb-ease-settle), color 100ms var(--sb-ease-settle), transform 100ms var(--sb-ease-settle); }
+
+/* The sidebar narrows under 1100px; the brand column above it narrows with it. */
+@media (max-width: 1100px) { :root { --rail-w: 200px; } .title-trail { max-width: calc(50% - var(--sb-pill-w) - 12px); } }
+@media (max-width: 1000px) { .title-trail__part:not(:last-child), .title-trail__sep { display: none; } }

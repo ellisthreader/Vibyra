@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Concerns;
 
-use App\Services\Analytics\AuthLoginRecorder;
-
 use App\Models\User;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\ProviderIdentityVerifier;
@@ -86,7 +84,6 @@ trait AuthEndpoints
             $user = app(Guests::class)->claim($guest, $email, $password, $name);
             app(ReferralService::class)->registerSignup($user, $referralCode);
             $user = $user->fresh() ?? $user;
-            app(\App\Services\Membership\Licenses\Pending::class)->capture($user, $request);
             try {
                 $user->sendEmailVerificationNotification();
             } catch (\Throwable) {
@@ -96,7 +93,7 @@ trait AuthEndpoints
             return $this->json([...$this->sessionPayload($request, $user), 'isNewUser' => true], 201);
         }
 
-        $user = app(\App\Services\Membership\Licenses\Pending::class)->createUser([
+        $user = User::create([
             'name' => $name !== '' ? $name : $this->nameFromEmail($email),
             'email' => $email,
             'provider' => 'email',
@@ -110,7 +107,7 @@ trait AuthEndpoints
             'onboarding_complete' => false,
             'remembered_desktops' => [],
             'app_state' => [],
-        ], $request);
+        ]);
         app(ReferralService::class)->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
 
@@ -160,11 +157,8 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => $error->getMessage()], $error->status);
         }
 
-        $payload = $this->sessionPayload($request, $account['user']);
-        app(AuthLoginRecorder::class)->record($account['user'], 'app', $provider);
-
         return $this->json([
-            ...$payload,
+            ...$this->sessionPayload($request, $account['user']),
             'isNewUser' => $account['created'],
         ]);
     }
@@ -240,10 +234,7 @@ trait AuthEndpoints
             return $this->json(['ok' => true, 'twoFactor' => app(TwoFactorChallenge::class)->issue($user)]);
         }
 
-        $payload = $this->sessionPayload($request, $user);
-        app(AuthLoginRecorder::class)->record($user, 'app', 'password');
-
-        return $this->json($payload);
+        return $this->json($this->sessionPayload($request, $user));
     }
 
     private function recordDailyLogin(User $user): void

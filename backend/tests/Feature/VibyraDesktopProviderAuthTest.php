@@ -4,34 +4,19 @@ namespace Tests\Feature;
 
 use App\Services\Auth\DesktopProviderTokenExchange;
 use App\Services\Auth\ProviderIdentityVerifier;
-use App\Models\User;
-use App\Notifications\VibyraVerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class VibyraDesktopProviderAuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->withHeader('X-Vibyra-Flow-Secret', str_repeat('s', 64));
-    }
-
     public function test_google_desktop_oauth_creates_a_real_account_session(): void
     {
-        config(['licenses.enabled' => true, 'membership.enabled' => false,
-            'membership.new_accounts_from' => null]);
-        $license = app(\App\Services\Membership\Licenses\Issuance::class)->create(\App\Models\User::factory()->create(), [
-            'request_id' => (string) \Illuminate\Support\Str::uuid(), 'label' => 'OAuth test', 'tokens' => 300,
-            'allowance' => 'once', 'duration_months' => 1, 'fixed_ends_at' => null, 'claim_by' => now()->addDay()]);
         $this->configureProvider('google', 'google-desktop-client');
-        $start = $this->postJson('/api/auth/desktop/google/start', ['flowSecret' => str_repeat('s', 64),
-            'licenseKey' => $license['key'],
+        $start = $this->postJson('/api/auth/desktop/google/start', [
             'deviceName' => 'Office PC',
             'installId' => 'desktop-install',
             'publicIp' => '8.8.8.8',
@@ -61,8 +46,6 @@ class VibyraDesktopProviderAuthTest extends TestCase
             ->assertJsonPath('status', 'complete')
             ->assertJsonPath('isNewUser', true)
             ->assertJsonPath('user.provider', 'google')
-            ->assertJsonPath('user.billingProvider', 'license')
-            ->assertJsonPath('user.licenseRedemptionStatus', 'redeemed')
             ->json();
 
         $this->withToken($status['token'])
@@ -80,7 +63,7 @@ class VibyraDesktopProviderAuthTest extends TestCase
     public function test_apple_desktop_oauth_accepts_form_post_and_first_login_name(): void
     {
         $this->configureProvider('apple', 'apple.desktop.service');
-        $start = $this->postJson('/api/auth/desktop/apple/start', ['flowSecret' => str_repeat('s', 64),
+        $start = $this->postJson('/api/auth/desktop/apple/start', [
             'deviceName' => 'Studio Mac',
             'installId' => 'studio-mac',
         ])->assertOk()->json();
@@ -113,78 +96,10 @@ class VibyraDesktopProviderAuthTest extends TestCase
             ->assertJsonPath('user.provider', 'apple');
     }
 
-    public function test_microsoft_website_oauth_creates_unverified_account_and_web_session(): void
-    {
-        Notification::fake();
-        $this->configureProvider('microsoft', 'microsoft-web-client');
-        $start = $this->postJson('/web-api/auth/provider/microsoft/start')->assertOk()->json();
-        $query = $this->authorizationQuery($start['authUrl']);
-        $this->assertSame('openid email profile', $query['scope']);
-        $this->assertSame('S256', $query['code_challenge_method']);
-
-        $tenant = '9188040d-6c67-4c5b-b112-36a304b66dad';
-        [$identityToken, $jwk] = $this->signedToken([
-            'iss' => "https://login.microsoftonline.com/{$tenant}/v2.0",
-            'tid' => $tenant,
-            'ver' => '2.0',
-            'aud' => 'microsoft-web-client',
-            'sub' => 'microsoft-user-1',
-            'preferred_username' => 'member@example.test',
-            'name' => 'Microsoft Member',
-            'nonce' => $query['nonce'],
-            'iat' => time(),
-            'exp' => time() + 300,
-        ]);
-        $jwk['issuer'] = 'https://login.microsoftonline.com/{tenantid}/v2.0';
-        $this->fakeProviderResponses('microsoft', $identityToken, $jwk);
-
-        $this->get('/api/auth/desktop/microsoft/callback?'.http_build_query([
-            'state' => $query['state'], 'code' => 'microsoft-code',
-        ]))->assertOk();
-        $this->getJson("/web-api/auth/provider/microsoft/status/{$start['flowId']}")
-            ->assertOk()
-            ->assertJsonPath('status', 'complete')
-            ->assertJsonPath('user.provider', 'microsoft')
-            ->assertJsonPath('user.emailVerified', false);
-        $this->assertAuthenticated();
-        $this->assertDatabaseHas('users', [
-            'email' => 'member@example.test', 'provider' => 'microsoft', 'email_verified_at' => null,
-        ]);
-        Notification::assertSentTo(User::where('email', 'member@example.test')->firstOrFail(), VibyraVerifyEmail::class);
-    }
-
-    public function test_microsoft_rejects_a_signing_key_for_another_tenant(): void
-    {
-        $this->configureProvider('microsoft', 'microsoft-web-client');
-        $start = $this->postJson('/web-api/auth/provider/microsoft/start')->assertOk()->json();
-        $query = $this->authorizationQuery($start['authUrl']);
-        $tenant = '9188040d-6c67-4c5b-b112-36a304b66dad';
-        [$identityToken, $jwk] = $this->signedToken([
-            'iss' => "https://login.microsoftonline.com/{$tenant}/v2.0",
-            'tid' => $tenant,
-            'ver' => '2.0',
-            'aud' => 'microsoft-web-client',
-            'sub' => 'microsoft-user-2',
-            'email' => 'wrong@example.test',
-            'nonce' => $query['nonce'],
-            'iat' => time(),
-            'exp' => time() + 300,
-        ]);
-        $jwk['issuer'] = 'https://login.microsoftonline.com/00000000-0000-0000-0000-000000000001/v2.0';
-        $this->fakeProviderResponses('microsoft', $identityToken, $jwk);
-
-        $this->get('/api/auth/desktop/microsoft/callback?'.http_build_query([
-            'state' => $query['state'], 'code' => 'microsoft-code',
-        ]))->assertStatus(400);
-        $this->getJson("/web-api/auth/provider/microsoft/status/{$start['flowId']}")
-            ->assertJsonPath('status', 'failed');
-        $this->assertDatabaseMissing('users', ['email' => 'wrong@example.test']);
-    }
-
     public function test_desktop_oauth_status_is_one_time_and_expires_after_pickup(): void
     {
         $this->configureProvider('google', 'google-desktop-client');
-        $start = $this->postJson('/api/auth/desktop/google/start', ['flowSecret' => str_repeat('s', 64)])->assertOk()->json();
+        $start = $this->postJson('/api/auth/desktop/google/start')->assertOk()->json();
         $query = $this->authorizationQuery($start['authUrl']);
         [$identityToken, $jwk] = $this->signedToken([
             'iss' => 'https://accounts.google.com',

@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "screenshot-toast",
+  "description": "The small thumbnail that follows a screenshot",
+  "webviews": ["screenshot-toast"],
+  "local": true,
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-screenshot-toast-shot",
+    "allow-close-screenshot-toast",
+    "allow-open-screenshot-markup",
+    "allow-copy-saved-screenshot",
+    "allow-reveal-screenshot"
+  ]
+}

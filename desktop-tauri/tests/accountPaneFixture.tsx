@@ -1,0 +1,179 @@
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import { createRoot } from 'react-dom/client';
+import { mockIPC, mockWindows } from '@tauri-apps/api/mocks';
+import { AuthScreen } from '../src/components/auth/AuthScreen';
+import { SettingsModal } from '../src/components/settings/SettingsModal';
+import { useAccountStore } from '../src/state/accountStore';
+import { useSettingsStore } from '../src/state/settingsStore';
+import { useTerminalStore } from '../src/state/terminalStore';
+import { useWorkspaceStore } from '../src/state/workspaceStore';
+import type { AccountProfile } from '../src/types';
+
+/**
+ * Settings > Account on sample data: every membership an account can be on,
+ * the second step on and off, devices, and the code step of a sign-in. No
+ * request leaves this page — every command is answered here.
+ */
+const query = new URLSearchParams(location.search);
+document.documentElement.dataset.platform = 'mac';
+document.documentElement.dataset.theme = query.has('light') ? 'light' : 'dark';
+mockWindows('main');
+
+const events: unknown[] = [];
+const day = 86_400_000;
+const iso = (offset: number) => new Date(Date.now() + offset).toISOString();
+const plan = query.get('plan') ?? 'free';
+let twoFactor = query.get('2fa') ?? 'off';
+let method = query.get('method') ?? 'totp';
+let setupMethod = method;
+const deviceCount = Number(query.get('devices') ?? '3');
+
+const memberships: Record<string, Partial<AccountProfile>> = {
+  free: { plan: 'free' },
+  stripe: {
+    plan: 'builder', billingProvider: 'stripe', canManageStripeBilling: true,
+    planRenewsAt: iso(21 * day), creditsResetAt: iso(21 * day),
+  },
+  annual: {
+    plan: 'pro', billingProvider: 'stripe', canManageStripeBilling: true,
+    planBillingCycle: 'annual', planRenewsAt: iso(200 * day), creditsResetAt: iso(21 * day),
+  },
+  cancelling: {
+    plan: 'builder', billingProvider: 'stripe', canManageStripeBilling: true,
+    membershipCancelAtPeriodEnd: true, membershipEndsAt: iso(12 * day), creditsResetAt: iso(12 * day),
+  },
+  appstore: {
+    plan: 'pro', billingProvider: 'iap-apple', membershipEndsAt: iso(9 * day),
+    planRenewsAt: iso(9 * day), creditsResetAt: iso(9 * day),
+  },
+};
+
+const profile: AccountProfile = {
+  name: 'Barbara Ellis', email: 'barbara@example.test', provider: query.get('provider') ?? 'email',
+  plan: 'free', emailVerified: !query.has('unverified'), welcomeKey: 'vw_fixture',
+  twoFactorEnabled: twoFactor === 'on', createdAt: '2026-03-02T09:00:00.000Z',
+  planBillingCycle: 'monthly', planRenewsAt: null, creditsResetAt: iso(21 * day),
+  membershipEndsAt: null, membershipCancelAtPeriodEnd: false, billingProvider: null,
+  canManageStripeBilling: false, hasAvatar: query.has('photo'),
+  ...memberships[plan],
+};
+
+// A 1×1 dot: enough to prove the photo path renders an image, not a letter.
+const photo = 'data:image/gif;base64,R0lGODlhAQABAIAAAP8AAAAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
+const devices = Array.from({ length: Math.max(0, deviceCount) }, (_, index) => [
+  { id: 'a'.repeat(64), name: 'Ellis’s MacBook Pro · Vibyra Desktop (macOS)', location: 'London, United Kingdom', lastActive: iso(-60_000), current: true },
+  { id: 'b'.repeat(64), name: 'iPhone 17 Pro', location: 'London, United Kingdom', lastActive: iso(-4 * 3600_000), current: false },
+  { id: 'c'.repeat(64), name: 'Chrome · macOS', location: 'Manchester, United Kingdom', lastActive: iso(-6 * day), current: false },
+][index]);
+
+const RECOVERY = ['4f2a-91bd', '7c10-3ee4', 'a913-70fc', 'd42b-1c08', '5e77-be21', '90aa-4d13'];
+const answers: Record<string, unknown> = {
+  account_profile_refresh: () => useAccountStore.getState().snapshot,
+  account_avatar: () => (query.has('photo') ? photo : null),
+  account_credits: () => ({
+    available: query.has('empty') ? 0 : 1_284, held: query.has('empty') ? 0 : 60,
+    total: query.has('empty') ? 0 : 1_344, chatEnabled: !query.has('nochat'),
+    purchasesEnabled: !query.has('nochat'),
+    ...(query.has('free') ? { paidAvailable: 0, freeMonthlyTokens: 30, freeNextAt: iso(21 * day) } : {}),
+  }),
+  account_topup_options: () => [
+    { key: 'topup_500', credits: 500, pricePence: 2000 },
+    { key: 'topup_1500', credits: 1500, pricePence: 5800 },
+    { key: 'topup_4000', credits: 4000, pricePence: 15200 },
+  ],
+  account_two_factor_status: () => ({
+    enabled: twoFactor === 'on', available: twoFactor !== 'provider',
+    method, destination: method === 'sms' ? '••••0123' : method === 'email' ? 'b•••@example.test' : null,
+    smsAvailable: !query.has('nosms'), emailAvailable: !query.has('unverified'),
+    confirmedAt: twoFactor === 'on' ? iso(-30 * day) : null,
+    recoveryCodesLeft: twoFactor === 'on' ? 5 : 0,
+  }),
+  account_two_factor_start: () => ({
+    secret: 'JBSWY3DPEHPK3PXP',
+    uri: 'otpauth://totp/Vibyra:barbara@example.test?secret=JBSWY3DPEHPK3PXP&issuer=Vibyra',
+    account: 'barbara@example.test',
+  }),
+  account_two_factor_delivery: () => ({ method, destination: method === 'sms' ? '••••0123' : 'b•••@example.test', codeSent: true }),
+  account_two_factor_code: () => null,
+  account_two_factor_method_code: () => null,
+  account_two_factor_method_confirm: () => { twoFactor = 'on'; method = setupMethod; return RECOVERY; },
+  account_two_factor_confirm: () => { twoFactor = 'on'; return RECOVERY; },
+  account_two_factor_disable: () => { twoFactor = 'off'; return null; },
+  account_two_factor_recovery_codes: () => RECOVERY,
+  account_devices: () => devices,
+  // Roadmap Part 19: ?data=none|building|ready|limited, or off for a server that offers neither row.
+  account_export_status: () => (query.get('data') === 'off' ? null : {
+    status: query.get('data') ?? 'none', canRequest: (query.get('data') ?? 'none') === 'none', nextAllowedAt: iso(20 * 3_600_000),
+    hasLink: query.get('data') === 'ready', linkExpiresInMinutes: 15, bytes: 48_000 }),
+  account_export_request: () => ({ status: 'building', canRequest: false, nextAllowedAt: iso(24 * 3_600_000), hasLink: false, linkExpiresInMinutes: null, bytes: null }),
+  account_export_open: () => null,
+  account_retention: () => (query.get('data') === 'off' ? null : { maxDays: 90, serverDays: 90, days: 30, choices: [7, 30, 90] }),
+  account_retention_set: () => ({ maxDays: 90, serverDays: 90, days: 7, choices: [7, 30, 90] }),
+  account_device_revoke: () => ({ signedOut: false }),
+  account_devices_revoke_all: () => ({ signedOut: true }),
+};
+
+const failing = (query.get('fail') ?? '').split(',').filter(Boolean);
+
+mockIPC((command, payload) => {
+  events.push([command, payload]);
+  if (failing.some(name => command === `account_${name}`)) {
+    throw 'Vibyra could not reach the account service. Check your connection and try again.';
+  }
+  const answer = answers[command];
+  if (command === 'account_two_factor_method_start') {
+    const values = payload as { method: string; currentCode: string };
+    if (values.currentCode === '000000') throw 'The current security code is wrong.';
+    setupMethod = values.method;
+    return { enrollmentId: '00000000-0000-4000-8000-000000000001', method: setupMethod,
+      secret: setupMethod === 'totp' ? 'JBSWY3DPEHPK3PXP' : null,
+      uri: setupMethod === 'totp' ? 'otpauth://totp/Vibyra:barbara@example.test?secret=JBSWY3DPEHPK3PXP&issuer=Vibyra' : null,
+      account: setupMethod === 'sms' ? '+447700900123' : 'barbara@example.test' };
+  }
+  if (typeof answer === 'function') return (answer as () => unknown)();
+  if (command === 'account_profile_update') {
+    const edit = payload as { name: string; email: string; currentPassword?: string };
+    if (edit.email !== profile.email && edit.currentPassword !== 'fixture-correct-password')
+      throw 'Enter your current password to change your email.';
+    Object.assign(profile, { name: edit.name, email: edit.email,
+      emailVerified: edit.email === profile.email && profile.emailVerified });
+    return { ...useAccountStore.getState().snapshot, profile: { ...profile } };
+  }
+  if (command === 'account_two_factor_submit') {
+    const code = (payload as { code?: string }).code ?? '';
+    if (code === '000000') {
+      return { ...useAccountStore.getState().snapshot, error: 'That code didn’t match. Try the current code from your authenticator app.' };
+    }
+    return { status: 'signedIn', profile, error: null, pendingProvider: null, secureStorage: true };
+  }
+  if (command === 'account_two_factor_cancel') {
+    return { status: 'signedOut', profile: null, error: null, pendingProvider: null, secureStorage: true };
+  }
+  return null;
+});
+
+Object.assign(window, { accountEvents: events, accountLast: () => events.at(-1), accountState: () => useAccountStore.getState().snapshot, accountPanes: () => useTerminalStore.getState().panes });
+
+useAccountStore.setState({
+  snapshot: {
+    status: query.has('auth2fa') ? 'twoFactor' : 'signedIn',
+    profile: query.has('auth2fa') ? null : profile,
+    error: null, pendingProvider: null, secureStorage: !query.has('nokeyring'),
+  },
+  busy: false,
+  // Ending the session reloads the real window; here it is only recorded.
+  endSession: async () => { events.push(['end-session']); },
+  logout: async () => { events.push(['logout']); },
+  forgotPassword: async (email) => { events.push(['forgot', email]); return 'Reset link sent.'; },
+  resendVerification: async () => { events.push(['resend']); return 'Verification email sent.'; },
+});
+useSettingsStore.setState({ settings: { theme: 'dark', fontSize: 13, projects: [] } as never });
+useTerminalStore.setState({ panes: (query.has('running')
+  ? [{ id: 1, projectId: 'p', title: 'Running', agentId: 'codex', status: 'running', lastFocusedAt: Date.now(), accent: '#5b7cfa' }]
+  : []) as never });
+useWorkspaceStore.setState({ settingsOpen: true, settingsSection: 'account', settingsPanel: null });
+
+createRoot(document.getElementById('root')!).render(
+  query.has('auth2fa') ? <AuthScreen /> : <SettingsModal />,
+);

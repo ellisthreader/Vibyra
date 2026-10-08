@@ -1,0 +1,127 @@
+/* Title-bar account avatar and its dropdown. */
+
+.account {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.account-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--elevated);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard);
+}
+
+.account-btn:hover,
+.account-btn[aria-expanded="true"] {
+  border-color: var(--accent-border);
+  background: var(--surface-tint);
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu);
+  z-index: 60;
+  animation: fade-in var(--t-soft) var(--e-standard);
+}
+
+.account-menu__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+}
+
+.account-menu__identity strong {
+  font-size: 13px;
+  font-weight: 620;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__identity span {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--line);
+}
+
+.account-menu__item {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-menu__item:hover,
+.account-menu__item:focus-visible {
+  background: var(--hover);
+}
+
+.account-menu__item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.account-menu__confirm {
+  padding: 8px 10px 10px;
+}
+
+.account-menu__confirm p {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.account-menu__confirm-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.account-menu__danger {
+  border-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.account-menu__danger:hover:enabled {
+  background: var(--danger-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu {
+    animation: none;
+  }
+}

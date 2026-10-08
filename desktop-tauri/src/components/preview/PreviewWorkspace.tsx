@@ -1,0 +1,139 @@
+import { useCallback, useEffect, useState } from "react";
+
+import { deviceByKey } from "../../lib/previewDevices";
+import {
+  loadViewport,
+  saveViewport,
+} from "../../lib/previewPersistence";
+import type {
+  PreviewTarget,
+  PreviewViewportState,
+} from "../../previewTypes";
+import { PreviewDeviceFrame } from "./PreviewDeviceFrame";
+import { PreviewAddress } from "./PreviewAddress";
+import { PreviewToolbar } from "./PreviewToolbar";
+import { useProjectPreview } from "./useProjectPreview";
+import { attachedPreviewPort } from "../../lib/previewAttached";
+import { NativeWindowShare } from './NativeWindowShare';
+
+interface Props {
+  projectId: string;
+  shareProjectId?: string;
+  root: string;
+  projectRoot?: string;
+  onResetScope?: () => void;
+  /** False while mounted out of sight; status checks then slow right down. */
+  active?: boolean;
+}
+
+export function PreviewWorkspace({ projectId, shareProjectId, root, projectRoot = root, onResetScope, active: shown = true }: Props) {
+  const controller = useProjectPreview(projectId, root, projectRoot, shown);
+  const [manualUrl, setManualUrl] = useState<string | null>(null);
+  const attachedPort = manualUrl ? attachedPreviewPort(manualUrl) : null;
+  const surfaceKey = manualUrl ? "manual-url" : controller.target?.id ?? "inspection";
+  const active = manualUrl ? {
+    ...controller, inspecting: false, inspection: null, targetId: "manual-url",
+    target: { id: attachedPort ? `attached-port:${attachedPort}` : "manual-url", name: "Your website", framework: "URL", relativeRoot: ".", command: null,
+      runnable: true, reason: null, deviceHint: "desktop" as const, landscape: false },
+    status: { phase: "running" as const, targetId: "manual-url", url: manualUrl, command: null, logs: [], error: null },
+    stop: async () => setManualUrl(null),
+  } : controller;
+
+  return (
+    <div className="preview-workspace">
+      <PreviewAddress url={active.status.url} onOpen={setManualUrl} />
+      {shareProjectId && <NativeWindowShare key={`${shareProjectId}:${root}`} projectId={shareProjectId} root={root} />}
+      <PreviewSurface
+        key={surfaceKey}
+        projectId={projectId}
+        target={active.target}
+        controller={active}
+        share={!shareProjectId || (manualUrl && !attachedPort) ? undefined : {
+          projectId: shareProjectId, root,
+          startPath: manualUrl ? new URL(manualUrl).pathname + new URL(manualUrl).search : undefined,
+        }}
+        onAutomatic={manualUrl ? () => { setManualUrl(null); void controller.inspect(); } : undefined}
+        onResetScope={onResetScope}
+      />
+    </div>
+  );
+}
+
+interface SurfaceProps {
+  projectId: string;
+  target: PreviewTarget | null;
+  controller: ReturnType<typeof useProjectPreview>;
+  share?: { projectId: string; root: string; startPath?: string };
+  onAutomatic?: () => void;
+  onResetScope?: () => void;
+}
+
+function PreviewSurface({ projectId, target, controller, share, onResetScope, onAutomatic }: SurfaceProps) {
+  const [viewport, setViewport] = useState<PreviewViewportState>(() =>
+    target
+      ? loadViewport(projectId, target.id, target.deviceHint, target.landscape)
+      : {
+          deviceKey: "macbook-pro-14",
+          landscape: false,
+          zoom: 1,
+          customWidth: 1280,
+          customHeight: 800,
+        },
+  );
+  const [revision, setRevision] = useState(0);
+  const [scale, setScale] = useState(0.5);
+  const device = deviceByKey(viewport.deviceKey);
+
+  useEffect(() => {
+    if (target) saveViewport(projectId, target.id, viewport);
+  }, [projectId, target, viewport]);
+
+  const updateViewport = useCallback((patch: Partial<PreviewViewportState>) => {
+    setViewport((current) => ({
+      ...current,
+      ...patch,
+      customWidth:
+        patch.customWidth === undefined
+          ? current.customWidth
+          : Math.min(7680, Math.max(240, patch.customWidth || 240)),
+      customHeight:
+        patch.customHeight === undefined
+          ? current.customHeight
+          : Math.min(4320, Math.max(240, patch.customHeight || 240)),
+    }));
+  }, []);
+
+  return (
+    <>
+      <PreviewToolbar
+        inspection={controller.inspection}
+        target={target}
+        targetId={controller.targetId}
+        status={controller.status}
+        statuses={controller.statuses}
+        device={device}
+        viewport={viewport}
+        scale={scale}
+        onResetScope={onResetScope}
+        onAutomatic={onAutomatic}
+        onTarget={(id) => void controller.selectTarget(id)}
+        onViewport={updateViewport}
+        onRefresh={() => setRevision((current) => current + 1)}
+        onRun={() => void controller.start()}
+        onStop={() => void controller.stop()}
+        share={share}
+      />
+      <PreviewDeviceFrame
+        device={device}
+        viewport={viewport}
+        status={controller.status}
+        target={target}
+        inspecting={controller.inspecting}
+        revision={revision}
+        onScaleChange={setScale}
+        onRun={() => void controller.start()}
+        onRetryInspect={() => void controller.inspect()}
+      />
+    </>
+  );
+}

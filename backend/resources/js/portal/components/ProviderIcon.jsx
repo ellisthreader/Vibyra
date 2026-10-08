@@ -1,12 +1,6 @@
 import React from "react";
 
 export default function ProviderIcon({ provider }) {
-  if (provider === "microsoft") {
-    return <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#f35325" d="M2 2h9.2v9.2H2z" /><path fill="#81bc06" d="M12.8 2H22v9.2h-9.2z" />
-      <path fill="#05a6f0" d="M2 12.8h9.2V22H2z" /><path fill="#ffba08" d="M12.8 12.8H22V22h-9.2z" />
-    </svg>;
-  }
   if (provider === "apple") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">

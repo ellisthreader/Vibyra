@@ -20,7 +20,7 @@ trait TestsAuthProxyLocation
         {
             $this->optionsJson('/api/account/sessions')
                 ->assertNoContent()
-                ->assertHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP, X-Vibyra-Cloud-Access, X-Vibyra-Flow-Secret');
+                ->assertHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP');
         }
 
     public function test_private_proxy_request_uses_forwarded_public_ip_for_location(): void

@@ -119,14 +119,13 @@ class LevelProgression
             'nextLevelXp' => $span,
             'progress' => min(1, $currentXp / $span),
             'dailyXpCap' => (int) config('levels.daily_xp_cap', 500),
-            'nextReward' => \App\Services\Membership\Units::modern($user->id) ? null : $this->nextReward($level),
-            'map' => $this->levelMap($level, !\App\Services\Membership\Units::modern($user->id)),
+            'nextReward' => $this->nextReward($level),
+            'map' => $this->levelMap($level),
         ];
     }
 
     private function grantRewards(User $user, int $levelAfter): array
     {
-        if (\App\Services\Membership\Units::modern($user->id)) return [];
         $rewardCredits = (array) config('levels.reward_credits', []);
         $rewardedThrough = (int) ($user->level_rewarded_level ?: 1);
         $granted = [];
@@ -164,9 +163,9 @@ class LevelProgression
         return null;
     }
 
-    private function levelMap(int $currentLevel, bool $rewards = true): array
+    private function levelMap(int $currentLevel): array
     {
-        $rewardCredits = $rewards ? (array) config('levels.reward_credits', []) : [];
+        $rewardCredits = (array) config('levels.reward_credits', []);
         $start = 1;
         $lastRewardLevel = max(array_map('intval', array_keys($rewardCredits ?: [1 => 0])));
         $end = max((int) config('levels.map_min_level', 20), $lastRewardLevel, $currentLevel + 10);

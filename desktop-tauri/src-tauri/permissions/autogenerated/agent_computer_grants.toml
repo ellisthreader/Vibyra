@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agent-computer-grants"
+description = "Enables the agent_computer_grants command without any pre-configured scope."
+commands.allow = ["agent_computer_grants"]
+
+[[permission]]
+identifier = "deny-agent-computer-grants"
+description = "Denies the agent_computer_grants command without any pre-configured scope."
+commands.deny = ["agent_computer_grants"]

@@ -4,7 +4,6 @@ namespace App\Services\Agents;
 
 use App\Jobs\RunAgentTool;
 use App\Services\ChatConnectors\ConnectorTools;
-use App\Services\Agents\BranchPublication\BranchAction;
 use App\Services\Vibes\{AgentTools, Wallet};
 use Illuminate\Support\Facades\DB;
 
@@ -19,19 +18,15 @@ class ToolActions
             $meta = json_decode($turn->request, true)['vibyraAgent'];
             foreach (DB::table('vibes_tools')->where('turn_id', $turnId)->whereNull('result')->get() as $tool) {
                 if ($tool->action_state !== null) continue;
-                $local = $tool->agent_workspace_id && in_array($tool->operation,
-                    ['write_file', 'run_test', BranchAction::PUBLISH], true);
-                if (!$tool->integration && !$local) continue;
-                if ($local) {
+                $localWrite = $tool->agent_workspace_id && $tool->operation === 'write_file';
+                if (!$tool->integration && !$localWrite) continue;
+                if ($localWrite) {
                     TaskContext::validate($user, $meta);
-                    $this->publishEnabled($tool, $turn);
-                    $grant = DB::table('agent_workspaces')->where('id', $tool->agent_workspace_id)
-                        ->where('user_id', $user)->whereNull('revoked_at')->first();
-                    abort_unless($grant && ($tool->operation === 'run_test'
-                        ? VmPlatform::allows($grant) : $grant->can_write),
-                        409, 'This computer cannot perform that project action.');
+                    abort_unless(DB::table('agent_workspaces')->where('id', $tool->agent_workspace_id)
+                        ->where('user_id', $user)->where('can_write', true)->whereNull('revoked_at')->exists(),
+                        409, 'This computer cannot edit the project.');
                 }
-                $write = $local || app(ToolPolicy::class)->requiresApproval($tool->integration, $tool->operation);
+                $write = $localWrite || app(ToolPolicy::class)->requiresApproval($tool->integration, $tool->operation);
                 $hash = $this->fingerprint($user, $turnId, $tool, $meta);
                 DB::table('vibes_tools')->where('id', $tool->id)->update([
                     'action_state' => $write ? 'pending' : 'queued', 'action_hash' => $hash,
@@ -110,10 +105,8 @@ class ToolActions
     public function authorizedLocal(object $tool, object $turn): void
     {
         abort_unless($tool->integration === null && $tool->agent_workspace_id
-            && in_array($tool->operation, ['write_file', 'run_test', BranchAction::PUBLISH], true)
-            && (in_array($tool->action_state, ['queued', 'dispatching'], true)
-                || ($tool->operation === BranchAction::PUBLISH && $tool->action_state === 'publishing'))
-            && $tool->action_answer === 'allow', 409, 'This computer action still needs approval.');
+            && $tool->operation === 'write_file' && in_array($tool->action_state, ['queued', 'dispatching'], true)
+            && $tool->action_answer === 'allow', 409, 'This edit still needs approval.');
         $this->eligible($tool, $turn);
     }
 
@@ -131,13 +124,10 @@ class ToolActions
                 && in_array($tool->integration, app(ConnectorTools::class)->resolve($turn->user_id, [$tool->integration]), true),
                 409, 'This teammate no longer has access to '.$tool->integration.'.');
         } else {
-            $this->publishEnabled($tool, $turn);
-            $grant = DB::table('agent_workspaces')->where('id', $tool->agent_workspace_id)
-                ->where('user_id', $turn->user_id)->whereNull('revoked_at')->first();
             abort_unless($tool->agent_workspace_id === ($meta['workspaceId'] ?? null)
-                && $grant && ($tool->operation === 'run_test'
-                    ? VmPlatform::allows($grant) : $grant->can_write),
-                409, 'This computer action grant changed.');
+                && DB::table('agent_workspaces')->where('id', $tool->agent_workspace_id)
+                    ->where('user_id', $turn->user_id)->where('can_write', true)->whereNull('revoked_at')->exists(),
+                409, 'This computer edit grant changed.');
         }
         // A queued database state alone never grants an external write. Recheck
         // immediately before dispatch in case a queue or policy path changed.
@@ -150,15 +140,5 @@ class ToolActions
     private function fingerprint(int $user, string $turnId, object $tool, array $meta): string
     {
         return hash('sha256', json_encode([$user, $turnId, $tool->id, $tool->operation, $tool->arguments, $meta]));
-    }
-
-    private function publishEnabled(object $tool, object $turn): void
-    {
-        if ($tool->operation !== BranchAction::PUBLISH) return;
-        $meta = json_decode($turn->request, true)['vibyraAgent'] ?? [];
-        abort_unless(config('agents.git_publish_enabled')
-            && in_array('github', $meta['integrations'] ?? [], true)
-            && in_array('github', app(ConnectorTools::class)->resolve($turn->user_id, ['github']), true),
-            409, 'GitHub publication is no longer available to this teammate.');
     }
 }

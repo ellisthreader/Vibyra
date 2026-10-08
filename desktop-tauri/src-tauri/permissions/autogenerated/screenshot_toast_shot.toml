@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-screenshot-toast-shot"
+description = "Enables the screenshot_toast_shot command without any pre-configured scope."
+commands.allow = ["screenshot_toast_shot"]
+
+[[permission]]
+identifier = "deny-screenshot-toast-shot"
+description = "Denies the screenshot_toast_shot command without any pre-configured scope."
+commands.deny = ["screenshot_toast_shot"]

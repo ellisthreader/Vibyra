@@ -1,0 +1,89 @@
+/* Content-only settings system. The coloured navigation tiles stay unchanged. */
+.settings-modal--tiles .settings-pane { background: var(--surface); }
+.settings-modal--tiles .settings-integrations,
+.settings-security {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+.settings-modal--tiles .settings-group,
+.settings-modal--tiles .disclosure {
+  background: var(--hover);
+  border-color: var(--line-soft);
+  box-shadow: none;
+}
+
+.settings-modal--tiles .setting-row__text { gap: 5px; flex: 1; }
+.settings-modal--tiles .setting-row__hint { max-width: 48ch; }
+.settings-modal--tiles .setting-row__label { overflow-wrap: anywhere; }
+.settings-modal--tiles .setting-label { flex-wrap: wrap; gap: 7px; }
+.settings-modal--tiles .setting-row__control {
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.settings-modal--tiles .setting-row--stack { align-items: stretch; gap: 14px; }
+.settings-modal--tiles .setting-row--stack .setting-row__hint { max-width: none; }
+.settings-modal--tiles .setting-row--stack .setting-row__control { justify-content: flex-start; }
+
+.settings-block__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--hover);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.settings-modal--tiles .disclosure { border-radius: 14px; }
+.settings-modal--tiles .disclosure__head { min-height: 62px; padding: 16px 20px; }
+.settings-modal--tiles .disclosure__title { font-weight: 550; }
+.settings-modal--tiles .disclosure__summary { color: var(--muted); }
+.settings-modal--tiles .settings-group.integration-list > .integration-card { padding: 18px 20px; }
+.settings-modal--tiles .integration-card__identity p { font-size: 12px; line-height: 1.5; }
+.settings-modal--tiles .account-card { padding: 20px; }
+.settings-modal--tiles .settings-block__note { margin-top: -5px; }
+.settings-modal--tiles .save-state { font-weight: 500; }
+
+.settings-modal--tiles .settings-performance .setting-row__control {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.settings-recommendation {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.settings-performance__hint {
+  margin: 0;
+  min-height: 38px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Keep actions attached to their setting as the content column narrows. */
+@container settings-content (max-width: 540px) {
+  .settings-modal--tiles .setting-row { flex-wrap: wrap; gap: 14px; padding: 16px; }
+  .settings-modal--tiles .setting-row__text { flex-basis: 220px; }
+  .settings-modal--tiles .setting-row__control { flex-wrap: wrap; }
+  .settings-modal--tiles .setting-row:has(.segmented, select, .speech-voice) { flex-direction: column; align-items: stretch; }
+  .settings-modal--tiles .setting-row:has(.segmented, select, .speech-voice) .setting-row__text { flex-basis: auto; }
+  .settings-modal--tiles .setting-row:has(.segmented, select, .speech-voice) .setting-row__control { justify-content: flex-start; }
+  .settings-modal--tiles .disclosure__head { flex-wrap: wrap; gap: 8px; }
+  .settings-modal--tiles .disclosure__summary { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-reveal { animation: none; outline: 2px solid var(--accent); outline-offset: 3px; }
+  .settings-modal--tiles .status-chip--busy > i { animation: none; }
+}

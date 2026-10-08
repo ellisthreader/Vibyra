@@ -13,7 +13,6 @@ trait BillingCheckoutActions
 
     private function createSubscriptionCheckout(StripeClient $stripe, User $user, Request $request): JsonResponse
     {
-        abort_unless(config('legal.paid_sales_enabled'), 503, 'New purchases are not available yet.');
         $plan = (string) $request->input('plan');
         $cycle = (string) $request->input('cycle', 'monthly');
         if (! in_array($plan, ['starter', 'builder', 'pro'], true)) {
@@ -44,7 +43,6 @@ trait BillingCheckoutActions
 
     private function createTopupCheckout(StripeClient $stripe, User $user, Request $request): JsonResponse
     {
-        abort_unless(config('legal.paid_sales_enabled'), 503, 'New purchases are not available yet.');
         $topupKey = (string) $request->input('topup');
         $topup = (array) config("billing.topups.{$topupKey}", []);
         if ($topup === []) {
@@ -88,7 +86,6 @@ trait BillingCheckoutActions
     {
         $secret = (string) config('services.stripe.secret');
 
-        return $secret === '' || !app(\App\Services\Membership\Offers::class)->stripeEnvironmentReady()
-            ? null : new StripeClient($secret);
+        return $secret === '' ? null : new StripeClient($secret);
     }
 }

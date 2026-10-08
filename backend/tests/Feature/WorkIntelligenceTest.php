@@ -13,7 +13,7 @@ final class WorkIntelligenceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp(); Queue::fake(); Http::preventStrayRequests();
-        config(['intelligence.events' => true, 'intelligence.inbox' => true, 'intelligence.push' => true, 'intelligence.expo_token' => 'test-expo-token',
+        config(['intelligence.events' => true, 'intelligence.inbox' => true, 'intelligence.push' => true,
             'intelligence.expo_project' => '00000000-0000-4000-8000-000000000001', 'app.key' => 'base64:'.base64_encode(str_repeat('x',32))]);
     }
     private function fixture(string $status = 'running'): array

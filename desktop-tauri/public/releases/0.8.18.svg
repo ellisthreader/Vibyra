@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232" fill="none">
+  <defs>
+    <linearGradient id="ground" x1="60" y1="20" x2="690" y2="220" gradientUnits="userSpaceOnUse"><stop stop-color="#141b2c"/><stop offset="1" stop-color="#080c15"/></linearGradient>
+    <linearGradient id="voice" x1="288" y1="62" x2="452" y2="170" gradientUnits="userSpaceOnUse"><stop stop-color="#98b8ff"/><stop offset="1" stop-color="#3866f5"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#456eef" stop-opacity=".32"/><stop offset="1" stop-color="#456eef" stop-opacity="0"/></radialGradient>
+  </defs>
+  <path fill="url(#ground)" d="M0 0h740v232H0z"/>
+  <ellipse cx="370" cy="116" rx="290" ry="150" fill="url(#glow)"/>
+  <g stroke="#344361" stroke-width="1"><path d="M100 116h120m300 0h120M163 68h78m258 96h78"/><circle cx="112" cy="116" r="4" fill="#18243b"/><circle cx="628" cy="116" r="4" fill="#18243b"/></g>
+  <rect x="248" y="45" width="244" height="142" rx="27" fill="#111b2e" stroke="#364f81"/>
+  <path d="M278 81h39m-39 15h25m141 40h21m-30 15h30" stroke="#7e97c3" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+  <g stroke="url(#voice)" stroke-width="7" stroke-linecap="round"><path d="M331 109v15m19-37v60m20-79v97m20-79v60m19-39v17"/></g>
+  <path d="m231 150 16-9 16 9v19l-16 9-16-9z" fill="#1b315c" stroke="#668ceb"/>
+  <path d="m480 64 16-9 16 9v19l-16 9-16-9z" fill="#1b315c" stroke="#668ceb"/>
+  <path d="m242 159 4 4 7-8m238-82 4 4 7-8" stroke="#a4bdff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

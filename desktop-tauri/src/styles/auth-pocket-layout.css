@@ -1,0 +1,138 @@
+.auth-pocket {
+/* Equal side tracks keep authentication on the full window centreline. */
+.pocket-layout { grid-template-columns:minmax(0,1fr) 380px minmax(0,1fr); grid-template-areas:"campaign signin showcase"; gap:22px; padding:8px 24px 16px; }
+.pocket-campaign { grid-area:campaign; }
+.pocket-signin { grid-area:signin; }
+.pocket-signin .login { width:320px; }
+.pocket-signin .brand--spotlight { justify-content:center; margin:0 0 30px; height:101px; }
+.brand__mark { position:relative; display:grid; place-items:center; width:110px; height:83px; isolation:isolate; animation:pocket-mark-rise 950ms cubic-bezier(.16,1,.3,1); }
+.pocket-signin .brand__mark img { width:110px; height:83px; object-fit:contain; position:relative; z-index:1; }
+.brand__mark::before { content:""; position:absolute; width:220px; height:170px; inset:auto; z-index:-1; background:radial-gradient(ellipse,rgba(69,108,239,.12),transparent 68%); }
+.brand__mark::after { content:""; position:absolute; inset:0; z-index:2; pointer-events:none; mask:url('../assets/vibyra-cobalt.png') center / contain no-repeat; -webkit-mask:url('../assets/vibyra-cobalt.png') center / contain no-repeat; background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.65) 50%,transparent 58%) -120% 0 / 300% 100% no-repeat; animation:pocket-mark-sheen 1600ms ease-out; }
+.pocket-signin .login-heading { text-align:center; margin-bottom:29px; }
+.pocket-signin .login-heading h1 { font-size:29px; font-weight:550; }
+.pocket-signin .signin-footnote { color:var(--muted); }
+/* The ad and its illustrative phone both follow the selected appearance. */
+&:is([data-theme="dark"] *) .pocket-campaign { background:#17233b; border:1px solid #2a3d61; color:#e4ebff; }
+&:is([data-theme="dark"] *) .pocket-campaign::before { background:linear-gradient(135deg,#22396200,#29497999); }
+&:is([data-theme="dark"] *) .pocket-campaign .ios-label { color:#9bafd3; }
+&:is([data-theme="dark"] *) .pocket-note-mark { color:#afc5ff; border-color:#425c86; }
+&:is([data-theme="dark"] *) .pocket-note p { color:#a6b7d3; }
+&:is([data-theme="dark"] *) .pocket-note .ios-link { color:#c1d3ff; }
+&:is([data-theme="dark"] *) .campaign-edition { color:#8fa4c8; }
+&:is([data-theme="dark"] *) .brand__mark::before { background:radial-gradient(ellipse,rgba(75,114,248,.2),transparent 68%); }
+&:is([data-theme="dark"] *) .pocket-visual .iphone { background:linear-gradient(125deg,#606c82,#303c52 45%,#8491a6 70%,#404e64); box-shadow:0 30px 60px #050b1966,0 4px 10px #050b1966,inset 0 0 0 1px #9aafcd70; }
+&:is([data-theme="dark"] *) .pocket-visual .iphone-screen { background:#141922; color:#e3e9f4; border-color:#080c12; }
+&:is([data-theme="dark"] *) .pocket-visual .phone-nav { border-color:#2a3343; }
+&:is([data-theme="dark"] *) .pocket-visual .phone-nav > span,
+&:is([data-theme="dark"] *) .pocket-visual .phone-nav small,
+&:is([data-theme="dark"] *) .pocket-visual .phone-day { color:#93a0b8; }
+&:is([data-theme="dark"] *) .pocket-visual .phone-bubble { background:#26334d; color:#e4ebfb; }
+&:is([data-theme="dark"] *) .pocket-visual .phone-reply p { color:#a4b0c6; }
+&:is([data-theme="dark"] *) .pocket-visual .mini-v { color:#8aa9ff; }
+&:is([data-theme="dark"] *) .pocket-visual .phone-composer { background:#202938; border-color:#354157; color:#a4b3cc; }
+&:is([data-theme="dark"] *) .pocket-visual .phone-homebar { background:#d4dded; }
+/* The journal thumbnail is user content and retains its own editorial palette. */
+@media (max-height:730px) and (min-width:761px) { .pocket-signin .brand--spotlight { height:77px; margin-bottom:23px; }.pocket-signin .brand__mark { width:91px; height:68px; }.pocket-signin .brand__mark img { width:91px; height:68px; }.pocket-signin { padding-top:25px; padding-bottom:40px; } }
+@media (max-width:760px) { .pocket-signin .brand--spotlight { height:83px; margin-bottom:24px; }.pocket-signin .brand__mark,.pocket-signin .brand__mark img { width:94px; height:71px; }.pocket-signin .login-heading { text-align:center; }.pocket-layout { grid-template-areas:none; } }
+@media (prefers-reduced-motion:reduce) { .brand__mark::after { animation:none; } }
+&:is([data-reduce="true"] *) .brand__mark::after { animation:none; }
+
+/* A split campaign frames the central welcome without displacing it. */
+.pocket-signin { padding:30px; align-items:safe center; }
+.pocket-campaign { min-height:590px; padding:38px 30px; display:flex; flex-direction:column; justify-content:center; background:#e9eeff; border:1px solid #dde5fc; }
+.pocket-campaign::before { width:430px; height:430px; top:62%; left:-60%; opacity:.55; }
+.pocket-campaign > h2 { font-size:clamp(32px,3.5vw,60px); letter-spacing:-2px; margin:24px 0 35px; line-height:1.08; }
+.pocket-note { position:relative; left:auto; bottom:auto; max-width:220px; }
+.pocket-note-mark { display:none; }
+.pocket-note h3 { font-size:15px; }
+.pocket-note p { font-size:12px; }
+.pocket-note .ios-link { font-size:11px; margin-top:20px; }
+.campaign-edition { left:30px; bottom:27px; font-size:7px; }
+.pocket-showcase { grid-area:showcase; position:relative; overflow:hidden; border-radius:15px; background:#e9eeff; border:1px solid #dde5fc; color:#344a76; min-height:590px; animation:form-in 950ms ease-out; }
+.pocket-showcase::before { content:""; position:absolute; width:500px; height:500px; border:1px solid #b5c7f0; border-radius:50%; top:95px; left:50%; transform:translateX(-50%); box-shadow:0 0 0 55px #bcccf320,0 0 0 110px #bcccf315; }
+.showcase-label { position:absolute; top:39px; left:0; right:0; text-align:center; font-size:8px; font-weight:600; letter-spacing:.15em; color:#64789f; }
+.pocket-visual { top:50%; left:50%; transform:translate(-50%,-52%) rotate(8deg) scale(.88); transform-origin:center; animation:pocket-phone-reveal 1200ms cubic-bezier(.16,1,.3,1); }
+.showcase-caption { position:absolute; bottom:35px; left:12px; right:12px; text-align:center; }
+.showcase-caption > span { font-size:13px; font-weight:550; }
+.showcase-caption p { font-size:10px; color:#6b7ea3; margin:8px 0 0; }
+&:is([data-theme="dark"] *) .pocket-showcase { background:#17233b; border-color:#2a3d61; color:#e4ebff; }
+&:is([data-theme="dark"] *) .pocket-showcase::before { border-color:#3a537c; box-shadow:0 0 0 55px #35568720,0 0 0 110px #35568715; }
+&:is([data-theme="dark"] *) .showcase-label,&:is([data-theme="dark"] *) .showcase-caption p { color:#9bafd3; }
+@media (max-width:1100px) and (min-width:761px) {
+ .pocket-layout { grid-template-columns:minmax(0,1fr) 350px minmax(0,1fr); gap:12px; padding-left:16px; padding-right:16px; }
+ .pocket-signin { padding:15px; }
+ .pocket-campaign { padding:25px 20px; }
+ .pocket-campaign > h2 { font-size:34px; letter-spacing:-1.5px; }
+ .pocket-note { left:auto; bottom:auto; }.pocket-note p { font-size:11px; }
+ .campaign-edition { left:20px; font-size:6px; }
+ .pocket-visual { transform:translate(-50%,-52%) rotate(8deg) scale(.73); }
+ .showcase-caption > span { font-size:11px; }.showcase-caption p { font-size:9px; }
+}
+@media (max-height:730px) and (min-width:761px) {
+ .pocket-campaign,.pocket-showcase { min-height:510px; }
+ .pocket-visual { transform:translate(-50%,-52%) rotate(8deg) scale(.73); }
+ .pocket-signin { padding-top:25px; padding-bottom:25px; }
+ .showcase-caption { bottom:25px; }
+}
+@media (max-width:760px) {
+ .pocket-layout { display:flex; padding:15px 20px; gap:20px; }
+ .pocket-signin { padding:15px 0 35px; min-height:560px; flex:none; }
+ .pocket-campaign { min-height:360px; padding:35px 30px 60px; }
+ .pocket-campaign > h2 { font-size:42px; margin:17px 0 25px; }
+ .pocket-note { left:auto; bottom:auto; max-width:none; }
+ .pocket-note p br { display:none; }
+ .pocket-note .ios-link { font-size:11px; }
+ .campaign-edition { left:30px; }
+ .pocket-showcase { order:2; flex:none; min-height:580px; }
+ .pocket-visual { transform:translate(-50%,-52%) rotate(8deg) scale(.86); }
+}
+
+/* Simplified selected concept: copy and device sit directly on the canvas. */
+.pocket-campaign,&:is([data-theme="dark"] *) .pocket-campaign,
+.pocket-showcase,&:is([data-theme="dark"] *) .pocket-showcase {
+ background:transparent; border:0; border-radius:0;
+}
+.pocket-campaign::before,.pocket-showcase::before,.brand__mark::before { display:none; }
+.pocket-campaign { padding-left:30px; padding-right:10px; }
+.pocket-campaign > h2 { margin-bottom:19px; }
+.pocket-note p { margin:0; }
+.pocket-note .ios-link { margin-top:24px; }
+.pocket-visual { transform:translate(-50%,-50%) rotate(6deg) scale(.8); }
+@media (max-width:1100px) and (min-width:761px) {
+ .pocket-campaign { padding-left:12px; padding-right:0; }
+ .pocket-visual { transform:translate(-50%,-50%) rotate(6deg) scale(.67); }
+}
+@media (max-height:730px) and (min-width:761px) {
+ .pocket-visual { transform:translate(-50%,-50%) rotate(6deg) scale(.67); }
+}
+@media (max-width:760px) {
+ .pocket-campaign { min-height:250px; padding:20px 15px; text-align:center; }
+ .pocket-showcase { min-height:450px; }
+ .pocket-visual { transform:translate(-50%,-50%) rotate(6deg) scale(.8); }
+}
+
+/* Download message left; the established mobile slogan accompanies the phone. */
+.pocket-campaign > h2 { font-size:clamp(28px,2.8vw,45px); letter-spacing:-1.5px; }
+.pocket-showcase-title { position:absolute; top:8%; left:0; right:0; margin:0; text-align:center; font-size:clamp(27px,2.6vw,40px); font-weight:510; letter-spacing:-1.5px; line-height:1.08; }
+.pocket-visual { top:60%; transform:translate(-50%,-50%) rotate(6deg) scale(.73); }
+@media (max-width:1100px) and (min-width:761px) {
+ .pocket-campaign > h2 { font-size:29px; }
+ .pocket-showcase-title { font-size:29px; }
+ .pocket-visual { transform:translate(-50%,-50%) rotate(6deg) scale(.62); }
+}
+@media (max-height:730px) and (min-width:761px) {
+ .pocket-showcase-title { top:7%; font-size:29px; }
+ .pocket-visual { top:62%; transform:translate(-50%,-50%) rotate(6deg) scale(.6); }
+}
+@media (max-width:760px) {
+ .pocket-campaign > h2 { font-size:34px; }
+ .pocket-showcase { min-height:540px; }
+ .pocket-showcase-title { top:15px; font-size:34px; }
+ .pocket-visual { top:60%; transform:translate(-50%,-50%) rotate(6deg) scale(.75); }
+}
+
+}
+@keyframes pocket-mark-rise { from { opacity:0; transform:translateY(15px) scale(.84); } to { opacity:1; transform:none; } }
+@keyframes pocket-mark-sheen { from { background-position:120% 0; } 20% { background-position:120% 0; } to { background-position:-120% 0; } }
+@keyframes pocket-phone-reveal { from { opacity:0; translate:0 35px; } to { opacity:1; translate:0 0; } }

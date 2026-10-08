@@ -1,0 +1,26 @@
+.decision__switch { position: relative; width: 34px; height: 20px; flex: none; }
+.decision__switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.decision__switch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background var(--t-ui) var(--e-standard);
+  pointer-events: none;
+}
+.decision__switch span::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform var(--t-ui) var(--e-standard);
+}
+.decision__switch input:checked + span { background: var(--action, var(--accent)); }
+.decision__switch input:checked + span::after { transform: translateX(14px); }
+.decision__switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.decision__switch input:disabled + span { opacity: 0.5; }

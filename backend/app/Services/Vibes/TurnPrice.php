@@ -25,7 +25,6 @@ final class TurnPrice
 
     /** The hard per-turn ceiling. A turn priced above this cannot be sent at all. */
     public const CEILING = 50;
-    public static function ceiling(int $scale): int { return $scale > 1 ? 100 : self::CEILING; }
 
     public static function scale(?string $effort): float
     {
@@ -80,10 +79,9 @@ final class TurnPrice
      * it is dearer than the prompt rate, because a first turn on a caching route
      * pays the write price rather than the read price.
      */
-    public static function credits(int $inputBound, ?string $effort, array $pricing, int $scale = 1): int|float
+    public static function credits(int $inputBound, ?string $effort, array $pricing): int
     {
-        $units = max(1, (int) ceil(self::usd($inputBound, $effort, $pricing) * 100 * $scale));
-        return $scale === 1 ? $units : $units / $scale;
+        return max(1, (int) ceil(self::usd($inputBound, $effort, $pricing) * 100));
     }
 
     /**

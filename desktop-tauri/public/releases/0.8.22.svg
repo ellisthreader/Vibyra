@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232" fill="none">
+  <defs>
+    <linearGradient id="sky" x2="740" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#101321"/><stop offset="1" stop-color="#070910"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#8b9dff" stop-opacity=".45"/><stop offset="1" stop-color="#8b9dff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="cloud" x1="370" y1="52" x2="370" y2="174" gradientUnits="userSpaceOnUse"><stop stop-color="#bac4ff"/><stop offset="1" stop-color="#506ae6"/></linearGradient>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h740v232H0z"/>
+  <ellipse cx="370" cy="119" rx="170" ry="110" fill="url(#glow)"/>
+  <g fill="#dae0ff" opacity=".65"><circle cx="121" cy="63" r="2"/><circle cx="222" cy="130" r="1.5"/><circle cx="555" cy="73" r="2"/><circle cx="640" cy="163" r="1.5"/><circle cx="448" cy="30" r="1"/><circle cx="314" cy="207" r="1"/></g>
+  <path d="M297 174a30 30 0 0 1-3-60 38 38 0 0 1 34-44 47 47 0 0 1 83 13 37 37 0 0 1 46 43 24 24 0 0 1-6 48Z" fill="url(#cloud)" stroke="#c4ceff" stroke-opacity=".2" stroke-width="3"/>
+  <path d="m347 128 17 17 34-38" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
