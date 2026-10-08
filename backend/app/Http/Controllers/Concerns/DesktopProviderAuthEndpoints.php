@@ -52,7 +52,7 @@ trait DesktopProviderAuthEndpoints
     public function desktopProviderStatus(Request $request, string $provider, string $flowId): JsonResponse
     {
         $secret = (string) $request->header('X-Vibyra-Flow-Secret', '');
-        $result = app(DesktopProviderOAuthFlow::class)->status(strtolower($provider), $flowId, null, $secret);
+        $result = app(DesktopProviderOAuthFlow::class)->status(strtolower($provider), $flowId, null, $secret, $request->header('X-Vibyra-Return-Code'));
         $status = match ($result['status'] ?? null) {
             'expired' => 410,
             'forbidden' => 403,
@@ -125,7 +125,8 @@ trait DesktopProviderAuthEndpoints
                     'ok' => true, 'status' => 'complete',
                     'twoFactor' => app(\App\Services\Auth\TwoFactorChallenge::class)->issue($account['user']),
                 ]);
-                return app(\App\Services\Auth\ProviderSecondFactorPage::class)->response();
+                return \App\Services\Auth\ProviderAppReturn::response($flow)
+                    ?? app(\App\Services\Auth\ProviderSecondFactorPage::class)->response();
             }
             $payload = $this->sessionPayload($sessionRequest, $account['user']);
             if ($flow['deviceName'] !== 'Vibyra Website') {
@@ -137,7 +138,7 @@ trait DesktopProviderAuthEndpoints
                 'status' => 'complete',
             ]);
 
-            return $this->desktopProviderResultPage(true);
+            return \App\Services\Auth\ProviderAppReturn::response($flow) ?? $this->desktopProviderResultPage(true);
         } catch (ProviderAccountException $error) {
             if ($flow) {
                 app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
@@ -147,7 +148,7 @@ trait DesktopProviderAuthEndpoints
                 ]);
             }
 
-            return $this->desktopProviderResultPage(false, $error->getMessage());
+            return \App\Services\Auth\ProviderAppReturn::response($flow) ?? $this->desktopProviderResultPage(false, $error->getMessage());
         } catch (Throwable) {
             $message = 'The provider could not verify this sign-in. Try again.';
             if ($flow) {
@@ -158,7 +159,7 @@ trait DesktopProviderAuthEndpoints
                 ]);
             }
 
-            return $this->desktopProviderResultPage(false, $message);
+            return \App\Services\Auth\ProviderAppReturn::response($flow) ?? $this->desktopProviderResultPage(false, $message);
         }
     }
 

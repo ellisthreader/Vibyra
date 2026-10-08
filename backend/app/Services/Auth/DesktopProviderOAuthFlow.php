@@ -42,6 +42,7 @@ class DesktopProviderOAuthFlow
             'secretHash' => $secret !== '' ? hash('sha256', $secret) : null,
             'startIp' => $startIp,
             'supportsTwoFactor' => ($client['supportsTwoFactor'] ?? false) === true,
+            'appReturnCode' => ProviderAppReturn::requested($client, $binding) ? bin2hex(random_bytes(32)) : null,
             'licenseHash' => $licenseHash,
         ]);
     }
@@ -58,9 +59,10 @@ class DesktopProviderOAuthFlow
 
     public function needsConfirmation(array $flow, ?string $callbackIp): bool
     {
-        // Binding and secrets prove who *started* a flow, and an attacker can start
-        // one and send the link on. Only returning on the starting network proves
-        // the person finishing it is the one who started it.
+        // The native result needs both the app-held secret and the browser return proof.
+        if (ProviderAppReturn::enabled($flow)) {
+            return false;
+        }
         if ($flow['purpose'] ?? null) {
             return false;
         }
@@ -109,33 +111,38 @@ class DesktopProviderOAuthFlow
             'purpose' => is_array($flow) ? ($flow['purpose'] ?? null) : null,
             'binding' => is_array($flow) ? ($flow['binding'] ?? null) : null,
             'secretHash' => is_array($flow) ? ($flow['secretHash'] ?? null) : null,
+            'appReturnHash' => is_array($flow) && ProviderAppReturn::enabled($flow)
+                ? hash('sha256', $flow['appReturnCode']) : null,
             'enrollment' => is_array($flow) && ($flow['purpose'] ?? null) === 'two_factor_enrollment'
                 ? $this->enrollmentBinding($flow) : null,
             'result' => $result,
         ], now()->addMinutes(5));
     }
 
-    public function status(string $provider, string $flowId, ?string $binding = null, ?string $secret = null): array
+    public function status(string $provider, string $flowId, ?string $binding = null, ?string $secret = null, ?string $returnCode = null): array
     {
         if ($this->isEnrollment($flowId)) {
             return ['ok' => false, 'status' => 'forbidden', 'error' => 'Account verification requires its original session.'];
         }
 
-        return $this->statusResult($provider, $flowId, $binding, $secret);
+        return $this->statusResult($provider, $flowId, $binding, $secret, $returnCode);
     }
 
-    private function statusResult(string $provider, string $flowId, ?string $binding = null, ?string $secret = null): array
+    private function statusResult(string $provider, string $flowId, ?string $binding = null, ?string $secret = null, ?string $returnCode = null): array
     {
         return Cache::lock('provider-result-claim:'.hash('sha256', $flowId), 15)->block(5,
-            fn () => $this->statusResultLocked($provider, $flowId, $binding, $secret));
+            fn () => $this->statusResultLocked($provider, $flowId, $binding, $secret, $returnCode));
     }
 
-    private function statusResultLocked(string $provider, string $flowId, ?string $binding, ?string $secret): array
+    private function statusResultLocked(string $provider, string $flowId, ?string $binding, ?string $secret, ?string $returnCode): array
     {
         $completed = Cache::get($this->resultKey($flowId));
         if (is_array($completed) && ($completed['provider'] ?? null) === $provider) {
             if (! $this->ownsFlow($completed, $binding, $secret)) {
                 return ['ok' => false, 'status' => 'forbidden', 'error' => 'This sign-in belongs to another session.'];
+            }
+            if (ProviderAppReturn::awaitingProof($completed, $returnCode)) {
+                return ['ok' => true, 'status' => 'pending'];
             }
             $claimed = Cache::pull($this->resultKey($flowId));
             if (is_array($claimed) && ($claimed['provider'] ?? null) === $provider) {
@@ -191,6 +198,7 @@ class DesktopProviderOAuthFlow
             'flowId' => $flowId,
             'authUrl' => $this->authorizationUrl($provider, $settings, $flow),
             'expiresIn' => self::FLOW_MINUTES * 60,
+            'appReturn' => ProviderAppReturn::enabled($flow),
         ];
     }
 

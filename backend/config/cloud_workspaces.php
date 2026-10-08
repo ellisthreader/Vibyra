@@ -64,6 +64,7 @@ return [
     'connect_consent_version' => (int) env('CLOUD_CONNECT_CONSENT_VERSION', 3),
     // "Connect to cloud" needs a Face ID proof from a key registered at sign-in (FaceKeys).
     'connect_requires_face' => (bool) env('CLOUD_CONNECT_REQUIRES_FACE', true),
+    'face_approval' => (bool) env('CLOUD_FACE_APPROVAL', false),
     // The Mac may agree for the account with its own computer-key proof instead (MacConnectController). Off until reviewed.
     'mac_connect_enabled' => (bool) env('CLOUD_MAC_CONNECT_ENABLED', false),
     'computer_terms_versions' => array_filter(array_map('trim', explode(',', (string) env('CLOUD_COMPUTER_TERMS_VERSIONS', '')))),

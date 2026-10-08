@@ -65,13 +65,16 @@ class TrustedRemoteDeviceController extends Controller
     {
         $session = $this->account($request);
         $data = $request->validate(['decision' => ['required', 'in:approve,deny'], 'challengeId' => ['nullable', 'uuid'], 'proof' => ['nullable', 'string', 'max:64'],
-            'assertionId' => ['nullable', 'uuid']]);
+            'assertionId' => ['nullable', 'uuid'], 'face' => ['nullable', 'array'], 'face.id' => ['required_with:face', 'uuid'], 'face.proof' => ['required_with:face', 'string', 'max:64']]);
         return $this->attempt($request, $session, 'decision', $id, function () use ($devices, $session, $hostId, $id, $data) {
             $cloud = \App\Models\RemoteHost::where('host_id', $hostId)->where('user_id', $session->user_id)->whereNull('revoked_at')->first();
             if (! $cloud) throw new RemoteAccessException('That computer is not available.', 404);
             if (app(\App\Services\CloudComputer\HostAuthority::class)->bound($cloud)) {
                 // No Mac exists to approve: a fresh passkey assertion (ceremony id) decides, never a host proof.
                 $approvals = app(\App\Services\CloudComputer\DevicePasskeyApproval::class);
+                if ($data['decision'] === 'approve' && isset($data['face'])) {
+                    return ['device' => $devices->describe(app(\App\Services\CloudComputer\DeviceFaceApproval::class)->approve($session, $hostId, $id, $data['face']))];
+                }
                 return ['device' => $devices->describe($data['decision'] === 'approve'
                     ? $approvals->approve($session, $hostId, $id, (string) ($data['assertionId'] ?? ''))
                     : $approvals->deny($session, $hostId, $id))];
