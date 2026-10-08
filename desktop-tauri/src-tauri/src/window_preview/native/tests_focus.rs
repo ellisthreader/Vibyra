@@ -56,9 +56,8 @@ fn focus_reports_the_field_as_window_fractions_and_moves_its_serial() {
 #[test]
 fn a_tap_replies_once_focus_has_moved() {
     let (backend, capture) = capture();
-    let before = eventually(&capture, |state| state["serial"].as_u64() > Some(0))["serial"]
-        .as_u64()
-        .unwrap();
+    let initial = eventually(&capture, |state| state["serial"].as_u64() > Some(0));
+    let before = initial["serial"].as_u64().unwrap();
     *backend.click_focuses.lock() = Some(Focused {
         front: true,
         identity: "pass".into(),
@@ -68,10 +67,12 @@ fn a_tap_replies_once_focus_has_moved() {
     let reply = capture
         .input(&json!({"kind":"click","x":0.2,"y":0.2}))
         .unwrap();
-    assert_eq!(reply["editable"], true, "{reply}");
-    assert_eq!(reply["kind"], "secure");
-    assert!(reply["serial"].as_u64().unwrap() > before);
     let elapsed = started.elapsed();
+    super::tests_focus_budget::assert_changed_or_expired(&reply, &initial, elapsed);
+    let observed = eventually(&capture, |state| state["editable"] == true);
+    assert_eq!(observed["kind"], "secure", "{observed}");
+    assert!(observed["serial"].as_u64().unwrap() > before);
+    assert_eq!(backend.inputs.lock().len(), 1);
     assert!(
         elapsed < Duration::from_millis(400),
         "changed focus: {elapsed:?}"

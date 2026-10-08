@@ -52,13 +52,37 @@ pub fn build(
     parent: &BTreeMap<String, String>,
     secrets: &BTreeMap<String, String>,
 ) -> Vec<(String, String)> {
+    build_for(cfg!(windows), spec, parent, secrets)
+}
+
+fn build_for(
+    windows: bool,
+    spec: &ServerSpec,
+    parent: &BTreeMap<String, String>,
+    secrets: &BTreeMap<String, String>,
+) -> Vec<(String, String)> {
+    let name = |key: &str| {
+        if windows {
+            key.to_ascii_uppercase()
+        } else {
+            key.to_owned()
+        }
+    };
     let mut env: BTreeMap<String, String> = parent
         .iter()
-        .filter(|(name, _)| ALLOWED.contains(&name.as_str()))
-        .map(|(k, v)| (k.clone(), v.clone()))
+        .filter(|(key, _)| {
+            ALLOWED.iter().any(|allowed| {
+                if windows {
+                    allowed.eq_ignore_ascii_case(key)
+                } else {
+                    *allowed == key.as_str()
+                }
+            })
+        })
+        .map(|(k, v)| (name(k), v.clone()))
         .collect();
-    env.extend(spec.env.iter().map(|(k, v)| (k.clone(), v.clone())));
-    env.extend(secrets.iter().map(|(k, v)| (k.clone(), v.clone())));
+    env.extend(spec.env.iter().map(|(k, v)| (name(k), v.clone())));
+    env.extend(secrets.iter().map(|(k, v)| (name(k), v.clone())));
     env.into_iter().collect()
 }
 
@@ -70,17 +94,37 @@ pub fn parent_env() -> BTreeMap<String, String> {
 /// (the user's login-shell PATH, installed at app start). `None` when absent.
 pub fn find_program(command: &str, env: &[(String, String)]) -> Option<PathBuf> {
     let command = super::super::launch_env::resolve_program(command.trim());
-    let path = std::path::Path::new(&command);
+    find_resolved(cfg!(windows), &command, env)
+}
+
+fn find_resolved(windows: bool, command: &str, env: &[(String, String)]) -> Option<PathBuf> {
+    let path = std::path::Path::new(command);
     if path.components().count() > 1 {
         return path.is_file().then(|| path.to_path_buf());
     }
     let search = env
         .iter()
-        .find(|(k, _)| k == "PATH")
+        .find(|(k, _)| {
+            if windows {
+                k.eq_ignore_ascii_case("PATH")
+            } else {
+                k == "PATH"
+            }
+        })
         .map(|(_, v)| v.as_str())?;
-    std::env::split_paths(search)
-        .map(|dir| dir.join(&command))
-        .find(|candidate| candidate.is_file())
+    for dir in std::env::split_paths(search) {
+        let candidate = dir.join(command);
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+        if windows && path.extension().is_none() {
+            let executable = candidate.with_extension("exe");
+            if executable.is_file() {
+                return Some(executable);
+            }
+        }
+    }
+    None
 }
 
 pub fn not_found(command: &str) -> McpError {
@@ -88,3 +132,7 @@ pub fn not_found(command: &str) -> McpError {
         "\"{command}\" was not found. Install it, or give the full path to the program."
     ))
 }
+
+#[cfg(test)]
+#[path = "env_tests.rs"]
+mod tests;
