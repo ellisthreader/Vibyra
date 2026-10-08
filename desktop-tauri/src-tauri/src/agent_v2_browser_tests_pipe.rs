@@ -7,6 +7,8 @@
 use super::launch;
 use serde_json::json;
 use std::process::Command;
+#[path = "agent_v2_browser_tests_netstat.rs"]
+mod netstat;
 
 fn run(program: &str, args: &[&str]) -> Option<String> {
     let out = Command::new(program).args(args).output().ok()?;
@@ -34,23 +36,20 @@ fn tree(root: u32) -> Vec<u32> {
 }
 
 /// `address pid` for every listening TCP socket owned by one of `pids`.
-fn listeners(pids: &[u32]) -> Option<Vec<String>> {
-    let table = run("netstat", &["-anv", "-p", "tcp"])?;
-    Some(
-        table
-            .lines()
-            .filter(|l| l.contains("LISTEN"))
-            .filter_map(|line| {
-                let rest = line.split("LISTEN").nth(1)?;
-                let pid = rest
-                    .split_whitespace()
-                    .skip(4)
-                    .find_map(|t| t.rsplit_once(':')?.1.parse::<u32>().ok())?;
-                let address = line.split_whitespace().nth(3)?;
-                pids.contains(&pid).then(|| format!("{address} pid {pid}"))
-            })
-            .collect(),
-    )
+fn listeners(pids: &[u32]) -> Result<Vec<String>, String> {
+    let out = Command::new("netstat")
+        .args(["-anv", "-p", "tcp"])
+        .output()
+        .map_err(|e| format!("netstat failed: {e}"))?;
+    let table = String::from_utf8_lossy(&out.stdout);
+    if !out.status.success() {
+        return Err(format!(
+            "netstat {}: {}",
+            out.status,
+            String::from_utf8_lossy(&out.stderr)
+        ));
+    }
+    netstat::listeners(&table, pids).map_err(|e| format!("{e}\nnetstat output:\n{table}"))
 }
 
 #[test]
@@ -76,13 +75,11 @@ fn chrome_is_driven_over_a_pipe_and_opens_no_local_debugging_port() {
     // The listing must see a listener we open ourselves (positive control).
     let own = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let port = own.local_addr().unwrap().port();
-    let Some(mine) = listeners(&[std::process::id()]) else {
-        eprintln!("skipped the socket listing: netstat is not available");
-        return;
-    };
+    let mine = listeners(&[std::process::id()]).expect("known-listener netstat observation");
     assert!(
         mine.iter().any(|l| l.contains(&format!(".{port} "))),
-        "netstat did not show a known listener: {mine:?}"
+        "netstat did not show a known listener: {mine:?}; raw output: {}",
+        run("netstat", &["-anv", "-p", "tcp"]).unwrap_or_default()
     );
     let processes = tree(pid);
     assert!(
