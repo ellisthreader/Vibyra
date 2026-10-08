@@ -32,8 +32,9 @@ class SyncLogins
     }
 
     /** Streams the sealed body to the sync disk and replaces any older un-applied login blob at once. */
-    public function receive(int $user, string $provider, int $seq, string $sha256, $stream, ?int $declared, ?string $origin = null): void
+    public function receive(int $user, string $provider, int $seq, string $sha256, $stream, ?int $declared, ?string $origin = null, ?string $targetVmKey = null): void
     {
+        if ($targetVmKey !== null && $origin !== 'cloud') Computers::fail('invalid_request', 'Only a sign-in made for Cloud can specify its computer key.', 422);
         $this->admit($user, $provider, $origin);
         if ($declared !== null && $declared > self::MAX_BYTES) Computers::fail('too_large', 'That login is too large to carry over.', 413);
         $this->checkSeq($this->row($user, $provider), $seq);
@@ -48,8 +49,15 @@ class SyncLogins
             $upload->store($tmp, $path);
         } catch (\Throwable $e) { @unlink($tmp); throw $e; }
         try {
-            $old = DB::transaction(function () use ($user, $provider, $seq, $id, $path, $spooled, $origin) {
+            $old = DB::transaction(function () use ($user, $provider, $seq, $id, $path, $spooled, $origin, $targetVmKey) {
                 app(\App\Services\Vibes\Wallet::class)->lock($user);
+                if ($targetVmKey !== null) {
+                    // Runtime key changes share Wallet admission; row lock also fences lifecycle key clearing.
+                    DB::table('cloud_sync_vm_keys')->where('user_id', $user)->lockForUpdate()->first();
+                    $currentKey = app(SyncKeys::class)->vmKey($user);
+                    if ($currentKey === null || !hash_equals($currentKey, $targetVmKey))
+                        Computers::fail('vm_key_changed', 'The cloud computer key changed. Refresh it and send the sign-in again.', 409);
+                }
                 $row = DB::table('cloud_sync_logins')->where('user_id', $user)->where('provider', $provider)->lockForUpdate()->first();
                 // Gone mid-upload: the agreement was withdrawn and the account purged. The stored file is deleted below.
                 if (!$row) Computers::fail('connect_required', 'Connect to the cloud from your iPhone first.', 409);

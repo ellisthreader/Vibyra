@@ -15,9 +15,10 @@ final class SyncLoginController extends Controller
         $user = $this->authenticatedUser($request)->id; $this->storing($user);
         $this->provider($provider);
         $q = $this->valid($request->query(), ['seq' => 'required|integer|min:1', 'sha256' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/'],
-            'origin' => ['nullable', 'string', 'in:'.implode(',', SyncLogins::ORIGINS)]]);
+            'origin' => ['required_with:targetVmKey', 'nullable', 'string', 'in:'.implode(',', SyncLogins::ORIGINS)],
+            'targetVmKey' => ['sometimes', 'required', 'string', 'regex:/^[a-f0-9]{64}$/']]);
         [$stream, $declared] = $this->body($request);
-        $logins->receive($user, $provider, (int) $q['seq'], $q['sha256'], $stream, $declared, $q['origin'] ?? null);
+        $logins->receive($user, $provider, (int) $q['seq'], $q['sha256'], $stream, $declared, $q['origin'] ?? null, $q['targetVmKey'] ?? null);
         app(\App\Services\CloudComputer\Wake::class)->afterUpload($user);
         return $this->reply($user, $logins);
     }
