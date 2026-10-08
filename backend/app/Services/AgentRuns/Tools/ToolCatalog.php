@@ -40,6 +40,8 @@ final class ToolCatalog
     /** The OpenAI-style function body: name, description, parameters. */
     public function definition(string $tool): array
     {
+        if (\App\Services\AgentRuns\CloudFiles\FileTools::has($tool))
+            return \App\Services\AgentRuns\CloudFiles\FileTools::definition($tool);
         if (\App\Services\AgentRuns\Outputs\OutputTools::has($tool))
             return \App\Services\AgentRuns\Outputs\OutputTools::definition($tool);
         $provider = $this->providerOf($tool);

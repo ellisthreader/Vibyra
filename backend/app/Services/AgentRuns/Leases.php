@@ -19,6 +19,7 @@ final class Leases
     /** The oldest claimable run for this binding's current account, or null. */
     public function claim(RuntimeBinding $binding): ?Run
     {
+        app(Cloud\Authority::class)->check($binding);
         $candidates = Run::query()->where('runtime_binding_id', $binding->id)->where('user_id', $binding->user_id)
             ->whereIn('state', RunStates::CLAIMABLE)->whereNull('cancel_requested_at')
             ->where(fn ($q) => $q->whereNull('lease_expires_at')->orWhere('lease_expires_at', '<', now()))
@@ -31,8 +32,10 @@ final class Leases
             $snap = $candidate->runtime_snapshot;
             // Pinned account: a run admitted on another AI account waits for that account.
             if (($snap['provider'] ?? null) !== $binding->provider || ($snap['accountRef'] ?? null) !== $binding->account_ref) continue;
+            if (Cloud\Authority::cloud($binding) && (($snap['model'] ?? null) !== $binding->model || ($snap['effort'] ?? null) !== $binding->effort)) continue;
             if ($this->conversationBusy($candidate)) continue;
             $claimed = DB::transaction(function () use ($candidate, $binding) {
+                app(Cloud\Authority::class)->check($binding);
                 $run = Run::query()->whereKey($candidate->id)->lockForUpdate()->first();
                 if (!$run || !in_array($run->state, RunStates::CLAIMABLE, true) || $run->cancel_requested_at
                     || ($run->lease_expires_at && $run->lease_expires_at->isFuture())) return null;
@@ -77,9 +80,14 @@ final class Leases
     /** Lock and fence one run for a runner write. */
     public function fenced(RuntimeBinding $binding, string $runId, int $generation, bool $allowCancelled = false): Run
     {
+        app(Cloud\Authority::class)->check($binding);
         $run = Run::query()->whereKey($runId)->where('user_id', $binding->user_id)
             ->where('runtime_binding_id', $binding->id)->lockForUpdate()->first();
         if (!$run) ApiError::throw(404, 'run_not_found', 'That task does not exist.');
+        $snap = $run->runtime_snapshot;
+        if (($snap['provider'] ?? null) !== $binding->provider || ($snap['accountRef'] ?? null) !== $binding->account_ref
+            || (Cloud\Authority::cloud($binding) && (($snap['model'] ?? null) !== $binding->model || ($snap['effort'] ?? null) !== $binding->effort)))
+            ApiError::throw(409, 'runtime_account_changed', 'This task belongs to a different AI account selection.');
         if ($run->lease_generation !== $generation || $generation < 1)
             ApiError::throw(409, 'stale_lease', 'This runner no longer holds the task lease.');
         if (!$allowCancelled && ($run->cancel_requested_at || $run->state === RunStates::CANCELLED))

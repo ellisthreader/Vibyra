@@ -103,11 +103,15 @@ final class Triggers
 
     public function payload(Trigger $t): array
     {
+        $runtime = $t->runtime_binding_id ? \App\Models\AgentV2\RuntimeBinding::whereKey($t->runtime_binding_id)
+            ->where('user_id', $t->user_id)->first() : null;
         $hook = in_array($t->kind, ['github.issue', 'github.pull_request', 'stripe.event', 'api.invoke'], true)
             ? url('/api/agents/v2/hooks/'.explode('.', $t->kind)[0].'/'.$t->id) : null;
         return ['id' => $t->id, 'agentId' => $t->agent_id, 'kind' => $t->kind, 'connectionId' => $t->connection_id,
             'filter' => $t->filter, 'promptTemplate' => $t->prompt_template, 'ratePerHour' => $t->rate_per_hour,
-            'runtimeId' => $t->runtime_binding_id, 'revision' => $t->revision, 'paused' => $t->paused_at !== null,
+            'runtimeId' => $t->runtime_binding_id, 'executionTarget' => $runtime?->execution_target ?? 'local',
+            'accountLabel' => $runtime?->execution_target === 'cloud' ? 'Claude Cloud account' : null,
+            'revision' => $t->revision, 'paused' => $t->paused_at !== null,
             'webhookUrl' => $hook, 'lastError' => $t->last_error, 'polledAt' => $t->polled_at?->toIso8601String(),
             'createdAt' => $t->created_at?->toIso8601String()];
     }

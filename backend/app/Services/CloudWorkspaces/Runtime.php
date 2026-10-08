@@ -53,7 +53,7 @@ final class Runtime
                 $source = ['type' => 'github', 'repo' => $w->repo, 'ref' => $w->ref, 'baseCommit' => $w->base_commit, 'token' => $credential['password'], 'expiresAt' => $credential['expiresAt']];
                 $project = ['files' => $saved['files'], 'base' => $saved['base'] ?? []];
             } else { $source = ['type' => 'upload']; $project = app(Artifacts::class)->read($w); }
-            return ['mode' => ($w->kind ?? 'project') === 'computer' ? 'computer' : 'project', 'token' => $token, 'checkpoint' => $w->checkpoint, 'source' => $source, 'project' => $project,
+            return ['cloudAgents' => ['enabled' => (bool) config('agents_v2.cloud_enabled') && ($w->kind ?? 'project') === 'computer'], 'mode' => ($w->kind ?? 'project') === 'computer' ? 'computer' : 'project', 'token' => $token, 'checkpoint' => $w->checkpoint, 'source' => $source, 'project' => $project,
                 'limits' => ['files' => config('cloud_workspaces.max_files'), 'fileBytes' => config('cloud_workspaces.max_file_bytes'),
                     'projectBytes' => config('cloud_workspaces.max_project_bytes')]];
         }, 5);

@@ -44,6 +44,8 @@ final class Broker
             if (!in_array($run->state, RunStates::ACTIVE, true))
                 ApiError::throw(409, 'run_not_active', 'This task is '.$run->state.'; it cannot call tools now.');
             $this->flow->resume($run);
+            if (\App\Services\AgentRuns\CloudFiles\FileTools::has($call['tool']))
+                return ['replay' => app(\App\Services\AgentRuns\CloudFiles\FileBroker::class)->request($run, $call)];
             if (\App\Services\AgentRuns\Outputs\OutputTools::has($call['tool']))
                 return ['replay' => app(\App\Services\AgentRuns\Outputs\OutputBroker::class)->request($run, $call)];
             try {
@@ -137,13 +139,15 @@ final class Broker
     /** What the runner (and so the model) receives. Pending writes carry no result yet and no fingerprint. */
     public function outcome(ToolAction $a): array
     {
+        $result = \App\Services\AgentRuns\CloudFiles\FileTools::has($a->tool)
+            ? \App\Services\AgentRuns\CloudFiles\FileBroker::result($a) : ($a->result ?? []);
         $body = ['id' => $a->id, 'callId' => $a->call_id, 'tool' => $a->tool, 'kind' => $a->kind,
             'connectionId' => $a->connection_id, 'state' => $a->state, 'summary' => $a->summary];
         // F-03: no fingerprint here. The runner must not learn what only the person's approval may quote; the
         // person reads it from the run (`actions[].fingerprint`, `approval.requested`), and a Mac action is claimed after approval.
         if ($a->state === 'pending_approval') return [...$body, 'expiresAt' => $a->expires_at?->toIso8601String()];
         if (in_array($a->state, ['completed', 'failed', 'unknown', 'refused', 'declined', 'expired', 'cancelled'], true))
-            return [...$body, 'result' => (object) (SecretGuard::enabled() ? SecretGuard::redactValue($a->result ?? []) : ($a->result ?? [])), 'receipt' => $this->receipt($a)]; // a refusal has one only when the sweeper closed it
+            return [...$body, 'result' => (object) (SecretGuard::enabled() ? SecretGuard::redactValue($result) : $result), 'receipt' => $this->receipt($a)]; // a refusal has one only when the sweeper closed it
         return $body;
     }
 

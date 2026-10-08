@@ -48,6 +48,7 @@ final class Admission
             if ($existing = $this->existing($userId, $data['idempotencyKey'], $hash)) return [$existing, false];
             throw $e;
         }
+        if (Cloud\Authority::cloud($binding)) DB::afterCommit(fn () => \App\Jobs\WakeAgentCloud::dispatch($run->id));
         return [$run, true];
     }
 

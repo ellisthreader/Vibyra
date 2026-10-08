@@ -96,10 +96,14 @@ final class Schedules
 
     public function payload(Schedule $s): array
     {
+        $runtime = $s->runtime_binding_id ? \App\Models\AgentV2\RuntimeBinding::whereKey($s->runtime_binding_id)
+            ->where('user_id', $s->user_id)->first() : null;
         return ['id' => $s->id, 'agentId' => $s->agent_id, 'conversationId' => $s->conversation_id, 'title' => $s->title,
             'prompt' => $s->prompt, 'timezone' => $s->timezone, 'recurrence' => $s->recurrence,
             'description' => Recurrence::describe($s->recurrence), 'revision' => $s->revision,
-            'runtimeId' => $s->runtime_binding_id, 'catchUpMinutes' => $s->catch_up_minutes, 'overlap' => $s->overlap,
+            'runtimeId' => $s->runtime_binding_id, 'executionTarget' => $runtime?->execution_target ?? 'local',
+            'accountLabel' => $runtime?->execution_target === 'cloud' ? 'Claude Cloud account' : null,
+            'catchUpMinutes' => $s->catch_up_minutes, 'overlap' => $s->overlap,
             'paused' => $s->paused_at !== null, 'nextRunAt' => $s->next_run_at?->toIso8601String(),
             'nextRunLocal' => $s->next_run_at?->setTimezone($s->timezone)->toIso8601String(),
             'createdAt' => $s->created_at?->toIso8601String(), 'updatedAt' => $s->updated_at?->toIso8601String()];

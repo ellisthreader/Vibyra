@@ -92,3 +92,5 @@ require __DIR__.'/agents_v2_browser.php';
 require __DIR__.'/agents_v2_local_mcp.php';
 
 require __DIR__.'/agents_v2_stage2.php';
+
+require __DIR__.'/agents_v2_cloud.php';

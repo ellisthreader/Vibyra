@@ -46,6 +46,7 @@ final class RunStates
     public static function allowed(string $from, string $to): bool
     {
         if (self::terminal($from)) return false;
+        if ($to === self::PAUSED_LIMITS && in_array($from, self::CLAIMABLE, true)) return true;
         if (in_array($to, [self::FAILED, self::CANCELLED, self::UNKNOWN], true)) return true;
         return in_array($to, self::NEXT[$from] ?? [], true);
     }

@@ -13,6 +13,8 @@ final class Scope
     {
         if (!DB::table('agent_teammates')->where('user_id', $user)->where('id', $agent)->exists())
             ApiError::throw(404, 'agent_not_found', 'That teammate does not exist.');
+        // Reviewing/forgetting saved Cloud memory never grants compute or account use.
+        if ($runtime && ($cloud = RuntimeBinding::whereKey($runtime)->where('user_id', $user)->where('execution_target', 'cloud')->first())) return $cloud;
         return app(RuntimeBindings::class)->select($user, $runtime);
     }
 

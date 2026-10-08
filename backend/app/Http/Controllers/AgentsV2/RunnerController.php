@@ -50,7 +50,9 @@ final class RunnerController extends Controller
         $data = $request->validate(['generation' => 'required|integer|min:1',
             'callId' => ['required', 'string', 'regex:/^[A-Za-z0-9._:-]{1,100}$/D'], 'tool' => 'required|string|max:80',
             'connectionId' => 'required|uuid', 'schemaRevision' => 'required|string|max:20', 'arguments' => 'present|array']);
-        if (strlen(json_encode($data['arguments'])) > 16000) ApiError::throw(422, 'arguments_too_large', 'Tool arguments are too large.');
+        // File content has its own 64 KiB byte cap; leave other tool limits unchanged.
+        $limit = $data['tool'] === 'cloud_write_file' ? 6 * \App\Services\AgentRuns\CloudFiles\Files::FILE_BYTES + 4096 : 16000;
+        if (strlen(json_encode($data['arguments'])) > $limit) ApiError::throw(422, 'arguments_too_large', 'Tool arguments are too large.');
         return $this->json(['action' => $broker->request($binding, $run, $data)]);
     }
 

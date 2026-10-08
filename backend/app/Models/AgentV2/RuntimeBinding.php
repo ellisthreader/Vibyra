@@ -16,6 +16,6 @@ final class RuntimeBinding extends Model
 
     protected function casts(): array
     {
-        return ['capabilities' => 'array', 'revision' => 'integer', 'last_seen_at' => 'datetime', 'revoked_at' => 'datetime'];
+        return ['cloud_generation' => 'integer', 'capabilities' => 'array', 'revision' => 'integer', 'last_seen_at' => 'datetime', 'revoked_at' => 'datetime'];
     }
 }

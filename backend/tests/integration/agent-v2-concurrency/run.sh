@@ -22,11 +22,13 @@ export CONC_RESULTS=${CONC_RESULTS:-${TMPDIR:-/tmp}/agent-v2-concurrency-results
 
 if nc -z 127.0.0.1 "$PORT" 2>/dev/null; then echo "Port $PORT is in use; set CONC_PG_PORT." >&2; exit 2; fi
 cleanup() {
-  pkill -9 -f "php -S 127.0.0.1:54391" 2>/dev/null || true
+  if [ "${CONC_USES_WIRE:-0}" = 1 ]; then pkill -9 -f "php -S 127.0.0.1:54391" 2>/dev/null || true; fi
   "$PGBIN/pg_ctl" -D "$PGDATA" -m immediate stop >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
 trap cleanup EXIT
+CONC_USES_WIRE=0
+for scenario in "$@"; do case "$scenario" in all|wire) CONC_USES_WIRE=1;; esac; done
 
 "$PGBIN/initdb" -D "$PGDATA" -U postgres --auth=trust -E UTF8 >/dev/null
 cat >> "$PGDATA/postgresql.conf" <<EOF

@@ -22,9 +22,9 @@ class Wake
     /** Starts for the same oldest unapplied upload, at most, before it is left for a person to look at (no endless wake loop). */
     public const SYNC_WAKE_TRIES = 3;
 
-    public function wake(VibyraSession $session, array $o): object
+    public function wake(VibyraSession $session, array $o, ?\App\Services\AgentRuns\Cloud\ComputeGrant $agentGrant = null): object
     {
-        return $this->start($session->user_id, $session->id, $o);
+        return $this->start($session->user_id, $session->id, $o, $agentGrant);
     }
 
     /**
@@ -81,10 +81,10 @@ class Wake
             || (app(SyncKeys::class)->vmKey($user) === null && app(AccessProjects::class)->allowedKeys($user) !== []);
     }
 
-    private function start(int $user, ?int $sessionId, array $o): object
+    private function start(int $user, ?int $sessionId, array $o, ?\App\Services\AgentRuns\Cloud\ComputeGrant $agentGrant = null): object
     {
         app(FlyProvider::class)->preflight();
-        $id = DB::transaction(function () use ($sessionId, $o, $user) {
+        $id = DB::transaction(function () use ($sessionId, $o, $user, $agentGrant) {
             app(Wallet::class)->lock($user);
             $w = DB::table('cloud_workspaces')->where('user_id', $user)->where('kind', 'computer')->where('state', '!=', 'deleted')->lockForUpdate()->first();
             if (!$w) Computers::fail('computer_missing', 'Create your cloud computer first.', 404);
@@ -106,12 +106,13 @@ class Wake
             abort_if(DB::table('cloud_workspaces')->where('user_id', $user)->whereIn('state', Workspaces::ACTIVE)->exists(), 409, 'Stop your other cloud computer first.');
             abort_if(DB::table('cloud_workspaces')->whereIn('state', Workspaces::ACTIVE)->count() >= config('cloud_workspaces.global_running_limit'), 503, 'Cloud computers are at capacity.');
             $max = (int) config('cloud_workspaces.max_background_seconds');
-            $seconds = max(60, min($max, (int) ($o['deadlineSeconds'] ?? $max)));
-            $budget = app(Budgets::class)->committed($w) + min((int) config('cloud_workspaces.max_budget_units'), (int) config('cloud_workspaces.account_daily_units'));
+            $agent = $agentGrant?->accept(VibyraSession::findOrFail($sessionId), $w);
+            $seconds = max($agent ? 1 : 60, min($max, (int) ($agent['deadlineSeconds'] ?? $o['deadlineSeconds'] ?? $max)));
+            $budget = app(Budgets::class)->committed($w) + min((int) ($agent['budgetUnits'] ?? config('cloud_workspaces.max_budget_units')), (int) config('cloud_workspaces.account_daily_units'));
             DB::table('cloud_workspaces')->where('id', $w->id)->update(['state' => 'starting', 'operation_id' => (string) Str::uuid(),
                 'generation' => $w->generation + 1, 'revision' => $w->revision + 1, 'app_session_id' => $sessionId, 'device_id' => null, 'device_generation' => null,
-                'region' => $w->region ?: config('cloud_workspaces.region'), 'tariff_version' => config('cloud_workspaces.tariff_version'),
-                'units_per_hour' => config('cloud_workspaces.units_per_hour'), 'provider_micro_per_hour' => config('cloud_workspaces.provider_micro_per_hour'),
+                'region' => $w->region ?: config('cloud_workspaces.region'), 'tariff_version' => $agent['tariffVersion'] ?? config('cloud_workspaces.tariff_version'),
+                'units_per_hour' => $agent['unitsPerHour'] ?? config('cloud_workspaces.units_per_hour'), 'provider_micro_per_hour' => $agent['providerMicroPerHour'] ?? config('cloud_workspaces.provider_micro_per_hour'),
                 'budget_units' => $budget, 'ready_at' => null, 'metered_at' => null, 'lease_until' => null, 'heartbeat_at' => null,
                 'bootstrap_secret' => Crypt::encryptString(Str::random(64)), 'bootstrapped_at' => null, 'runtime_token_hash' => null,
                 'stop_requested_at' => null, 'stop_reason' => null, 'retention_warned_at' => null, 'retention_deleted_at' => null, 'unsaved_possible' => false, 'deadline_at' => now()->addSeconds($seconds),

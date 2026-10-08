@@ -23,6 +23,9 @@ class Idle
         // Included hours are spent and overage is blocked: stop rather than run unpaid.
         if (app(\App\Services\CloudWorkspaces\Allowance::class)->exhaustedAndBlocked((int) $w->user_id)) return 'allowance_exhausted';
         if (app(Computers::class)->active($w) > 0) return null;
+        if (config('agents_v2.cloud_enabled') && \App\Models\AgentV2\Run::whereIn('runtime_binding_id',
+            \App\Models\AgentV2\RuntimeBinding::where('cloud_workspace_id', $w->id)->where('cloud_generation', $w->generation)->whereNull('revoked_at')->select('id'))
+            ->whereIn('state', \App\Services\AgentRuns\RunStates::ACTIVE)->where('lease_expires_at', '>', now())->exists()) return null;
         // Booted but the Host never reached the relay: stop with an error instead of showing "starting" forever.
         if ($this->neverConnected($w)) return 'host_unreachable';
         // Uploads waiting to be applied, an apply under way, or a Mac still sending: stay up while it keeps moving (every upload,

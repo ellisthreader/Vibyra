@@ -16,7 +16,7 @@ final class AgentV2MemoryController extends Controller
         [$user, $binding, $scope] = $this->context($request, $id);
         $memories = Scope::query($user, $id, $scope)->where('status', '!=', 'forgotten')
             ->orderByDesc('updated_at')->limit(200)->get()->map(fn ($m) => Scope::payload($m))->all();
-        return $this->json(['runtimeId' => $binding->id, 'accountScope' => $scope, 'accountLabel' => $binding->provider.' · '.$binding->account_ref, 'memories' => $memories]);
+        return $this->json(['runtimeId' => $binding->id, 'accountScope' => $scope, 'accountLabel' => $binding->execution_target === 'cloud' ? 'Claude Cloud account' : $binding->provider.' · '.$binding->account_ref, 'memories' => $memories]);
     }
 
     public function store(Request $request, string $id, Memories $memories)

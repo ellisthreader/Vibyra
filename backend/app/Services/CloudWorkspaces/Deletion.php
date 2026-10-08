@@ -28,6 +28,7 @@ final class Deletion
                 abort_unless($disk->delete($c->object_key) || !$disk->exists($c->object_key), 503, 'Project deletion needs retry.');
             }
             DB::table('cloud_checkpoints')->where('workspace_id', $w->id)->delete();
+            DB::table('agent_cloud_file_scopes')->where('workspace_id', $w->id)->where('user_id', $w->user_id)->delete();
             DB::table('cloud_actions')->where('workspace_id', $w->id)->update(['arguments' => '{}', 'result' => null, 'state' => 'deleted']);
             DB::table('cloud_preview_tickets')->where('workspace_id', $w->id)->delete();
             DB::table('cloud_quotes')->where('workspace_id', $w->id)->update(['payload' => '{}']);
