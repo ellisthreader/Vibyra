@@ -2,7 +2,7 @@
 nixPkgs = ["php83", "php83Packages.composer", "nodejs_22"]
 
 [phases.install]
-cmds = ["mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs", "composer install --no-dev --optimize-autoloader --no-interaction", "npm ci", "npm install -g @railway/cli"]
+cmds = ["mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs", "node scripts/restore-existing-release-assets.mjs", "composer install --no-dev --optimize-autoloader --no-interaction", "npm ci", "npm install -g @railway/cli"]
 
 [phases.build]
 cmds = ["node scripts/restore-existing-release-assets.mjs", "npm run build", "php artisan config:clear", "php artisan route:clear"]
