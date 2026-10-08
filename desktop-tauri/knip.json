@@ -16,6 +16,7 @@
     "src-tauri/examples/event-dispatch/assets/*.js",
     "src-tauri/src/window_preview/viewer*.js",
     "src-tauri/src/agent_v2_browser_*.js",
+    "src-tauri/src/agent_v2/execute_fixture.cjs",
     "tests/teammate*Checks.mjs",
     "src-tauri/crates/vibyra-core/src/local_mcp/fixture/server.mjs",
     "scripts/verify-dialogs.mjs",
