@@ -1,3 +1,6 @@
+import { RELEASE_0827 } from "./changelogRelease0827.ts";
+export { formatDate } from "./changelogDate.ts";
+import { RELEASE_0826 } from './changelogRelease0826.ts';
 import { RELEASE_0824 } from "./changelogRelease0824.ts";
 import { RELEASE_0812 } from "./changelogRelease0812.ts";
 import { RELEASE_0822 } from "./changelogRelease0822.ts";
@@ -20,6 +23,8 @@ import type { ChangelogEntry } from "./changelogTypes.ts";
 export type { ChangelogEntry, ChangelogSection } from "./changelogTypes.ts";
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_0827,
+  RELEASE_0826,
   RELEASE_0824,
   RELEASE_0823,
   RELEASE_0822,
@@ -185,16 +190,4 @@ export function shouldOpen(
   // either. `usedBefore` is what tells the two apart.
   if ((seen === null || seen === "") && !usedBefore) return false;
   return entryFor(current) !== undefined;
-}
-
-/** Long dateline, matching the window's title block. */
-export function formatDate(iso: string): string {
-  const parsed = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return parsed.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
 }

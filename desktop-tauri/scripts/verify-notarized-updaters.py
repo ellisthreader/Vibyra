@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate final Apple-notarized bytes before the CI updater secret is exposed."""
 import hashlib
+import importlib.util
 import json
 import os
 import plistlib
@@ -53,35 +54,44 @@ def validate_entries(manifest, directory, commit, version):
 
 
 def safe_members(archive):
-    members = archive.getmembers()
-    if len(members) > 10000 or sum(m.size for m in members) > 3 * 1024 ** 3:
-        raise ValueError("Oversized archive")
-    for member in members:
+    members, seen, links, total = [], set(), set(), 0
+    for member in archive:
         path = PurePosixPath(member.name)
-        if member.size < 0:
-            raise ValueError("Invalid archive member size")
-        if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] != "Vibyra.app":
-            raise ValueError("Archive path escapes app")
+        name = member.name.rstrip("/")
+        total += member.size
+        if len(members) >= 10000 or member.size < 0 or total > 3 * 1024 ** 3:
+            raise ValueError("Oversized or invalid archive")
+        if (path.is_absolute() or ".." in path.parts or not path.parts
+                or path.parts[0] != "Vibyra.app" or name != path.as_posix() or name in seen):
+            raise ValueError("Archive path escapes app or repeats")
+        if (member.isfile() or member.isdir()) and member.mode & 0o7000:
+            raise ValueError("Special archive permission bits are forbidden")
         if not (member.isfile() or member.isdir() or member.issym()):
             raise ValueError("Unsupported archive member")
         if member.issym():
             target = posixpath.normpath(posixpath.join(str(path.parent), member.linkname))
             if target != "Vibyra.app" and not target.startswith("Vibyra.app/"):
                 raise ValueError("Archive link escapes app")
+            links.add(name)
+        seen.add(name)
+        members.append(member)
+    if not members or any(str(parent) in links for name in seen for parent in PurePosixPath(name).parents):
+        raise ValueError("Empty archive or write through symlink")
     return members
 
 
-def verify_app(app, entry, version, build):
+def verify_app(app, entry, version, build, notarized=True):
     with (app / "Contents/Info.plist").open("rb") as stream:
         info = plistlib.load(stream)
     if (info.get("CFBundleIdentifier"), info.get("CFBundleShortVersionString"), info.get("CFBundleVersion")) != (
             "app.vibyra.desktop", version, build):
         raise ValueError("Wrong app identity or version")
     run("codesign", "--verify", "--deep", "--strict", str(app))
-    run("xcrun", "stapler", "validate", str(app))
-    assessment = run("spctl", "--assess", "--type", "execute", "--verbose=2", str(app))
-    if "Notarized Developer ID" not in assessment:
-        raise ValueError("Notarized Gatekeeper acceptance required")
+    if notarized:
+        run("xcrun", "stapler", "validate", str(app))
+        assessment = run("spctl", "--assess", "--type", "execute", "--verbose=2", str(app))
+        if "Notarized Developer ID" not in assessment:
+            raise ValueError("Notarized Gatekeeper acceptance required")
     objects = [app, app / "Contents/MacOS/Vibyra", app / "Contents/MacOS/AgentCommandClient",
                app / "Contents/XPCServices/AgentCommand.xpc"]
     for obj in objects:
@@ -113,24 +123,60 @@ def verify_provenance(provenance, commit):
             raise ValueError("Complete signed native build gates required for both architectures")
 
 
+def helper(name):
+    spec = importlib.util.spec_from_file_location(name, Path(__file__).with_name(name + ".py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def verify_release(release, source, expected):
+    if (release.get("tag_name") != "remote-notarized-" + source or release.get("draft") is not True
+            or release.get("target_commitish") != source):
+        raise ValueError("Wrong notarized draft tag or target source")
+    assets = release.get("assets", [])
+    if len(assets) != len(expected) or {a.get("name") for a in assets} != expected:
+        raise ValueError("Unexpected notarized draft assets")
+
+
 def main():
     directory = Path(sys.argv[1])
     manifest = json.loads((directory / "notarized-manifest.json").read_text())
-    config = json.loads(Path("src-tauri/tauri.conf.json").read_text())
-    mac = json.loads(Path("src-tauri/tauri.macos.conf.json").read_text())
-    entries = validate_entries(manifest, directory, os.environ["GITHUB_SHA"], config["version"])
+    source = os.environ["NOTARIZED_SOURCE_COMMIT"]
+    if not re.fullmatch(r"[a-f0-9]{40}", source):
+        raise ValueError("Explicit frozen source commit required")
+    originals, identity = helper("notarized-originals"), helper("notarized-identity")
+    config = json.loads(originals.source_config(source, "src-tauri/tauri.conf.json"))
+    mac = json.loads(originals.source_config(source, "src-tauri/tauri.macos.conf.json"))
+    build = mac["bundle"]["macOS"]["bundleVersion"]
+    entries = validate_entries(manifest, directory, source, config["version"])
+    if manifest.get("buildNumber") != build:
+        raise ValueError("Wrong frozen app build number")
+    repository = os.environ["GITHUB_REPOSITORY"]
     provenance = json.loads(run("gh", "run", "view", str(manifest["buildRunId"]), "--repo",
-                                os.environ["GITHUB_REPOSITORY"], "--json", "headSha,status,conclusion,jobs,workflowName"))
-    verify_provenance(provenance, os.environ["GITHUB_SHA"])
+                                repository, "--json", "headSha,status,conclusion,jobs,workflowName"))
+    verify_provenance(provenance, source)
+    release = originals.draft_release(repository, source)
+    verify_release(release, source, {"notarized-manifest.json", *[e["filename"] for e in entries]})
     with tempfile.TemporaryDirectory(prefix="vibyra-notarized-ci-") as folder:
         for entry in entries:
             destination = Path(folder) / entry["architecture"]
             destination.mkdir()
-            with tarfile.open(directory / entry["filename"], "r:gz") as archive:
-                members = safe_members(archive)
-                archive.extractall(destination, members=members, filter="data")
-            verify_app(destination / "Vibyra.app", entry, config["version"], mac["bundle"]["macOS"]["bundleVersion"])
-    print("Exact build provenance, both archives and Apple acceptance verified")
+            original_dir = destination / "original"
+            original_dir.mkdir()
+            archive_path, version, original_build = originals.fetch(
+                repository, source, manifest["buildRunId"], entry["architecture"], original_dir, identity)
+            modes = {}
+            for archive, target in [(directory / entry["filename"], destination), (archive_path, original_dir)]:
+                with tarfile.open(archive, "r:gz") as stream:
+                    members = safe_members(stream)
+                    modes[target] = {m.name.rstrip("/"): (m.mode, m.type) for m in members if not m.issym()}
+                    stream.extractall(target, members=members, filter="data")
+            identity.compare_archive_modes(modes[original_dir], modes[destination])
+            verify_app(original_dir / "Vibyra.app", entry, version, original_build, notarized=False)
+            verify_app(destination / "Vibyra.app", entry, version, original_build)
+            identity.compare_apps(original_dir / "Vibyra.app", destination / "Vibyra.app")
+    print("Frozen successful CI artifacts, exact notarized content and Apple acceptance verified")
 
 
 if __name__ == "__main__":

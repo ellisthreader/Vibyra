@@ -1,11 +1,14 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { verifyUpdateSignature } from './minisign-verify.mjs';
 
 const dir = process.argv[2];
 const manifest = JSON.parse(readFileSync(join(dir, 'notarized-manifest.json')));
-const config = JSON.parse(readFileSync('src-tauri/tauri.conf.json'));
+const source = process.env.NOTARIZED_SOURCE_COMMIT;
+if (!/^[a-f0-9]{40}$/.test(source ?? '') || manifest.sourceCommit !== source) throw new Error('Wrong frozen source');
+const config = JSON.parse(execFileSync('git', ['show', `${source}:desktop-tauri/src-tauri/tauri.conf.json`], { encoding: 'utf8' }));
 const archives = readdirSync(dir).filter((file) => file.endsWith('.app.tar.gz'));
 if (archives.length !== 2) throw new Error('Exactly two architecture archives required');
 for (const entry of manifest.archives) {

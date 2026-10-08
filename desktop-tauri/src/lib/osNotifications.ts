@@ -72,7 +72,8 @@ export async function raiseOsNotification(item: NotificationItem): Promise<void>
     if (isMac) {
       const action = item.action;
       const target = action?.id === 'openTeammate' && typeof action.arg === 'string' && action.runId && action.account
-        ? { agentId: action.arg, runId: action.runId, account: action.account } : null;
+        ? { agentId: action.arg, runId: action.runId, account: action.account }
+        : action?.id === 'openAgentDigest' && typeof action.arg === 'string' && action.account ? {digestId:action.arg,account:action.account} : null;
       await invoke('native_notification_show', { title: item.title, body: item.body ?? null, target });
       return;
     }

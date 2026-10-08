@@ -8,8 +8,12 @@ use tauri::{State, WebviewWindow};
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Target {
     pub account: String,
+    #[serde(default)]
     pub agent_id: String,
+    #[serde(default)]
     pub run_id: String,
+    #[serde(default)]
+    pub digest_id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -19,6 +23,7 @@ pub struct Activation {
     account: String,
     agent_id: String,
     run_id: String,
+    digest_id: Option<String>,
 }
 
 fn main_window(window: &WebviewWindow) -> Result<(), String> {
@@ -65,6 +70,7 @@ pub async fn native_notification_show(
             owner: profile.welcome_key,
             agent_id: target.agent_id,
             run_id: target.run_id,
+            digest_id: target.digest_id,
             issued_at: native::now(),
         };
         if !route.valid(native::now()) {
@@ -95,6 +101,7 @@ pub fn native_notification_activations(
             account: profile.email.clone(),
             agent_id: route.agent_id,
             run_id: route.run_id,
+            digest_id: route.digest_id,
         })
         .collect())
 }

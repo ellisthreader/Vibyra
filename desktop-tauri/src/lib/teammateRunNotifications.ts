@@ -6,7 +6,7 @@ import type { NotificationInput } from "../notificationTypes";
 // The decision of what to raise is pure and lives here; polling is in
 // useTeammateRunNotifications.
 
-export type TeammateRunKind = "completed" | "approval" | "signin" | "failed";
+export type TeammateRunKind = "completed" | "approval" | "signin" | "failed" | "progress" | "blocked" | "cancelled";
 
 export interface InboxItem {
   id: string;
@@ -14,9 +14,11 @@ export interface InboxItem {
   createdAt: string;
   read: boolean;
   actionable: boolean;
+  alertDisposition?: 'eligible'|'suppressed'|'deferred';
   destination: {
     source: string;
     runId?: string;
+    digestId?:string;
     agentId?: string | null;
     conversationId?: string | null;
     kind?: TeammateRunKind;
@@ -37,17 +39,21 @@ const KINDS: Record<TeammateRunKind, Pick<NotificationInput, "category" | "sever
   completed: { category: "agentDone", severity: "success" },
   approval: { category: "agentAttention", severity: "warning" },
   signin: { category: "agentAttention", severity: "warning" },
+  progress:{category:"agentDone",severity:"info"},
+  blocked:{category:"agentAttention",severity:"warning"},
+  cancelled:{category:"agentDone",severity:"info"},
   failed: { category: "agentFailed", severity: "danger" },
 };
 
 /** Retire visible prompts when another device reads them or the run moves on. */
 export function settledTeammateKeys(items: InboxItem[]): Set<string> {
-  return new Set(items.filter(item => item.destination?.source === "agent_run" && (item.read || !item.actionable))
-    .map(item => `teammate:${item.destination.runId}:${item.destination.kind}:${item.id}`));
+  return new Set(items.filter(item => ['agent_run','agent_digest'].includes(item.destination?.source) && (item.read || !item.actionable || item.alertDisposition==='suppressed'))
+    .map(item => item.destination.source==='agent_digest'?`teammate-digest:${item.destination.digestId}:${item.id}`:`teammate:${item.destination.runId}:${item.destination.kind}:${item.id}`));
 }
 
 export function teammateRunNotification(item: InboxItem, account?: string): NotificationInput | null {
   const d = item.destination;
+  if(d?.source==='agent_digest'&&typeof d.digestId==='string'&&/^[a-f0-9-]{36}$/i.test(d.digestId)) return {category:'agentDone',severity:'info',title:item.title,dedupeKey:`teammate-digest:${d.digestId}:${item.id}`,action:{id:'openAgentDigest',label:'Open daily summary',arg:d.digestId,account}};
   const kind = d?.kind;
   if (d?.source !== "agent_run" || !kind || !(kind in KINDS)) return null;
   if (typeof d.agentId !== "string" || typeof d.runId !== "string") return null;
@@ -57,7 +63,7 @@ export function teammateRunNotification(item: InboxItem, account?: string): Noti
     // One row per run and hook: a second approval on the same run is new news.
     dedupeKey: `teammate:${d.runId}:${kind}:${item.id}`,
     // Needs-you states stay until handled; a finish can fade.
-    timeoutMs: kind === "completed" ? undefined : 0,
+    timeoutMs: ["completed","progress","cancelled"].includes(kind) ? undefined : 0,
     action: { id: "openTeammate", label: "Open conversation", arg: d.agentId, runId: d.runId, ...(account ? { account } : {}) },
   };
 }
@@ -66,11 +72,12 @@ export function teammateRunNotification(item: InboxItem, account?: string): Noti
 export function newTeammateAlerts(items: InboxItem[], context: AlertContext): NotificationInput[] {
   const out: NotificationInput[] = [];
   for (const item of [...items].reverse()) {
-    if (item.destination?.source !== "agent_run" || context.seen.has(item.id)) continue;
+    if (!['agent_run','agent_digest'].includes(item.destination?.source) || context.seen.has(item.id)) continue;
+    if (!context.baseline && item.alertDisposition==='deferred' && !item.read && item.actionable) continue;
     context.seen.add(item.id);
     // `actionable` is the server's "still true right now": an expired approval
     // or a run that moved on is history, not an alert.
-    if (context.baseline || item.read || !item.actionable) continue;
+    if (context.baseline || item.read || !item.actionable || item.alertDisposition==='suppressed') continue;
     if (context.watching && item.destination.agentId === context.watching) continue;
     const input = teammateRunNotification(item, context.account);
     if (input) out.push(input);

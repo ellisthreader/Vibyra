@@ -1,4 +1,4 @@
-export interface NativeActivation { id: string; account: string; agentId: string; runId: string }
+export interface NativeActivation { id: string; account: string; agentId: string; runId: string; digestId?:string|null }
 type Stop = () => void;
 interface ResponseBridge {
   listen(wake: () => void): Promise<Stop>;

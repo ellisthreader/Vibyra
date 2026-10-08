@@ -1,0 +1,21 @@
+.agent-work-core { display: grid; gap: 12px; }
+.agent-work-card { padding: 14px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.agent-work-card h4 { font-size: 15px; margin: 0 0 8px; }
+.agent-work-card p { margin: 8px 0; line-height: 1.5; }
+.agent-work-card summary { cursor: pointer; padding: 8px 0; }
+.agent-work-milestone { border-left: 2px solid var(--border); margin: 10px 0; padding: 0 12px; }
+.agent-work-milestone h5 { margin: 0; font-size: 13px; }
+.agent-work-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.agent-work-card button { min-height: 34px; }
+.agent-work-field { display: grid; gap: 5px; margin: 10px 0; }
+.agent-work-field textarea { min-height: 90px; resize: vertical; }
+.agent-work-field input,.agent-work-field textarea { width: 100%; }
+.agent-work-signals details { border-top: 1px solid var(--border); padding: 12px 0; }
+.agent-work-signals summary { cursor: pointer; font-weight: 600; }
+.agent-work-core button { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; background: var(--bg-secondary,rgba(127,127,127,.08)); color: var(--text); cursor: pointer; justify-self: start; }
+.agent-work-core button:hover:not(:disabled) { background: var(--bg-hover,rgba(127,127,127,.16)); }
+.agent-work-core button:disabled { opacity: .45; cursor: default; }
+.agent-work-core button.primary { background: var(--accent,#8264f4); color: #fff; border-color: transparent; }
+.agent-work-field input,.agent-work-field textarea { border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); padding: 10px; font: inherit; }
+.agent-work-core h3 { margin: 8px 0 0; font-size: 17px; }
+.agent-work-core .profile-help { color: var(--text-secondary,#969ca8); font-size: 13px; }

@@ -68,6 +68,11 @@ export function runNotificationAction(action: NotificationAction): void {
       }
       useWorkspaceStore.getState().setProjectMode("preview");
       return;
+    case "openAgentDigest":
+      if (typeof action.arg !== "string" || !action.account || action.account !== useAccountStore.getState().snapshot.profile?.email) return;
+      useProductMode.getState().choose("agent");
+      useTeammateFocus.getState().requestDigest(action.arg,action.account);
+      return;
     case "openTeammate":
       // Navigation only: the thread re-reads the run, and any approval still
       // needs the person's own click there.

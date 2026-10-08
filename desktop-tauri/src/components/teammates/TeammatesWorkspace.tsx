@@ -1,3 +1,6 @@
+import {DigestDialog} from './work/DigestDialog';
+import {stageFourClient} from '../../../../mobile/src/agents/v2/stageFourClient';
+import {teammateApi} from './api';
 import { useEffect, useRef, useState } from 'react';
 import { useAccountStore } from '../../state/accountStore';
 import { useTeammateFocus } from '../../state/teammateFocusStore';
@@ -24,8 +27,10 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
   const selectionKey = `teammate-selection.${encodeURIComponent(identity)}`;
   const [selected, setSelected] = useState<string | null>(null), [visited, setVisited] = useState<string[]>([]);
   const [query, setQuery] = useState(''), [archived, setArchived] = useState(false), [showList, setShowList] = useState(true);
-  const [skills, setSkills] = useState(false), [setup, setSetup] = useState<{ agent?: Teammate; tab?: 'Access' | 'Memory' } | null>(null);
+  const [skills, setSkills] = useState(false), [setup, setSetup] = useState<{ agent?: Teammate; tab?: 'Access' | 'Memory'|'Work' } | null>(null);
   const [activity, setActivity] = useState(false), [page, setPage] = useState<TeammatePage>('overview');
+  const digest=useTeammateFocus(s=>s.digest),[workApi]=useState(()=>stageFourClient(teammateApi));
+  const [preparedDraft,setPreparedDraft]=useState<{agentId:string;nonce:number;prompt:string}>();
   const restored = useRef(false);
   // The tab you chose carries across teammates; anything new from a teammate
   // (unread messages, an approval) opens its chat, where that news is.
@@ -78,13 +83,15 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
       {current && !setup && !activity && <TeammateOverview agent={current} v2={mode === 'v2'} enabled={enabled} page={page} active={active && (!compact || !showList)}
         onPage={setPage} onEdit={tab => { setSetup({ agent: current, tab }); setShowList(false); }} onSaved={state.replace} onBack={back} />}
       {visited.map(id => { const agent = roster?.teammates.find(a => a.id === id); return agent ? <Thread key={`${id}.${agent.chatId}.${mode}`} agent={agent} identity={identity} v2={mode === 'v2'} header={false}
-        active={active && id === selected && page === 'chat' && !setup && !skills && !activity && (!compact || !showList)} enabled={enabled} onBack={back} onRead={cursor => state.read(id, cursor)} onAccess={state.replace} onReload={() => void refresh()} onDetails={tab => { setSetup({ agent, tab }); setShowList(false); }} /> : null; })}
+        preparedDraft={preparedDraft?.agentId===id?preparedDraft:undefined} active={active && id === selected && page === 'chat' && !setup && !skills && !activity && (!compact || !showList)} enabled={enabled} onBack={back} onRead={cursor => state.read(id, cursor)} onAccess={state.replace} onReload={() => void refresh()} onDetails={tab => { setSetup({ agent, tab }); setShowList(false); }} /> : null; })}
       {activity && !setup && <Activity teammates={roster?.teammates ?? []} onOpen={open} onBack={() => { setActivity(false); setShowList(true); }} />}
       {setup && <Setup key={setup.agent?.id ?? 'new'} agent={setup.agent} tab={setup.tab} v2={mode === 'v2'} onTemplate={createdFromTemplate} identity={identity} enabled={enabled}
+        onDraft={prompt=>{if(setup.agent){setPreparedDraft({agentId:setup.agent.id,nonce:Date.now(),prompt});open(setup.agent,'chat');}}}
         localComputer={roster?.capabilities?.localComputer === true}
         vmTests={roster?.capabilities?.vmTests === true}
         onClose={() => { setSetup(null); if (!selected) setShowList(true); }} onSaved={saved} />}
     </main>
+    {digest&&digest.account===identity&&<DigestDialog key={digest.nonce} api={workApi.signals} id={digest.id} identity={identity} onClose={()=>useTeammateFocus.getState().closeDigest()}/>}
     {skills && <Skills teammates={roster?.teammates ?? []} identity={identity} onClose={() => { setSkills(false); void refresh(); }} />}
   </div>;
 }

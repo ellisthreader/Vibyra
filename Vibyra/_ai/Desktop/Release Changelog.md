@@ -10,6 +10,37 @@ is a read-only pilot, with repository writes disabled. Art: `public/releases/0.8
 This private source candidate is not a public release. Exact-source signed CI,
 notarization, installation and physical provider acceptance require separate receipts.
 
+## 0.8.27 — 8 October 2026 (Cloud audit release candidate, build96)
+
+Preserves installed Stage4 ongoing-work features and the Cloud-owned account
+controls. An existing approved Cloud connection keeps Mac Allow available while
+its only phone uses Cloud; new setup still needs a live approved phone. Uploads
+bind the login to the accepted VM key and reseal after bounded key/sequence retries.
+Selected-repository GitHub App access remains read only, without personal tokens.
+
+Portable native path/process fixtures and managed-worktree discard are corrected.
+Final notarized updater signing checks immutable CI originals, code, entitlements,
+resources and canonical archive headers before exposing the existing signing key.
+Exact-source CI, Apple acceptance, installation and real physical Cloud provider
+work remain separate pending gates; no public release is claimed by this entry.
+
+## 0.8.26 — 8 October 2026 (Stage 4 local Mac release, build95)
+
+Adds reviewed ongoing goals and exact follow-ups, chat-created skill/routine drafts,
+relevant notifications and daily summaries, opt-in read-only GitHub discovery linked
+to an explicitly selected goal, and starters matched to stated interests/read access.
+Goal completion needs owner evidence review; discovery never changes goal progress.
+Runtime/account selection and existing grants remain pinned to reviewed work.
+
+Signed and activated locally with the owner account/workspace retained. Developer ID,
+secure timestamps, hardened runtime and the helper sandbox verify. Native Work UI
+reads pass; 1,022 Rust and 708 frontend tests pass, with existing live/fixture skips
+recorded separately. Receipts are under `output/agent-stage4-20261008/mac/`.
+This local build is not notarized or publicly distributed. Real provider execution
+and physical locked-phone push delivery remain separate from test-data acceptance.
+No public updater feed or signing key is changed. Art: `public/releases/0.8.26.svg`.
+
+
 ## 0.8.23 — 8 October 2026 (Cloud audit release candidate)
 
 Cloud accounts use fresh Claude and Codex browser approvals from Settings → Cloud,

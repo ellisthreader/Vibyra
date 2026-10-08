@@ -140,11 +140,8 @@ fn rate_limits_and_server_errors_are_retried_then_left_to_the_lease() {
 fn a_crash_reports_a_plain_reason_never_the_stderr_tail() {
     let dir = tempfile::tempdir().unwrap();
     let plan = plan(dir.path(), &[INIT_OK], &[]);
-    let crashing = FAKE.replace(
-        r#"cat "$FAKE_OUT";;"#,
-        r#"cat "$FAKE_OUT"; echo "/Users/alice/secret/project: boom" >&2; exit 1;;"#,
-    );
-    std::fs::write(dir.path().join("claude.sh"), crashing).unwrap();
+    let mut plan = plan;
+    plan.launch.env.push(("FAKE_CRASH".into(), "1".into()));
     let backend = Scripted::default();
     let outcome = execute(&plan, &backend, &Control::default());
     assert_eq!(outcome, Outcome::Failed("provider_error".into()));

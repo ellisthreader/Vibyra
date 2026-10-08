@@ -22,12 +22,14 @@ fn claude_advertises_controlled_tools_and_others_do_not() {
     let host = "a".repeat(64);
     let claude = payload(&host, &selection("claude"), "2.1.285");
     assert_eq!(claude["capabilities"]["controlledTools"], true);
+    assert_eq!(claude["capabilities"]["pinnedSkillsV1"], true);
     assert_eq!(claude["providerVersion"], "2.1.285");
     assert_eq!(claude["accountRef"], "default");
     for other in ["codex", "gemini"] {
         let body = payload(&host, &selection(other), "");
         assert_eq!(body["capabilities"]["controlledTools"], false);
         assert_eq!(body["capabilities"]["ready"], false);
+        assert_ne!(body["capabilities"]["pinnedSkillsV1"], true);
         assert!(body["providerVersion"].is_null());
     }
     // Never any login material in the registration.
@@ -70,14 +72,11 @@ fn enabled_follows_the_backend_flag() {
     });
     let on = MockServer::start(|_| (200, json!({"runtimes": []}).to_string()));
     let down = MockServer::start(|_| (500, "{}".into()));
-    // A backend without the Agent V2 routes answers a bare Laravel 404.
-    let missing = MockServer::start(|_| (404, json!({"message": "Not Found"}).to_string()));
     let rt = runtime();
     assert_eq!(rt.block_on(enabled(&off.base, "t")), Ok(false));
     assert_eq!(rt.block_on(enabled(&cohort.base, "t")), Ok(false));
     assert_eq!(rt.block_on(enabled(&on.base, "t")), Ok(true));
     assert!(rt.block_on(enabled(&down.base, "t")).is_err());
-    assert_eq!(rt.block_on(enabled(&missing.base, "t")), Ok(false));
 }
 
 #[test]

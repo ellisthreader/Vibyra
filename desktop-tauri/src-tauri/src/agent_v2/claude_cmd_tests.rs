@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::agent_v2::provider_fixture_tests as fixture;
+
 fn input<'a>(allowed: &'a [String], config: Option<&'a Path>) -> LaunchInput<'a> {
     LaunchInput {
         program: Path::new("/opt/node/bin/claude"),
@@ -101,17 +103,33 @@ fn the_spawned_command_clears_the_app_environment() {
         assert!(!FORBIDDEN_ENV.contains(&name.as_ref()), "{name}");
     }
     assert_eq!(envs.len(), 6);
-    // Run the same environment through `env` to observe what a child sees.
+    // A real native Node child reports exactly the environment it received.
     let probe = Launch {
-        program: "/usr/bin/env".into(),
-        args: vec![],
+        program: fixture::node(),
+        args: vec![
+            "-e".into(),
+            "for (const [k,v] of Object.entries(process.env)) console.log(`${k}=${v}`)".into(),
+        ],
         env: launch.env.clone(),
         cwd: std::env::temp_dir(),
     };
     let output = super::command(&probe).output().unwrap();
+    assert!(output.status.success(), "{:?}", output);
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(!text.contains("CLAUDE_CODE_TEST_LEAK"));
-    assert_eq!(text.lines().count(), 6);
+    // Node's macOS runtime adds this CoreFoundation encoding marker itself;
+    // every other child variable must be exactly one of the six explicit inputs.
+    let child: Vec<_> = text
+        .lines()
+        .filter(|line| !(cfg!(target_os = "macos") && line.starts_with("__CF_USER_TEXT_ENCODING=")))
+        .collect();
+    assert_eq!(child.len(), 6, "{text}");
+    for (name, value) in &launch.env {
+        assert!(
+            child.contains(&format!("{name}={value}").as_str()),
+            "{text}"
+        );
+    }
     std::env::remove_var("CLAUDE_CODE_TEST_LEAK");
 }
 

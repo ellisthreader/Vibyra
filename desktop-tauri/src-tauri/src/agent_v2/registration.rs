@@ -36,7 +36,7 @@ impl Registered {
 pub fn capabilities(selection: &Selection) -> Value {
     if selection.controlled_tools() {
         json!({"controlledTools": true, "adapter": "claude-stream-json", "brokerOnly": true,
-            "interrupt": true, "taskSteering": true, "preflight": "initialize+mcp_status", "computerTools": true,
+            "interrupt": true, "taskSteering": true, "pinnedSkillsV1": true, "preflight": "initialize+mcp_status", "computerTools": true,
             "browserTools": crate::agent_v2_browser::available(), "localMcp": true})
     } else {
         // Codex needs the code-mode JS host for any tool; Gemini is untested.
@@ -57,11 +57,6 @@ pub async fn enabled(base: &str, token: &str) -> Result<bool, ApiError> {
     match send(base, Some(token), None, Method::GET, "runtimes", None).await {
         Ok(_) => Ok(true),
         Err(error) if error.disabled() => Ok(false),
-        // The backend this app talks to has not shipped the Agent V2 routes yet: same as off,
-        // so the Mac asks once a minute instead of reporting an error every 30 seconds.
-        Err(ApiError::Refused {
-            status: 404, code, ..
-        }) if code == "http_error" => Ok(false),
         Err(error) => Err(error),
     }
 }

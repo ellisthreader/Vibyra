@@ -17,6 +17,8 @@ mod execute;
 pub(crate) mod mock_http;
 mod preflight;
 mod prompt;
+#[cfg(test)]
+mod provider_fixture_tests;
 mod registration;
 mod run;
 mod runner;

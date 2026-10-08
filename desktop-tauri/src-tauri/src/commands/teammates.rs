@@ -3,9 +3,6 @@ use serde_json::Value;
 use tauri::State;
 #[path = "teammates_v2_cloud_routes.rs"]
 mod cloud;
-#[path = "teammates_v2_stage2_routes.rs"]
-mod stage2;
-
 #[path = "teammates_v2_hub_routes.rs"]
 mod hub;
 #[path = "teammates_v2_overview_routes.rs"]
@@ -14,7 +11,10 @@ mod overview;
 mod query;
 #[path = "teammates_request_method.rs"]
 mod request_method;
-
+#[path = "teammates_v2_stage2_routes.rs"]
+mod stage2;
+#[path = "teammates_v2_work_routes.rs"]
+mod work;
 fn uuid(value: &str) -> bool {
     value.len() == 36
         && value.bytes().enumerate().all(|(i, b)| {
@@ -25,11 +25,13 @@ fn uuid(value: &str) -> bool {
             }
         })
 }
-
 /// PATCH/PUT/DELETE routes (Agent v2 routines and triggers §6b; hub grants and MCP reads §6c).
 /// DELETE carries no body, PATCH/PUT always do, and none accepts a query.
 fn permitted_method(path: &str, method: &str, has_body: bool) -> bool {
-    if cloud::method(path, method, has_body) || stage2::method(path, method, has_body) {
+    if work::method(path, method, has_body)
+        || cloud::method(path, method, has_body)
+        || stage2::method(path, method, has_body)
+    {
         return true;
     }
     let parts: Vec<_> = path.split('/').collect();
@@ -39,8 +41,10 @@ fn permitted_method(path: &str, method: &str, has_body: bool) -> bool {
         (verb, route) => hub::hub_method(route, verb, has_body),
     }
 }
-
 fn permitted(path: &str, write: bool) -> bool {
+    if let Some(allowed) = work::route(path, write) {
+        return allowed;
+    }
     if let Some(allowed) = cloud::route(path, write) {
         return allowed;
     }
@@ -103,7 +107,6 @@ fn permitted(path: &str, write: bool) -> bool {
         _ => false,
     }
 }
-
 /// Account-scoped API bridge. No caller-selected origin, credentials or automatic write retries.
 #[tauri::command]
 pub async fn teammate_request(
@@ -114,7 +117,6 @@ pub async fn teammate_request(
 ) -> Result<Value, String> {
     send(state, path, body, method, None).await
 }
-
 /// The roster list and read marker, per install: the only routes that take `X-Vibyra-Device` (§6d).
 #[tauri::command]
 pub async fn teammate_request_device(
@@ -128,7 +130,6 @@ pub async fn teammate_request_device(
     }
     send(state, path, body, None, Some(device)).await
 }
-
 async fn send(
     state: State<'_, AppState>,
     path: String,
@@ -191,7 +192,6 @@ async fn send(
     }
     Ok(value)
 }
-
 #[cfg(test)]
 #[path = "teammates_v2_routes_test.rs"]
 mod v2_routes_test;

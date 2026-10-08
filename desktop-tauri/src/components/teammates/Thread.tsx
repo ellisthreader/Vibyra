@@ -12,8 +12,10 @@ import { useGrantedAccounts } from './useGrantedAccounts';
 import { overviewClient } from './overviewClient';
 import type { Teammate } from './types';
 const overview = overviewClient(teammateApi, teammateApiDevice);
-export function Thread({ agent, identity, active, enabled, v2 = false, header = true, onDetails, onBack, onRead, onAccess, onReload }: { agent: Teammate; identity: string; active: boolean; enabled: boolean; v2?: boolean; header?: boolean; onDetails(tab?: 'Access'): void; onBack(): void; onRead(cursor: string): void; onAccess(agent: Teammate): void; onReload(): void }) {
+export function Thread({ agent, identity, active, enabled, v2 = false, header = true, onDetails, onBack, onRead, onAccess, onReload, preparedDraft }: { agent: Teammate; identity: string; active: boolean; enabled: boolean; v2?: boolean; header?: boolean; onDetails(tab?: 'Access'|'Work'): void; onBack(): void; onRead(cursor: string): void; onAccess(agent: Teammate): void; onReload(): void; preparedDraft?:{nonce:number;prompt:string} }) {
   const chat = useThread(agent, identity, active, enabled, v2), output = useRef<HTMLDivElement>(null), follow = useRef(true);
+  const appliedDraft=useRef(0);
+  useEffect(()=>{if(active&&chat.ready&&preparedDraft&&appliedDraft.current!==preparedDraft.nonce){appliedDraft.current=preparedDraft.nonce;chat.edit([chat.draft,preparedDraft.prompt].filter(Boolean).join('\n'));}},[active,chat.ready,preparedDraft]);
   const accounts = useGrantedAccounts(agent.id, agent.revision, v2);
   const anchor = useRef<{ height: number; top: number } | null>(null);
   const [newMessages, setNewMessages] = useState(false), [atBottom, setAtBottom] = useState(true);
@@ -45,10 +47,11 @@ export function Thread({ agent, identity, active, enabled, v2 = false, header = 
   const modelName = chat.models.find(m => m.id === model)?.name ?? (model === 'auto' ? 'Auto · matched to your task' : model.startsWith('provider:') ? `${model.slice(9).replace(/^./, c => c.toUpperCase())} · Auto` : model.split('/').at(-1));
   return <section className="teammate-thread" hidden={!active} aria-label={`Conversation with ${agent.name}`}>
     {header && <header className="teammate-thread-header"><button className="icon-btn teammate-back" aria-label="Back to teammates" onClick={onBack}>←</button><img src={avatarUrl(agent.avatar)} alt="" /><div><strong>{agent.name}</strong><small>{agent.archived ? 'Archived conversation' : modelName}</small></div><button className="icon-btn" title="Teammate details" aria-label="Teammate details" onClick={() => onDetails()}>···</button></header>}
+    {v2&&<button type="button" onClick={()=>onDetails('Work')}>Work</button>}
     {v2 && active && <StageTwoOutputs key={`${identity}:${agent.id}`} agentId={agent.id} identity={identity} disabled={!enabled || agent.archived} />}
     <div className="teammate-messages" ref={output} onScroll={() => { if (!active || !output.current) return; const el = output.current; const near = el.scrollHeight - el.clientHeight - el.scrollTop < 80; follow.current = near; setAtBottom(near); if (near) setNewMessages(false); }}>
       <div className="teammate-transcript">{chat.hasMore && <button className="teammate-history-button" disabled={chat.loadingOlder} onClick={() => { if (output.current) anchor.current = { height: output.current.scrollHeight, top: output.current.scrollTop }; void chat.loadOlder().catch(() => { anchor.current = null; }); }}>{chat.loadingOlder ? 'Loading earlier messages…' : 'Load earlier messages'}</button>}{!chat.turns.length && !chat.loadError && <div className="teammate-empty"><img src={avatarUrl(agent.avatar)} alt="" /><h3>{chat.ready ? `Meet ${agent.name}` : 'Loading conversation…'}</h3>{chat.ready && <p>{agent.brief}</p>}</div>}
-        <ThreadMessages turns={chat.turns} enabled={enabled && active && !agent.archived} refresh={chat.refresh} accounts={accounts} />
+        <ThreadMessages agentId={agent.id} turns={chat.turns} enabled={enabled && active && !agent.archived} refresh={chat.refresh} accounts={accounts} />
       </div>
     </div>
     {newMessages && <button className="teammate-new-messages" onClick={() => { follow.current = true; setAtBottom(true); setNewMessages(false); if (output.current) output.current.scrollTop = output.current.scrollHeight; }}>Latest messages ↓</button>}

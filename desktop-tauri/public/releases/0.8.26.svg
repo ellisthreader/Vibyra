@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232">
+  <defs>
+    <linearGradient id="ground" x2="1" y2="1"><stop stop-color="#141722"/><stop offset=".55" stop-color="#1d2130"/><stop offset="1" stop-color="#101219"/></linearGradient>
+    <linearGradient id="panel" x2="0" y2="1"><stop stop-color="#29334e"/><stop offset="1" stop-color="#1b2235"/></linearGradient>
+    <radialGradient id="light"><stop stop-color="#5b7cfa" stop-opacity=".17"/><stop offset="1" stop-color="#5b7cfa" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fade" x2="0" y2="1"><stop stop-color="#101219" stop-opacity="0"/><stop offset="1" stop-color="#101219"/></linearGradient>
+  </defs>
+  <path fill="url(#ground)" d="M0 0h740v232H0z"/>
+  <ellipse fill="url(#light)" cx="363" cy="109" rx="268" ry="140"/>
+  <g transform="translate(166 61) rotate(-8 78 50)"><rect width="156" height="103" rx="12" fill="#101724" opacity=".5"/><rect x="7" y="6" width="142" height="90" rx="9" fill="url(#panel)"/><rect x="20" y="22" width="92" height="5" rx="2.5" fill="#7490ff" opacity=".21"/><rect x="20" y="38" width="58" height="4" rx="2" fill="#7490ff" opacity=".13"/><rect x="20" y="51" width="106" height="4" rx="2" fill="#7490ff" opacity=".13"/><rect x="20" y="64" width="79" height="4" rx="2" fill="#7490ff" opacity=".13"/></g>
+  <g transform="translate(413 68) rotate(8 74 44)"><rect width="148" height="95" rx="12" fill="#141c2d"/><rect x="7" y="6" width="134" height="82" rx="9" fill="url(#panel)"/><rect x="22" y="22" width="50" height="5" rx="2.5" fill="#7490ff" opacity=".26"/><rect x="22" y="39" width="102" height="4" rx="2" fill="#7490ff" opacity=".15"/><rect x="22" y="52" width="78" height="4" rx="2" fill="#7490ff" opacity=".15"/><rect x="22" y="65" width="92" height="4" rx="2" fill="#7490ff" opacity=".15"/></g>
+  <g transform="translate(287 42)"><rect x="-6" y="8" width="174" height="130" rx="14" fill="#101219" opacity=".45"/><rect width="162" height="122" rx="12" fill="url(#panel)" stroke="#7490ff" stroke-opacity=".2"/><rect x="15" y="17" width="105" height="7" rx="3.5" fill="#7490ff" opacity=".36"/><rect x="15" y="42" width="131" height="4" rx="2" fill="#7490ff" opacity=".22"/><rect x="15" y="56" width="92" height="4" rx="2" fill="#7490ff" opacity=".18"/><rect x="15" y="70" width="115" height="4" rx="2" fill="#7490ff" opacity=".18"/><rect x="15" y="94" width="69" height="8" rx="4" fill="#5b7cfa" opacity=".28"/><circle cx="139" cy="97" r="5" fill="#d4b18a"/></g>
+  <g fill="#7490ff" opacity=".3"><circle cx="238" cy="34" r="2"/><circle cx="484" cy="40" r="1.5"/><circle cx="564" cy="122" r="2"/><circle cx="158" cy="105" r="1.5"/><circle cx="383" cy="25" r="1"/></g>
+  <path fill="url(#fade)" d="M0 174h740v58H0z"/>
+</svg>

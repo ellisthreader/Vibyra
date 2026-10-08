@@ -32,7 +32,8 @@ export type NotificationActionId =
   | "openPreview"
   | "installUpdate"
   /** arg: teammate (agent) id — opens Agent mode at that teammate's thread. */
-  | "openTeammate";
+  | "openTeammate"
+  | "openAgentDigest";
 
 export interface NotificationAction {
   id: NotificationActionId;

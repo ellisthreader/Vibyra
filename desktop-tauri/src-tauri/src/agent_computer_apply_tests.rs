@@ -30,6 +30,7 @@ fn fixture() -> Fixture {
     std::fs::create_dir(&source).unwrap();
     let source = source.canonicalize().unwrap();
     git(&source, &["init", "-q"]);
+    git(&source, &["config", "core.autocrlf", "false"]);
     std::fs::write(source.join("notes.txt"), "Original note\n").unwrap();
     std::fs::write(source.join("gone.txt"), "Delete me\n").unwrap();
     std::fs::write(source.join("other.txt"), "Other\n").unwrap();

@@ -25,11 +25,8 @@ pub(crate) fn discard(grant: &Grant, storage: &Path) -> Result<Value, String> {
         .path
         .to_str()
         .ok_or("The Agent worktree path is unavailable.")?;
-    let listed = git_cmd::run(source, &["worktree", "list", "--porcelain"], None)?;
-    if !String::from_utf8_lossy(&listed)
-        .lines()
-        .any(|line| line.strip_prefix("worktree ") == Some(target))
-    {
+    let listed = git_cmd::run(source, &["worktree", "list", "--porcelain", "-z"], None)?;
+    if !listed_worktree(&listed, &grant.path) {
         return Err("This folder is not a worktree of the granted project.".into());
     }
     git_cmd::run(source, &["worktree", "remove", "--force", target], None)
@@ -60,3 +57,34 @@ pub(crate) fn discard(grant: &Grant, storage: &Path) -> Result<Value, String> {
         && git_cmd::run(source, &["branch", "-D", &branch], None).is_ok();
     Ok(json!({"removed":true,"branchDeleted":deleted,"branchKept":exists && !deleted}))
 }
+
+// Git uses slash-separated, non-verbatim Windows paths. Compare directory objects,
+// after refusing links; the grant's managed path and identity were checked above.
+fn listed_worktree(listed: &[u8], target: &Path) -> bool {
+    let Ok(listed) = std::str::from_utf8(listed) else {
+        return false;
+    };
+    listed.split('\0').any(|record| {
+        let Some(path) = record.strip_prefix("worktree ").map(Path::new) else {
+            return false;
+        };
+        let Ok(meta) = std::fs::symlink_metadata(path) else {
+            return false;
+        };
+        if !meta.is_dir() || meta.file_type().is_symlink() {
+            return false;
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::MetadataExt;
+            if meta.file_attributes() & 0x400 != 0 {
+                return false;
+            }
+        }
+        path.canonicalize().is_ok_and(|listed| listed == target)
+    })
+}
+
+#[cfg(test)]
+#[path = "agent_computer_discard_path_tests.rs"]
+mod path_tests;

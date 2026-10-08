@@ -1,25 +1,12 @@
-//! Runs `execute` against a fake `claude` (a shell script speaking the same
+//! Runs `execute` against a fake `claude` (a native Node process speaking the same
 //! stream-json control protocol) and a recording backend.
 
 use super::*;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-const FAKE: &str = r#"
-while IFS= read -r line; do
-  case "$line" in
-    *'"subtype":"initialize"'*)
-      echo '{"type":"control_response","response":{"subtype":"success","request_id":"vibyra-init","response":{"account":{"email":"a@b.c","subscriptionType":"Claude Max","apiProvider":"firstParty"}}}}';;
-    *'"subtype":"mcp_status"'*)
-      id=$(echo "$line" | sed 's/.*"request_id":"\([^"]*\)".*/\1/')
-      echo "{\"type\":\"control_response\",\"response\":{\"subtype\":\"success\",\"request_id\":\"$id\",\"response\":{\"mcpServers\":[{\"name\":\"vibyra-broker\",\"status\":\"connected\"}]}}}";;
-    *'"subtype":"interrupt"'*)
-      [ -n "$FAKE_IGNORE_INTERRUPT" ] && continue
-      echo '{"type":"result","subtype":"error_during_execution","is_error":true,"result":"interrupted"}'; exit 0;;
-    *'"type":"user"'*) cat "$FAKE_OUT";;
-  esac
-done
-"#;
+use crate::agent_v2::provider_fixture_tests as fixture;
+const FAKE: &str = include_str!("execute_fixture.cjs");
 
 const INIT_OK: &str = r#"{"type":"system","subtype":"init","tools":["mcp__vibyra-broker__gmail_search"],"mcp_servers":[{"name":"vibyra-broker","status":"connected"}],"apiKeySource":"none","model":"m","claude_code_version":"2.1.285"}"#;
 const DELTA: &str = r#"{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"Two emails."}}}"#;
@@ -63,7 +50,7 @@ impl Backend for Recorder {
 }
 
 fn plan(dir: &Path, lines: &[&str], extra_env: &[(&str, &str)]) -> Plan {
-    let script = dir.join("claude.sh");
+    let script = dir.join("claude.cjs");
     std::fs::write(&script, FAKE).unwrap();
     let out = dir.join("out.jsonl");
     std::fs::write(
@@ -71,10 +58,7 @@ fn plan(dir: &Path, lines: &[&str], extra_env: &[(&str, &str)]) -> Plan {
         lines.iter().map(|l| format!("{l}\n")).collect::<String>(),
     )
     .unwrap();
-    let mut env = vec![
-        ("PATH".to_owned(), "/usr/bin:/bin".to_owned()),
-        ("FAKE_OUT".to_owned(), out.to_string_lossy().into_owned()),
-    ];
+    let mut env = vec![("FAKE_OUT".to_owned(), out.to_string_lossy().into_owned())];
     env.extend(
         extra_env
             .iter()
@@ -82,7 +66,7 @@ fn plan(dir: &Path, lines: &[&str], extra_env: &[(&str, &str)]) -> Plan {
     );
     Plan {
         launch: Launch {
-            program: PathBuf::from("/bin/sh"),
+            program: fixture::node(),
             args: vec![script.to_string_lossy().into_owned()],
             env,
             cwd: dir.into(),

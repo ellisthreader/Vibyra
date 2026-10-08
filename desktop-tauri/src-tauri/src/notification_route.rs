@@ -11,16 +11,28 @@ const MAX_PENDING: usize = 32;
 pub struct NotificationRoute {
     pub id: String,
     pub owner: String,
+    #[serde(default)]
     pub agent_id: String,
+    #[serde(default)]
     pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest_id: Option<String>,
     pub issued_at: u64,
 }
 
 impl NotificationRoute {
     pub fn valid(&self, now: u64) -> bool {
-        [&self.id, &self.agent_id, &self.run_id]
-            .iter()
-            .all(|id| uuid::Uuid::parse_str(id).is_ok())
+        uuid::Uuid::parse_str(&self.id).is_ok()
+            && match &self.digest_id {
+                Some(id) => {
+                    uuid::Uuid::parse_str(id).is_ok()
+                        && self.agent_id.is_empty()
+                        && self.run_id.is_empty()
+                }
+                None => [&self.agent_id, &self.run_id]
+                    .iter()
+                    .all(|id| uuid::Uuid::parse_str(id).is_ok()),
+            }
             && !self.owner.is_empty()
             && self.owner.len() <= 80
             && self
@@ -76,6 +88,7 @@ mod tests {
             agent_id: uuid::Uuid::from_u128(100).to_string(),
             run_id: uuid::Uuid::from_u128(id + 1000).to_string(),
             issued_at: 100,
+            digest_id: None,
         }
     }
     #[test]
@@ -110,5 +123,20 @@ mod tests {
             queue.push(route(id, "owner"), 101);
         }
         assert_eq!(queue.drain("owner", 101).len(), MAX_PENDING);
+    }
+    #[test]
+    fn digest_callbacks_are_exact_owner_scoped_and_never_guess_a_task() {
+        let mut digest = route(200, "owner");
+        digest.agent_id.clear();
+        digest.run_id.clear();
+        digest.digest_id = Some(uuid::Uuid::from_u128(201).to_string());
+        let mut queue = ActivationQueue::default();
+        assert!(queue.push(digest.clone(), 101));
+        let got = queue.drain("owner", 102);
+        assert_eq!(got[0].digest_id, digest.digest_id);
+        assert!(got[0].run_id.is_empty());
+        digest.id = uuid::Uuid::from_u128(202).to_string();
+        digest.run_id = uuid::Uuid::from_u128(203).to_string();
+        assert!(!queue.push(digest, 102));
     }
 }

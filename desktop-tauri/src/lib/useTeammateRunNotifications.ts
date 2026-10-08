@@ -28,7 +28,7 @@ export function useTeammateRunNotifications(): void {
   const identity = useAccountStore((s) => s.snapshot.profile?.email ?? null);
   useEffect(() => {
     const state = useNotificationStore.getState();
-    const foreign = state.history.filter(item => item.action?.id === "openTeammate" && item.action.account !== identity);
+    const foreign = state.history.filter(item => ['openTeammate','openAgentDigest'].includes(item.action?.id??'') && item.action?.account !== identity);
     for (const item of foreign) state.dismiss(item.id);
     if (foreign.length) {
       const ids = new Set(foreign.map(item => item.id));

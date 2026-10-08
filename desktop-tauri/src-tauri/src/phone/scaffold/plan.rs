@@ -92,14 +92,16 @@ mod layer_tests {
     use super::validate;
     #[test]
     fn addon_steps_stay_inside_the_new_project() {
-        let plan = |cwd: &str| {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("app");
+        let plan = |cwd: &std::path::Path| {
             serde_json::from_value(serde_json::json!({
-            "dir": "/tmp/qa/app", "createDir": true, "gitInit": false, "seeds": [],
+            "dir": root, "createDir": true, "gitInit": false, "seeds": [],
             "steps": [{"label": "Install addon", "program": "npm", "args": ["install"], "cwd": cwd}]
         })).unwrap()
         };
-        assert!(validate(&plan("/tmp/qa/app/services/express")).is_ok());
-        assert!(validate(&plan("/tmp/qa/app/../other")).is_err());
-        assert!(validate(&plan("/tmp/qa/application")).is_err());
+        assert!(validate(&plan(&root.join("services").join("express"))).is_ok());
+        assert!(validate(&plan(&root.join("..").join("other"))).is_err());
+        assert!(validate(&plan(&temp.path().join("application"))).is_err());
     }
 }

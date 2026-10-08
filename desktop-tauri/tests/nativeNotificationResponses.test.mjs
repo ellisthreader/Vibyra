@@ -31,3 +31,8 @@ test('an account switch during native drain cannot navigate', async () => {
   account = 'new'; finish([activation('old','old')]); await tick(); stop();
   assert.deepEqual(opened, []);
 });
+
+test('native summary callbacks preserve their own digest ID and owner without inventing a run',async()=>{
+ const opened=[];const value={id:'summary',account:'owner',agentId:'',runId:'',digestId:'exact-digest'};
+ const stop=await startNativeNotificationResponses({listen:async()=>()=>{},drain:async()=>[value,{...value,id:'other',account:'other'}],account:()=> 'owner',open:x=>opened.push(x)});await tick();stop();assert.deepEqual(opened,[value]);
+});

@@ -8,6 +8,8 @@ mod account_devices;
 #[cfg(test)]
 mod account_endpoint_tests;
 mod account_endpoints;
+#[cfg(test)]
+mod account_fixture_tests;
 mod account_license_types;
 mod account_login;
 mod account_oauth;

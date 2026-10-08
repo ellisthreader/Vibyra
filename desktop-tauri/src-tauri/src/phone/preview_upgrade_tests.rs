@@ -19,7 +19,16 @@ fn approved_websocket_echo_is_full_duplex_and_revocation_cancels_it() {
         .join("../../host/relay/tests/fixtures/preview-site.mjs")
         .canonicalize()
         .unwrap();
-    assert!(fixture.is_file());
+    // canonicalize returns a Windows namespaced path. Node 22's entry-point
+    // realpath rejects that drive prefix (EISDIR on D:); URL roundtrip preserves
+    // the absolute file identity while producing the normal native path.
+    let fixture = url::Url::from_file_path(&fixture)
+        .unwrap()
+        .to_file_path()
+        .unwrap();
+    assert!(fixture.is_absolute() && fixture.is_file());
+    #[cfg(windows)]
+    assert!(!fixture.to_str().unwrap().starts_with(r"\\?\"));
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("managed");
     fs::create_dir(&root).unwrap();

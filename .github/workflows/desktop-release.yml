@@ -273,5 +273,10 @@ jobs:
 
   notarized:
     if: ${{ inputs.sign_notarized_only }}
+    permissions:
+      contents: write # Required for exact private-draft access; no publication.
+      actions: read
     uses: ./.github/workflows/desktop-notarized-update.yml
+    with:
+      notarized_source_commit: ${{ github.sha }}
     secrets: inherit

@@ -11,6 +11,9 @@ interface TeammateFocus {
   visible: string | null;
   /** What the Agents page shows, for the title bar trail (a teammate, Activity, a new teammate). */
   trail: string | null;
+  digest:{id:string;account:string;nonce:number}|null;
+  requestDigest(id:string,account:string):void;
+  closeDigest():void;
   request(id: string, runId?: string): void;
   setVisible(id: string | null): void;
   setTrail(trail: string | null): void;
@@ -20,6 +23,9 @@ export const useTeammateFocus = create<TeammateFocus>((set) => ({
   requested: null,
   visible: null,
   trail: null,
+  digest:null,
+  requestDigest:(id,account)=>set({digest:{id,account,nonce:Date.now()}}),
+  closeDigest:()=>set({digest:null}),
   request: (id, runId) => set({ requested: { id, runId, nonce: Date.now() } }),
   setVisible: (id) => set((s) => (s.visible === id ? s : { visible: id })),
   setTrail: (trail) => set((s) => (s.trail === trail ? s : { trail })),

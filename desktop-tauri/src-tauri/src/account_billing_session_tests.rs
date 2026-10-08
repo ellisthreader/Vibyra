@@ -1,4 +1,5 @@
 use super::*;
+use crate::account_fixture_tests::{input as fixture_input, shell as fixture_shell};
 use crate::account_types::AccountProfile;
 use serde_json::json;
 
@@ -79,7 +80,7 @@ fn valid_response_cannot_open_after_switch_between_response_and_browser() {
 #[test]
 fn unverified_checkout_403_preserves_session_and_real_pty() {
     use std::sync::Arc;
-    use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+    use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
     struct Sink;
     impl OutputSink for Sink {
         fn on_output(&self, _: u64, _: String) {}
@@ -90,11 +91,7 @@ fn unverified_checkout_403_preserves_session_and_real_pty() {
     let action = BillingSession::capture(&account).unwrap();
     let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
     let terminal = manager
-        .create_session(
-            "shell",
-            "billing-fixture",
-            &LaunchSpec::shell(Some("/bin/sh".into()), None),
-        )
+        .create_session("shell", "billing-fixture", &fixture_shell())
         .unwrap();
     for status in [403, 401, 429, 503] {
         let message = "Verify your email before checking out.";
@@ -110,7 +107,10 @@ fn unverified_checkout_403_preserves_session_and_real_pty() {
         assert!(manager.process_id(terminal.id).unwrap().is_some());
     }
     manager
-        .write_input(terminal.id, b"printf billing-session-preserved\n")
+        .write_input(
+            terminal.id,
+            fixture_input("billing-session-preserved").as_bytes(),
+        )
         .unwrap();
     manager.shutdown();
 }

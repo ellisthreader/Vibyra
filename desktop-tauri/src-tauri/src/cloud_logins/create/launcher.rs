@@ -80,7 +80,10 @@ mod tests {
     fn windows_npm_uses_a_fixed_native_or_js_entry_and_never_the_batch_shim() {
         let dir = tempfile::tempdir().unwrap();
         let prefix = dir.path().join("Profile with spaces & punctuation");
-        let package = prefix.join("node_modules/@anthropic-ai/claude-code");
+        let package = prefix
+            .join("node_modules")
+            .join("@anthropic-ai")
+            .join("claude-code");
         std::fs::create_dir_all(package.join("bin")).unwrap();
         let shim = prefix.join("claude.cmd");
         std::fs::write(&shim, "batch fixture must never execute").unwrap();
@@ -91,7 +94,7 @@ mod tests {
         let js = windows_claude(&shim, || panic!("prefer sibling node")).unwrap();
         assert_eq!(js.executable, node);
         assert_eq!(js.arguments, vec![package.join("cli.js").into_os_string()]);
-        let native = package.join("bin/claude.exe");
+        let native = package.join("bin").join("claude.exe");
         std::fs::write(&native, "native fixture").unwrap();
         let exe = windows_claude(&shim, || panic!("native needs no node")).unwrap();
         assert_eq!(exe.executable, native);

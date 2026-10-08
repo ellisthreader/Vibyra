@@ -1,11 +1,12 @@
 use super::*;
+use crate::account_fixture_tests::{input as fixture_input, shell as fixture_shell};
 use crate::account_session::AccountSessionManager;
 use crate::account_types::AccountProfile;
 
 #[test]
 fn rejected_profile_change_preserves_signed_in_profile_and_running_terminal() {
     use std::sync::Arc;
-    use vibyra_core::pty::{FlushConfig, LaunchSpec, OutputSink, PtyManager};
+    use vibyra_core::pty::{FlushConfig, OutputSink, PtyManager};
     struct Sink;
     impl OutputSink for Sink {
         fn on_output(&self, _: u64, _: String) {}
@@ -21,7 +22,7 @@ fn rejected_profile_change_preserves_signed_in_profile_and_running_terminal() {
         },
     );
     let manager = PtyManager::new(Arc::new(Sink), FlushConfig::default());
-    let spec = LaunchSpec::shell(Some("/bin/sh".into()), None);
+    let spec = fixture_shell();
     let terminal = manager
         .create_session("shell", "profile-fixture", &spec)
         .unwrap();
@@ -42,7 +43,7 @@ fn rejected_profile_change_preserves_signed_in_profile_and_running_terminal() {
         assert!(manager.process_id(terminal.id).unwrap().is_some());
     }
     manager
-        .write_input(terminal.id, "printf profile-preserved\n".as_bytes())
+        .write_input(terminal.id, fixture_input("profile-preserved").as_bytes())
         .unwrap();
     manager.shutdown();
 }

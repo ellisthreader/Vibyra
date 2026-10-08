@@ -55,3 +55,18 @@ test("settled or acknowledged prompts retire without retiring a new pending appr
     item("read", "signin", { read: true }), item("new", "approval")])],
     ["teammate:run-old:approval:old", "teammate:run-read:signin:read"]);
 });
+
+test('quiet-hour deferral waits for eligibility; mode suppression never replays',()=>{
+ const ctx=context();const deferred=item('quiet','completed',{alertDisposition:'deferred'}), suppressed=item('muted','completed',{alertDisposition:'suppressed'});
+ assert.deepEqual(newTeammateAlerts([deferred,suppressed],ctx),[]);assert.equal(ctx.seen.has('quiet'),false);assert.equal(ctx.seen.has('muted'),true);
+ assert.equal(newTeammateAlerts([{...deferred,alertDisposition:'eligible'},{...suppressed,alertDisposition:'eligible'}],ctx).length,1);
+ assert.equal(newTeammateAlerts([{...deferred,alertDisposition:'eligible'}],ctx).length,0);
+ const baseline=context({baseline:true});newTeammateAlerts([deferred],baseline);baseline.baseline=false;assert.equal(newTeammateAlerts([{...deferred,alertDisposition:'eligible'}],baseline).length,0);
+});
+test('daily summaries keep a distinct owner-bound destination and honour deferral',()=>{
+ const id='550e8400-e29b-41d4-a716-446655440000';const digest={...item('digest','completed'),destination:{source:'agent_digest',digestId:id}};
+ const action=teammateRunNotification(digest,'owner').action;assert.deepEqual(action,{id:'openAgentDigest',label:'Open daily summary',arg:id,account:'owner'});
+ assert.equal(teammateRunNotification({...digest,destination:{source:'agent_digest',digestId:'../../'}}),null);
+ const ctx=context();assert.equal(newTeammateAlerts([{...digest,alertDisposition:'deferred'}],ctx).length,0);assert.equal(newTeammateAlerts([digest],ctx).length,1);
+ assert.ok(settledTeammateKeys([{...digest,read:true}]).has(`teammate-digest:${id}:digest`));
+});

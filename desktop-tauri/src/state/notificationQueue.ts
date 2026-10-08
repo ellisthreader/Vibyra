@@ -77,11 +77,12 @@ const NEVER_BURST = new Set<NotificationCategory>(["appUpdate", "models", "syste
 
 /** Level 2: the newest item shares this category and arrived a blink ago. */
 function burstMatch(history: NotificationItem[], input: NotificationInput, now: number) {
-  // Task inbox alerts must retain each exact navigation target.
-  if (input.action?.id === "openTeammate") return undefined;
+  // Inbox task alerts retain distinct navigation targets even when several
+  // tasks finish together. A category summary would discard all but one run.
+  if (['openTeammate','openAgentDigest'].includes(input.action?.id??'')) return undefined;
   if (NEVER_BURST.has(input.category)) return undefined;
   const head = history[0];
-  if (head?.action?.id === "openTeammate") return undefined;
+  if (['openTeammate','openAgentDigest'].includes(head?.action?.id??'')) return undefined;
   if (!head || head.category !== input.category) return undefined;
   return now - head.at <= BURST_MS ? head : undefined;
 }

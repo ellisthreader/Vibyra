@@ -10,7 +10,7 @@ fn run_folder(base: &Path, name: &str, age: Duration) -> std::path::PathBuf {
     )
     .unwrap();
     let old = SystemTime::now() - age;
-    fs::File::open(&dir).unwrap().set_modified(old).unwrap();
+    set_modified(&dir, old);
     dir
 }
 
@@ -25,10 +25,7 @@ fn stale_run_folders_are_swept_and_everything_else_is_left_alone() {
     let unrelated = run_folder(base.path(), "some-other-old-folder", old);
     let no_layout = base.path().join("vibyra-agent-plain");
     fs::create_dir(&no_layout).unwrap();
-    fs::File::open(&no_layout)
-        .unwrap()
-        .set_modified(SystemTime::now() - old)
-        .unwrap();
+    set_modified(&no_layout, SystemTime::now() - old);
     let target = tempfile::tempdir().unwrap();
     fs::create_dir(target.path().join("ctl")).unwrap();
     #[cfg(unix)]
@@ -53,4 +50,21 @@ fn a_missing_base_folder_is_not_an_error() {
         sweep(Path::new("/nonexistent/vibyra"), STALE, SystemTime::now()),
         0
     );
+}
+
+fn set_modified(path: &Path, modified: SystemTime) {
+    #[cfg(windows)]
+    let file = {
+        use std::os::windows::fs::OpenOptionsExt;
+        // Directory handles need BACKUP_SEMANTICS; set_modified needs only
+        // FILE_WRITE_ATTRIBUTES, not read/write access to directory contents.
+        fs::OpenOptions::new()
+            .access_mode(0x100)
+            .custom_flags(0x02000000)
+            .open(path)
+            .unwrap()
+    };
+    #[cfg(not(windows))]
+    let file = fs::File::open(path).unwrap();
+    file.set_modified(modified).unwrap();
 }
