@@ -3,6 +3,7 @@ import { METRICS, display, frontier } from "./metrics.js";
 import { linear, log, pad, padLog } from "./scales.js";
 import { useTooltip, Tooltip, TipBody } from "./Tooltip.jsx";
 import useWidth from "./useWidth.js";
+import { modelLabel } from "./effortSelection.js";
 import MapLegend from "./MapLegend.jsx";
 import placeLabels from "./labels.js";
 
@@ -22,17 +23,21 @@ export default function ValueMap({ models, focus, onFocus }) {
     const height = width < 640 ? 380 : 480;
     const xs = points.map(x.get);
     const ys = points.map(y.get);
+    const xDomain = xs.length ? [Math.min(...xs), Math.max(...xs)] : [1, 10];
+    const yDomain = ys.length ? [Math.min(...ys), Math.max(...ys)] : [0, 100];
+    if (yDomain[0] === yDomain[1]) { yDomain[0] -= 5; yDomain[1] += 5; }
+    if (xDomain[0] === xDomain[1]) { xDomain[0] *= .8; xDomain[1] *= 1.2; }
     const sx = (xId === "price" ? log : linear)(
-        xId === "price" ? padLog([Math.min(...xs), Math.max(...xs)]) : pad([Math.min(...xs), Math.max(...xs)]),
+        xId === "price" ? padLog(xDomain) : pad(xDomain),
         [M.left, width - M.right],
     );
-    const sy = linear(pad([Math.min(...ys), Math.max(...ys)]), [height - M.bottom, M.top]);
+    const sy = linear(pad(yDomain), [height - M.bottom, M.top]);
     const line = frontier(points, xId, yId).map((m) => `${sx(x.get(m))},${sy(y.get(m))}`).join(" ");
     const tipFor = (m) => <TipBody model={m} rows={[[y.title, display(yId, m)], [x.title, display(xId, m)]]} />;
     // Name the models people look for first: the focused one, the frontier, then the top scorers.
     const priority = [...points].sort((a, b) => rank(b) - rank(a));
     function rank(m) { return (m.id === focus ? 1e4 : 0) + (best.has(m.id) ? 1e3 : 0) + y.get(m); }
-    const spots = priority.map((m) => ({ id: m.id, text: m.name, cx: sx(x.get(m)), cy: sy(y.get(m)) }));
+    const spots = priority.map((m) => ({ id: m.id, text: modelLabel(m), cx: sx(x.get(m)), cy: sy(y.get(m)) }));
     const labels = placeLabels(spots.slice(0, 10), width, spots);
     const goodCorner = x.better === "low" ? "top-left" : "top-right";
     return (
@@ -77,18 +82,19 @@ export default function ValueMap({ models, focus, onFocus }) {
                             const cls = `bm-dot${best.has(m.id) ? " is-best" : ""}${m.openWeights ? " is-open" : ""}${focus === m.id ? " is-focused" : ""}`;
                             const label = labels.get(m.id);
                             return (
-                                <g key={m.id} className={cls} tabIndex={0} role="button" aria-label={`${m.name}: ${y.fmt(y.get(m))}, ${x.fmt(x.get(m))}`}
+                                <g key={m.id} className={cls} tabIndex={0} role="button" aria-label={`${modelLabel(m)}: ${y.fmt(y.get(m))}, ${x.fmt(x.get(m))}`}
                                     aria-pressed={focus === m.id}
                                     onClick={() => onFocus(m.id)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onFocus(m.id))}
                                     onPointerMove={(e) => show(e, tipFor(m))} onFocus={(e) => show(e, tipFor(m))} onBlur={hide}>
                                     <circle className="bm-hit" cx={cx} cy={cy} r="14" />
                                     <circle className="bm-point" cx={cx} cy={cy} r="6" />
-                                    {label && <text x={label.x} y={cy} dy="0.32em" textAnchor={label.anchor}>{m.name}</text>}
+                                    {label && <text x={label.x} y={cy} dy="0.32em" textAnchor={label.anchor}>{modelLabel(m)}</text>}
                                 </g>
                             );
                         })}
                     </svg>
                 </div>
+                {!points.length && <p className="bm-footnote">No qualifying scores for this effort and these axes. Published runs remain available under Rankings and All scores.</p>}
                 <MapLegend />
                 <Tooltip tip={tip} />
             </div>

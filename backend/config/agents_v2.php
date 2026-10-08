@@ -6,6 +6,7 @@
  * OpenRouter. Off by default; a run needs the flag AND a cohort entry.
  */
 return [
+    'outputs_enabled' => env('AGENT_OUTPUTS_ENABLED', false),
     'enabled' => (bool) env('AGENTS_V2_ENABLED', false),
     // Comma-separated user IDs, or `*` for every account. Empty means nobody.
     'user_ids' => (string) env('AGENTS_V2_USER_IDS', ''),

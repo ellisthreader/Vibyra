@@ -36,12 +36,15 @@ final class Leases
                 $run = Run::query()->whereKey($candidate->id)->lockForUpdate()->first();
                 if (!$run || !in_array($run->state, RunStates::CLAIMABLE, true) || $run->cancel_requested_at
                     || ($run->lease_expires_at && $run->lease_expires_at->isFuture())) return null;
+                if (Steering::pending($run) && ($binding->capabilities['taskSteering'] ?? false) !== true) return null;
+                if (Steering::unsettled($run)) return null;
                 // A lease that lapsed (the Mac crashed or slept) is a lost attempt; a wait releases its lease, so it is not.
                 $lapsed = $run->lease_expires_at !== null;
                 if ($lapsed && $run->lapsed_claims >= max(1, (int) config('agents_v2.max_claims')) - 1) {
                     $this->giveUp($run);
                     return null;
                 }
+                app(Steering::class)->apply($run);
                 $run->forceFill(['lapsed_claims' => $run->lapsed_claims + ($lapsed ? 1 : 0), 'lease_generation' => $run->lease_generation + 1,
                     'lease_expires_at' => now()->addSeconds((int) config('agents_v2.lease_seconds')),
                     'started_at' => $run->started_at ?? now(), 'wait_revision' => null, 'resume_after' => null])->save();
@@ -83,6 +86,8 @@ final class Leases
             ApiError::throw(409, 'run_cancelled', 'This task was cancelled.');
         if (!$allowCancelled && RunStates::terminal($run->state))
             ApiError::throw(409, 'run_finished', 'This task already finished.');
+        if (!$allowCancelled && Steering::pending($run))
+            ApiError::throw(409, 'instruction_pending', 'Updated task instructions are waiting for a safe checkpoint.');
         return $run;
     }
 
@@ -90,9 +95,11 @@ final class Leases
     {
         return DB::transaction(function () use ($binding, $runId, $generation) {
             $run = $this->fenced($binding, $runId, $generation, true);
-            if (!RunStates::terminal($run->state)) $run->forceFill([
+            // A heartbeat already in flight when checkpoint committed must not resurrect the released lease.
+            if (!RunStates::terminal($run->state) && !(Steering::pending($run) && $run->lease_expires_at === null)) $run->forceFill([
                 'lease_expires_at' => now()->addSeconds((int) config('agents_v2.lease_seconds'))])->save();
             return ['state' => $run->state, 'cancelRequested' => $run->cancel_requested_at !== null,
+                'steeringRequested' => Steering::pending($run), 'instructionRevision' => $run->instruction_revision,
                 'generation' => $run->lease_generation, 'leaseExpiresAt' => $run->lease_expires_at?->toIso8601String()];
         });
     }

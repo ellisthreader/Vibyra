@@ -1,0 +1,39 @@
+.benchmarks-page .bm-effort-controls { display: flex; align-items: center; gap: 28px; margin-block: 0 28px; }
+.benchmarks-page .bm-select-label { display: grid; gap: 7px; min-width: 0; font-size: 12px; color: var(--home-muted); }
+.benchmarks-page .bm-select-label select { max-width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--bm-line); border-radius: 8px; color: var(--home-ink); background: var(--bm-surface); font: inherit; }
+.benchmarks-page .bm-effort-controls p { max-width: 540px; color: var(--home-muted); font-size: 12px; line-height: 1.6; }
+.benchmarks-page .bm-ranking-controls { display: grid; gap: 12px; justify-items: end; min-width: 0; max-width: 400px; }
+.benchmarks-page .bm-ranking-controls .bm-select-label { width: 100%; }
+.benchmarks-page .bm-model small { flex-wrap: wrap; white-space: normal; gap: 5px; }
+.benchmarks-page .bm-model em.is-effort { color: var(--bm-ink-2); border-color: var(--bm-line); }
+.benchmarks-page .bm-pick-effort { display: block; margin-top: 5px; font-size: 11px; font-weight: 500; color: var(--home-muted); letter-spacing: 0; }
+.benchmarks-page .bm-score-options { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--home-muted); }
+.benchmarks-page .bm-raw-score { cursor: help; }
+.benchmarks-page .bm-score-sensitivity { display: block; margin-top: 3px; color: var(--home-muted); font-size: 10px; }
+.benchmarks-page .bm-published-runs > p { margin-top: 12px; color: var(--home-muted); font-size: 12px; line-height: 1.7; }
+.benchmarks-page .bm-table-model { border: 0; padding: 0; background: none; color: inherit; }
+.benchmarks-page .bm-run-hint { margin-top: 14px; color: var(--home-muted); font-size: 12px; }
+.benchmarks-page .bm-published-runs { margin-top: 18px; padding: 20px; border: 1px solid var(--bm-line); border-radius: 12px; background: var(--bm-surface); }
+.benchmarks-page .bm-published-runs summary { cursor: pointer; font-size: 14px; }
+.benchmarks-page .bm-published-runs ul { display: grid; gap: 16px; list-style: none; padding: 18px 0 0; }
+.benchmarks-page .bm-published-runs li { min-width: 0; overflow-wrap: anywhere; }
+.benchmarks-page .bm-published-runs li > div { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; }
+.benchmarks-page .bm-published-runs li p, .benchmarks-page .bm-published-runs li small { color: var(--home-muted); font-size: 12px; line-height: 1.7; }
+.benchmarks-page .bm-published-runs a { text-decoration: underline; text-underline-offset: 3px; }
+.benchmarks-page .bm-select-label select:focus-visible { outline: 2px solid var(--home-cobalt); outline-offset: 3px; }
+.benchmarks-page .bm-cost-note { margin: 0 0 18px; color: var(--home-muted); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.benchmarks-page .bm-cost-note a { white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+.benchmarks-page .bm-map + .bm-cost-note { margin-top: 18px; }
+.benchmarks-page .bm-cost-table td { padding: 14px; }
+.benchmarks-page .bm-cost-table .bm-sticky { min-width: 230px; }
+.benchmarks-page .bm-value-policy { display: block; margin-top: 10px; color: var(--home-muted); font-size: 10px; line-height: 1.5; }
+.benchmarks-page .bm-token-details { margin-top: 22px; color: var(--home-muted); font-size: 13px; }
+.benchmarks-page .bm-token-details summary { cursor: pointer; }
+.benchmarks-page .bm-token-details .bm-section { margin-top: 24px; }
+@media (max-width: 900px) {
+    .benchmarks-page .bm-ranking-controls { justify-items: start; width: 100%; }
+}
+@media (max-width: 640px) {
+    .benchmarks-page .bm-effort-controls { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 20px; }
+    .benchmarks-page .bm-ranking-controls { max-width: 100%; }
+}

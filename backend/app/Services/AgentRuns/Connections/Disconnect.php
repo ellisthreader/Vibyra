@@ -4,7 +4,9 @@ namespace App\Services\AgentRuns\Connections;
 
 use App\Models\AgentV2\McpServer;
 use App\Services\AgentRuns\Composio\ComposioApi;
+use App\Services\ChatConnectors\{Registry, Revocable};
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Removing a connection from the hub: every grant on it is revoked and the stored
@@ -14,7 +16,8 @@ use Illuminate\Support\Facades\Crypt;
  */
 final class Disconnect
 {
-    public function __construct(private readonly Connections $connections, private readonly ComposioApi $composio) {}
+    public function __construct(private readonly Connections $connections, private readonly ComposioApi $composio,
+        private readonly Registry $registry) {}
 
     public function remove(int $userId, string $id): void
     {
@@ -28,5 +31,14 @@ final class Disconnect
         $this->connections->revoke($userId, $id);
         McpServer::query()->where('connection_id', $row->id)->update(['oauth' => null, 'status' => 'removed', 'updated_at' => now()]);
         if ($account) $this->composio->disconnect($account);
+        // Install-backed accounts already revoke upstream through Installs. Extra accounts must do the same.
+        if (!$row->install_id && $row->credential && $this->registry->has($row->provider)) {
+            try {
+                $connector = $this->registry->for($row->provider);
+                if ($connector instanceof Revocable) $connector->revoke(Crypt::decryptString($row->credential));
+            } catch (\Throwable) {
+                Log::warning('Connector upstream disconnect failed', ['provider' => $row->provider]);
+            }
+        }
     }
 }

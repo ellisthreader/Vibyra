@@ -38,6 +38,15 @@ final class Client
     private function body($response): array
     {
         if ($response->status() === 401) throw new \App\Services\ChatConnectors\ReconnectRequired('Microsoft access expired or was revoked. Tell the person to reconnect it in Settings → Integrations.');
+        // Said plainly, because a refusal that reads as an outage sends the person to the wrong fix.
+        $code = (string) $response->json('error.code');
+        $code = preg_match('/^[A-Za-z0-9_.-]{1,60}$/D', $code) ? ' ('.$code.')' : '';
+        match ($response->status()) {
+            403 => abort(403, 'Microsoft denied this'.$code.'. The account may lack permission, or an admin has not approved this app for its organization.'),
+            404 => abort(404, 'Microsoft could not find that item, or this account cannot see it'.$code.'.'),
+            429 => abort(429, 'Microsoft is rate-limiting requests. Try again shortly.'),
+            default => null,
+        };
         if (!$response->successful() || !is_array($response->json())) {
             throw new RuntimeException('Microsoft refused this request. Check the connection and its access.');
         }

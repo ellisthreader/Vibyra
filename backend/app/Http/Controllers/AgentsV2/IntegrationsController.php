@@ -5,10 +5,11 @@ namespace App\Http\Controllers\AgentsV2;
 use App\Http\Controllers\Controller;
 use App\Services\AgentRuns\Composio\ComposioAccounts;
 use App\Services\AgentRuns\Connections\Readiness;
+use App\Services\AgentRuns\Mcp\McpPresets;
 use App\Services\ChatConnectors\OAuthFlows;
 use Illuminate\Http\Request;
 
-/** The teammate integration catalogue (honest readiness) and Composio account linking. */
+/** The teammate integration catalogue (honest readiness, plus one-tap MCP presets) and Composio account linking. */
 final class IntegrationsController extends Controller
 {
     use V2Requests, CallbackPage;
@@ -16,7 +17,7 @@ final class IntegrationsController extends Controller
     public function catalogue(Request $request, Readiness $readiness)
     {
         $this->v2User($request);
-        return $this->json(['providers' => $readiness->catalogue()]);
+        return $this->json(['providers' => $readiness->catalogue(), 'mcpPresets' => McpPresets::available()]);
     }
 
     public function composioStart(Request $request, string $toolkit, ComposioAccounts $accounts)

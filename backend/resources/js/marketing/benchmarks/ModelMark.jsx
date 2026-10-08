@@ -1,4 +1,5 @@
 import React from "react";
+import { effortLabel } from "./effortSelection.js";
 import { PROVIDERS } from "./data.js";
 import { logoPath } from "./metrics.js";
 
@@ -21,6 +22,7 @@ export function ModelName({ model, showProvider = true }) {
                 {showProvider && (
                     <small>
                         {PROVIDERS[model.provider]?.name ?? model.provider}
+                        {model.effort && <em className="is-effort">{effortLabel(model)}</em>}
                         {model.openWeights && <em>Open weights</em>}
                         {model.provisional && <em className="is-early" title="Fewer than 6 leaderboards list this model yet">Early data</em>}
                     </small>

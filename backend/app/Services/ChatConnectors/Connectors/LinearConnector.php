@@ -83,7 +83,7 @@ final class LinearConnector implements Connector
             $data = $this->query($credential,
                 'query ($id: String!) { issue(id: $id) { id identifier title description url state { name } team { name } } }',
                 ['id' => $arguments['id']]);
-            if (!is_array($data['issue'] ?? null)) throw new RuntimeException('Linear did not find that issue.');
+            if (!is_array($data['issue'] ?? null)) abort(404, 'Linear did not find that issue, or this account cannot see it.');
             $issue = $data['issue'];
             $issue['description'] = mb_substr((string) ($issue['description'] ?? ''), 0, 12000);
             return ['result' => ['issue' => $issue],
@@ -115,6 +115,11 @@ final class LinearConnector implements Connector
         $body = $response->json();
         $codes = is_array($body) ? array_map(fn ($e) => strtoupper((string) ($e['extensions']['code'] ?? '')), (array) ($body['errors'] ?? [])) : [];
         if ($response->status() === 401 || in_array('AUTHENTICATION_ERROR', $codes, true)) throw ReconnectRequired::for('linear');
+        if ($response->status() === 429 || in_array('RATELIMITED', $codes, true)) abort(429, 'Linear is rate-limiting requests. Try again shortly.');
+        if (in_array('FORBIDDEN', $codes, true)) abort(403, 'Linear says this sign-in may not do that. It may have been granted fewer permissions than this needs; reconnecting Linear grants them.');
+        // Linear words its own input and not-found errors for the person ("Entity not found: Issue"); say that instead of an outage.
+        $said = is_array($body) ? ($body['errors'][0]['extensions']['userPresentableMessage'] ?? null) : null;
+        if (is_string($said) && trim($said) !== '' && mb_strlen($said) <= 300) abort(422, 'Linear: '.trim(preg_replace('/\s+/', ' ', $said)));
         if (!$response->successful() || !is_array($body) || !empty($body['errors']) || !is_array($body['data'] ?? null)) {
             throw new RuntimeException('Linear refused this request. Check the connection and team access.');
         }

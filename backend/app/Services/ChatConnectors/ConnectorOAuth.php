@@ -3,6 +3,7 @@
 namespace App\Services\ChatConnectors;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Connecting by signing in to the service rather than pasting a key. The phone
@@ -100,15 +101,18 @@ class ConnectorOAuth
         // Slack returns a user token (the one that may search) under `authed_user`.
         $root = ($flow['mode'] ?? '') === 'add_account' && !empty($settings['agent_user_scope'])
             ? (string) ($settings['agent_token_root'] ?? 'authed_user').'.' : '';
-        $token = (string) ($response->json($root.'access_token') ?? '');
-        if (!$response->successful() || $token === '') {
-            $this->fail($flow, $this->name($slug).' did not finish the connection. Please try again.');
-            return [$flow, null];
-        }
         // The refresh token and lifetime are part of the grant. Reading only the
         // access token off this response is what used to make a Figma connection
         // unrenewable, and so silently dead ninety days later.
-        return [$flow, ConnectorTokens::grant($response, $root, null)];
+        $grant = ConnectorTokens::exchanged($settings, $response, $root);
+        if (!$response->successful() || $grant === null) {
+            $this->fail($flow, $this->name($slug).' did not finish the connection. Please try again.');
+            return [$flow, null];
+        }
+        // Slack: the bot's granted scopes (e.g. app_mentions:read, which the Events API needs) sit beside the user token's.
+        if ($root !== '' && is_string($bot = $response->json('scope')) && $bot !== '')
+            $grant['scope'] = mb_substr(trim(((string) $grant['scope']).','.$bot, ','), 0, 2000);
+        return [$flow, $grant];
     }
 
     /** Whether this provider's tokens can be traded for a fresh one at all. */
@@ -134,12 +138,16 @@ class ConnectorOAuth
         try { $response = ConnectorTokens::request($settings)->post((string) $settings['refresh_url'], array_intersect_key($fields, array_flip($wanted))); }
         catch (ConnectionException $e) { return null; }
         // The provider says this refresh token is dead: only a new sign-in helps.
-        if (in_array($response->status(), [400, 401], true)) throw ReconnectRequired::for($slug);
+        if (ConnectorTokens::signInEnded($response)) throw ReconnectRequired::for($slug);
         $token = (string) ($response->json('access_token') ?? '');
-        if (!$response->successful() || $token === '') return null;
+        if (!$response->successful() || $token === '') {
+            // Vibyra's own app credentials were refused (wrong or expired secret): the owner's to fix, never the person's.
+            if (in_array($response->status(), [400, 401], true)) Log::warning('Connector refresh refused our client credentials', ['slug' => $slug]);
+            return null;
+        }
         // Figma keeps one access token per user per app and returns no new refresh
         // token here, so the one already stored stays the one to use next time.
-        return ConnectorTokens::grant($response, '', $refresh);
+        return ConnectorTokens::grant($response, '', $refresh, $settings);
     }
 
     public function succeed(array $flow, array $extra = []): void
@@ -175,11 +183,6 @@ class ConnectorOAuth
         return $this->callbackBaseUrl($slug).'/api/connectors/callback/'.$slug;
     }
 
-    /**
-     * One provider can move to another registered origin (Google to vibyra.net) while the
-     * rest stay where their apps are registered. The confirmation hop follows, so its
-     * host-only binding cookie still reaches the callback.
-     */
     private function callbackBaseUrl(string $slug): string
     {
         return rtrim(trim((string) ($this->settings($slug)['callback_base_url'] ?? ''))

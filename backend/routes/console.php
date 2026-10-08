@@ -52,3 +52,5 @@ Schedule::command('vibyra:agent-v2-retention')->dailyAt('03:30')->withoutOverlap
 Schedule::command('vibyra:backup-attachments')->dailyAt('02:45')->withoutOverlapping(30)->onOneServer();
 
 Schedule::command('vibyra:platform-webhooks-sweep')->everyMinute()->when(fn () => (bool) config('platform.webhooks'))->withoutOverlapping(5)->onOneServer();
+
+Schedule::command('vibyra:sync-model-catalog')->everyFiveMinutes()->withoutOverlapping(15)->onOneServer();

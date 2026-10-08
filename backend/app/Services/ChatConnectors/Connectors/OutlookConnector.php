@@ -60,7 +60,8 @@ final class OutlookConnector implements Connector
     public function run(string $operation, array $arguments, string $credential): array
     {
         if ($operation === 'outlook_mail_search') {
-            $data = $this->graph->get($credential, '/me/messages', ['$search' => '"'.$arguments['query'].'"',
+            // $search takes the whole query in double quotes, so a quote inside it would end the phrase early and Graph answers 400.
+            $data = $this->graph->get($credential, '/me/messages', ['$search' => '"'.str_replace('"', ' ', $arguments['query']).'"',
                 '$top' => 10, '$select' => 'id,subject,from,receivedDateTime,bodyPreview,webLink']);
             $messages = array_map(fn ($item) => ['id' => $item['id'] ?? null,
                 'subject' => $item['subject'] ?? null, 'from' => $item['from']['emailAddress']['address'] ?? null,

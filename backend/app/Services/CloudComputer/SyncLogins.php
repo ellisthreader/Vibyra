@@ -6,12 +6,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Opt-in login carry-over (Codex only). The Mac uploads one sealed blob; the backend stores ciphertext and never opens it.
+ * Logins for Vibyra Cloud. The Mac uploads one sealed blob; the backend stores ciphertext and never opens it.
+ * `origin: cloud` (2026-10-07) is a fresh login the Mac created only for Cloud (Codex `auth.json`, Claude long-lived token);
+ * null is a copy of the Mac's own Codex login, which the VM drops and which can never replace a Cloud login.
  * The blob file goes as soon as the cloud computer acks it (ok or not), when a newer one replaces it, after 24 hours, or with the account.
  */
 class SyncLogins
 {
-    public const PROVIDERS = ['codex'];
+    public const PROVIDERS = ['codex', 'claude'];
+    public const ORIGINS = ['cloud'];
     public const MAX_BYTES = 262144;
     public const MAX_AGE_HOURS = 24;
 
@@ -23,15 +26,15 @@ class SyncLogins
         foreach (self::PROVIDERS as $p) {
             $r = $rows[$p] ?? null;
             $out[$p] = ['seq' => (int) ($r->seq ?? 0), 'appliedSeq' => (int) ($r->applied_seq ?? 0), 'pending' => (bool) ($r->blob_id ?? false),
-                'appliedAt' => ($r->applied_at ?? null) ? Carbon::parse($r->applied_at)->toIso8601String() : null];
+                'appliedAt' => ($r->applied_at ?? null) ? Carbon::parse($r->applied_at)->toIso8601String() : null, 'origin' => $r->origin ?? null];
         }
         return $out;
     }
 
     /** Streams the sealed body to the sync disk and replaces any older un-applied login blob at once. */
-    public function receive(int $user, string $provider, int $seq, string $sha256, $stream, ?int $declared): void
+    public function receive(int $user, string $provider, int $seq, string $sha256, $stream, ?int $declared, ?string $origin = null): void
     {
-        $this->admit($user, $provider);
+        $this->admit($user, $provider, $origin);
         if ($declared !== null && $declared > self::MAX_BYTES) Computers::fail('too_large', 'That login is too large to carry over.', 413);
         $this->checkSeq($this->row($user, $provider), $seq);
         $upload = app(SyncUpload::class);
@@ -45,13 +48,14 @@ class SyncLogins
             $upload->store($tmp, $path);
         } catch (\Throwable $e) { @unlink($tmp); throw $e; }
         try {
-            $old = DB::transaction(function () use ($user, $provider, $seq, $id, $path, $spooled) {
+            $old = DB::transaction(function () use ($user, $provider, $seq, $id, $path, $spooled, $origin) {
+                app(\App\Services\Vibes\Wallet::class)->lock($user);
                 $row = DB::table('cloud_sync_logins')->where('user_id', $user)->where('provider', $provider)->lockForUpdate()->first();
                 // Gone mid-upload: the agreement was withdrawn and the account purged. The stored file is deleted below.
                 if (!$row) Computers::fail('connect_required', 'Connect to the cloud from your iPhone first.', 409);
                 $this->checkSeq($row, $seq);
-                $this->admit($user, $provider); // blocked while this upload was streaming
-                DB::table('cloud_sync_logins')->where('id', $row->id)->update(['seq' => $seq, 'blob_id' => $id, 'path' => $path, 'bytes' => $spooled['bytes'], 'sha256' => $spooled['sha256'],
+                $this->admit($user, $provider, $origin, $row); // blocked while this upload was streaming
+                DB::table('cloud_sync_logins')->where('id', $row->id)->update(['seq' => $seq, 'origin' => $origin, 'blob_id' => $id, 'path' => $path, 'bytes' => $spooled['bytes'], 'sha256' => $spooled['sha256'],
                     'uploaded_at' => now(), 'fetched_at' => null, 'failed_at' => null, 'error' => null, 'updated_at' => now()]);
                 return $row->path;
             });
@@ -59,29 +63,35 @@ class SyncLogins
         if ($old) $this->deleteFile($old);
     }
 
-    /** DELETE: drops any pending blob; seq/applied metadata stays so the next upload still has to be newer. */
-    public function remove(int $user, string $provider): void
+    /** DELETE: drops a pending COPY of the Mac's login; seq/applied metadata stays so the next upload still has to be newer.
+     *  A login made for Cloud is never dropped this way (an older Mac taking its copy back must not remove Cloud's own). */
+    public function remove(int $user, string $provider, ?int $expectedSeq = null): void
     {
-        $this->dropBlob(DB::table('cloud_sync_logins')->where('user_id', $user)->where('provider', $provider)->whereNotNull('blob_id')->first());
+        DB::transaction(function () use ($user, $provider, $expectedSeq) {
+            // receive() takes this same row lock: a copy withdrawal cannot clear a newer Cloud login's pointer.
+            $row = DB::table('cloud_sync_logins')->where('user_id', $user)->where('provider', $provider)->lockForUpdate()->first();
+            if (!$row || $row->origin === 'cloud' || ($expectedSeq !== null && (int) $row->seq !== $expectedSeq)) return;
+            $this->dropBlob($row);
+        }, 5);
     }
 
     /** Runtime inbox items. */
     public function pending(int $user): array
     {
-        return DB::table('cloud_sync_logins')->where('user_id', $user)->whereNotNull('blob_id')->orderBy('provider')->get()->map(fn ($r) => ['id' => $r->blob_id, 'project' => null,
-            'provider' => $r->provider, 'kind' => 'login', 'seq' => (int) $r->seq, 'bytes' => (int) $r->bytes, 'sha256' => $r->sha256])->all();
+        return DB::table('cloud_sync_logins')->where('user_id', $user)->whereNotNull('blob_id')->orderBy('provider')->get()->filter(fn ($r) => app(AccessProviders::class)->enabled($user, $r->provider))->map(fn ($r) => ['id' => $r->blob_id, 'project' => null,
+            'provider' => $r->provider, 'origin' => $r->origin, 'kind' => 'login', 'seq' => (int) $r->seq, 'bytes' => (int) $r->bytes, 'sha256' => $r->sha256])->values()->all();
     }
 
     public function pendingCount(int $user): int
     {
-        return DB::table('cloud_sync_logins')->where('user_id', $user)->whereNotNull('blob_id')->count();
+        return count($this->pending($user));
     }
 
     /** A blob-shaped object (path, bytes, sha256) for the shared download response, or null when this id is not a live login blob. */
     public function blob(int $user, string $id): ?object
     {
         $r = DB::table('cloud_sync_logins')->where('user_id', $user)->where('blob_id', $id)->first();
-        if (!$r) return null;
+        if (!$r || !app(AccessProviders::class)->enabled($user, $r->provider)) return null;
         DB::table('cloud_sync_logins')->where('id', $r->id)->whereNull('fetched_at')->update(['fetched_at' => now()]);
         return (object) ['id' => $r->blob_id, 'path' => $r->path, 'bytes' => $r->bytes, 'sha256' => $r->sha256];
     }
@@ -121,10 +131,16 @@ class SyncLogins
         return DB::table('cloud_sync_logins')->where('user_id', $user)->where('provider', $provider)->first();
     }
 
-    /** The phone turned carry-over off for this provider (AccessProviders). */
-    private function admit(int $user, string $provider): void
+    /** A login made for Cloud needs provider permission, but never the legacy carry-over permission. A copy of the Mac's own login only for Codex, only while the phone allows it,
+     *  and never over a Cloud login (it would replace a working sign-in with one that signs the Mac out). */
+    private function admit(int $user, string $provider, ?string $origin = null, ?object $row = null): void
     {
-        if (app(AccessProviders::class)->blocked($user, $provider)) Computers::fail('login_blocked', 'Using this login in Vibyra Cloud is turned off on your iPhone.', 409);
+        if (!app(AccessProviders::class)->enabled($user, $provider))
+            Computers::fail('login_blocked', 'This AI account is turned off for Vibyra Cloud.', 409);
+        if ($origin === 'cloud') return;
+        $row ??= DB::table('cloud_sync_logins')->where('user_id', $user)->where('provider', $provider)->first();
+        if ($provider !== 'codex' || ($row->origin ?? null) === 'cloud' || app(AccessProviders::class)->blocked($user, $provider))
+            Computers::fail('login_blocked', 'Vibyra Cloud uses its own sign-in for this account.', 409);
     }
 
     private function checkSeq(?object $row, int $seq): void
@@ -138,7 +154,10 @@ class SyncLogins
     {
         if (!$r || !$r->blob_id) return;
         if ($r->path && !$this->deleteFile($r->path)) return;
-        DB::table('cloud_sync_logins')->where('id', $r->id)->update($meta + ['blob_id' => null, 'path' => null, 'bytes' => 0, 'sha256' => null, 'uploaded_at' => null, 'updated_at' => now()]);
+        // A newer receive may have replaced this snapshot while its old file was being deleted.
+        DB::table('cloud_sync_logins')->where('id', $r->id)->where('seq', $r->seq)
+            ->where('blob_id', $r->blob_id)->where('path', $r->path)
+            ->update($meta + ['blob_id' => null, 'path' => null, 'bytes' => 0, 'sha256' => null, 'uploaded_at' => null, 'updated_at' => now()]);
     }
 
     private function deleteFile(string $path): bool

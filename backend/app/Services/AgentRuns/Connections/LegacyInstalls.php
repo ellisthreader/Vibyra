@@ -73,7 +73,9 @@ final class LegacyInstalls
             // A provider refusal seen by the broker is cleared only by a reconnect.
             $changes['health'] = $health;
         }
-        if ($changes !== []) DB::table('agent_connections')->where('id', $row->id)->update([...$changes, 'updated_at' => now()]);
+        // A reconnect may have advanced the epoch since this snapshot. Never overwrite that newer credential generation.
+        if ($changes !== []) DB::table('agent_connections')->where('id', $row->id)->where('generation', $row->generation)
+            ->where('install_id', $install->id)->whereNull('revoked_at')->update([...$changes, 'updated_at' => now()]);
     }
 
     public static function detach(object $row): void

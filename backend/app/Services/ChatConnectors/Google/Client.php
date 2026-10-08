@@ -33,6 +33,15 @@ final class Client
     private function body($response): array
     {
         if ($response->status() === 401) throw new \App\Services\ChatConnectors\ReconnectRequired('Google access expired or was revoked. Tell the person to reconnect it in Settings → Integrations.');
+        // Google says why in `reasons`; the ones the person or the owner can act on are worded as such, not as an outage.
+        $reasons = array_merge(array_column((array) $response->json('error.errors'), 'reason'), array_column((array) $response->json('error.details'), 'reason'));
+        match (true) {
+            (bool) array_intersect($reasons, ['accessNotConfigured', 'SERVICE_DISABLED']) => abort(503, 'Google says this API is not switched on for Vibyra\'s Google project. That is a setup problem on Vibyra\'s side; reconnecting will not fix it.'),
+            (bool) array_intersect($reasons, ['insufficientPermissions', 'ACCESS_TOKEN_SCOPE_INSUFFICIENT']) => abort(403, 'Google says this sign-in was not granted the access this needs. Reconnect Google and allow every permission it asks for.'),
+            $response->status() === 429, (bool) array_intersect($reasons, ['rateLimitExceeded', 'userRateLimitExceeded']) => abort(429, 'Google is rate-limiting requests. Try again shortly.'),
+            $response->status() === 404 => abort(404, 'Google could not find that item, or this account cannot see it.'),
+            default => null,
+        };
         if (!$response->successful() || !is_array($response->json())) {
             throw new RuntimeException('Google refused this request. Check the connection and its access.');
         }

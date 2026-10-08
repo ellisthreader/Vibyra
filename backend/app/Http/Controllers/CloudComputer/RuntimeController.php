@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\CloudComputer;
 
 use App\Http\Controllers\Controller;
-use App\Services\CloudComputer\{HostActivity, HostRegistration, Projects};
+use App\Services\CloudComputer\{AccessProviders, HostActivity, HostRegistration, Projects};
 use App\Services\CloudWorkspaces\Runtime;
 use App\Services\Remote\RemoteAccessException;
 use Illuminate\Http\{JsonResponse, Request};
@@ -31,9 +31,10 @@ final class RuntimeController extends Controller
     {
         $w = $this->computer($request, $workspace);
         $data = $request->validate(['running' => 'required|integer|min:0|max:50', 'waitingApproval' => 'required|integer|min:0|max:50', 'login' => 'sometimes|array',
-            'login.claude' => 'sometimes|nullable|boolean', 'login.codex' => 'sometimes|nullable|boolean', 'projects' => 'sometimes|array|max:100']);
+            'login.claude' => 'sometimes|nullable|boolean', 'login.codex' => 'sometimes|nullable|boolean', 'projects' => 'sometimes|array|max:100',
+            'providerPolicyVersion' => 'sometimes|integer|in:1']);
         $activity->record($w, $data);
-        return response()->json(['ok' => true]);
+        return response()->json(['ok' => true, 'disabledProviders' => app(AccessProviders::class)->disabledProviders((int) $w->user_id)]);
     }
 
     public function pending(Request $request, string $workspace, Projects $projects)

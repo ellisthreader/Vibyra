@@ -21,6 +21,7 @@ final class Repos
     /** Stored OAuth token for one call. Callers must never log, store or cache it. */
     public function token(int $user): string
     {
+        app(\App\Services\CloudComputer\AccessProviders::class)->requireGithub($user);
         if (!$this->connected($user)) throw new GitRefused('github_not_connected', 'Connect GitHub in Settings first.', 409);
         return $this->installs->credential($user, 'github');
     }

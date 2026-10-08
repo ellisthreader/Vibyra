@@ -14,7 +14,17 @@ export function log([d0, d1], [r0, r1]) {
     const l0 = Math.log10(d0);
     const l1 = Math.log10(d1);
     const f = (v) => r0 + ((Math.log10(v) - l0) / (l1 - l0)) * (r1 - r0);
-    f.ticks = () => [0.03, 0.1, 0.3, 1, 3, 10, 30, 100].filter((v) => v >= d0 && v <= d1);
+    f.ticks = () => {
+        const ticks = [];
+        for (let power = Math.floor(l0); power <= Math.ceil(l1); power++) {
+            for (const multiplier of [1, 3]) {
+                const value = multiplier * 10 ** power;
+                if (value >= d0 && value <= d1) ticks.push(value);
+            }
+        }
+        const stride = Math.max(1, Math.ceil(ticks.length / 7));
+        return ticks.filter((_, i) => i % stride === 0);
+    };
     return f;
 }
 

@@ -109,7 +109,8 @@ final class GithubTools implements ProviderTools
     {
         $more = str_contains((string) $response->header('Link'), 'rel="next"');
         return ['page' => $page, 'hasMore' => $more, 'nextPage' => $more && $page < 100 ? $page + 1 : null,
-            'coverage' => $more ? 'Partial: follow nextPage for more.' : 'Complete.'];
+            'coverage' => !$more ? 'Complete.' : ($page < 100 ? 'Partial: follow nextPage for more.'
+                : 'Partial: the 100-page limit was reached; remaining results were not read.')];
     }
 
     /** The chat readers return `['error', 'status']` instead of throwing; type them here. */
@@ -120,11 +121,12 @@ final class GithubTools implements ProviderTools
         $status = $result['status'] ?? null;
         $error = (string) $result['error'];
         if ($status === 401) throw ReconnectRequired::for('github');
-        if ($status === 429) throw ToolFailure::rateLimited('GitHub', null);
+        if ($status === 429 || ($result['rateLimited'] ?? false))
+            throw ToolFailure::rateLimited('GitHub', $result['retryAfter'] ?? null);
         if ($status === 403) throw ToolFailure::refused('forbidden', $error);
         if ($status === 404) throw ToolFailure::refused('not_found', $error);
         if (is_int($status) && $status < 500) throw ToolFailure::refused('invalid_request', $error);
-        if ($status === null && !preg_match('/respond in time|time budget|retry/i', $error))
+        if ($status === null && !($result['retryable'] ?? false) && !preg_match('/respond in time|time budget|retry/i', $error))
             throw ToolFailure::refused('unsupported', $error);
         throw ToolFailure::retryable($error);
     }

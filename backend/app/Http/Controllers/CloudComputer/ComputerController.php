@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\CloudComputer;
 
 use App\Http\Controllers\{Controller, Concerns\UserPayloads};
-use App\Services\CloudComputer\{Computers, ConnectConsent, EnsureComputer, Projects, Wake};
+use App\Services\CloudComputer\{AccessProviders, Computers, ConnectConsent, EnsureComputer, Projects, Wake};
 use App\Services\Vibes\Wallet;
 use Illuminate\Http\Request;
 
@@ -51,6 +51,9 @@ final class ComputerController extends Controller
         $data = $request->validate(['name' => ['required', 'string', 'regex:'.Projects::NAME],
             'repo' => ['sometimes', 'nullable', 'string', 'max:200', 'regex:~^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$~', 'not_regex:~(^|/)\.{1,2}(/|$)~'],
             'branch' => ['sometimes', 'nullable', 'string', 'max:200', 'regex:~^(?!-)[A-Za-z0-9._/-]+$~', 'not_regex:~\.\.~']]);
+        if (!empty($data['repo']) && !app(AccessProviders::class)->enabled($user->id, 'github')) {
+            Computers::fail('github_disabled', AccessProviders::GITHUB_OFF, 403);
+        }
         $w = $computers->find($user->id);
         if (!$w) Computers::fail('computer_missing', 'Create your cloud computer first.', 404);
         return $this->json(['ok' => true, 'project' => $projects->queue($w, $data['name'], $data['repo'] ?? null, $data['branch'] ?? null)]);

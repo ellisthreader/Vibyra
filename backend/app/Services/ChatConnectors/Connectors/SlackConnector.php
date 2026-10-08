@@ -99,11 +99,22 @@ final class SlackConnector implements Connector
     private function body($response): array
     {
         $body = $response->json();
+        $error = is_array($body) && is_string($body['error'] ?? null) ? $body['error'] : '';
         // Slack answers a dead token with HTTP 200 and ok:false, so the reason is in the body.
-        if ($response->status() === 401 || (is_array($body) && in_array($body['error'] ?? null,
-            ['invalid_auth', 'token_revoked', 'token_expired', 'account_inactive', 'not_authed'], true))) {
+        if ($response->status() === 401 || in_array($error, ['invalid_auth', 'token_revoked', 'token_expired', 'account_inactive', 'not_authed'], true)) {
             throw ReconnectRequired::for('slack');
         }
+        // Reasons the person can act on are said plainly; a bare "could not be reached" would send them looking in the wrong place.
+        $needed = is_array($body) && is_string($body['needed'] ?? null) && preg_match('/^[a-z:._,-]{1,80}$/D', $body['needed']) ? ' ('.$body['needed'].')' : '';
+        $plain = match (true) {
+            $response->status() === 429, $error === 'ratelimited' => 'Slack is rate-limiting requests. Try again in a minute.',
+            in_array($error, ['missing_scope', 'no_permission', 'not_allowed_token_type'], true) => 'Slack says the Vibyra app was not granted a permission this needs'.$needed.'. Reconnecting Slack after the app adds it fixes this.',
+            $error === 'not_in_channel' => 'The Vibyra bot is not a member of that channel. Invite it there (/invite the bot) and try again.',
+            $error === 'channel_not_found' => 'Slack could not find that channel, or the bot cannot see it (private channels need an invite).',
+            $error === 'is_archived' => 'That Slack channel is archived.',
+            default => null,
+        };
+        if ($plain !== null) abort($response->status() === 429 ? 429 : 422, $plain);
         if (!$response->successful() || !is_array($body) || ($body['ok'] ?? false) !== true) {
             throw new RuntimeException('Slack refused this request. Check the bot membership and scopes.');
         }

@@ -1,6 +1,7 @@
 // Metric definitions and the small amount of maths the charts share.
 // Every chart reads models through these so a value is formatted one way.
 import { LABELS } from "./data.js";
+import { efficientCoder, taskMoney } from "./costPerformance.js";
 
 export const blended = (m) =>
     m.blended ?? (m.priceIn != null && m.priceOut != null ? (3 * m.priceIn + m.priceOut) / 4 : null);
@@ -12,7 +13,7 @@ export const METRICS = {
         label: LABELS.intelligence.label ?? "Intelligence",
         title: LABELS.intelligence.title,
         get: (m) => m.intelligence,
-        fmt: (v) => v.toFixed(0),
+        fmt: (v) => v.toFixed(LABELS.intelligence.label === "Vibyra Score" ? 1 : 0),
         better: "high",
         note: LABELS.intelligence.note,
     },
@@ -40,6 +41,12 @@ export const METRICS = {
         approx: (m) => m.approx?.includes("speed"),
         better: "high",
         note: "Median output tokens per second through the first-party API. Higher is better.",
+    },
+    taskCost: {
+        label: "Coding task cost", title: "AA coding USD / task",
+        get: (m) => m.boards?.["aa-coding-agent"]?.costPerTask ?? null,
+        fmt: taskMoney, better: "low",
+        note: "Published mean API cost per AA coding-agent task attempt, including caching and fallback attempts.",
     },
 };
 
@@ -69,19 +76,14 @@ export function frontier(models, xMetric, yMetric) {
 export function topPicks(models) {
     const best = (id) => ranked(models, id)[0];
     const smartest = best("intelligence");
-    // Best value: the cheapest model that keeps 80% of the leader's score.
-    const cutoff = smartest ? smartest.intelligence * 0.8 : 0;
-    const value = ranked(models.filter((m) => m !== smartest && (m.intelligence ?? 0) >= cutoff), "price")[0];
-    const saving = smartest && value ? blended(smartest) / blended(value) : 0;
+    const value = efficientCoder(models)?.model;
     return [
         { id: "smartest", label: "Smartest overall", model: smartest, metric: "intelligence",
             line: LABELS.pickSmartest },
         { id: "coder", label: "Best for coding", model: best("coding"), metric: "coding",
             line: best("coding")?.codingAgent ? `${LABELS.pickCoder.replace(/\.$/, "")}, running in ${best("coding").codingAgent.split(" + ")[0]}.` : LABELS.pickCoder },
-        { id: "value", label: "Best value", model: value, metric: "price",
-            line: saving > 1.5
-                ? `${Math.round((value.intelligence / smartest.intelligence) * 100)}% of the top score, at ${Math.round(saving)}× less per token.`
-                : "Cheapest model close to the top score." },
+        { id: "value", label: "Efficient coder", model: value, metric: "taskCost",
+            line: "Lowest published cost per AA coding-agent task within 5 index points of the displayed performance leader." },
         { id: "fastest", label: "Fastest", model: best("speed"), metric: "speed",
             line: "Most output tokens per second." },
     ];

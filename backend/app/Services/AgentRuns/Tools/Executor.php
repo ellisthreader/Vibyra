@@ -29,10 +29,17 @@ final class Executor
 
     public function execute(ToolAction $action, Connection $connection): ToolAction
     {
+        if (!$this->sameConnection($action, $connection))
+            return $this->fail($action, ToolFailure::refused('access_changed', 'Access changed before this action ran. Prepare it again.'));
         $provider = $connection->provider;
         $adapter = $this->adapters->for($provider);
         $name = $this->adapters->name($provider);
+        if ($action->tool === 'gmail_send') {
+            try { app(Providers\GmailAttachmentBytes::class)->forAction($action->id, $action->arguments ?? []); }
+            catch (ToolFailure $e) { return $this->fail($action, $e); }
+        }
         try { $credential = $this->credentials->for($connection); }
+        catch (ToolFailure $e) { return $this->fail($action, $e); }
         catch (ReconnectRequired $e) { return $this->reconnect($action, $connection, $e); }
         catch (\Throwable $e) {
             return $this->fail($action, ToolFailure::refused('credential_unavailable', 'Connect '.$name.' before using it.'));
@@ -64,10 +71,17 @@ final class Executor
     /** The sweeper's one read-only look for the exact approved change (never a re-send); null when absent or not checkable. */
     public function lookup(ToolAction $action, Connection $connection): ?array
     {
+        if (!$this->sameConnection($action, $connection)) return null;
         try {
             return $this->adapters->for($connection->provider)->reconcile($action->tool, $action->arguments ?? [],
                 $this->credentials->for($connection), $action->id);
         } catch (\Throwable) { return null; } // A revoked connection or an unreachable provider proves nothing either way.
+    }
+
+    private function sameConnection(ToolAction $action, Connection $connection): bool
+    {
+        return $action->connection_id === $connection->id && $action->connection_generation === $connection->generation
+            && $action->user_id === $connection->user_id;
     }
 
     /** Close an action whose process died mid-call: confirmed when the lookup found it, else unknown for a write and retryable for a read. */

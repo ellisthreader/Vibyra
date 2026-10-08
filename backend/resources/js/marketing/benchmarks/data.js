@@ -71,3 +71,5 @@ export const { SOURCE, SOURCE_NAME, AS_OF, AS_OF_SHORT, LABELS, BENCHMARKS, MODE
 export const SOURCES = [...chosen.SOURCES, ...(chosen.extraSources ?? [])];
 export const CONSENSUS_SOURCES = chosen.CONSENSUS_SOURCES ?? null;
 export const PROVIDERS = snapshot.PROVIDERS;
+
+export const ALL_MODELS = chosen.ALL_MODELS ?? chosen.MODELS;

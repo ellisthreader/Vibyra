@@ -22,7 +22,8 @@ final class DeliverPhoneNotification implements ShouldQueue
         if (!$item || !$device || $device->user_id !== $item->user_id || $device->generation !== $d->generation
             || !app(Devices::class)->eligible($device) || !app(Inbox::class)->current($item)) { $this->done('suppressed'); return; }
         $p = app(Preferences::class)->get($item->user_id);
-        if (!$p->{$item->category}) { $this->done('suppressed'); return; }
+        $phase = DB::table('work_events')->where('id', $item->event_id)->value('phase');
+        if (!app(Preferences::class)->allows($p, $item->category, $phase)) { $this->done('suppressed'); return; }
         if (app(Preferences::class)->quiet($p)) {
             $this->done('pending', ['next_at' => now()->addMinutes(5)]); return;
         }
@@ -36,7 +37,11 @@ final class DeliverPhoneNotification implements ShouldQueue
         if (app(PhonePush::class)->rateLimited((int) $item->user_id)) { $this->done('suppressed', ['error' => 'RateLimited']); return; }
         try {
             $r = app(PhonePush::class)->item($device, $item, $ttl, (int) $d->generation);
-        } catch (\Throwable) { $this->retry($d); return; }
+        } catch (\Throwable) {
+            // No receipt means it may already have reached the phone. Keep the
+            // inbox item, but never replay an uncertain OS notification.
+            $this->done('failed', ['error' => 'DeliveryUnconfirmed']); return;
+        }
         match ($r['state']) {
             'retry' => $this->retry($d),
             'ticketed' => $this->done('ticketed', ['ticket' => $r['ticket'], 'next_at' => now()->addMinutes(15)]),

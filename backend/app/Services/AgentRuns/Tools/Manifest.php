@@ -29,7 +29,12 @@ final class Manifest
     /** @return array{tools: array, dropped: array, scores: array<string, int>} */
     public function selection(Run $run): array
     {
-        return $this->selection->select($run, $this->candidates($run), (int) config('agents_v2.max_tools', 10));
+        $local = \App\Services\AgentRuns\Outputs\OutputTools::entries($run);
+        $cap = max(0, (int) config('agents_v2.max_tools', 10));
+        $local = array_slice($local, 0, $cap);
+        $selection = $this->selection->select($run, $this->candidates($run), max(0, $cap - count($local)));
+        $selection['tools'] = [...$selection['tools'], ...$local];
+        return $selection;
     }
 
     /** Every tool the run may call right now (snapshot ∩ current grant ∩ healthy connection), uncapped. */

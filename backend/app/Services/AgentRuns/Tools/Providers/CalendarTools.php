@@ -31,10 +31,11 @@ final class CalendarTools implements ProviderTools
             'google_calendar_list_calendars' => Schema::tool($tool, 'List the calendars this Google account can see, with '
                 .'their ids, access role and timezone.', ['pageToken' => ['type' => 'string']]),
             'google_calendar_list_events' => Schema::tool($tool, 'List events on one calendar inside a time window, in a '
-                .'timezone. Follow nextPageToken before claiming the window is complete.', $calendar + $window
+                .'timezone. All-day dates retain their exclusive end date. Follow nextPageToken before claiming the window is complete.', $calendar + $window
                 + ['pageToken' => ['type' => 'string'], 'maxResults' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 50]],
                 ['calendarId', 'timeMin', 'timeMax', 'timeZone']),
-            'google_calendar_freebusy' => Schema::tool($tool, 'Busy intervals for up to 5 calendars inside a time window.',
+            'google_calendar_freebusy' => Schema::tool($tool, 'Busy intervals for up to 5 calendars inside a time window. '
+                .'Only infer free time when each calendar has complete coverage; reduce the window if truncated.',
                 ['calendarIds' => ['type' => 'array', 'items' => ['type' => 'string'], 'minItems' => 1, 'maxItems' => 5]] + $window,
                 ['calendarIds', 'timeMin', 'timeMax', 'timeZone']),
             default => $this->writes->definition($tool),
@@ -113,9 +114,14 @@ final class CalendarTools implements ProviderTools
         $calendars = [];
         foreach ($a['calendarIds'] as $id) {
             $entry = $body['calendars'][$id] ?? null;
+            $busy = $entry['busy'] ?? null;
+            $truncated = is_array($busy) && count($busy) > 200;
+            $error = is_array($entry['errors'][0] ?? null) ? (string) ($entry['errors'][0]['reason'] ?? 'unavailable')
+                : (!is_array($busy) ? 'missing' : null);
             $calendars[] = ['calendarId' => $id, 'busy' => array_map(fn ($b) => ['start' => $b['start'] ?? null, 'end' => $b['end'] ?? null],
-                array_slice($entry['busy'] ?? [], 0, 200)),
-                'error' => is_array($entry['errors'][0] ?? null) ? (string) ($entry['errors'][0]['reason'] ?? 'unavailable') : ($entry ? null : 'missing')];
+                array_slice(is_array($busy) ? $busy : [], 0, 200)), 'error' => $error, 'truncated' => $truncated,
+                'coverage' => $error ? 'Unavailable: do not infer free time.' : ($truncated
+                    ? 'Partial: use a smaller time window before inferring free time.' : 'Complete.')];
         }
         return ['result' => ['timeMin' => $a['timeMin'], 'timeMax' => $a['timeMax'], 'timeZone' => $a['timeZone'],
             'calendars' => $calendars], 'summary' => 'Checked free/busy for '.count($calendars).' calendars'];
@@ -150,7 +156,8 @@ final class CalendarTools implements ProviderTools
 
     public static function instant(mixed $value, string $field): CarbonImmutable
     {
-        abort_unless(is_string($value) && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d)?(?:Z|[+-]\d\d:\d\d)$/D', $value),
+        abort_unless(is_string($value) && preg_match('/^(\d{4})-(\d\d)-(\d\d)T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/D', $value, $parts)
+            && checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]),
             422, 'Give '.$field.' as an RFC3339 time with an offset.');
         try { return CarbonImmutable::parse($value); } catch (\Throwable) { abort(422, 'That '.$field.' is not a valid time.'); }
     }

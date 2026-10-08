@@ -16,6 +16,6 @@ final class Run extends Model
 
     protected function casts(): array
     {
-        return ['attachments' => 'array', 'grant_snapshot' => 'array', 'runtime_snapshot' => 'array', 'lease_generation' => 'integer', 'event_seq' => 'integer', 'lease_expires_at' => 'datetime', 'cancel_requested_at' => 'datetime', 'started_at' => 'datetime', 'finished_at' => 'datetime', 'resume_after' => 'datetime', 'wait_revision' => 'integer'];
+        return ['instruction_revision' => 'integer', 'applied_instruction_revision' => 'integer', 'attachments' => 'array', 'grant_snapshot' => 'array', 'runtime_snapshot' => 'array', 'lease_generation' => 'integer', 'event_seq' => 'integer', 'lease_expires_at' => 'datetime', 'cancel_requested_at' => 'datetime', 'started_at' => 'datetime', 'finished_at' => 'datetime', 'resume_after' => 'datetime', 'wait_revision' => 'integer'];
     }
 }

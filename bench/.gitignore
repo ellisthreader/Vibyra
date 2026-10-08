@@ -1,0 +1,5 @@
+# Held-out questions must never reach this public repo, or models train on them.
+private/
+# Raw run logs and downloaded datasets are rebuilt on demand.
+runs/
+cache/

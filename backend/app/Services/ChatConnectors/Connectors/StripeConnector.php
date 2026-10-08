@@ -2,9 +2,8 @@
 
 namespace App\Services\ChatConnectors\Connectors;
 
-use App\Services\ChatConnectors\Connector;
-use App\Services\ChatConnectors\Stripe\{ReadTools, Account, Revenue, Money, Prompt};
-use Illuminate\Support\Facades\Http;
+use App\Services\ChatConnectors\{Connector, Revocable};
+use App\Services\ChatConnectors\Stripe\{Api, Auth, ReadTools, Account, Revenue, Money, Prompt};
 use RuntimeException;
 
 /**
@@ -15,9 +14,9 @@ use RuntimeException;
  * that, because "an AI is connected to my Stripe" is a sentence that deserves a
  * precise answer rather than a reassuring one.
  */
-class StripeConnector implements Connector
+class StripeConnector implements Connector, Revocable
 {
-    private const BASE = 'https://api.stripe.com/v1';
+    public function __construct(private readonly Api $api) {}
 
     public function definitions(): array
     {
@@ -85,15 +84,15 @@ class StripeConnector implements Connector
             }];
         }
         if ($operation === 'stripe_balance') {
-            $body = $this->get($credential, '/balance');
-            if ($body === null) return $this->unreachable();
+            $body = $this->api->get($credential, '/balance');
+            if ($body === null) return $this->api->failed();
             return ['result' => ['livemode' => $body['livemode'] ?? null, 'available' => $this->amounts($body['available'] ?? []),
                 'pending' => $this->amounts($body['pending'] ?? [])], 'summary' => 'Read your Stripe balance'];
         }
         if ($operation === 'stripe_recent_payments') {
             $limit = (int) ($arguments['limit'] ?? 10);
-            $body = $this->get($credential, '/charges', ['limit' => $limit]);
-            if ($body === null) return $this->unreachable();
+            $body = $this->api->get($credential, '/charges', ['limit' => $limit]);
+            if ($body === null) return $this->api->failed();
             $payments = array_map(fn ($charge) => [
                 'id' => (string) ($charge['id'] ?? ''), 'amount' => (int) ($charge['amount'] ?? 0),
                 'formatted' => Money::format((int) ($charge['amount'] ?? 0), $charge['currency'] ?? ''), 'currency' => $charge['currency'] ?? null,
@@ -106,8 +105,8 @@ class StripeConnector implements Connector
         }
         if ($operation === 'stripe_find_customer') {
             $email = $arguments['email'];
-            $body = $this->get($credential, '/customers', ['email' => $email, 'limit' => 5]);
-            if ($body === null) return $this->unreachable();
+            $body = $this->api->get($credential, '/customers', ['email' => $email, 'limit' => 5]);
+            if ($body === null) return $this->api->failed();
             $customers = array_map(fn ($customer) => [
                 'id' => (string) ($customer['id'] ?? ''), 'name' => $customer['name'] ?? null,
                 'email' => $customer['email'] ?? null, 'createdAt' => gmdate('c', (int) ($customer['created'] ?? 0)),
@@ -120,14 +119,14 @@ class StripeConnector implements Connector
             // Two customers with one email is the classic double-run mistake, and it
             // is invisible until someone is billed twice, so an existing record is
             // handed back instead of a second one being made.
-            $existing = $this->get($credential, '/customers', ['email' => $email, 'limit' => 1]);
+            $existing = $this->api->get($credential, '/customers', ['email' => $email, 'limit' => 1]);
             if ($existing === null) return ['result' => ['error' => 'Could not check for an existing customer. Nothing was created.'], 'summary' => 'Stripe customer lookup failed'];
             if (!empty($existing['data'][0]['id'])) {
                 return ['result' => ['created' => false, 'id' => (string) $existing['data'][0]['id'], 'email' => $email,
                     'note' => 'A Stripe customer with that email already existed, so nothing was created.'],
                     'summary' => 'Stripe already had a customer for '.$email];
             }
-            $customer = $this->post($credential, '/customers', array_filter([
+            $customer = $this->api->post($credential, '/customers', array_filter([
                 'email' => $email, 'name' => isset($arguments['name']) ? trim($arguments['name']) : null,
                 'description' => isset($arguments['description']) ? trim($arguments['description']) : null,
             ], fn ($value) => $value !== null));
@@ -139,25 +138,37 @@ class StripeConnector implements Connector
                 'email' => $customer['email'] ?? $email, 'name' => $customer['name'] ?? null],
                 'summary' => 'Created the Stripe customer '.$email];
         }
-        return $this->unreachable();
+        return $this->api->failed();
     }
 
     public function connect(string $credential): string
     {
-        $account = $this->get($credential, '/account');
+        $account = $this->api->get($credential, '/account');
         if ($account === null) {
             // A restricted key may not be allowed to read the account itself, so the
             // balance stands in purely as proof that the key reaches an account.
-            if ($this->get($credential, '/balance') === null) {
-                throw new RuntimeException('That key did not work. Check it is a restricted key with read access and try again.');
+            if ($this->api->get($credential, '/balance') === null) {
+                throw new RuntimeException('Stripe did not accept that. A pasted key must be a restricted key with read access; a sign-in must be one Stripe still honours.');
             }
-            return 'Stripe account';
+            return $this->labelled('Stripe account', $credential);
         }
         foreach ([$account['settings']['dashboard']['display_name'] ?? null,
             $account['business_profile']['name'] ?? null, $account['id'] ?? null] as $label) {
-            if (is_string($label) && trim($label) !== '') return $label;
+            if (is_string($label) && trim($label) !== '') return $this->labelled($label, $credential);
         }
-        return 'Stripe account';
+        return $this->labelled('Stripe account', $credential);
+    }
+
+    /** Test data must never pass for the real thing, so a test-mode connection says so in its label. */
+    private function labelled(string $label, string $credential): string
+    {
+        return Auth::testMode($credential) ? mb_substr($label, 0, 80).' (test mode)' : $label;
+    }
+
+    /** Disconnecting also ends the platform's access on Stripe's side, so the account's Dashboard stops listing it. */
+    public function revoke(string $credential): void
+    {
+        Auth::deauthorize($credential);
     }
 
     public function prompt(): string
@@ -169,32 +180,5 @@ class StripeConnector implements Connector
         return array_map(fn ($entry) => ['amount' => (int) ($entry['amount'] ?? 0),
             'formatted' => Money::format((int) ($entry['amount'] ?? 0), $entry['currency'] ?? ''),
             'currency' => $entry['currency'] ?? null], array_slice($entries, 0, 20));
-    }
-    private function request(string $credential)
-    {
-        return Http::withToken($credential)->acceptJson()->timeout((int) config('chat_connectors.timeout_seconds', 12));
-    }
-    /** The decoded body, or null when Stripe refused or could not be reached. */
-    private function get(string $credential, string $path, array $query = []): ?array
-    {
-        $response = $this->request($credential)->get(self::BASE.$path, $query);
-        if (!$response->successful()) return null;
-        $body = $response->json();
-        return is_array($body) ? $body : null;
-    }
-
-    /** The created resource, or null when Stripe refused. Stripe takes form bodies, not JSON. */
-    private function post(string $credential, string $path, array $payload): ?array
-    {
-        $response = $this->request($credential)->asForm()->post(self::BASE.$path, $payload);
-        if (!$response->successful()) return null;
-        $body = $response->json();
-        return is_array($body) ? $body : null;
-    }
-
-    private function unreachable(): array
-    {
-        return ['result' => ['error' => 'Stripe could not be reached just now. Please try again in a moment.'],
-            'summary' => 'Could not reach Stripe'];
     }
 }

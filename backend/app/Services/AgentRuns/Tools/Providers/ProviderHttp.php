@@ -18,7 +18,8 @@ final class ProviderHttp
 {
     public static function google(string $token): PendingRequest
     {
-        return Http::withToken($token)->acceptJson()->timeout((int) config('chat_connectors.timeout_seconds', 12));
+        return Http::withToken($token)->acceptJson()->timeout((int) config('chat_connectors.timeout_seconds', 12))
+            ->withOptions(['allow_redirects' => false]);
     }
 
     /** Any bearer-token provider, with redirects off so a token never follows a hop. */

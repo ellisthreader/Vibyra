@@ -2,11 +2,10 @@
 namespace App\Http\Controllers\CloudComputer;
 
 use App\Http\Controllers\{Controller, Concerns\UserPayloads};
-use App\Services\CloudComputer\{AccessProjects, Computers, ConnectConsent, FaceKeys, SyncRetention, Wake};
+use App\Services\CloudComputer\{AccessProjects, Computers, ConnectAgreement, ConnectConsent, ConnectSelections, FaceKeys, SyncRetention, Wake};
 use App\Services\Vibes\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{DB, Validator};
-use Illuminate\Support\Str;
 
 /** POST /api/cloud-computer/connect: the phone's "Connect to cloud" agreement. Makes the computer, then records the consent.
  *  DELETE withdraws it: the computer is stopped, every synced project, conversation and login copy is deleted, and the
@@ -15,39 +14,22 @@ final class ConnectController extends Controller
 {
     use UserPayloads;
 
-    public function __invoke(Request $request, Computers $computers, ConnectConsent $consent, FaceKeys $faces)
+    public function __invoke(Request $request, Computers $computers, FaceKeys $faces)
     {
         $session = $this->authenticatedSession($request);
-        $user = $this->authenticatedUser($request); app(Wallet::class)->ensure($user);
+        $user = $this->authenticatedUser($request);
         $v = Validator::make($request->all(), ['accept' => 'required|accepted', 'consentVersion' => 'required|integer|min:1']);
         if ($v->fails()) Computers::fail('invalid_request', 'Tick the box to agree before connecting.', 422);
-        $picked = $this->picked($request);
-        if ((int) $request->input('consentVersion') !== $consent->current()) {
-            Computers::fail('consent_outdated', 'The cloud terms changed. Read them again to connect.', 409, ['current' => $consent->current()]);
-        }
-        // The person, with their face, on the phone they signed in on: a stolen session token cannot agree for them.
+        $choices = ConnectSelections::read($request);
+        $agreement = app(ConnectAgreement::class);
+        $version = (int) $request->input('consentVersion');
+        $agreement->checkVersion($version);
+        app(Wallet::class)->ensure($user);
+        // Phone identity remains independent of the desktop's computer-key proof.
         if ($faces->required()) $faces->verify($session, $request->input('face'));
-        $w = $computers->create($user->id, (string) Str::uuid(), 'Cloud'); // refuses a non-entitled account before any consent is kept
-        $consent->record($user->id, $consent->current(), 'phone', $request);
-        if ($picked) app(AccessProjects::class)->decide($user->id, $picked, 'phone'); // the projects ticked on the connect page
-        // The connect text covers the cloud terms, so the first wake needs no extra terms sheet.
-        DB::table('cloud_workspaces')->where('id', $w->id)->whereNull('terms_accepted_at')->update(['terms_accepted_at' => now(), 'updated_at' => now()]);
-        // A failed start from before this agreement (say, before a Delete everything) is history: it neither shows as an
-        // error nor holds back the start this connect makes for the ticked projects.
-        DB::table('cloud_workspaces')->where('id', $w->id)->whereIn('state', ['stopped', 'archived', 'expired'])
-            ->whereIn('stop_reason', Computers::START_FAILED)->update(['stop_reason' => null, 'updated_at' => now()]);
+        $agreement->accept($user->id, $version, 'phone', $request, $choices);
         app(Wake::class)->forPerson($user->id);
         return $this->json(['ok' => true] + $computers->payload($user->id))->header('Cache-Control', 'private, no-store');
-    }
-
-    /** Optional `projects:[{id, name}]` (at most 100), checked before anything is stored. */
-    private function picked(Request $request): array
-    {
-        if (!$request->has('projects')) return [];
-        $v = Validator::make($request->all(), ['projects' => 'array|max:'.AccessProjects::MAX_ITEMS, 'projects.*' => 'required|array',
-            'projects.*.id' => 'required|string|min:1|max:255', 'projects.*.name' => 'required|string|max:120']);
-        if ($v->fails()) Computers::fail('invalid_request', (string) $v->errors()->first(), 422);
-        return AccessController::items($v->validated()['projects'] ?? [], true);
     }
 
     private function keepsAnything(int $user): bool
@@ -73,10 +55,15 @@ final class ConnectController extends Controller
         }, 5);
         // Idempotent: a second tap (or a retried request) finds nothing agreed and nothing kept, and changes nothing.
         if (!$open && !$this->keepsAnything($user->id)) return $this->json(['ok' => true] + $computers->payload($user->id))->header('Cache-Control', 'private, no-store');
-        // Shutdown does nothing for a computer already asleep; once stopped, Retention removes its disk without the usual wait.
-        if ($w) app(Wake::class)->stop($user->id);
-        app(SyncRetention::class)->purgeUser($user->id);
-        app(AccessProjects::class)->purge($user->id);
+        // Keep withdrawal durable even if file deletion fails. A newer agreement between the two phases wins; otherwise
+        // hold the account lock through cleanup so a fresh connect cannot have its new choices or uploads purged here.
+        DB::transaction(function () use ($user, $w, $consent) {
+            app(Wallet::class)->lock($user->id);
+            if ($consent->latest($user->id)) return;
+            if ($w) app(Wake::class)->stop($user->id);
+            app(SyncRetention::class)->purgeUser($user->id);
+            app(AccessProjects::class)->purge($user->id);
+        }, 5);
         return $this->json(['ok' => true] + $computers->payload($user->id))->header('Cache-Control', 'private, no-store');
     }
 }

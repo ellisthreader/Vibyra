@@ -46,7 +46,9 @@ final class NotionConnector implements Connector
     public function run(string $operation, array $arguments, string $credential): array
     {
         if ($operation === 'notion_search') {
+            // Pages only: without the filter, data sources fill the twenty slots and are then thrown away.
             $data = $this->post($credential, '/search', ['query' => $arguments['query'],
+                'filter' => ['property' => 'object', 'value' => 'page'],
                 'sort' => ['direction' => 'descending', 'timestamp' => 'last_edited_time'], 'page_size' => 20]);
             $pages = [];
             foreach (array_slice($data['results'] ?? [], 0, 20) as $page) {
@@ -105,6 +107,9 @@ final class NotionConnector implements Connector
     private function body($response): array
     {
         if ($response->status() === 401) throw ReconnectRequired::for('notion');
+        // A page that was never shared answers 404, and one the connection may not read 403. Both would otherwise read as an outage.
+        if (in_array($response->status(), [403, 404], true)) abort(422, 'Notion could not open that. The page must be shared with the Vibyra connection in Notion (the page\'s ... menu, then Connections).');
+        if ($response->status() === 429) abort(429, 'Notion is rate-limiting requests. Try again shortly.');
         if (!$response->successful() || !is_array($response->json())) {
             throw new RuntimeException('Notion refused this request. Check which pages were shared with the connection.');
         }

@@ -17,6 +17,11 @@ case "$role" in
     ;;
 esac
 
+if [[ "$role" == "all" || "$role" == "web" ]] && [[ ! -f public/index.php ]]; then
+  echo "Missing Laravel public/index.php; refusing to start the web service." >&2
+  exit 64
+fi
+
 mkdir -p \
   bootstrap/cache \
   storage/framework/cache/data \

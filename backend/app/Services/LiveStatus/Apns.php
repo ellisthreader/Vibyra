@@ -71,7 +71,7 @@ final class Apns
     private function post(string $host, string $token, array $payload, array $headers): array
     {
         try {
-            $response = Http::withOptions(['version' => 2.0])->timeout((int) config('live_status.apns.timeout', 10))
+            $response = Http::withOptions(['version' => 2.0])->withoutRedirecting()->timeout((int) config('live_status.apns.timeout', 10))
                 ->withHeaders(['authorization' => 'bearer '.$this->jwt->token(), ...$headers])
                 ->withBody(json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), 'application/json')
                 ->post(self::HOSTS[$host].'/3/device/'.$token);

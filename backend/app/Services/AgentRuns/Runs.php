@@ -44,7 +44,7 @@ final class Runs
     /** A cheap validator for conditional GETs: changes whenever the journal or state does. */
     public static function etag(Run $run, string $suffix = ''): string
     {
-        return '"'.substr(hash('sha256', $run->id.':'.$run->event_seq.':'.$run->state.':'.$suffix), 0, 32).'"';
+        return '"'.substr(hash('sha256', $run->id.':'.$run->event_seq.':'.$run->state.':'.$suffix.':'.app(Outputs\Outputs::class)->revisionTag($run)), 0, 32).'"';
     }
 
     public function payload(Run $run): array
@@ -54,10 +54,11 @@ final class Runs
         $connections = \App\Models\AgentV2\Connection::query()->where('user_id', $run->user_id)
             ->whereIn('id', $actions->pluck('connection_id')->unique()->values())->get(['id', 'provider', 'external_identity'])->keyBy('id');
         $snap = $run->runtime_snapshot ?? [];
-        return ['id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
+        return [...Steering::payload($run), 'id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
             'conversationSeq' => $run->conversation_seq, 'idempotencyKey' => $run->idempotency_key, 'state' => $run->state, 'stateReason' => $run->state_reason,
             'terminal' => RunStates::terminal($run->state), 'prompt' => $run->prompt,
             'attachments' => $run->attachments ?? [], 'answer' => $run->answer,
+            'outputs' => app(Outputs\Outputs::class)->forRun($run),
             'fundingSource' => $run->funding_source,
             'runtime' => ['bindingId' => $snap['bindingId'] ?? null, 'hostId' => $snap['hostId'] ?? null,
                 'provider' => $snap['provider'] ?? null, 'accountRef' => $snap['accountRef'] ?? null,
@@ -90,13 +91,14 @@ final class Runs
             ->where('state', RunStates::COMPLETED)->where('conversation_seq', '<', $run->conversation_seq)
             ->orderByDesc('conversation_seq')->limit(10)->get(['id', 'prompt', 'answer'])->reverse()->values()
             ->map(fn (Run $r) => ['runId' => $r->id, 'prompt' => $r->prompt, 'answer' => $r->answer])->all();
+        $history = app(Memory\Recall::class)->history($run, $history);
         $notes = app(Planning\RunNotes::class)->for($run, $agent);
-        return ['id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
+        return [...Steering::payload($run), 'id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
             'generation' => $run->lease_generation, 'leaseExpiresAt' => $run->lease_expires_at?->toIso8601String(),
             'state' => $run->state, 'prompt' => $run->prompt, 'attachments' => $run->attachments ?? [],
             'runtime' => $run->runtime_snapshot, 'eventCursor' => $run->event_seq,
             'profile' => ['name' => $agent?->name, 'brief' => Planning\RunNotes::brief($agent?->brief, $notes['text']),
-                'memory' => $agent?->memory, 'revision' => $run->profile_revision],
-            'history' => $history, 'tools' => $manifest, 'connectionGaps' => $notes['gaps']];
+                'memory' => app(Memory\Recall::class)->text($run, $agent?->memory), 'revision' => $run->profile_revision],
+            'actionCheckpoint' => Steering::actions($run), 'history' => $history, 'tools' => $manifest, 'connectionGaps' => $notes['gaps']];
     }
 }

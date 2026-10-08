@@ -1,0 +1,2002 @@
+{
+  "generated": "2026-10-08",
+  "sources": [
+    {
+      "id": "lmarena-text",
+      "name": "LMArena Text (style control, default view)",
+      "org": "LMArena",
+      "url": "https://arena.ai/leaderboard/text",
+      "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/text_style_control/latest-00000-of-00001.parquet",
+      "updated": "2026-09-25",
+      "metric": "Arena score (Bradley-Terry, style control)",
+      "category": "preference",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 1508.5538218355593,
+              "variant": "claude-opus-5.5-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 1
+            }
+          ],
+          "value": 1508.5538218355593,
+          "variant": "claude-opus-5.5-high",
+          "rank": 1
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 1501.293611997489,
+              "variant": "claude-fable-5.1-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 5
+            }
+          ],
+          "value": 1501.293611997489,
+          "variant": "claude-fable-5.1-max",
+          "rank": 5
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 1494.0967431517377,
+              "variant": "muse-spark-1.3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 9
+            }
+          ],
+          "value": 1494.0967431517377,
+          "variant": "muse-spark-1.3-max",
+          "rank": 9
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 1492.3909065738185,
+              "variant": "gemini-3.8-flash-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 10
+            }
+          ],
+          "value": 1492.3909065738185,
+          "variant": "gemini-3.8-flash-high",
+          "rank": 10
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 1487.9637997404498,
+              "variant": "kimi-k3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 16
+            }
+          ],
+          "value": 1487.9637997404498,
+          "variant": "kimi-k3-max",
+          "rank": 16
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 1486.6776290065297,
+              "variant": "gemini-3.1-pro-preview",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 17
+            }
+          ],
+          "value": 1486.6776290065297,
+          "variant": "gemini-3.1-pro-preview",
+          "rank": 17
+        },
+        "mimo-v2-6-pro": {
+          "measurements": [
+            {
+              "value": 1479.7396239199584,
+              "variant": "mimo-v2.6-pro",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 23
+            }
+          ],
+          "value": 1479.7396239199584,
+          "variant": "mimo-v2.6-pro",
+          "rank": 23
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 1479.6000693617252,
+              "variant": "glm-5.3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 24
+            }
+          ],
+          "value": 1479.6000693617252,
+          "variant": "glm-5.3-max",
+          "rank": 24
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 1477.7238481553331,
+              "variant": "gpt-6-astra-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 26
+            }
+          ],
+          "value": 1477.7238481553331,
+          "variant": "gpt-6-astra-max",
+          "rank": 26
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 1476.5072608045655,
+              "variant": "deepseek-v4.1-flash-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 29
+            }
+          ],
+          "value": 1476.5072608045655,
+          "variant": "deepseek-v4.1-flash-max",
+          "rank": 29
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 1464.358629793212,
+              "variant": "deepseek-v4-pro-high-20260813",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 53,
+              "snapshot": "0813"
+            }
+          ],
+          "value": 1464.358629793212,
+          "variant": "deepseek-v4-pro-high-20260813",
+          "rank": 53
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 1461.5259908728863,
+              "variant": "claude-sonnet-5-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 54
+            }
+          ],
+          "value": 1461.5259908728863,
+          "variant": "claude-sonnet-5-high",
+          "rank": 54
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 1457.482176999627,
+              "variant": "gpt-6-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 60
+            }
+          ],
+          "value": 1457.482176999627,
+          "variant": "gpt-6-sol-max",
+          "rank": 60
+        },
+        "mimo-v2-6-flash": {
+          "measurements": [
+            {
+              "value": 1453.6669198282275,
+              "variant": "mimo-v2.6-flash",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 71
+            }
+          ],
+          "value": 1453.6669198282275,
+          "variant": "mimo-v2.6-flash",
+          "rank": 71
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 1442.4231003499538,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 86
+            }
+          ],
+          "value": 1442.4231003499538,
+          "variant": "gpt-6-luna-max",
+          "rank": 86
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 1440.4553191574714,
+              "variant": "minimax-m3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 91
+            }
+          ],
+          "value": 1440.4553191574714,
+          "variant": "minimax-m3",
+          "rank": 91
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 1439.0692302796642,
+              "variant": "grok-4.7-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 92
+            }
+          ],
+          "value": 1439.0692302796642,
+          "variant": "grok-4.7-xhigh",
+          "rank": 92
+        },
+        "mistral-medium-3-5": {
+          "measurements": [
+            {
+              "value": 1426.1283068837586,
+              "variant": "mistral-medium-3.5",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 113
+            }
+          ],
+          "value": 1426.1283068837586,
+          "variant": "mistral-medium-3.5",
+          "rank": 113
+        },
+        "claude-haiku-4-5": {
+          "measurements": [
+            {
+              "value": 1413.9274399763758,
+              "variant": "claude-haiku-4-5-20251001",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 137
+            }
+          ],
+          "value": 1413.9274399763758,
+          "variant": "claude-haiku-4-5-20251001",
+          "rank": 137
+        }
+      },
+      "notes": "Fresh raw HF dataset, complete overall category (409 rows); full raw precision preserved. All same-checkpoint effort/thinking variants remain separate in measurements; compatible top-level score is best published value only, not an effort-specific score. Source-declared effort comes from the suffix after the model name: the Max in Qwen3.8 Max is part of its name, not effort. Missing effort/mode/fallback/harness metadata stays unspecified/null. DeepSeek original/preview excluded because roster is 0813. Qwen Max undated rows excluded because they cannot establish roster 0902 checkpoint. updated is the dataset leaderboard_publish_date, corroborated by source page.",
+      "evaluator": "LMArena"
+    },
+    {
+      "id": "lmarena-webdev",
+      "name": "LMArena WebDev (Code Arena)",
+      "org": "LMArena",
+      "url": "https://arena.ai/leaderboard/code",
+      "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/webdev/latest-00000-of-00001.parquet",
+      "updated": "2026-09-25",
+      "metric": "Arena score (Bradley-Terry)",
+      "category": "coding",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 1826.7306745084245,
+              "variant": "claude-opus-5.5-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 1
+            }
+          ],
+          "value": 1826.7306745084245,
+          "variant": "claude-opus-5.5-max",
+          "rank": 1
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 1791.6525596749589,
+              "variant": "gpt-6-astra-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 2
+            }
+          ],
+          "value": 1791.6525596749589,
+          "variant": "gpt-6-astra-max",
+          "rank": 2
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 1751.4867509630722,
+              "variant": "claude-fable-5.1-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 3
+            }
+          ],
+          "value": 1751.4867509630722,
+          "variant": "claude-fable-5.1-max",
+          "rank": 3
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 1680.9724563881532,
+              "variant": "gpt-6-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 5
+            }
+          ],
+          "value": 1680.9724563881532,
+          "variant": "gpt-6-sol-max",
+          "rank": 5
+        },
+        "qwen3-8-max": {
+          "measurements": [
+            {
+              "value": 1661.6148024691886,
+              "variant": "qwen3.8-max-0902",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 8,
+              "snapshot": "0902"
+            }
+          ],
+          "value": 1661.6148024691886,
+          "variant": "qwen3.8-max-0902",
+          "rank": 8
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 1659.8729180873972,
+              "variant": "kimi-k3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 9
+            }
+          ],
+          "value": 1659.8729180873972,
+          "variant": "kimi-k3-max",
+          "rank": 9
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 1626.4699243598252,
+              "variant": "muse-spark-1.3 (xHigh)",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 15
+            },
+            {
+              "value": 1655.5032259545446,
+              "variant": "muse-spark-1.3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 10
+            }
+          ],
+          "value": 1655.5032259545446,
+          "variant": "muse-spark-1.3-max",
+          "rank": 10
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 1629.266689991658,
+              "variant": "grok-4.7-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 13
+            }
+          ],
+          "value": 1629.266689991658,
+          "variant": "grok-4.7-xhigh",
+          "rank": 13
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 1620.706058061411,
+              "variant": "deepseek-v4.1-flash-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 16
+            }
+          ],
+          "value": 1620.706058061411,
+          "variant": "deepseek-v4.1-flash-max",
+          "rank": 16
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 1619.078984091177,
+              "variant": "glm-5.3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 18
+            }
+          ],
+          "value": 1619.078984091177,
+          "variant": "glm-5.3-max",
+          "rank": 18
+        },
+        "mimo-v2-6-pro": {
+          "measurements": [
+            {
+              "value": 1618.0515859954373,
+              "variant": "mimo-v2.6-pro",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 19
+            }
+          ],
+          "value": 1618.0515859954373,
+          "variant": "mimo-v2.6-pro",
+          "rank": 19
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 1592.646721210178,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 24
+            }
+          ],
+          "value": 1592.646721210178,
+          "variant": "gpt-6-luna-max",
+          "rank": 24
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 1582.041653732348,
+              "variant": "deepseek-v4-pro-high-20260813",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 26,
+              "snapshot": "0813"
+            }
+          ],
+          "value": 1582.041653732348,
+          "variant": "deepseek-v4-pro-high-20260813",
+          "rank": 26
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 1579.9571506411203,
+              "variant": "gemini-3.8-flash-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 28
+            }
+          ],
+          "value": 1579.9571506411203,
+          "variant": "gemini-3.8-flash-high",
+          "rank": 28
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 1538.9131567383743,
+              "variant": "claude-sonnet-5-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 36
+            }
+          ],
+          "value": 1538.9131567383743,
+          "variant": "claude-sonnet-5-high",
+          "rank": 36
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 1483.4066915845285,
+              "variant": "minimax-m3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 54
+            }
+          ],
+          "value": 1483.4066915845285,
+          "variant": "minimax-m3",
+          "rank": 54
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 1446.3145134914955,
+              "variant": "gemini-3.1-pro-preview",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 63
+            }
+          ],
+          "value": 1446.3145134914955,
+          "variant": "gemini-3.1-pro-preview",
+          "rank": 63
+        },
+        "claude-haiku-4-5": {
+          "measurements": [
+            {
+              "value": 1329.545619927862,
+              "variant": "claude-haiku-4-5-20251001",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 110
+            }
+          ],
+          "value": 1329.545619927862,
+          "variant": "claude-haiku-4-5-20251001",
+          "rank": 110
+        },
+        "mistral-medium-3-5": {
+          "measurements": [
+            {
+              "value": 1263.4464280022278,
+              "variant": "mistral-medium-3.5",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 118
+            }
+          ],
+          "value": 1263.4464280022278,
+          "variant": "mistral-medium-3.5",
+          "rank": 118
+        }
+      },
+      "notes": "Fresh raw HF dataset, complete overall category (134 rows); full raw precision preserved. All same-checkpoint effort/thinking variants remain separate in measurements; compatible top-level score is best published value only, not an effort-specific score. Source-declared effort comes from the suffix after the model name: the Max in Qwen3.8 Max is part of its name, not effort. Missing effort/mode/fallback/harness metadata stays unspecified/null. DeepSeek original/preview excluded because roster is 0813. Qwen Max undated rows excluded because they cannot establish roster 0902 checkpoint. updated is the dataset leaderboard_publish_date, corroborated by source page.",
+      "evaluator": "LMArena"
+    },
+    {
+      "id": "lmarena-agent",
+      "name": "LMArena Agent Arena",
+      "org": "LMArena",
+      "url": "https://arena.ai/leaderboard/agent",
+      "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/agent/latest-00000-of-00001.parquet",
+      "updated": "2026-09-28",
+      "metric": "Net Improvement (relative agent score, percent; can be negative)",
+      "category": "agents",
+      "higherIsBetter": true,
+      "confidence": "medium",
+      "scores": {
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 14.0647128827409,
+              "variant": "Claude Fable 5.1 (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 1
+            }
+          ],
+          "value": 14.0647128827409,
+          "variant": "Claude Fable 5.1 (Max)",
+          "rank": 1
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 11.843427629578219,
+              "variant": "Claude Opus 5.5 (High)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 2
+            }
+          ],
+          "value": 11.843427629578219,
+          "variant": "Claude Opus 5.5 (High)",
+          "rank": 2
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 10.363131353613044,
+              "variant": "GPT 6 Astra (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 3
+            }
+          ],
+          "value": 10.363131353613044,
+          "variant": "GPT 6 Astra (Max)",
+          "rank": 3
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 8.799784916674689,
+              "variant": "GPT 6 Sol (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 6
+            }
+          ],
+          "value": 8.799784916674689,
+          "variant": "GPT 6 Sol (Max)",
+          "rank": 6
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 4.801650404212376,
+              "variant": "Claude Sonnet 5 (High)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 10
+            }
+          ],
+          "value": 4.801650404212376,
+          "variant": "Claude Sonnet 5 (High)",
+          "rank": 10
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 4.034997607721866,
+              "variant": "Kimi K3 (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 13
+            }
+          ],
+          "value": 4.034997607721866,
+          "variant": "Kimi K3 (Max)",
+          "rank": 13
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 4.0205615666081576,
+              "variant": "Grok 4.7 (xHigh)",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 14
+            }
+          ],
+          "value": 4.0205615666081576,
+          "variant": "Grok 4.7 (xHigh)",
+          "rank": 14
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 3.857651731346263,
+              "variant": "Deepseek V4.1 Flash (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 15
+            }
+          ],
+          "value": 3.857651731346263,
+          "variant": "Deepseek V4.1 Flash (Max)",
+          "rank": 15
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 3.8290704943740415,
+              "variant": "Muse Spark 1.3 (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 17
+            }
+          ],
+          "value": 3.8290704943740415,
+          "variant": "Muse Spark 1.3 (Max)",
+          "rank": 17
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 3.7541249524181475,
+              "variant": "Gemini 3.8 Flash (High)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 18
+            }
+          ],
+          "value": 3.7541249524181475,
+          "variant": "Gemini 3.8 Flash (High)",
+          "rank": 18
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 2.781504921470527,
+              "variant": "GLM 5.3 (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 19
+            }
+          ],
+          "value": 2.781504921470527,
+          "variant": "GLM 5.3 (Max)",
+          "rank": 19
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 1.7427578243678723,
+              "variant": "DeepSeek V4 Pro (High) (0813)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 21,
+              "snapshot": "0813"
+            }
+          ],
+          "value": 1.7427578243678723,
+          "variant": "DeepSeek V4 Pro (High) (0813)",
+          "rank": 21
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 1.591221339609086,
+              "variant": "GPT 6 Luna (Max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 23
+            }
+          ],
+          "value": 1.591221339609086,
+          "variant": "GPT 6 Luna (Max)",
+          "rank": 23
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": -6.805126769980034,
+              "variant": "Minimax M3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 39
+            }
+          ],
+          "value": -6.805126769980034,
+          "variant": "Minimax M3",
+          "rank": 39
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": -7.2196207321710375,
+              "variant": "Gemini 3.1 Pro Preview",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 41
+            }
+          ],
+          "value": -7.2196207321710375,
+          "variant": "Gemini 3.1 Pro Preview",
+          "rank": 41
+        },
+        "mistral-medium-3-5": {
+          "measurements": [
+            {
+              "value": -11.94976013612434,
+              "variant": "Mistral Medium 3.5",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 45
+            }
+          ],
+          "value": -11.94976013612434,
+          "variant": "Mistral Medium 3.5",
+          "rank": 45
+        }
+      },
+      "notes": "Fresh raw HF dataset, complete overall category (46 rows); full raw precision preserved. All same-checkpoint effort/thinking variants remain separate in measurements; compatible top-level score is best published value only, not an effort-specific score. Source-declared effort comes from the suffix after the model name: the Max in Qwen3.8 Max is part of its name, not effort. Missing effort/mode/fallback/harness metadata stays unspecified/null. DeepSeek original/preview excluded because roster is 0813. Qwen Max undated rows excluded because they cannot establish roster 0902 checkpoint. Agent raw score multiplied by 100 to match the percent display, preserving negative values. updated is the dataset leaderboard_publish_date, corroborated by source page.",
+      "evaluator": "LMArena"
+    },
+    {
+      "id": "livebench-global",
+      "name": "LiveBench Global Average",
+      "org": "LiveBench",
+      "url": "https://livebench.ai/",
+      "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
+      "updated": "2026-10-07",
+      "metric": "Global average (mean of 7 category means)",
+      "category": "overall",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 76.03971428571428,
+              "variant": "claude-sonnet-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 76.03971428571428,
+          "variant": "claude-sonnet-5-xhigh-effort"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 76.95184523809525,
+              "variant": "gemini-3.1-pro-preview-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 76.95184523809525,
+          "variant": "gemini-3.1-pro-preview-high"
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 67.2567619047619,
+              "variant": "minimax-m3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 67.2567619047619,
+          "variant": "minimax-m3"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 79.19304761904762,
+              "variant": "kimi-k3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 79.19304761904762,
+          "variant": "kimi-k3"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 77.43614285714285,
+              "variant": "deepseek-v4-pro-0813",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "snapshot": "0813"
+            }
+          ],
+          "value": 77.43614285714285,
+          "variant": "deepseek-v4-pro-0813"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 76.13780952380952,
+              "variant": "glm-5.3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 76.13780952380952,
+          "variant": "glm-5.3"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 83.41415476190477,
+              "variant": "claude-fable-5-1-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 83.41415476190477,
+          "variant": "claude-fable-5-1-max-effort"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 75.82852380952382,
+              "variant": "gemini-3.8-flash-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 75.82852380952382,
+          "variant": "gemini-3.8-flash-high"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 81.58864285714286,
+              "variant": "muse-spark-1.3-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.58864285714286,
+          "variant": "muse-spark-1.3-xhigh"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 82.16064285714286,
+              "variant": "gpt-6-astra-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 82.16064285714286,
+          "variant": "gpt-6-astra-max"
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 81.10970238095238,
+              "variant": "deepseek-v4.1-flash-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.10970238095238,
+          "variant": "deepseek-v4.1-flash-max"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 77.39673809523809,
+              "variant": "grok-4.7-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 77.39673809523809,
+          "variant": "grok-4.7-xhigh"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 83.21657142857143,
+              "variant": "claude-opus-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 82.05921428571429,
+              "variant": "claude-opus-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 83.21657142857143,
+          "variant": "claude-opus-5-5-max-effort"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 79.24545238095237,
+              "variant": "gpt-6-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 79.24545238095237,
+          "variant": "gpt-6-sol-max"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 72.02647619047619,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 72.02647619047619,
+          "variant": "gpt-6-luna-max"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 75.67214285714286,
+              "variant": "claude-sonnet-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 77.75469047619048,
+              "variant": "claude-sonnet-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 75.67214285714286,
+          "variant": "claude-sonnet-5-5-max-effort"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 81.61566666666667,
+              "variant": "gpt-6.1-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 81.11019047619048,
+              "variant": "gpt-6.1-sol-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.61566666666667,
+          "variant": "gpt-6.1-sol-max"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 72.06791666666666,
+              "variant": "claude-haiku-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 67.88196428571429,
+              "variant": "claude-haiku-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 72.06791666666666,
+          "variant": "claude-haiku-5-5-xhigh-effort"
+        }
+      },
+      "notes": "Current raw CSV and categories JSON verified on 2026-10-08, including Claude Haiku 5.5 xHigh and Max Effort rows. Benchmark release remains LiveBench-2026-06-25; models are appended afterward. updated = CSV Last-Modified HTTP header (2026-10-07), not benchmark release date. Mean of task scores per category, then mean of all 7 category means for global, matching the site; unrounded arithmetic retained. Every exact-checkpoint explicitly named effort variant remains separate; effort does not imply thinking mode, fallback policy or harness. Existing exact-version variants are retained; DeepSeek original/preview and undated Qwen Max cannot establish roster 0813/0902 checkpoints and remain excluded. Global is reference-only because it overlaps its retained category components.",
+      "consensus": false,
+      "consensusReason": "Global average overlaps its coding and agent categories; reference only rather than counting the same tasks again.",
+      "evaluator": "LiveBench",
+      "family": "livebench-global"
+    },
+    {
+      "id": "livebench-coding",
+      "name": "LiveBench Coding",
+      "org": "LiveBench",
+      "url": "https://livebench.ai/",
+      "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
+      "updated": "2026-10-07",
+      "metric": "Coding category average (code_generation, code_completion)",
+      "category": "coding",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 80.68,
+              "variant": "claude-sonnet-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 80.68,
+          "variant": "claude-sonnet-5-xhigh-effort"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 76.4545,
+              "variant": "gemini-3.1-pro-preview-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 76.4545,
+          "variant": "gemini-3.1-pro-preview-high"
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 68.2025,
+              "variant": "minimax-m3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 68.2025,
+          "variant": "minimax-m3"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 81.4455,
+              "variant": "kimi-k3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.4455,
+          "variant": "kimi-k3"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 77.1585,
+              "variant": "deepseek-v4-pro-0813",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "snapshot": "0813"
+            }
+          ],
+          "value": 77.1585,
+          "variant": "deepseek-v4-pro-0813"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 78.95,
+              "variant": "glm-5.3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 78.95,
+          "variant": "glm-5.3"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 86.375,
+              "variant": "claude-fable-5-1-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 86.375,
+          "variant": "claude-fable-5-1-max-effort"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 72.489,
+              "variant": "gemini-3.8-flash-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 72.489,
+          "variant": "gemini-3.8-flash-high"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 81.0625,
+              "variant": "muse-spark-1.3-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.0625,
+          "variant": "muse-spark-1.3-xhigh"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 80.35849999999999,
+              "variant": "gpt-6-astra-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 80.35849999999999,
+          "variant": "gpt-6-astra-max"
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 80.037,
+              "variant": "deepseek-v4.1-flash-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 80.037,
+          "variant": "deepseek-v4.1-flash-max"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 77.1585,
+              "variant": "grok-4.7-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 77.1585,
+          "variant": "grok-4.7-xhigh"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 89.253,
+              "variant": "claude-opus-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 89.253,
+              "variant": "claude-opus-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 89.253,
+          "variant": "claude-opus-5-5-max-effort"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 81.767,
+              "variant": "gpt-6-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.767,
+          "variant": "gpt-6-sol-max"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 78.95,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 78.95,
+          "variant": "gpt-6-luna-max"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 91.366,
+              "variant": "claude-sonnet-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 88.87049999999999,
+              "variant": "claude-sonnet-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 91.366,
+          "variant": "claude-sonnet-5-5-max-effort"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 80.35849999999999,
+              "variant": "gpt-6.1-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 80.741,
+              "variant": "gpt-6.1-sol-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 80.35849999999999,
+          "variant": "gpt-6.1-sol-max"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 76.393,
+              "variant": "claude-haiku-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 77.863,
+              "variant": "claude-haiku-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 77.863,
+          "variant": "claude-haiku-5-5-max-effort"
+        }
+      },
+      "notes": "Current raw CSV and categories JSON verified on 2026-10-08, including Claude Haiku 5.5 xHigh and Max Effort rows. Benchmark release remains LiveBench-2026-06-25; models are appended afterward. updated = CSV Last-Modified HTTP header (2026-10-07), not benchmark release date. Mean of task scores per category, then mean of all 7 category means for global, matching the site; unrounded arithmetic retained. Every exact-checkpoint explicitly named effort variant remains separate; effort does not imply thinking mode, fallback policy or harness. Existing exact-version variants are retained; DeepSeek original/preview and undated Qwen Max cannot establish roster 0813/0902 checkpoints and remain excluded. Global is reference-only because it overlaps its retained category components.",
+      "evaluator": "LiveBench",
+      "family": "livebench-coding"
+    },
+    {
+      "id": "livebench-agentic-coding",
+      "name": "LiveBench Agentic Coding",
+      "org": "LiveBench",
+      "url": "https://livebench.ai/",
+      "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
+      "updated": "2026-10-07",
+      "metric": "Agentic Coding category average (python, javascript, typescript; agentic v2)",
+      "category": "agents",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 59.394,
+              "variant": "claude-sonnet-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 59.394,
+          "variant": "claude-sonnet-5-xhigh-effort"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 44.141333333333336,
+              "variant": "gemini-3.1-pro-preview-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 44.141333333333336,
+          "variant": "gemini-3.1-pro-preview-high"
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 40.656333333333336,
+              "variant": "minimax-m3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 40.656333333333336,
+          "variant": "minimax-m3"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 62.17166666666667,
+              "variant": "kimi-k3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 62.17166666666667,
+          "variant": "kimi-k3"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 54.949666666666666,
+              "variant": "deepseek-v4-pro-0813",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "snapshot": "0813"
+            }
+          ],
+          "value": 54.949666666666666,
+          "variant": "deepseek-v4-pro-0813"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 60.909,
+              "variant": "glm-5.3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 60.909,
+          "variant": "glm-5.3"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 66.06066666666666,
+              "variant": "claude-fable-5-1-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 66.06066666666666,
+          "variant": "claude-fable-5-1-max-effort"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 54.242333333333335,
+              "variant": "gemini-3.8-flash-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 54.242333333333335,
+          "variant": "gemini-3.8-flash-high"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 64.091,
+              "variant": "muse-spark-1.3-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 64.091,
+          "variant": "muse-spark-1.3-xhigh"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 57.323,
+              "variant": "gpt-6-astra-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 57.323,
+          "variant": "gpt-6-astra-max"
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 77.27266666666667,
+              "variant": "deepseek-v4.1-flash-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 77.27266666666667,
+          "variant": "deepseek-v4.1-flash-max"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 53.989666666666665,
+              "variant": "grok-4.7-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 53.989666666666665,
+          "variant": "grok-4.7-xhigh"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 71.717,
+              "variant": "claude-opus-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 65.35333333333334,
+              "variant": "claude-opus-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 71.717,
+          "variant": "claude-opus-5-5-max-effort"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 52.87866666666667,
+              "variant": "gpt-6-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 52.87866666666667,
+          "variant": "gpt-6-sol-max"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 51.212,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 51.212,
+          "variant": "gpt-6-luna-max"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 56.31333333333333,
+              "variant": "claude-sonnet-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 39.343666666666664,
+              "variant": "claude-sonnet-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 56.31333333333333,
+          "variant": "claude-sonnet-5-5-max-effort"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 54.54533333333333,
+              "variant": "gpt-6.1-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 56.76766666666667,
+              "variant": "gpt-6.1-sol-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 54.54533333333333,
+          "variant": "gpt-6.1-sol-max"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 51.36366666666667,
+              "variant": "claude-haiku-5-5-xhigh-effort",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            },
+            {
+              "value": 57.17166666666667,
+              "variant": "claude-haiku-5-5-max-effort",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 57.17166666666667,
+          "variant": "claude-haiku-5-5-max-effort"
+        }
+      },
+      "notes": "Current raw CSV and categories JSON verified on 2026-10-08, including Claude Haiku 5.5 xHigh and Max Effort rows. Benchmark release remains LiveBench-2026-06-25; models are appended afterward. updated = CSV Last-Modified HTTP header (2026-10-07), not benchmark release date. Mean of task scores per category, then mean of all 7 category means for global, matching the site; unrounded arithmetic retained. Every exact-checkpoint explicitly named effort variant remains separate; effort does not imply thinking mode, fallback policy or harness. Existing exact-version variants are retained; DeepSeek original/preview and undated Qwen Max cannot establish roster 0813/0902 checkpoints and remain excluded. Global is reference-only because it overlaps its retained category components.",
+      "evaluator": "LiveBench",
+      "family": "livebench-agentic-coding"
+    }
+  ],
+  "staleOrSkipped": [
+    {
+      "board": "dated roster match",
+      "variant": "qwen3.8-max",
+      "reason": "Qwen3.8 Max roster checkpoint is 0902; undated rows cannot establish this snapshot and may be the earlier Aug 2 checkpoint."
+    },
+    {
+      "board": "dated roster match",
+      "variant": "deepseek-v4-pro",
+      "reason": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot."
+    },
+    {
+      "board": "dated roster match",
+      "variant": "deepseek-v4-pro-high-preview",
+      "reason": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot."
+    },
+    {
+      "board": "dated roster match",
+      "variant": "Qwen3.8 Max",
+      "reason": "Qwen3.8 Max roster checkpoint is 0902; undated rows cannot establish this snapshot and may be the earlier Aug 2 checkpoint."
+    },
+    {
+      "board": "dated roster match",
+      "variant": "DeepSeek V4 Pro",
+      "reason": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot."
+    },
+    {
+      "board": "LMArena Text style-control \u2014 Haiku 5.5",
+      "reason": "Checked all 413 model keys in current raw embedded Text page (board date 2026-10-02), plus raw HF metadata. No exact Haiku 5.5 result; older Haiku 4.5/3.5/3 remain distinct. Existing source retained for narrow rollout."
+    },
+    {
+      "board": "LMArena WebDev \u2014 Haiku 5.5",
+      "reason": "Checked all 141 model keys in current raw embedded WebDev overall page (board date 2026-10-07), plus full HF filtered Haiku rows (dataset date 2026-10-06). Only Haiku 4.5 is present; no exact Haiku 5.5 row. Existing source retained. Canonical page: https://arena.ai/leaderboard/code/webdev/overall."
+    },
+    {
+      "board": "LMArena Agent \u2014 Haiku 5.5",
+      "reason": "Checked all 50 rows of latest raw HF agent dataset, board date 2026-10-02. No Haiku model is present, so no exact Haiku 5.5 result. Existing source retained with no guessed new result."
+    }
+  ],
+  "excluded": {
+    "dated roster match": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot.",
+    "livebench-global": "Reference-only: global overlaps retained Coding and Agentic Coding category components; no extra capability vote."
+  }
+}

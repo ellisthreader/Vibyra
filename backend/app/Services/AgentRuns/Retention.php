@@ -66,7 +66,10 @@ final class Retention
         $deleted = 0;
         $rows = DB::table('agent_v2_attachments')->where('created_at', '<', now()->subHours(min($limit)))->orderBy('created_at')->limit(self::BATCH * 5)->get();
         foreach ($rows as $row) {
-            $runs = DB::table('agent_runs')->where('user_id', $row->user_id)->where('attachments', 'like', '%'.$row->id.'%')->get(['state', 'finished_at']);
+            $runs = DB::table('agent_runs')->where('user_id', $row->user_id)->where(function ($q) use ($row) {
+                $q->where('attachments', 'like', '%'.$row->id.'%')->orWhereIn('id', DB::table('agent_tool_actions')
+                    ->where('user_id', $row->user_id)->where('tool', 'gmail_send')->where('arguments', 'like', '%'.$row->id.'%')->select('run_id'));
+            })->get(['state', 'finished_at']);
             $expired = $runs->isEmpty() ? $unattachedHours > 0 : ($days > 0 && $runs->every(fn ($r) => RunStates::terminal($r->state)
                 && $r->finished_at !== null && $r->finished_at < now()->subDays($days)->toDateTimeString()));
             if (!$expired) continue;

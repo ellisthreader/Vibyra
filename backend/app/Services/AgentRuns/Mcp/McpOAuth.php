@@ -87,6 +87,14 @@ final class McpOAuth
         return $flow;
     }
 
+    /** The server's own words for a refusal (RFC 7591 error, description), without control characters: " (invalid_redirect_uri: ...)". */
+    private static function reason(\Illuminate\Http\Client\Response $response): string
+    {
+        $text = trim(implode(': ', array_filter([$response->json('error'), $response->json('error_description')], 'is_string')));
+        $text = trim((string) preg_replace('/[\p{Cc}\p{Cf}]+/u', ' ', $text));
+        return $text === '' ? '' : ' ('.mb_substr($text, 0, 160).')';
+    }
+
     private function register(array $found): array
     {
         if ($found['cimd']) return ['client_id' => self::metadataUrl()];
@@ -95,8 +103,9 @@ final class McpOAuth
             'json' => array_diff_key(self::metadata(), ['client_id' => true, 'client_uri' => true])
                 + ($found['scope'] !== '' ? ['scope' => $found['scope']] : [])]);
         $id = $response->json('client_id');
-        if (!$response->successful() || !is_string($id) || $id === '' || strlen($id) > 500)
-            throw new McpError('oauth_error', 'This MCP server refused to register Vibyra as an app.');
+        // Some servers issue a self-contained encrypted client_id (Netlify's is about 700 characters), so the cap is generous.
+        if (!$response->successful() || !is_string($id) || $id === '' || strlen($id) > 4000)
+            throw new McpError('oauth_error', 'This MCP server refused to register Vibyra as an app'.self::reason($response).'.');
         $secret = $response->json('client_secret');
         return ['client_id' => $id, 'client_secret' => is_string($secret) ? $secret : null];
     }

@@ -28,7 +28,7 @@ final class Admission
         $snapshot = $this->grants->snapshot($userId, $agent->id, true, $askedInApp ? (string) $request['prompt'] : null);
         $online = $binding->last_seen_at && $binding->last_seen_at->isAfter(now()->subSeconds((int) config('agents_v2.online_seconds')));
         try {
-            $run = DB::transaction(function () use ($userId, $data, $request, $hash, $agent, $binding, $snapshot, $online) {
+            $run = DB::transaction(function () use ($userId, $data, $request, $hash, $agent, $binding, $snapshot, $online, $askedInApp) {
                 DB::table('agent_teammates')->where('id', $agent->id)->lockForUpdate()->first();
                 $seq = (int) Run::query()->where('agent_id', $agent->id)->max('conversation_seq') + 1;
                 $run = Run::query()->create(['user_id' => $userId, 'agent_id' => $agent->id,
@@ -40,6 +40,7 @@ final class Admission
                     'state' => $online ? RunStates::QUEUED : RunStates::WAITING_COMPUTER, 'event_seq' => 0]);
                 $this->events->append($run, 'run.admitted', ['state' => $run->state, 'fundingSource' => 'connected_account',
                     'provider' => $binding->provider, 'model' => $binding->model, 'grants' => count($snapshot)]);
+                if ($askedInApp) app(Memory\Candidates::class)->capture($run);
                 return $run;
             });
         } catch (QueryException $e) {

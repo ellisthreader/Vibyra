@@ -13,7 +13,8 @@ final class TerminalCatalog
     {
         if ($this->pricing->isStale()) $this->pricing->refreshPricingFor(config('vibes.auto_model'));
         $snapshot = $this->pricing->snapshot();
-        $version = hash('sha256', json_encode($snapshot));
+        $published = app(\App\Services\ModelCatalog\PublishedCatalog::class)->envelope();
+        $version = hash('sha256', json_encode($snapshot).($published['signature'] ?? ''));
         abort_if($revision !== null && $revision !== $version, 409, 'The model list changed. Refresh it to continue.');
         $fresh = ! $this->pricing->isStale();
         $rows = collect($snapshot['models'] ?? [])->filter(fn ($m, $id) => ! str_starts_with($id, '~') && self::executable($id) && self::offered($id) && self::listed($id) && self::choosable(self::levels($m)) && in_array('text', $m['output_modalities'] ?? [], true))
@@ -70,6 +71,8 @@ final class TerminalCatalog
     /** Whether the curated menu (`config('vibes.terminal_models')`) offers this model; an empty menu offers all. */
     public static function listed(string $id): bool
     {
+        $catalog = app(\App\Services\ModelCatalog\PublishedCatalog::class);
+        if ($catalog->active()) return ($catalog->models()[$id]['terminal'] ?? false) && $catalog->eligible($id);
         $menu = (array) config('vibes.terminal_models', []);
 
         return $menu === [] || in_array($id, $menu, true);

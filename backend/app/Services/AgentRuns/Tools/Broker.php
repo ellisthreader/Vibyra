@@ -32,16 +32,18 @@ final class Broker
     {
         $prepared = DB::transaction(function () use ($binding, $runId, $call) {
             $run = $this->leases->fenced($binding, $runId, (int) $call['generation']);
-            if (!in_array($run->state, RunStates::ACTIVE, true))
-                ApiError::throw(409, 'run_not_active', 'This task is '.$run->state.'; it cannot call tools now.');
             $existing = ToolAction::query()->where('run_id', $run->id)->where('call_id', $call['callId'])->first();
             if ($existing) {
-                if ($existing->tool !== $call['tool'] || $existing->connection_id !== $call['connectionId']
+                if ($existing->tool !== $call['tool'] || ($existing->draft_original_connection_id ?? $existing->connection_id) !== $call['connectionId']
                     || $existing->args_hash !== Canonical::hash($call['arguments']))
                     ApiError::throw(409, 'call_conflict', 'This call ID was already used with different arguments.');
                 return ['replay' => $existing];
             }
+            if (!in_array($run->state, RunStates::ACTIVE, true))
+                ApiError::throw(409, 'run_not_active', 'This task is '.$run->state.'; it cannot call tools now.');
             $this->flow->resume($run);
+            if (\App\Services\AgentRuns\Outputs\OutputTools::has($call['tool']))
+                return ['replay' => app(\App\Services\AgentRuns\Outputs\OutputBroker::class)->request($run, $call)];
             try {
                 if ($run->tool_calls >= (int) config('agents_v2.max_tool_calls'))
                     throw new ToolRefused('limit_reached', 'This task reached its tool-call limit.');
@@ -65,8 +67,14 @@ final class Broker
                 return ['replay' => $this->refuse($run, $call, $refused)];
             }
             $write = $this->catalog->kind($call['tool']) === 'write';
+            if ($write && $run->instruction_revision > 0 && ToolAction::query()->where('run_id', $run->id)
+                ->where('tool', $call['tool'])->where('connection_id', $connection->id)->whereNotNull('dispatched_at')
+                ->where('instruction_revision', '<', $run->instruction_revision)->get()
+                ->contains(fn ($prior) => Canonical::hash($prior->arguments) === Canonical::hash($args)))
+                return ['replay' => $this->refuse($run, $call, new ToolRefused('already_dispatched',
+                    'This exact change was already dispatched before the updated instruction. Check its saved receipt; it is not repeated.'))];
             $action = ToolAction::query()->create(['run_id' => $run->id, 'user_id' => $run->user_id,
-                'call_id' => $call['callId'], 'tool' => $call['tool'], 'kind' => $write ? 'write' : 'read',
+                'instruction_revision' => $run->instruction_revision, 'call_id' => $call['callId'], 'tool' => $call['tool'], 'kind' => $write ? 'write' : 'read',
                 'connection_id' => $connection->id, 'connection_generation' => $connection->generation,
                 'grant_id' => $grant->id, 'grant_revision' => $grant->revision, 'arguments' => $args,
                 'args_hash' => Canonical::hash($call['arguments']), 'schema_revision' => $call['schemaRevision'],

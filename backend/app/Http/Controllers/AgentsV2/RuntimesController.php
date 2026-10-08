@@ -23,6 +23,7 @@ final class RuntimesController extends Controller
             'capabilities.computerTools' => 'sometimes|boolean',
             // Phase 7: the Mac can run browser tools in a separate profile (claim + receipt endpoints).
             'capabilities.browserTools' => 'sometimes|boolean',
+            'capabilities.taskSteering' => 'sometimes|boolean',
             'capabilities.localMcp' => 'sometimes|boolean']);
         return $this->json(['runtime' => $bindings->register($user->id, $data)], 201);
     }

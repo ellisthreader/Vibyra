@@ -1,0 +1,2696 @@
+{
+  "sources": [
+    {
+      "id": "epoch-chess-puzzles",
+      "name": "Chess Puzzles",
+      "evaluator": "Epoch AI",
+      "family": "game-puzzles",
+      "org": "Epoch AI",
+      "url": "https://epoch.ai/data/benchmark_data.zip#chess_puzzles.csv",
+      "updated": "2026-09-30",
+      "metric": "Accuracy %",
+      "category": "reasoning",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 38,
+              "variant": "muse-spark-1.3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-18T19:12:25.000Z",
+              "stderr": 4.878317312145634
+            },
+            {
+              "value": 35,
+              "variant": "muse-spark-1.3_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-16T13:39:25.000Z",
+              "stderr": 4.793724854411022
+            }
+          ],
+          "value": 38,
+          "variant": "muse-spark-1.3_max"
+        },
+        "qwen3-8-max": {
+          "measurements": [
+            {
+              "value": 40,
+              "variant": "qwen3.8-max-0902_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-02T18:04:58.000Z",
+              "stderr": 4.92365963917331
+            }
+          ],
+          "value": 40,
+          "variant": "qwen3.8-max-0902_xhigh"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 61,
+              "variant": "gemini-3.8-flash_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-02T17:15:36.000Z",
+              "stderr": 4.902071300001973
+            }
+          ],
+          "value": 61,
+          "variant": "gemini-3.8-flash_high"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 47,
+              "variant": "claude-fable-5-1_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-01T18:32:00.000Z",
+              "stderr": 5.016135580465917
+            }
+          ],
+          "value": 47,
+          "variant": "claude-fable-5-1_max"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 72,
+              "variant": "gpt-6-astra_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-30T14:57:43.000Z",
+              "stderr": 4.512608598542129
+            }
+          ],
+          "value": 72,
+          "variant": "gpt-6-astra_max"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 21,
+              "variant": "glm-5.3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-24T19:44:18.000Z",
+              "stderr": 4.093601807403323
+            }
+          ],
+          "value": 21,
+          "variant": "glm-5.3_max"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 47,
+              "variant": "deepseek-v4-pro-0813_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-18T21:03:23.000Z",
+              "stderr": 5.016135580465917
+            }
+          ],
+          "value": 47,
+          "variant": "deepseek-v4-pro-0813_max"
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 4,
+              "variant": "MiniMax-M3_none",
+              "effort": "none",
+              "rawEffort": "none",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-10T17:46:41.000Z",
+              "stderr": 1.9694638556693238
+            },
+            {
+              "value": 14.000000000000002,
+              "variant": "MiniMax-M3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-10T17:45:57.000Z",
+              "stderr": 3.4873508801977695
+            }
+          ],
+          "value": 14.000000000000002,
+          "variant": "MiniMax-M3"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 20,
+              "variant": "kimi-k3_low",
+              "effort": "low",
+              "rawEffort": "low",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-07T00:57:00.000Z",
+              "stderr": 4.020151261036848
+            },
+            {
+              "value": 25,
+              "variant": "kimi-k3_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-07T00:57:00.000Z",
+              "stderr": 4.351941398892446
+            },
+            {
+              "value": 39,
+              "variant": "kimi-k3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-07-16T21:59:40.000Z",
+              "stderr": 4.902071300001973
+            }
+          ],
+          "value": 39,
+          "variant": "kimi-k3_max"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 49,
+              "variant": "gemini-3.1-pro-preview_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-06T22:30:32.000Z",
+              "stderr": 5.024183937956915
+            },
+            {
+              "value": 55.00000000000001,
+              "variant": "gemini-3.1-pro-preview",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-02-19T18:01:28.796Z",
+              "stderr": 5
+            }
+          ],
+          "value": 55.00000000000001,
+          "variant": "gemini-3.1-pro-preview"
+        },
+        "claude-haiku-4-5": {
+          "measurements": [
+            {
+              "value": 8,
+              "variant": "claude-haiku-4-5-20251001_32K",
+              "effort": "unspecified",
+              "rawEffort": "32K",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-07-16T17:57:55.000Z",
+              "stderr": 2.7265992434429074
+            }
+          ],
+          "value": 8,
+          "variant": "claude-haiku-4-5-20251001_32K"
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 35,
+              "variant": "claude-sonnet-5_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-06-30T20:26:11.000Z",
+              "stderr": 4.793724854411022
+            },
+            {
+              "value": 16,
+              "variant": "claude-sonnet-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-06-30T18:32:59.000Z",
+              "stderr": 3.6845294917747067
+            }
+          ],
+          "value": 35,
+          "variant": "claude-sonnet-5_xhigh"
+        }
+      },
+      "notes": "Raw CSV, Sep30 archive + explicit hub Sep30 update. 100 generated positions, exact move grading; narrow reasoning slice. Current best runs range4–72%; not saturated/floor-bound. Present inside ECI composite; avoid treating this as a new independent evaluator. Exact 0902 Qwen /0813 DeepSeek only.",
+      "consensus": true,
+      "models": 12
+    },
+    {
+      "id": "epoch-mystery-game-puzzles",
+      "name": "Mystery Game Puzzles",
+      "evaluator": "Epoch AI",
+      "family": "game-puzzles",
+      "org": "Epoch AI",
+      "url": "https://epoch.ai/data/benchmark_data.zip#mystery_game_puzzles.csv",
+      "updated": "2026-09-30",
+      "metric": "Accuracy %",
+      "category": "reasoning",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 71,
+              "variant": "claude-opus-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-29T17:34:54.000Z",
+              "stderr": 4.560480215720688
+            }
+          ],
+          "value": 71,
+          "variant": "claude-opus-5-5_max"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 65,
+              "variant": "claude-sonnet-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-29T15:15:14.000Z",
+              "stderr": 4.793724854411022
+            }
+          ],
+          "value": 65,
+          "variant": "claude-sonnet-5-5_max"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 25,
+              "variant": "muse-spark-1.3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-18T19:12:25.000Z",
+              "stderr": 4.464048473115664
+            },
+            {
+              "value": 14.14141414141414,
+              "variant": "muse-spark-1.3_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-16T23:26:24.000Z",
+              "stderr": 3.519858850692775
+            }
+          ],
+          "value": 25,
+          "variant": "muse-spark-1.3_max"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 47,
+              "variant": "gemini-3.8-flash_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-02T17:15:36.000Z",
+              "stderr": 5.016135580465917
+            }
+          ],
+          "value": 47,
+          "variant": "gemini-3.8-flash_high"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 57.99999999999999,
+              "variant": "claude-fable-5-1_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-09-01T18:45:06.000Z",
+              "stderr": 4.9604496374885825
+            }
+          ],
+          "value": 57.99999999999999,
+          "variant": "claude-fable-5-1_max"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 33,
+              "variant": "glm-5.3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-30T23:33:33.000Z",
+              "stderr": 4.725815626252608
+            }
+          ],
+          "value": 33,
+          "variant": "glm-5.3_max"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 84,
+              "variant": "gpt-6-astra_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-30T14:57:43.000Z",
+              "stderr": 3.6845294917747067
+            }
+          ],
+          "value": 84,
+          "variant": "gpt-6-astra_max"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 12,
+              "variant": "kimi-k3_low",
+              "effort": "low",
+              "rawEffort": "low",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-29T11:05:21.000Z",
+              "stderr": 3.2659863237109046
+            },
+            {
+              "value": 26,
+              "variant": "kimi-k3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-07-29T03:26:08.000Z",
+              "stderr": 4.4084400227680804
+            }
+          ],
+          "value": 26,
+          "variant": "kimi-k3_max"
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 7.000000000000001,
+              "variant": "MiniMax-M3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-27T19:13:33.000Z",
+              "stderr": 2.564323999762428
+            },
+            {
+              "value": 8,
+              "variant": "MiniMax-M3_none",
+              "effort": "none",
+              "rawEffort": "none",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-27T18:09:34.000Z",
+              "stderr": 2.7265992434429074
+            }
+          ],
+          "value": 8,
+          "variant": "MiniMax-M3_none"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 43,
+              "variant": "deepseek-v4-pro-0813_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-19T18:14:49.000Z",
+              "stderr": 4.97569851956243
+            }
+          ],
+          "value": 43,
+          "variant": "deepseek-v4-pro-0813_max"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 32,
+              "variant": "gemini-3.1-pro-preview_medium",
+              "effort": "medium",
+              "rawEffort": "medium",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-06T00:12:06.000Z",
+              "stderr": 4.688261722621506
+            },
+            {
+              "value": 28.999999999999996,
+              "variant": "gemini-3.1-pro-preview_low",
+              "effort": "low",
+              "rawEffort": "low",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-06T00:11:58.000Z",
+              "stderr": 4.560480215720688
+            },
+            {
+              "value": 34,
+              "variant": "gemini-3.1-pro-preview_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-07-27T18:29:16.000Z",
+              "stderr": 4.760952285695233
+            }
+          ],
+          "value": 34,
+          "variant": "gemini-3.1-pro-preview_high"
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 16,
+              "variant": "claude-sonnet-5",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-08-06T00:09:48.000Z",
+              "stderr": 3.6845294917747067
+            },
+            {
+              "value": 35,
+              "variant": "claude-sonnet-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch minimal game-puzzle scaffold",
+              "evaluatedAt": "2026-07-28T21:09:50.000Z",
+              "stderr": 4.793724854411023
+            }
+          ],
+          "value": 35,
+          "variant": "claude-sonnet-5_max"
+        }
+      },
+      "notes": "Raw CSV, Sep30 archive + explicit hub Sep30 update. 100 positions from an undisclosed game; exact move grading. Prompt/transcripts withheld to reduce preparation; trust evaluator but external reproduction limited. Present inside ECI composite; avoid treating this as a new independent evaluator. Exact 0902 Qwen /0813 DeepSeek only.",
+      "consensus": true,
+      "models": 12
+    },
+    {
+      "id": "epoch-furniture-assembly",
+      "name": "Furniture Assembly",
+      "evaluator": "Epoch AI",
+      "family": "spatial-reasoning",
+      "org": "Epoch AI",
+      "url": "https://epoch.ai/data/benchmark_data.zip#furniture_assembly.csv",
+      "updated": "2026-09-30",
+      "metric": "Accuracy %",
+      "category": "reasoning",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 75,
+              "variant": "claude-sonnet-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-29T15:17:08.000Z",
+              "stderr": 5.510647116121488
+            }
+          ],
+          "value": 75,
+          "variant": "claude-sonnet-5-5_max"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 83.33333333333334,
+              "variant": "claude-opus-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-22T16:51:00.000Z",
+              "stderr": 4.704047221664923
+            }
+          ],
+          "value": 83.33333333333334,
+          "variant": "claude-opus-5-5_max"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 34.166666666666664,
+              "variant": "kimi-k3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-11T03:00:40.000Z",
+              "stderr": 6.116993402501947
+            }
+          ],
+          "value": 34.166666666666664,
+          "variant": "kimi-k3_max"
+        },
+        "qwen3-8-max": {
+          "measurements": [
+            {
+              "value": 20,
+              "variant": "qwen3.8-max-0902_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-10T20:24:14.000Z",
+              "stderr": 5.207556439232955
+            }
+          ],
+          "value": 20,
+          "variant": "qwen3.8-max-0902_xhigh"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 31.666666666666664,
+              "variant": "gemini-3.8-flash_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-10T20:23:47.000Z",
+              "stderr": 5.93832076297605
+            }
+          ],
+          "value": 31.666666666666664,
+          "variant": "gemini-3.8-flash_high"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 70,
+              "variant": "claude-fable-5-1_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-10T20:23:45.000Z",
+              "stderr": 5.724365605193373
+            }
+          ],
+          "value": 70,
+          "variant": "claude-fable-5-1_max"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 26.666666666666668,
+              "variant": "gemini-3.1-pro-preview_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-10T20:23:45.000Z",
+              "stderr": 5.6331678510110805
+            }
+          ],
+          "value": 26.666666666666668,
+          "variant": "gemini-3.1-pro-preview_high"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 80,
+              "variant": "gpt-6-astra_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FAB zoom+Python, 80-step sandbox",
+              "evaluatedAt": "2026-09-10T20:22:39.000Z",
+              "stderr": 4.928872620664329
+            }
+          ],
+          "value": 80,
+          "variant": "gpt-6-astra_max"
+        }
+      },
+      "notes": "Raw CSV, Sep30 archive + explicit hub Sep30 update. 60 images across three IKEA assemblies. GPT-5.6 Sol grades descriptions after step-match checks; small visual/spatial task set, not general intelligence. Present inside ECI composite; avoid treating this as a new independent evaluator. Exact 0902 Qwen /0813 DeepSeek only.",
+      "consensus": true,
+      "models": 8
+    },
+    {
+      "id": "epoch-frontiermath-t4-v2",
+      "name": "FrontierMath Tier 4 (v2, private)",
+      "evaluator": "Epoch AI",
+      "family": "frontiermath",
+      "org": "Epoch AI",
+      "url": "https://epoch.ai/data/benchmark_data.zip#frontiermath_tier_4_v2.csv",
+      "updated": "2026-09-30",
+      "metric": "Accuracy %",
+      "category": "reasoning",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 80.48780487804879,
+              "variant": "claude-sonnet-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-29T15:15:14.000Z",
+              "stderr": 6.265967111543964
+            }
+          ],
+          "value": 80.48780487804879,
+          "variant": "claude-sonnet-5-5_max"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 95,
+              "variant": "claude-opus-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-22T18:27:39.000Z",
+              "stderr": 4.117547077105885
+            }
+          ],
+          "value": 95,
+          "variant": "claude-opus-5-5_max"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 46.34146341463415,
+              "variant": "muse-spark-1.3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-18T16:34:54.000Z",
+              "stderr": 7.884502378168105
+            },
+            {
+              "value": 41.46341463414634,
+              "variant": "muse-spark-1.3_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-16T02:51:59.000Z",
+              "stderr": 7.789619230571372
+            }
+          ],
+          "value": 46.34146341463415,
+          "variant": "muse-spark-1.3_max"
+        },
+        "qwen3-8-max": {
+          "measurements": [
+            {
+              "value": 34.146341463414636,
+              "variant": "qwen3.8-max-0902_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-02T18:04:58.000Z",
+              "stderr": 7.497768853141171
+            }
+          ],
+          "value": 34.146341463414636,
+          "variant": "qwen3.8-max-0902_xhigh"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 21.951219512195124,
+              "variant": "gemini-3.8-flash_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-02T17:15:36.000Z",
+              "stderr": 6.5445892024384085
+            }
+          ],
+          "value": 21.951219512195124,
+          "variant": "gemini-3.8-flash_high"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 87.8048780487805,
+              "variant": "claude-fable-5-1_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-09-01T18:38:24.000Z",
+              "stderr": 5.173952057462543
+            }
+          ],
+          "value": 87.8048780487805,
+          "variant": "claude-fable-5-1_max"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 82.92682926829268,
+              "variant": "gpt-6-astra_none",
+              "effort": "none",
+              "rawEffort": "none",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-30T02:22:12.000Z",
+              "stderr": 5.949419959829497
+            },
+            {
+              "value": 87.8048780487805,
+              "variant": "gpt-6-astra_low",
+              "effort": "low",
+              "rawEffort": "low",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-30T02:22:12.000Z",
+              "stderr": 5.173952057462543
+            },
+            {
+              "value": 97.5609756097561,
+              "variant": "gpt-6-astra_medium",
+              "effort": "medium",
+              "rawEffort": "medium",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-30T02:22:12.000Z",
+              "stderr": 2.4390243902439024
+            },
+            {
+              "value": 97.6,
+              "variant": "gpt-6-astra_high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-30T02:22:12.000Z",
+              "stderr": 2.4
+            },
+            {
+              "value": 97.6,
+              "variant": "gpt-6-astra_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-30T02:22:12.000Z",
+              "stderr": 2.4
+            },
+            {
+              "value": 97.6,
+              "variant": "gpt-6-astra_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-30T02:22:12.000Z",
+              "stderr": 2.4
+            }
+          ],
+          "value": 97.6,
+          "variant": "gpt-6-astra_high"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 29.268292682926827,
+              "variant": "glm-5.3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-25T14:20:20.000Z",
+              "stderr": 7.194088392074452
+            }
+          ],
+          "value": 29.268292682926827,
+          "variant": "glm-5.3_max"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 26.82926829268293,
+              "variant": "deepseek-v4-pro-0813_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-08-19T13:35:48.000Z",
+              "stderr": 7.005564203095157
+            }
+          ],
+          "value": 26.82926829268293,
+          "variant": "deepseek-v4-pro-0813_max"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 39.02439024390244,
+              "variant": "kimi-k3_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-07-17T01:48:42.000Z",
+              "stderr": 7.712872341874095
+            }
+          ],
+          "value": 39.02439024390244,
+          "variant": "kimi-k3_max"
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 29.268292682926827,
+              "variant": "claude-sonnet-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-06-30T21:54:08.000Z",
+              "stderr": 7.194088392074452
+            }
+          ],
+          "value": 29.268292682926827,
+          "variant": "claude-sonnet-5_max"
+        },
+        "gemini-3-1-pro": {
+          "measurements": [
+            {
+              "value": 26.82926829268293,
+              "variant": "gemini-3.1-pro-preview",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "evaluatedAt": "2026-06-11T23:35:57.000Z",
+              "stderr": 7.005564203095157
+            }
+          ],
+          "value": 26.82926829268293,
+          "variant": "gemini-3.1-pro-preview"
+        }
+      },
+      "notes": "Raw CSV, Sep30 archive + explicit hub Sep30 update. Old exclusion claim no longer holds: roster best runs span21.95–97.6%, not broadly near zero. SAME FAMILY as Tiers1–3: expose raw board, cap family influence. All current exact effort rows retained. Present inside ECI composite; avoid treating this as a new independent evaluator. Exact 0902 Qwen /0813 DeepSeek only.",
+      "consensus": true,
+      "models": 12
+    },
+    {
+      "id": "arc-prize-agi-2",
+      "name": "ARC-AGI-2 Verified (Semi-Private)",
+      "evaluator": "ARC Prize Foundation",
+      "family": "arc-agi",
+      "org": "ARC Prize Foundation",
+      "url": "https://arcprize.org/media/data/leaderboard/v2.json",
+      "updated": "2026-09-29",
+      "metric": "Accuracy %",
+      "category": "reasoning",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "claude-haiku-4-5": {
+          "measurements": [
+            {
+              "value": 1.25,
+              "variant": "Claude Haiku 4.5",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.0426,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 1.25,
+              "variant": "Claude Haiku 4.5 (Thinking 1K)",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.0471,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 1.67,
+              "variant": "Claude Haiku 4.5 (Thinking 8K)",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.0909,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 2.78,
+              "variant": "Claude Haiku 4.5 (Thinking 16K)",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.1392,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 4.03,
+              "variant": "Claude Haiku 4.5 (Thinking 32K)",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.3766,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 4.03,
+          "variant": "Claude Haiku 4.5 (Thinking 32K)"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 60.416666666666664,
+              "variant": "Kimi K3 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/moonshot-kimi-k3",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 1.5926940250000003,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 55.00000000000001,
+              "variant": "Kimi K3 (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/moonshot-kimi-k3",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.9472229249999998,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 12.36111111111111,
+              "variant": "Kimi K3 (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/moonshot-kimi-k3",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.2541386750000001,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 60.416666666666664,
+          "variant": "Kimi K3 (Max)"
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 61.25000000000001,
+              "variant": "DeepSeek V4 Pro 0813 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/deepseek-v4-pro-0813",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.5976109150000003,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 59.72222222222221,
+              "variant": "DeepSeek V4 Pro 0813 (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/deepseek-v4-pro-0813",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.5969432040000002,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 56.25,
+              "variant": "DeepSeek V4 Pro 0813 (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/deepseek-v4-pro-0813",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.37025881200000005,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 0.8333333333333334,
+              "variant": "DeepSeek V4 Pro 0813 (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/deepseek-v4-pro-0813",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.040291977000000014,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 61.25000000000001,
+          "variant": "DeepSeek V4 Pro 0813 (Max)"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 90,
+              "variant": "Claude Fable 5.1 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-fable-5-1",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 4.492348833333334,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 90,
+              "variant": "Claude Fable 5.1 (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-fable-5-1",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 3.120216916666669,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 88.75,
+              "variant": "Claude Fable 5.1 (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-fable-5-1",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 1.6673061666666666,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 86.25,
+              "variant": "Claude Fable 5.1 (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-fable-5-1",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 1.2239411666666673,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 78.33333333333333,
+              "variant": "Claude Fable 5.1 (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-fable-5-1",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.9523265833333336,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 90,
+          "variant": "Claude Fable 5.1 (Max)"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 95,
+              "variant": "GPT-6 Astra (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 1.1194680833333335,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 93.33333333333333,
+              "variant": "GPT-6 Astra (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.8286855833333331,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 92.08333333333333,
+              "variant": "GPT-6 Astra (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.6680793333333332,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 92.08333333333333,
+              "variant": "GPT-6 Astra (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.4800926666666667,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 85.41666666666666,
+              "variant": "GPT-6 Astra (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.4162418333333334,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 59.583333333333336,
+              "variant": "GPT-6 Astra (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.3696743333333333,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 95,
+          "variant": "GPT-6 Astra (Max)"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 59.30555555555556,
+              "variant": "GPT-6 Luna (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.06181100083333334,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 41.94444444444444,
+              "variant": "GPT-6 Luna (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.032297893333333334,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 31.38888888888889,
+              "variant": "GPT-6 Luna (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.02336191,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 18.055555555555554,
+              "variant": "GPT-6 Luna (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.012202668333333333,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 4.583333333333333,
+              "variant": "GPT-6 Luna (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.005273818333333334,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 0,
+              "variant": "GPT-6 Luna (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.0036990350000000003,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 59.30555555555556,
+          "variant": "GPT-6 Luna (Max)"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 91.66666666666666,
+              "variant": "Claude Opus 5.5 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-opus-5-5",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 1.8517409666666667,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 92.5,
+              "variant": "Claude Opus 5.5 (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-opus-5-5",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.6709066333333333,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 93.33333333333333,
+              "variant": "Claude Opus 5.5 (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-opus-5-5",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.4078964666666666,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 87.5,
+              "variant": "Claude Opus 5.5 (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-opus-5-5",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.3369188,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 70.1388888888889,
+              "variant": "Claude Opus 5.5 (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/anthropic-claude-opus-5-5",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.24127179999999998,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 93.33333333333333,
+          "variant": "Claude Opus 5.5 (High)"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 89.16666666666667,
+              "variant": "Gemini 3.8 Flash (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.39972941250000005,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 82.91666666666667,
+              "variant": "Gemini 3.8 Flash (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.2477876749999999,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 77.5,
+              "variant": "Gemini 3.8 Flash (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.15445401874999998,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 89.16666666666667,
+          "variant": "Gemini 3.8 Flash (High)"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 89.58333333333334,
+              "variant": "GPT-6 Sol (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.43889828333333336,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 78.05555555555556,
+              "variant": "GPT-6 Sol (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.27722933333333344,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 68.88888888888887,
+              "variant": "GPT-6 Sol (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.20273668333333333,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 57.777777777777786,
+              "variant": "GPT-6 Sol (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.14762708333333335,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 31.52777777777777,
+              "variant": "GPT-6 Sol (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.1008582166666667,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            },
+            {
+              "value": 1.6666666666666667,
+              "variant": "GPT-6 Sol (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v2_Semi_Private",
+              "costPerTask": 0.0740642,
+              "costBasis": "ARC Prize verified semi-private run, published USD per task",
+              "costUpdated": "2026-09-30",
+              "costEligible": true
+            }
+          ],
+          "value": 89.58333333333334,
+          "variant": "GPT-6 Sol (Max)"
+        }
+      },
+      "notes": "Raw official JSON used by Verified leaderboard; generatedAt is export date. Same-version effort and harness runs retained. Independent verified testing policy https://arcprize.org/policy. ARC2 verified Fable results corroborate all five levels. Semi-private API testing acknowledges limited possible leakage. No Epoch replica counted. ARC3 adapter results have distinct harnesses.",
+      "consensus": true,
+      "models": 9,
+      "costUpdated": "2026-09-30"
+    },
+    {
+      "id": "cais-scale-hle-diamond",
+      "name": "Humanity’s Last Exam Diamond (no tools)",
+      "evaluator": "Scale AI (SEAL)",
+      "family": "hle",
+      "org": "CAIS + Scale AI",
+      "url": "https://lastexam.ai/blog/hle-diamond",
+      "updated": "2026-09-30",
+      "metric": "Accuracy %",
+      "category": "knowledge",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 59.9,
+              "variant": "GPT-6 Astra (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 74.2,
+                "knowledge": 45.6
+              }
+            },
+            {
+              "value": 65.8,
+              "variant": "GPT-6 Astra (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 80.8,
+                "knowledge": 50.8
+              }
+            }
+          ],
+          "value": 65.8,
+          "variant": "GPT-6 Astra (max, no tools)"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 54.6,
+              "variant": "Claude Opus 5.5 (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 62.4,
+                "knowledge": 46.8
+              }
+            },
+            {
+              "value": 60.9,
+              "variant": "Claude Opus 5.5 (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 68.6,
+                "knowledge": 53.2
+              }
+            }
+          ],
+          "value": 60.9,
+          "variant": "Claude Opus 5.5 (max, no tools)"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 53.2,
+              "variant": "GPT-6.1 Sol (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 67.4,
+                "knowledge": 39
+              }
+            },
+            {
+              "value": 61.1,
+              "variant": "GPT-6.1 Sol (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 75,
+                "knowledge": 47.2
+              }
+            }
+          ],
+          "value": 61.1,
+          "variant": "GPT-6.1 Sol (max, no tools)"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 50.7,
+              "variant": "Claude Fable 5.1 (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 60.8,
+                "knowledge": 40.6
+              }
+            },
+            {
+              "value": 53.7,
+              "variant": "Claude Fable 5.1 (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 61.2,
+                "knowledge": 46.2
+              }
+            }
+          ],
+          "value": 53.7,
+          "variant": "Claude Fable 5.1 (max, no tools)"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 33.1,
+              "variant": "Claude Sonnet 5.5 (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 42.4,
+                "knowledge": 23.8
+              }
+            },
+            {
+              "value": 43.3,
+              "variant": "Claude Sonnet 5.5 (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 54,
+                "knowledge": 32.6
+              }
+            }
+          ],
+          "value": 43.3,
+          "variant": "Claude Sonnet 5.5 (max, no tools)"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 32.8,
+              "variant": "GPT-6 Sol (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 42.2,
+                "knowledge": 23.4
+              }
+            },
+            {
+              "value": 43.2,
+              "variant": "GPT-6 Sol (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 57.2,
+                "knowledge": 29.2
+              }
+            }
+          ],
+          "value": 43.2,
+          "variant": "GPT-6 Sol (max, no tools)"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 24.6,
+              "variant": "Muse Spark 1.3 (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 30,
+                "knowledge": 19.2
+              }
+            },
+            {
+              "value": 34.6,
+              "variant": "Muse Spark 1.3 (max, no tools)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 44.2,
+                "knowledge": 25
+              }
+            }
+          ],
+          "value": 34.6,
+          "variant": "Muse Spark 1.3 (max, no tools)"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 33.3,
+              "variant": "Gemini 3.8 Flash (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 36.6,
+                "knowledge": 30
+              }
+            }
+          ],
+          "value": 33.3,
+          "variant": "Gemini 3.8 Flash (high, no tools)"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 22.8,
+              "variant": "Grok 4.7 (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 31.2,
+                "knowledge": 14.4
+              }
+            },
+            {
+              "value": 25,
+              "variant": "Grok 4.7 (xhigh, no tools)",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 33.8,
+                "knowledge": 16.2
+              }
+            }
+          ],
+          "value": 25,
+          "variant": "Grok 4.7 (xhigh, no tools)"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 21.7,
+              "variant": "Kimi K3 (high, no tools)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond closed-book, no tools",
+              "subscores": {
+                "reasoning": 24.4,
+                "knowledge": 19
+              }
+            }
+          ],
+          "value": 21.7,
+          "variant": "Kimi K3 (high, no tools)"
+        }
+      },
+      "notes": "Raw fresh Flight main/subset tables + client JS high comparison object. Sep22 publication but newly corrected runs include GPT6.1/Sonnet5.5; updated explicitly fetch date Sep30 (no per-evaluation timestamp). Top captions declare GPT/Claude/Muse max, Gemini/Kimi high, Grok xhigh. HIGH and MAX never merged. Knowledge/reasoning partitions retained as subscores, not extra sources. SEAL high snapshot older51.3 differs current blog high50.7; no duplicate counted. Exclude GLM text-only subset and generic DeepSeekV4Pro (unconfirmed0813). Frozen1000-question clean Diamond replaces noisy legacy HLE; no tools vs tools separate.",
+      "consensus": true,
+      "models": 10
+    },
+    {
+      "id": "arc-prize-agi-3",
+      "name": "ARC-AGI-3 Verified (Semi-Private)",
+      "evaluator": "ARC Prize Foundation",
+      "family": "arc-agi",
+      "org": "ARC Prize Foundation",
+      "url": "https://arcprize.org/media/data/leaderboard/v3.json",
+      "updated": "2026-09-29",
+      "metric": "Accuracy %",
+      "category": "agents",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 62.71280210060628,
+              "variant": "GPT-6 Astra (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 59.342954091460555,
+              "variant": "GPT-6 Astra (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 54.81905163612231,
+              "variant": "GPT-6 Astra (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 38.58757449733784,
+              "variant": "GPT-6 Astra (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 17.452190401133805,
+              "variant": "GPT-6 Astra (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 35.177880317424,
+              "variant": "GPT-6 Astra (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 98.55074288592294,
+              "variant": "GPT-6 Astra - Provider Adapter (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 98.44155844155843,
+              "variant": "GPT-6 Astra - Provider Adapter (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 99.94571232125699,
+              "variant": "GPT-6 Astra - Provider Adapter (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 98.43861309255745,
+              "variant": "GPT-6 Astra - Provider Adapter (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 98.02838165829648,
+              "variant": "GPT-6 Astra - Provider Adapter (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 96.72021831785531,
+              "variant": "GPT-6 Astra - Provider Adapter (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-astra",
+              "dataset": "v3_Semi_Private"
+            }
+          ],
+          "value": 99.94571232125699,
+          "variant": "GPT-6 Astra - Provider Adapter (High)"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 0.10360997760319558,
+              "variant": "GPT-6 Luna (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.16413333960356602,
+              "variant": "GPT-6 Luna (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.18024216987988248,
+              "variant": "GPT-6 Luna (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.19415284639354707,
+              "variant": "GPT-6 Luna (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.03291205821227175,
+              "variant": "GPT-6 Luna (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.027919455042839488,
+              "variant": "GPT-6 Luna (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.5868386891554969,
+              "variant": "GPT-6 Luna - Provider Adapter (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.5072886313635385,
+              "variant": "GPT-6 Luna - Provider Adapter (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.37847731587690087,
+              "variant": "GPT-6 Luna - Provider Adapter (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.31612009238177263,
+              "variant": "GPT-6 Luna - Provider Adapter (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.2374807559887363,
+              "variant": "GPT-6 Luna - Provider Adapter (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.04644044435594966,
+              "variant": "GPT-6 Luna - Provider Adapter (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-luna",
+              "dataset": "v3_Semi_Private"
+            }
+          ],
+          "value": 0.5868386891554969,
+          "variant": "GPT-6 Luna - Provider Adapter (Max)"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 10.36627922392312,
+              "variant": "Gemini 3.8 Flash (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 3.9878093830617267,
+              "variant": "Gemini 3.8 Flash (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 5.989560493697216,
+              "variant": "Gemini 3.8 Flash (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 35.00424335075243,
+              "variant": "Gemini 3.8 Flash - Provider Adapter (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 24.202718056957025,
+              "variant": "Gemini 3.8 Flash - Provider Adapter (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 15.071935405559648,
+              "variant": "Gemini 3.8 Flash - Provider Adapter (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/google-gemini-3-8-flash",
+              "dataset": "v3_Semi_Private"
+            }
+          ],
+          "value": 35.00424335075243,
+          "variant": "Gemini 3.8 Flash - Provider Adapter (High)"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 4.623568186131146,
+              "variant": "GPT-6 Sol (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 1.7976269602783517,
+              "variant": "GPT-6 Sol (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.8994389911152361,
+              "variant": "GPT-6 Sol (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.418612306617149,
+              "variant": "GPT-6 Sol (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.12649234250931635,
+              "variant": "GPT-6 Sol (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 0.2837742350643006,
+              "variant": "GPT-6 Sol (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Standard",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 23.028056734101497,
+              "variant": "GPT-6 Sol - Provider Adapter (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 9.453334058864572,
+              "variant": "GPT-6 Sol - Provider Adapter (XHigh)",
+              "effort": "xhigh",
+              "rawEffort": "XHigh",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 5.855663760579018,
+              "variant": "GPT-6 Sol - Provider Adapter (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 4.930246053628116,
+              "variant": "GPT-6 Sol - Provider Adapter (Medium)",
+              "effort": "medium",
+              "rawEffort": "Medium",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 1.7619154311646184,
+              "variant": "GPT-6 Sol - Provider Adapter (Low)",
+              "effort": "low",
+              "rawEffort": "Low",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            },
+            {
+              "value": 1.2059164341155284,
+              "variant": "GPT-6 Sol - Provider Adapter (None)",
+              "effort": "none",
+              "rawEffort": "None",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": "ARC Prize Provider Adapter",
+              "resultsUrl": "https://arcprize.org/results/openai-gpt-6-sol",
+              "dataset": "v3_Semi_Private"
+            }
+          ],
+          "value": 23.028056734101497,
+          "variant": "GPT-6 Sol - Provider Adapter (Max)"
+        }
+      },
+      "notes": "Raw official JSON used by Verified leaderboard; generatedAt is export date. Same-version effort and harness runs retained. Independent verified testing policy https://arcprize.org/policy. ARC2 verified Fable results corroborate all five levels. Semi-private API testing acknowledges limited possible leakage. No Epoch replica counted. ARC3 adapter results have distinct harnesses.",
+      "consensus": false,
+      "models": 4,
+      "excludedReason": "Only four roster checkpoints; potential fifth Gemini3.1 metadata release Mar5 conflicts with roster Feb19 and checkpoint cannot be verified.",
+      "consensusReason": "Only four roster checkpoints; potential fifth Gemini3.1 metadata release Mar5 conflicts with roster Feb19 and checkpoint cannot be verified."
+    },
+    {
+      "id": "cais-scale-hle-diamond-tools",
+      "name": "HLE Diamond with web+code",
+      "evaluator": "Scale AI (SEAL)",
+      "family": "hle",
+      "org": "CAIS + Scale AI",
+      "url": "https://lastexam.ai/blog/hle-diamond",
+      "updated": "2026-09-30",
+      "metric": "Accuracy %",
+      "category": "agents",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "scores": {
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 82.9,
+              "variant": "GPT-6 Astra (high, web+code)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond web+code",
+              "baselineNoTools": 59.9
+            }
+          ],
+          "value": 82.9,
+          "variant": "GPT-6 Astra (high, web+code)"
+        },
+        "claude-opus-5-5": {
+          "measurements": [
+            {
+              "value": 73.9,
+              "variant": "Claude Opus 5.5 (high, web+code)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond web+code",
+              "baselineNoTools": 54.6
+            }
+          ],
+          "value": 73.9,
+          "variant": "Claude Opus 5.5 (high, web+code)"
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 72.3,
+              "variant": "Claude Fable 5.1 (high, web+code)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond web+code",
+              "baselineNoTools": 50.7
+            }
+          ],
+          "value": 72.3,
+          "variant": "Claude Fable 5.1 (high, web+code)"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 60.6,
+              "variant": "Gemini 3.8 Flash (high, web+code)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond web+code",
+              "baselineNoTools": 33.3
+            }
+          ],
+          "value": 60.6,
+          "variant": "Gemini 3.8 Flash (high, web+code)"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 65,
+              "variant": "GPT-6 Sol (high, web+code)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond web+code",
+              "baselineNoTools": 32.8
+            }
+          ],
+          "value": 65,
+          "variant": "GPT-6 Sol (high, web+code)"
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 55.4,
+              "variant": "Muse Spark 1.3 (high, web+code)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "HLE-Diamond web+code",
+              "baselineNoTools": 24.6
+            }
+          ],
+          "value": 55.4,
+          "variant": "Muse Spark 1.3 (high, web+code)"
+        }
+      },
+      "notes": "Raw Flight separate tool table. Caption explicitly all HIGH. Retained as reference so tool/scaffold lift is visible; do not compare against closed-book as another independent exam.",
+      "consensus": false,
+      "models": 6,
+      "excludedReason": "Same exam family/tool condition; reference only per requested curation.",
+      "consensusReason": "Same exam family/tool condition; reference only per requested curation."
+    }
+  ],
+  "excluded": {
+    "METR time horizons": "Primary page updated May8,2026; only Gemini3.1 exact roster row and no Fable/Opus5.5/Astra; incomplete and stale for current roster.",
+    "UK AISI Frontier AI Trends": "Report explicitly covers releases through October2025 and aggregated/anonymized trends; not model leaderboard. Current cyber studies are narrow safety evaluations, no broad exact-version effort table.",
+    "ARC-AGI-1": "Older easy task set nearly saturated at frontier; ARC2 kept.",
+    "Epoch replicated ARC2": "Direct ARC Prize raw JSON collected; Epoch mirror would duplicate same runs.",
+    "Epoch miscellaneous external boards": "Many are component runs of AA Intelligence (CRITPT/SciCode), manufacturer-owned coding boards (CursorBench), or duplicate Vals/SEAL; not additional independent evaluators.",
+    "Legacy CAIS HLE": "Official dashboard hle field dataset version undocumented and noisy original/rolling set differs Diamond; retain raw reference, replace with frozen cleaned Diamond.",
+    "scale-hle-diamond": "Superseded corrected primary CAIS Diamond; SEAL old high51.3 vs current high50.7. Same exam, not extra evaluator.",
+    "scale-audiomc": "Only 1 exact roster checkpoints; below five minimum.",
+    "scale-prbench-finance": "Niche professional domain, excluded from general consensus.",
+    "scale-multinrc": "Only 1 exact roster checkpoints; below five minimum.",
+    "scale-mask": "Safety/honesty measure, not capability score.",
+    "scale-sweatlas-tw": "Only 4 exact roster checkpoints; below five minimum.",
+    "scale-hil": "Only 3 exact roster checkpoints; below five minimum.",
+    "scale-sweatlas-refactoring": "Only 4 exact roster checkpoints; below five minimum.",
+    "scale-rli": "Only 2 exact roster checkpoints; below five minimum.",
+    "scale-prbench-legal": "Niche professional domain, excluded from general consensus.",
+    "scale-multichallenge": "Only 1 exact roster checkpoints; below five minimum.",
+    "scale-drugdiscoverybench": "Niche professional domain, excluded from general consensus.",
+    "scale-vtb": "Only 1 exact roster checkpoints; below five minimum.",
+    "scale-enigma_eval": "Only 1 exact roster checkpoints; below five minimum."
+  }
+}

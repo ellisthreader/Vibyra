@@ -24,13 +24,20 @@ final class Discovery
             $prm = $this->json($url);
             if ($prm) break;
         }
-        if (!$prm) throw new McpError('oauth_error', 'This MCP server does not publish how to sign in to it.');
+        $as = null;
+        if (!$prm) {
+            // Servers written for the 2025-03-26 spec (Atlassian's) publish no resource metadata: their authorization server is their own origin.
+            $origin = 'https://'.strtolower((string) parse_url($resource, PHP_URL_HOST));
+            $as = $this->authorizationServer($origin, true);
+            if (!$as) throw new McpError('oauth_error', 'This MCP server does not publish how to sign in to it.');
+            $prm = ['resource' => $resource, 'authorization_servers' => [$origin]];
+        }
         $declared = is_string($prm['resource'] ?? null) ? self::canonical($prm['resource']) : '';
         if ($declared === '' || !self::covers($declared, $resource))
             throw new McpError('oauth_error', 'This MCP server\'s sign-in metadata names a different resource.');
         $issuer = $prm['authorization_servers'][0] ?? null;
         if (!is_string($issuer) || !str_starts_with($issuer, 'https://')) throw new McpError('oauth_error', 'This MCP server names no sign-in server.');
-        $as = $this->authorizationServer($issuer);
+        $as ??= $this->authorizationServer($issuer);
         $scopes = $params['scope'] ?? (is_array($prm['scopes_supported'] ?? null) ? implode(' ', array_filter($prm['scopes_supported'], 'is_string')) : '');
         return ['resource' => $declared === $resource ? $resource : $declared, 'issuer' => $issuer,
             'authorize' => $as['authorization_endpoint'], 'token' => $as['token_endpoint'],
@@ -38,7 +45,8 @@ final class Discovery
             'cimd' => ($as['client_id_metadata_document_supported'] ?? false) === true, 'scope' => mb_substr($scopes, 0, 1000)];
     }
 
-    private function authorizationServer(string $issuer): array
+    /** @param bool $optional return null instead of failing when the server publishes no metadata at all */
+    private function authorizationServer(string $issuer, bool $optional = false): ?array
     {
         $candidates = parse_url($issuer, PHP_URL_PATH) && trim((string) parse_url($issuer, PHP_URL_PATH), '/') !== ''
             ? [...$this->wellKnown($issuer, 'oauth-authorization-server'), $this->wellKnown($issuer, 'openid-configuration')[0],
@@ -55,6 +63,7 @@ final class Discovery
                     throw new McpError('oauth_error', 'The sign-in server metadata is incomplete.');
             return $meta;
         }
+        if ($optional) return null;
         throw new McpError('oauth_error', 'The sign-in server does not publish its metadata.');
     }
 

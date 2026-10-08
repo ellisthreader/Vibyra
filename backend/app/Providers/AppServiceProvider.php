@@ -13,6 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(\App\Services\ModelCatalog\PublishedCatalog::class);
         $this->app->bind(RuntimeDeploymentProvider::class, RailwayRuntimeDeploymentService::class);
         $this->app->bind(\App\Services\CloudWorkspaces\CloudWorkspaceProvider::class, \App\Services\CloudWorkspaces\FlyProvider::class);
     }
@@ -40,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
         // network (or strangers behind one carrier address) shared a bucket. A request with no bearer falls back to its IP.
         foreach (['cloud-computer-read' => 120, 'cloud-computer-create' => 6, 'cloud-computer-connect' => 6, 'cloud-computer-face-key' => 6,
             'cloud-computer-face-challenge' => 20, 'cloud-computer-wake' => 6, 'cloud-computer-repos' => 30, 'cloud-computer-projects' => 30,
-            'cloud-access-projects' => 30, 'cloud-access-codex' => 30, 'cloud-sync-login' => 30, 'cloud-sync-repair' => 6] as $name => $perMinute) {
+            'cloud-access-projects' => 30, 'cloud-access-codex' => 30, 'cloud-access-accounts' => 30, 'cloud-sync-login' => 30, 'cloud-sync-repair' => 6] as $name => $perMinute) {
             \Illuminate\Support\Facades\RateLimiter::for($name, function (\Illuminate\Http\Request $request) use ($name, $perMinute) {
                 $token = (string) $request->bearerToken();
                 return \Illuminate\Cache\RateLimiting\Limit::perMinute($perMinute)->by($name.':'.($token !== '' ? hash('sha256', $token) : 'ip:'.$request->ip()));

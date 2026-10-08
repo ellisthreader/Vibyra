@@ -115,7 +115,7 @@ class Wake
                 'budget_units' => $budget, 'ready_at' => null, 'metered_at' => null, 'lease_until' => null, 'heartbeat_at' => null,
                 'bootstrap_secret' => Crypt::encryptString(Str::random(64)), 'bootstrapped_at' => null, 'runtime_token_hash' => null,
                 'stop_requested_at' => null, 'stop_reason' => null, 'retention_warned_at' => null, 'retention_deleted_at' => null, 'unsaved_possible' => false, 'deadline_at' => now()->addSeconds($seconds),
-                'last_activity_at' => now(), 'host_running' => 0, 'host_waiting' => 0, 'host_activity_at' => null,
+                'last_activity_at' => now(), 'host_running' => 0, 'host_waiting' => 0, 'host_activity_at' => null, 'host_provider_policy_version' => 0,
                 'terms_accepted_at' => $w->terms_accepted_at ?? now(), 'updated_at' => now()]);
             $fresh = DB::table('cloud_workspaces')->where('id', $w->id)->first();
             try { app(Reservations::class)->reserve($fresh, Quotes::runway((int) $fresh->units_per_hour)); }

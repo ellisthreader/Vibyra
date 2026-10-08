@@ -20,6 +20,16 @@ class VibyraCors
     public static function withCorsHeaders(Response $response, ?Request $request = null): Response
     {
         $request ??= request();
+        // Signed public data/assets have no cookies or account state. Desktop WebViews
+        // and phone browser previews may read them from any origin, including opaque ones.
+        if ($request->is('web-api/model-catalog', 'web-api/model-catalog/*')) {
+            $response->headers->set('Access-Control-Allow-Origin', '*');
+            $response->headers->remove('Access-Control-Allow-Credentials');
+            $response->headers->set('Access-Control-Allow-Headers', 'If-None-Match');
+            $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+            $response->headers->set('Access-Control-Expose-Headers', 'ETag');
+            return $response;
+        }
         // Public sandboxed demo assets need anonymous module/font loads from an opaque origin.
         if ($request->is('api/community/projects/*/demo*')
             && str_starts_with((string) $response->headers->get('Content-Security-Policy'), 'sandbox')) {
@@ -43,7 +53,7 @@ class VibyraCors
         }
 
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP, X-Vibyra-Cloud-Access, X-Vibyra-Flow-Secret');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
         $response->headers->set('Access-Control-Max-Age', '86400');
 
         return $response;

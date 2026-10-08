@@ -83,7 +83,8 @@ final class CalendarWrites
         return ($event['id'] ?? null) === $id && ($event['status'] ?? 'confirmed') !== 'cancelled'
             && ($event['summary'] ?? null) === $a['title'] && is_string($start) && is_string($end)
             && strtotime($start) === strtotime($a['start']) && strtotime($end) === strtotime($a['end'])
-            && empty($event['attendees']);
+            && ($event['description'] ?? '') === ($a['description'] ?? '')
+            && empty($event['attendees']) && empty($event['attendeesOmitted']) && empty($event['recurrence']);
     }
 
     private function confirmed(array $event, array $a): array

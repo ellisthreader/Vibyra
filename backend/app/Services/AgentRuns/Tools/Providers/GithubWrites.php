@@ -59,7 +59,8 @@ final class GithubWrites
                 ->post($issues, ['title' => $a['title']] + ($a['body'] !== '' ? ['body' => $a['body']] : [])));
             $issue = ProviderHttp::json($response, 'GitHub', true);
             $number = $issue['number'] ?? null;
-            if ($response->status() !== 201 || !is_int($number) || !$this->url($issue, $a, '/issues/'.$number))
+            if ($response->status() !== 201 || !is_int($number) || $number < 1
+                || !$this->url($issue, $a, ['/issues/'.$number]))
                 throw ToolFailure::unknown('GitHub');
             return ['result' => ['number' => $number, 'title' => $issue['title'] ?? $a['title'], 'url' => $issue['html_url'],
                 'repository' => $a['repository']], 'summary' => 'Opened issue #'.$number.' on '.$a['repository'],
@@ -69,19 +70,22 @@ final class GithubWrites
             ->post($issues.'/'.$a['number'].'/comments', ['body' => $a['body']]));
         $comment = ProviderHttp::json($response, 'GitHub', true);
         $id = $comment['id'] ?? null;
-        if ($response->status() !== 201 || !is_int($id) || !$this->url($comment, $a, '#issuecomment-'.$id))
+        if ($response->status() !== 201 || !is_int($id) || $id < 1 || !$this->url($comment, $a,
+            ['/issues/'.$a['number'].'#issuecomment-'.$id, '/pull/'.$a['number'].'#issuecomment-'.$id]))
             throw ToolFailure::unknown('GitHub');
         return ['result' => ['commentId' => $id, 'number' => $a['number'], 'url' => $comment['html_url'],
             'repository' => $a['repository']], 'summary' => 'Commented on #'.$a['number'].' in '.$a['repository'],
             'resourceId' => (string) $id, 'url' => $comment['html_url']];
     }
 
-    /** The returned link must point at this repository, so a receipt never names someone else's resource. */
-    private function url(array $body, array $a, string $suffix): bool
+    /** Confirm the exact resource, including the approved issue/PR number for comments. */
+    private function url(array $body, array $a, array $suffixes): bool
     {
         $url = $body['html_url'] ?? null;
         if (!is_string($url)) return false;
-        return str_starts_with(strtolower($url), 'https://github.com/'.strtolower($a['repository']).'/')
-            && str_ends_with($url, $suffix);
+        foreach ($suffixes as $suffix) {
+            if (strcasecmp($url, 'https://github.com/'.$a['repository'].$suffix) === 0) return true;
+        }
+        return false;
     }
 }

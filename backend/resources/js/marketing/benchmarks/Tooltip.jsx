@@ -1,3 +1,4 @@
+import { modelLabel } from "./effortSelection.js";
 import React, { useCallback, useRef, useState } from "react";
 
 // One floating readout per chart. The value leads; the label follows.
@@ -35,7 +36,7 @@ export function Tooltip({ tip }) {
 export function TipBody({ model, rows }) {
     return (
         <>
-            <p className="bm-tip-name">{model.name}</p>
+            <p className="bm-tip-name">{modelLabel(model)}</p>
             <dl>
                 {rows.map(([label, value]) => (
                     <div key={label}>

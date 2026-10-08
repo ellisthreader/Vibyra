@@ -33,7 +33,8 @@ final class Approvals
         return Canonical::hash(['user' => $userId, 'run' => $a->run_id, 'action' => $a->id, 'call' => $a->call_id,
             'tool' => $a->tool, 'connection' => $a->connection_id, 'generation' => $a->connection_generation,
             'grant' => $a->grant_id, 'grantRevision' => $a->grant_revision, 'arguments' => $a->arguments,
-            'schema' => $a->schema_revision, 'policy' => (int) config('agents_v2.policy_revision', 1)]);
+            'schema' => $a->schema_revision, 'policy' => (int) config('agents_v2.policy_revision', 1),
+            ...((int) $a->draft_revision > 1 ? ['draftRevision' => (int) $a->draft_revision] : [])]);
     }
 
     public function decide(int $userId, string $actionId, string $fingerprint, string $decision): ToolAction

@@ -25,6 +25,8 @@ final class Credentials
     public function mint(object $workspace, string $repo, string $op, ?string $branch): array
     {
         $user = (int) $workspace->user_id;
+        try { app(\App\Services\CloudComputer\AccessProviders::class)->requireGithub($user); }
+        catch (GitRefused $e) { $this->audit($workspace, $repo, $op, $branch, $e->errorCode); throw $e; }
         // Only a repo this computer actually has (or was asked to clone) is eligible, never "any repo the owner can reach".
         if (($workspace->kind ?? 'project') !== 'computer' || !in_array(strtolower($repo), app(\App\Services\CloudComputer\Projects::class)->repos($workspace), true)) {
             $this->audit($workspace, $repo, $op, $branch, 'repo_not_in_computer');

@@ -16,7 +16,7 @@ return [
                 'authorize_url' => 'https://slack.com/oauth/v2/authorize',
                 'token_url' => 'https://slack.com/api/oauth.v2.access',
                 'refresh_url' => 'https://slack.com/api/oauth.v2.access',
-                'scope' => 'channels:read,groups:read,channels:history,groups:history,chat:write',
+                'scope' => 'channels:read,groups:read,channels:history,groups:history,chat:write,app_mentions:read',
                 // Agent V2 "Add another account": a user token (Slack search needs one), returned under authed_user.
                 'agent_user_scope' => 'channels:read,groups:read,channels:history,groups:history,search:read,chat:write',
                 'client_id' => env('CHAT_CONNECTORS_SLACK_CLIENT_ID'),
@@ -47,6 +47,9 @@ return [
                 'token_auth' => 'basic', 'token_encoding' => 'json',
                 'token_fields' => ['code', 'redirect_uri', 'grant_type'],
                 'refresh_fields' => ['refresh_token', 'grant_type'],
+                // Notion issues a refresh token but states no lifetime. Assume 90 minutes, so a token older than
+                // half an hour is renewed before use (Installs renews inside the last hour) rather than found dead.
+                'assumed_lifetime' => 5400,
             ],
         ],
 
@@ -70,7 +73,8 @@ return [
                 'client_id' => env('CHAT_CONNECTORS_LINEAR_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_LINEAR_CLIENT_SECRET'),
                 'pkce' => true, 'prompt' => 'consent',
-                'refresh_fields' => ['refresh_token', 'grant_type', 'client_id'],
+                // Linear's tokens last 24 hours and the refresh token rotates; the secret is sent so a confidential app renews.
+                'refresh_fields' => ['refresh_token', 'grant_type', 'client_id', 'client_secret'],
             ],
         ],
 ];

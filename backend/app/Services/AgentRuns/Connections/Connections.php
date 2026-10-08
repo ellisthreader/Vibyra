@@ -86,13 +86,14 @@ final class Connections
     /** The provider said this account lacks a permission; remembered until the next credential generation. */
     public function markScope(Connection $row, string $tool): void
     {
-        Connection::query()->whereKey($row->id)->update(['scope_issue' => json_encode(['generation' => $row->generation,
+        Connection::query()->whereKey($row->id)->where('generation', $row->generation)->whereNull('revoked_at')->update(['scope_issue' => json_encode(['generation' => $row->generation,
             'tool' => $tool, 'at' => now()->toIso8601String()]), 'updated_at' => now()]);
     }
 
     public function markReconnect(Connection $row): void
     {
-        Connection::query()->whereKey($row->id)->update(['health' => 'reconnect_required', 'updated_at' => now()]);
+        Connection::query()->whereKey($row->id)->where('generation', $row->generation)->whereNull('revoked_at')
+            ->update(['health' => 'reconnect_required', 'updated_at' => now()]);
         $row->health = 'reconnect_required';
     }
 

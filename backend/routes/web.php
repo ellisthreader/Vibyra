@@ -54,6 +54,10 @@ Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'cat
 Route::post('/web-api/phone-waitlist', [PhoneWaitlistController::class, 'store'])->middleware([VerifyHuman::class.':api', 'throttle:5,10']);
 Route::post('/web-api/faq/ask', [WebsiteFaqController::class, 'ask'])->middleware([VerifyHuman::class.':api', 'throttle:12,1']);
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
+Route::get('/web-api/model-catalog', [\App\Http\Controllers\ModelCatalogController::class, 'index'])->middleware('throttle:60,1');
+Route::get('/web-api/model-catalog/health', [\App\Http\Controllers\ModelCatalogController::class, 'health'])->middleware('throttle:60,1');
+Route::get('/web-api/model-catalog/artwork/{hash}', [\App\Http\Controllers\ModelCatalogController::class, 'artwork'])
+    ->where('hash', '[a-f0-9]{64}')->middleware('throttle:300,1');
 Route::get('/web-api/openrouter/releases', [OpenRouterModelReleaseController::class, 'index'])
     ->middleware('throttle:30,1');
 Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])

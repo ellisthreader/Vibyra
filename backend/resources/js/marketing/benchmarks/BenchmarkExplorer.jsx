@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Leaderboard from "./Leaderboard.jsx";
-import ValueMap from "./ValueMap.jsx";
+import CostPerformance from "./CostPerformance.jsx";
 import ScoreTable from "./ScoreTable.jsx";
 import HeadToHead from "./HeadToHead.jsx";
 
 const VIEWS = [
     ["leaderboard", "Rankings", Leaderboard],
-    ["value", "Value map", ValueMap],
+    ["value", "Cost & performance", CostPerformance],
     ["scores", "All scores", ScoreTable],
     ["compare", "Head to head", HeadToHead],
 ];

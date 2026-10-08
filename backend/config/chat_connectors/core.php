@@ -55,9 +55,12 @@ return [
                 'url' => 'https://dashboard.stripe.com/login',
             ],
             // Signing in with Stripe Connect: a `ca_` client id from the platform's Connect
-            // settings, with {APP_URL}/api/connectors/callback/stripe as a redirect, and the
-            // platform's secret key for the exchange. `read_write` is the only scope that
-            // can create a customer. The token endpoint takes only these three fields.
+            // settings, with {CALLBACK_BASE}/api/connectors/callback/stripe as a redirect, and the
+            // platform's secret key (same live/test mode as the client id) for the exchange.
+            // `read_write` is the only scope that can create a customer. The token endpoint takes
+            // only these three fields, and answers with the connected account's id: its
+            // `access_token` is deprecated, so the id is what is stored (`credential_from`;
+            // calls then use the platform key plus a Stripe-Account header, see Stripe\Auth).
             'oauth' => [
                 'authorize_url' => 'https://connect.stripe.com/oauth/authorize',
                 'token_url' => 'https://connect.stripe.com/oauth/token',
@@ -65,6 +68,7 @@ return [
                 'client_id' => env('CHAT_CONNECTORS_STRIPE_CLIENT_ID'),
                 'client_secret' => env('CHAT_CONNECTORS_STRIPE_SECRET_KEY'),
                 'token_fields' => ['client_secret', 'code', 'grant_type'],
+                'credential_from' => 'stripe_account',
             ],
         ],
 

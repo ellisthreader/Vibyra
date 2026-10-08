@@ -35,7 +35,7 @@ final class PhonePush
         $body = 'Open Vibyra to review remote access.';
         if (($device->provider ?? 'expo') !== 'apns') {
             if (!$this->expoReady()) return ['state' => 'suppressed', 'error' => 'PushUnavailable'];
-            $r = Http::withToken((string) config('intelligence.expo_token'))->acceptJson()->timeout(10)
+            $r = Http::withToken((string) config('intelligence.expo_token'))->withoutRedirecting()->acceptJson()->timeout(10)
                 ->post('https://exp.host/--/api/v2/push/send', ['to' => Crypt::decryptString($device->token), 'title' => $title,
                     'body' => $body, 'sound' => 'default', 'priority' => 'high', 'ttl' => 300,
                     'data' => ['version' => 1, 'securityEventId' => $eventId]]);
@@ -109,14 +109,16 @@ final class PhonePush
         $hint = $device->apns_host ?? (($device->environment ?? null) === 'sandbox' ? 'sandbox' : 'production');
         $r = $this->apns->sendAlert(Crypt::decryptString($device->token), $payload, 10, $hint, $collapse, $ttl);
         if ($r['status'] === 200) {
-            if (($device->apns_host ?? null) !== $r['host']) DB::table('notification_devices')->where('id', $device->id)->update(['apns_host' => $r['host']]);
+            if (($device->apns_host ?? null) !== $r['host']) DB::table('notification_devices')->where('id', $device->id)
+                ->where('generation', $generation)->update(['apns_host' => $r['host']]);
             return ['state' => 'accepted'];
         }
         if ($r['status'] === 410 || in_array($r['reason'], self::DEAD, true)) {
             $this->revoke($device, $generation);
             return ['state' => 'failed', 'error' => $r['status'] === 410 ? 'Unregistered' : (string) $r['reason']];
         }
-        if ($r['status'] === 0 || $r['status'] === 429 || $r['status'] >= 500 || $r['status'] === 403) return ['state' => 'retry'];
+        if ($r['status'] === 0) return ['state' => 'failed', 'error' => 'DeliveryUnconfirmed'];
+        if ($r['status'] === 429 || $r['status'] >= 500 || $r['status'] === 403) return ['state' => 'retry'];
         return ['state' => 'failed', 'error' => in_array($r['reason'], ['PayloadTooLarge', 'BadCollapseId', 'BadTopic', 'TopicDisallowed'], true) ? $r['reason'] : 'PushRejected'];
     }
 
@@ -124,7 +126,7 @@ final class PhonePush
     private function expoItem(object $device, object $item, int $ttl, int $generation): array
     {
         if (!$this->expoReady()) return ['state' => 'suppressed', 'error' => 'PushUnavailable'];
-        $r = Http::withToken((string) config('intelligence.expo_token'))->acceptJson()->timeout(10)
+        $r = Http::withToken((string) config('intelligence.expo_token'))->withoutRedirecting()->acceptJson()->timeout(10)
             ->post('https://exp.host/--/api/v2/push/send', ['to' => Crypt::decryptString($device->token),
                 'title' => $item->title, 'body' => $item->body ?? 'Open Vibyra to review.', 'sound' => 'default',
                 'ttl' => $ttl, 'data' => ['version' => 1, 'notificationId' => $item->id]]);

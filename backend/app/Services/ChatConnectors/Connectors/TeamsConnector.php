@@ -38,7 +38,8 @@ final class TeamsConnector implements Connector
     public function run(string $operation, array $arguments, string $credential): array
     {
         if ($operation === 'teams_chats') {
-            $data = $this->graph->get($credential, '/me/chats', ['$top' => 20]);
+            // Without $orderby Graph returns chats in no particular order, so "recent" would be any twenty.
+            $data = $this->graph->get($credential, '/me/chats', ['$top' => 20, '$orderby' => 'lastMessagePreview/createdDateTime desc']);
             $chats = array_map(fn ($chat) => ['id' => $chat['id'] ?? null,
                 'topic' => $chat['topic'] ?? null, 'type' => $chat['chatType'] ?? null,
                 'updated' => $chat['lastUpdatedDateTime'] ?? null], array_slice($data['value'] ?? [], 0, 20));

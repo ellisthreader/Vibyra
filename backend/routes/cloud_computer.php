@@ -22,6 +22,8 @@ Route::prefix('api/cloud-computer')->middleware('throttle:cloud-computer-read')-
     Route::get('access', [AccessController::class, 'show']);
     Route::put('access/projects', [AccessController::class, 'projects'])->middleware('throttle:cloud-access-projects');
     Route::put('access/providers/codex', [AccessController::class, 'codex'])->middleware('throttle:cloud-access-codex');
+    Route::put('access/providers/claude', [AccessController::class, 'claude'])->middleware('throttle:cloud-access-accounts');
+    Route::put('access/integrations/github', [AccessController::class, 'github'])->middleware('throttle:cloud-access-accounts');
 });
 
 // VM side. Same runtime bearer as the hosted workspace runtime (Runtime::authenticate).

@@ -40,7 +40,7 @@ final class Issues
         ];
         if ($count === 0) return $result;
         $comments = $this->client->get($token, $path.'/comments', ['per_page' => 10, 'page' => $args['page']]);
-        if (isset($comments['error'])) return ['error' => 'Issue comments could not be read; retry before relying on the discussion.'];
+        if (isset($comments['error'])) return ['error' => 'Issue comments could not be read. '.$comments['error']] + $comments;
         if (!is_array($comments['data'])) return ['error' => 'GitHub returned unreadable issue comments.'];
         $result['comments'] = array_map(function ($comment) {
             $body = is_string($comment['body'] ?? null) ? $comment['body'] : '';

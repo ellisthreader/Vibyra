@@ -27,6 +27,13 @@ final class Preferences
             409, 'Notification settings changed. Refresh before saving.');
         return $this->payload($user);
     }
+    /** Failure events use Failed even when an older event producer says attention. */
+    public function allows(object $p, string $category, ?string $phase): bool
+    {
+        $key = $category === 'attention' && in_array($phase, ['failed', 'agent_failed', 'cloud_failed'], true)
+            ? 'failures' : $category;
+        return (bool) ($p->{$key} ?? true);
+    }
     public function quiet(object $p): bool
     {
         if ($p->quiet_start === null || $p->quiet_end === null || $p->quiet_start === $p->quiet_end) return false;

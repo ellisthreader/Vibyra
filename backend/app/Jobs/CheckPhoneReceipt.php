@@ -17,7 +17,7 @@ final class CheckPhoneReceipt implements ShouldQueue
         // Receipt checks continue when sending is disabled; they never send another alert.
         DB::table('notification_deliveries')->where('id', $d->id)->update(['next_at' => now()->addMinutes(15)]);
         try {
-            $r = Http::withToken((string) config('intelligence.expo_token'))->timeout(10)
+            $r = Http::withToken((string) config('intelligence.expo_token'))->withoutRedirecting()->timeout(10)
                 ->post('https://exp.host/--/api/v2/push/getReceipts', ['ids' => [$d->ticket]]);
             $receipt = $r->json('data')[$d->ticket] ?? null;
             if (!$receipt) {

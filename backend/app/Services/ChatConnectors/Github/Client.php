@@ -27,11 +27,24 @@ final class Client
                 403, 429 => 'GitHub refused access or rate-limited this request. Check repository/organization access or retry later.',
                 404 => 'This GitHub resource was not found or this connection cannot access it.',
                 default => 'GitHub could not return this resource. Retry later.',
-            }, 'status' => $r->status()];
+            }, 'status' => $r->status()] + $this->failureMetadata($r);
             $data = $r->json();
-            if (!is_array($data)) return ['error' => 'GitHub returned an unreadable response.'];
+            if (!is_array($data)) return ['error' => 'GitHub returned an unreadable response.', 'retryable' => true];
             return ['data' => $data, 'hasMore' => str_contains($r->header('Link') ?? '', 'rel="next"')];
         } catch (\Throwable) { return ['error' => 'GitHub did not respond in time. Retry later.']; }
+    }
+
+    /** Preserve throttling evidence for the Agent adapter without exposing provider response bodies. */
+    private function failureMetadata(\Illuminate\Http\Client\Response $response): array
+    {
+        $limited = $response->status() === 429 || ($response->status() === 403
+            && ($response->header('X-RateLimit-Remaining') === '0'
+                || str_contains(strtolower($response->body()), 'rate limit')));
+        if (!$limited) return [];
+        $after = $response->header('Retry-After');
+        $reset = $response->header('X-RateLimit-Reset');
+        $seconds = is_numeric($after) ? (int) $after : (is_numeric($reset) ? (int) $reset - time() : null);
+        return ['rateLimited' => true, 'retryAfter' => $seconds === null ? null : max(1, min(3600, $seconds))];
     }
 
     public static function path(string $repository): string

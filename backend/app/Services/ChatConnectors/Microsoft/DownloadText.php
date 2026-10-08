@@ -16,8 +16,10 @@ final class DownloadText
             422, 'Only text files up to 1 MB can be read.');
         $download = $item['@microsoft.graph.downloadUrl'] ?? null;
         $host = is_string($download) ? strtolower((string) parse_url($download, PHP_URL_HOST)) : '';
-        $allowed = $host !== '' && (str_ends_with($host, '.sharepoint.com')
-            || str_ends_with($host, '.1drv.com') || str_ends_with($host, '.onedrive.com'));
+        // A personal OneDrive hands out my.microsoftpersonalcontent.com links (older ones: *.1drv.com, *.livefilestore.com).
+        $allowed = $host !== '' && (str_ends_with($host, '.sharepoint.com') || str_ends_with($host, '.1drv.com')
+            || str_ends_with($host, '.onedrive.com') || str_ends_with($host, '.microsoftpersonalcontent.com')
+            || str_ends_with($host, '.livefilestore.com'));
         abort_unless($allowed && parse_url($download, PHP_URL_SCHEME) === 'https',
             422, 'Microsoft did not provide a trusted download URL.');
         // The signed URL needs no bearer token. Never forward the Graph token or
