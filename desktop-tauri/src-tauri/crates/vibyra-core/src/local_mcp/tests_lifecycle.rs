@@ -12,6 +12,9 @@ fn pid(sup: &Supervisor, spec: &ServerSpec) -> i32 {
         .unwrap()
 }
 
+#[path = "idle_fixture.rs"]
+mod idle_fixture;
+
 #[test]
 fn a_server_starts_on_first_use_and_there_is_one_process_per_server() {
     if !node_available() {
@@ -155,27 +158,6 @@ fn repeated_failures_leave_the_server_failed_until_retry() {
     );
     sup.retry(&spec.id);
     assert_eq!(sup.status(&spec.id).state, State::Stopped);
-}
-
-#[test]
-fn an_idle_server_is_stopped_and_starts_again_on_next_use() {
-    if !node_available() {
-        return;
-    }
-    let limits = Limits {
-        idle_stop: Duration::from_millis(400),
-        ..quick()
-    };
-    let sup = supervisor(limits, Arc::default());
-    sup.spawn_janitor();
-    let spec = spec("idle", "");
-    let first = pid(&sup, &spec);
-    assert!(
-        gone_within(first, Duration::from_secs(4)),
-        "stopped after sitting idle"
-    );
-    assert_eq!(sup.status(&spec.id).state, State::Stopped);
-    assert_ne!(pid(&sup, &spec), first);
 }
 
 #[test]

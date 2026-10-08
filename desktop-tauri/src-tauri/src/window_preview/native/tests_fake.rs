@@ -23,8 +23,6 @@ pub(super) struct Fake {
     pub stall: Mutex<Duration>,
     /// Input injection can also wait on the application.
     pub input_stall: Mutex<Duration>,
-    /// Model the tap thread being descheduled before it delivers the click.
-    pub delivery_stall: Mutex<Duration>,
     pub fields_stall: Mutex<Duration>,
     pub fields_started: AtomicBool,
     pub active_reads: AtomicUsize,
@@ -95,7 +93,6 @@ impl Backend for Fake {
         Ok(Box::new(Grey))
     }
     fn input(&self, _: &Geometry, event: &InputEvent) -> Result<(), String> {
-        std::thread::sleep(*self.delivery_stall.lock());
         let wait = *self.input_stall.lock();
         self.inputs.lock().push(event.clone());
         if matches!(event, InputEvent::Click { .. }) {
