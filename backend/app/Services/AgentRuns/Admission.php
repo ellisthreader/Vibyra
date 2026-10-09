@@ -16,20 +16,31 @@ final class Admission
     public function __construct(private readonly RuntimeBindings $bindings, private readonly Grants $grants,
         private readonly Events $events) {}
 
-    /** @return array{0: Run, 1: bool} the run and whether this call created it. `$askedInApp`: typed by the person in the app. */
+    /** @return array{0: Run, 1: bool} the run and whether this call created it */
     public function admit(int $userId, array $data, bool $askedInApp = false): array
     {
+        $mode = $data['executionMode'] ?? 'ordered';
+        if (!in_array($mode, ['ordered', 'independent', 'coordinated'], true))
+            ApiError::throw(422, 'invalid_execution_mode', 'Choose an ordered or independent task.');
         $request = ['agentId' => $data['agentId'], 'prompt' => $data['prompt'],
             'attachments' => array_values($data['attachments'] ?? []), 'runtimeId' => $data['runtimeId'] ?? null];
+        if ($mode !== 'ordered') $request['executionMode'] = $mode;
         $hash = Canonical::hash($request);
         if ($existing = $this->existing($userId, $data['idempotencyKey'], $hash)) return [$existing, false];
         $agent = $this->grants->agent($userId, $data['agentId']);
         $binding = $this->bindings->select($userId, $request['runtimeId']);
         $snapshot = $this->grants->snapshot($userId, $agent->id, true, $askedInApp ? (string) $request['prompt'] : null);
         $online = $binding->last_seen_at && $binding->last_seen_at->isAfter(now()->subSeconds((int) config('agents_v2.online_seconds')));
+        $created = true;
         try {
-            $run = DB::transaction(function () use ($userId, $data, $request, $hash, $agent, $binding, $snapshot, $online, $askedInApp) {
-                DB::table('agent_teammates')->where('id', $agent->id)->lockForUpdate()->first();
+            $run = DB::transaction(function () use ($userId, $data, $request, $hash, $agent, $binding, $snapshot, $online, $askedInApp, $mode, &$created) {
+                Jobs\AccountLock::lock($userId);
+                if ($existing = $this->existing($userId, $data['idempotencyKey'], $hash)) { $created = false; return $existing; }
+                $binding = \App\Models\AgentV2\RuntimeBinding::query()->whereKey($binding->id)->lockForUpdate()->firstOrFail();
+                if ($binding->revoked_at) ApiError::throw(409, 'runtime_changed', 'That runtime was removed.');
+                Jobs\Capacity::admission($userId, $binding, $mode);
+                $agent = DB::table('agent_teammates')->where('id', $agent->id)->lockForUpdate()->first();
+                if (!$agent || $agent->archived_at) ApiError::throw(409, 'agent_archived', 'Restore this teammate before starting work.');
                 $seq = (int) Run::query()->where('agent_id', $agent->id)->max('conversation_seq') + 1;
                 $run = Run::query()->create(['user_id' => $userId, 'agent_id' => $agent->id,
                     'conversation_id' => $agent->chat_id, 'conversation_seq' => $seq, 'idempotency_key' => $data['idempotencyKey'],
@@ -39,9 +50,10 @@ final class Admission
                     'runtime_snapshot' => RuntimeBindings::snapshot($binding), 'funding_source' => 'connected_account',
                     'state' => $online ? RunStates::QUEUED : RunStates::WAITING_COMPUTER, 'event_seq' => 0]);
                 \App\Services\AgentWork\SkillSnapshots::capture($run);
+                Jobs\Contexts::capture($run, $mode, $agent);
                 $this->events->append($run, 'run.admitted', ['state' => $run->state, 'fundingSource' => 'connected_account',
                     'provider' => $binding->provider, 'model' => $binding->model, 'grants' => count($snapshot)]);
-                if ($askedInApp) app(Memory\Candidates::class)->capture($run);
+                if ($askedInApp && $mode !== 'coordinated') app(Memory\Candidates::class)->capture($run);
                 return $run;
             });
         } catch (QueryException $e) {
@@ -49,8 +61,8 @@ final class Admission
             if ($existing = $this->existing($userId, $data['idempotencyKey'], $hash)) return [$existing, false];
             throw $e;
         }
-        if (Cloud\Authority::cloud($binding)) DB::afterCommit(fn () => \App\Jobs\WakeAgentCloud::dispatch($run->id));
-        return [$run, true];
+        if ($created && Cloud\Authority::cloud($binding)) DB::afterCommit(fn () => \App\Jobs\WakeAgentCloud::dispatch($run->id));
+        return [$run, $created];
     }
 
     private function existing(int $userId, string $key, string $hash): ?Run

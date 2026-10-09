@@ -4,7 +4,7 @@ namespace App\Services\Membership;
 
 final class Offers
 {
-    public function all(): array
+    public function all(?int $userId = null): array
     {
         return collect(config('membership.offers'))->map(fn ($p, $key) => [
             'offerKey' => $key, 'offerVersion' => config('membership.version'),
@@ -12,7 +12,9 @@ final class Offers
             'credits' => $p['credits'], 'pence' => $p['pence'], 'currency' => 'GBP',
             'interval' => $p['interval'] ?? null,
             'stripeEnabled' => (bool) (config('legal.paid_sales_enabled') && config('membership.enabled') && config('membership.stripe_enabled') && config('membership.stripe_portal_configuration') && $p['stripe'] && config('services.stripe.secret') && config('services.stripe.webhook_secret') && $this->stripeEnvironmentReady()),
-            'appleEnabled' => (bool) (config('membership.enabled') && config('membership.apple_enabled') && $p['apple']),
+            'appleEnabled' => (bool) ($p['apple'] && ($userId !== null
+                ? app(\App\Services\Vibes\AppleEnvironment::class)->purchasesEnabled($userId)
+                : config('legal.paid_sales_enabled', false) && config('membership.enabled') && config('membership.apple_enabled'))),
         ])->values()->all();
     }
     public function stripeEnvironmentReady(): bool

@@ -17,7 +17,8 @@ class VibesAppleNotificationController extends Controller
         $hint = $this->hint($notification['data']['signedTransactionInfo'] ?? '');
         $id = $hint['transactionId'] ?? null;
         if (!is_string($id) || !preg_match('/^[0-9]{1,40}$/', $id)) return response()->json(['ok' => true]);
-        $t = $apple->transaction($id);
+        $environment = app(\App\Services\Vibes\AppleEnvironment::class)->notifications((string) ($hint['environment'] ?? ''));
+        $t = $apple->inEnvironment($environment)->transaction($id);
         $wallet = DB::table('vibes_wallets')->where('account_token', strtolower($t['appAccountToken'] ?? ''))->first();
         if ($wallet) $purchases->apply($wallet->user_id, $t);
         return response()->json(['ok' => true]);

@@ -15,6 +15,7 @@ final class Proposals
     {
         self::enabled();
         app(Grants::class)->agent($run->user_id, $run->agent_id);
+        if ($kind === 'workflow') $spec = \App\Services\AgentCoordination\WorkflowDraft::bind($run, $spec);
         $spec = ProposalSpecs::normalize($kind, $spec, $run->agent_id, $run->runtime_binding_id);
         DB::table('agent_work_proposal_quotas')->insertOrIgnore(['agent_id' => $run->agent_id, 'user_id' => $run->user_id, 'count' => 0]);
         $quota = DB::table('agent_work_proposal_quotas')->where('agent_id', $run->agent_id)->lockForUpdate()->first();
@@ -24,7 +25,8 @@ final class Proposals
         return WorkProposal::create(['user_id' => $run->user_id, 'agent_id' => $run->agent_id, 'run_id' => $run->id,
             'runtime_id' => $run->runtime_binding_id, 'runtime_snapshot' => [...$run->runtime_snapshot,
                 'accountLabel' => \App\Services\AgentWork\RuntimePins::label($run->runtime_snapshot),
-                'workAgentId' => $run->agent_id, 'skillsHash' => \App\Services\AgentWork\SkillSnapshots::runHash($run)],
+                'workAgentId' => $run->agent_id, 'skillsHash' => \App\Services\AgentWork\SkillSnapshots::runHash($run),
+                ...($kind === 'workflow' ? ['coordination' => \App\Services\AgentCoordination\WorkflowDraft::reviewContext($run)] : [])],
             'kind' => $kind, 'spec' => $spec, 'revision' => 1, 'status' => 'draft', 'expires_at' => now()->addDays(7)]);
     }
 

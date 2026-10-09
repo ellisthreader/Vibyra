@@ -16,8 +16,17 @@ final class Leases
 {
     public function __construct(private readonly Lifecycle $lifecycle, private readonly Events $events) {}
 
-    /** The oldest claimable run for this binding's current account, or null. */
-    public function claim(RuntimeBinding $binding): ?Run
+    /** Claim the oldest eligible task in one explicit runtime worker slot. */
+    public function claim(RuntimeBinding $binding, ?int $workerSlot = null): ?Run
+    {
+        return DB::transaction(function () use ($binding, $workerSlot) {
+            Jobs\AccountLock::lock($binding->user_id);
+            if (!Jobs\Slots::available($binding, $workerSlot)) return null;
+            return $this->claimWithin($binding, $workerSlot);
+        });
+    }
+
+    private function claimWithin(RuntimeBinding $binding, ?int $workerSlot): ?Run
     {
         app(Cloud\Authority::class)->check($binding);
         $candidates = Run::query()->where('runtime_binding_id', $binding->id)->where('user_id', $binding->user_id)
@@ -27,16 +36,22 @@ final class Leases
             ->where(fn ($q) => $q->whereNotIn('state', [RunStates::WAITING_SIGNIN, RunStates::PAUSED_LIMITS])
                 ->orWhereNull('wait_revision')->orWhere('wait_revision', '!=', $binding->revision)
                 ->orWhere('resume_after', '<=', now()))
-            ->orderBy('created_at')->orderBy('conversation_seq')->limit(20)->get();
+            ->orderBy('created_at')->orderBy('conversation_seq')->limit(Jobs\AccountLock::enabled($binding->user_id) ? Jobs\Capacity::QUEUED + Jobs\Capacity::RUNNING : 20)->get();
         foreach ($candidates as $candidate) {
             $snap = $candidate->runtime_snapshot;
             // Pinned account: a run admitted on another AI account waits for that account.
             if (($snap['provider'] ?? null) !== $binding->provider || ($snap['accountRef'] ?? null) !== $binding->account_ref) continue;
             if (Cloud\Authority::cloud($binding) && (($snap['model'] ?? null) !== $binding->model || ($snap['effort'] ?? null) !== $binding->effort)) continue;
             if (!\App\Services\AgentWork\RuntimePins::allowsRun($binding, $candidate) || !\App\Services\AgentWork\SkillSnapshots::supports($binding, $candidate)) continue;
-            if ($this->conversationBusy($candidate)) continue;
-            $claimed = DB::transaction(function () use ($candidate, $binding) {
+            if (Jobs\Contexts::mode($candidate) === 'ordered' && $this->conversationBusy($candidate)) continue;
+            if (!Jobs\Slots::eligible($binding, $candidate, $workerSlot)) continue;
+            $claimed = DB::transaction(function () use ($candidate, $binding, $workerSlot) {
+                try { \App\Services\AgentCoordination\Context::fence($binding, $candidate->id); }
+                catch (\Illuminate\Http\Exceptions\HttpResponseException|\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+                    return null; // A stale group cannot prevent unrelated eligible work from being claimed.
+                }
                 app(Cloud\Authority::class)->check($binding);
+                if (Jobs\AccountLock::enabled($binding->user_id)) Jobs\Slots::binding($binding);
                 \App\Services\AgentWork\RuntimePins::fenceBinding($binding, $candidate->id);
                 \App\Services\AgentWork\SkillSnapshots::fenceBinding($binding, $candidate->id);
                 $run = Run::query()->whereKey($candidate->id)->lockForUpdate()->first();
@@ -55,6 +70,7 @@ final class Leases
                 $run->forceFill(['lapsed_claims' => $run->lapsed_claims + ($lapsed ? 1 : 0), 'lease_generation' => $run->lease_generation + 1,
                     'lease_expires_at' => now()->addSeconds((int) config('agents_v2.lease_seconds')),
                     'started_at' => $run->started_at ?? now(), 'wait_revision' => null, 'resume_after' => null])->save();
+                Jobs\Slots::assign($binding, $run, $workerSlot);
                 $this->events->append($run, 'run.claimed', ['generation' => $run->lease_generation,
                     'hostId' => $binding->host_id]);
                 if ($run->state !== RunStates::STARTING) $this->lifecycle->move($run, RunStates::STARTING);
@@ -78,13 +94,17 @@ final class Leases
     {
         return Run::query()->where('agent_id', $run->agent_id)->where('user_id', $run->user_id)
             ->whereNotIn('state', RunStates::TERMINAL)->where('id', '!=', $run->id)
+            ->whereNotIn('id', \App\Models\AgentV2\Job::query()->where('mode', '!=', 'ordered')->select('run_id'))
             ->where('conversation_seq', '<', $run->conversation_seq)->exists();
     }
 
     /** Lock and fence one run for a runner write. */
-    public function fenced(RuntimeBinding $binding, string $runId, int $generation, bool $allowCancelled = false): Run
+    public function fenced(RuntimeBinding $binding, string $runId, int $generation, bool $allowCancelled = false, bool $factualReceipt = false): Run
     {
+        Jobs\AccountLock::lock($binding->user_id);
+        \App\Services\AgentCoordination\Context::fence($binding, $runId, $allowCancelled);
         app(Cloud\Authority::class)->check($binding);
+        Jobs\Slots::fence($binding, $runId, $allowCancelled, $factualReceipt);
         \App\Services\AgentWork\RuntimePins::fenceBinding($binding, $runId);
         \App\Services\AgentWork\SkillSnapshots::fenceBinding($binding, $runId);
         $run = Run::query()->whereKey($runId)->where('user_id', $binding->user_id)
@@ -111,7 +131,7 @@ final class Leases
     {
         return DB::transaction(function () use ($binding, $runId, $generation) {
             $run = $this->fenced($binding, $runId, $generation, true);
-            // A heartbeat already in flight when checkpoint committed must not resurrect the released lease.
+            // A late heartbeat must not resurrect an attempt already released at a steering checkpoint.
             if (!RunStates::terminal($run->state) && !(Steering::pending($run) && $run->lease_expires_at === null)) $run->forceFill([
                 'lease_expires_at' => now()->addSeconds((int) config('agents_v2.lease_seconds'))])->save();
             return ['state' => $run->state, 'cancelRequested' => $run->cancel_requested_at !== null,

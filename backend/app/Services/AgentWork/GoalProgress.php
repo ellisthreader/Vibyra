@@ -25,7 +25,9 @@ final class GoalProgress
     public function advance(string $id): void
     {
         if (!config('agents_v2.work_enabled')) return;
-        DB::transaction(function () use ($id) {
+        $userId = Goal::whereKey($id)->value('user_id'); if ($userId === null) return;
+        DB::transaction(function () use ($id, $userId) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock((int) $userId);
             $goal = Goal::whereKey($id)->lockForUpdate()->first();
             if (!$goal || in_array($goal->status, ['completed', 'cancelled', 'expired'], true)) return;
             RuntimePins::lock((int) $goal->user_id, $goal->runtime_binding_id);

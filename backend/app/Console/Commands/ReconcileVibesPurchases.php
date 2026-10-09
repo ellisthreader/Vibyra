@@ -18,16 +18,16 @@ class ReconcileVibesPurchases extends Command
         $failed = 0;
         // History v2 includes missed renewals and finished consumables. One scan per
         // account avoids repeating its full history for every purchased transaction.
-        $legacy = DB::table('vibes_purchases')->select('user_id', 'transaction_id');
-        $modern = DB::table('membership_periods')->selectRaw('user_id, payment_id as transaction_id')
-            ->where('provider', 'iap-apple')->where('environment', config('vibes.apple_environment'))->whereNotNull('payment_id');
+        $legacy = DB::table('vibes_purchases')->selectRaw('user_id, transaction_id, ? as environment', [config('vibes.apple_environment')]);
+        $modern = DB::table('membership_periods')->selectRaw('user_id, payment_id as transaction_id, environment')
+            ->where('provider', 'iap-apple')->whereIn('environment', ['Production', 'Sandbox'])->whereNotNull('payment_id');
         DB::query()->fromSub($legacy->unionAll($modern), 'apple_accounts')
-            ->selectRaw('user_id, MIN(transaction_id) as transaction_id')->groupBy('user_id')
-            ->orderBy('user_id')->chunk(100, function ($rows) use ($apple, $purchases, &$failed) {
+            ->selectRaw('user_id, environment, MIN(transaction_id) as transaction_id')->groupBy('user_id', 'environment')
+            ->orderBy('user_id')->orderBy('environment')->chunk(100, function ($rows) use ($apple, $purchases, &$failed) {
             foreach ($rows as $row) {
                 try {
                     $wallet = DB::table('vibes_wallets')->where('user_id', $row->user_id)->firstOrFail();
-                    foreach ($apple->history($row->transaction_id) as $t) {
+                    foreach ($apple->inEnvironment($row->environment)->history($row->transaction_id) as $t) {
                         if ((isset(config('vibes.products')[$t['productId'] ?? '']) || app(Offers::class)->apple($t['productId'] ?? ''))
                             && strtolower($t['appAccountToken'] ?? '') === strtolower($wallet->account_token)) $purchases->apply($row->user_id, $t);
                     }

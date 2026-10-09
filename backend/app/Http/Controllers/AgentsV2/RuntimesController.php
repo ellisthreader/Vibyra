@@ -19,6 +19,7 @@ final class RuntimesController extends Controller
             'model' => 'required|string|min:1|max:120', 'effort' => 'sometimes|nullable|in:minimal,low,medium,high,xhigh,max',
             'providerVersion' => 'sometimes|nullable|string|max:60', 'capabilities' => 'required|array|max:20',
             'capabilities.controlledTools' => 'required|boolean', 'capabilities.pinnedSkillsV1' => 'sometimes|boolean',
+            'capabilities.parallelJobsV1' => 'sometimes|boolean', 'capabilities.workerSlots' => 'sometimes|integer|in:3',
             // Phase 4: the Mac can run computer tools (claim + receipt endpoints).
             'capabilities.computerTools' => 'sometimes|boolean',
             // Phase 7: the Mac can run browser tools in a separate profile (claim + receipt endpoints).

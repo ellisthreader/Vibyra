@@ -6,6 +6,8 @@
  * OpenRouter. Off by default; a run needs the flag AND a cohort entry.
  */
 return [
+    'parallel_jobs_enabled' => (bool) env('AGENT_PARALLEL_JOBS_ENABLED', false),
+    'coordination_enabled' => (bool) env('AGENT_COORDINATION_ENABLED', false),
     'work_enabled' => (bool) env('AGENT_WORK_ENABLED', false),
     'cloud_enabled' => (bool) env('AGENT_CLOUD_ENABLED', false),
     'outputs_enabled' => env('AGENT_OUTPUTS_ENABLED', false),

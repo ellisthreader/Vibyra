@@ -27,6 +27,7 @@ final class FollowUpProgress
         $peek = FollowUp::find($id);
         if (!$peek) return;
         DB::transaction(function () use ($peek) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock((int) $peek->user_id);
             // Intake and scanners use trigger → connection → grant → follow-up → binding → run.
             $trigger = $peek->trigger_id ? Trigger::whereKey($peek->trigger_id)->lockForUpdate()->first() : null;
             $authority = $trigger ? FollowUpAuthority::snapshot($trigger, true) : null;

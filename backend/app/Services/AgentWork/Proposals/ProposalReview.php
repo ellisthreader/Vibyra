@@ -17,8 +17,10 @@ final class ProposalReview
     {
         Proposals::enabled();
         return DB::transaction(function () use ($userId, $id, $revision, $spec) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $p = $this->proposals->find($userId, $id, true);
             $this->draft($p, $revision);
+            if ($p->kind === 'workflow') $spec = \App\Services\AgentCoordination\WorkflowDraft::edit($p, $spec);
             $normalized = ProposalSpecs::normalize($p->kind, $spec, $p->agent_id, $p->runtime_id);
             $p->forceFill(['spec' => $normalized, 'revision' => $p->revision + 1])->save();
             return $p;
@@ -28,6 +30,7 @@ final class ProposalReview
     public function discard(int $userId, string $id, int $revision): WorkProposal
     {
         return DB::transaction(function () use ($userId, $id, $revision) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $p = $this->proposals->find($userId, $id, true);
             $this->draft($p, $revision, false);
             $p->forceFill(['status' => 'discarded', 'revision' => $p->revision + 1])->save();
@@ -39,6 +42,7 @@ final class ProposalReview
     {
         return DB::transaction(function () use ($userId, $id, $revision, $hash) {
             // Activation services serialize this owner's new saved work under the same user lock.
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $user = User::whereKey($userId)->lockForUpdate()->firstOrFail();
             $p = $this->proposals->find($userId, $id, true);
             if ($p->status === 'accepted') {
@@ -55,10 +59,12 @@ final class ProposalReview
                 app(\App\Services\AgentWork\FollowUpSources::class)->source($userId, $p->agent_id, $spec['condition'], true);
             // Skills lock the wallet, before any runtime row; no compute or credits are consumed.
             if ($p->kind === 'skill') app(\App\Services\Vibes\Wallet::class)->lock($userId);
+            if ($p->kind === 'workflow') \App\Services\AgentCoordination\WorkflowDraft::lockSource($userId, $spec);
             RuntimePins::require($userId, $p->runtime_snapshot);
             $bound = [...$spec, 'agentId' => $p->agent_id, 'runtimeId' => $p->runtime_id];
             $key = 'proposal:'.$p->id;
             $target = match ($p->kind) {
+                'workflow' => app(\App\Services\AgentCoordination\Workflows::class)->activate($userId, $bound, $key),
                 'goal' => app(Goals::class)->activate($userId, $bound, $key),
                 'followup' => app(FollowUps::class)->activate($userId, $bound, $key),
                 'routine' => app(Routines::class)->activate($userId, $bound, $key),

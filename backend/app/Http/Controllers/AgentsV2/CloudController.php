@@ -76,6 +76,7 @@ final class CloudController extends Controller
         $d = $r->validate(['generation' => 'required|integer|min:1', 'runtimeId' => 'required|uuid',
             'provider' => 'required|in:claude', 'accountId' => 'required|string|max:128', 'model' => 'required|string|max:120',
             'effort' => 'sometimes|nullable|in:low,medium,high,xhigh,max', 'providerVersion' => 'sometimes|nullable|string|max:60',
+            'capabilities.parallelJobsV1' => 'sometimes|boolean', 'capabilities.workerSlots' => 'sometimes|integer|in:3',
             'capabilities.pinnedSkillsV1' => 'sometimes|boolean', 'capabilities.controlledTools' => 'required|accepted', 'capabilities.taskSteering' => 'required|accepted']);
         $w = $runtime->authenticate($workspace, (string) $r->bearerToken());
         return $runtime->withCurrent($w, function ($w) use ($d, $registration) {

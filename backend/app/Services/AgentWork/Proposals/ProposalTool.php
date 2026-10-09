@@ -23,8 +23,10 @@ final class ProposalTool
             .'Routine spec: {title,prompt,timezone,recurrence:{type:"once"|"daily"|"weekly",time:"HH:MM",date?,weekdays?},'
             .'catchUpMinutes?:60,overlap?:"skip"}; weekdays 1=Monday. '
             .'Skill spec: {name,instructions,assignToAgent:boolean}. No tools or extra permissions come with skills. '
+            .'For a group planning task only, workflow spec: {title,expiresAt,steps:[{key,agentId,title,prompt,successCriteria,dependsOn:[]}],finalCriteria}. '
+            .'Use only the selected group members; 1–12 steps with earlier dependencies, expiry within seven days. Source group/context are server supplied. '
             .'Maximum spec 32KB. Draft expires in 7 days. Do not claim that a draft is active.',
-            ['kind' => ['type' => 'string', 'enum' => ['context', 'goal', 'followup', 'routine', 'skill']],
+            ['kind' => ['type' => 'string', 'enum' => ['context', 'goal', 'followup', 'routine', 'skill', 'workflow']],
                 'spec' => ['type' => 'object', 'description' => 'Required for drafts; omitted for context. The complete structured draft described above.']], ['kind']);
     }
 

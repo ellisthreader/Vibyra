@@ -7,6 +7,21 @@ use RuntimeException;
 
 class AppleStore
 {
+    private ?string $environmentOverride = null;
+
+    public function inEnvironment(string $environment): self
+    {
+        abort_unless(in_array($environment, ['Production', 'Sandbox'], true), 422, 'Invalid Apple environment.');
+        $store = clone $this;
+        $store->environmentOverride = $environment;
+        return $store;
+    }
+
+    private function environment(): string
+    {
+        return $this->environmentOverride ?? config('vibes.apple_environment');
+    }
+
     public function transaction(string $id): array
     {
         abort_unless(preg_match('/^[0-9]{1,40}$/', $id), 422, 'Invalid transaction.');
@@ -57,7 +72,7 @@ class AppleStore
 
     private function get(string $path, array $query = []): array
     {
-        $sandbox = config('vibes.apple_environment') === 'Sandbox';
+        $sandbox = $this->environment() === 'Sandbox';
         $url = $sandbox ? 'https://api.storekit-sandbox.apple.com' : 'https://api.storekit.apple.com';
         $r = Http::withToken($this->token())->acceptJson()->timeout(15)->get($url.$path, $query);
         abort_unless($r->successful(), 502, 'Apple could not verify this purchase yet. Please try Restore Purchases.');
@@ -70,7 +85,7 @@ class AppleStore
         if (count($parts) !== 3) throw new RuntimeException('Invalid Apple API response.');
         $data = json_decode(base64_decode(strtr($parts[1], '-_', '+/'), true), true, flags: JSON_THROW_ON_ERROR);
         abort_unless(($data['bundleId'] ?? null) === config('vibes.apple_bundle_id')
-            && ($data['environment'] ?? null) === config('vibes.apple_environment'), 422, 'Wrong purchase environment or application.');
+            && ($data['environment'] ?? null) === $this->environment(), 422, 'Wrong purchase environment or application.');
         return $data;
     }
 
@@ -80,7 +95,7 @@ class AppleStore
         $parts = explode('.', $jws);
         abort_unless(count($parts) === 3, 502, 'Invalid Apple renewal response.');
         $data = json_decode(base64_decode(strtr($parts[1], '-_', '+/'), true), true, flags: JSON_THROW_ON_ERROR);
-        abort_unless(($data['environment'] ?? null) === config('vibes.apple_environment')
+        abort_unless(($data['environment'] ?? null) === $this->environment()
             && in_array($data['autoRenewStatus'] ?? null, [0, 1], true) && is_int($data['signedDate'] ?? null), 502, 'Invalid Apple renewal status.');
         return $data;
     }

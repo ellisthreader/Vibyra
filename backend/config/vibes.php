@@ -51,6 +51,8 @@ return [
     'queue_connection' => env('VIBES_QUEUE_CONNECTION', 'database'),
     'apple_bundle_id' => env('APPLE_IAP_BUNDLE_ID', 'app.vibyra.mobile'),
     'apple_environment' => env('VIBES_APPLE_ENVIRONMENT', 'Production'),
+    // Development-signed iPhones use sandbox. Only these modern account IDs may test on this server.
+    'apple_sandbox_user_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('APPLE_IAP_SANDBOX_USER_IDS', ''))))),
     'apple_issuer' => env('APPLE_IAP_ISSUER_ID'),
     'apple_key_id' => env('APPLE_IAP_KEY_ID'),
     'apple_private_key' => env('APPLE_IAP_PRIVATE_KEY'),

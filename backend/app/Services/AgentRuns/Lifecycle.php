@@ -26,5 +26,6 @@ final class Lifecycle
         $this->events->append($run, 'run.state', ['from' => $from, 'to' => $to, 'reason' => $reason]);
         if (isset(self::HOOKS[$to])) $this->events->append($run, self::HOOKS[$to], [...$hookPayload, 'reason' => $reason]);
         app(\App\Services\Platform\WebhookEvents::class)->runMoved($run, $from, $to);
+        if ($terminal) \App\Services\AgentCoordination\Context::afterRun($run);
     }
 }

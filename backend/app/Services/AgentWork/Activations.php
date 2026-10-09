@@ -18,6 +18,7 @@ final class Activations
     {
         abort_unless(preg_match('/^[A-Za-z0-9._:-]{1,120}$/D', $key), 422, 'Use a valid activation key.');
         return DB::transaction(function () use ($userId, $kind, $spec, $key, $create, $read) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $user = User::query()->whereKey($userId)->lockForUpdate()->firstOrFail();
             $receipt = DB::table('agent_work_activations')->where('user_id', $userId)->where('activation_key', $key)->first();
             $hash = Canonical::hash($spec);

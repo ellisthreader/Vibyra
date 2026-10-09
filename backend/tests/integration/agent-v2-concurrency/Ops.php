@@ -9,8 +9,10 @@ final class ConcOps
     {
         require_once __DIR__.'/CloudAgentOps.php';
         require_once __DIR__.'/AgentWorkOps.php';
+        require_once __DIR__.'/CoordOps.php';
         require_once __DIR__.'/SignalOps.php';
         return match ($op) {
+            'coordination' => ConcCoordOps::run($a),
             'work_core' => ConcAgentWorkOps::run($a),
             'signals' => ConcSignalOps::run($a),
             'cloud_agent' => ConcCloudAgentOps::run($a),

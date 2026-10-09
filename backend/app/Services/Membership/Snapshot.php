@@ -30,9 +30,8 @@ final class Snapshot
         $payload['entitlements'] = app(Plans::class)->for($membership['plan']);
         $payload['planEntitlements']['pro_v2'] = app(Plans::class)->for('pro_v2');
         // The app sells through the App Store, so it only sees offers with a product there.
-        $payload['products'] = array_values(array_filter(app(Offers::class)->all(), fn ($o) => $o['id'] !== null));
-        $payload['purchasesEnabled'] = !$payload['guest'] && config('membership.enabled') && config('membership.apple_enabled')
-            && (bool) config('vibes.apple_private_key') && (bool) config('vibes.apple_issuer') && (bool) config('vibes.apple_key_id');
+        $payload['products'] = array_values(array_filter(app(Offers::class)->all($userId), fn ($o) => $o['id'] !== null));
+        $payload['purchasesEnabled'] = !$payload['guest'] && app(\App\Services\Vibes\AppleEnvironment::class)->purchasesEnabled($userId);
         $payload['salesCapabilities'] = ['apple' => (bool) $payload['purchasesEnabled'],
             'stripe' => (bool) config('legal.paid_sales_enabled') && !$payload['guest'] && (bool) config('membership.enabled') && (bool) config('membership.stripe_enabled')
                 && (bool) config('membership.stripe_portal_configuration') && (bool) config('services.stripe.secret') && (bool) config('services.stripe.webhook_secret') && app(Offers::class)->stripeEnvironmentReady()];

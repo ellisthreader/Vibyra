@@ -45,6 +45,7 @@ final class FollowUps
     public function control(int $userId, string $id, int $revision, string $action): array
     {
         return DB::transaction(function () use ($userId, $id, $revision, $action) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $row = $this->find($userId, $id, true);
             if ($row->revision !== $revision) ApiError::throw(409, 'work_changed', 'This follow-up changed. Refresh it before deciding.');
             abort_unless(in_array($action, ['pause', 'resume', 'cancel'], true), 422, 'Choose pause, resume or cancel.');

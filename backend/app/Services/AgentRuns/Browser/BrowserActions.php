@@ -49,6 +49,9 @@ final class BrowserActions
                     $this->resume($run);
                     return $action;
                 }
+                if (!\App\Services\AgentRuns\Jobs\ResourceClaims::acquire($run, $action)) {
+                    $this->resume($run); return $action;
+                }
                 $action->forceFill(['state' => 'dispatching', 'dispatched_at' => now(), 'claimed_generation' => $generation])->save();
             } elseif ($action->state === 'dispatching' && (int) $action->claimed_generation !== $generation) {
                 if ($action->kind === 'read') $action->forceFill(['claimed_generation' => $generation])->save();
@@ -67,7 +70,7 @@ final class BrowserActions
     public function receipt(RuntimeBinding $binding, string $runId, string $actionId, int $generation, array $result): array
     {
         $action = DB::transaction(function () use ($binding, $runId, $actionId, $generation, $result) {
-            $run = $this->leases->fenced($binding, $runId, $generation, true);
+            $run = $this->leases->fenced($binding, $runId, $generation, true, true);
             $action = $this->locked($run, $actionId);
             $key = 'mac:'.hash('sha256', json_encode($result));
             if (in_array($action->state, ['pending_approval', 'approved'], true) || (int) $action->claimed_generation !== $generation)

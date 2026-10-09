@@ -6,6 +6,7 @@ use App\Models\AgentV2\Connection;
 use App\Models\AgentV2\Grant;
 use App\Models\AgentV2\Run;
 use App\Services\AgentRuns\Canonical;
+use App\Services\AgentCoordination\Context;
 use App\Services\AgentRuns\Computer\{ComputerGrants, ComputerTools};
 use App\Services\AgentRuns\Connections\LegacyInstalls;
 
@@ -21,7 +22,7 @@ final class Manifest
     /** The capped, task-relevant manifest (ToolSelection); `selection()` also reports what the cap dropped. */
     public function for(Run $run): array
     {
-        $tools = $this->selection($run)['tools'];
+        $tools = Context::filterTools($run, $this->selection($run)['tools']);
         return ['revision' => substr(Canonical::hash(array_map(fn ($t) => [$t['tool'], $t['connectionId'], $t['schemaRevision']], $tools)), 0, 16),
             'tools' => $tools];
     }
@@ -32,9 +33,10 @@ final class Manifest
         $local = [...\App\Services\AgentRuns\Outputs\OutputTools::entries($run),
             ...\App\Services\AgentRuns\CloudFiles\FileTools::entries($run),
             ...\App\Services\AgentWork\Proposals\ProposalTool::entries($run)];
+        $local = Context::filterTools($run, $local);
         $cap = max(0, (int) config('agents_v2.max_tools', 10));
         $local = array_slice($local, 0, $cap);
-        $selection = $this->selection->select($run, $this->candidates($run), max(0, $cap - count($local)));
+        $selection = $this->selection->select($run, Context::filterTools($run, $this->candidates($run)), max(0, $cap - count($local)));
         $selection['tools'] = [...$selection['tools'], ...$local];
         return $selection;
     }

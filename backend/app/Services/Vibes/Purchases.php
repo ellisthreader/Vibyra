@@ -18,6 +18,8 @@ class Purchases
             return;
         }
         DB::transaction(function () use ($userId, $t) {
+            // Legacy grants have no environment column; sandbox testing uses the modern catalogue only.
+            abort_unless(($t['environment'] ?? '') === config('vibes.apple_environment'), 422, 'Wrong purchase environment.');
             $w = $this->wallet->lock($userId);
             $product = config('vibes.products')[$t['productId'] ?? ''] ?? null;
             abort_unless($product && isset($t['transactionId'], $t['originalTransactionId'], $t['purchaseDate']), 422, 'Unknown Apple product.');

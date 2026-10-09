@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('api/agents/v2')->middleware([RequireApprovedMarket::class])->group(function (): void {
     Route::middleware(['throttle:120,1,agent-v2', AgentV2Credentials::class.':user'])->group(function (): void {
         Route::post('runs', [RunsController::class, 'store'])->middleware('throttle:30,1,agent-v2-admit');
+        Route::get('jobs', [\App\Http\Controllers\AgentsV2\JobsController::class, 'index']);
         Route::get('runs', [RunsController::class, 'index']);
         Route::get('runs/{id}', [RunsController::class, 'show'])->whereUuid('id');
         Route::get('runs/{id}/events', [RunsController::class, 'events'])->whereUuid('id');
@@ -98,3 +99,5 @@ require __DIR__.'/agents_v2_stage2.php';
 require __DIR__.'/agents_v2_cloud.php';
 
 require __DIR__.'/agents_v2_work.php';
+
+require __DIR__.'/agents_v2_coordination.php';

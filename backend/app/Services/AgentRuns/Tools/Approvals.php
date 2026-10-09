@@ -44,6 +44,7 @@ final class Approvals
             // with a concurrent cancel on Postgres: one of the two callers got a 500 and the cancel could be the victim.
             $runId = ToolAction::query()->whereKey($actionId)->where('user_id', $userId)->value('run_id');
             if (!$runId) ApiError::throw(404, 'action_not_found', 'That action does not exist.');
+            \App\Services\AgentRuns\Jobs\ActionAuthority::beforeRun($runId, $decision !== 'decline');
             $run = Run::query()->whereKey($runId)->lockForUpdate()->firstOrFail();
             $action = ToolAction::query()->whereKey($actionId)->where('user_id', $userId)->lockForUpdate()->first();
             if (!$action) ApiError::throw(404, 'action_not_found', 'That action does not exist.');
@@ -90,6 +91,7 @@ final class Approvals
         $claimed = DB::transaction(function () use ($actionId, $strandedBefore, &$refused) {
             $runId = ToolAction::query()->whereKey($actionId)->value('run_id'); // run → action, like cancel (see decide)
             if (!$runId) return null;
+            \App\Services\AgentRuns\Jobs\ActionAuthority::beforeRun($runId);
             $run = Run::query()->whereKey($runId)->lockForUpdate()->firstOrFail();
             $action = ToolAction::query()->whereKey($actionId)->lockForUpdate()->first();
             if (!$action || $action->state !== 'approved' || $action->dispatched_at !== null) return null;
@@ -119,6 +121,9 @@ final class Approvals
                 return null;
             }
             if ($computer && ComputerTools::onMac($action->tool)) return null; // Stays approved: the leased Mac claims it.
+            if (!\App\Services\AgentRuns\Jobs\ResourceClaims::acquire($run, $action)) {
+                $refused = true; return null;
+            }
             $action->forceFill(['state' => 'dispatching', 'dispatched_at' => now()])->save();
             return [$action, $connection];
         });

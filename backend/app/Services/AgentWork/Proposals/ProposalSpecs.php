@@ -16,11 +16,12 @@ final class ProposalSpecs
         abort_unless(strlen(json_encode($spec, JSON_THROW_ON_ERROR)) <= 32000, 422, 'Keep this plan within 32 KB.');
         $bound = [...$spec, 'agentId' => $agentId, 'runtimeId' => $runtimeId];
         $out = match ($kind) {
+            'workflow' => \App\Services\AgentCoordination\WorkflowSpecs::normalize($bound),
             'goal' => Specs::goal($bound),
             'followup' => Specs::followup($bound),
             'routine' => self::routine($spec),
             'skill' => self::skill($spec),
-            default => abort(422, 'Choose goal, followup, routine or skill.'),
+            default => abort(422, 'Choose goal, followup, routine, skill or workflow.'),
         };
         unset($out['agentId'], $out['runtimeId']);
         return $out;

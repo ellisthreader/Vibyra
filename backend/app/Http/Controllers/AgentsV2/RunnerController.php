@@ -16,7 +16,8 @@ final class RunnerController extends Controller
 
     public function claim(Request $request, string $runtime, Leases $leases, Runs $runs, Manifest $manifest)
     {
-        $run = $leases->claim($this->runner($request, $runtime));
+        $data = $request->validate(['workerSlot' => 'sometimes|integer|min:0|max:2']);
+        $run = $leases->claim($this->runner($request, $runtime), $data['workerSlot'] ?? null);
         if (!$run) return response('', 204);
         return $this->json(['run' => $runs->claimPayload($run, $manifest->for($run))]);
     }

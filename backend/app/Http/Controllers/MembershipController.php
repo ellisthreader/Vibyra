@@ -32,7 +32,7 @@ class MembershipController extends Controller
         $d = $r->validate(['productId' => 'required|string|max:160']);
         $offer = app(Offers::class)->apple($d['productId']);
         if ($offer) {
-            abort_unless(Units::modern($u->id) && config('membership.apple_enabled'), 409, 'This offer is not available for your account.');
+            abort_unless(Units::modern($u->id) && app(\App\Services\Vibes\AppleEnvironment::class)->purchasesEnabled($u->id), 409, 'This offer is not available for your account.');
             abort_if($offer['kind'] === 'subscription' && app(\App\Services\Membership\Entitlements::class)->for($u)['tier'] !== 'free', 409, 'Manage your existing subscription before buying another.');
         }
         return response()->json(['ok' => true]);

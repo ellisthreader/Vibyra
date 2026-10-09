@@ -13,7 +13,7 @@ final class ApplePurchases
         $w = app(Wallet::class)->lock($userId);
         abort_unless(strtolower($t['appAccountToken'] ?? '') === strtolower($w->account_token), 409, 'Purchase belongs to another account.');
         abort_unless(($t['inAppOwnershipType'] ?? '') === 'PURCHASED', 422, 'This purchase cannot be shared.');
-        abort_unless(($t['environment'] ?? '') === config('vibes.apple_environment'), 422, 'Wrong purchase environment.');
+        abort_unless(app(\App\Services\Vibes\AppleEnvironment::class)->allows($userId, $t['environment'] ?? ''), 422, 'Wrong purchase environment.');
         foreach (['transactionId', 'originalTransactionId', 'purchaseDate', 'price', 'currency'] as $key) {
             abort_unless(isset($t[$key]), 422, 'Apple purchase is missing '.$key.'.');
         }

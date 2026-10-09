@@ -27,6 +27,8 @@ final class Registration
         $key = Str::random(64);
         $b->forceFill(['runner_key_hash' => hash('sha256', $key), 'cloud_generation' => $w->generation, 'last_seen_at' => now(),
             'provider_version' => $d['providerVersion'] ?? null, 'capabilities' => ['controlledTools' => true, 'taskSteering' => true,
+                'parallelJobsV1' => ($d['capabilities']['parallelJobsV1'] ?? false) === true && ($d['capabilities']['workerSlots'] ?? null) === 3,
+                'workerSlots' => ($d['capabilities']['workerSlots'] ?? null) === 3 ? 3 : 1,
                 'pinnedSkillsV1' => ($d['capabilities']['pinnedSkillsV1'] ?? false) === true]])->save();
         return ['runtimeId' => $b->id, 'runnerKey' => $key, 'selection' => $s];
     }

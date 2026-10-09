@@ -37,6 +37,7 @@ final class Goals
     public function control(int $userId, string $id, int $revision, string $action): array
     {
         return DB::transaction(function () use ($userId, $id, $revision, $action) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $goal = $this->find($userId, $id, true); self::revision($goal, $revision);
             abort_unless(in_array($action, ['pause', 'resume', 'cancel'], true), 422, 'Choose pause, resume or cancel.');
             if (in_array($goal->status, ['completed', 'cancelled', 'expired'], true)) ApiError::throw(409, 'work_terminal', 'This goal is finished.');
@@ -56,6 +57,7 @@ final class Goals
     public function confirm(int $userId, string $id, int $revision): array
     {
         return DB::transaction(function () use ($userId, $id, $revision) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock($userId);
             $goal = $this->find($userId, $id, true); self::revision($goal, $revision);
             abort_unless($goal->status === 'awaiting_review' && $goal->expires_at->isFuture(), 409, 'Review all delivered milestones before finishing.');
             foreach ($goal->milestones as $step) {

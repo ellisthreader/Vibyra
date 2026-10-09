@@ -23,7 +23,7 @@ trait AdmissionInput
             'attachments.*.mimeType' => 'required_without:attachments.*.id|string|max:100',
             'attachments.*.size' => 'required_without:attachments.*.id|integer|min:0',
             'attachments.*.sha256' => ['sometimes', 'regex:/^[a-f0-9]{64}$/D'], 'attachments.*.ref' => 'sometimes|string|max:500',
-            'runtimeId' => 'sometimes|nullable|uuid']);
+            'runtimeId' => 'sometimes|nullable|uuid', 'executionMode' => 'sometimes|in:ordered,independent']);
         if (trim($data['prompt']) === '') ApiError::throw(422, 'empty_prompt', 'Write a task first.');
         $data['attachments'] = app(RunAttachments::class)->resolve($userId, $data['attachments'] ?? []);
         return $data;

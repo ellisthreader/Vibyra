@@ -69,6 +69,7 @@ final class Scheduler
     public function admit(Occurrence $o): string
     {
         return DB::transaction(function () use ($o) {
+        \App\Services\AgentRuns\Jobs\AccountLock::lock((int) $o->user_id);
         $s = Schedule::query()->whereKey($o->schedule_id)->lockForUpdate()->first();
         $stop = match (true) {
             !$s || $s->deleted_at !== null => 'schedule_deleted',
@@ -94,6 +95,7 @@ final class Scheduler
         $s = Schedule::query()->whereKey($o->schedule_id)->first();
         $window = $s?->catch_up_minutes ?? (int) config('agents_v2.schedule_catch_up_minutes', 60);
         return DB::transaction(function () use ($o, $now, $window) {
+            \App\Services\AgentRuns\Jobs\AccountLock::lock((int) $o->user_id);
             $run = Run::query()->whereKey($o->run_id)->lockForUpdate()->first();
             if (!$run || $run->state !== RunStates::WAITING_COMPUTER) {
                 $this->mark($o, 'admitted', null);

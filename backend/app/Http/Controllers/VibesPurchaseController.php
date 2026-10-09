@@ -16,7 +16,8 @@ class VibesPurchaseController extends Controller
         $wallet->ensure($user);
         // Restore/settlement remains available when new purchases are disabled.
         $d = $request->validate(['transactionId' => 'required|string|regex:/^[0-9]{1,40}$/', 'productId' => 'required|string|max:160']);
-        $t = $apple->transaction($d['transactionId']);
+        $environment = app(\App\Services\Vibes\AppleEnvironment::class)->forUser($user->id);
+        $t = $apple->inEnvironment($environment)->transaction($d['transactionId']);
         abort_unless(($t['productId'] ?? null) === $d['productId'], 409, 'Apple verified a different product.');
         $purchases->apply($user->id, $t);
         return $this->json(['wallet' => $wallet->payload($user->id)]);

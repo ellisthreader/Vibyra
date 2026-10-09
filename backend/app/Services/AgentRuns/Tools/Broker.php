@@ -34,6 +34,7 @@ final class Broker
     {
         $prepared = DB::transaction(function () use ($binding, $runId, $call) {
             $run = $this->leases->fenced($binding, $runId, (int) $call['generation']);
+            \App\Services\AgentCoordination\Context::authorizeTool($run, $call);
             $existing = ToolAction::query()->where('run_id', $run->id)->where('call_id', $call['callId'])->first();
             if ($existing) {
                 if ($existing->tool !== $call['tool'] || ($existing->draft_original_connection_id ?? $existing->connection_id) !== $call['connectionId']

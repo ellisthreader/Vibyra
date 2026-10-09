@@ -47,6 +47,7 @@ final class Runs
     public function cancel(int $userId, string $id): Run
     {
         return DB::transaction(function () use ($userId, $id) {
+            Jobs\AccountLock::lock($userId);
             $run = Run::query()->where('user_id', $userId)->whereKey($id)->lockForUpdate()->first();
             if (!$run) ApiError::throw(404, 'run_not_found', 'That task does not exist.');
             if (RunStates::terminal($run->state)) return $run;
@@ -72,6 +73,7 @@ final class Runs
             ->whereIn('id', $actions->pluck('connection_id')->unique()->values())->get(['id', 'provider', 'external_identity'])->keyBy('id');
         $snap = $run->runtime_snapshot ?? [];
         return [...Steering::payload($run), 'id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
+            'job' => Jobs\Slots::payload($run), 'coordination' => \App\Services\AgentCoordination\Context::metadata($run),
             'conversationSeq' => $run->conversation_seq, 'idempotencyKey' => $run->idempotency_key, 'state' => $run->state, 'stateReason' => $run->state_reason,
             'terminal' => RunStates::terminal($run->state), 'prompt' => $run->prompt,
             'attachments' => $run->attachments ?? [], 'answer' => $run->answer,
@@ -112,13 +114,17 @@ final class Runs
             ->orderByDesc('conversation_seq')->limit(10)->get(['id', 'prompt', 'answer'])->reverse()->values()
             ->map(fn (Run $r) => ['runId' => $r->id, 'prompt' => $r->prompt, 'answer' => $r->answer])->all();
         $history = app(Memory\Recall::class)->history($run, $history);
-        $notes = app(Planning\RunNotes::class)->for($run, $agent);
+        $context = Jobs\Contexts::forClaim($run);
+        if (Jobs\AccountLock::enabled($run->user_id)) $history = $context['history'] ?? Jobs\Contexts::history($run);
+        $isolated = \App\Services\AgentCoordination\Context::isolated($run);
+        if ($isolated) $history = [];
+        $notes = $isolated ? ['text' => '', 'gaps' => []] : app(Planning\RunNotes::class)->for($run, $agent);
         return [...Steering::payload($run), 'id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
             'generation' => $run->lease_generation, 'leaseExpiresAt' => $run->lease_expires_at?->toIso8601String(),
             'state' => $run->state, 'prompt' => $run->prompt, 'attachments' => $run->attachments ?? [],
             'runtime' => $run->runtime_snapshot, 'eventCursor' => $run->event_seq,
-            'profile' => ['name' => $agent?->name, 'brief' => Planning\RunNotes::brief($agent?->brief, $notes['text']),
-                'memory' => app(Memory\Recall::class)->text($run, $agent?->memory), 'revision' => $run->profile_revision, 'skills' => \App\Services\AgentWork\SkillSnapshots::forRun($run)],
+            'profile' => ['name' => $context['name'] ?? $agent?->name, 'brief' => Planning\RunNotes::brief($context['brief'] ?? $agent?->brief, $notes['text']),
+                'memory' => $isolated ? '' : ($context['memory'] ?? app(Memory\Recall::class)->text($run, $agent?->memory)), 'revision' => $run->profile_revision, 'skills' => \App\Services\AgentWork\SkillSnapshots::forRun($run)],
             'actionCheckpoint' => Steering::actions($run), 'history' => $history, 'tools' => $manifest, 'connectionGaps' => $notes['gaps']];
     }
 }
