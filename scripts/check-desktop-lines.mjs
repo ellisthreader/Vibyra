@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
+import { execFileSync } from "node:child_process";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DESKTOP_ROOTS = [join(ROOT, "desktop-tauri")];
@@ -23,7 +24,12 @@ const EXCLUDED_PATHS = new Set([
 ]);
 const EXCLUDED_DIRECTORIES = new Set(["dist", "node_modules", "target"]);
 // Pinned third-party source; exact upstream/delta hashes live in VIBYRA-PATCH.json.
-const VENDORED_RUNTIME = "desktop-tauri/src-tauri/vendor/tauri-runtime-wry";
+const PINNED_VENDOR = new Set([
+  "desktop-tauri/src-tauri/vendor/tauri-runtime-wry",
+  "desktop-tauri/src-tauri/vendor/glib-0.18.5",
+]);
+execFileSync(process.execPath,
+  [join(ROOT, "desktop-tauri/scripts/glib-backport.mjs"), "proof"], { stdio: "inherit" });
 
 async function collectCodeFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -31,7 +37,7 @@ async function collectCodeFiles(directory) {
   for (const entry of entries) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      if (EXCLUDED_DIRECTORIES.has(entry.name) || repoPath(path) === VENDORED_RUNTIME) continue;
+      if (EXCLUDED_DIRECTORIES.has(entry.name) || PINNED_VENDOR.has(repoPath(path))) continue;
       files.push(...await collectCodeFiles(path));
     } else if (CODE_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
       files.push(path);

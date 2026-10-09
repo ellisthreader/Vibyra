@@ -89,6 +89,10 @@ jobs:
         run: npm --prefix desktop-tauri test
       - name: Typecheck and build frontend
         run: npm --prefix desktop-tauri run build
+      - name: Verify pinned GLib source and optimized iterator repair
+        if: runner.os == 'Linux'
+        working-directory: desktop-tauri
+        run: npm run glib:test:linux
       - name: Check Rust formatting
         run: npm --prefix desktop-tauri run rust:fmt
       - name: Lint all Rust targets

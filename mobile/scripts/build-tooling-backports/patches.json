@@ -1,0 +1,150 @@
+[
+  {
+    "package": "braces",
+    "path": "lib/security-depth.js",
+    "beforeSha256": null,
+    "afterSha256": "04e86410053b4397484d6cc24bbe8c8af05fae4f9f75902aa7560564780522e4",
+    "replacements": [],
+    "newSource": "'use strict';\n// Vibyra backport: fixed, non-disableable bound for recursive brace walkers.\nconst MAX_DEPTH = 128;\nconst checkDepth = depth => {\n  if (depth > MAX_DEPTH) throw new SyntaxError('Brace nesting exceeds security limit');\n};\nconst validate = ast => {\n  const active = new WeakSet();\n  const stack = [[ast, 0, false]];\n  while (stack.length) {\n    const [node, depth, leaving] = stack.pop();\n    checkDepth(depth);\n    if (!node || typeof node !== 'object' || Array.isArray(node)) {\n      throw new TypeError('Invalid brace AST node');\n    }\n    if (leaving) { active.delete(node); continue; }\n    if (active.has(node)) throw new SyntaxError('Cyclic brace AST');\n    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(node))) {\n      if (descriptor.get || descriptor.set) throw new TypeError('Invalid brace AST accessor');\n    }\n    if (typeof node.type !== 'string' ||\n        (node.value !== undefined && typeof node.value !== 'string') ||\n        (node.nodes !== undefined && !Array.isArray(node.nodes))) {\n      throw new TypeError('Invalid brace AST shape');\n    }\n    let parent = node.parent;\n    const parents = new WeakSet([node]);\n    let hops = 0;\n    while (parent !== undefined && parent !== null) {\n      checkDepth(++hops);\n      if (typeof parent !== 'object' || Array.isArray(parent)) {\n        throw new TypeError('Invalid brace AST parent');\n      }\n      if (parents.has(parent)) throw new SyntaxError('Cyclic brace AST parent');\n      parents.add(parent);\n      const descriptor = Object.getOwnPropertyDescriptor(parent, 'parent');\n      if (descriptor && (descriptor.get || descriptor.set)) {\n        throw new TypeError('Invalid brace AST accessor');\n      }\n      parent = parent.parent;\n    }\n    active.add(node);\n    stack.push([node, depth, true]);\n    for (const child of node.nodes || []) stack.push([child, depth + 1, false]);\n  }\n};\nmodule.exports = { MAX_DEPTH, checkDepth, validate };\n"
+  },
+  {
+    "package": "braces",
+    "path": "lib/parse.js",
+    "beforeSha256": "e572166565f15fa6ad9865ae49d678218e32aabfd1b3720f6d0d43d39800d310",
+    "afterSha256": "4199f93e5aa71ec5d628ddef5c9e3d794b7fa8148798fe8e50107695bfc82bc7",
+    "replacements": [
+      [
+        "'use strict';",
+        "'use strict';\n\nconst security = require('./security-depth');"
+      ],
+      [
+        "  const push = node => {",
+        "  const push = node => {\n    if (node.nodes) security.checkDepth(stack.length + 1);"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "braces",
+    "path": "lib/compile.js",
+    "beforeSha256": "dc98f22eee3d511785d92a00758d5f0d48efed5f5813bdecc2de430c529b5c9f",
+    "afterSha256": "37d19f7c06fa910bc0de2f6f9f17667f8b0ab4d795226ab2de3fdcc1eef50dec",
+    "replacements": [
+      [
+        "'use strict';",
+        "'use strict';\n\nconst security = require('./security-depth');"
+      ],
+      [
+        "const compile = (ast, options = {}) => {",
+        "const compile = (ast, options = {}) => {\n  security.validate(ast);"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "braces",
+    "path": "lib/expand.js",
+    "beforeSha256": "41ccc196ebfa7b7781a634e721eb744e4e7bcb54cba427a7e3d6806a1b9e58f7",
+    "afterSha256": "f294473791bdebde508aec2a5f20b66225246dc66e4a58805d50ea903a5dae74",
+    "replacements": [
+      [
+        "'use strict';",
+        "'use strict';\n\nconst security = require('./security-depth');"
+      ],
+      [
+        "const expand = (ast, options = {}) => {",
+        "const expand = (ast, options = {}) => {\n  security.validate(ast);"
+      ],
+      [
+        "const append = (queue = '', stash = '', enclose = false) => {",
+        "const append = (queue = '', stash = '', enclose = false, depth = 0) => {\n  security.checkDepth(depth);"
+      ],
+      [
+        "append(value, stash, enclose)",
+        "append(value, stash, enclose, depth + 1)"
+      ],
+      [
+        "append(item, ele, enclose)",
+        "append(item, ele, enclose, depth + 1)"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "braces",
+    "path": "lib/stringify.js",
+    "beforeSha256": "379f22d77bfa1478341ccd49c5e4267464aabcbba03558bab332aac23fc6f23a",
+    "afterSha256": "3f569c454c41bc0ea02fdbf7a254c47525663e79bcf0017b6932d0b7401429bb",
+    "replacements": [
+      [
+        "'use strict';",
+        "'use strict';\n\nconst security = require('./security-depth');"
+      ],
+      [
+        "module.exports = (ast, options = {}) => {",
+        "module.exports = (ast, options = {}) => {\n  security.validate(ast);"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "braces",
+    "path": "lib/utils.js",
+    "beforeSha256": "b5a7596aa67730412b3c029ef09e84e6b67b8e445cffd35d1d295549c89066c7",
+    "afterSha256": "274bbb6f43cafd1c92dcb3d317bf9da1f1303a254841dcaff930067aa55fa9ca",
+    "replacements": [
+      [
+        "'use strict';",
+        "'use strict';\n\nconst security = require('./security-depth');"
+      ],
+      [
+        "  const flat = arr => {",
+        "  const flat = (arr, depth = 0) => {\n    security.checkDepth(depth);"
+      ],
+      [
+        "        flat(ele);",
+        "        flat(ele, depth + 1);"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "node-forge",
+    "path": "lib/rsa.js",
+    "beforeSha256": "fd4740238145ec26470eb3f06a627c72039538ce1307dbdce40521f94dfd0a50",
+    "afterSha256": "63fb148943c5c694eda485f65712a4b9279139897efb024260fb1b6676bdf205",
+    "replacements": [
+      [
+        "  obj.value.length !== 2) {",
+        "  obj.value.length !== 2 ||\n  obj.value[0].value.length !==\n    (('parameters' in capture) ? 2 : 1)) {"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "node-forge",
+    "path": "dist/forge.min.js",
+    "beforeSha256": "d9b9074e6861200d676e25dcfe97889db5e8f4150bb766d29c491ad709a51b58",
+    "afterSha256": "a1d374dddbfd38635e74c08bddcd55553f9b3e29fa4346ff8ac8cbfa2f21414f",
+    "replacements": [
+      [
+        "!s.validate(n,d,o,c)||2!==n.value.length",
+        "!s.validate(n,d,o,c)||2!==n.value.length||n.value[0].value.length!==(\"parameters\"in o?2:1)"
+      ]
+    ],
+    "newSource": null
+  },
+  {
+    "package": "node-forge",
+    "path": "dist/forge.all.min.js",
+    "beforeSha256": "cb9ba4045a81825f8edb646c38d53a1ac30ce07665bf26042c8dea86d7208642",
+    "afterSha256": "baaad7f257463658489c2860eb83da1ab6bf6485557a94a8a5a97f935784a1bb",
+    "replacements": [
+      [
+        "!s.validate(a,d,o,c)||2!==a.value.length",
+        "!s.validate(a,d,o,c)||2!==a.value.length||a.value[0].value.length!==(\"parameters\"in o?2:1)"
+      ]
+    ],
+    "newSource": null
+  }
+]

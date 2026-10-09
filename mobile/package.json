@@ -15,7 +15,7 @@
     "export": "expo export --platform ios --platform web",
     "doctor": "npx expo-doctor",
     "assets": "node scripts/build-runtime.mjs",
-    "check": "npm run assets && npm run typecheck && npm run lint && npm test && npm run lines",
+    "check": "npm run test:build-tooling && npm run assets && npm run typecheck && npm run lint && npm test && npm run lines",
     "prestart": "npm run assets",
     "preweb": "npm run assets",
     "preexport": "npm run assets",
@@ -57,7 +57,9 @@
     "ios:device": "expo run:ios --device",
     "verify:agents": "node scripts/verify-agents-ui.mjs",
     "verify:pair-link": "node scripts/verify-pair-link.mjs",
-    "verify:chat-markdown": "node scripts/verify-chat-markdown.mjs"
+    "verify:chat-markdown": "node scripts/verify-chat-markdown.mjs",
+    "postinstall": "node scripts/apply-build-tooling-backports.mjs",
+    "test:build-tooling": "node scripts/apply-build-tooling-backports.mjs --check && node scripts/build-tooling-backports/regressions.mjs && node scripts/build-tooling-backports/install-regressions.mjs && node scripts/build-tooling-backports/consumer-smoke.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

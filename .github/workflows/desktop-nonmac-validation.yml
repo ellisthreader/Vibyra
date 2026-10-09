@@ -49,6 +49,9 @@ jobs:
         run: npm ci --prefix ../host/relay
       - name: Confirm repository Rust toolchain
         run: rustup show active-toolchain
+      - name: Verify pinned GLib source and optimized iterator repair
+        if: runner.os == 'Linux'
+        run: npm run glib:test:linux
       - name: Compile native platform and run all security gates
         if: runner.os != 'Linux'
         run: npm run verify

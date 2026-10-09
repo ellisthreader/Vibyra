@@ -1,5 +1,6 @@
 [workspace]
 members = ["crates/vibyra-core", "crates/vibyra-sync"]
+exclude = ["vendor/glib-0.18.5"]
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -106,3 +107,4 @@ windows = { version = "0.62", features = ["Foundation", "Foundation_Metadata", "
 # Keep tracing secrecy without synchronous cross-thread JavaScript dispatch.
 [patch.crates-io]
 tauri-runtime-wry = { path = "vendor/tauri-runtime-wry" }
+glib = { path = "vendor/glib-0.18.5" }
