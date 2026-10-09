@@ -7,6 +7,12 @@
 
 use std::path::{Path, PathBuf};
 
+#[path = "claude_platform_env.rs"]
+mod platform;
+pub(super) fn platform_env(tmpdir: &Path) -> Vec<(String, String)> {
+    platform::env(tmpdir)
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Launch {
     pub program: PathBuf,
@@ -90,15 +96,7 @@ pub fn build(input: &LaunchInput<'_>) -> Launch {
         args.push("--effort".into());
         args.push(effort.to_owned());
     }
-    let mut path = String::from("/usr/bin:/bin");
-    if let Some(dir) = input
-        .program
-        .parent()
-        .filter(|dir| !dir.as_os_str().is_empty())
-    {
-        path.push(':');
-        path.push_str(&dir.to_string_lossy());
-    }
+    let path = platform::path(input.program);
     let mut env = vec![
         ("HOME".to_owned(), input.home.to_string_lossy().into_owned()),
         ("USER".to_owned(), input.user.to_owned()),
@@ -110,6 +108,7 @@ pub fn build(input: &LaunchInput<'_>) -> Launch {
         ("LANG".to_owned(), "en_US.UTF-8".to_owned()),
         ("PATH".to_owned(), path),
     ];
+    env.extend(platform_env(input.tmpdir));
     if let Some(dir) = input.config_dir {
         env.push((
             "CLAUDE_CONFIG_DIR".into(),
@@ -137,10 +136,37 @@ pub fn command(launch: &Launch) -> std::process::Command {
 
 /// `claude` on the (login-shell-augmented) PATH, as an absolute path.
 pub fn find_program(name: &str) -> Option<PathBuf> {
-    let path = std::env::var_os("PATH")?;
-    std::env::split_paths(&path)
+    find_in_path(name, &std::env::var_os("PATH")?)
+}
+
+fn find_in_path(name: &str, path: &std::ffi::OsStr) -> Option<PathBuf> {
+    #[cfg(windows)]
+    if name.chars().any(|c| matches!(c, '/' | '\\' | ':')) {
+        return None; // Provider names are bare native executable names, never paths.
+    }
+    #[cfg(windows)]
+    let name = match Path::new(name).extension().and_then(|ext| ext.to_str()) {
+        None => format!("{name}.exe"),
+        Some(ext) if ext.eq_ignore_ascii_case("exe") => name.to_owned(),
+        _ => return None, // No batch shim, PATHEXT expansion or command interpreter.
+    };
+    #[cfg(windows)]
+    let name = name.as_str();
+    let candidate = std::env::split_paths(path)
+        .filter(|dir| !cfg!(windows) || dir.is_absolute())
         .map(|dir| dir.join(name))
-        .find(|candidate| candidate.is_file())
+        .find(|candidate| candidate.is_file())?;
+    #[cfg(windows)]
+    {
+        std::fs::canonicalize(candidate).ok().filter(|path| {
+            path.extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("exe"))
+        })
+    }
+    #[cfg(not(windows))]
+    {
+        Some(candidate)
+    }
 }
 
 /// Claude Code keeps per-folder memory in `<config>/projects/<cwd with every
@@ -155,3 +181,7 @@ pub fn project_dir_name(cwd: &Path) -> String {
 #[cfg(test)]
 #[path = "claude_cmd_tests.rs"]
 mod tests;
+
+#[cfg(all(test, windows))]
+#[path = "claude_windows_tests.rs"]
+mod windows_tests;

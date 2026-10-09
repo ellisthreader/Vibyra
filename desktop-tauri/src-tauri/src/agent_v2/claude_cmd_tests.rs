@@ -69,14 +69,28 @@ fn the_command_line_matches_the_adapter_contract_exactly() {
 fn the_environment_is_built_from_nothing() {
     let launch = build(&input(&[], None));
     let names: Vec<_> = launch.env.iter().map(|(name, _)| name.as_str()).collect();
-    assert_eq!(names, ["HOME", "USER", "LOGNAME", "TMPDIR", "LANG", "PATH"]);
+    let mut expected = vec!["HOME", "USER", "LOGNAME", "TMPDIR", "LANG", "PATH"];
+    if cfg!(windows) {
+        expected.extend(["SystemRoot", "TEMP", "TMP"]);
+    }
+    assert_eq!(names, expected);
     let path = &launch
         .env
         .iter()
         .find(|(name, _)| name == "PATH")
         .unwrap()
         .1;
+    #[cfg(not(windows))]
     assert_eq!(path, "/usr/bin:/bin:/opt/node/bin");
+    #[cfg(windows)]
+    {
+        let root = PathBuf::from(&platform_env(Path::new("/var/tmp"))[0].1);
+        let paths: Vec<_> = std::env::split_paths(path).collect();
+        assert_eq!(
+            paths,
+            [root.join("System32"), root, PathBuf::from("/opt/node/bin")]
+        );
+    }
     // No tools: no --allowedTools flag swallowing the following flags.
     assert!(!launch.args.iter().any(|arg| arg == "--allowedTools"));
 }
@@ -86,7 +100,11 @@ fn a_non_default_account_adds_only_its_config_dir() {
     let config =
         Path::new("/Users/me/Library/Application Support/vibyra-desktop/accounts/claude/a2");
     let launch = build(&input(&[], Some(config)));
-    let extra: Vec<_> = launch.env.iter().skip(6).collect();
+    let extra: Vec<_> = launch
+        .env
+        .iter()
+        .skip(6 + platform_env(Path::new("/var/tmp")).len())
+        .collect();
     assert_eq!(extra.len(), 1);
     assert_eq!(extra[0].0, "CLAUDE_CONFIG_DIR");
 }
@@ -94,7 +112,13 @@ fn a_non_default_account_adds_only_its_config_dir() {
 #[test]
 fn the_spawned_command_clears_the_app_environment() {
     std::env::set_var("CLAUDE_CODE_TEST_LEAK", "1");
-    let launch = build(&input(&[], None));
+    let dir = tempfile::tempdir().unwrap();
+    let program = fixture::node();
+    let mut value = input(&[], None);
+    value.program = &program;
+    value.workdir = dir.path();
+    value.tmpdir = dir.path();
+    let launch = build(&value);
     let command = command(&launch);
     let envs: Vec<_> = command.get_envs().collect();
     for (name, _) in &envs {
@@ -102,28 +126,28 @@ fn the_spawned_command_clears_the_app_environment() {
         assert!(!name.starts_with("CLAUDE_CODE_"), "{name}");
         assert!(!FORBIDDEN_ENV.contains(&name.as_ref()), "{name}");
     }
-    assert_eq!(envs.len(), 6);
+    assert_eq!(envs.len(), 6 + platform_env(Path::new("/var/tmp")).len());
     // A real native Node child reports exactly the environment it received.
     let probe = Launch {
-        program: fixture::node(),
+        program: launch.program.clone(),
         args: vec![
             "-e".into(),
-            "for (const [k,v] of Object.entries(process.env)) console.log(`${k}=${v}`)".into(),
+            "if (require('node:crypto').randomBytes(32).length !== 32) throw Error('CSPRNG'); const fs=require('node:fs'),path=require('node:path'),os=require('node:os'); if(path.resolve(os.tmpdir())!==path.resolve(process.env.TMPDIR)) throw Error('wrong temp root'); const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'vibyra-probe-')); fs.writeFileSync(path.join(tmp,'probe'),'ok'); fs.rmSync(tmp,{recursive:true}); for (const [k,v] of Object.entries(process.env)) console.log(`${k}=${v}`)".into(),
         ],
         env: launch.env.clone(),
-        cwd: std::env::temp_dir(),
+        cwd: launch.cwd.clone(),
     };
     let output = super::command(&probe).output().unwrap();
     assert!(output.status.success(), "{:?}", output);
     let text = String::from_utf8_lossy(&output.stdout);
     assert!(!text.contains("CLAUDE_CODE_TEST_LEAK"));
     // Node's macOS runtime adds this CoreFoundation encoding marker itself;
-    // every other child variable must be exactly one of the six explicit inputs.
+    // every other child variable must be exactly one of the explicit launch inputs.
     let child: Vec<_> = text
         .lines()
         .filter(|line| !(cfg!(target_os = "macos") && line.starts_with("__CF_USER_TEXT_ENCODING=")))
         .collect();
-    assert_eq!(child.len(), 6, "{text}");
+    assert_eq!(child.len(), launch.env.len(), "{text}");
     for (name, value) in &launch.env {
         assert!(
             child.contains(&format!("{name}={value}").as_str()),

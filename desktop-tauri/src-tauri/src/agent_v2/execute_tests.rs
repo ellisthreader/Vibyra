@@ -58,7 +58,8 @@ fn plan(dir: &Path, lines: &[&str], extra_env: &[(&str, &str)]) -> Plan {
         lines.iter().map(|l| format!("{l}\n")).collect::<String>(),
     )
     .unwrap();
-    let mut env = vec![("FAKE_OUT".to_owned(), out.to_string_lossy().into_owned())];
+    let mut env = crate::agent_v2::claude_cmd::platform_env(dir);
+    env.push(("FAKE_OUT".to_owned(), out.to_string_lossy().into_owned()));
     env.extend(
         extra_env
             .iter()
