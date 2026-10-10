@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 232">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#121621"/><stop offset="1" stop-color="#1e2538"/></linearGradient>
+    <linearGradient id="card" x2="0" y2="1"><stop stop-color="#2b3855"/><stop offset="1" stop-color="#1c263b"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#7391ff" stop-opacity=".18"/><stop offset="1" stop-color="#7391ff" stop-opacity="0"/></radialGradient>
+  </defs>
+  <path fill="url(#bg)" d="M0 0h740v232H0z"/>
+  <ellipse cx="370" cy="116" rx="305" ry="145" fill="url(#glow)"/>
+  <g fill="none" stroke="#6f8ffd" stroke-width="2" opacity=".45"><path d="M243 69h72q15 0 15 15v64q0 15 15 15h62"/><path d="M243 116h164"/><path d="M243 164h72q15 0 15-15V85q0-16 15-16h62"/></g>
+  <g fill="url(#card)" stroke="#7999ff" stroke-opacity=".2"><rect x="137" y="47" width="113" height="43" rx="10"/><rect x="137" y="96" width="113" height="43" rx="10"/><rect x="137" y="145" width="113" height="43" rx="10"/><rect x="401" y="61" width="185" height="111" rx="14"/></g>
+  <g fill="#839dff"><circle cx="156" cy="69" r="5"/><circle cx="156" cy="117" r="5"/><circle cx="156" cy="167" r="5"/></g>
+  <g fill="#a4b7fa" opacity=".45"><rect x="172" y="64" width="58" height="5" rx="2.5"/><rect x="172" y="113" width="50" height="5" rx="2.5"/><rect x="172" y="161" width="62" height="5" rx="2.5"/><rect x="420" y="81" width="111" height="7" rx="3.5"/><rect x="420" y="103" width="144" height="4" rx="2"/><rect x="420" y="116" width="122" height="4" rx="2"/><rect x="420" y="130" width="136" height="4" rx="2"/></g>
+  <path d="m540 150 6 6 12-13" stroke="#93c5bb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

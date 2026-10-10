@@ -1,7 +1,9 @@
+import {WorkflowEditor} from './WorkflowEditor';
 import type {FollowUpSource} from '../../../../../mobile/src/agents/v2/workCoreModel';
 import type {WorkProposal,GoalSpec,FollowUpSpec,RoutineSpec,SkillSpec} from '../../../../../mobile/src/agents/v2/workProposalModel';
 export function ProposalEditor({item,value,change,disabled,sources}:{item:WorkProposal;value:WorkProposal['spec'];change(v:WorkProposal['spec']):void;disabled:boolean;sources:FollowUpSource[]}) {
  const field=(label:string,text:string,set:(v:string)=>void,multiline=false)=><label className="agent-work-field" key={label}>{label}{multiline?<textarea aria-label={label} value={text} disabled={disabled} onChange={e=>set(e.target.value)}/>:<input aria-label={label} value={text} disabled={disabled} onChange={e=>set(e.target.value)}/>}</label>;
+ if(item.kind==='workflow')return <WorkflowEditor value={value as typeof item.spec} context={item.runtime.coordination} change={change} disabled={disabled}/>;
  if(item.kind==='skill'){const s=value as SkillSpec;return <>{field('Skill name',s.name,name=>change({...s,name}))}{field('Skill instructions',s.instructions,instructions=>change({...s,instructions}),true)}<label><input type="checkbox" checked={s.assignToAgent} disabled={disabled} onChange={e=>change({...s,assignToAgent:e.target.checked})}/> Assign to this teammate</label><p className="profile-help">Saving a skill grants no tools or account access.</p></>;}
  if(item.kind==='goal'){const s=value as GoalSpec;return <>{field('Goal title',s.title,title=>change({...s,title}))}{field('Goal expiry (ISO date with timezone)',s.expiresAt,expiresAt=>change({...s,expiresAt}))}{s.milestones.map((m,index)=>{
   const patch=(v:Partial<typeof m>)=>change({...s,milestones:s.milestones.map((x,i)=>i===index?{...x,...v}:x)});

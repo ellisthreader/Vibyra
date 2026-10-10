@@ -1,3 +1,6 @@
+import {stageFiveClient} from '../../../../mobile/src/agents/v2/stageFiveClient';
+import {useAgentJobs} from '../../../../mobile/src/agents/v2/useAgentJobs';
+import {checkQueue} from '../../../../mobile/src/agents/v2/jobsModel';
 import { observeRuntimeChoice } from '../../../../mobile/src/agents/v2/cloudPreviewScope';
 import { useAgentRuntime } from './useAgentRuntime';
 import { computerName } from "../../lib/platform";
@@ -11,17 +14,21 @@ import { useRunHistory } from './useRunHistory';
 import { useTaskPlan } from './useTaskPlan';
 import { fixOf, type BridgeFix } from './bridgeError';
 import { parseUpload, uploadProblem } from '../../../../mobile/src/agents/v2/overviewModel.ts';
-import { isRunPending, mergeTurns, runPending, submitRunPending } from './runsV2';
-import type { Quote, Teammate } from './types';
+import { isRunPending, mergeTurns, runPending, runTurn, submitRunPending } from './runsV2';
+import type { Quote, Teammate, Turn } from './types';
 
+const stageFive=stageFiveClient(teammateApi);
 /** `v2`: sends become Agent v2 runs; earlier v1 turns stay readable in the same transcript. */
 export function useThread(agent: Teammate, identity: string, active: boolean, enabled = true, v2 = false) {
+  const jobs=useAgentJobs(v2?stageFive.jobs:undefined,agent.id,active&&v2),parallelJobs=v2&&jobs.page?.enabled===true;
   const runtime = useAgentRuntime(identity, agent.id, v2 && active);
   const key = `teammate-chat.${encodeURIComponent(identity)}.${agent.chatId}`;
   const [state, setState] = useState<ThreadDraft>(() => { try { return restoreThread(localStorage.getItem(key)); } catch { return restoreThread('invalid'); } });
   const legacy = useThreadHistory(agent.chatId, active), runs = useRunHistory(agent, active && v2);
   const refreshBoth = useCallback(async () => { await Promise.all([legacy.refresh(), runs.refresh()]); }, [legacy.refresh, runs.refresh]);
-  const merged = useMemo(() => mergeTurns(legacy.turns, runs.turns), [legacy.turns, runs.turns]);
+  const [accepted,setAccepted]=useState<Turn[]>([]);
+  useEffect(()=>setAccepted(rows=>rows.filter(r=>!runs.turns.some(t=>t.id===r.id))),[runs.turns]);
+  const merged = useMemo(() => mergeTurns(mergeTurns(legacy.turns,runs.turns),accepted.filter(r=>!runs.turns.some(t=>t.id===r.id))), [legacy.turns, runs.turns,accepted]);
   const history = v2 ? { ...legacy, turns: merged, ready: legacy.ready && runs.ready, loadError: legacy.loadError || runs.loadError, refresh: refreshBoth } : legacy;
   const { ready, loadError, refresh } = history;
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -63,7 +70,7 @@ export function useThread(agent: Teammate, identity: string, active: boolean, en
     try { await task(); } catch (e) { if (alive.current) { setError(message(e)); setRefusal(fixOf(e)); } }
     finally { lock.current = false; if (alive.current) setBusy(false); }
   };
-  const guard = () => { if (!writable.current || !ready || loadError || !consented || latest.current.pending) throw new Error('Refresh this conversation before sending.'); };
+  const guard = () => { if (!writable.current || !ready || loadError || !consented || latest.current.pending || (!parallelJobs && history.turns.some(t=>['queued','running','waiting'].includes(t.status)))) throw new Error('Refresh this conversation before sending.'); };
   const estimate = () => run(async () => {
     guard(); const requested = version.current, draft = latest.current;
     if (!draft.draft.trim()) return;
@@ -77,16 +84,16 @@ export function useThread(agent: Teammate, identity: string, active: boolean, en
     if (alive.current && requested === version.current) setQuote(result);
   });
   const accept = () => run(async () => { if (!writable.current) return; await teammateApi('vibes/consent', { accepted: true }); if (alive.current) setConsented(true); });
-  const complete = async () => { update({ draft: '', pending: null, attachments: [] }); await refresh(); };
+  const complete = (turn?:Turn) => { if(turn?.v2)setAccepted(rows=>[...rows.filter(r=>r.id!==turn.id),turn]); update({ draft: '', pending: null, attachments: [] }); void refresh().catch(()=>{}); };
   const submit = async (request: Pending) => {
-    if (isRunPending(request)) await submitRunPending(teammateApi, request, () => update({ draft: request.text, pending: null }));
-    else await submitThread(teammateApi, agent.chatId, request, () => update({ draft: request.text, pending: null }));
-    await complete();
+    const turn=isRunPending(request)?runTurn(await submitRunPending(teammateApi, request, () => update({ draft: request.text, pending: null }))):await submitThread(teammateApi, agent.chatId, request, () => update({ draft: request.text, pending: null }));
+    complete(turn);
   };
   const send = () => run(async () => {
     guard();
-    if (!quote || quote.expiresAt * 1000 <= Date.now()) { setQuote(null); throw new Error('The estimate expired. Get a fresh estimate.'); }
-    const request = v2 ? runPending(agent.id, latest.current.draft, undefined, latest.current.attachments.map(a => a.id), runtime.store.runtimeId()) : { id: crypto.randomUUID(), quote: quote.quote, text: latest.current.draft };
+    if(parallelJobs)checkQueue(await stageFive.jobs.list(agent.id));
+    if (!parallelJobs && (!quote || quote.expiresAt * 1000 <= Date.now())) { setQuote(null); throw new Error('The estimate expired. Get a fresh estimate.'); }
+    const request = v2 ? runPending(agent.id, latest.current.draft, undefined, latest.current.attachments.map(a => a.id), runtime.store.runtimeId(),parallelJobs?'independent':undefined) : { id: crypto.randomUUID(), quote: quote!.quote, text: latest.current.draft };
     update({ pending: request }); setQuote(null); plan.clear(); await submit(request);
   });
   const reconcile = () => run(async () => {
@@ -118,7 +125,7 @@ export function useThread(agent: Teammate, identity: string, active: boolean, en
   const stop = (id: string) => run(async () => {
     await teammateApi(history.turns.find(t => t.id === id)?.v2 ? `agents/v2/runs/${id}/cancel` : `vibes/turns/${id}/cancel`, {}); await refresh();
   });
-  return { ...state, runtime, v2, plan, refusal, attach, removeAttachment: (id: string) => change({ attachments: state.attachments.filter(a => a.id !== id) }),
+  return { ...state, runtime, jobs, parallelJobs, v2, plan, refusal, attach, removeAttachment: (id: string) => change({ attachments: state.attachments.filter(a => a.id !== id) }),
     edit: (draft: string) => change({ draft }), ...history, quote, error: state.recoveryError || error || loadError || resourceError, loadError, resourceError, busy, ready, consented, models,
     setEffort: (effort: string) => change({ effort }), setModel: (model: string) => change({ model, effort: '' }),
     reload: async () => { setError(''); setResourceVersion(n => n + 1); await refresh(); }, dismissQuote: () => { setQuote(null); plan.clear(); }, refresh, estimate, accept, send, reconcile, retry, stop };

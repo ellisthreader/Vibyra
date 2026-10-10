@@ -31,6 +31,15 @@ export function setDraftForScope(scope: string, value: string) {
   else drafts.delete(scope);
   emit();
 }
+/** Explicit starter preparation preserves any existing unsent draft and never sends it. */
+export async function appendDraftForScope(scope: string, text: string) {
+  const revision = revisions.get(scope);
+  let current = drafts.has(scope) ? drafts.get(scope)! : await readDraft(scope) ?? '';
+  if (revisions.get(scope) !== revision) current = drafts.get(scope) ?? '';
+  const next = current.trimEnd().endsWith(text) ? current : current.trim() ? `${current.trimEnd()}\n${text}` : text;
+  setDraftForScope(scope, next);
+  await writeDraft(scope, next);
+}
 export function useDraft(scope: string, persist = false) {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {

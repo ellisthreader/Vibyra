@@ -32,16 +32,16 @@ const runsClient = (api: Request) => ({
 });
 
 /** The exact admission body is the pending "quote", saved before the first send. */
-export function runPending(agentId: string, text: string, uuid: () => string = () => crypto.randomUUID(), attachments: string[] = [], runtimeId?: string): Pending {
+export function runPending(agentId: string, text: string, uuid: () => string = () => crypto.randomUUID(), attachments: string[] = [], runtimeId?: string, executionMode?: 'independent' | 'ordered'): Pending {
   const id = uuid();
-  return { id, quote: JSON.stringify(runBody(agentId, id, text, attachments, runtimeId)), text };
+  return { id, quote: JSON.stringify(runBody(agentId, id, text, attachments, runtimeId, executionMode)), text };
 }
 export const isRunPending = (pending: Pending) => Boolean(parseRunBody(pending.quote, pending.id));
 export function submitRunPending(api: Request, pending: Pending, released: () => void): Promise<Run> {
   const body = parseRunBody(pending.quote, pending.id);
   if (!body) return Promise.reject(new Error('The saved send could not be restored. Reopen the app before sending again.'));
   const client = runsClient(api);
-  return submitRun(body, { admit: client.admit, list: client.list, status: statusOf }, released);
+  return submitRun(body, { admit: client.admit, list: client.list, status: statusOf, lookup:body.executionMode==='independent'?async(agent,key)=>(await api<{runs:Run[]}>(`agents/v2/jobs?agentId=${encodeURIComponent(agent)}&idempotencyKey=${encodeURIComponent(key)}`)).runs:undefined }, released);
 }
 
 export function runTurn(run: Run, feed?: RunFeed): Turn {

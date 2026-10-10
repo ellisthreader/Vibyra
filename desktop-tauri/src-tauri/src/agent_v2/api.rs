@@ -19,6 +19,15 @@ pub struct RunnerApi {
 }
 
 impl RunnerApi {
+    pub async fn claim_slot(&self, slot: usize) -> Result<Option<Value>, ApiError> {
+        let body = self
+            .call(Method::POST, "claim", Some(json!({"workerSlot": slot})))
+            .await?;
+        Ok(body
+            .map(|value| value["run"].clone())
+            .filter(Value::is_object))
+    }
+
     async fn call(
         &self,
         method: Method,
@@ -37,6 +46,7 @@ impl RunnerApi {
     }
 
     /// The claimed run, or `None` when there is nothing to do.
+    #[allow(dead_code)] // Serial protocol remains available to compatibility fixtures.
     pub async fn claim(&self) -> Result<Option<Value>, ApiError> {
         let body = self.call(Method::POST, "claim", Some(json!({}))).await?;
         Ok(body

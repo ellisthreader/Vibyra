@@ -3,6 +3,8 @@ use serde_json::Value;
 use tauri::State;
 #[path = "teammates_v2_cloud_routes.rs"]
 mod cloud;
+#[path = "teammates_v2_coordination_routes.rs"]
+mod coordination;
 #[path = "teammates_v2_hub_routes.rs"]
 mod hub;
 #[path = "teammates_v2_overview_routes.rs"]
@@ -11,23 +13,19 @@ mod overview;
 mod query;
 #[path = "teammates_request_method.rs"]
 mod request_method;
+#[path = "teammates_route_id.rs"]
+mod route_id;
+use route_id::uuid;
 #[path = "teammates_v2_stage2_routes.rs"]
 mod stage2;
 #[path = "teammates_v2_work_routes.rs"]
 mod work;
-fn uuid(value: &str) -> bool {
-    value.len() == 36
-        && value.bytes().enumerate().all(|(i, b)| {
-            if [8, 13, 18, 23].contains(&i) {
-                b == b'-'
-            } else {
-                b.is_ascii_hexdigit()
-            }
-        })
-}
 /// PATCH/PUT/DELETE routes (Agent v2 routines and triggers §6b; hub grants and MCP reads §6c).
 /// DELETE carries no body, PATCH/PUT always do, and none accepts a query.
 fn permitted_method(path: &str, method: &str, has_body: bool) -> bool {
+    if coordination::method(path, method, has_body) {
+        return true;
+    }
     if work::method(path, method, has_body)
         || cloud::method(path, method, has_body)
         || stage2::method(path, method, has_body)
@@ -42,6 +40,9 @@ fn permitted_method(path: &str, method: &str, has_body: bool) -> bool {
     }
 }
 fn permitted(path: &str, write: bool) -> bool {
+    if let Some(allowed) = coordination::route(path, write) {
+        return allowed;
+    }
     if let Some(allowed) = work::route(path, write) {
         return allowed;
     }

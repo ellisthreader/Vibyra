@@ -28,13 +28,13 @@ test('state labels: active with next run, paused, done', () => {
   assert.equal(scheduleLabel({ ...base, nextRunLocal: null }, now), 'Done · no more runs');
 });
 
-test('occurrence history words: ran, skipped, waiting for Mac, expired with reason', () => {
+test('occurrence history words: ran, skipped, waiting for the selected computer, expired with reason', () => {
   assert.deepEqual(occurrenceLabel({ state: 'admitted', reason: null, runState: 'completed' }), { label: 'Ran', tone: 'ok' });
-  assert.deepEqual(occurrenceLabel({ state: 'admitted', reason: null, runState: 'waiting_for_computer' }), { label: 'Waiting for your Mac', tone: 'warn' });
-  assert.deepEqual(occurrenceLabel({ state: 'waiting', reason: null, runState: null }), { label: 'Waiting for your Mac', tone: 'warn' });
+  assert.deepEqual(occurrenceLabel({ state: 'admitted', reason: null, runState: 'waiting_for_computer' }), { label: 'Waiting for the selected computer', tone: 'warn' });
+  assert.deepEqual(occurrenceLabel({ state: 'waiting', reason: null, runState: null }), { label: 'Waiting for the selected computer', tone: 'warn' });
   assert.equal(occurrenceLabel({ state: 'skipped', reason: 'previous_run_active', runState: null }).label, 'Skipped · the last run was still going');
-  assert.equal(occurrenceLabel({ state: 'expired', reason: 'computer_offline', runState: null }).label, 'Expired · your Mac stayed offline');
-  assert.equal(occurrenceLabel({ state: 'failed', reason: 'runtime_required', runState: null }).label, 'Failed · no Mac is set up to run it');
+  assert.equal(occurrenceLabel({ state: 'expired', reason: 'computer_offline', runState: null }).label, 'Expired · the selected computer stayed offline');
+  assert.equal(occurrenceLabel({ state: 'failed', reason: 'runtime_required', runState: null }).label, 'Failed · no computer is set up to run it');
   assert.equal(occurrenceLabel({ state: 'failed', reason: 'something_new', runState: null }).label, 'Failed · something new');
 });
 

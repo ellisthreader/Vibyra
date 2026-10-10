@@ -1,3 +1,4 @@
+import {GroupsPanel} from './groups/GroupsPanel';
 import {DigestDialog} from './work/DigestDialog';
 import {stageFourClient} from '../../../../mobile/src/agents/v2/stageFourClient';
 import {teammateApi} from './api';
@@ -28,6 +29,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
   const [selected, setSelected] = useState<string | null>(null), [visited, setVisited] = useState<string[]>([]);
   const [query, setQuery] = useState(''), [archived, setArchived] = useState(false), [showList, setShowList] = useState(true);
   const [skills, setSkills] = useState(false), [setup, setSetup] = useState<{ agent?: Teammate; tab?: 'Access' | 'Memory'|'Work' } | null>(null);
+  const [groupsOpen,setGroupsOpen]=useState(false);
   const [activity, setActivity] = useState(false), [page, setPage] = useState<TeammatePage>('overview');
   const digest=useTeammateFocus(s=>s.digest),[workApi]=useState(()=>stageFourClient(teammateApi));
   const [preparedDraft,setPreparedDraft]=useState<{agentId:string;nonce:number;prompt:string}>();
@@ -50,7 +52,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
   // Notification bridge (Agent V2 Phase 3, lib/useTeammateRunNotifications): open a requested teammate once, report the visible thread.
   const requested = useTeammateFocus(s => s.requested), handled = useRef(0);
   useEffect(() => { if (!requested || requested.nonce === handled.current) return; const agent = roster?.teammates.find(a => a.id === requested.id); if (!agent) return; handled.current = requested.nonce; restored.current = true; setSkills(false); setArchived(agent.archived); open(agent, 'chat'); }, [requested, roster]);
-  const visibleThread = active && page === 'chat' && !setup && !skills && !activity && (!compact || !showList) ? selected : null;
+  const visibleThread = active && !groupsOpen && page === 'chat' && !setup && !skills && !activity && (!compact || !showList) ? selected : null;
   useEffect(() => { useTeammateFocus.getState().setVisible(visibleThread); return () => useTeammateFocus.getState().setVisible(null); }, [visibleThread]);
   const rows = (roster?.teammates ?? []).filter(a => a.archived === archived && `${a.name} ${a.brief}`.toLowerCase().includes(query.trim().toLowerCase()));
   const saved = (agent: Teammate) => { state.saved(agent); setArchived(agent.archived); open(agent); };
@@ -67,7 +69,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
   const trail = activity ? 'Activity' : setup ? setup.agent?.name ?? 'New teammate' : current?.name ?? null;
   useEffect(() => { useTeammateFocus.getState().setTrail(trail); }, [trail]);
   return <div ref={ref} className={`teammates-workspace ${showList && !setup && !activity ? 'show-roster' : 'show-thread'}`} hidden={!active}>
-    <Roster v2={mode === 'v2'} activity={activity} onActivity={openActivity} rows={rows} selected={setup || activity ? null : selected} query={query} archived={archived} hasArchived={Boolean(roster?.teammates.some(a => a.archived))}
+    <Roster onGroups={mode==='v2'?()=>setGroupsOpen(true):undefined} v2={mode === 'v2'} activity={activity} onActivity={openActivity} rows={rows} selected={setup || activity ? null : selected} query={query} archived={archived} hasArchived={Boolean(roster?.teammates.some(a => a.archived))}
       onRefresh={() => void refresh()} loading={loading} error={error} hasRoster={Boolean(roster)} enabled={enabled} onQuery={setQuery} onArchive={() => setArchived(!archived)} onOpen={open} onNew={create} onSkills={() => setSkills(true)} />
     <main className="teammates-main">
       {error && <div className="teammate-notice error" role="alert"><span>{error}</span><button disabled={loading} onClick={() => void refresh()}>{loading ? 'Refreshing…' : 'Retry'}</button></div>}
@@ -83,7 +85,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
       {current && !setup && !activity && <TeammateOverview agent={current} v2={mode === 'v2'} enabled={enabled} page={page} active={active && (!compact || !showList)}
         onPage={setPage} onEdit={tab => { setSetup({ agent: current, tab }); setShowList(false); }} onSaved={state.replace} onBack={back} />}
       {visited.map(id => { const agent = roster?.teammates.find(a => a.id === id); return agent ? <Thread key={`${id}.${agent.chatId}.${mode}`} agent={agent} identity={identity} v2={mode === 'v2'} header={false}
-        preparedDraft={preparedDraft?.agentId===id?preparedDraft:undefined} active={active && id === selected && page === 'chat' && !setup && !skills && !activity && (!compact || !showList)} enabled={enabled} onBack={back} onRead={cursor => state.read(id, cursor)} onAccess={state.replace} onReload={() => void refresh()} onDetails={tab => { setSetup({ agent, tab }); setShowList(false); }} /> : null; })}
+        preparedDraft={preparedDraft?.agentId===id?preparedDraft:undefined} active={active && !groupsOpen && id === selected && page === 'chat' && !setup && !skills && !activity && (!compact || !showList)} enabled={enabled} onBack={back} onRead={cursor => state.read(id, cursor)} onAccess={state.replace} onReload={() => void refresh()} onDetails={tab => { setSetup({ agent, tab }); setShowList(false); }} /> : null; })}
       {activity && !setup && <Activity teammates={roster?.teammates ?? []} onOpen={open} onBack={() => { setActivity(false); setShowList(true); }} />}
       {setup && <Setup key={setup.agent?.id ?? 'new'} agent={setup.agent} tab={setup.tab} v2={mode === 'v2'} onTemplate={createdFromTemplate} identity={identity} enabled={enabled}
         onDraft={prompt=>{if(setup.agent){setPreparedDraft({agentId:setup.agent.id,nonce:Date.now(),prompt});open(setup.agent,'chat');}}}
@@ -92,6 +94,7 @@ function AccountTeammates({ identity, active }: { identity: string; active: bool
         onClose={() => { setSetup(null); if (!selected) setShowList(true); }} onSaved={saved} />}
     </main>
     {digest&&digest.account===identity&&<DigestDialog key={digest.nonce} api={workApi.signals} id={digest.id} identity={identity} onClose={()=>useTeammateFocus.getState().closeDigest()}/>}
+    {groupsOpen&&<GroupsPanel identity={identity} teammates={roster?.teammates??[]} active={active} disabled={!enabled} onClose={()=>setGroupsOpen(false)} onOpenRun={(agentId,runId)=>{setGroupsOpen(false);useTeammateFocus.getState().request(agentId,runId);}}/>}
     {skills && <Skills teammates={roster?.teammates ?? []} identity={identity} onClose={() => { setSkills(false); void refresh(); }} />}
   </div>;
 }

@@ -19,3 +19,9 @@
 .agent-work-field input,.agent-work-field textarea { border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); padding: 10px; font: inherit; }
 .agent-work-core h3 { margin: 8px 0 0; font-size: 17px; }
 .agent-work-core .profile-help { color: var(--text-secondary,#969ca8); font-size: 13px; }
+
+.agent-job-tabs{padding:8px 16px;display:grid;gap:6px}.agent-job-tabs>div{display:flex;gap:6px;overflow:auto}.agent-job-tabs button{flex-shrink:0}.agent-job-tabs button[aria-pressed="true"]{outline:1px solid var(--accent)}.agent-job-tabs p{margin:0;display:flex;gap:10px;align-items:center}
+
+.agent-groups-panel{position:absolute;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:24px;display:flex;flex-direction:column;gap:16px}.agent-groups-panel>header,.agent-groups-panel>nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.agent-groups-panel>header{justify-content:space-between}.agent-groups-panel .agent-work-field{max-width:900px}.agent-groups-panel input:not([type="checkbox"]):not([type="radio"]),.agent-groups-panel textarea,.agent-groups-panel select{width:100%}
+
+.agent-work-field select{min-height:40px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit}.agent-work-actions{flex-wrap:wrap}

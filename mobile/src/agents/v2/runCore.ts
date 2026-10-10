@@ -18,6 +18,7 @@ export interface RunAction {
   receipt?: { status: string; providerResourceId?: string | null; summary?: string | null } | null;
 }
 export interface Run {
+  job?: import('./jobsModel').JobMetadata;
   outputs?: import('./outputModel').AgentOutput[];
   id: string; agentId: string; conversationId: string; conversationSeq: number; idempotencyKey: string;
   state: RunState; stateReason: string | null; terminal: boolean; prompt: string; answer: string | null;
@@ -31,7 +32,7 @@ export interface RunEvent { seq: number; type: string; payload: Record<string, a
 export interface EventsPage { events: RunEvent[]; nextCursor: number; state: string; terminal: boolean; latestSeq: number }
 /** An uploaded file, named by the id `POST /attachments` returned. */
 export interface AttachmentRef { id: string }
-export interface RunBody { agentId: string; idempotencyKey: string; prompt: string; attachments: AttachmentRef[]; runtimeId?: string }
+export interface RunBody { agentId: string; idempotencyKey: string; prompt: string; attachments: AttachmentRef[]; runtimeId?: string; executionMode?: 'independent' | 'ordered' }
 export interface RunFeed {
   cursor: number; text: string; final: string | null; status: string | null; signin: Record<string, any> | null;
   /** The tool call in flight (from `tool.requested`), cleared by its result; `provider` comes from the event. */

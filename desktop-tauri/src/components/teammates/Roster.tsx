@@ -20,7 +20,7 @@ function teammateTime(value: string) {
 interface Props {
   rows: Teammate[]; selected: string | null; query: string; archived: boolean; hasArchived: boolean;
   loading: boolean; error: string; enabled: boolean; hasRoster: boolean; v2?: boolean; activity?: boolean;
-  onRefresh(): void; onActivity?(): void; onQuery(value: string): void; onArchive(): void; onOpen(agent: Teammate): void; onNew(): void; onSkills(): void;
+  onGroups?(): void; onRefresh(): void; onActivity?(): void; onQuery(value: string): void; onArchive(): void; onOpen(agent: Teammate): void; onNew(): void; onSkills(): void;
 }
 export function Roster(props: Props) {
   const input = useRef<HTMLInputElement>(null);
@@ -38,6 +38,7 @@ export function Roster(props: Props) {
     </div>
     <footer className="pstrip__footer">{(props.archived || props.hasArchived) && <button className="pstrip__row" onClick={props.onArchive}>{props.archived ? 'Back to active teammates' : 'Archived teammates'}</button>}
       {props.v2 && <button className={`pstrip__row ${props.activity ? 'pstrip__row--active' : ''}`} aria-pressed={props.activity} onClick={props.onActivity}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4" /></svg>Activity</button>}
+      {props.onGroups&&<button type="button" className="pstrip__row" onClick={props.onGroups}>Agent groups</button>}
       <button className="pstrip__row" onClick={props.onSkills}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4zm16 0h-4a3 3 0 0 0-3 3m0 14a4 4 0 0 1 4-3h3z" /></svg>Skills</button>
       <ReportProblemButton />
       <button className="pstrip__row" onClick={() => useWorkspaceStore.getState().openSettings()}><GearIcon size={16} /><span className="pstrip__name">Settings</span><kbd>{keyLabel('Mod+,')}</kbd></button></footer>

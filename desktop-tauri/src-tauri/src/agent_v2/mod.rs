@@ -15,6 +15,7 @@ pub mod commands;
 mod execute;
 #[cfg(test)]
 pub(crate) mod mock_http;
+mod pool;
 mod preflight;
 mod prompt;
 #[cfg(test)]

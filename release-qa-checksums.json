@@ -1,0 +1,30 @@
+{
+  "baseline": "e587760059c220ad72c67317edbca9ad0ab6d52b",
+  "sources": [
+    {
+      "path": "scripts/materialize-secret-guard-fixtures.mjs",
+      "sha256": "da9b7739451f49bfd90c1d21ea187a61bf1c8eb739db7e82c8082e9c0f072f4a",
+      "bytes": 3675,
+      "exactBaselineMatch": true
+    },
+    {
+      "path": "docs/secret-guard-vectors.template.json",
+      "sha256": "894e8671a6656f7267b9ab06f53b596b6c613081b461e6d4c17ad509840e838c",
+      "bytes": 19895,
+      "exactBaselineMatch": true
+    },
+    {
+      "path": "docs/secret-guard-fixture-factories.json",
+      "sha256": "c206ca13fde4045e687d0d7859da722f006e2e07fcb69aebfcd04e058d9a0a53",
+      "bytes": 13915,
+      "exactBaselineMatch": true
+    }
+  ],
+  "materializedOutput": {
+    "path": "docs/secret-guard-vectors.json",
+    "sha256": "0a6023246fbfffd9edc4741da42455fe462e2827ebc5a2667053f3843e8d22b3",
+    "archived": false
+  },
+  "checkCommand": "node scripts/materialize-secret-guard-fixtures.mjs --check",
+  "checkPassed": true
+}

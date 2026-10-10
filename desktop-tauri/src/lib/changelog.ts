@@ -1,5 +1,7 @@
+import { RELEASE_0829 } from "./changelogRelease0829.ts";
 import { RELEASE_0827 } from "./changelogRelease0827.ts";
 export { formatDate } from "./changelogDate.ts";
+import { RELEASE_0828 } from './changelogRelease0828.ts';
 import { RELEASE_0826 } from './changelogRelease0826.ts';
 import { RELEASE_0824 } from "./changelogRelease0824.ts";
 import { RELEASE_0812 } from "./changelogRelease0812.ts";
@@ -23,6 +25,8 @@ import type { ChangelogEntry } from "./changelogTypes.ts";
 export type { ChangelogEntry, ChangelogSection } from "./changelogTypes.ts";
 
 export const CHANGELOG: ChangelogEntry[] = [
+  RELEASE_0829,
+  RELEASE_0828,
   RELEASE_0827,
   RELEASE_0826,
   RELEASE_0824,

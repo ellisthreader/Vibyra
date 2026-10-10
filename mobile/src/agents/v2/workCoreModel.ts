@@ -1,4 +1,4 @@
-export interface WorkRuntime { accountLabel?:string; id?: string; bindingId?: string; executionTarget?: 'local'|'cloud'; provider?: string; accountId?: string; accountRef?: string; model?: string; effort?: string; computerName?: string }
+export interface WorkRuntime { coordination?:import('./workflowReview').CoordinationReview; accountLabel?:string; id?: string; bindingId?: string; executionTarget?: 'local'|'cloud'; provider?: string; accountId?: string; accountRef?: string; model?: string; effort?: string; computerName?: string }
 export interface WorkBase { id:string; agentId:string; title:string; revision:number; reason:string|null; runtimeId:string; runtime:WorkRuntime; expiresAt:string; createdAt:string; updatedAt:string }
 export interface WorkEvidence { runId:string; answer:string; outputIds:string[]; finishedAt:string }
 export interface GoalMilestone { key:string; title:string; prompt:string; successCriteria:string; dependsOn:string[]; status:'pending'|'running'|'delivered'|'blocked'; runId:string|null; evidence:WorkEvidence|null }

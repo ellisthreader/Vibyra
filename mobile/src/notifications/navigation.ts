@@ -7,6 +7,11 @@ export function subscribeNotificationNavigation(listener: Listener) {
     listeners.delete(listener);
   };
 }
+/** Open a run from outside a notification (a Live Activity tap): the same route a tapped notification takes. */
+export function routeToRun(destination: NotificationDestination) {
+  for (const listener of listeners) listener(destination);
+}
+
 /** The teammate a destination opens in Agent mode, or null for Work mode targets. */
 export function agentTarget(d: NotificationDestination): { id: string; runId?: string } | null {
   if (d.source === 'agent_run' && typeof d.agentId === 'string') return { id: d.agentId, runId: d.runId };

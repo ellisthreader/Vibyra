@@ -1,0 +1,6 @@
+import {useAgentJobs} from '../../../../../mobile/src/agents/v2/useAgentJobs';
+import {jobCapacity,queueReason,type JobsApi} from '../../../../../mobile/src/agents/v2/jobsModel';
+export function Jobs({api,agentId,active,disabled,onOpenRun}:{api:JobsApi;agentId?:string;active:boolean;disabled:boolean;onOpenRun?(id:string):void}){
+ const state=useAgentJobs(api,agentId,active);
+ return <section className="agent-work-core"><h3>Jobs</h3>{state.error&&<p role="alert">{state.error}</p>}{state.page&&<p className="profile-help">{jobCapacity(state.page.capacity)}</p>}<button type="button" onClick={()=>void state.refresh()}>Refresh jobs</button>{state.page?.runs.map(run=><article key={run.id} className="agent-work-card"><h4>{run.prompt}</h4><p>{run.state.replaceAll('_',' ')}{run.job?.queueReason?` · ${queueReason(run.job.queueReason)}`:''}</p>{run.stateReason&&<p>{run.stateReason}</p>}{run.answer&&<p style={{whiteSpace:'pre-wrap'}}>{run.answer}</p>}<div className="agent-work-actions">{onOpenRun&&<button type="button" onClick={()=>onOpenRun(run.id)}>Open task & receipts</button>}{!run.terminal&&<button type="button" disabled={disabled||state.busy} onClick={()=>void state.cancel(run.id)}>Cancel job</button>}</div></article>)}{state.page&&!state.page.runs.length&&<p>No jobs yet. Send a task from chat.</p>}</section>;
+}

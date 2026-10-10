@@ -36,7 +36,7 @@ impl Registered {
 pub fn capabilities(selection: &Selection) -> Value {
     if selection.controlled_tools() {
         json!({"controlledTools": true, "adapter": "claude-stream-json", "brokerOnly": true,
-            "interrupt": true, "taskSteering": true, "pinnedSkillsV1": true, "preflight": "initialize+mcp_status", "computerTools": true,
+            "interrupt": true, "taskSteering": true, "pinnedSkillsV1": true, "parallelJobsV1": true, "workerSlots": 3, "preflight": "initialize+mcp_status", "computerTools": true,
             "browserTools": crate::agent_v2_browser::available(), "localMcp": true})
     } else {
         // Codex needs the code-mode JS host for any tool; Gemini is untested.

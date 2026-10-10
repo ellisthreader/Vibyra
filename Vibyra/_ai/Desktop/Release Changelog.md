@@ -1,3 +1,37 @@
+## 0.8.29 — 9 October 2026 (combined Stage 5 and Cloud audit candidate, build98)
+
+Preserves installed0.8.28/build97 independent jobs, groups, reviewed workflows and
+owner evidence review. Retains Cloud management while the approved phone uses
+Cloud, VM-key resealing retries, selected-repository read-only access and the
+verified Windows/native, Linux iterator and build-tooling repairs. Art:
+`public/releases/0.8.29.svg`. This isolated candidate is not installed, notarized
+or publicly distributed; full same-source CI and physical acceptance remain gates.
+
+## 0.8.28 — 2026-10-09
+
+Stage 5 candidate, Mac build 97: independent jobs, reviewed group workflows, explicit shared context and evidence-based final review. Preserves the installed 0.8.26/build95 source; reserves 0.8.27/build96 for concurrent peer work. Candidate validation is ongoing; not yet installed or published.
+
+## 0.8.27 — 9 October 2026 (Cloud audit candidate, build96)
+
+Cloud account controls remain available while the approved phone uses Cloud.
+Login retries reseal for the current VM key; selected-repository GitHub access
+remains read-only. Exact-source four-platform CI passed; this candidate was not
+installed over the newer Stage5 build97. Art: `public/releases/0.8.27.svg`.
+
+## 0.8.26 — 8 October 2026 (Stage 4 local Mac candidate, build95)
+
+Adds reviewed ongoing goals and exact follow-ups, chat-created skill/routine drafts,
+relevant notifications and daily summaries, opt-in read-only GitHub discovery linked
+to an explicitly selected goal, and starters matched to stated interests/read access.
+Goal completion needs owner evidence review; discovery never changes goal progress.
+Runtime/account selection and existing grants remain pinned to reviewed work.
+
+This entry records the prepared local release scope, not public distribution.
+Backend fixtures, PostgreSQL races, protocol tests and native test-data acceptance
+have separate receipts under `output/agent-stage4-20261008/`. Signed installation,
+real provider execution and physical locked-phone push receipt are separate gates.
+No public updater feed or signing key is changed. Art: `public/releases/0.8.26.svg`.
+
 ## 0.8.24 — 8 October 2026 (combined Cloud audit release candidate, Mac build94)
 
 Preserves the exact installed Stage3 build93 Cloud agent allowance review, bounded
@@ -9,37 +43,6 @@ is a read-only pilot, with repository writes disabled. Art: `public/releases/0.8
 
 This private source candidate is not a public release. Exact-source signed CI,
 notarization, installation and physical provider acceptance require separate receipts.
-
-## 0.8.27 — 8 October 2026 (Cloud audit release candidate, build96)
-
-Preserves installed Stage4 ongoing-work features and the Cloud-owned account
-controls. An existing approved Cloud connection keeps Mac Allow available while
-its only phone uses Cloud; new setup still needs a live approved phone. Uploads
-bind the login to the accepted VM key and reseal after bounded key/sequence retries.
-Selected-repository GitHub App access remains read only, without personal tokens.
-
-Portable native path/process fixtures and managed-worktree discard are corrected.
-Final notarized updater signing checks immutable CI originals, code, entitlements,
-resources and canonical archive headers before exposing the existing signing key.
-Exact-source CI, Apple acceptance, installation and real physical Cloud provider
-work remain separate pending gates; no public release is claimed by this entry.
-
-## 0.8.26 — 8 October 2026 (Stage 4 local Mac release, build95)
-
-Adds reviewed ongoing goals and exact follow-ups, chat-created skill/routine drafts,
-relevant notifications and daily summaries, opt-in read-only GitHub discovery linked
-to an explicitly selected goal, and starters matched to stated interests/read access.
-Goal completion needs owner evidence review; discovery never changes goal progress.
-Runtime/account selection and existing grants remain pinned to reviewed work.
-
-Signed and activated locally with the owner account/workspace retained. Developer ID,
-secure timestamps, hardened runtime and the helper sandbox verify. Native Work UI
-reads pass; 1,022 Rust and 708 frontend tests pass, with existing live/fixture skips
-recorded separately. Receipts are under `output/agent-stage4-20261008/mac/`.
-This local build is not notarized or publicly distributed. Real provider execution
-and physical locked-phone push delivery remain separate from test-data acceptance.
-No public updater feed or signing key is changed. Art: `public/releases/0.8.26.svg`.
-
 
 ## 0.8.23 — 8 October 2026 (Cloud audit release candidate)
 

@@ -47,6 +47,7 @@ impl Backend for LiveBackend {
     }
 }
 
+#[derive(Clone)]
 pub struct Account {
     pub program: PathBuf,
     /// `CLAUDE_CONFIG_DIR` for a non-default account.
