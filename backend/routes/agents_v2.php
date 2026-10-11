@@ -23,6 +23,7 @@ Route::prefix('api/agents/v2')->middleware([RequireApprovedMarket::class])->grou
         Route::post('connections', [ConnectionFlowsController::class, 'store'])->middleware('throttle:10,1,agent-v2-connect');
         Route::post('connections/{provider}/start', [ConnectionFlowsController::class, 'start'])
             ->where('provider', '[a-z][a-z0-9_]{1,39}')->middleware('throttle:10,1,agent-v2-connect');
+        Route::post('connections/flows/{flow}/claim', [ConnectionFlowsController::class, 'claim'])->whereUuid('flow');
         Route::get('connections/flows/{flow}', [ConnectionFlowsController::class, 'flow'])->whereUuid('flow');
         Route::delete('connections/{id}', [ConnectionsController::class, 'destroy'])->whereUuid('id')
             ->withoutMiddleware(RequireApprovedMarket::class);

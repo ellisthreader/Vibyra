@@ -41,8 +41,8 @@ class ChatConnectorsController extends Controller
     public function start(Request $request, string $integration, ConnectorOAuth $oauth)
     {
         $user = $this->available($request, $integration);
-        $data = $request->validate(['returnUrl' => 'nullable|string|max:500']);
-        return $this->json($oauth->start($user->id, $integration, $data['returnUrl'] ?? null));
+        $data = $request->validate(['returnUrl' => 'nullable|string|max:500', 'appReturn' => 'nullable|in:loopback-v1']);
+        return $this->json($oauth->start($user->id, $integration, $data['returnUrl'] ?? null, 'install', $data['appReturn'] ?? null));
     }
 
     /** How a sign-in ended, with the catalogue as it now stands, for the account that started it. */
@@ -64,19 +64,22 @@ class ChatConnectorsController extends Controller
         [$flow, $grant] = $oauth->finish($integration, (string) $request->query('state', ''),
             (string) $request->query('code', ''), (string) $request->query('error', ''), OAuthFlows::presented($request));
         if ($flow && $grant !== null) {
-            try {
-                // Agent V2 "add another account" keeps the ordinary-chat install untouched.
-                if (in_array($flow['mode'] ?? 'install', ['add_account', 'channel_owner', 'channel_bot'], true)) $oauth->succeed($flow, ['connectionId' =>
-                    app(\App\Services\AgentRuns\Connections\Connections::class)->addAccount((int) $flow['userId'], $integration, $grant['access'], $grant)->id]);
-                else { $installs->connect((int) $flow['userId'], $integration, $grant['access'], $grant); $oauth->succeed($flow); }
-            }
-            catch (\Throwable $e) { $oauth->fail($flow, 'The connection could not be saved. Please try again.'); }
+            $completion = app(\App\Services\ChatConnectors\ConnectorAppReturn::class);
+            if (\App\Services\ChatConnectors\ConnectorAppReturn::enabled($flow)) $completion->hold($flow, $grant);
+            else $completion->save($flow, $grant);
         }
         $name = $oauth->name($integration);
-        if ($flow && ($to = $oauth->returnTo($flow))) return redirect()->away($to);
+        if ($flow && ($to = $oauth->returnTo($flow))) return redirect()->away($to)->header('Cache-Control', 'no-store')->header('Referrer-Policy', 'no-referrer');
         $connected = $flow && $oauth->status((string) $flow['flowId'], (int) $flow['userId'])['status'] === 'connected';
         return $connected ? $this->page($name.' is connected', 'You can close this page and go back to Vibyra.')
             : $this->page($name.' was not connected', 'You can close this page and try again in Vibyra.');
+    }
+
+    public function claim(Request $request, string $flow, \App\Services\ChatConnectors\ConnectorAppReturn $returns)
+    {
+        $user = $this->authenticatedUser($request, allowGuest: true);
+        $data = $request->validate(['returnCode' => 'required|string|regex:/\A[a-f0-9]{64}\z/']);
+        return $this->json($returns->claim($flow, $user->id, $data['returnCode']));
     }
 
     private function page(string $title, string $detail)

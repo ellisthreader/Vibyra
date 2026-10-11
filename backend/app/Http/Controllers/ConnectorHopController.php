@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Cookie;
 
 /**
+ * Native loopback-v1 flows redirect immediately: their credentials remain encrypted and unusable until
+ * the initiating app claims with the browser-only return proof. Legacy clients retain confirmation below.
  * The first stop of every connect flow (connector, v2 add-account, remote MCP, Composio). `start` gives the app this
  * link instead of the provider's page. Opening it (GET) only shows a first-party page that names the provider and the
  * masked Vibyra account the sign-in will be attached to: it sets no cookie and redirects nowhere, so a link that was
@@ -25,6 +27,8 @@ final class ConnectorHopController extends Controller
     public function show(Request $request, string $flow, OAuthFlows $flows)
     {
         $hop = $flows->peek($flow);
+        // Only proof-return flows can skip confirmation. Their grants remain unusable until app claim.
+        if ($hop && ($hop['automatic'] ?? false)) return $this->forward($request, $flow, $flows);
         return $hop === null ? $this->gone($request) : $this->page($request, 200, ['hop' => $hop, 'title' => 'Connect '.$hop['provider'], 'detail' => '']);
     }
 
@@ -41,6 +45,11 @@ final class ConnectorHopController extends Controller
             return $done === null ? $this->gone($request) : $this->finished($done['flow'], $done['provider']);
         }
         if ($choice !== 'continue') return $this->show($request, $flow, $flows);
+        return $this->forward($request, $flow, $flows);
+    }
+
+    private function forward(Request $request, string $flow, OAuthFlows $flows)
+    {
         $hop = $flows->open($flow);
         if ($hop === null) return $this->gone($request);
         $cookie = new Cookie($hop['cookie'], $hop['nonce'], time() + OAuthFlows::MINUTES * 60 + 30, $hop['path'], null,

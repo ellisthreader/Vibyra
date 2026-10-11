@@ -37,10 +37,10 @@ class ConnectorOAuth
      * show the account picker and may request the provider's wider `agent_scope`
      * (and Slack's `agent_user_scope`, a user token that can search messages).
      */
-    public function start(int $userId, string $slug, ?string $returnUrl, string $mode = 'install'): array
+    public function start(int $userId, string $slug, ?string $returnUrl, string $mode = 'install', ?string $appReturn = null): array
     {
         abort_unless($this->configured($slug), 422, $this->name($slug).' sign-in is not available right now. Please try again later.');
-        $flow = $this->flows->begin($userId, $returnUrl, ['slug' => $slug, 'mode' => $mode]);
+        $flow = $this->flows->begin($userId, $returnUrl, ['slug' => $slug, 'mode' => $mode, ...ConnectorAppReturn::options($returnUrl, $appReturn)]);
         $settings = $this->settings($slug);
         $agent = $mode === 'add_account';
         $query = array_filter([
@@ -65,7 +65,7 @@ class ConnectorOAuth
             $query['code_challenge'] = OAuthFlows::challenge($flow['verifier']);
         }
         // The app opens Vibyra's own link, never the provider's page: that hop binds this browser (OAuthFlows::entry).
-        return ['flowId' => $flow['flowId'], 'url' => $this->flows->entry($flow, $settings['authorize_url'].'?'.http_build_query($query),
+        return ['flowId' => $flow['flowId'], 'appReturn' => $appReturn === 'loopback-v1', 'url' => $this->flows->entry($flow, $settings['authorize_url'].'?'.http_build_query($query),
             parse_url($this->redirectUri($slug), PHP_URL_PATH), $this->name($slug), $this->callbackBaseUrl($slug))];
     }
 

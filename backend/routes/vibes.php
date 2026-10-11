@@ -59,6 +59,7 @@ Route::post('api/vibes/apple-notifications', \App\Http\Controllers\VibesAppleNot
 Route::prefix('api/connectors')->middleware('throttle:60,1,connectors-api')->group(function () {
     Route::get('/', [ChatConnectorsController::class, 'index']);
     Route::get('callback/{integration}', [ChatConnectorsController::class, 'callback']);
+    Route::post('flows/{flow}/claim', [ChatConnectorsController::class, 'claim'])->whereUuid('flow');
     Route::get('flows/{flow}', [ChatConnectorsController::class, 'flow']);
     // First stop of every connect flow. GET only shows "Connect <provider> to the Vibyra account <masked>?" (no cookie, no
     // redirect); the POST (session CSRF token) binds the browser with the nonce cookie and goes on to the provider, or cancels. Public; single use.

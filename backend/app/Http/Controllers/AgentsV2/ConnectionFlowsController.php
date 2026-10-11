@@ -24,8 +24,15 @@ final class ConnectionFlowsController extends Controller
         $user = $this->v2User($request);
         $this->available($provider);
         if (!$oauth->configured($provider)) ApiError::throw(409, 'oauth_unavailable', 'Sign-in for this service is not set up yet.');
-        $data = $request->validate(['returnUrl' => 'nullable|string|max:500']);
-        return $this->json($oauth->start($user->id, $provider, $data['returnUrl'] ?? null, 'add_account'));
+        $data = $request->validate(['returnUrl' => 'nullable|string|max:500', 'appReturn' => 'nullable|in:loopback-v1']);
+        return $this->json($oauth->start($user->id, $provider, $data['returnUrl'] ?? null, 'add_account', $data['appReturn'] ?? null));
+    }
+
+    public function claim(Request $request, string $flow, \App\Services\ChatConnectors\ConnectorAppReturn $returns)
+    {
+        $user = $this->v2User($request);
+        $data = $request->validate(['returnCode' => 'required|string|regex:/\A[a-f0-9]{64}\z/']);
+        return $this->json($returns->claim($flow, $user->id, $data['returnCode']));
     }
 
     /** How the sign-in ended; `connected` carries the connection it created or refreshed. */

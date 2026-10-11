@@ -28,12 +28,13 @@ final class OAuthFlows
         $verifier = Str::random(64);
         $nonce = Str::random(48);
         Cache::put($this->stateKey($state), [...$extra, 'userId' => $userId, 'flowId' => $flowId, 'verifier' => $verifier,
-            'nonce' => hash('sha256', $nonce), 'return' => $this->safeReturn($returnUrl)], now()->addMinutes(self::MINUTES));
+            'nonce' => hash('sha256', $nonce), 'return' => $this->safeReturn($returnUrl, $extra)], now()->addMinutes(self::MINUTES));
         $this->record($flowId, $userId, ['status' => 'pending']);
         return ['flowId' => $flowId, 'state' => $state, 'verifier' => $verifier, 'nonce' => $nonce];
     }
 
     /**
+     * Native proof-return flows pass through automatically; ordinary/legacy flows keep confirmation.
      * The link `start` hands the app instead of the provider's page: Vibyra's own hop. Opening it only shows a page
      * that names the provider and the (masked) Vibyra account; pressing Continue there sets the binding cookie (scoped
      * to this flow's callback path) and sends the browser on. The callback refuses any browser that did not press it,
@@ -41,8 +42,10 @@ final class OAuthFlows
      */
     public function entry(array $begun, string $providerUrl, string $callbackPath, string $provider, ?string $baseUrl = null): string
     {
+        $state = Cache::get($this->stateKey($begun['state']));
+        $automatic = is_array($state) && ConnectorAppReturn::enabled($state);
         $name = trim((string) preg_replace('/[\p{Cc}\p{Cf}]+/u', ' ', $provider)); // a server's own name: no control or bidi characters
-        Cache::put($this->hopKey($begun['flowId']), ['url' => $providerUrl, 'nonce' => $begun['nonce'], 'path' => $callbackPath,
+        Cache::put($this->hopKey($begun['flowId']), ['automatic' => $automatic, 'url' => $providerUrl, 'nonce' => $begun['nonce'], 'path' => $callbackPath,
             'cookie' => self::cookieName($begun['state']), 'state' => $begun['state'], 'provider' => Str::limit($name, 60, '…') ?: 'this service'],
             now()->addMinutes(self::MINUTES));
         return rtrim($baseUrl ?? (string) config('app.url'), '/').'/api/connectors/begin/'.$begun['flowId'];
@@ -54,7 +57,7 @@ final class OAuthFlows
         $hop = Cache::get($this->hopKey($flowId));
         $flow = is_array($hop) && is_string($hop['state'] ?? null) ? Cache::get($this->stateKey($hop['state'])) : null;
         if (!is_array($flow)) return null;
-        return ['provider' => (string) ($hop['provider'] ?? 'this service'),
+        return ['automatic' => (bool) ($hop['automatic'] ?? false), 'provider' => (string) ($hop['provider'] ?? 'this service'),
             'account' => AccountMask::for(User::query()->find((int) ($flow['userId'] ?? 0)))];
     }
 
@@ -136,16 +139,18 @@ final class OAuthFlows
         $return = $flow['return'] ?? null;
         if (!is_string($return) || $return === '') return null;
         $status = $this->status((string) $flow['flowId'], (int) $flow['userId'])['status'];
-        return $return.(str_contains($return, '?') ? '&' : '?').http_build_query(['flow' => $flow['flowId'], 'status' => $status]);
+        return $return.(str_contains($return, '?') ? '&' : '?').http_build_query(['flow' => $flow['flowId'], 'status' => $status,
+            ...(ConnectorAppReturn::enabled($flow) ? ['returnCode' => $flow['appReturnCode']] : [])]);
     }
 
-    /** Only the app's own link schemes: never a web page, so this cannot be used to bounce a browser anywhere. */
-    private function safeReturn(?string $returnUrl): ?string
+    /** Fixed app schemes, or an exact loopback return backed by the separate browser-proof claim protocol. */
+    private function safeReturn(?string $returnUrl, array $extra = []): ?string
     {
         if (!is_string($returnUrl) || $returnUrl === '' || strlen($returnUrl) > 500) return null;
         $scheme = strtolower((string) parse_url($returnUrl, PHP_URL_SCHEME));
         $parts = parse_url($returnUrl);
         if (!$parts || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) return null;
+        if (ConnectorAppReturn::enabled($extra) && ConnectorAppReturn::validReturn($returnUrl)) return $returnUrl;
         if ($returnUrl === 'vibyra://integrations/connected') return $returnUrl;
         return in_array($scheme, ['exp', 'exps'], true) && ($parts['path'] ?? '') === '/--/integrations/connected'
             && $this->developerHost((string) ($parts['host'] ?? '')) ? $returnUrl : null;
