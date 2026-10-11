@@ -99,6 +99,10 @@ class RunVibesTurn implements ShouldQueue
             $id = is_string($body['id'] ?? null) ? $body['id'] : null;
             DB::table('vibes_turns')->where('id', $t->id)->update(['generation_id' => $id]);
             $cost = $body['usage']['cost'] ?? null;
+            // Read and written tokens, summed over the turn's steps, for the line in Usage history.
+            $in = $body['usage']['prompt_tokens'] ?? null; $out = $body['usage']['completion_tokens'] ?? null;
+            if (is_int($in) && is_int($out) && $in >= 0 && $out >= 0) DB::table('vibes_turns')->where('id', $t->id)->update([
+                'input_tokens' => DB::raw('COALESCE(input_tokens, 0) + '.$in), 'output_tokens' => DB::raw('COALESCE(output_tokens, 0) + '.$out)]);
             $text = $body['choices'][0]['message']['content'] ?? null;
             $text = is_string($text) && trim($text) !== '' ? $text : null;
             // Memory lines are for this server, not the person: taken out of every reply,

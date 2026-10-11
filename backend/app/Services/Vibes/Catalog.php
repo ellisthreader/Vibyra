@@ -148,6 +148,12 @@ class Catalog
         return ucfirst(str_replace('-', ' ', $vendor));
     }
 
+    /** A model's short name from a catalogue snapshot (`OpenRouterPricingCatalog::all()`), for Usage history. */
+    public function displayName(string $id, array $models): string
+    {
+        return $this->name($models[$id] ?? null, $id);
+    }
+
     private function name(mixed $model, string $id): string
     {
         $name = is_array($model) && is_string($model['name'] ?? null) ? trim($model['name']) : '';

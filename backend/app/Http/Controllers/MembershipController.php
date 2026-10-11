@@ -40,11 +40,10 @@ class MembershipController extends Controller
     public function activity(Request $r)
     {
         $u = $this->account($r);
-        $d = $r->validate(['before' => 'sometimes|integer|min:1']);
-        $rows = DB::table('vibes_ledger')->where('user_id', $u->id)
-            ->when(isset($d['before']), fn ($q) => $q->where('id', '<', $d['before']))->orderByDesc('id')->limit(51)->get();
-        return response()->json(['items' => $rows->take(50)->map(fn ($l) => ['id' => (string) $l->id,
-            'kind' => $l->kind, 'deltaUnits' => (string) $l->delta, 'unitScale' => $l->unit_scale,
-            'createdAt' => $l->created_at])->values(), 'next' => $rows->count() > 50 ? (string) $rows[49]->id : null]);
+        $d = $r->validate(['before' => 'sometimes|integer|min:1', 'view' => 'sometimes|in:usage']);
+        // `view=usage` folds each spend into one entry; without it the raw ledger is unchanged,
+        // with each row's `detail` added for clients that read it.
+        return response()->json(app(\App\Services\Vibes\UsageActivity::class)
+            ->page($u->id, isset($d['before']) ? (int) $d['before'] : null, ($d['view'] ?? null) === 'usage'));
     }
 }
