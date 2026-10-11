@@ -142,7 +142,7 @@ class Quotes {
         }
         if ($partial) {
             $available = $paid + ($selected['trial'] ? $trialUsable : 0);
-            abort_if($available <= 0, 402, 'You’re out of usable tokens for this model. Add tokens or upgrade to continue.');
+            if ($available <= 0) throw new OutOfTokens('You’re out of usable tokens for this model. Add tokens or upgrade to continue.', 'balance');
             $limited = $available <= $max;
             $max = min($max, $available);
             $request['vibyraBalanceLimited'] = $limited;

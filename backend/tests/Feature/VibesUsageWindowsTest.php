@@ -98,7 +98,13 @@ class VibesUsageWindowsTest extends TestCase
             $this->fail('The session window should have refused this turn.');
         } catch (HttpException $e) {
             $this->assertSame(429, $e->getStatusCode());
-            $this->assertStringContainsString('5-hour Vibes limit', $e->getMessage());
+            $this->assertStringContainsString('5-hour pace limit', $e->getMessage());
+            $this->assertInstanceOf(\App\Services\Vibes\PaceRefusal::class, $e);
+            $json = $e->render()->getData(true);
+            $this->assertSame(['ok' => false, 'code' => 'pace_limit', 'window' => 'session'], array_intersect_key($json, array_flip(['ok', 'code', 'window'])));
+            $this->assertSame($json['error'], $json['message']);
+            $this->assertNotNull($json['resetsAt']);
+            $this->assertNotFalse(strtotime($json['resetsAt']));
             $this->assertStringContainsString('4 hours', $e->getMessage());
         }
     }
@@ -127,7 +133,7 @@ class VibesUsageWindowsTest extends TestCase
             $this->fail('The week window should have refused this turn.');
         } catch (HttpException $e) {
             $this->assertSame(429, $e->getStatusCode());
-            $this->assertStringContainsString('7-day Vibes limit', $e->getMessage());
+            $this->assertStringContainsString('7-day pace limit', $e->getMessage());
             $this->assertStringContainsString('4 days', $e->getMessage());
         }
     }
@@ -147,6 +153,21 @@ class VibesUsageWindowsTest extends TestCase
         $this->assertSame(60, $limits['session']['limit']);
     }
 
+    public function test_an_empty_balance_refuses_a_send_with_the_out_of_tokens_code_over_http(): void
+    {
+        $user = $this->account();
+        $this->withToken($this->token);
+        $chat = (string) Str::uuid();
+        $this->postJson('/api/vibes/chats', ['id' => $chat, 'title' => 'Build a timer'])->assertOk();
+        $quote = $this->postJson('/api/vibes/quote', ['chatId' => $chat, 'text' => 'Build a timer', 'model' => 'auto'])->assertOk()->json();
+        DB::table('vibes_grants')->where('user_id', $user->id)->update(['remaining' => 0]);
+        $json = $this->postJson('/api/vibes/turns', ['id' => (string) Str::uuid(), 'quote' => $quote['quote']])
+            ->assertStatus(402)->assertJsonPath('ok', false)->assertJsonPath('code', 'out_of_tokens')->json();
+        $this->assertContains($json['reason'], ['balance', 'paid_model']);
+        $this->assertSame($json['error'], $json['message']);
+        $this->assertStringNotContainsString('Vibes', $json['message']);
+    }
+
     public function test_the_window_bounds_the_rate_a_send_may_spend_at_not_the_balance(): void
     {
         $user = $this->account();
@@ -160,7 +181,8 @@ class VibesUsageWindowsTest extends TestCase
         $this->spend($user, 1000, 10);
         $before = app(Wallet::class)->available($user->id);
         $this->postJson('/api/vibes/turns', ['id' => (string) Str::uuid(), 'quote' => $quote['quote']])
-            ->assertStatus(429)->assertJsonPath('message', fn ($said) => str_contains((string) $said, 'Vibes limit'));
+            ->assertStatus(429)->assertJsonPath('code', 'pace_limit')->assertJsonPath('ok', false)
+            ->assertJsonPath('message', fn ($said) => str_contains((string) $said, 'pace limit') && !str_contains((string) $said, 'Vibes'));
         $this->assertSame($before, app(Wallet::class)->available($user->id));
         $this->assertSame(0, DB::table('vibes_turns')->where('status', 'queued')->count());
     }

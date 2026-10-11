@@ -67,9 +67,9 @@ class UsageWindows
         if (\App\Services\Membership\Units::modern($userId)) return;
         $entitlements = $this->plans->for($plan);
         $this->enforce($userId, self::sessionStart(), self::sessionHours() * 60,
-            $entitlements['sessionCredits'], $credits, self::sessionHours().'-hour');
+            $entitlements['sessionCredits'], $credits, self::sessionHours().'-hour', 'session');
         $this->enforce($userId, self::weekStart(), self::weekDays() * 24 * 60,
-            $entitlements['weekCredits'], $credits, self::weekDays().'-day');
+            $entitlements['weekCredits'], $credits, self::weekDays().'-day', 'week');
     }
 
     private static function sessionStart(): CarbonInterface
@@ -82,7 +82,7 @@ class UsageWindows
         return now()->subDays(self::weekDays());
     }
 
-    private function enforce(int $userId, CarbonInterface $since, int $minutes, int $limit, int $credits, string $named): void
+    private function enforce(int $userId, CarbonInterface $since, int $minutes, int $limit, int $credits, string $named, string $key): void
     {
         $window = $this->measure($userId, $since, $minutes);
         if ($window['used'] + $credits <= $limit) return;
@@ -90,7 +90,8 @@ class UsageWindows
         // is the first moment any headroom returns. It is never null here: being
         // over the limit means something is in the window.
         $free = $window['resetsAt'] === null ? '' : ' More free up in about '.self::inWords(Carbon::parse($window['resetsAt'])).'.';
-        abort(429, 'Your '.$named.' Vibes limit is reached.'.$free);
+        throw new PaceRefusal('You have reached your '.$named.' pace limit.'.$free, ['window' => $key,
+            'resetsAt' => $window['resetsAt'] === null ? null : Carbon::parse($window['resetsAt'])->toIso8601String()]);
     }
 
     /**
