@@ -21,6 +21,7 @@ final class Connections
     {
         LegacyInstalls::sync($userId);
         return Connection::query()->where('user_id', $userId)->whereNull('revoked_at')
+            ->whereNotIn('provider', \App\Services\ChatConnectors\RetiredIntegrations::IDS)
             ->orderBy('created_at')->orderBy('id')->get()->all();
     }
 

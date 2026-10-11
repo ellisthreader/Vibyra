@@ -16,6 +16,13 @@ return [
     // Platform-wide daily ceiling on free-token spend, in micro-USD ($30).
     'free_daily_micro_limit' => (int) env('MEMBERSHIP_FREE_DAILY_MICRO_USD_LIMIT', 30000000),
     'version' => '2026-09-27',
+    'teams' => [
+        'billing_enabled' => (bool) env('MEMBERSHIP_TEAMS_BILLING_ENABLED', false),
+        'plan' => 'team_v2',
+        'stripe_price' => env('STRIPE_MEMBERSHIP_TEAM_SEAT'),
+        'seat_pence' => env('MEMBERSHIP_TEAM_SEAT_PENCE') === null ? null : (int) env('MEMBERSHIP_TEAM_SEAT_PENCE'),
+        'min_seats' => 2, 'max_seats' => 200,
+    ],
     'offers' => [
         'pro_monthly' => ['kind' => 'subscription', 'plan' => 'pro_v2', 'credits' => 300, 'pence' => 1999, 'interval' => 'month',
             'apple' => 'app.vibyra.membership.pro.monthly.v2', 'stripe' => env('STRIPE_MEMBERSHIP_PRO_MONTHLY')],

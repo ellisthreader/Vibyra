@@ -135,6 +135,7 @@ final class Executor
     public function finish(ToolAction $action, string $state, string $status, string $outcome, array $result,
         string $summary, array $confirmed = []): ToolAction
     {
+        if ($action->rule_id) $summary = mb_substr($summary, 0, 215).' · allowed by rule '.substr($action->rule_id, 0, 8);
         $resourceId = is_string($confirmed['resourceId'] ?? null) ? mb_substr($confirmed['resourceId'], 0, 255) : null;
         // F-09: no fragment, userinfo or token parameter reaches the receipt, the journal or the model, whichever provider sent it.
         $url = is_string($confirmed['url'] ?? null) ? self::capped(SafeUrl::clean($confirmed['url']), 500) : null;

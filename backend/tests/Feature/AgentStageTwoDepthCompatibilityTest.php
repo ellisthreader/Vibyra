@@ -50,15 +50,14 @@ final class AgentStageTwoDepthCompatibilityTest extends TestCase
         $this->assertStringNotContainsString(self::TOKEN, json_encode(Steering::actions($row)));
     }
 
-    public function test_local_outputs_and_delegation_share_the_manifest_cap(): void
+    public function test_local_outputs_and_current_provider_tools_share_the_manifest_cap(): void
     {
-        config(['agent_depth.delegation' => true, 'agents_v2.outputs_enabled' => true, 'agents_v2.max_tools' => 3]);
-        app(\App\Services\Agents\Teammates::class)->save($this->user->id, ['id' => (string) \Illuminate\Support\Str::uuid(),
-            'name' => 'Other', 'brief' => 'Help', 'avatar' => 'assistant', 'budget' => 10, 'integrations' => []]);
+        config(['agents_v2.outputs_enabled' => true, 'agents_v2.max_tools' => 3]);
         $connection = $this->gmailInstall('owner@example.com');
         $this->grant($connection);
         $run = $this->admit();
-        $manifest = app(Manifest::class)->for(Run::findOrFail($run['id']));
-        $this->assertSame(['save_output', 'read_output', 'delegate_task'], array_column($manifest['tools'], 'tool'));
+        $manifest = app(Manifest::class)->selection(Run::findOrFail($run['id']));
+        $this->assertSame(['gmail_search', 'save_output', 'read_output'], array_column($manifest['tools'], 'tool'));
+        $this->assertSame(['gmail_read'], array_column($manifest['dropped'], 'tool'));
     }
 }

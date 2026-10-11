@@ -77,7 +77,9 @@ final class CloudController extends Controller
             'provider' => 'required|in:claude', 'accountId' => 'required|string|max:128', 'model' => 'required|string|max:120',
             'effort' => 'sometimes|nullable|in:low,medium,high,xhigh,max', 'providerVersion' => 'sometimes|nullable|string|max:60',
             'capabilities.parallelJobsV1' => 'sometimes|boolean', 'capabilities.workerSlots' => 'sometimes|integer|in:3',
-            'capabilities.pinnedSkillsV1' => 'sometimes|boolean', 'capabilities.controlledTools' => 'required|accepted', 'capabilities.taskSteering' => 'required|accepted']);
+            'capabilities.pinnedSkillsV1' => 'sometimes|boolean', 'capabilities.controlledTools' => 'required|accepted', 'capabilities.taskSteering' => 'required|accepted',
+            'capabilities.browserTools' => 'sometimes|boolean', 'capabilities.cloudPrivateBrowserV1' => 'sometimes|boolean',
+            'capabilities.browserWorkflowsV1' => 'sometimes|boolean', 'capabilities.browserUploadsV1' => 'sometimes|boolean']);
         $w = $runtime->authenticate($workspace, (string) $r->bearerToken());
         return $runtime->withCurrent($w, function ($w) use ($d, $registration) {
             $this->computer($w);

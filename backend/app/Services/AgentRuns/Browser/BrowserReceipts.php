@@ -22,6 +22,7 @@ final class BrowserReceipts
     public function record(ToolAction $action, array $result, string $key): void
     {
         // A submit may already have sent the form: its receipt is judged separately and never answered with a refusal (F-10).
+        if ($action->tool === 'browser_upload') { app(\App\Services\AgentBrowser\UploadReceipts::class)->record($action, $result, $key); return; }
         if ($action->tool === 'browser_submit') { $this->submits->record($action, $result, $key); return; }
         abort_if(strlen(json_encode($result)) > (int) config('agents_v2_browser.max_receipt_bytes', 30000), 422, 'Browser receipt is too large.');
         $error = $result['error'] ?? null;
@@ -32,6 +33,7 @@ final class BrowserReceipts
             $this->finish($action, 'failed', ['error' => $error, 'outcome' => 'refused', 'reason' => $reason], mb_substr($error, 0, 255), $key);
             return;
         }
+        if ($action->tool === 'browser_download') $result = app(\App\Services\AgentBrowser\Files::class)->receipt($action, $result);
         $result = self::scrub($result);
         $url = $result['url'] ?? null;
         abort_unless(is_string($url) && strlen($url) <= 2048, 422, 'A browser receipt names the page URL.');

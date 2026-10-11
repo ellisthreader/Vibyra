@@ -76,13 +76,6 @@ class ProviderAccountService
         ], $request);
         $this->referrals->registerSignup($user, $referralCode);
 
-        if ($provider === 'microsoft') {
-            try {
-                $user->sendEmailVerificationNotification();
-            } catch (\Throwable) {
-                // A mail transport outage must not invalidate the provider session.
-            }
-        }
 
         return ['user' => $user->fresh() ?? $user, 'created' => true];
     }

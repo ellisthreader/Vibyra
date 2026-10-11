@@ -15,6 +15,7 @@ trait UserPayloads
 
     private function sessionPayload(Request $request, User $user): array
     {
+        \App\Services\Teams\Sso\Policy::assertMaySignIn($user, $request);
         if (method_exists($this, 'recordDailyLogin')) {
             $this->recordDailyLogin($user);
             $user = $user->fresh() ?? $user;

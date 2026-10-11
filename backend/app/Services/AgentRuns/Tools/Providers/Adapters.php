@@ -30,12 +30,6 @@ final class Adapters
         'google_drive' => DriveTools::class,
         'google_tasks' => TasksTools::class,
         'figma' => FigmaTools::class,
-        // Microsoft 365 wave (Stage 3 wave 2), all over Graph via GraphApi.
-        'outlook_mail' => OutlookMailTools::class,
-        'outlook_calendar' => OutlookCalendarTools::class,
-        'onedrive' => OneDriveTools::class,
-        'teams' => TeamsTools::class,
-        'sharepoint' => SharePointTools::class,
         // Mac folder grants (Phase 4); executed by the leased Mac, see AgentRuns\Computer.
         'computer' => \App\Services\AgentRuns\Computer\ComputerTools::class,
         // Teammate browser grants (Phase 7); executed by the leased Mac, see AgentRuns\Browser.

@@ -41,33 +41,39 @@ class AgentV2BrowserReceiptTest extends TestCase
             'destination' => 'https://shop.example.com/send', 'observed' => ['method' => 'POST', 'destination' => 'https://shop.example.com/send']], ...$over]);
     }
 
-    public function test_a_receipt_that_cannot_be_verified_after_a_real_submit_is_unknown_never_a_refusal(): void
+    public static function unverifiable(): array
     {
-        foreach ([
-            'wrong destination' => ['destination' => 'https://shop.example.com/other', 'observed' => ['method' => 'POST', 'destination' => 'https://shop.example.com/other']],
-            'final URL too long' => ['url' => 'https://shop.example.com/sent?'.str_repeat('a=b&', 700)],
-            'page outside the granted sites' => ['url' => 'https://evil.example.net/landing'],
-            'malformed fingerprint' => ['pageFingerprint' => 'not-a-hash'],
-            'huge receipt' => ['title' => str_repeat('x', 40000)],
-        ] as $why => $over) {
-            $submit = $this->dispatchedSubmit(md5($why));
-            $this->receipt($submit, $over)->assertOk()->assertJsonPath('action.state', 'unknown')->assertJsonPath('action.result.outcome', 'outcome_unknown');
-            $this->assertStringContainsString('Check the site', $this->getJson($this->runnerPath('/runs/'.$this->claimed['id'].'/actions/'.$submit['id']
-                .'?generation='.$this->claimed['generation']), $this->runnerHeaders())->json('action.result.error'), $why);
-        }
-        $this->assertSame(5, DB::table('agent_receipts')->where('status', 'unknown')->count());
+        return [
+            'wrong destination' => [['destination' => 'https://shop.example.com/other', 'observed' => ['method' => 'POST', 'destination' => 'https://shop.example.com/other']]],
+            'final URL too long' => [['url' => 'https://shop.example.com/sent?'.str_repeat('a=b&', 700)]],
+            'page outside the granted sites' => [['url' => 'https://evil.example.net/landing']],
+            'malformed fingerprint' => [['pageFingerprint' => 'not-a-hash']],
+            'huge receipt' => [['title' => str_repeat('x', 40000)]],
+        ];
     }
-
-    public function test_submitted_is_only_confirmed_by_the_request_the_mac_observed(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('unverifiable')]
+    public function test_a_receipt_that_cannot_be_verified_after_a_real_submit_is_unknown_never_a_refusal(array $over): void
     {
-        $missing = $this->dispatchedSubmit('a');
-        $this->receipt($missing, ['observed' => null])->assertOk()->assertJsonPath('action.state', 'unknown');
-        $wrongMethod = $this->dispatchedSubmit('b');
-        $this->receipt($wrongMethod, ['observed' => ['method' => 'GET', 'destination' => 'https://shop.example.com/send']])->assertOk()->assertJsonPath('action.state', 'unknown');
-        $elsewhere = $this->dispatchedSubmit('c');
-        $this->receipt($elsewhere, ['observed' => ['method' => 'POST', 'destination' => 'https://shop.example.com/else']])->assertOk()->assertJsonPath('action.state', 'unknown');
-        $ok = $this->dispatchedSubmit('d');
-        $this->receipt($ok)->assertOk()->assertJsonPath('action.state', 'completed')->assertJsonPath('action.receipt.status', 'confirmed');
+        $submit = $this->dispatchedSubmit('unverifiable');
+        $this->receipt($submit, $over)->assertOk()->assertJsonPath('action.state', 'unknown')->assertJsonPath('action.result.outcome', 'outcome_unknown');
+        $this->assertStringContainsString('Check the site', $this->getJson($this->runnerPath('/runs/'.$this->claimed['id'].'/actions/'.$submit['id']
+            .'?generation='.$this->claimed['generation']), $this->runnerHeaders())->json('action.result.error'));
+        $this->assertSame(1, DB::table('agent_receipts')->where('status', 'unknown')->count());
+    }
+    public static function observed(): array
+    {
+        return [
+            'missing' => [['observed' => null], 'unknown'],
+            'wrong method' => [['observed' => ['method' => 'GET', 'destination' => 'https://shop.example.com/send']], 'unknown'],
+            'elsewhere' => [['observed' => ['method' => 'POST', 'destination' => 'https://shop.example.com/else']], 'unknown'],
+            'exact' => [[], 'completed'],
+        ];
+    }
+    #[\PHPUnit\Framework\Attributes\DataProvider('observed')]
+    public function test_submitted_is_only_confirmed_by_the_request_the_mac_observed(array $over, string $state): void
+    {
+        $submit = $this->dispatchedSubmit('observed');
+        $this->receipt($submit, $over)->assertOk()->assertJsonPath('action.state', $state);
     }
 
     public function test_a_click_that_sent_nothing_is_a_definite_not_submitted_that_may_be_proposed_again(): void

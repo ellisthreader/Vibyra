@@ -95,6 +95,13 @@ final class TriggersController extends Controller
     {
         $raw = $request->getContent();
         $slack->verify($raw, (string) $request->header('X-Slack-Request-Timestamp', ''), (string) $request->header('X-Slack-Signature', ''));
+        if (config('agents_v2.channels_enabled') && \App\Services\AgentChannels\Gate::configured('slack')) {
+            $event = app(\App\Services\AgentChannels\Providers\SlackInbound::class)->verify($raw, (string) $request->header('X-Slack-Request-Timestamp', ''), (string) $request->header('X-Slack-Signature', ''));
+            if (isset($event['provider'])) {
+                $channel = app(\App\Services\AgentChannels\Intake::class)->accept($event);
+                if ($channel['channelHandled'] ?? false) return response()->json($channel);
+            }
+        }
         $answer = $slack->accept($raw);
         if (isset($answer['challenge'])) return response($answer['challenge'], 200)->header('Content-Type', 'text/plain');
         return response()->json($answer, 200);
@@ -115,7 +122,9 @@ final class TriggersController extends Controller
     public function capabilities(Request $request)
     {
         $on = app(Access::class)->allows($this->authenticatedUser($request)->id);
-        return $this->json(['enabled' => $on, 'routines' => $on, 'triggers' => $on,
+        return $this->json(['capabilities' => $on && config('agents_v2.capabilities_enabled') ? app(\App\Services\AgentCapabilities\Catalogue::class)->all() : [],
+            'installations' => $on ? app(\App\Services\AgentCapabilities\Installations::class)->list($this->authenticatedUser($request)->id) : [],
+            'enabled' => $on, 'routines' => $on, 'triggers' => $on,
             'triggerKinds' => $on ? array_values(array_filter(array_keys(TriggerKinds::KINDS), fn ($kind) => ($kind !== 'slack.mention' || (string) config('agents_v2.slack_signing_secret', '') !== '') && ($kind !== 'api.invoke' || ApiInvoke::enabled()))) : []]);
     }
 }

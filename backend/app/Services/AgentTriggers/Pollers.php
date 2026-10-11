@@ -66,6 +66,10 @@ final class Pollers
             if ($row = Connection::query()->whereKey($t->connection_id)->first()) $this->connections->markReconnect($row);
         } catch (ToolFailure $e) {
             $error = mb_substr($e->reason ?: $e->outcome, 0, 60);
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            $code = $e->getResponse()->getData(true)['code'] ?? '';
+            if (!str_starts_with($code, 'organisation_')) throw $e;
+            $error = $code;
         }
         FollowUpObservations::record($t, $authority, $complete && !$error, $now, is_int($windowStart) ? $windowStart : null);
         $t->forceFill(['polled_at' => $now, 'last_error' => $error])->save();
@@ -115,6 +119,7 @@ final class Pollers
         if (!$this->access->allows($t->user_id)) return 'agents_v2_unavailable';
         $c = Connection::query()->whereKey($t->connection_id)->where('user_id', $t->user_id)->whereNull('revoked_at')->first();
         if (!$c) return 'connection_revoked';
+        \App\Services\AgentOrganizations\Authority::discovery($t->agent_id, $t->user_id, $c->provider);
         if ($c->health !== 'healthy') return 'reconnect_required';
         $read = $t->kind === 'gmail.message' ? 'gmail_search' : 'google_calendar_list_events';
         $granted = collect($this->grants->active($t->user_id, $t->agent_id))

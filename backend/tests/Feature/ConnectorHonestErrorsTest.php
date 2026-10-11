@@ -10,7 +10,7 @@ use Tests\TestCase;
 /**
  * What a provider's refusal is worded as. Only a sign-in the provider no longer honours says "reconnect"; a missing
  * scope, an unshared page, a bot outside the channel or an admin who has not approved the app say that instead of
- * reading as an outage or an empty result. Also the Microsoft request shapes that used to fail outright.
+ * reading as an outage or an empty result. 
  */
 class ConnectorHonestErrorsTest extends TestCase
 {
@@ -66,15 +66,6 @@ class ConnectorHonestErrorsTest extends TestCase
         $this->assertStringContainsString('did not find that issue', $this->refused('linear', 'linear_issue', $issue, ['data' => ['issue' => null]]));
     }
 
-    public function test_microsoft_says_denied_missing_and_busy_instead_of_unreachable(): void
-    {
-        $search = ['query' => 'plan'];
-        $this->assertStringContainsString('admin has not approved', $this->refused('onedrive', 'onedrive_search', $search, ['error' => ['code' => 'accessDenied']], 403));
-        $this->assertStringContainsString('(accessDenied)', $this->refused('onedrive', 'onedrive_search', $search, ['error' => ['code' => 'accessDenied']], 403));
-        $this->assertStringContainsString('could not find that item', $this->refused('onedrive', 'onedrive_read', ['id' => 'ABC123'], ['error' => ['code' => 'itemNotFound']], 404));
-        $this->assertStringContainsString('rate-limiting', $this->refused('sharepoint', 'sharepoint_sites', $search, [], 429));
-    }
-
     public function test_google_names_a_disabled_api_and_a_missing_scope(): void
     {
         $disabled = ['error' => ['code' => 403, 'status' => 'PERMISSION_DENIED', 'details' => [['reason' => 'SERVICE_DISABLED']]]];
@@ -83,23 +74,4 @@ class ConnectorHonestErrorsTest extends TestCase
         $this->assertStringContainsString('Reconnect Google', $this->refused('gmail', 'gmail_search', ['query' => 'a'], $scope, 403));
     }
 
-    public function test_the_microsoft_requests_graph_used_to_reject(): void
-    {
-        Http::fake(['graph.microsoft.com/*' => Http::response(['value' => []])]);
-        $registry = app(Registry::class);
-        $registry->for('outlook_mail')->run('outlook_mail_search', ['query' => 'say "hi" now'], 't');
-        $registry->for('teams')->run('teams_chats', [], 't');
-        Http::assertSent(fn ($r) => str_contains($r->url(), '/me/messages') && substr_count((string) $r['$search'], '"') === 2);
-        Http::assertSent(fn ($r) => str_contains($r->url(), '/me/chats') && $r['$orderby'] === 'lastMessagePreview/createdDateTime desc');
-    }
-
-    public function test_a_personal_onedrive_download_link_is_trusted(): void
-    {
-        $link = 'https://my.microsoftpersonalcontent.com/personal/abc/_layouts/15/download.aspx?UniqueId=1&tempauth=x';
-        Http::fake(['graph.microsoft.com/*' => Http::response(['id' => 'i1', 'name' => 'n.txt', 'size' => 2, 'file' => ['mimeType' => 'text/plain'], '@microsoft.graph.downloadUrl' => $link]),
-            'my.microsoftpersonalcontent.com/*' => Http::response('hi')]);
-        $out = app(Registry::class)->for('onedrive')->run('onedrive_read', ['id' => 'i1'], 't');
-        $this->assertSame('hi', $out['result']['text']);
-        Http::assertSent(fn ($r) => str_contains($r->url(), 'microsoftpersonalcontent.com') && !$r->hasHeader('Authorization'));
-    }
 }

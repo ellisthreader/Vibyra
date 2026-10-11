@@ -9,6 +9,7 @@ final class TaskContext
     public static function forChat(object $chat): ?object
     {
         if (empty($chat->agent_id)) return null;
+        \App\Services\AgentOrganizations\Instances::personalOnly($chat->agent_id);
         abort_unless(config('agents.enabled'), 503, 'Teammate tasks are paused. Your history is still available.');
         $a = DB::table('agent_teammates')->where('id', $chat->agent_id)->where('user_id', $chat->user_id)->firstOrFail();
         abort_if($a->archived_at, 409, 'Restore this teammate to send it another task.');
@@ -68,6 +69,7 @@ final class TaskContext
 
     public static function validate(int $user, array $meta): void
     {
+        \App\Services\AgentOrganizations\Instances::personalOnly($meta['id'] ?? '');
         abort_unless(config('agents.enabled'), 409, 'Teammate tasks are paused.');
         $a = DB::table('agent_teammates')->where('id', $meta['id'] ?? '')->where('user_id', $user)->first();
         abort_unless($a && !$a->archived_at && (int) $a->revision === ($meta['revision'] ?? null), 409, 'This teammate or its access changed. Start a new task.');

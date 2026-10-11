@@ -179,11 +179,10 @@ class AgentModelQuoteTest extends TestCase
         $this->assertNotContains('github_list_repositories', $names);
     }
 
-    public function test_teammate_can_save_more_grants_than_one_turn_offers(): void
+    public function test_teammate_can_save_all_supported_grants(): void
     {
         $grants = ['github', 'stripe', 'figma', 'gmail', 'google_calendar', 'google_drive',
-            'outlook_mail', 'outlook_calendar', 'onedrive', 'teams', 'sharepoint',
-            'slack', 'notion', 'linear'];
+            'google_tasks', 'slack', 'notion', 'linear'];
         foreach ($grants as $slug) DB::table('vibes_integration_installs')->insert([
             'user_id' => $this->user, 'integration' => $slug,
             'credential' => Crypt::encryptString('fixture-token'), 'account_label' => 'Fixture',

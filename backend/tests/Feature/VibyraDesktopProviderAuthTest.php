@@ -113,72 +113,13 @@ class VibyraDesktopProviderAuthTest extends TestCase
             ->assertJsonPath('user.provider', 'apple');
     }
 
-    public function test_microsoft_website_oauth_creates_unverified_account_and_web_session(): void
+    public function test_retired_microsoft_sign_in_has_no_route_or_provider_configuration(): void
     {
-        Notification::fake();
-        $this->configureProvider('microsoft', 'microsoft-web-client');
-        $start = $this->postJson('/web-api/auth/provider/microsoft/start')->assertOk()->json();
-        $query = $this->authorizationQuery($start['authUrl']);
-        $this->assertSame('openid email profile', $query['scope']);
-        $this->assertSame('S256', $query['code_challenge_method']);
-
-        $tenant = '9188040d-6c67-4c5b-b112-36a304b66dad';
-        [$identityToken, $jwk] = $this->signedToken([
-            'iss' => "https://login.microsoftonline.com/{$tenant}/v2.0",
-            'tid' => $tenant,
-            'ver' => '2.0',
-            'aud' => 'microsoft-web-client',
-            'sub' => 'microsoft-user-1',
-            'preferred_username' => 'member@example.test',
-            'name' => 'Microsoft Member',
-            'nonce' => $query['nonce'],
-            'iat' => time(),
-            'exp' => time() + 300,
-        ]);
-        $jwk['issuer'] = 'https://login.microsoftonline.com/{tenantid}/v2.0';
-        $this->fakeProviderResponses('microsoft', $identityToken, $jwk);
-
-        $this->get('/api/auth/desktop/microsoft/callback?'.http_build_query([
-            'state' => $query['state'], 'code' => 'microsoft-code',
-        ]))->assertOk();
-        $this->getJson("/web-api/auth/provider/microsoft/status/{$start['flowId']}")
-            ->assertOk()
-            ->assertJsonPath('status', 'complete')
-            ->assertJsonPath('user.provider', 'microsoft')
-            ->assertJsonPath('user.emailVerified', false);
-        $this->assertAuthenticated();
-        $this->assertDatabaseHas('users', [
-            'email' => 'member@example.test', 'provider' => 'microsoft', 'email_verified_at' => null,
-        ]);
-        Notification::assertSentTo(User::where('email', 'member@example.test')->firstOrFail(), VibyraVerifyEmail::class);
-    }
-
-    public function test_microsoft_rejects_a_signing_key_for_another_tenant(): void
-    {
-        $this->configureProvider('microsoft', 'microsoft-web-client');
-        $start = $this->postJson('/web-api/auth/provider/microsoft/start')->assertOk()->json();
-        $query = $this->authorizationQuery($start['authUrl']);
-        $tenant = '9188040d-6c67-4c5b-b112-36a304b66dad';
-        [$identityToken, $jwk] = $this->signedToken([
-            'iss' => "https://login.microsoftonline.com/{$tenant}/v2.0",
-            'tid' => $tenant,
-            'ver' => '2.0',
-            'aud' => 'microsoft-web-client',
-            'sub' => 'microsoft-user-2',
-            'email' => 'wrong@example.test',
-            'nonce' => $query['nonce'],
-            'iat' => time(),
-            'exp' => time() + 300,
-        ]);
-        $jwk['issuer'] = 'https://login.microsoftonline.com/00000000-0000-0000-0000-000000000001/v2.0';
-        $this->fakeProviderResponses('microsoft', $identityToken, $jwk);
-
-        $this->get('/api/auth/desktop/microsoft/callback?'.http_build_query([
-            'state' => $query['state'], 'code' => 'microsoft-code',
-        ]))->assertStatus(400);
-        $this->getJson("/web-api/auth/provider/microsoft/status/{$start['flowId']}")
-            ->assertJsonPath('status', 'failed');
-        $this->assertDatabaseMissing('users', ['email' => 'wrong@example.test']);
+        $this->postJson('/web-api/auth/provider/microsoft/start')->assertStatus(405);
+        $this->postJson('/api/auth/desktop/microsoft/start', ['flowSecret' => str_repeat('s', 64)])->assertStatus(405);
+        $this->get('/api/auth/desktop/microsoft/callback?state=old&code=old')->assertStatus(405);
+        $this->assertFalse(app(\App\Services\Auth\DesktopProviderOAuthFlow::class)->isConfigured('microsoft'));
+        $this->assertNull(config('services.microsoft_desktop_oauth'));
     }
 
     public function test_desktop_oauth_status_is_one_time_and_expires_after_pickup(): void

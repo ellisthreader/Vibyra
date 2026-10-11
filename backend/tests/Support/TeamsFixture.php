@@ -12,7 +12,7 @@ trait TeamsFixture
 {
     protected function bootTeams(): void
     {
-        config(['teams.enabled' => true, 'platform.activity' => true, 'spend_caps.enabled' => true]);
+        config(['teams.enabled' => true, 'teams.member_caps_enabled' => true, 'platform.activity' => true, 'spend_caps.enabled' => true]);
         $this->app->instance(EndpointPolicy::class, new EndpointPolicy(fn () => ['93.184.216.34']));
     }
 

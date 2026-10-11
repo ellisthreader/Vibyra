@@ -31,13 +31,14 @@ class DesktopProviderOAuthFlow
     {
         $secret = trim((string) ($client['flowSecret'] ?? ''));
         if ($binding === null && (strlen($secret) < 32 || strlen($secret) > 256)) {
-            throw new ProviderIdentityException('Update Vibyra to continue with secure provider sign-in (flowSecret required).');
+            throw new ProviderIdentityException('Update Vibyra and try signing in again.');
         }
 
         return $this->create($provider, [
             'deviceName' => mb_substr(trim((string) ($client['deviceName'] ?? 'Vibyra Desktop')), 0, 120),
             'installId' => mb_substr(trim((string) ($client['installId'] ?? '')), 0, 128),
             'publicIp' => trim((string) ($client['publicIp'] ?? '')),
+            'countryCode' => $client['countryCode'] ?? null,
             'binding' => $binding !== null ? hash('sha256', $binding) : null,
             'secretHash' => $secret !== '' ? hash('sha256', $secret) : null,
             'startIp' => $startIp,
@@ -225,7 +226,7 @@ class DesktopProviderOAuthFlow
 
     private function settings(string $provider): array
     {
-        if (! in_array($provider, ['apple', 'google', 'microsoft'], true)) {
+        if (! in_array($provider, ['apple', 'google'], true)) {
             throw new ProviderIdentityException('Unsupported desktop sign-in provider.');
         }
 

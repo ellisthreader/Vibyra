@@ -7,6 +7,7 @@
  */
 return [
     'enabled' => (bool) env('AGENTS_V2_BROWSER_ENABLED', false),
+    'cloud_enabled' => (bool) env('AGENTS_V2_CLOUD_BROWSER_ENABLED', false),
     // Largest Mac receipt (snapshot/page text) the server stores for one browser action.
     'max_receipt_bytes' => 30000,
 ];

@@ -71,9 +71,9 @@ class TeamsSsoLoginTest extends TestCase
         $this->ssoSignIn('ada@acme.test', 'shared-sub')->assertRedirect('/account/team');
         $this->app['auth']->forgetGuards();
         $this->flushSession();
-        // Bob's email, Ada's subject: the bound identity wins, so it is Ada who signs in, not Bob.
-        $this->ssoSignIn('bob@acme.test', 'shared-sub')->assertRedirect('/account/team');
-        $this->assertSame('ada@acme.test', auth()->user()->email);
+        // A changed email cannot silently authenticate the previously bound account.
+        $this->assertSame('sso_identity', $this->errorOf($this->ssoSignIn('bob@acme.test', 'shared-sub')));
+        $this->assertGuest();
     }
 
     public function test_an_unverified_account_with_that_email_loses_its_old_password_and_sessions(): void

@@ -25,11 +25,6 @@ final class Relevance
         'google_drive' => [['google drive', 'gdrive', 'google docs', 'google sheets'], ['drive', 'doc', 'docs', 'document', 'spreadsheet', 'sheet']],
         'google_tasks' => [['google tasks'], ['task list', 'todo', 'to-do', 'todos', 'reminder']],
         'figma' => [['figma'], ['design', 'designs', 'mockup', 'frame']],
-        'outlook_mail' => [['outlook'], ['email', 'emails', 'mail', 'inbox', 'unread', 'reply', 'send']],
-        'outlook_calendar' => [['outlook calendar'], ['calendar', 'meeting', 'meetings', 'event', 'events', 'schedule', 'agenda']],
-        'onedrive' => [['onedrive', 'one drive'], ['file', 'files', 'document']],
-        'teams' => [['microsoft teams', 'ms teams'], ['channel', 'channels', 'teams chat']],
-        'sharepoint' => [['sharepoint'], ['site', 'intranet']],
         'computer' => [['my mac', 'my computer', 'workspace', 'project folder'], ['code', 'codebase', 'file', 'files', 'folder', 'test', 'tests', 'branch', 'commit', 'refactor', 'bug', 'fix']],
     ];
     private const TRIGGER_PROVIDERS = ['github.issue' => 'github', 'github.pull_request' => 'github',

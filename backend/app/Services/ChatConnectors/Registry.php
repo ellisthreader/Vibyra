@@ -2,7 +2,7 @@
 
 namespace App\Services\ChatConnectors;
 
-use App\Services\ChatConnectors\Connectors\{GithubConnector, StripeConnector, FigmaConnector, GmailConnector, GoogleCalendarConnector, GoogleDriveConnector, OutlookConnector, OutlookCalendarConnector, OneDriveConnector, TeamsConnector, SharePointConnector, GoogleTasksConnector, DeepWikiConnector, HackerNewsConnector, SlackConnector, NotionConnector, LinearConnector};
+use App\Services\ChatConnectors\Connectors\{GithubConnector, StripeConnector, FigmaConnector, GmailConnector, GoogleCalendarConnector, GoogleDriveConnector, GoogleTasksConnector, DeepWikiConnector, HackerNewsConnector, SlackConnector, NotionConnector, LinearConnector};
 
 /**
  * Routes a slug to its connector and a tool call back to the integration that owns it.
@@ -24,11 +24,6 @@ class Registry
         'gmail' => GmailConnector::class,
         'google_calendar' => GoogleCalendarConnector::class,
         'google_drive' => GoogleDriveConnector::class,
-        'outlook_mail' => OutlookConnector::class,
-        'outlook_calendar' => OutlookCalendarConnector::class,
-        'onedrive' => OneDriveConnector::class,
-        'teams' => TeamsConnector::class,
-        'sharepoint' => SharePointConnector::class,
         'google_tasks' => GoogleTasksConnector::class,
         'deepwiki' => DeepWikiConnector::class,
         'hackernews' => HackerNewsConnector::class,

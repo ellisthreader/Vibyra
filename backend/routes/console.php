@@ -48,6 +48,7 @@ Schedule::command('vibyra:agent-v2-routines')->everyMinute()->when(fn () => (boo
 Schedule::command('vibyra:agent-v2-sweep-dispatching')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
 // F-04: old run journals and attachment files age out; orphaned rows left by a deleted account are swept (daily, any flag state).
 Schedule::command('vibyra:agent-v2-retention')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
+Schedule::command('vibyra:agent-browser-prune')->everyMinute()->withoutOverlapping()->onOneServer();
 
 Schedule::command('vibyra:backup-attachments')->dailyAt('02:45')->withoutOverlapping(30)->onOneServer();
 
@@ -58,3 +59,9 @@ Schedule::command('vibyra:agent-cloud-wake')->everyMinute()->when(fn () => (bool
 Schedule::command('vibyra:agent-work')->everyMinute()->when(fn () => (bool) config('agents_v2.work_enabled'))->withoutOverlapping(5)->onOneServer();
 
 Schedule::command('vibyra:agent-coordination')->everyMinute()->when(fn () => (bool) config('agents_v2.coordination_enabled'))->withoutOverlapping(5)->onOneServer();
+
+Schedule::command('vibyra:agent-channels')->everyMinute()->when(fn()=>(bool)config('agents_v2.channels_enabled'))->withoutOverlapping(5)->onOneServer();
+
+// Revocation and retention still run when the rollout flag is switched off.
+Schedule::command('vibyra:agent-organisations')->everyMinute()->withoutOverlapping(5)->onOneServer();
+Schedule::command('vibyra:agent-organisations --retention')->dailyAt('03:40')->withoutOverlapping()->onOneServer();

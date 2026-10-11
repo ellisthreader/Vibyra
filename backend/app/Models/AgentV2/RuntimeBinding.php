@@ -12,7 +12,7 @@ final class RuntimeBinding extends Model
 
     protected $table = 'agent_runtime_bindings';
     protected $guarded = [];
-    protected $hidden = ['runner_key_hash'];
+    protected $hidden = ['runner_key_hash', 'browser_key_hash'];
 
     protected function casts(): array
     {

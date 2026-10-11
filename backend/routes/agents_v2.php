@@ -101,3 +101,12 @@ require __DIR__.'/agents_v2_cloud.php';
 require __DIR__.'/agents_v2_work.php';
 
 require __DIR__.'/agents_v2_coordination.php';
+
+require __DIR__.'/agents_v2_capabilities.php';
+
+require __DIR__.'/agents_v2_channels.php';
+
+require __DIR__.'/agents_v2_browser_workflows.php';
+
+require __DIR__.'/agents_v2_organisation.php';
+require __DIR__.'/agents_v2_rules.php';

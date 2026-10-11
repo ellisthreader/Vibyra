@@ -66,7 +66,7 @@ class ChatConnectorsController extends Controller
         if ($flow && $grant !== null) {
             try {
                 // Agent V2 "add another account" keeps the ordinary-chat install untouched.
-                if (($flow['mode'] ?? 'install') === 'add_account') $oauth->succeed($flow, ['connectionId' =>
+                if (in_array($flow['mode'] ?? 'install', ['add_account', 'channel_owner', 'channel_bot'], true)) $oauth->succeed($flow, ['connectionId' =>
                     app(\App\Services\AgentRuns\Connections\Connections::class)->addAccount((int) $flow['userId'], $integration, $grant['access'], $grant)->id]);
                 else { $installs->connect((int) $flow['userId'], $integration, $grant['access'], $grant); $oauth->succeed($flow); }
             }

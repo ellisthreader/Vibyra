@@ -23,7 +23,7 @@ final class RuntimesController extends Controller
             // Phase 4: the Mac can run computer tools (claim + receipt endpoints).
             'capabilities.computerTools' => 'sometimes|boolean',
             // Phase 7: the Mac can run browser tools in a separate profile (claim + receipt endpoints).
-            'capabilities.browserTools' => 'sometimes|boolean',
+            'capabilities.browserTools' => 'sometimes|boolean', 'capabilities.browserWorkflowsV1' => 'sometimes|boolean', 'capabilities.browserUploadsV1' => 'sometimes|boolean',
             'capabilities.taskSteering' => 'sometimes|boolean',
             // Roadmap Part 6: the Mac runs local MCP servers (claim + receipt endpoints).
             'capabilities.localMcp' => 'sometimes|boolean']);

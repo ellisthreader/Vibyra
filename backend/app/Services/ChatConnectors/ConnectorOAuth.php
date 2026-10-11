@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Services\ChatConnectors;
-
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
 
@@ -54,6 +52,11 @@ class ConnectorOAuth
             'prompt' => $agent && ($settings['prompt'] ?? '') === 'consent'
                 ? 'select_account consent' : (string) ($settings['prompt'] ?? ''),
         ], fn ($value) => $value !== '');
+        if ($slug === 'slack' && in_array($mode, ['channel_owner', 'channel_bot'], true)) {
+            unset($query['scope'], $query['user_scope']);
+            if ($mode === 'channel_owner') $query['user_scope'] = 'users:read';
+            else $query['scope'] = 'chat:write,app_mentions:read,im:history,users:read';
+        }
         foreach ((array) ($settings['authorize_params'] ?? []) as $key => $value) {
             if (is_string($key) && is_string($value)) $query[$key] = $value;
         }
@@ -78,6 +81,10 @@ class ConnectorOAuth
     {
         $flow = $this->flows->claim($state, $binding);
         if (!$flow || ($flow['slug'] ?? '') !== $slug) return [null, null];
+        if (RetiredIntegrations::contains($slug)) {
+            $this->fail($flow, 'This integration has been removed.');
+            return [$flow, null];
+        }
         if (!config('chat_connectors.enabled')) {
             $this->fail($flow, 'Integrations are temporarily unavailable.');
             return [$flow, null];
@@ -99,7 +106,7 @@ class ConnectorOAuth
             return [$flow, null];
         }
         // Slack returns a user token (the one that may search) under `authed_user`.
-        $root = ($flow['mode'] ?? '') === 'add_account' && !empty($settings['agent_user_scope'])
+        $root = (($flow['mode'] ?? '') === 'channel_owner' || (($flow['mode'] ?? '') === 'add_account' && !empty($settings['agent_user_scope'])))
             ? (string) ($settings['agent_token_root'] ?? 'authed_user').'.' : '';
         // The refresh token and lifetime are part of the grant. Reading only the
         // access token off this response is what used to make a Figma connection
@@ -191,6 +198,6 @@ class ConnectorOAuth
 
     private function settings(string $slug): array
     {
-        return (array) config('chat_connectors.catalogue.'.$slug.'.oauth', []);
+        return RetiredIntegrations::contains($slug) ? [] : (array) config('chat_connectors.catalogue.'.$slug.'.oauth', []);
     }
 }

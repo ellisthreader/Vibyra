@@ -19,7 +19,7 @@ class DesktopProviderTokenExchange
             'client_id' => $settings['client_id'] ?? '',
             'redirect_uri' => $settings['redirect_uri'] ?? '',
         ];
-        if ($provider === 'google' || $provider === 'microsoft') {
+        if ($provider === 'google') {
             $payload['code_verifier'] = $flow['verifier'] ?? '';
             if (! empty($settings['client_secret'])) {
                 $payload['client_secret'] = $settings['client_secret'];

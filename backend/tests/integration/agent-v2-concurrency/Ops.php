@@ -7,11 +7,13 @@ final class ConcOps
 {
     public static function run(string $op, array $a): array
     {
-        require_once __DIR__.'/CloudAgentOps.php';
-        require_once __DIR__.'/AgentWorkOps.php';
-        require_once __DIR__.'/CoordOps.php';
-        require_once __DIR__.'/SignalOps.php';
+        foreach (['CloudAgentOps', 'AgentWorkOps', 'CoordOps', 'ChannelOps', 'StageSixOps', 'SignalOps', 'OrganisationOps', 'RuleOps'] as $helper)
+            require_once __DIR__.'/'.$helper.'.php';
         return match ($op) {
+            'rules' => ConcRuleOps::run($a),
+            'organisation' => ConcOrganisationOps::run($a),
+            'stage6_authority' => ConcStageSixOps::run($a),
+            'channels' => ConcChannelOps::run($a),
             'coordination' => ConcCoordOps::run($a),
             'work_core' => ConcAgentWorkOps::run($a),
             'signals' => ConcSignalOps::run($a),
@@ -190,11 +192,9 @@ final class ConcOps
         } catch (Throwable $e) { return ['appended' => $n, 'stopped' => class_basename($e)]; }
         return ['appended' => $n, 'stopped' => null];
     }
-
     private static function accountDelete(array $a): array
     {
         usleep((int) ($a['delayMs'] ?? 0) * 1000);
         return ['deleted' => app(\App\Services\Account\AccountDeletion::class)->delete(\App\Models\User::query()->findOrFail($a['user']))];
     }
-
 }

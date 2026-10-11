@@ -16,7 +16,7 @@ use Tests\TestCase;
  */
 class AgentV2InsertRaceRegressionTest extends TestCase
 {
-    use RefreshDatabase, AgentV2Fixture, AgentV2ComputerFixture, AgentV2Routes, FakeMcpServer;
+    use RefreshDatabase, AgentV2Fixture, AgentV2ComputerFixture, AgentV2Routes, FakeMcpServer, \Tests\Support\AgentV2BrowserFixture;
 
     protected function setUp(): void
     {
@@ -53,11 +53,13 @@ class AgentV2InsertRaceRegressionTest extends TestCase
     public function test_browser_site_grants_serialize_on_the_user_row_before_looking_for_the_teammates_browser_connection(): void
     {
         config(['agents_v2_browser.enabled' => true]);
-        $sql = $this->queries(fn () => $this->putJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', ['origins' => ['https://shop.example.com']])
+        $this->user->forceFill(['plan' => 'pro', 'membership_ends_at' => now()->addDay()])->save();
+        $expected = $this->browserExpected();
+        $sql = $this->queries(fn () => $this->putJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', ['origins' => ['https://shop.example.com'], ...$expected])
             ->assertOk()->assertJsonPath('browser.generation', 1));
         $this->assertBefore($sql, '/^select \* from "users" where "id" = \?/', '/inner join "agent_connections"/',
             'The pair lookup ran before the user lock, so parallel first grants each created a connection and a grant.');
-        $this->putJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', ['origins' => ['https://shop.example.com', 'https://b.example.org']])
+        $this->putJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', ['origins' => ['https://shop.example.com', 'https://b.example.org'], ...$this->browserExpected()])
             ->assertOk()->assertJsonPath('browser.generation', 2);
         $this->assertSame([1, 1], [DB::table('agent_connections')->where('provider', 'browser')->whereNull('revoked_at')->count(),
             DB::table('agent_grants')->where('agent_id', $this->agent['id'])->whereNull('revoked_at')->count()]);

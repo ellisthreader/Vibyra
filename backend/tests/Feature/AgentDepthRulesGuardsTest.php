@@ -54,7 +54,7 @@ class AgentDepthRulesGuardsTest extends TestCase
     public function test_always_ask_wins_over_a_broader_allow(): void
     {
         $this->rule([])->assertOk();
-        $this->rule(['scope' => 'qa-org/sandbox', 'effect' => 'ask'])->assertOk();
+        $this->rule(['scope' => '', 'effect' => 'ask'])->assertOk();
         $this->admit('Go.');
         $claimed = $this->claim();
         $this->issue($claimed, 'a1')->assertJsonPath('action.state', 'pending_approval');

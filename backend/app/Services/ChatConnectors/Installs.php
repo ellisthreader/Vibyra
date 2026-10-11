@@ -113,6 +113,7 @@ class Installs
     /** The stored key for one call, decrypted only for as long as that call takes. */
     public function credential(int $userId, string $slug, ?array $expected = null): string
     {
+        abort_if(RetiredIntegrations::contains($slug), 410, 'This integration has been removed.');
         if (in_array($slug, ['deepwiki', 'hackernews'], true)) {
             abort_unless($this->publicReady($slug), 422, 'This public integration is unavailable.');
             return '';

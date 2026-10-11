@@ -20,7 +20,9 @@ final class Capacity
     public static function admission(int $userId, RuntimeBinding $binding, string $mode): void
     {
         if (($mode === 'independent' && !config('agents_v2.parallel_jobs_enabled'))
-            || ($mode === 'coordinated' && !config('agents_v2.coordination_enabled')))
+            || ($mode === 'coordinated' && !config('agents_v2.coordination_enabled'))
+            || ($mode === 'channel' && !config('agents_v2.channels_enabled'))
+            || ($mode === 'browser_test' && !config('agents_v2.browser_workflows_enabled')))
             ApiError::throw(409, 'parallel_jobs_disabled', 'Independent Agent jobs are not enabled.');
         if ($mode !== 'ordered' && !self::supports($binding))
             ApiError::throw(409, 'runtime_upgrade', 'Update this runtime before starting independent Agent jobs. Your draft is still available.');

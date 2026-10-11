@@ -73,8 +73,9 @@ final class Runs
             ->whereIn('id', $actions->pluck('connection_id')->unique()->values())->get(['id', 'provider', 'external_identity'])->keyBy('id');
         $snap = $run->runtime_snapshot ?? [];
         return [...Steering::payload($run), 'id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
-            'job' => Jobs\Slots::payload($run), 'coordination' => \App\Services\AgentCoordination\Context::metadata($run),
+            'job' => Jobs\Slots::payload($run), 'coordination' => \App\Services\AgentCoordination\Context::metadata($run), 'channel' => \App\Services\AgentChannels\RunContext::metadata($run),
             'conversationSeq' => $run->conversation_seq, 'idempotencyKey' => $run->idempotency_key, 'state' => $run->state, 'stateReason' => $run->state_reason,
+            'organisation' => \App\Services\AgentOrganizations\Authority::metadata($run),
             'terminal' => RunStates::terminal($run->state), 'prompt' => $run->prompt,
             'attachments' => $run->attachments ?? [], 'answer' => $run->answer,
             'outputs' => app(Outputs\Outputs::class)->forRun($run),
@@ -94,11 +95,12 @@ final class Runs
     private function action(ToolAction $a, ?Receipt $r, ?\App\Models\AgentV2\Connection $c = null): array
     {
         return ['id' => $a->id, 'callId' => $a->call_id, 'tool' => $a->tool, 'kind' => $a->kind,
-            'provider' => $c?->provider ?? app(Tools\ToolProviders::class)->of($a->tool), 'account' => $c?->external_identity,
+            'provider' => $a->tool === \App\Services\AgentChannels\ReplyTool::NAME ? ($a->arguments['provider'] ?? null) : ($c?->provider ?? app(Tools\ToolProviders::class)->of($a->tool)), 'account' => $c?->external_identity ?? ($a->arguments['senderLabel'] ?? null),
             'connectionId' => $a->connection_id, 'state' => $a->state, 'summary' => $a->summary,
             'arguments' => $a->kind === 'write' ? (object) (Guard\SecretGuard::enabled()
                 ? Guard\SecretGuard::redactValue($a->arguments ?? []) : ($a->arguments ?? [])) : null,
             'containsSecret' => !empty($a->secret_kinds), 'secretKinds' => $a->secret_kinds ?? [],
+            'approval' => $a->approved_by ? ['source' => $a->approved_by, 'ruleId' => $a->rule_id, 'revision' => $a->rule_revision] : null,
             'fingerprint' => $a->state === 'pending_approval' ? $a->fingerprint : null,
             'expiresAt' => $a->state === 'pending_approval' ? $a->expires_at?->toIso8601String() : null,
             'receipt' => $r ? ['status' => $r->status, 'outcome' => $r->outcome,
@@ -116,15 +118,17 @@ final class Runs
         $history = app(Memory\Recall::class)->history($run, $history);
         $context = Jobs\Contexts::forClaim($run);
         if (Jobs\AccountLock::enabled($run->user_id)) $history = $context['history'] ?? Jobs\Contexts::history($run);
-        $isolated = \App\Services\AgentCoordination\Context::isolated($run);
+        $publicProfile = \App\Services\AgentChannels\RunContext::profile($run) ?? \App\Services\AgentBrowserWorkflows\Context::profile($run);
+        $isolated = $publicProfile !== null || \App\Services\AgentCoordination\Context::isolated($run);
         if ($isolated) $history = [];
+        if (Guard\SecretGuard::enabled()) $history = Guard\SecretGuard::redactValue($history);
         $notes = $isolated ? ['text' => '', 'gaps' => []] : app(Planning\RunNotes::class)->for($run, $agent);
         return [...Steering::payload($run), 'id' => $run->id, 'agentId' => $run->agent_id, 'conversationId' => $run->conversation_id,
             'generation' => $run->lease_generation, 'leaseExpiresAt' => $run->lease_expires_at?->toIso8601String(),
             'state' => $run->state, 'prompt' => $run->prompt, 'attachments' => $run->attachments ?? [],
-            'runtime' => $run->runtime_snapshot, 'eventCursor' => $run->event_seq,
-            'profile' => ['name' => $context['name'] ?? $agent?->name, 'brief' => Planning\RunNotes::brief($context['brief'] ?? $agent?->brief, $notes['text']),
-                'memory' => $isolated ? '' : ($context['memory'] ?? app(Memory\Recall::class)->text($run, $agent?->memory)), 'revision' => $run->profile_revision, 'skills' => \App\Services\AgentWork\SkillSnapshots::forRun($run)],
+            'runtime' => $run->runtime_snapshot, 'eventCursor' => $run->event_seq, 'guard' => ['secrets' => Guard\SecretGuard::enabled()],
+            'profile' => \App\Services\AgentOrganizations\Authority::profile($run, $publicProfile ?? ['name' => $context['name'] ?? $agent?->name, 'brief' => Planning\RunNotes::brief($context['brief'] ?? $agent?->brief, $notes['text']),
+                'memory' => $isolated ? '' : ($context['memory'] ?? app(Memory\Recall::class)->text($run, $agent?->memory)), 'revision' => $run->profile_revision, 'skills' => \App\Services\AgentWork\SkillSnapshots::forRun($run)], $notes['text']),
             'actionCheckpoint' => Steering::actions($run), 'history' => $history, 'tools' => $manifest, 'connectionGaps' => $notes['gaps']];
     }
 }

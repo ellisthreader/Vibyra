@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\RunVibesTurn;
 use App\Models\User;
-use App\Services\Agents\{Teammates, ToolActions};
+use App\Services\Agents\{Teammates, ToolActions, Workspaces};
 use App\Services\ChatConnectors\Installs;
 use App\Services\Vibes\{Quotes, Turns, Wallet};
 use Illuminate\Foundation\Testing\RefreshDatabase;

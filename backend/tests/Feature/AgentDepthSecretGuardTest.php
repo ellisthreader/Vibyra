@@ -23,7 +23,7 @@ class AgentDepthSecretGuardTest extends TestCase
         $this->bootV2();
         $this->github = $this->providerInstall('github', '@owner', 'gh-token');
         $this->grant($this->github, ['github_create_issue']);
-        $this->route('POST', self::REPO, Http::response(['number' => 12, 'title' => 'Deploy', 'html_url' => 'https://github.com/qa-org/sandbox/issues/12'], 201));
+        $this->route('POST', self::REPO, Http::response(['id' => 1200, 'number' => 12, 'title' => 'Deploy', 'html_url' => 'https://github.com/qa-org/sandbox/issues/12'], 201));
     }
 
     private function pendingIssue(string $body = 'Deploy key: '.self::TOKEN): array

@@ -9,6 +9,7 @@ final class MemberPins
     public static function capture(int $userId, array $members, bool $lock = true): array
     {
         $ids = array_column($members, 'agentId'); sort($ids);
+        \App\Services\AgentOrganizations\Instances::groupScope($ids);
         $q = DB::table('agent_teammates')->where('user_id', $userId)->whereIn('id', $ids)->whereNull('archived_at')->orderBy('id');
         $agents = ($lock ? $q->lockForUpdate() : $q)->get()->keyBy('id');
         if ($agents->count() !== count($ids)) ApiError::throw(409, 'group_member_unavailable', 'Choose active teammates belonging to this account.');

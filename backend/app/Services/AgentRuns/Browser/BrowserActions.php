@@ -98,13 +98,17 @@ final class BrowserActions
             || ($action->expires_at && $action->expires_at->isPast())
             || !hash_equals((string) $action->fingerprint, Approvals::fingerprint($action, $run->user_id))
             || !BrowserGrants::usable($run, $connection)
+            || ($action->tool === 'browser_upload' && !\App\Services\AgentBrowser\UploadBinding::capable($run))
+            || !\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider)
             || !isset(app(BrowserTools::class)->tools()[$action->tool]);
     }
 
     /** What the leased Mac needs: the action and the grant's sites (its profile is keyed by the connection). */
     public static function payload(ToolAction $a, Connection $c): array
     {
+        $private = $a->tool === 'browser_takeover_request' ? \App\Models\AgentV2\BrowserHandoff::where('action_id', $a->id)->value('id') : null;
         return ['id' => $a->id, 'tool' => $a->tool, 'kind' => $a->kind, 'state' => $a->state, 'fingerprint' => $a->fingerprint,
+            'privateHandoffId' => $private,
             'claimedGeneration' => $a->claimed_generation === null ? null : (int) $a->claimed_generation,
             'arguments' => (object) ($a->arguments ?? []), 'expiresAt' => $a->expires_at?->timestamp,
             'browser' => ['connectionId' => $c->id, 'generation' => (int) $c->generation, 'origins' => $c->scopes ?? []]];

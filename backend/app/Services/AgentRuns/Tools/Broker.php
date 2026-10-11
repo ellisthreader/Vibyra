@@ -35,6 +35,7 @@ final class Broker
         $prepared = DB::transaction(function () use ($binding, $runId, $call) {
             $run = $this->leases->fenced($binding, $runId, (int) $call['generation']);
             \App\Services\AgentCoordination\Context::authorizeTool($run, $call);
+            \App\Services\AgentChannels\RunContext::authorizeTool($run, $call);
             $existing = ToolAction::query()->where('run_id', $run->id)->where('call_id', $call['callId'])->first();
             if ($existing) {
                 if ($existing->tool !== $call['tool'] || ($existing->draft_original_connection_id ?? $existing->connection_id) !== $call['connectionId']
@@ -42,9 +43,12 @@ final class Broker
                     ApiError::throw(409, 'call_conflict', 'This call ID was already used with different arguments.');
                 return ['replay' => $existing];
             }
+            \App\Services\AgentBrowserWorkflows\Context::authorizeTool($run, $call);
             if (!in_array($run->state, RunStates::ACTIVE, true))
                 ApiError::throw(409, 'run_not_active', 'This task is '.$run->state.'; it cannot call tools now.');
             $this->flow->resume($run);
+            if ($call['tool'] === \App\Services\AgentChannels\ReplyTool::NAME)
+                return ['replay' => app(\App\Services\AgentChannels\ReplyBroker::class)->request($run, $call)];
             if ($call['tool'] === \App\Services\AgentWork\Proposals\ProposalTool::NAME)
                 return ['replay' => app(\App\Services\AgentWork\Proposals\ProposalBroker::class)->request($run, $call)];
             if (\App\Services\AgentRuns\CloudFiles\FileTools::has($call['tool']))
@@ -94,10 +98,13 @@ final class Broker
             if ($write) {
                 $action->forceFill(['fingerprint' => Approvals::fingerprint($action, $run->user_id),
                     'secret_kinds' => SecretGuard::enabled() ? (SecretGuard::kindsIn($args) ?: null) : null])->save();
+                if (app(\App\Services\AgentRuns\Rules\RuleApproval::class)->preapprove($action, $run))
+                    return ['ruleDispatch' => $action->id];
                 $this->events->append($run, 'approval.requested', ['actionId' => $action->id, 'tool' => $action->tool,
                     'connectionId' => $connection->id, 'account' => $connection->external_identity,
                     'arguments' => SecretGuard::enabled() ? SecretGuard::redactValue($args) : $args, 'fingerprint' => $action->fingerprint,
-                    'expiresAt' => $action->expires_at->toIso8601String()]);
+                    'expiresAt' => $action->expires_at->toIso8601String(),
+                    ...(!empty($action->secret_kinds) ? ['containsSecret' => true] : [])]);
                 $this->lifecycle->move($run, RunStates::WAITING_APPROVAL, null, ['actionId' => $action->id, 'tool' => $action->tool]);
                 return ['replay' => $action];
             }
@@ -108,6 +115,10 @@ final class Broker
             }
             return ['execute' => [$action, $connection]];
         });
+        if (isset($prepared['ruleDispatch'])) {
+            app(Approvals::class)->dispatch($prepared['ruleDispatch']);
+            return $this->outcome(ToolAction::query()->findOrFail($prepared['ruleDispatch']));
+        }
         if (isset($prepared['replay'])) return $this->outcome($prepared['replay']);
         [$action, $connection] = $prepared['execute'];
         $done = $this->executor->execute($action, $connection);

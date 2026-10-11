@@ -25,7 +25,7 @@ final class Grants
 
     public function __construct(private readonly ToolCatalog $catalog) {}
 
-    public function put(int $userId, string $agentId, Connection $connection, array $operations): Grant
+    public function put(int $userId, string $agentId, Connection $connection, array $operations, bool $implicit = false): Grant
     {
         $this->agent($userId, $agentId);
         if ($connection->revoked_at) ApiError::throw(409, 'connection_revoked', 'That connection was removed.');
@@ -38,11 +38,15 @@ final class Grants
         sort($ops);
         if ($ops === [] || array_diff($ops, $allowed) !== [])
             ApiError::throw(422, 'invalid_operations', 'Choose operations this connection offers: '.implode(', ', $allowed).'.');
-        return DB::transaction(function () use ($userId, $agentId, $connection, $ops) {
+        return DB::transaction(function () use ($userId, $agentId, $connection, $ops, $implicit) {
+            Jobs\AccountLock::lock($userId);
             // Serialize grants on this connection: with no grant row yet there is nothing to lock, so two
             // first grants used to each insert one (and a later edit changed only one of them).
             $locked = DB::table('agent_connections')->where('id', $connection->id)->lockForUpdate()->first();
             if (!$locked || $locked->revoked_at) ApiError::throw(409, 'connection_revoked', 'That connection was removed.');
+            if ($implicit && \App\Services\AgentCapabilities\Authority::managed($connection->id))
+                ApiError::throw(409, 'capability_explicit_grant', 'Choose this capability’s teammate access explicitly.');
+            \App\Services\AgentCapabilities\Authority::grant(Connection::query()->findOrFail($connection->id), $ops);
             $grant = Grant::query()->where('user_id', $userId)->where('agent_id', $agentId)
                 ->where('connection_id', $connection->id)->whereNull('revoked_at')->lockForUpdate()->first();
             if ($grant && $grant->operations === $ops) return $grant;
@@ -92,7 +96,7 @@ final class Grants
         if ($admitting) $this->adoptAccessList($userId, $this->agent($userId, $agentId), $asked);
         return array_map(fn (Grant $g) => ['grantId' => $g->id, 'connectionId' => $g->connection_id,
             'revision' => $g->revision, 'generation' => (int) $g->connection_generation,
-            'operations' => $g->operations], $this->active($userId, $agentId));
+            'operations' => $g->operations, 'capability' => \App\Services\AgentCapabilities\Authority::snapshot($g->connection_id)], $this->active($userId, $agentId));
     }
 
     /**
@@ -117,10 +121,11 @@ final class Grants
         $connections = Connection::query()->where('user_id', $userId)->whereIn('provider', [...$listed, ...$requested])
             ->whereNull('revoked_at')->get();
         foreach ($connections as $connection) {
+            if (\App\Services\AgentCapabilities\Authority::managed($connection->id)) continue;
             $ops = $this->catalog->operations($connection->provider);
             if ($ops === [] || Grant::query()->where('agent_id', $agent->id)->where('connection_id', $connection->id)->exists()) continue;
             if (in_array($connection->provider, $requested, true) && !$this->unambiguous($userId, $agent->id, $connection->provider)) continue;
-            rescue(fn () => $this->put($userId, $agent->id, $connection, $ops));
+            rescue(fn () => $this->put($userId, $agent->id, $connection, $ops, true));
         }
     }
 

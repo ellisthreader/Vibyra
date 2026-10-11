@@ -62,7 +62,7 @@ final class Slots
 
     private static function modeEnabled(string $mode): bool
     {
-        return (bool) config($mode === 'coordinated' ? 'agents_v2.coordination_enabled' : 'agents_v2.parallel_jobs_enabled');
+        return (bool) config(match ($mode) {'coordinated' => 'agents_v2.coordination_enabled', 'channel' => 'agents_v2.channels_enabled', 'browser_test' => 'agents_v2.browser_workflows_enabled', default => 'agents_v2.parallel_jobs_enabled'});
     }
 
     public static function binding(RuntimeBinding $binding): RuntimeBinding

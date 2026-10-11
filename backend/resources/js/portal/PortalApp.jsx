@@ -8,6 +8,8 @@ import CheckoutPage from "./pages/CheckoutPage.jsx";
 import AccountPage from "./pages/AccountPage.jsx";
 import DeveloperPage from "./pages/DeveloperPage.jsx";
 import OwnerPage from "./pages/OwnerPage.jsx";
+import TeamPage from "./pages/TeamPage.jsx";
+import TeamJoinPage from "./pages/TeamJoinPage.jsx";
 
 function PortalRoute() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
@@ -21,6 +23,8 @@ function PortalRoute() {
   if (path === "/billing/cancel") return <BillingStatusPage status="cancel" />;
   if (path === "/billing") return <BillingPage />;
   if (path === "/account/developer") return <DeveloperPage />;
+  if (path === "/account/team") return <TeamPage />;
+  if (path === "/team/join") return <TeamJoinPage />;
   if (path === "/checkout") return <CheckoutPage />;
   return <AccountPage />;
 }

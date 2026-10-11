@@ -19,6 +19,8 @@ final class Credentials
 
     public function for(Connection $row): string
     {
+        if (\App\Services\ChatConnectors\RetiredIntegrations::contains($row->provider))
+            throw \App\Services\AgentRuns\Tools\Providers\ToolFailure::refused('provider_removed', 'This integration has been removed.');
         return DB::transaction(function () use ($row) {
             // Serialize refresh per connection so two calls never spend one refresh token twice.
             $fresh = Connection::query()->whereKey($row->id)->lockForUpdate()->first();

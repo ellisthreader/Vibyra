@@ -17,6 +17,7 @@ class Teammates
     public function save(int $user, array $data, ?string $id = null): array
     {
         return DB::transaction(function () use ($user, $data, $id) {
+            if ($id && \App\Services\AgentOrganizations\Instances::get($id)) \App\Services\AgentRuns\Jobs\AccountLock::force($user);
             app(Wallet::class)->lock($user);
             $fields = ['name' => trim($data['name']), 'brief' => trim($data['brief']), 'avatar' => $data['avatar'],
                 'memory' => trim($data['memory'] ?? ''), 'budget' => (int) $data['budget'],
@@ -36,6 +37,7 @@ class Teammates
                 abort_if(DB::table('agent_teammates')->where('user_id', $user)->count() >= config('agents.max_teammates'), 422, 'Your teammate limit has been reached.');
             } else {
                 $existing = $this->get($user, $id);
+                \App\Services\AgentOrganizations\Instances::guardEdit($id, $fields);
                 $sameSkills = $skillIds === null || $skillIds === DB::table('agent_skill_assignments')->where('agent_id', $id)->orderBy('skill_id')->pluck('skill_id')->all();
                 $same = $sameSkills && collect($fields)->every(fn ($value, $key) => $existing->$key == $value);
                 if ($same && (int) $existing->revision === (int) $data['revision'] + 1) return $this->payload($existing);
@@ -94,6 +96,7 @@ class Teammates
         if (!$projected) $waiting = $last && $last->status === 'waiting' && !$last->cancel_requested && !$last->settled_at
             && DB::table('vibes_tools')->where('turn_id', $last->id)->where('action_state', 'pending')->where('created_at', '>', now()->subMinutes(15))->exists();
         return ['id' => $a->id, 'chatId' => $a->chat_id, 'name' => $a->name, 'avatar' => $a->avatar, 'brief' => $a->brief,
+            'organisation' => \App\Services\AgentOrganizations\Instances::metadata($a->id),
             'model' => $a->model ?? 'auto', 'skillIds' => DB::table('agent_skill_assignments')->where('agent_id', $a->id)->orderBy('skill_id')->pluck('skill_id')->all(),
             'memory' => $a->memory, 'integrations' => json_decode($a->integrations, true), 'budget' => (int) $a->budget,
             'revision' => (int) $a->revision, 'archived' => (bool) $a->archived_at,

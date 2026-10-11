@@ -24,37 +24,55 @@ final class BrowserGrants
         return $pair ? self::payload(...$pair) : null;
     }
 
-    public function put(int $userId, string $agentId, array $rawOrigins): array
+    public function put(int $userId, string $agentId, array $rawOrigins, ?array $expected = null, array $options = []): array
     {
         $this->grants->agent($userId, $agentId);
         $origins = BrowserOrigins::list($rawOrigins);
-        return DB::transaction(function () use ($userId, $agentId, $origins) {
+        return DB::transaction(function () use ($userId, $agentId, $origins, $expected, $options) {
+            \App\Services\AgentRuns\Jobs\AccountLock::force($userId);
             // A first grant has no connection row to lock, so parallel first grants each created a browser connection and a
             // grant (the teammate kept several, and a later edit changed only one). Serialize per account on the user row.
             DB::table('users')->where('id', $userId)->lockForUpdate()->first();
             $pair = self::active($userId, $agentId, true);
+            if (!BrowserAccessVersion::begin($userId, $agentId, $expected, $pair ? self::payload(...$pair) : null, ['put', $origins, $options]))
+                { if (!$pair) ApiError::throw(409, 'browser_access_changed', 'Browser access was removed. Reload before granting it again.');
+                    return self::payload(...$pair); }
+            $uploads = $options['uploadsAllowed'] ?? ($pair && in_array('browser_upload', $pair[0]->operations ?? [], true));
+            $runtime = array_key_exists('runtimeId', $options) ? $options['runtimeId'] : ($pair ? $pair[1]->browser_runtime_id : null);
+            BrowserRuntimeScope::review($userId, $runtime);
+            // A target switch creates a new profile and invalidates every old approval.
+            if ($pair && $pair[1]->browser_runtime_id !== $runtime) {
+                $pair[1]->forceFill(['revoked_at' => now(), 'health' => 'revoked'])->save();
+                $this->grants->revokeForConnection($pair[1]->id);
+                $pair = null;
+            }
             $ops = array_keys(BrowserTools::TOOLS);
+            if (!$uploads) $ops = array_values(array_diff($ops, ['browser_upload']));
             sort($ops);
             if (!$pair) {
                 $connection = Connection::query()->create(['user_id' => $userId, 'provider' => BrowserTools::PROVIDER,
                     'external_identity' => 'Browser', 'scopes' => $origins, 'generation' => 1, 'capability_revision' => 1,
-                    'health' => 'healthy']);
+                    'health' => 'healthy', 'browser_runtime_id' => $runtime]);
                 $grant = Grant::query()->create(['user_id' => $userId, 'agent_id' => $agentId,
                     'connection_id' => $connection->id, 'operations' => $ops, 'revision' => 1]);
                 return self::payload($grant, $connection);
             }
             [$grant, $connection] = $pair;
-            if ($connection->scopes !== $origins)
+            $changed = $grant->operations !== $ops;
+            if ($changed) $grant->forceFill(['operations' => $ops, 'revision' => $grant->revision + 1])->save();
+            if ($connection->scopes !== $origins || $changed)
                 $connection->forceFill(['scopes' => $origins, 'generation' => $connection->generation + 1])->save();
             return self::payload($grant, $connection);
         });
     }
 
-    public function revoke(int $userId, string $agentId): void
+    public function revoke(int $userId, string $agentId, ?array $expected = null): void
     {
         $this->grants->agent($userId, $agentId);
-        DB::transaction(function () use ($userId, $agentId) {
+        DB::transaction(function () use ($userId, $agentId, $expected) {
+            \App\Services\AgentRuns\Jobs\AccountLock::force($userId);
             $pair = self::active($userId, $agentId, true);
+            if (!BrowserAccessVersion::begin($userId, $agentId, $expected, $pair ? self::payload(...$pair) : null, ['revoke'])) return;
             if (!$pair) return;
             $pair[1]->forceFill(['revoked_at' => now(), 'health' => 'revoked'])->save();
             $this->grants->revokeForConnection($pair[1]->id);
@@ -77,6 +95,7 @@ final class BrowserGrants
     public static function payload(Grant $grant, Connection $connection): array
     {
         return ['connectionId' => $connection->id, 'grantId' => $grant->id, 'origins' => $connection->scopes ?? [],
+            'uploadsAllowed' => in_array('browser_upload', $grant->operations ?? [], true), 'runtimeId' => $connection->browser_runtime_id,
             'generation' => (int) $connection->generation, 'updatedAt' => $connection->updated_at?->toIso8601String()];
     }
 
@@ -85,6 +104,7 @@ final class BrowserGrants
     {
         $runtime = $run->runtime_snapshot ?? [];
         return ($runtime['capabilities']['browserTools'] ?? false) === true
+            && BrowserRuntimeScope::allows($run, $connection)
             && Grant::query()->where('connection_id', $connection->id)->where('agent_id', $run->agent_id)
                 ->whereNull('revoked_at')->exists();
     }

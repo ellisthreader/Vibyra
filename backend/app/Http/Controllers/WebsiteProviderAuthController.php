@@ -25,7 +25,6 @@ class WebsiteProviderAuthController extends Controller
         return response()->json(['ok' => true, 'providers' => [
             'google' => $this->flows->isConfigured('google'),
             'apple' => $this->flows->isConfigured('apple'),
-            'microsoft' => $this->flows->isConfigured('microsoft'),
         ]]);
     }
 
@@ -70,9 +69,11 @@ class WebsiteProviderAuthController extends Controller
             return response()->json(['ok' => false, 'status' => 'failed', 'error' => 'The provider sign-in could not be verified.'], 401);
         }
 
+        // Policy can change after the provider callback but before browser collection.
+        $session->delete();
+        \App\Services\Teams\Sso\Policy::assertMaySignIn($user, $request);
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
-        $session->delete();
         app(AuthLoginRecorder::class)->record($user, 'website', strtolower($provider));
         if (($result['isNewUser'] ?? false) === true) {
             app(Recorder::class)->signup($request);

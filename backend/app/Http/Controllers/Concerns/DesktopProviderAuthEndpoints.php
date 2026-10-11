@@ -106,6 +106,7 @@ trait DesktopProviderAuthEndpoints
 
                 return $this->desktopProviderResultPage(true, '', false, true);
             }
+            $this->assertProviderSignupMarket($request, $provider, $flow, $identity);
             $sessionRequest = Request::create('/api/auth/desktop/session', 'POST', [
                 'deviceName' => $flow['deviceName'],
                 'installId' => $flow['installId'],
@@ -256,4 +257,20 @@ trait DesktopProviderAuthEndpoints
 
         return response($html, $success ? 200 : 400)->header('Content-Type', 'text/html; charset=utf-8');
     }
+    private function assertProviderSignupMarket(Request $request, string $provider, array $flow, array $identity): void
+    {
+        if (! config('legal.enforce_market_access', true)
+            || app(\App\Services\Auth\ProviderAccountService::class)->existingAccount(
+                $provider, $identity, ($flow['supportsTwoFactor'] ?? false) === true) !== null) {
+            return;
+        }
+        $ip = app(\App\Services\Legal\TrustedClientIp::class)->forRequest($request);
+        $country = $ip ? app(\App\Services\Analytics\CountryResolver::class)->forIp($ip) : null;
+        $declared = strtoupper(trim((string) ($flow['countryCode'] ?? '')));
+        if ($country === null || ! in_array($country, (array) config('legal.account_countries', []), true)
+            || $declared !== $country) {
+            throw new ProviderAccountException('Vibyra account creation is not available in this location.', 451);
+        }
+    }
+
 }

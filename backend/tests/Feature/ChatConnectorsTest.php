@@ -42,7 +42,7 @@ class ChatConnectorsTest extends TestCase
     {
         $body = $this->withToken('')->getJson('/api/connectors')->assertOk()->json();
         $this->assertSame(['github', 'stripe', 'figma', 'gmail', 'google_calendar', 'google_drive',
-            'outlook_mail', 'outlook_calendar', 'onedrive', 'teams', 'sharepoint', 'google_tasks', 'deepwiki', 'hackernews', 'slack', 'notion', 'linear'],
+            'google_tasks', 'deepwiki', 'hackernews', 'slack', 'notion', 'linear'],
             array_column($body['integrations'], 'id'));
         foreach ($body['integrations'] as $integration) {
             $this->assertFalse($integration['installed']);

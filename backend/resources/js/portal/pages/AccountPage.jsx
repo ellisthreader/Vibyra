@@ -6,6 +6,7 @@ import AccountDownloads from "../components/AccountDownloads.jsx";
 import AccountSetup from "../components/AccountSetup.jsx";
 import ActivityPanel from "../components/ActivityPanel.jsx";
 import DeveloperLink from "../components/DeveloperLink.jsx";
+import TeamLink from "../components/TeamLink.jsx";
 import Notice from "../components/Notice.jsx";
 import { go } from "../navigation.js";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
@@ -43,6 +44,7 @@ export default function AccountPage() {
       <AccountDownloads />
       <AccountSetup email={user.email} />
       <DeveloperLink key={user.id} />
+      <TeamLink key={`team:${user.id}`} />
       <ActivityPanel key={user.id} accountId={user.id} />
     </>}
   </PortalShell>;

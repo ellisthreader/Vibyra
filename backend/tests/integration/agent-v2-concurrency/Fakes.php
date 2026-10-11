@@ -24,6 +24,11 @@ final class ConcFakes
         app()->instance(\App\Services\Mcp\EndpointPolicy::class, new \App\Services\Mcp\EndpointPolicy(fn (string $host) => in_array($host, ['mcp.conc.example', 'hooks.conc.example'], true) ? ['93.184.216.34'] : []));
         Http::fake(function ($request) {
             $url = $request->url();
+            if ($url === 'https://api.github.com/repos/qa-org/sandbox/issues' && $request->method() === 'POST') {
+                if (DB::transactionLevel() !== 0) throw new RuntimeException('Rule provider call inside transaction');
+                $id = self::record('RULE_ISSUE', (string) ($request->header('Authorization')[0] ?? ''));
+                return Http::response(['id' => $id, 'number' => $id, 'title' => 'Fixture', 'html_url' => 'https://github.com/qa-org/sandbox/issues/'.$id], 201);
+            }
             if ($url === 'https://oauth2.googleapis.com/token') {
                 self::record('GOOGLE_REFRESH', (string) $request['refresh_token'], null, 150);
                 return Http::response(['access_token' => 'refreshed-'.$request['refresh_token'], 'expires_in' => 3600]);

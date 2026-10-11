@@ -46,7 +46,10 @@ final class Leases
             if (Jobs\Contexts::mode($candidate) === 'ordered' && $this->conversationBusy($candidate)) continue;
             if (!Jobs\Slots::eligible($binding, $candidate, $workerSlot)) continue;
             $claimed = DB::transaction(function () use ($candidate, $binding, $workerSlot) {
-                try { \App\Services\AgentCoordination\Context::fence($binding, $candidate->id); }
+                try { \App\Services\AgentOrganizations\Authority::fence($candidate->id);
+                    \App\Services\AgentCoordination\Context::fence($binding, $candidate->id);
+                    \App\Services\AgentChannels\RunContext::fence($binding, $candidate->id);
+                    \App\Services\AgentBrowserWorkflows\Context::fence($binding, $candidate->id); }
                 catch (\Illuminate\Http\Exceptions\HttpResponseException|\Symfony\Component\HttpKernel\Exception\HttpException $e) {
                     return null; // A stale group cannot prevent unrelated eligible work from being claimed.
                 }
@@ -102,7 +105,10 @@ final class Leases
     public function fenced(RuntimeBinding $binding, string $runId, int $generation, bool $allowCancelled = false, bool $factualReceipt = false): Run
     {
         Jobs\AccountLock::lock($binding->user_id);
+        \App\Services\AgentOrganizations\Authority::fence($runId, $factualReceipt);
         \App\Services\AgentCoordination\Context::fence($binding, $runId, $allowCancelled);
+        \App\Services\AgentChannels\RunContext::fence($binding, $runId, $allowCancelled);
+        \App\Services\AgentBrowserWorkflows\Context::fence($binding, $runId, $allowCancelled);
         app(Cloud\Authority::class)->check($binding);
         Jobs\Slots::fence($binding, $runId, $allowCancelled, $factualReceipt);
         \App\Services\AgentWork\RuntimePins::fenceBinding($binding, $runId);

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\{DB, Schema};
 use Tests\Support\AgentV2Fixture;
 use Tests\TestCase;
 
-/** Upgrade the captured ee5c action schema without resetting existing actions or adding unshipped depth tables. */
+/** The independent secret-column upgrade preserves actions and respects the earlier Rules migration's ownership. */
 final class AgentStageTwoSecretUpgradeTest extends TestCase
 {
     use RefreshDatabase, AgentV2Fixture;
@@ -22,6 +22,9 @@ final class AgentStageTwoSecretUpgradeTest extends TestCase
         $r = $this->claim();
         $a = $this->callTool($r, 'gmail_send', $c,
             ['to' => 'to@example.com', 'subject' => 'Existing', 'body' => 'Approved later'], 'prior-live')->assertOk()->json('action');
+        // Simulate an installation where the independent migration owns this column.
+        DB::table('migrations')->where('migration', '2026_10_02_160100_create_agent_approval_rules')->delete();
+        $rulesBefore = DB::table('agent_approval_rules')->count();
         $migration = $this->migration();
         $migration->down();
         $this->assertFalse(Schema::hasColumn('agent_tool_actions', 'secret_kinds'));
@@ -32,7 +35,8 @@ final class AgentStageTwoSecretUpgradeTest extends TestCase
         unset($after['secret_kinds']);
         $this->assertSame($before, $after);
         $this->assertNull(ToolAction::findOrFail($a['id'])->secret_kinds);
-        $this->assertFalse(Schema::hasTable('agent_approval_rules'));
+        $this->assertTrue(Schema::hasTable('agent_approval_rules'));
+        $this->assertSame($rulesBefore, DB::table('agent_approval_rules')->count());
         $this->assertFalse(Schema::hasTable('agent_delegations'));
     }
 

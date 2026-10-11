@@ -22,7 +22,7 @@ final class ConcBrowser
     {
         return ['url' => 'https://shop.example.com/contact', 'title' => 'Contact', 'pageFingerprint' => $fp,
             'elements' => [['ref' => 'e1', 'role' => 'textbox', 'name' => 'To', 'value' => 'someone@example.com']],
-            'forms' => [['action' => 'https://shop.example.com/send', 'method' => 'post',
+            'forms' => [['fieldsComplete' => true, 'action' => 'https://shop.example.com/send', 'method' => 'post',
                 'fields' => [['ref' => 'e1', 'name' => 'to', 'label' => 'To', 'type' => 'email', 'value' => 'someone@example.com']], 'submits' => [['ref' => 'e3', 'label' => 'Send']]]]];
     }
 
@@ -40,9 +40,13 @@ final class ConcBrowser
     private static function stage(): array
     {
         $fx = ConcFixture::make(false);
+        DB::table('users')->where('id', $fx['user'])->update(['plan' => 'pro', 'membership_ends_at' => now()->addDay()]);
         $fx['runtime'] = ConcFixture::ok(ConcHttp::call('POST', '/api/agents/v2/runtimes', $fx['token'], ['hostId' => $fx['hostId'], 'provider' => 'codex', 'accountRef' => 'acct-1',
             'model' => 'gpt-5.5', 'effort' => 'medium', 'providerVersion' => '1.2.3', 'capabilities' => ['controlledTools' => true, 'browserTools' => true]]), 201)['runtime'];
-        $conn = ConcFixture::ok(ConcHttp::call('PUT', '/api/agents/v2/agents/'.$fx['agent'].'/browser', $fx['token'], ['origins' => ['https://shop.example.com']]), 200)['browser']['connectionId'];
+        $route = '/api/agents/v2/agents/'.$fx['agent'].'/browser';
+        $state = ConcFixture::ok(ConcHttp::call('GET', $route, $fx['token']), 200);
+        $conn = ConcFixture::ok(ConcHttp::call('PUT', $route, $fx['token'], ['origins' => ['https://shop.example.com'],
+            'expectedRevision' => $state['revision'], 'expectedConnectionId' => null, 'expectedGeneration' => 0]), 200)['browser']['connectionId'];
         ConcFixture::admit($fx, 'Send the contact form.');
         $c = ConcFixture::claim($fx);
         $fp = str_repeat('b', 64);

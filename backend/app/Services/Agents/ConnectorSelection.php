@@ -12,11 +12,6 @@ final class ConnectorSelection
         'gmail' => ['email', 'emails', 'e-mail', 'e-mails', 'mail', 'inbox', 'newsletter', 'newsletters', 'unread', 'correspondence', 'reply', 'draft', 'sender', 'gmail'],
         'google_calendar' => ['calendar', 'meeting', 'meetings', 'event', 'events', 'schedule', 'agenda', 'appointment', 'appointments', 'availability', 'free time'],
         'google_drive' => ['drive', 'document', 'documents', 'doc', 'sheet', 'slide', 'file', 'files', 'spreadsheet', 'spreadsheets', 'presentation', 'presentations'],
-        'outlook_mail' => ['email', 'emails', 'e-mail', 'e-mails', 'mail', 'inbox', 'newsletter', 'newsletters', 'unread', 'correspondence', 'reply', 'draft', 'sender', 'outlook'],
-        'outlook_calendar' => ['calendar', 'meeting', 'meetings', 'event', 'events', 'schedule', 'agenda', 'appointment', 'appointments', 'availability', 'free time', 'outlook'],
-        'onedrive' => ['onedrive', 'document', 'documents', 'file', 'files', 'microsoft file'],
-        'teams' => ['teams', 'chat', 'chats', 'workplace message'],
-        'sharepoint' => ['sharepoint', 'site', 'sites', 'document', 'documents', 'file', 'files'],
         'google_tasks' => ['task', 'tasks', 'todo', 'to-do', 'checklist', 'reminder', 'reminders'],
         'deepwiki' => ['deepwiki', 'documentation', 'docs', 'repository docs', 'codebase question'],
         'slack' => ['slack', 'channel', 'channels', 'workspace message'],
@@ -38,7 +33,7 @@ final class ConnectorSelection
         $task = mb_strtolower($text);
         $earlier = mb_strtolower($context);
         $scored = [];
-        $granted = array_values(array_unique(array_filter($granted, 'is_string')));
+        $granted = array_values(array_unique(array_filter($granted, fn ($slug) => is_string($slug) && !\App\Services\ChatConnectors\RetiredIntegrations::contains($slug))));
         foreach ($granted as $position => $slug) {
             $score = self::score($task, $slug, 100, 50, self::CURRENT);
             if ($score === 0 && $earlier !== '') $score = self::score($earlier, $slug, self::CONTEXT, self::CONTEXT, self::CONTEXT);

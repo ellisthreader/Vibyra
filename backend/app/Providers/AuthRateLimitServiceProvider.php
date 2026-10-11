@@ -56,7 +56,8 @@ class AuthRateLimitServiceProvider extends ServiceProvider
 
     private function client(Request $request): string
     {
-        $installId = mb_substr(trim((string) $request->input('installId', '')), 0, 128);
+        $input = $request->input('installId', '');
+        $installId = is_string($input) ? mb_substr(trim($input), 0, 128) : '';
         if ($installId !== '') {
             return 'install:'.$installId;
         }
@@ -68,7 +69,8 @@ class AuthRateLimitServiceProvider extends ServiceProvider
 
     private function subject(Request $request): string
     {
-        $email = strtolower(trim((string) $request->input('email', '')));
+        $input = $request->input('email', '');
+        $email = is_string($input) ? strtolower(trim($input)) : '';
 
         return $email !== '' ? 'email:'.$email : $this->client($request);
     }

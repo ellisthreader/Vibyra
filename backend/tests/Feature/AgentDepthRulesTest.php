@@ -44,7 +44,7 @@ class AgentDepthRulesTest extends TestCase
         $this->assertSame(64, strlen((string) $row->fingerprint), 'The fingerprint machinery still runs.');
         $this->assertTrue(hash_equals($row->fingerprint, Approvals::fingerprint($row, $this->user->id)));
         $card = $this->getJson('/api/agents/v2/runs/'.$run['id'])->json('run.actions.0');
-        $this->assertSame(['source' => 'rule', 'ruleId' => $created['id']], $card['approval']);
+        $this->assertSame(['source' => 'rule', 'ruleId' => $created['id'], 'revision' => 1], $card['approval']);
         $this->assertNotContains('run.waiting_approval', DB::table('agent_run_events')->where('run_id', $run['id'])->pluck('type')->all(), 'Nobody was asked.');
         $decided = collect(DB::table('agent_run_events')->where('run_id', $run['id'])->where('type', 'approval.decided')->get())->map(fn ($e) => json_decode($e->payload, true))->sole();
         $this->assertSame(['allow', 'rule', $created['id']], [$decided['decision'], $decided['source'], $decided['ruleId']]);
@@ -69,7 +69,7 @@ class AgentDepthRulesTest extends TestCase
     public function test_an_irreversible_action_can_never_be_made_automatic(): void
     {
         foreach (['gmail_send' => $this->gmail, 'slack_post_message' => $this->gmail, 'browser_submit' => $this->gmail, 'publish_branch' => $this->gmail] as $tool => $connection)
-            $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['tool' => $tool, 'connectionId' => $connection, 'effect' => 'allow'])
+            $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['expectedRevision' => 0, 'tool' => $tool, 'connectionId' => $connection, 'effect' => 'allow'])
                 ->assertStatus(422)->assertJsonPath('code', 'rule_not_allowed');
         $this->assertSame(0, ApprovalRule::query()->count());
         // Even a rule written straight into the table is ignored when the action runs, and "always ask" is fine for any write.
@@ -80,7 +80,7 @@ class AgentDepthRulesTest extends TestCase
         $this->callTool($claimed, 'gmail_send', $this->gmail, ['to' => 'a@example.com', 'subject' => 'Hi', 'body' => 'x'], 'm1')->assertOk()
             ->assertJsonPath('action.state', 'pending_approval');
         Http::assertNotSent(fn ($r) => str_ends_with($r->url(), '/messages/send'));
-        $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['tool' => 'gmail_send', 'connectionId' => $this->gmail, 'effect' => 'ask'])->assertOk();
+        $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['expectedRevision' => 1, 'tool' => 'gmail_send', 'connectionId' => $this->gmail, 'effect' => 'ask'])->assertOk();
         foreach (['github_create_issue', 'workspace_edit', 'notion_create_page'] as $tool) $this->assertTrue(RuleEligibility::allowed($tool));
         foreach (['gmail_send', 'slack_post_message', 'teams_post_message', 'outlook_mail_send', 'browser_submit', 'publish_branch', 'open_draft_pr', 'run_test',
             'github_delete_branch', 'stripe_refund', 'mcp_00000000__send_all', 'composio_gmail__send', 'google_drive_trash'] as $tool) $this->assertFalse(RuleEligibility::allowed($tool), $tool);
@@ -89,7 +89,7 @@ class AgentDepthRulesTest extends TestCase
     public function test_a_rule_is_checked_for_its_exact_tool_connection_and_scope(): void
     {
         $this->rule(['scope' => 'qa-org/sandbox'])->assertOk();
-        $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['tool' => 'github_create_issue', 'connectionId' => $this->gmail, 'effect' => 'allow'])
+        $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['expectedRevision' => 0, 'scope' => 'qa-org/sandbox', 'tool' => 'github_create_issue', 'connectionId' => $this->gmail, 'effect' => 'allow'])
             ->assertStatus(422)->assertJsonPath('code', 'rule_not_granted');
         $this->rule(['tool' => 'github_comment_issue', 'scope' => 'x/y'])->assertOk();
         $this->admit('Go.');
@@ -101,7 +101,7 @@ class AgentDepthRulesTest extends TestCase
     public function test_a_scope_on_a_tool_without_one_and_a_read_are_refused(): void
     {
         $this->rule(['tool' => 'github_create_issue', 'scope' => str_repeat('a', 201)])->assertStatus(422);
-        $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['tool' => 'gmail_read', 'connectionId' => $this->gmail, 'effect' => 'ask'])
+        $this->postJson('/api/agents/v2/agents/'.$this->agent['id'].'/rules', ['expectedRevision' => 0, 'tool' => 'gmail_read', 'connectionId' => $this->gmail, 'effect' => 'ask'])
             ->assertStatus(422)->assertJsonPath('code', 'rule_not_allowed');
     }
 

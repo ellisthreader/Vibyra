@@ -42,10 +42,11 @@ class AgentsController extends Controller
         abort_unless(config('agents.enabled'), 503, 'Teammates are being prepared. Please try again later.');
         app(Wallet::class)->ensure($user);
         abort_unless(app(\App\Services\Membership\PlanLimits::class)->allows($user, 'agents'), 402, self::AGENTS_NEED_PRO);
+        $managed = $id && \App\Services\AgentOrganizations\Instances::get($agents->get($user->id, $id)->id);
         $data = $request->validate([
             'id' => $id ? 'prohibited' : 'required|uuid', 'revision' => $id ? 'required|integer|min:1' : 'prohibited',
-            'name' => 'required|string|max:80', 'brief' => 'required|string|max:4000', 'memory' => 'present|nullable|string|max:4000',
-            'avatar' => ['required', Rule::in(['site', 'review', 'oncall', 'assistant', 'lead', 'bugs', 'db', 'qa', 'sprout'])],
+            'name' => 'required|string|max:80', 'brief' => 'required|string|max:'.($managed ? '8000' : '4000'), 'memory' => 'present|nullable|string|max:4000',
+            'avatar' => $managed ? 'required|string|max:100' : ['required', Rule::in(['site', 'review', 'oncall', 'assistant', 'lead', 'bugs', 'db', 'qa', 'sprout'])],
             'model' => 'sometimes|string|max:160', 'skillIds' => 'sometimes|array|max:20',
             'skillIds.*' => 'uuid|distinct',
             'budget' => 'required|integer|min:1|max:100', 'integrations' => 'present|array|max:500',

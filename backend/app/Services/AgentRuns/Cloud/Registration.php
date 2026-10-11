@@ -25,11 +25,18 @@ final class Registration
         app(Accounts::class)->requireSelection($w, $d);
         $b = RuntimeBinding::whereKey($s['runtimeId'])->lockForUpdate()->firstOrFail();
         $key = Str::random(64);
-        $b->forceFill(['runner_key_hash' => hash('sha256', $key), 'cloud_generation' => $w->generation, 'last_seen_at' => now(),
+        $browser = config('agents_v2_browser.cloud_enabled') && ($d['capabilities']['cloudPrivateBrowserV1'] ?? false) === true
+            && ($d['capabilities']['browserTools'] ?? false) === true;
+        $browserKey = $browser ? Str::random(64) : null;
+        $b->forceFill(['runner_key_hash' => hash('sha256', $key), 'browser_key_hash' => $browserKey ? hash('sha256', $browserKey) : null,
+            'cloud_generation' => $w->generation, 'last_seen_at' => now(),
             'provider_version' => $d['providerVersion'] ?? null, 'capabilities' => ['controlledTools' => true, 'taskSteering' => true,
                 'parallelJobsV1' => ($d['capabilities']['parallelJobsV1'] ?? false) === true && ($d['capabilities']['workerSlots'] ?? null) === 3,
                 'workerSlots' => ($d['capabilities']['workerSlots'] ?? null) === 3 ? 3 : 1,
-                'pinnedSkillsV1' => ($d['capabilities']['pinnedSkillsV1'] ?? false) === true]])->save();
-        return ['runtimeId' => $b->id, 'runnerKey' => $key, 'selection' => $s];
+                'pinnedSkillsV1' => ($d['capabilities']['pinnedSkillsV1'] ?? false) === true,
+                'browserTools' => $browser, 'cloudPrivateBrowserV1' => $browser,
+                'browserWorkflowsV1' => $browser && ($d['capabilities']['browserWorkflowsV1'] ?? false) === true,
+                'browserUploadsV1' => $browser && ($d['capabilities']['browserUploadsV1'] ?? false) === true]])->save();
+        return ['runtimeId' => $b->id, 'runnerKey' => $key, 'browserKey' => $browserKey, 'selection' => $s];
     }
 }

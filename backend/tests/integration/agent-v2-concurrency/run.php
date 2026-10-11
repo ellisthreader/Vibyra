@@ -13,15 +13,21 @@ $app = conc_boot(true);
 $names = array_values(array_filter(array_slice($argv, 1), fn ($a) => !str_starts_with($a, '--')));
 if (in_array('--fresh', $argv, true)) Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--force' => true]);
 ConcFakes::setup();
-$all = ['jobs' => ConcJobs::class, 'stage5upgrade' => ConcStageFiveUpgrade::class, 'coordination' => ConcCoordination::class, 'stage4upgrade' => ConcStageFourUpgrade::class, 'workproposals' => ConcWorkProposals::class, 'workcore' => ConcWorkCore::class, 'signals' => ConcSignals::class, 'cloudagents' => ConcCloudAgents::class, 'cloudfiles' => ConcCloudFiles::class, 'cloudrunner' => ConcCloudRunner::class, 'emailenvelope' => ConcEmailEnvelope::class, 'stage2upgrade' => ConcStageTwoUpgrade::class, 'draftoutputs' => ConcDraftOutputs::class, 'memory' => ConcMemory::class, 'steering' => ConcSteering::class, 'credentials' => ConcCredentials::class, 'admission' => ConcAdmission::class, 'leases' => ConcLeases::class, 'events' => ConcEvents::class,
+$all = ['ruleupgrade' => ConcRuleUpgrade::class, 'rules' => ConcRules::class, 'stage7upgrade' => ConcStageSevenUpgrade::class, 'organisations' => ConcOrganisations::class, 'stage6upgrade' => ConcStageSixUpgrade::class, 'stage6smoke' => ConcStageSixSmoke::class, 'browserworkflows' => ConcBrowserWorkflows::class, 'stage6authority' => ConcStageSixAuthority::class, 'channels' => ConcChannels::class, 'browserfiles' => ConcBrowserFiles::class, 'jobs' => ConcJobs::class, 'stage5upgrade' => ConcStageFiveUpgrade::class, 'coordination' => ConcCoordination::class, 'stage4upgrade' => ConcStageFourUpgrade::class, 'workproposals' => ConcWorkProposals::class, 'workcore' => ConcWorkCore::class, 'signals' => ConcSignals::class, 'cloudagents' => ConcCloudAgents::class, 'cloudfiles' => ConcCloudFiles::class, 'cloudrunner' => ConcCloudRunner::class, 'emailenvelope' => ConcEmailEnvelope::class, 'stage2upgrade' => ConcStageTwoUpgrade::class, 'draftoutputs' => ConcDraftOutputs::class, 'memory' => ConcMemory::class, 'steering' => ConcSteering::class, 'credentials' => ConcCredentials::class, 'admission' => ConcAdmission::class, 'leases' => ConcLeases::class, 'events' => ConcEvents::class,
     'approvals' => ConcApprovals::class, 'terminal' => ConcTerminal::class, 'schedules' => ConcSchedules::class, 'connections' => ConcConnections::class, 'triggers' => ConcTriggers::class, 'sweeper' => ConcSweeper::class, 'stranded' => ConcStranded::class, 'inserts' => ConcInserts::class, 'publish' => ConcPublish::class,
     'browser' => ConcBrowser::class, 'wire' => ConcWire::class, 'queue' => ConcQueue::class, 'platform' => ConcPlatform::class, 'localmcp' => ConcLocalMcp::class];
-$names = $names ?: array_keys(array_diff_key($all, ['queue' => 1, 'wire' => 1]));
+$names = $names ?: array_keys(array_diff_key($all, ['queue' => 1, 'wire' => 1, 'stage6smoke' => 1]));
 foreach ($names as $n) {
     $class = $all[$n] ?? null;
     if (!$class) { fwrite(STDERR, "Unknown scenario $n\n"); exit(2); }
     Illuminate\Support\Facades\DB::table('cache')->delete(); // fresh throttle windows per scenario
+    $flags = ['jobs' => ['AGENT_PARALLEL_JOBS_ENABLED' => 'parallel_jobs_enabled'],
+        'workproposals' => ['AGENT_WORK_ENABLED' => 'work_enabled'],
+        'browserworkflows' => ['AGENT_BROWSER_WORKFLOWS_ENABLED' => 'browser_workflows_enabled', 'AGENT_PARALLEL_JOBS_ENABLED' => 'parallel_jobs_enabled']][$n] ?? [];
+    $prior = [];
+    foreach ($flags as $env => $key) { $prior[$env] = [getenv($env), config('agents_v2.'.$key)]; putenv($env.'=true'); config(['agents_v2.'.$key => true]); }
     try { $class::run(); } catch (Throwable $e) { Conc::check($n.' scenario completed', false, get_class($e).': '.$e->getMessage().' @'.basename($e->getFile()).':'.$e->getLine()); }
+    finally { foreach ($flags as $env => $key) { putenv($prior[$env][0] === false ? $env : $env.'='.$prior[$env][0]); config(['agents_v2.'.$key => $prior[$env][1]]); } }
 }
 $fail = count(array_filter(Conc::$results, fn ($r) => !$r['pass']));
 $stray = ConcFakes::count('STRAY');

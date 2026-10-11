@@ -87,9 +87,9 @@ Route::post('/web-api/auth/password/forgot', [VibyraAppController::class, 'forgo
 Route::post('/web-api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1,web-password-reset');
 Route::get('/web-api/session', [WebsiteAuthController::class, 'session']);
 Route::post('/web-api/auth/provider/{provider}/start', [WebsiteProviderAuthController::class, 'start'])
-    ->whereIn('provider', ['apple', 'google', 'microsoft'])->middleware([VerifyHuman::class.':api', 'throttle:auth-provider-start']);
+    ->whereIn('provider', ['apple', 'google'])->middleware([VerifyHuman::class.':api', 'throttle:auth-provider-start']);
 Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'status'])
-    ->whereIn('provider', ['apple', 'google', 'microsoft'])->middleware('throttle:auth-provider-status');
+    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:auth-provider-status');
 Route::get('/web-api/auth/providers', [WebsiteProviderAuthController::class, 'providers'])
     ->middleware('throttle:60,1');
 
@@ -155,13 +155,13 @@ Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middlewar
 Route::post('/api/auth/login/2fa', [VibyraAppController::class, 'loginTwoFactor'])->middleware('throttle:8,1,login-2fa');
 Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])->middleware('throttle:auth-provider-challenge');
 Route::post('/api/auth/desktop/{provider}/start', [VibyraAppController::class, 'desktopProviderStart'])
-    ->whereIn('provider', ['apple', 'google', 'microsoft'])
+    ->whereIn('provider', ['apple', 'google'])
     ->middleware('throttle:auth-provider-start');
 Route::get('/api/auth/desktop/{provider}/status/{flowId}', [VibyraAppController::class, 'desktopProviderStatus'])
-    ->whereIn('provider', ['apple', 'google', 'microsoft'])
+    ->whereIn('provider', ['apple', 'google'])
     ->middleware('throttle:auth-provider-status');
 Route::match(['get', 'post'], '/api/auth/desktop/{provider}/callback', [VibyraAppController::class, 'desktopProviderCallback'])
-    ->whereIn('provider', ['apple', 'google', 'microsoft'])
+    ->whereIn('provider', ['apple', 'google'])
     ->middleware('throttle:auth-provider-callback')
     ->name('auth.desktop.callback');
 Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware('throttle:auth-password-forgot');

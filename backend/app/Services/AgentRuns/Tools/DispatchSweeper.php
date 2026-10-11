@@ -52,6 +52,7 @@ final class DispatchSweeper
     private function settle(string $id): ?string
     {
         $action = ToolAction::query()->find($id);
+        if (\App\Services\AgentChannels\Replies::handles($action)) return app(\App\Services\AgentChannels\Replies::class)->settle($id);
         $run = $action?->state === 'dispatching' ? Run::query()->find($action->run_id) : null;
         if (!$run || !$this->stale($action, $run)) return null;
         // One sweeper per action at a time, so racing sweeps look it up once rather than each asking the provider.

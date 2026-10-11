@@ -1,0 +1,43 @@
+/* Roadmap Part 13: the Team page and the SSO sign-in field. Existing tokens only. */
+.team-table { width: 100%; margin-top: 16px; border-collapse: collapse; font-size: 14px; }
+.team-table th { padding: 0 12px 8px 0; color: var(--portal-muted); font-size: 13px; font-weight: 600; text-align: left; }
+.team-table td { padding: 12px 12px 12px 0; border-top: 1px solid var(--portal-border); vertical-align: middle; }
+.team-table td strong { display: block; font-weight: 650; }
+.team-table td span { display: block; color: var(--portal-muted); font-size: 13px; overflow-wrap: anywhere; }
+.team-actions { text-align: right; }
+.team-actions .portal-link-button { margin-left: auto; }
+.team-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.team-table select, .team-cap, .team-invite input, .team-invite select, .team-admin input, .team-admin select {
+  min-height: 40px; padding: 0 10px; border: 1px solid var(--portal-border); border-radius: 8px; background: var(--portal-canvas); color: var(--portal-text); font-size: 16px; }
+.team-cap { width: 140px; }
+.team-invite, .team-admin form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-top: 20px; }
+.team-invite label, .team-admin label { display: grid; gap: 6px; color: var(--portal-muted); font-size: 13px; font-weight: 600; }
+.team-invite label:first-child { flex: 1 1 240px; }
+.team-invite input { width: 100%; }
+.team-admin p { flex-basis: 100%; margin: 0; color: var(--portal-muted); font-size: 13px; line-height: 1.45; }
+.team-note, .team-ok { margin: 16px 0 0; color: var(--portal-muted); font-size: 14px; }
+.team-ok { color: var(--portal-success); }
+.team-dns { margin: 16px 0; }
+.team-dns p { margin: 0 0 8px; color: var(--portal-muted); font-size: 14px; }
+.team-dns code { display: block; margin: 0 0 8px; }
+.team-form { display: grid; gap: 16px; margin-top: 20px; }
+.team-form label { display: grid; gap: 7px; min-width: 0; color: var(--portal-muted); font-size: 13px; font-weight: 600; }
+.team-form input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--portal-border); border-radius: 8px; background: var(--portal-canvas); color: var(--portal-text); font: inherit; font-size: 16px; }
+.team-form button { justify-self: start; }
+.team-sso .team-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.team-sso p, .team-sso code, .team-dns code { overflow-wrap: anywhere; }
+.team-sso > p:not(.panel-label) { color: var(--portal-muted); font-size: 14px; line-height: 1.6; }
+.team-check { display: flex; gap: 10px; align-items: center; margin-top: 12px; color: var(--portal-muted); font-size: 14px; line-height: 1.5; }
+.team-check input { flex: none; width: 18px; height: 18px; accent-color: var(--portal-accent); }
+@media (max-width: 560px) {
+  .team-sso .team-form { grid-template-columns: 1fr; }
+  .team-table thead { display: none; }
+  .team-table, .team-table tbody, .team-table tr, .team-table td { display: block; }
+  .team-table tr { padding: 12px 0; border-top: 1px solid var(--portal-border); }
+  .team-table td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; border: 0; }
+  .team-table td::before { content: attr(data-label); flex: none; color: var(--portal-muted); font-size: 13px; }
+  .team-table td[data-label="Name"] { display: block; }
+  .team-table td[data-label="Name"]::before, .team-table td[data-label=""]::before { content: none; }
+  .team-actions { justify-content: flex-end; }
+  .team-cap { width: 120px; }
+}

@@ -21,16 +21,13 @@ class AgentV2ToolArgumentHardeningTest extends TestCase
     {
         $bad = ['"a@evil.com,b"@c.com', '"quoted"@c.com', 'a@b.com,c@d.com', 'a@b.com;c@d.com', 'Name <a@b.com>', "a@b.com\nBcc: x@y.com",
             'a b@c.com', 'a@b.com ', "a@b.com\t", 'a(comment)@b.com', 'a\\@b.com@c.com', "\"a\"@b.com"];
-        foreach (['gmail' => ['gmail_send', 'to'], 'outlook_mail' => ['outlook_mail_send', 'to']] as $slug => [$tool]) {
+        foreach (['gmail' => ['gmail_send', 'to']] as $slug => [$tool]) {
             $connector = app(Registry::class)->for($slug);
             foreach ($bad as $to) $this->refused(fn () => $connector->validate($tool, ['to' => $to, 'subject' => 'Hi', 'body' => 'Body']), $slug.' '.$to);
             $ok = $connector->validate($tool, ['to' => 'first.last+tag@sub.example.co.uk', 'subject' => 'Hi', 'body' => 'Body']);
             $this->assertSame('first.last+tag@sub.example.co.uk', $ok['to']);
         }
-        $calendar = app(\App\Services\AgentRuns\Tools\Providers\OutlookCalendarTools::class);
-        $window = ['timeMin' => '2026-10-01T09:00:00Z', 'timeMax' => '2026-10-01T17:00:00Z', 'timeZone' => 'UTC'];
-        $this->refused(fn () => $calendar->validate('outlook_calendar_freebusy', ['schedules' => ['"a@evil.com,b"@c.com']] + $window), 'freebusy schedule');
-        $this->assertSame(['a@b.com'], $calendar->validate('outlook_calendar_freebusy', ['schedules' => ['A@B.com']] + $window)['schedules']);
+
     }
 
     public function test_the_github_read_validator_refuses_dot_segments_like_the_write_validator(): void

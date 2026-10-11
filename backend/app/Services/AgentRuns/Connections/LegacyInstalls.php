@@ -47,6 +47,7 @@ final class LegacyInstalls
 
     private static function syncOne(object $install): void
     {
+        if (\App\Services\ChatConnectors\RetiredIntegrations::contains($install->integration)) return;
         $row = DB::table('agent_connections')->where('install_id', $install->id)->first();
         $identity = $install->account_label !== null ? (string) $install->account_label : null;
         $health = Cache::has('chat-connectors:reconnect:'.$install->user_id.':'.$install->integration)

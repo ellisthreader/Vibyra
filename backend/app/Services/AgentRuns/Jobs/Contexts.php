@@ -19,8 +19,9 @@ final class Contexts
         if (!AccountLock::enabled($run->user_id)) return;
         $context = null;
         if ($mode !== 'ordered') {
-            $coordinated = $mode === 'coordinated';
-            $context = ['name' => $agent->name, 'brief' => $agent->brief,
+            $coordinated = in_array($mode, ['coordinated', 'channel', 'browser_test'], true);
+            $public = in_array($mode, ['channel', 'browser_test'], true);
+            $context = ['name' => $public ? 'Isolated Agent task' : $agent->name, 'brief' => $public ? '' : $agent->brief,
                 'history' => $coordinated ? [] : self::history($run),
                 'memory' => $coordinated ? '' : app(Recall::class)->text($run, $agent->memory ?? null),
                 'memoryBoundary' => $coordinated ? null : self::memoryBoundary($run, $agent->memory ?? null)];
@@ -34,7 +35,7 @@ final class Contexts
     {
         $rows = Run::query()->where('agent_id', $run->agent_id)->where('user_id', $run->user_id)
             ->where('state', RunStates::COMPLETED)->where('conversation_seq', '<', $run->conversation_seq)
-            ->whereNotIn('id', Job::query()->where('mode', 'coordinated')->select('run_id'))
+            ->whereNotIn('id', Job::query()->whereIn('mode', ['coordinated', 'channel', 'browser_test'])->select('run_id'))
             ->orderByDesc('conversation_seq')->limit(10)->get(['id', 'prompt', 'answer'])->reverse()->values();
         return app(Recall::class)->history($run, $rows->map(fn ($row) => [
             'runId' => $row->id, 'prompt' => mb_substr($row->prompt, 0, 4000),
@@ -47,7 +48,7 @@ final class Contexts
         if (!$job?->context) return null;
         $context = $job->context;
         $memory = DB::table('agent_teammates')->where('id', $run->agent_id)->value('memory');
-        if ($job->mode === 'coordinated' || !hash_equals((string) ($context['memoryBoundary'] ?? ''), self::memoryBoundary($run, $memory)))
+        if (in_array($job->mode, ['coordinated', 'channel', 'browser_test'], true) || !hash_equals((string) ($context['memoryBoundary'] ?? ''), self::memoryBoundary($run, $memory)))
             $context['memory'] = ''; // Forgetting/expiry may remove facts; an old snapshot must not restore them.
         $context['history'] = app(Recall::class)->history($run, $context['history'] ?? []);
         return $context;

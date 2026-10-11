@@ -16,18 +16,23 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 final class BrowserBinding
 {
     private const MAX_FIELDS = 30;
-    private const SNAPSHOT_TOOLS = ['browser_open', 'browser_snapshot', 'browser_click', 'browser_type', 'browser_takeover_request'];
+    private const SNAPSHOT_TOOLS = ['browser_open', 'browser_snapshot', 'browser_click', 'browser_type', 'browser_takeover_request', 'browser_resolve'];
 
     public function bind(Run $run, Connection $browser, string $tool, array $arguments): array
     {
+        if (in_array($tool, ['browser_resolve', 'browser_download'], true)
+            && (!config('agents_v2_browser.enabled')
+                || (\App\Models\AgentV2\RuntimeBinding::find($run->runtime_binding_id)?->capabilities['browserWorkflowsV1'] ?? false) !== true))
+            throw new ToolRefused('browser_workflows_unavailable', 'This runtime does not support browser workflows.');
         try { $args = app(BrowserTools::class)->validate($tool, $arguments); }
         catch (HttpException $e) { throw new ToolRefused('invalid_arguments', $e->getMessage()); }
-        if ($tool === 'browser_open' && !BrowserGrants::allows($browser, $args['url']))
+        if (in_array($tool, ['browser_open', 'browser_download'], true) && !BrowserGrants::allows($browser, $args['url']))
             throw self::notAllowed($args['url']);
-        return $tool === 'browser_submit' ? $this->submit($run, $browser, $args) : $args;
+        if ($tool === 'browser_resolve' && !BrowserGrants::allows($browser, $args['origin'])) throw self::notAllowed($args['origin']);
+        return in_array($tool, ['browser_submit', 'browser_upload'], true) ? $this->submit($run, $browser, $args, $tool) : $args;
     }
 
-    private function submit(Run $run, Connection $browser, array $args): array
+    private function submit(Run $run, Connection $browser, array $args, string $tool): array
     {
         $snapshot = ToolAction::query()->where('run_id', $run->id)->where('connection_id', $browser->id)
             ->whereIn('tool', self::SNAPSHOT_TOOLS)->where('state', 'completed')->orderByDesc('created_at')->get()
@@ -38,6 +43,8 @@ final class BrowserBinding
             && collect($f['submits'] ?? [])->contains(fn ($s) => ($s['ref'] ?? null) === $args['ref']));
         if (!is_array($form))
             throw new ToolRefused('invalid_arguments', 'That ref is not a submit button of a form in that snapshot.');
+        if (($form['fieldsComplete'] ?? null) !== true)
+            throw new ToolRefused('incomplete_form', 'This form cannot be shown completely. Ask the person to use private takeover.');
         $destination = (string) ($form['action'] ?? '');
         if (!BrowserGrants::allows($browser, $destination)) throw self::notAllowed($destination);
         if (!BrowserGrants::allows($browser, $snapshot['url'] ?? null)) throw self::notAllowed((string) ($snapshot['url'] ?? ''));
@@ -45,9 +52,10 @@ final class BrowserBinding
         if (count(is_array($form['fields'] ?? null) ? $form['fields'] : []) > self::MAX_FIELDS)
             throw new ToolRefused('invalid_arguments', 'This form has more than '.self::MAX_FIELDS.' fields, more than an approval can show in full.');
         $label = collect($form['submits'])->firstWhere('ref', $args['ref'])['label'] ?? '';
-        return ['ref' => $args['ref'], 'pageFingerprint' => $args['pageFingerprint'], 'pageUrl' => (string) $snapshot['url'],
+        $bound = ['ref' => $args['ref'], 'pageFingerprint' => $args['pageFingerprint'], 'pageUrl' => (string) $snapshot['url'],
             'destination' => $destination, 'method' => strtoupper((string) ($form['method'] ?? 'GET')),
             'submitLabel' => mb_substr((string) $label, 0, 200), 'fields' => self::fields($form['fields'] ?? [])];
+        return $tool === 'browser_upload' ? \App\Services\AgentBrowser\UploadBinding::bind($run, $form, $args, $bound) : $bound;
     }
 
     /** The exact field summary a person reviews: names, labels and values, secrets hidden. */

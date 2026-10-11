@@ -66,6 +66,8 @@ final class Approvals
             }
             if (!empty($action->secret_kinds) && !$confirmSecret)
                 ApiError::throw(422, 'secret_confirmation_required', 'This action contains something that looks like a secret. Confirm it to send it anyway.');
+            if (!empty($action->secret_kinds)) \App\Services\Platform\AccountActivity::record($userId, 'secret_guard.confirmed',
+                ['tool' => $action->tool, 'kinds' => $action->secret_kinds]);
             $action->forceFill(['state' => 'approved', 'decision' => 'allow'])->save();
             $this->events->append($run, 'approval.decided', ['actionId' => $action->id, 'decision' => 'allow']);
             if ($run->state === RunStates::WAITING_APPROVAL) $this->lifecycle->move($run, RunStates::RUNNING);
@@ -87,6 +89,8 @@ final class Approvals
      */
     public function dispatch(string $actionId, ?CarbonInterface $strandedBefore = null): ?string
     {
+        if (ToolAction::whereKey($actionId)->value('tool') === \App\Services\AgentChannels\ReplyTool::NAME)
+            return app(\App\Services\AgentChannels\Replies::class)->dispatch($actionId, $strandedBefore);
         $refused = false;
         $claimed = DB::transaction(function () use ($actionId, $strandedBefore, &$refused) {
             $runId = ToolAction::query()->whereKey($actionId)->value('run_id'); // run → action, like cancel (see decide)
@@ -101,9 +105,10 @@ final class Approvals
             $connection = Connection::query()->whereKey($action->connection_id)->whereNull('revoked_at')->first();
             $stale = $run->cancel_requested_at || RunStates::terminal($run->state)
                 || !$grant || $grant->revision !== $action->grant_revision || !in_array($action->tool, $grant->operations ?? [], true)
-                || !$connection || $connection->generation !== $action->connection_generation || $connection->health !== 'healthy'
+                || !$connection || !\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider) || !\App\Services\AgentCapabilities\Authority::allows($run, $connection) || $connection->generation !== $action->connection_generation || $connection->health !== 'healthy'
                 || ($action->expires_at && $action->expires_at->isPast())
-                || !hash_equals((string) $action->fingerprint, self::fingerprint($action, $run->user_id));
+                || !hash_equals((string) $action->fingerprint, self::fingerprint($action, $run->user_id))
+                || app(\App\Services\AgentRuns\Rules\RuleApproval::class)->stale($action, $run);
             if (!$stale && $connection->provider === \App\Services\AgentRuns\Browser\BrowserTools::PROVIDER) {
                 // A browser submit stays approved; the leased Mac claims it (BrowserActions rechecks everything).
                 if (!\App\Services\AgentRuns\Browser\BrowserActions::stale($action, $run)) return null;

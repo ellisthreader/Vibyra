@@ -6,17 +6,21 @@ const WebsiteSessionContext = createContext(null);
 export function WebsiteSessionProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState("");
 
   const refresh = useCallback(async () => {
     try {
       const payload = await portalApi.session();
+      setSessionError("");
       setUser(payload.user ?? null);
       return payload.user ?? null;
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
+        setSessionError("");
         setUser(null);
         return null;
       }
+      setSessionError("We couldn’t check your sign-in. Please try again.");
       throw error;
     } finally {
       setLoading(false);
@@ -51,8 +55,8 @@ export function WebsiteSessionProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, loading, refresh, login, loginTwoFactor, signup, logout }), [
-    user, loading, refresh, login, loginTwoFactor, signup, logout,
+  const value = useMemo(() => ({ user, loading, sessionError, refresh, login, loginTwoFactor, signup, logout }), [
+    user, loading, sessionError, refresh, login, loginTwoFactor, signup, logout,
   ]);
   return <WebsiteSessionContext.Provider value={value}>{children}</WebsiteSessionContext.Provider>;
 }

@@ -32,6 +32,7 @@ final class Activations
             if (isset($spec['condition']['at'])) abort_unless(\Carbon\CarbonImmutable::parse($spec['condition']['at'])->isFuture(), 422, 'Choose a future follow-up time.');
             if (!app(PlanLimits::class)->allows($user, 'agents')) ApiError::throw(402, 'plan_required', 'Agents need Pro.');
             app(Grants::class)->agent($userId, $spec['agentId']);
+            \App\Services\AgentOrganizations\Authority::instance($spec['agentId']);
             if (isset($spec['condition']['triggerId'])) app(FollowUpSources::class)->source($userId, $spec['agentId'], $spec['condition'], true);
             $snapshot = [...RuntimePins::capture($userId, $spec['runtimeId']), 'workAgentId' => $spec['agentId'],
                 'skillsHash' => SkillSnapshots::selectionHash($userId, $spec['agentId'])];

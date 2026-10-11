@@ -48,7 +48,7 @@ class AgentV2BrowserToolsTest extends TestCase
         $this->registerRuntime('acct-2'); // Re-registered without browserTools.
         $this->assertSame([], $this->toolList($this->fresh()['id']), 'A Mac without browser support gets none.');
         $this->bootBrowser(true, []);
-        $this->deleteJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser')->assertOk();
+        $this->deleteJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', $this->browserExpected())->assertOk();
         $this->assertSame([], $this->toolList($this->fresh()['id']), 'Removed grant: no browser tools.');
     }
 

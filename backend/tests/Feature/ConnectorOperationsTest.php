@@ -133,48 +133,6 @@ class ConnectorOperationsTest extends TestCase
                 'due' => '2026-10-01'], 'tasks.googleapis.com/tasks/v1/lists/list123/tasks', [[
                     'id' => 'task456', 'title' => 'Review plan']], 'Created Google Task Review plan'],
 
-            // --- Microsoft Graph ----------------------------------------------
-            ['outlook_mail', 'outlook_mail_search', ['query' => 'invoice'], 'graph.microsoft.com/v1.0/me/messages*', [
-                ['value' => [['id' => 'message123', 'subject' => 'Invoice',
-                    'from' => ['emailAddress' => ['address' => 'a@example.com']]]]]], 'Found 1 Outlook messages'],
-            ['outlook_mail', 'outlook_mail_read', ['id' => 'message123'], 'graph.microsoft.com/v1.0/me/messages/*', [[
-                'id' => 'message123', 'subject' => 'Invoice', 'body' => ['contentType' => 'text', 'content' => 'Please pay']]],
-                'Read Outlook message message123'],
-            ['outlook_mail', 'outlook_mail_send', ['to' => 'a@example.com', 'subject' => 'Hello', 'body' => 'Hi'],
-                'graph.microsoft.com/v1.0/me/sendMail', [[]], 'Microsoft accepted email to a@example.com'],
-            ['outlook_calendar', 'outlook_calendar_upcoming', ['days' => 7],
-                'graph.microsoft.com/v1.0/me/calendar/calendarView*', [
-                    ['value' => [['id' => 'event123', 'subject' => 'Call',
-                        'start' => ['dateTime' => '2026-10-01T09:00:00']]]]], 'Read 1 upcoming Outlook events'],
-            ['outlook_calendar', 'outlook_calendar_create_event', ['title' => 'Call',
-                'start' => '2026-10-01T09:00:00Z', 'end' => '2026-10-01T10:00:00Z'],
-                'graph.microsoft.com/v1.0/me/events', [['id' => 'event123']], 'Created Outlook event Call'],
-            ['onedrive', 'onedrive_search', ['query' => 'notes'], 'graph.microsoft.com/v1.0/me/drive/root/search*', [
-                ['value' => [['id' => 'item123', 'name' => 'Notes.txt', 'file' => ['mimeType' => 'text/plain']]]]],
-                'Found 1 OneDrive items'],
-            ['onedrive', 'onedrive_read', ['id' => 'item123'], '*', [
-                ['id' => 'item123', 'name' => 'Notes.txt', 'size' => 5, 'file' => ['mimeType' => 'text/plain'],
-                    '@microsoft.graph.downloadUrl' => 'https://files.example.sharepoint.com/notes'],
-                'hello'], 'Read OneDrive file Notes.txt'],
-            ['teams', 'teams_chats', [], 'graph.microsoft.com/v1.0/me/chats*', [[
-                'value' => [['id' => '19:abc@thread.v2', 'topic' => 'Team']]]], 'Listed 1 Teams chats'],
-            ['teams', 'teams_chat_messages', ['chatId' => '19:abc@thread.v2'],
-                'graph.microsoft.com/v1.0/me/chats/*', [[
-                    'value' => [['id' => 'message1', 'body' => ['contentType' => 'text', 'content' => 'Hello']]]]],
-                'Read 1 Teams chat messages'],
-            ['sharepoint', 'sharepoint_sites', ['query' => 'product'], 'graph.microsoft.com/v1.0/sites*', [[
-                'value' => [['id' => 'example.sharepoint.com,site,web', 'displayName' => 'Product']]]],
-                'Found 1 SharePoint sites'],
-            ['sharepoint', 'sharepoint_files', ['siteId' => 'example.sharepoint.com,site,web', 'query' => 'plan'],
-                'graph.microsoft.com/v1.0/sites/*', [[
-                    'value' => [['id' => 'item123', 'name' => 'Plan.txt']]]], 'Found 1 SharePoint files'],
-            ['sharepoint', 'sharepoint_read', ['siteId' => 'example.sharepoint.com,site,web', 'itemId' => 'item123'],
-                '*', [
-                    ['id' => 'item123', 'name' => 'Plan.txt', 'size' => 4,
-                        'file' => ['mimeType' => 'text/plain'],
-                        '@microsoft.graph.downloadUrl' => 'https://files.example.sharepoint.com/plan'],
-                    'plan'], 'Read SharePoint file Plan.txt'],
-
             // --- Slack --------------------------------------------------------
             ['slack', 'slack_channels', [], 'slack.com/api/conversations.list*', [[
                 'ok' => true, 'channels' => [['id' => 'C12345678', 'name' => 'general', 'is_member' => true]]]],
@@ -224,7 +182,7 @@ class ConnectorOperationsTest extends TestCase
         // repeats for anything further the connector asks.
         $sequence = Http::sequence();
         foreach ($bodies as $body) $sequence->push($body,
-            $operation === 'outlook_mail_send' ? 202 : 200);
+            200);
         Http::fake([$pattern => $sequence->whenEmpty(Http::response($bodies[count($bodies) - 1]))]);
         $connector = app(Registry::class)->for($slug);
         $safe = $connector->validate($operation, $arguments);
@@ -263,13 +221,6 @@ class ConnectorOperationsTest extends TestCase
                 'due' => '2026-10-01'], 'tasks.googleapis.com/tasks/v1/lists/list123/tasks', [['id' => 'task456']],
                 'POST', 'https://tasks.googleapis.com/tasks/v1/lists/list123/tasks',
                 ['title' => 'Review plan', 'due' => '2026-10-01T00:00:00.000Z']],
-            'outlook_mail' => ['outlook_mail_send', ['to' => 'a@example.com', 'subject' => 'Hello', 'body' => 'Hi'],
-                'graph.microsoft.com/v1.0/me/sendMail', [[]],
-                'POST', 'https://graph.microsoft.com/v1.0/me/sendMail', ['message' => null]],
-            'outlook_calendar' => ['outlook_calendar_create_event', ['title' => 'Call',
-                'start' => '2026-10-01T09:00:00Z', 'end' => '2026-10-01T10:00:00Z'],
-                'graph.microsoft.com/v1.0/me/events', [['id' => 'event123']],
-                'POST', 'https://graph.microsoft.com/v1.0/me/events', ['subject' => 'Call']],
             'slack' => ['slack_post_message', ['channel' => 'C12345678', 'text' => 'Hello'],
                 'slack.com/api/chat.postMessage', [['ok' => true, 'channel' => 'C12345678', 'ts' => '1.0']],
                 'POST', 'https://slack.com/api/chat.postMessage', ['channel' => 'C12345678', 'text' => 'Hello']],
@@ -282,7 +233,7 @@ class ConnectorOperationsTest extends TestCase
         foreach ($expected as $slug => [$operation, $arguments, $pattern, $bodies, $method, $url, $payload]) {
             $sequence = Http::sequence();
             foreach ($bodies as $body) $sequence->push($body,
-                $operation === 'outlook_mail_send' ? 202 : 200);
+                200);
             Http::fake([$pattern => $sequence->whenEmpty(Http::response($bodies[count($bodies) - 1]))]);
 
             $connector = app(Registry::class)->for($slug);

@@ -7,7 +7,7 @@ export async function completeProviderLogin(provider, onStatus, declarations = {
   if (!popup) throw new Error("Allow pop-ups to continue with this provider.");
 
   try {
-    const name = { google: "Google", apple: "Apple", microsoft: "Microsoft" }[provider] ?? "provider";
+    const name = { google: "Google", apple: "Apple" }[provider] ?? "provider";
     onStatus(`Opening ${name} sign-in…`);
     const start = await portalApi.startProvider(provider, declarations);
     if (!start.authUrl || !start.flowId) throw new Error("The sign-in provider did not start.");

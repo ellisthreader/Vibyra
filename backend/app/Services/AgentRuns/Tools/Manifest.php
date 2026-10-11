@@ -22,7 +22,7 @@ final class Manifest
     /** The capped, task-relevant manifest (ToolSelection); `selection()` also reports what the cap dropped. */
     public function for(Run $run): array
     {
-        $tools = Context::filterTools($run, $this->selection($run)['tools']);
+        $tools = \App\Services\AgentBrowserWorkflows\Context::filterTools($run, Context::filterTools($run, $this->selection($run)['tools']));
         return ['revision' => substr(Canonical::hash(array_map(fn ($t) => [$t['tool'], $t['connectionId'], $t['schemaRevision']], $tools)), 0, 16),
             'tools' => $tools];
     }
@@ -30,6 +30,8 @@ final class Manifest
     /** @return array{tools: array, dropped: array, scores: array<string, int>} */
     public function selection(Run $run): array
     {
+        if (\App\Services\AgentChannels\RunContext::isolated($run))
+            return ['tools' => \App\Services\AgentChannels\RunContext::filterTools($run, []), 'dropped' => [], 'scores' => []];
         $local = [...\App\Services\AgentRuns\Outputs\OutputTools::entries($run),
             ...\App\Services\AgentRuns\CloudFiles\FileTools::entries($run),
             ...\App\Services\AgentWork\Proposals\ProposalTool::entries($run)];
@@ -50,9 +52,14 @@ final class Manifest
             $pair = $this->current($run, $pinned);
             if (!$pair || $pair[1]->health !== 'healthy') continue;
             [$grant, $connection] = $pair;
+            if (!\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider)) continue;
+            if (!\App\Services\AgentCapabilities\Authority::allows($run, $connection, $pinned)) continue;
             $ops = array_intersect($pinned['operations'] ?? [], $grant->operations ?? [], $this->catalog->operations($connection->provider));
             foreach ($this->catalog->operations($connection->provider) as $tool) {
                 if (!in_array($tool, $ops, true)) continue;
+                if (in_array($tool, ['browser_resolve', 'browser_download'], true)
+                    && !((\App\Models\AgentV2\RuntimeBinding::find($run->runtime_binding_id)?->capabilities['browserWorkflowsV1'] ?? false) === true)) continue;
+                if ($tool === 'browser_upload' && !\App\Services\AgentBrowser\UploadBinding::capable($run)) continue;
                 $definition = $this->catalog->definition($tool);
                 $tools[] = ['tool' => $tool, 'connectionId' => $connection->id, 'provider' => $connection->provider,
                     'account' => $connection->external_identity, 'kind' => $this->catalog->kind($tool),
@@ -72,6 +79,11 @@ final class Manifest
      */
     public function authorize(Run $run, string $tool, string $connectionId): array
     {
+        if (in_array($tool, ['browser_resolve', 'browser_download'], true)
+            && ((\App\Models\AgentV2\RuntimeBinding::find($run->runtime_binding_id)?->capabilities['browserWorkflowsV1'] ?? false) !== true))
+            throw new ToolRefused('runtime_upgrade', 'Update this runtime before using this browser operation.');
+        if ($tool === 'browser_upload' && !\App\Services\AgentBrowser\UploadBinding::capable($run))
+            throw new ToolRefused('runtime_upgrade', 'Update this runtime before uploading a file.');
         $provider = $this->catalog->providerOf($tool);
         if (!$provider) throw new ToolRefused('unknown_tool', 'That tool is not available to this teammate.');
         $pinned = collect($run->grant_snapshot ?? [])->firstWhere('connectionId', $connectionId);
@@ -81,6 +93,10 @@ final class Manifest
         $pair = $this->current($run, $pinned);
         if (!$pair) throw new ToolRefused('grant_revoked', 'Access to that account was removed. Start a new task.');
         [$grant, $connection] = $pair;
+        if (!\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider))
+            throw new ToolRefused('organisation_provider_denied', 'Your organisation policy does not allow this connector for this task.');
+        if (!\App\Services\AgentCapabilities\Authority::allows($run, $connection, $pinned))
+            \App\Services\AgentRuns\ApiError::throw(409, 'capability_review_changed', 'Review the current capability version before using it.');
         if ($connection->revoked_at) throw new ToolRefused('connection_revoked', 'That account was disconnected.');
         if ($connection->provider !== $provider) throw new ToolRefused('wrong_connection', 'That tool does not belong to that account.');
         if ($connection->health !== 'healthy')

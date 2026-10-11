@@ -10,6 +10,7 @@ trait AgentV2BrowserFixture
     protected function bootBrowser(bool $capable = true, array $origins = ['https://shop.example.com']): ?string
     {
         config(['agents_v2_browser.enabled' => true]);
+        $this->user->forceFill(['plan' => 'pro', 'membership_ends_at' => now()->addDay()])->save();
         $this->runtime = $this->postJson('/api/agents/v2/runtimes', ['hostId' => $this->hostId, 'provider' => 'claude',
             'accountRef' => 'default', 'model' => 'claude-sonnet', 'capabilities' => ['controlledTools' => true,
                 'browserTools' => $capable]])->assertCreated()->json('runtime');
@@ -18,7 +19,14 @@ trait AgentV2BrowserFixture
 
     protected function browserSites(array $origins)
     {
-        return $this->putJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', ['origins' => $origins]);
+        return $this->putJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser', ['origins' => $origins, ...$this->browserExpected()]);
+    }
+
+    protected function browserExpected(): array
+    {
+        $state = $this->getJson('/api/agents/v2/agents/'.$this->agent['id'].'/browser')->assertOk()->json();
+        return ['expectedRevision' => $state['revision'], 'expectedConnectionId' => $state['browser']['connectionId'] ?? null,
+            'expectedGeneration' => $state['browser']['generation'] ?? 0];
     }
 
     protected function browserPath(array $claimed, string $suffix = ''): string
@@ -52,7 +60,7 @@ trait AgentV2BrowserFixture
         return ['url' => 'https://shop.example.com/contact', 'title' => 'Contact', 'pageFingerprint' => $fp,
             'elements' => [['ref' => 'e1', 'role' => 'textbox', 'name' => 'To', 'value' => $to],
                 ['ref' => 'e2', 'role' => 'textbox', 'name' => 'Password', 'type' => 'password', 'value' => $password]],
-            'forms' => [['action' => 'https://shop.example.com/send', 'method' => 'post',
+            'forms' => [['fieldsComplete' => true, 'action' => 'https://shop.example.com/send', 'method' => 'post',
                 'fields' => [['ref' => 'e1', 'name' => 'to', 'label' => 'To', 'type' => 'email', 'value' => $to],
                     ['ref' => 'e2', 'name' => 'pw', 'label' => 'Password', 'type' => 'password', 'value' => $password]],
                 'submits' => [['ref' => 'e3', 'label' => 'Send']]]]];

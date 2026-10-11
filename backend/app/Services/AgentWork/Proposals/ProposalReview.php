@@ -54,6 +54,7 @@ final class ProposalReview
             Proposals::enabled(); app(Access::class)->require($userId);
             if (!app(PlanLimits::class)->allows($user, 'agents')) ApiError::throw(402, 'plan_required', 'Agents need Pro.');
             app(Grants::class)->agent($userId, $p->agent_id);
+            \App\Services\AgentOrganizations\Authority::instance($p->agent_id);
             $spec = ProposalSpecs::normalize($p->kind, $p->spec, $p->agent_id, $p->runtime_id);
             if ($p->kind === 'followup' && isset($spec['condition']['triggerId']))
                 app(\App\Services\AgentWork\FollowUpSources::class)->source($userId, $p->agent_id, $spec['condition'], true);

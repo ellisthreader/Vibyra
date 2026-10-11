@@ -15,7 +15,7 @@ final class BrowserTools implements ProviderTools
 {
     public const PROVIDER = 'browser';
     public const TOOLS = ['browser_open' => 'read', 'browser_snapshot' => 'read', 'browser_click' => 'read',
-        'browser_type' => 'read', 'browser_read' => 'read', 'browser_takeover_request' => 'read', 'browser_submit' => 'write'];
+        'browser_type' => 'read', 'browser_read' => 'read', 'browser_takeover_request' => 'read', 'browser_submit' => 'write', 'browser_resolve' => 'read', 'browser_download' => 'read', 'browser_upload' => 'write'];
 
     /** @return array<string, 'read'|'write'> */
     public function tools(): array
@@ -28,6 +28,9 @@ final class BrowserTools implements ProviderTools
         $s = ['type' => 'string'];
         $ref = ['type' => 'string', 'description' => 'Element ref from the latest snapshot, e.g. "e12".'];
         return match ($tool) {
+            'browser_upload' => \App\Services\AgentBrowser\UploadBinding::definition(),
+            'browser_resolve' => Schema::tool($tool, 'Resolve one reviewed semantic browser step against the current page. Returns a fresh snapshot and resolvedRef only when origin, path, role, name and type match uniquely. Changed or ambiguous pages stop; this never clicks or grants submission.', ['origin' => $s, 'path' => $s, 'role' => $s, 'name' => $s, 'inputType' => $s, 'href' => $s], ['origin', 'path', 'role', 'name']),
+            'browser_download' => Schema::tool($tool, 'Download one file from an allowed site to a private owned artifact, up to 8 MB. Returns metadata only. PDF, plain text, CSV, JSON, PNG, JPEG and WebP are supported; no executable, archive or HTML.', ['url' => $s], ['url']),
             'browser_open' => Schema::tool($tool, 'Open an http(s) URL in the teammate browser on the Mac. Only the sites the person granted can load; anything else is blocked. Returns a page snapshot.', ['url' => $s], ['url']),
             'browser_snapshot' => Schema::tool($tool, 'Describe the current page: URL, title, headings, interactive elements with refs, forms (password values are never shown) and pageFingerprint.', []),
             'browser_click' => Schema::tool($tool, 'Click one element by ref (links, buttons, tabs). Submitting a form is not allowed here; use browser_submit. Requests that would send data are blocked. Returns a new snapshot.', ['ref' => $ref], ['ref']),
@@ -42,14 +45,17 @@ final class BrowserTools implements ProviderTools
     public function validate(string $tool, array $a): array
     {
         abort_unless(isset($this->tools()[$tool]), 422, 'That browser tool is not enabled.');
+        if ($tool === 'browser_upload') return \App\Services\AgentBrowser\UploadBinding::validate($a);
         $allowed = match ($tool) {
-            'browser_open' => ['url'], 'browser_click' => ['ref'], 'browser_type' => ['ref', 'text'],
+            'browser_resolve' => \App\Services\AgentBrowser\Semantic::FIELDS,
+            'browser_open', 'browser_download' => ['url'], 'browser_click' => ['ref'], 'browser_type' => ['ref', 'text'],
             'browser_read' => ['startChar'], 'browser_takeover_request' => ['reason'], 'browser_submit' => ['pageFingerprint', 'ref'],
             default => [],
         };
         Schema::only($a, $allowed);
         return match ($tool) {
-            'browser_open' => ['url' => self::url($a['url'] ?? null)],
+            'browser_resolve' => \App\Services\AgentBrowser\Semantic::validate($a),
+            'browser_open', 'browser_download' => ['url' => self::url($a['url'] ?? null)],
             'browser_click' => ['ref' => self::ref($a['ref'] ?? null)],
             'browser_type' => ['ref' => self::ref($a['ref'] ?? null), 'text' => (string) Schema::text($a['text'] ?? null, 2000,
                 'Type at most 2000 characters.', false)],

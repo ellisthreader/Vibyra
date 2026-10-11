@@ -13,6 +13,7 @@ class AgentV2RouteAuthTest extends TestCase
     /** Called by GitHub/Linear/Stripe servers (signed per trigger) and Slack (one app signing secret), by a browser returning from a provider (single-use state, bound cookie), or by a server fetching our client metadata. */
     private const PUBLIC = ['api/agents/v2/hooks/github/{trigger}', 'api/agents/v2/hooks/stripe/{trigger}', 'api/agents/v2/hooks/linear/{trigger}',
         'api/agents/v2/hooks/api/{trigger}', // Roadmap Part 11 api.invoke: the trigger's own secret is the bearer
+        'api/agents/v2/channel-hooks/slack', 'api/agents/v2/channel-hooks/teams', // Verified Slack HMAC / Microsoft Bot Connector JWT
         'api/agents/v2/hooks/slack', 'api/agents/v2/mcp/callback',
         'api/agents/v2/mcp/client-metadata.json', 'api/agents/v2/composio/callback'];
 

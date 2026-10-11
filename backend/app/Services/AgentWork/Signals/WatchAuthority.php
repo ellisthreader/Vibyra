@@ -8,6 +8,7 @@ final class WatchAuthority
     public function selected(int $user,string $agent,string $connection): array
     {
         app(Grants::class)->agent($user,$agent);
+        \App\Services\AgentOrganizations\Authority::discovery($agent,$user,'github');
         $c=Connection::query()->whereKey($connection)->where('user_id',$user)->where('provider','github')->whereNull('revoked_at')->first();
         abort_unless($c && $c->health==='healthy',409,'Choose a healthy GitHub connection.');
         $g=Grant::query()->where('user_id',$user)->where('agent_id',$agent)->where('connection_id',$connection)->whereNull('revoked_at')->first();

@@ -17,7 +17,7 @@ final class ComputerDispatch
     /** Computer-specific part, also used by `Approvals::dispatch`. */
     public static function current(ToolAction $action, Run $run, Connection $connection): bool
     {
-        if (!ComputerGrants::usable($run, $connection)) return false;
+        if (!ComputerGrants::usable($run, $connection) || !\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider)) return false;
         $pin = $action->arguments['github'] ?? null;
         return !is_array($pin) || ComputerBinding::githubCurrent($pin) !== null;
     }
@@ -33,7 +33,8 @@ final class ComputerDispatch
             || !$connection || $connection->generation !== $action->connection_generation || $connection->health !== 'healthy'
             || ($expiry && $action->expires_at && $action->expires_at->isPast())
             || !hash_equals((string) $action->fingerprint, Approvals::fingerprint($action, $run->user_id))
-            || !self::current($action, $run, $connection);
+            || !self::current($action, $run, $connection)
+            || app(\App\Services\AgentRuns\Rules\RuleApproval::class)->stale($action, $run);
     }
 
     /** What the leased Mac needs to run one action; never another account's data. */

@@ -24,7 +24,7 @@ class ConnectorRenewalFixesTest extends TestCase
     {
         parent::setUp();
         config(['chat_connectors.enabled' => true, 'app.key' => 'base64:'.base64_encode(str_repeat('x', 32)), 'app.url' => 'https://vibyra.test']);
-        foreach (['notion', 'linear', 'slack', 'outlook_mail'] as $slug) {
+        foreach (['notion', 'linear', 'slack'] as $slug) {
             config(['chat_connectors.catalogue.'.$slug.'.oauth.client_id' => $slug.'-id', 'chat_connectors.catalogue.'.$slug.'.oauth.client_secret' => $slug.'-secret']);
         }
         $this->user = User::factory()->create(['email_verified_at' => now()]);
@@ -82,17 +82,6 @@ class ConnectorRenewalFixesTest extends TestCase
         $this->assertSame(['xoxe.xoxb-2', 'xoxe-2', 43200], [$grant['access'], $grant['refresh'], $grant['expires_in']]);
         $this->expectException(ReconnectRequired::class);
         $oauth->renew('slack', 'xoxe-2');
-    }
-
-    public function test_microsoft_refusing_the_app_secret_is_not_a_reason_to_reconnect(): void
-    {
-        $oauth = app(ConnectorOAuth::class);
-        Http::fake(['login.microsoftonline.com/*' => Http::sequence()
-            ->push(['error' => 'invalid_client', 'error_description' => 'AADSTS7000222: client secret keys are expired'], 401)
-            ->push(['error' => 'invalid_grant', 'error_description' => 'AADSTS700082: refresh token expired'], 400)]);
-        $this->assertNull($oauth->renew('outlook_mail', 'old'));
-        $this->expectException(ReconnectRequired::class);
-        $oauth->renew('outlook_mail', 'old');
     }
 
     public function test_two_calls_after_expiry_renew_once(): void

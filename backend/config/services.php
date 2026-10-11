@@ -120,12 +120,6 @@ return [
         'jwks_url' => env('APPLE_AUTH_JWKS_URL', 'https://appleid.apple.com/auth/keys'),
     ],
 
-    'microsoft_auth' => [
-        'audiences' => array_values(array_filter([
-            trim((string) env('MICROSOFT_DESKTOP_CLIENT_ID', '')),
-        ])),
-        'jwks_url' => env('MICROSOFT_AUTH_JWKS_URL', 'https://login.microsoftonline.com/common/discovery/v2.0/keys'),
-    ],
 
     'google_desktop_oauth' => [
         'client_id' => env('GOOGLE_DESKTOP_CLIENT_ID'),
@@ -146,13 +140,6 @@ return [
         'token_url' => env('APPLE_DESKTOP_TOKEN_URL', 'https://appleid.apple.com/auth/token'),
     ],
 
-    'microsoft_desktop_oauth' => [
-        'client_id' => env('MICROSOFT_DESKTOP_CLIENT_ID'),
-        'client_secret' => env('MICROSOFT_DESKTOP_CLIENT_SECRET'),
-        'redirect_uri' => env('MICROSOFT_DESKTOP_REDIRECT_URI', rtrim((string) env('APP_URL'), '/').'/api/auth/desktop/microsoft/callback'),
-        'authorize_url' => env('MICROSOFT_DESKTOP_AUTHORIZE_URL', 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'),
-        'token_url' => env('MICROSOFT_DESKTOP_TOKEN_URL', 'https://login.microsoftonline.com/common/oauth2/v2.0/token'),
-    ],
 
     'railway' => [
         'api_token' => env('RAILWAY_API_TOKEN'),

@@ -98,6 +98,7 @@ final class LocalMcpActions
             || !$connection || $connection->generation !== $action->connection_generation || $connection->health !== 'healthy'
             || ($action->expires_at && $action->expires_at->isPast())
             || !hash_equals((string) $action->fingerprint, Approvals::fingerprint($action, $run->user_id))
+            || !\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider)
             || !LocalMcpGrants::usable($run, $connection) || !isset($tools[$action->tool]) || $tools[$action->tool] !== $action->kind;
     }
 

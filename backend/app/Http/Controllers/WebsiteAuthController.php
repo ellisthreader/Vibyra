@@ -25,6 +25,12 @@ class WebsiteAuthController extends Controller
 
     public function signup(Request $request): JsonResponse
     {
+        $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'string', 'max:254'],
+            'password' => ['required', 'string', 'min:8'],
+            'referralCode' => ['nullable', 'string'], 'ref' => ['nullable', 'string'],
+        ]);
         app(Recorder::class)->consented($request, 'website_signup_attempted');
         $email = $this->normalizedEmail($request->input('email'));
         $password = (string) $request->input('password', '');
@@ -76,6 +82,7 @@ class WebsiteAuthController extends Controller
 
     public function login(Request $request): JsonResponse
     {
+        $request->validate(['email' => ['required', 'string', 'max:254'], 'password' => ['required', 'string']]);
         $email = $this->normalizedEmail($request->input('email'));
         $user = $email ? User::where('email', $email)->first() : null;
         $password = (string) $request->input('password', '');
@@ -97,6 +104,7 @@ class WebsiteAuthController extends Controller
 
     public function loginTwoFactor(Request $request): JsonResponse
     {
+        $request->validate(['challengeId' => ['required', 'string'], 'code' => ['required', 'string']]);
         $user = app(TwoFactorChallenge::class)->claim(
             trim((string) $request->input('challengeId', '')),
             (string) $request->input('code', ''),
@@ -135,6 +143,7 @@ class WebsiteAuthController extends Controller
 
     private function establishSession(Request $request, User $user): void
     {
+        \App\Services\Teams\Sso\Policy::assertMaySignIn($user);
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
     }
