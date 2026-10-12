@@ -1,6 +1,11 @@
 const number = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
+export function formatExactCount(value) {
+  const safe = numeric(value);
+  return safe == null ? "—" : number.format(safe);
+}
+
 export function formatCount(value) {
   const safe = numeric(value);
   if (safe == null) return "—";

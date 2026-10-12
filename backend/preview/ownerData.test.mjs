@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { numeric, planCount, seriesTotal, downloadCoverage, utc, recent, isGuest, licenseStatus } from "../resources/js/portal/owner/ownerData.js";
 import { chartModel } from "../resources/js/portal/owner/chartGeometry.js";
-import { formatCount, formatMoney } from "../resources/js/portal/owner/format.js";
+import { formatCount, formatExactCount, formatMoney } from "../resources/js/portal/owner/format.js";
 import { readLocation, locationFor } from "../resources/js/portal/owner/ownerNavigation.js";
 import { reportForIdentity } from "../resources/js/portal/owner/reportIdentity.js";
 
@@ -14,6 +14,8 @@ test("unavailable numbers never become recorded zeroes", () => {
   }
   assert.equal(formatCount(0), "0");
   assert.equal(formatCount("12"), "12");
+  assert.equal(formatExactCount(123456), "123,456");
+  assert.equal(formatExactCount(null), "—");
   assert.equal(formatMoney(0), "$0.00");
   assert.equal(formatMoney(6240), "< $0.01");
 });

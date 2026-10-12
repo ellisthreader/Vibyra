@@ -1,5 +1,5 @@
 import React, { useId, useState } from "react";
-import { formatCount, formatDay } from "./format.js";
+import { formatExactCount as formatCount, formatDay } from "./format.js";
 import { chartModel } from "./chartGeometry.js";
 import { Panel, Empty } from "./OwnerPrimitives.jsx";
 
