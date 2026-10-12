@@ -16,7 +16,10 @@ export default function OwnerAccounts({ local, report, ownerId }) {
   const access = useOwnerAccess(ownerId);
   const refresh = () => setRevision(value => value + 1);
   useEffect(() => {
-    if (!access.expiresAt) { setData(null); setSelected(null); }
+    if (!access.expiresAt) {
+      setData(null); setSelected(null);
+      setQuery(current => current.search ? { ...current, search: "", page: 1 } : current);
+    }
   }, [access.expiresAt]);
   useEffect(() => {
     if (local) return;
