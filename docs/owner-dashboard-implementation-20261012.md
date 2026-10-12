@@ -12,7 +12,7 @@ The owner section now includes global account search, read-only profiles, explic
 
 ## Source provenance
 
-Base: `origin/railway-production` at `48d32eb2`. All 383 files in the captured production frontend snapshot matched this branch byte for byte before implementation. Work is isolated on `codex/owner-dashboard-redesign-20261012`; existing edits in the main and website checkouts are preserved.
+Initial base: `48d32eb2`; all 383 files in the captured production frontend snapshot matched byte for byte. The branch was then rebased onto `4c48a4fa` to preserve the newer Cloud login-delivery fixes. Work is isolated on `codex/owner-dashboard-redesign-20261012`; existing edits in the main and website checkouts are preserved.
 
 The source snapshot and comparison manifests are stored locally in `/Users/ellis/Desktop/Vibyra-owner-redesign-20261012/`. No production customer records, keys or credentials are used in the preview. Old owner components and styles that are no longer imported have been removed.
 
