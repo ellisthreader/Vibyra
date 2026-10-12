@@ -21,6 +21,7 @@ class RelayAuthorization
         $host = RemoteHost::query()->where('host_id', $claims['hostId'])->whereNull('revoked_at')->lockForUpdate()->first();
         if (! $host || (string) $host->user_id !== $claims['userId']
             || $host->authorization_generation !== $claims['generation']) return false;
+        if (!\App\Services\Account\AccountAccess::allowed($host->user_id)) return false;
         // A cloud computer's host has no phone session: its authority is the running, account-owned workspace bound to this host row.
         if (isset($claims['cloudWorkspace'])) return $claims['role'] === 'host' && app(\App\Services\CloudComputer\HostAuthority::class)->allows($host, $claims['cloudWorkspace']);
         $session = VibyraSession::query()->whereKey($claims['appSessionId'])->where('user_id', $host->user_id)

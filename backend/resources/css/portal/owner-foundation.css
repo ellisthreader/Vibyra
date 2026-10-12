@@ -9,6 +9,7 @@
   --od-accent: #315bd8;
   --od-soft: #eaf0ff;
   --od-error: #b52c42;
+  --od-success: #247547;
   --od-warning: #885415;
   --portal-canvas: var(--od-canvas);
   --portal-surface: var(--od-surface);
@@ -37,6 +38,7 @@
   --od-accent: #8ca5ff;
   --od-soft: #222d49;
   --od-error: #ff8c98;
+  --od-success: #70cc96;
   --od-warning: #efbc72;
   color-scheme: dark;
 }
@@ -45,7 +47,8 @@
     --od-canvas: #0e0f12; --od-surface: #181a20; --od-rail: #13151a;
     --od-elevated: #20232a; --od-border: #2b2f38; --od-text: #f5f7fa;
     --od-muted: #a6adba; --od-accent: #8ca5ff; --od-soft: #222d49;
-    --od-error: #ff8c98; --od-warning: #efbc72; color-scheme: dark;
+    --od-error: #ff8c98;
+  --od-success: #70cc96; --od-warning: #efbc72; color-scheme: dark;
   }
 }
 .owner-dashboard * { box-sizing: border-box; }

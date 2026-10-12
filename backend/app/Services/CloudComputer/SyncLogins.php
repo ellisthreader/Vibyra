@@ -111,7 +111,7 @@ class SyncLogins
     {
         return DB::transaction(function () use ($user, $id, $d, $runtime) {
             app(\App\Services\Vibes\Wallet::class)->lock($user);
-            if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime);
+            if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime, true);
             $r = DB::table('cloud_sync_logins')->where('user_id', $user)->where('blob_id', $id)->lockForUpdate()->first();
             if (!$r) return false;
             $ok = (bool) ($d['ok'] ?? true);

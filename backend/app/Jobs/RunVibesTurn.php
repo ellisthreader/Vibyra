@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Services\ChatConnectors\ConnectorRunner;
+use App\Services\Account\TurnAccess;
 use App\Services\Vibes\{AgentTools, Attachments, ChatMemory, TurnPrice, Turns};
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -29,6 +30,7 @@ class RunVibesTurn implements ShouldQueue
             ->whereNull('settled_at')->update(['status' => 'running', 'dispatched_at' => now(), 'updated_at' => now()]);
         if (!$claimed) return;
         $t = DB::table('vibes_turns')->where('id', $this->turnId)->firstOrFail();
+        if (TurnAccess::stopIfBanned($t)) return;
         app(\App\Services\Progress\WorkEvents::class)->observe($t->id);
         // A stop is the person's doing; a disabled feature or a missing key is ours.
         // Both settled as "stopped", which is how a server with no OpenRouter key
@@ -91,6 +93,7 @@ class RunVibesTurn implements ShouldQueue
                 }
                 unset($tool);
             }
+            if (TurnAccess::stopIfBanned($t)) return;
             DB::table('vibes_turns')->where('id', $t->id)->increment('step_count');
             $response = Http::withToken(config('services.openrouter.key'))->acceptJson()->timeout(65)
                 ->withHeaders(['HTTP-Referer' => 'https://vibyra.app', 'X-OpenRouter-Title' => 'Vibyra'])
@@ -110,6 +113,7 @@ class RunVibesTurn implements ShouldQueue
             if ($text !== null && $response->successful()) $text = app(ChatMemory::class)->settle($t, $request, $text) ?: null;
             if (is_numeric($cost) && is_finite((float) $cost) && (float) $cost >= 0) {
                 $micro = (int) ceil((float) $cost * 1000000);
+                if (TurnAccess::stopIfBanned($t, $t->actual_micro_usd + $micro)) return;
                 $fresh = DB::table('vibes_turns')->where('id', $t->id)->firstOrFail();
                 if ($response->successful() && !empty($body['choices'][0]['message']['tool_calls']) && !$fresh->cancel_requested) {
                     try {

@@ -105,8 +105,7 @@ final class SsoAuthController extends Controller
     /** Fixed destination, no request-supplied URL anywhere in this controller. */
     private function finishWeb(Request $request, User $user)
     {
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
+        \App\Services\Account\WebAccountSession::start($request, $user);
         return redirect('/account/team');
     }
 

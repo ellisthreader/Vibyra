@@ -7,26 +7,28 @@ use Illuminate\Support\Str;
 
 final class Runtime
 {
-    public function authenticate(string $id, string $token): object
+    public function authenticate(string $id, string $token, bool $allowBanned = false): object
     {
         $w = DB::table('cloud_workspaces')->where('id', $id)->first();
         abort_unless($w && $w->runtime_token_hash && hash_equals($w->runtime_token_hash, hash('sha256', $token))
             && in_array($w->state, Workspaces::ACTIVE, true), 401, 'Runtime authority expired.');
+        if (!$allowBanned) \App\Services\Account\AccountAccess::require($w->user_id);
         return $w;
     }
     /** Recheck the authenticated snapshot while the caller holds the account wallet lock. */
-    public function current(object $initial): object
+    public function current(object $initial, bool $allowBanned = false): object
     {
         $w = DB::table('cloud_workspaces')->where('id', $initial->id)->lockForUpdate()->first();
         abort_unless($w && $w->generation === $initial->generation && $w->runtime_token_hash === $initial->runtime_token_hash
             && in_array($w->state, Workspaces::ACTIVE, true), 401, 'Runtime generation changed.');
+        if (!$allowBanned) \App\Services\Account\AccountAccess::require($w->user_id);
         return $w;
     }
-    public function withCurrent(object $initial, callable $operation): mixed
+    public function withCurrent(object $initial, callable $operation, bool $allowBanned = false): mixed
     {
-        return DB::transaction(function () use ($initial, $operation) {
+        return DB::transaction(function () use ($initial, $operation, $allowBanned) {
             app(Wallet::class)->lock($initial->user_id);
-            return $operation($this->current($initial));
+            return $operation($this->current($initial, $allowBanned));
         }, 5);
     }
     public function bootstrap(string $id, string $secret, string $machine, int $generation): array
@@ -37,6 +39,7 @@ final class Runtime
             $w = DB::table('cloud_workspaces')->where('id', $id)->firstOrFail();
             abort_unless($w->state === 'starting' && $w->generation === $generation && $w->machine_id === $machine
                 && $w->bootstrap_secret && hash_equals(Crypt::decryptString($w->bootstrap_secret), $secret), 401, 'Invalid managed runtime bootstrap.');
+            \App\Services\Account\AccountAccess::require($w->user_id);
             $token = $w->runtime_secret ? Crypt::decryptString($w->runtime_secret) : Str::random(64);
             DB::table('cloud_workspaces')->where('id', $id)->update(['runtime_secret' => Crypt::encryptString($token),
                 'runtime_token_hash' => hash('sha256', $token), 'bootstrapped_at' => now()]);
@@ -119,6 +122,7 @@ final class Runtime
             app(Wallet::class)->lock($initial->user_id);
             $w = DB::table('cloud_workspaces')->where('id', $initial->id)->firstOrFail();
             abort_unless($w->generation === $initial->generation && $w->runtime_token_hash === $initial->runtime_token_hash, 401, 'Runtime generation changed.');
+            if (!\App\Services\Account\AccountAccess::allowed($w->user_id)) return null;
             if ($w->state !== 'ready' || !$w->lease_until || now()->gte($w->lease_until)) return null;
             if (DB::table('cloud_actions')->where('workspace_id', $w->id)->where('generation', $w->generation)->where('state', 'running')->exists()) return null;
             DB::table('cloud_actions')->where('workspace_id', $w->id)->where('state', 'queued')->where('expires_at', '<=', now())->update(['state' => 'expired']);

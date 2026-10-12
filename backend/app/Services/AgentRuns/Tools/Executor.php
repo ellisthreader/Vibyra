@@ -45,6 +45,7 @@ final class Executor
             return $this->fail($action, ToolFailure::refused('credential_unavailable', 'Connect '.$name.' before using it.'));
         }
         try {
+            if (!\App\Services\Account\AccountAccess::allowed($action->user_id)) return $this->fail($action, ToolFailure::refused('account_banned', 'This account is banned.'));
             return $this->confirm($action, $adapter->run($action->tool, $action->arguments, $credential, $action->id));
         } catch (ReconnectRequired $e) {
             return $this->reconnect($action, $connection, $e);

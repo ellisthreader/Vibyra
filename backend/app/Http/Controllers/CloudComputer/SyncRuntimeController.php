@@ -36,12 +36,12 @@ final class SyncRuntimeController extends Controller
 
     public function status(Request $request, string $workspace, SyncKeys $keys)
     {
-        $w = $this->computerFor($request, $workspace);
+        $w = $this->computerFor($request, $workspace, true);
         // {applying, keyOk?, lastError?: {code, message, project?}|null}; older images send only applying. null clears the error.
         $d = $this->valid($request->all(), ['applying' => 'required|boolean', 'keyOk' => 'sometimes|nullable|boolean', 'lastError' => 'sometimes|nullable|array',
             'lastError.code' => 'required_with:lastError|string|max:60', 'lastError.message' => 'sometimes|nullable|string|max:300', 'lastError.project' => 'sometimes|nullable|string|max:64']);
         $error = isset($d['lastError']) ? array_filter(['code' => $d['lastError']['code'], 'message' => $d['lastError']['message'] ?? null, 'project' => $d['lastError']['project'] ?? null], fn ($v) => $v !== null) : null;
-        app(\App\Services\CloudWorkspaces\Runtime::class)->withCurrent($w, fn ($current) => $keys->setApplying($current->user_id, (bool) $d['applying'], isset($d['keyOk']) ? (bool) $d['keyOk'] : null, $error, $request->has('lastError') && $error === null));
+        app(\App\Services\CloudWorkspaces\Runtime::class)->withCurrent($w, fn ($current) => $keys->setApplying($current->user_id, (bool) $d['applying'], isset($d['keyOk']) ? (bool) $d['keyOk'] : null, $error, $request->has('lastError') && $error === null), true);
         return $this->reply([]);
     }
 
@@ -53,7 +53,7 @@ final class SyncRuntimeController extends Controller
 
     public function applied(Request $request, string $workspace, string $id, SyncQueue $queue, SyncLogins $logins)
     {
-        $w = $this->computerFor($request, $workspace);
+        $w = $this->computerFor($request, $workspace, true);
         $d = $this->valid($request->all(), ['ok' => 'required|boolean', 'head' => ['sometimes', 'nullable', 'string', 'regex:/^[a-f0-9]{40}$/'], 'state' => 'sometimes|nullable|in:synced,diverged',
             'error' => 'sometimes|nullable|string|max:300', 'needFull' => 'sometimes|boolean',
             'code' => 'sometimes|nullable|string|max:60', 'message' => 'sometimes|nullable|string|max:300']);
@@ -63,7 +63,7 @@ final class SyncRuntimeController extends Controller
 
     public function down(Request $request, string $workspace, string $name, SyncProjects $projects, SyncKeys $keys, SyncBlobs $blobs)
     {
-        $w = $this->computerFor($request, $workspace);
+        $w = $this->computerFor($request, $workspace, true);
         $project = $projects->findOrFail($w->user_id, $name);
         $q = $this->blobQuery($request);
         $mac = $keys->findMac($w->user_id, strtolower((string) $request->query('mac'))) ?? Computers::fail('unknown_mac', 'That Mac is not registered for cloud sync.', 404);

@@ -60,7 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->remove(HandleCors::class);
         $middleware->append(VibyraCors::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
-        $middleware->web(append: [\Illuminate\Session\Middleware\AuthenticateSession::class]);
+        $middleware->web(append: [\Illuminate\Session\Middleware\AuthenticateSession::class, \App\Http\Middleware\RequireActiveWebAccount::class]);
         $middleware->prepend(\App\Http\Middleware\CloudPreviewOrigin::class);
         $middleware->prepend(\App\Http\Middleware\CanonicalWebsiteHost::class);
         $middleware->append(\App\Http\Middleware\VibesLegacyGuard::class);
@@ -83,6 +83,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['licenseKey']);
+        $exceptions->dontFlash(['licenseKey', 'reason', 'message']);
         $exceptions->respond(fn ($response) => VibyraCors::withCorsHeaders($response, request()));
     })->create();

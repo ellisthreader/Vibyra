@@ -1,3 +1,4 @@
+import { ownerAccountPreview, resetOwnerAccountPreview } from "./ownerAccountPreview.mjs";
 import http from "node:http";
 import { reviewPage } from "./reviewPage.mjs";
 import fs from "node:fs";
@@ -10,7 +11,7 @@ const vite = await createServer({ configFile: false, root, server: { middlewareM
 let verified = false;
 const created = new Map();
 const rows = structuredClone(fixtureLicenses);
-const scenarios = ["normal", "empty", "unavailable", "sparse", "stale", "error", "denied", "verify", "setup", "uncertain"];
+const scenarios = ["normal", "empty", "unavailable", "sparse", "stale", "error", "denied", "verify", "setup", "uncertain", "expire"];
 const json = (response, value, status = 200) => { response.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" }); response.end(JSON.stringify(value)); };
 async function api(request, response, url, scenario) {
   if (url.pathname === "/web-api/session") return json(response, { user: request.headers.cookie?.includes("owner-preview-login=1") ? null : { id: "preview-owner", name: "Ellis", email: "owner@example.test" } });
@@ -20,16 +21,11 @@ async function api(request, response, url, scenario) {
     return json(response, fixtureReport(Number(url.searchParams.get("days")), scenario));
   }
   if (url.pathname === "/web-api/owner/verify-2fa") {
-    verified = true;
+    verified = true; resetOwnerAccountPreview();
     return json(response, { ok: true, expires_at: new Date(Date.now() + 600000).toISOString() });
   }
   if (["verify", "setup"].includes(scenario) && !verified) return json(response, { ok: false, enabled: scenario !== "setup", provider: "email", error: "owner_two_factor_required" }, 428);
-  if (url.pathname === "/web-api/owner/accounts") {
-    if (scenario === "denied") return json(response, { ok: false }, 403);
-    const payload = fixtureAccounts(Number(url.searchParams.get("page") || 1));
-    if (scenario === "empty") Object.assign(payload, { total: 0, last_page: 1, accounts: [] });
-    return json(response, payload);
-  }
+  if (await ownerAccountPreview(request, response, url, scenario)) return;
   if (url.pathname === "/web-api/owner/licenses" && request.method === "GET") {
     const search = url.searchParams.get("search")?.toLowerCase() || "";
     return json(response, { ok: true, enabled: true, ownerAccessExpiresAt: Date.now() + 600000, lastPage: 1, licenses: scenario === "empty" ? [] : rows.filter(row => row.label.toLowerCase().includes(search) || row.redeemed_email?.includes(search)) });
@@ -65,7 +61,7 @@ http.createServer(async (request, response) => {
     }
     if (url.pathname === "/owner" || url.pathname === "/owner/login") {
       const selected = scenarios.includes(url.searchParams.get("scenario")) ? url.searchParams.get("scenario") : scenario;
-      verified = false;
+      verified = false; resetOwnerAccountPreview();
       response.setHeader("Set-Cookie", ["owner-preview=" + selected + "; Path=/; SameSite=Strict", "owner-preview-login=" + (url.pathname.endsWith("/login") ? "1" : "0") + "; Path=/; SameSite=Strict"]);
       const banner = '<div class="preview-banner" style="font:12px system-ui;background:#eaf0ff;color:#2449b8;padding:8px 20px;display:flex;align-items:center;gap:12px">Design preview · synthetic data only <select aria-label="Preview scenario" onchange="location.href=\'/owner?scenario=\'+this.value">' + scenarios.map(item => '<option ' + (item === selected ? "selected" : "") + '>' + item + '</option>').join("") + '</select><a href="/owner/login">Owner login preview</a></div>';
       const previewStyle = '<style>@media(min-width:801px){body:has(.preview-banner) .od-sidebar{top:38px}}.preview-banner{position:relative;z-index:100}</style>';

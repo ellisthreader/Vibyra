@@ -7,6 +7,7 @@ import AccountSetup from "../components/AccountSetup.jsx";
 import ActivityPanel from "../components/ActivityPanel.jsx";
 import DeveloperLink from "../components/DeveloperLink.jsx";
 import TeamLink from "../components/TeamLink.jsx";
+import AccountWarnings from "../components/AccountWarnings.jsx";
 import Notice from "../components/Notice.jsx";
 import { go } from "../navigation.js";
 import { useWebsiteSession } from "../session/WebsiteSessionProvider.jsx";
@@ -38,6 +39,8 @@ export default function AccountPage() {
     {user && <>
       <div className="account-identity"><span className="account-identity-avatar" aria-hidden="true">{firstName[0]?.toUpperCase()}</span><span><strong>{user.name}</strong><small>{user.email}</small></span><button className="portal-link-button" disabled={busy} onClick={signOut}>Log out</button></div>
       {!user.emailVerified && <p className="account-email-note" role="status">Check your inbox to verify your email address. <button type="button" onClick={resendVerification}>Send link again</button>{verificationStatus && <span>{verificationStatus}</span>}</p>}
+      <AccountWarnings warnings={user.accountWarnings} />
+      {user.ownerAccess && <p><a className="portal-button" href="/owner">Open owner dashboard</a></p>}
       <nav className="account-jump" aria-label="Account sections"><a href="#membership">Membership</a><a href="#downloads">Downloads</a><a href="#connect">Connect your phone</a></nav>
       <AccountMembership key={`${user.id}:${user.billingProvider}`} user={user} />
       <RedeemLicense key={user.id} user={user} onRedeemed={refresh} />

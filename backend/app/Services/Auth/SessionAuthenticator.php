@@ -23,7 +23,7 @@ class SessionAuthenticator
             })
             ->first();
 
-        if (! $session) {
+        if (! $session || !\App\Services\Account\AccountAccess::allowed($session->user_id)) {
             return null;
         }
 

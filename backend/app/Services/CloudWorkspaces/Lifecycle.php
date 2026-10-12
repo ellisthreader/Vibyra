@@ -13,6 +13,9 @@ final class Lifecycle
         try {
             $w = DB::table('cloud_workspaces')->where('id', $id)->first();
             if (!$w) return;
+            if (in_array($w->state, ['starting', 'ready'], true) && !\App\Services\Account\AccountAccess::allowed($w->user_id)) {
+                $w = app(Shutdown::class)->request($w->user_id, $id, 'account_banned');
+            }
             $provider = app(CloudWorkspaceProvider::class);
             if ($w->state === 'starting') {
                 if (now()->gte($w->deadline_at) || now()->gte(Carbon::parse($w->updated_at)->addSeconds(config('cloud_workspaces.boot_timeout_seconds')))) {

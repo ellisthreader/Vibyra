@@ -29,7 +29,7 @@ export default function OwnerPage() {
   return <OwnerShell navigation={navigation} user={user} report={report}>
     {sessionError ? <ErrorMessage onRetry={() => refreshSession().catch(() => {})}>{sessionError}</ErrorMessage>
       : loading || !user ? <div className="od-loading" role="status">Checking your sign-in…</div>
-      : protectedPage ? view === "users" ? <OwnerAccounts key={user.id} local={local} report={data} />
+      : protectedPage ? view === "users" ? <OwnerAccounts key={user.id} ownerId={user.id} local={local} report={data} />
         : <OwnerLicenses key={user.id} local={local} />
       : <>
         {report.error && <ErrorMessage onRetry={report.refresh}>{data ? "Showing the last successfully loaded report. " + report.error : report.error}</ErrorMessage>}

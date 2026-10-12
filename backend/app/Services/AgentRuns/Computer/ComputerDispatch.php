@@ -17,6 +17,7 @@ final class ComputerDispatch
     /** Computer-specific part, also used by `Approvals::dispatch`. */
     public static function current(ToolAction $action, Run $run, Connection $connection): bool
     {
+        if (!\App\Services\Account\AccountAccess::allowed($run->user_id)) return false;
         if (!ComputerGrants::usable($run, $connection) || !\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider)) return false;
         $pin = $action->arguments['github'] ?? null;
         return !is_array($pin) || ComputerBinding::githubCurrent($pin) !== null;
@@ -25,6 +26,7 @@ final class ComputerDispatch
     /** Full recheck for a Mac claim; the caller holds the run and action locks. */
     public static function stale(ToolAction $action, Run $run, bool $expiry = true): bool
     {
+        if (!\App\Services\Account\AccountAccess::allowed($run->user_id)) return true;
         LegacyInstalls::sync($run->user_id);
         $grant = Grant::query()->whereKey($action->grant_id)->whereNull('revoked_at')->first();
         $connection = Connection::query()->whereKey($action->connection_id)->whereNull('revoked_at')->first();

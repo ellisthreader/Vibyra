@@ -55,6 +55,10 @@ final class ComputerPublish
         try {
             $workspace = (string) \App\Models\AgentV2\Connection::query()->whereKey($action->connection_id)->value('workspace_id');
             $manifest = Manifest::validate($upload, $workspace);
+            if (!\App\Services\Account\AccountAccess::allowed($action->user_id)) {
+                $this->finish($action, ['published' => false, 'refused' => true, 'reason' => 'Account access was revoked before publication.']);
+                return;
+            }
             $result = $this->publisher->publish($this->credentials->for($github), $args['repository'], $args['baseBranch'],
                 $args['message'], $manifest, $args['expectedHeadSha'] ?? null);
         } catch (\Throwable) {

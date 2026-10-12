@@ -17,7 +17,8 @@ export default function AuthPage({ mode }) {
   const [fields, setFields] = useState({ name: "", email: "", password: "" });
   const [licenseKey, setLicenseKey] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => new URLSearchParams(window.location.search).get("account") === "banned"
+    ? "This account has been banned. Contact support if you believe this is a mistake." : "");
   const [providerStatus, setProviderStatus] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [challenge, setChallenge] = useState(null);

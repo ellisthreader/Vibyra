@@ -5,7 +5,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "check:owner": "node preview/checkOwnerSource.mjs && node --test preview/ownerData.test.mjs preview/ownerRendering.test.mjs",
+    "check:owner": "node preview/checkOwnerSource.mjs && node --test preview/ownerData.test.mjs preview/ownerRendering.test.mjs preview/ownerActions.test.mjs",
     "preview:owner": "node preview/ownerPreview.mjs"
   },
   "devDependencies": {

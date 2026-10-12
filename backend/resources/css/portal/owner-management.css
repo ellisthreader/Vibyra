@@ -1,0 +1,47 @@
+.od-account-search { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 16px; margin-bottom: 20px; }
+.od-account-search label, .od-account-action label { display: grid; gap: 7px; font-size: 12px; color: var(--od-muted); }
+.od-account-search input, .od-account-search select, .od-account-action input, .od-account-action textarea, .od-account-action select { width: 100%; border: 1px solid var(--od-border); border-radius: 7px; padding: 10px 12px; color: var(--od-text); background: var(--od-surface); font: inherit; }
+.od-account-search input { font-size: 14px; }
+.od-badge.is-banned { color: var(--od-error); border-color: #c7414138; background: #c7414110; }
+.od-account-dialog { width: min(820px, calc(100% - 32px)); }
+.od-account-summary { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.od-account-summary .od-note { margin: 0; }
+.od-account-balances { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 22px 0; }
+.od-account-balances > div { border: 1px solid var(--od-border); border-radius: 8px; padding: 16px; display: grid; gap: 8px; }
+.od-account-balances span, .od-account-balances small { color: var(--od-muted); font-size: 12px; }
+.od-account-balances strong { font-size: 25px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.od-control-fieldset, .od-account-action fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.od-account-controls { border-block: 1px solid var(--od-border); padding: 20px 0; margin: 20px 0; }
+.od-account-controls h3, .od-account-history h3 { font-size: 15px; margin: 0 0 12px; }
+.od-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.od-dialog .od-actions .od-button { margin-top: 0; }
+.od-danger { border-color: #c7414160; color: var(--od-error); background: transparent; }
+.od-danger:hover { background: #c7414110; }
+.od-account-action { display: grid; gap: 14px; }
+.od-account-action h3, .od-account-action p { margin: 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.od-account-action h3 { font-size: 15px; }
+.od-account-action fieldset { display: grid; gap: 14px; }
+.od-account-action small { color: var(--od-muted); font-size: 11px; }
+.od-account-action textarea { resize: vertical; min-height: 72px; }
+.od-form-two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.od-action-review { background: var(--od-elevated); border: 1px solid var(--od-border); border-radius: 8px; padding: 16px; display: grid; gap: 14px; }
+.od-action-review p { display: grid; gap: 5px; white-space: pre-wrap; }
+.od-action-review strong { font-size: 11px; color: var(--od-muted); }
+.od-caution, .od-pending { padding: 14px; background: #bd88100d; border: 1px solid #bd881030; border-radius: 8px; }
+.od-pending p { font-size: 13px; line-height: 1.6; }
+.od-success { color: var(--od-success); font-size: 12px; line-height: 1.6; }
+.od-account-history { margin-top: 24px; }
+.od-account-history ol { padding: 0; list-style: none; }
+.od-account-history li { border-top: 1px solid var(--od-border); padding: 14px 0; }
+.od-account-history li > div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.od-account-history strong { font-size: 13px; }
+.od-account-history time, .od-account-history small { font-size: 11px; color: var(--od-muted); overflow-wrap: anywhere; }
+.od-account-history p, .od-account-history blockquote { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap; }
+.od-account-history blockquote { margin: 8px 0; padding: 8px 12px; border-left: 2px solid var(--od-border); color: var(--od-muted); }
+.od-control-fieldset:disabled { opacity: .65; }
+@media (max-width: 550px) {
+  .od-account-search, .od-form-two { grid-template-columns: 1fr; }
+  .od-account-dialog { padding: 18px; }
+  .od-account-dialog .od-actions .od-button { flex: 1 1 auto; }
+  .od-account-history li > div { display: grid; gap: 4px; }
+}

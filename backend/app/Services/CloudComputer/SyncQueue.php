@@ -51,7 +51,7 @@ class SyncQueue
     {
         DB::transaction(function () use ($user, $id, $d, $runtime) {
             app(\App\Services\Vibes\Wallet::class)->lock($user);
-            if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime);
+            if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime, true);
             $b = $this->upBlob($user, $id);
             $p = DB::table('cloud_sync_projects')->where('id', $b->project_id)->lockForUpdate()->first();
             if ($b->applied_at || $b->failed_at || !$p) return;

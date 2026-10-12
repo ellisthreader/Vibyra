@@ -85,9 +85,10 @@ class ToolActions
         if (!$work) return;
         [$tool, $turn] = $work;
         $outcome = app(ConnectorTools::class)->run($turn->user_id, $tool->integration, $tool->operation, json_decode($tool->arguments, true));
-        $uncertain = isset($outcome['result']['error']);
+        $refused = ($outcome['result']['outcome'] ?? null) === 'refused';
+        $uncertain = isset($outcome['result']['error']) && !$refused;
         if ($uncertain) $outcome['result']['notice'] = 'The outcome could not be confirmed. Do not repeat a write automatically; check the connected service first.';
-        DB::table('vibes_tools')->where('id', $id)->update(['action_state' => $uncertain ? 'unknown' : 'completed',
+        DB::table('vibes_tools')->where('id', $id)->update(['action_state' => $refused ? 'expired' : ($uncertain ? 'unknown' : 'completed'),
             'summary' => $outcome['summary'], 'updated_at' => now()]);
         try { app(AgentTools::class)->respond($turn->user_id, $id, $tool->action_answer ?? 'auto', $outcome['result']); }
         catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {

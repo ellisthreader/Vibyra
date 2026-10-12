@@ -22,7 +22,7 @@ final class RuntimeController extends Controller
     public function heartbeat(Request $request, string $workspace, Runtime $runtime)
     {
         $data = $request->validate(['ready' => 'required|boolean']);
-        $w = $runtime->authenticate($workspace, (string) $request->bearerToken());
+        $w = $runtime->authenticate($workspace, (string) $request->bearerToken(), true);
         $result = $runtime->heartbeat($w, $data['ready']);
         $cancelled = DB::table('cloud_actions')->where('workspace_id', $workspace)->where('generation', $w->generation)
             ->whereIn('state', ['cancelled', 'expired'])->where('claimed_at', '>=', now()->subMinutes(5))->pluck('id');
@@ -31,7 +31,7 @@ final class RuntimeController extends Controller
     public function checkpoint(Request $request, string $workspace, Runtime $runtime)
     {
         $data = $request->validate(['files' => 'present|array', 'base' => 'sometimes|array', 'baseCommit' => ['sometimes', 'nullable', 'string', 'regex:/^([a-f0-9]{40}|[a-f0-9]{64})$/']]);
-        return response()->json(['ok' => true, ...$runtime->checkpoint($runtime->authenticate($workspace, (string) $request->bearerToken()), $data['files'], $data['base'] ?? null, $data['baseCommit'] ?? null)]);
+        return response()->json(['ok' => true, ...$runtime->checkpoint($runtime->authenticate($workspace, (string) $request->bearerToken(), true), $data['files'], $data['base'] ?? null, $data['baseCommit'] ?? null)]);
     }
     public function next(Request $request, string $workspace, Runtime $runtime)
     {
@@ -52,7 +52,7 @@ final class RuntimeController extends Controller
     public function result(Request $request, string $workspace, string $action, Runtime $runtime)
     {
         $data = $request->validate(['result' => 'present|array']);
-        $w = $runtime->authenticate($workspace, (string) $request->bearerToken());
+        $w = $runtime->authenticate($workspace, (string) $request->bearerToken(), true);
         abort_if(($w->kind ?? 'project') === 'computer', 409, 'A cloud computer does not run hosted-project actions.');
         $a = $runtime->result($w, $action, $data['result']);
         app(Tools::class)->complete($a);

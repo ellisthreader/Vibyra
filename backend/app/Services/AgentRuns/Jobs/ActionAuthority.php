@@ -7,10 +7,12 @@ use App\Services\AgentCoordination\Context;
 /** Lock the account and reviewed group before any run/action dispatch locks. */
 final class ActionAuthority
 {
-    public static function beforeRun(string $runId, bool $execution = true): void
+    public static function beforeRun(string $runId, bool $execution = true, bool $allowBannedCleanup = false): bool
     {
         $run = Run::query()->findOrFail($runId);
         AccountLock::lock($run->user_id);
+        if ($execution && $allowBannedCleanup && !\App\Services\Account\AccountAccess::allowed($run->user_id)) return false;
+        if ($execution) \App\Services\Account\AccountAccess::require($run->user_id);
         if ($execution) \App\Services\AgentOrganizations\Authority::fence($runId);
         $mode = Contexts::mode($run);
         if ($execution && $mode !== 'ordered') {
@@ -27,5 +29,6 @@ final class ActionAuthority
             $binding = RuntimeBinding::query()->findOrFail($run->runtime_binding_id);
             Context::fence($binding, $runId);
         }
+        return true;
     }
 }

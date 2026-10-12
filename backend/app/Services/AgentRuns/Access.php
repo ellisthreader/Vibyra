@@ -7,7 +7,7 @@ final class Access
 {
     public function allows(int $userId): bool
     {
-        if (!config('agents_v2.enabled')) return false;
+        if (!config('agents_v2.enabled') || !\App\Services\Account\AccountAccess::allowed($userId)) return false;
         $list = trim((string) config('agents_v2.user_ids', ''));
         if ($list === '*') return true;
         $ids = array_map('intval', array_filter(array_map('trim', explode(',', $list)), 'is_numeric'));

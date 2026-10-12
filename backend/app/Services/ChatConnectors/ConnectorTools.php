@@ -55,6 +55,8 @@ class ConnectorTools
      */
     public function run(int $userId, string $slug, string $operation, array $arguments): array
     {
+        if (!\App\Services\Account\AccountAccess::allowed($userId)) return [
+            'result' => ['error' => 'Account access was revoked.', 'outcome' => 'refused'], 'summary' => 'Action refused'];
         try {
             $credential = $this->installs->credential($userId, $slug);
             $outcome = $this->registry->for($slug)->run($operation, $arguments, $credential);
