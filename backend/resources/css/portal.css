@@ -5,6 +5,4 @@
 @import './portal/checkout.css';
 @import './portal/account.css';
 @import './portal/downloads.css';
-@import './portal/owner-layout.css';
-@import './portal/owner-content.css';
-@import './portal/owner-charts.css';
+@import './portal/owner-design.css';

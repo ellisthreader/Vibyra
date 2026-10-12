@@ -2,14 +2,16 @@ const number = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 export function formatCount(value) {
-  if (value === null || value === undefined) return "—";
-  const safe = Number.isFinite(Number(value)) ? Number(value) : 0;
+  const safe = numeric(value);
+  if (safe == null) return "—";
   return safe >= 100000 ? compact.format(safe) : number.format(safe);
 }
 
 export function formatMoney(microUsd) {
-  if (microUsd === null || microUsd === undefined) return "—";
-  const value = Number(microUsd || 0) / 1000000;
+  const amount = numeric(microUsd);
+  if (amount == null) return "—";
+  const value = amount / 1000000;
+  if (value > 0 && value < 0.01) return "< $0.01";
   return new Intl.NumberFormat("en-US", {
     style: "currency", currency: "USD", maximumFractionDigits: 2,
   }).format(value);
@@ -33,6 +35,15 @@ export function readableDimension(value) {
     macos: "macOS", "macos-arm64": "macOS · Apple Silicon", "macos-x64": "macOS · Intel",
     ios: "iOS", android: "Android", web: "Web", windows: "Windows", linux: "Linux",
     "linux-deb": "Linux · Debian", openai: "OpenAI", anthropic: "Anthropic", google: "Google",
+    "/": "Homepage", "/downloads": "Downloads", "/signup": "Sign up", "/login": "Log in",
+    "/account": "Account", "/checkout": "Checkout", "/benchmarks": "Benchmarks",
+    nav_downloads: "Navigation · Get Vibyra", GB: "United Kingdom", "GB-LND": "London, UK",
   };
-  return names[value] ?? readableEvent(value);
+  if (names[value]) return names[value];
+  if (String(value).includes("/") && !String(value).startsWith("/")) {
+    const [provider, model] = String(value).split("/");
+    return (names[provider] || provider) + " · " + model.replace(/-/g, " ");
+  }
+  return readableEvent(value);
 }
+import { numeric } from "./ownerData.js";

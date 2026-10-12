@@ -27,7 +27,7 @@ export default function AuthPage({ mode }) {
   const intent = purchaseIntent();
   const ownerLogin = window.location.pathname === "/owner/login";
   const localOwnerAvailable = ownerLogin && document.querySelector('meta[name="local-owner-access"]')?.content === "1";
-  const next = ownerLogin ? "/owner" : safeNext(window.location.search, "/account");
+  const next = ownerLogin ? safeNext(window.location.search, "/owner") : safeNext(window.location.search, "/account");
 
   useEffect(() => {
     if (!loading && user && !busy && !welcome) go(withIntent(next, intent));

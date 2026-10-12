@@ -2,12 +2,11 @@ import React, { useEffect, useState } from "react";
 import { apiRequest } from "../api.js";
 import LicenseForm from "./LicenseForm.jsx";
 import LicenseGate from "./LicenseGate.jsx";
+import { Empty, ErrorMessage } from "./OwnerPrimitives.jsx";
+import { utc, licenseStatus } from "./ownerData.js";
 import "../../../css/portal/licenses.css";
 
-const date = value => value ? `${new Date(value.includes("T") ? value : value.replace(" ", "T") + "Z").toLocaleString("en-GB", { timeZone: "UTC" })} UTC` : "—";
-const status = row => row.revoked_at ? "Revoked" : row.redeemed_at
-  ? Date.parse(row.ends_at.replace(" ", "T") + "Z") <= Date.now() ? "Expired" : "Active"
-  : Date.parse(row.claim_by.replace(" ", "T") + "Z") <= Date.now() ? "Unclaimed · expired" : "Ready to claim";
+const date = utc;
 
 export default function OwnerLicenses({ local = false }) {
   const [page, setPage] = useState(1), [search, setSearch] = useState("");
@@ -16,6 +15,7 @@ export default function OwnerLicenses({ local = false }) {
   const [showForm, setShowForm] = useState(false), [issued, setIssued] = useState(null);
   const [revision, setRevision] = useState(0), [revoke, setRevoke] = useState(null);
   const [creation, setCreation] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [expiresAt, setExpiresAt] = useState(null);
   const refresh = () => setRevision(n => n + 1);
   const failure = caught => {
@@ -43,10 +43,14 @@ export default function OwnerLicenses({ local = false }) {
   useEffect(() => {
     if (local) return;
     let active = true;
+    setLoading(true);
+    setError("");
+    setData(null);
     const timer = setTimeout(() => {
       apiRequest(`/web-api/owner/licenses?page=${page}&search=${encodeURIComponent(search)}`)
         .then(result => { if (active && authorize(result)) { setData(result); setChallenge(null); } })
-        .catch(caught => { if (active) failure(caught); });
+        .catch(caught => { if (active) failure(caught); })
+        .finally(() => { if (active) setLoading(false); });
     }, 250);
     return () => { active = false; clearTimeout(timer); };
   }, [page, search, revision, local]);
@@ -70,11 +74,11 @@ export default function OwnerLicenses({ local = false }) {
   if (local) return <section className="owner-panel"><h2>Production owner access required</h2><p>Sign in to the protected owner dashboard to manage licenses.</p></section>;
   if (challenge) return <LicenseGate challenge={challenge} onVerified={refresh} />;
   return <div className="owner-flow owner-licenses">
-    {error && <p role="alert">{error}</p>}
+    {error && <ErrorMessage onRetry={creation ? () => create(creation) : refresh}>{error}</ErrorMessage>}
     <section className="owner-panel"><div className="owner-panel__heading"><h2>Pro licenses</h2>
       <button className="portal-button" disabled={!data?.enabled || busy} onClick={() => setShowForm(!showForm)}>{showForm ? "Close" : "Create license"}</button></div>
       {data && !data.enabled && <p>New licenses and redemption are currently disabled. Existing licenses can still be revoked.</p>}
-      {showForm && <LicenseForm busy={busy || !!creation} onCreate={create} />}
+      {showForm && <LicenseForm busy={busy} locked={!!creation} onCreate={create} />}
       {creation && <p role="status">The creation result is unconfirmed. <button className="portal-link-button" disabled={busy} onClick={() => create(creation)}>Check same request</button></p>}
       {issued && <div className="license-issued"><h3>{issued.key ? "Save this key now" : "License already created"}</h3>
         {issued.key ? <><p>This is the only time the full key is shown. Anyone holding it can claim it.</p><code>{issued.key}</code>
@@ -83,15 +87,15 @@ export default function OwnerLicenses({ local = false }) {
         <button className="portal-link-button" onClick={() => setIssued(null)}>Dismiss</button></div>}
     </section>
     <section className="owner-panel"><label className="license-search">Search licenses<input value={search} maxLength={120} placeholder="Label or redeemed email" onChange={e => { setSearch(e.target.value); setPage(1); }} /></label>
-      {!data && <p role="status">Loading licenses…</p>}
-      <div className="license-table"><table><thead><tr><th>License</th><th>Allowance</th><th>Validity</th><th>Status / account</th><th>Actions</th></tr></thead>
+      {!data && (loading ? <p role="status">Loading licenses…</p> : <Empty title="License records unavailable">Refresh to try again.</Empty>)}
+      {!!data?.licenses.length && <div className="license-table" tabIndex="0" role="region" aria-label="Pro licenses"><table><thead><tr><th>License</th><th>Allowance</th><th>Validity</th><th>Status / account</th><th>Actions</th></tr></thead>
         <tbody>{data?.licenses.map(row => <tr key={row.id}><td><strong>{row.label}</strong><small>•••• {row.key_suffix}</small></td>
           <td>{row.tokens.toLocaleString()} tokens<small>{row.allowance === "monthly" ? "Every month" : "One time"}</small></td>
           <td>{row.ends_at || row.fixed_ends_at ? `Ends ${date(row.ends_at || row.fixed_ends_at)}` : `${row.duration_months} month(s) after redemption`}<small>Claim before {date(row.claim_by)}</small></td>
-          <td>{status(row)}<small>{row.redeemed_email || "Unclaimed"}</small></td>
-          <td>{!row.revoked_at && <button className="portal-link-button" disabled={busy} onClick={() => setRevoke(row)}>Revoke</button>}</td></tr>)}</tbody></table></div>
-      {data?.licenses.length === 0 && <p>No licenses found.</p>}
-      {data && <div className="license-pages"><button disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} of {data.lastPage}</span><button disabled={page >= data.lastPage} onClick={() => setPage(page + 1)}>Next</button></div>}
+          <td><span className="od-badge">{licenseStatus(row)}</span><small>{row.redeemed_email || "Unclaimed"}</small></td>
+          <td>{!row.revoked_at && <button className="portal-link-button" disabled={busy || loading} onClick={() => setRevoke(row)}>Revoke</button>}</td></tr>)}</tbody></table></div>}
+      {data?.licenses.length === 0 && <Empty title={search ? "No matching licenses" : "No licenses yet"}>{search ? "Try a different label or redeemed email." : "Create a license to give someone Pro with an allowance and an end date."}</Empty>}
+      {data?.lastPage > 1 && <div className="license-pages"><button disabled={loading || page <= 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} of {data.lastPage}</span><button disabled={loading || page >= data.lastPage} onClick={() => setPage(page + 1)}>Next</button></div>}
     </section>
     {revoke && <section className="owner-panel license-review" role="alert"><h3>Revoke {revoke.label}?</h3><p>This stops its Pro benefits and removes its unspent license tokens. Purchased tokens and subscriptions are preserved.</p>
       <button className="portal-button" disabled={busy} onClick={confirmRevoke}>Revoke license</button> <button className="portal-link-button" disabled={busy} onClick={() => setRevoke(null)}>Keep license</button></section>}

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { apiRequest } from "../api.js";
 import OwnerTwoFactorSetup from "./OwnerTwoFactorSetup.jsx";
+import { Panel, Empty, ErrorMessage, Details, Facts } from "./OwnerPrimitives.jsx";
+import { formatCount } from "./format.js";
+import { utc, isGuest } from "./ownerData.js";
+import AccountDetails from "./AccountDetails.jsx";
 
-const date = (value) => value ? new Date(value).toLocaleString("en-GB", {
-  dateStyle: "medium", timeStyle: "short", timeZone: "UTC",
-}) + " UTC" : "—";
-
-export default function OwnerAccounts({ local }) {
+export default function OwnerAccounts({ local, report }) {
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [challenge, setChallenge] = useState(null);
@@ -14,73 +14,90 @@ export default function OwnerAccounts({ local }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const refresh = () => setRevision(value => value + 1);
 
   useEffect(() => {
     if (local) return;
     let active = true;
+    const controller = new AbortController();
     setBusy(true);
     setError("");
-    apiRequest(`/web-api/owner/accounts?page=${page}`).then((payload) => {
+    apiRequest("/web-api/owner/accounts?page=" + page, { signal: controller.signal }).then(payload => {
       if (active) { setData(payload); setChallenge(null); }
-    }).catch((caught) => {
+    }).catch(caught => {
       if (!active) return;
+      setData(null);
+      setSelected(null);
       if (caught.status === 428) setChallenge(caught.payload);
-      else setError(caught.message);
+      else {
+        setChallenge(null);
+        setError(caught.status === 401 ? "Your session has expired. Sign in again to view accounts."
+          : caught.status === 403 ? "This account does not have owner access." : caught.message || "Please try again.");
+      }
     }).finally(() => { if (active) setBusy(false); });
-    return () => { active = false; };
+    const timer = window.setTimeout(refresh, 60000);
+    return () => { active = false; controller.abort(); window.clearTimeout(timer); };
   }, [page, revision, local]);
+  useEffect(() => { setSelected(null); }, [page]);
 
-  const verify = async (event) => {
+  const verify = async event => {
     event.preventDefault();
     setBusy(true);
     setError("");
     try {
       await apiRequest("/web-api/owner/verify-2fa", { body: { code } });
       setCode("");
-      setRevision((value) => value + 1);
+      refresh();
     } catch (caught) {
       setError(caught.message);
       setCode("");
       setBusy(false);
     }
   };
-
-  if (local) return <section className="owner-state" role="status"><strong>Production owner access only</strong>
-    <p>This local one-click account shows aggregate production snapshots. Names, email addresses and login records stay on the protected production service.</p></section>;
-  if (challenge && !challenge.enabled && ["google", "email"].includes(challenge.provider))
-    return <OwnerTwoFactorSetup provider={challenge.provider} onComplete={() => setRevision((value) => value + 1)} />;
-  if (challenge) return <section className="owner-panel owner-accounts-gate">
-    <p className="owner-kicker">Extra protection</p><h2>Verify before opening account records</h2>
-    {challenge.enabled ? <p>Enter a current authenticator code or a recovery code. Access lasts 10 minutes.</p>
-      : <p>Enable two-factor authentication in Vibyra iOS or Desktop Account settings, then return here. Owner account records require a separate authenticator code.</p>}
-    {challenge.enabled && <>
-      <form onSubmit={verify}><label>Verification code<input value={code} onChange={(event) => setCode(event.target.value)}
-        autoComplete="one-time-code" inputMode="text" maxLength={20} required autoFocus /></label>
-        <button type="submit" disabled={busy || !code.trim()}>{busy ? "Checking…" : "Open account records"}</button></form></>}
-    {error && <p className="owner-accounts-error" role="alert">{error}</p>}
-  </section>;
-
-  return <div className="owner-flow"><section className="owner-panel owner-accounts">
-    <div className="owner-panel__heading"><div><p className="owner-kicker">Operational account data</p>
-      <h2>Accounts &amp; sessions</h2></div><span>{data ? `${data.total} accounts` : ""}</span></div>
-    <p className="owner-footnote">Login counts come from successful authentication records. Last session use means an authenticated token was used; it does not prove the person is online.</p>
-    {error && <p className="owner-accounts-error" role="alert">{error}</p>}
-    {busy && !data ? <p className="owner-empty">Loading account records…</p> : null}
-    {data && <><div className="owner-accounts-scroll"><table><thead><tr>
-      <th scope="col">Account</th><th scope="col">Plan</th><th scope="col">Created</th>
-      <th scope="col">Last login</th><th scope="col">Logins · 30d</th>
-      <th scope="col">Last session use</th><th scope="col">Used in last 5m</th>
-    </tr></thead><tbody>{data.accounts.map((account) => <tr key={account.id}>
-      <td><strong>{account.name || "Unnamed account"}</strong><small>{account.email}</small>
-        <small>{account.email_verified_at ? "Verified email" : "Email unverified"}</small></td>
-      <td>{account.plan || "—"}</td><td>{date(account.created_at)}</td>
-      <td>{date(account.last_login_at)}</td><td>{account.logins_30d ?? "—"}</td>
-      <td>{date(account.last_session_used_at)}</td><td>{account.recent_sessions_5m}</td>
-    </tr>)}</tbody></table></div>
-      {!data.accounts.length && <p className="owner-empty">No account records on this page.</p>}
-      <div className="owner-accounts-pages"><span>Page {data.page} of {data.last_page}</span>
-        <div><button type="button" onClick={() => setPage((value) => value - 1)} disabled={busy || page <= 1}>Previous</button>
-          <button type="button" onClick={() => setPage((value) => value + 1)} disabled={busy || page >= data.last_page}>Next</button></div>
-      </div></>}
-  </section></div>;
+  if (local) return <Panel title="Protected account records"><p>Sign in to the production owner dashboard to view names, email addresses and account details. This preview contains aggregate data only.</p></Panel>;
+  if (challenge && !challenge.enabled && ["google", "email"].includes(challenge.provider)) {
+    return <OwnerTwoFactorSetup provider={challenge.provider} onComplete={refresh} />;
+  }
+  if (challenge) return <Panel title="Verify to view account details" className="od-verification">
+    <p>{challenge.enabled ? "Enter an authenticator or recovery code. Access lasts 10 minutes." : "Enable two-factor authentication in Vibyra account settings, then return here."}</p>
+    {challenge.enabled && <form onSubmit={verify}><label>Verification code
+      <input value={code} onChange={event => setCode(event.target.value)} autoComplete="one-time-code" inputMode="text" maxLength={20} required autoFocus />
+    </label><button className="od-button od-primary" disabled={busy || !code.trim()}>{busy ? "Checking…" : "View account details"}</button></form>}
+    {error && <p className="od-error-text" role="alert">{error}</p>}
+  </Panel>;
+  return <div className="od-flow">
+    {error && <ErrorMessage onRetry={refresh}>{error} <a href="/owner/login">Sign in</a></ErrorMessage>}
+    <Panel title="Account directory" subtitle="Newest accounts first · guest accounts are included" action={<button className="od-button" disabled={busy} onClick={refresh}>{busy ? "Updating…" : "Refresh"}</button>}>
+      {!data ? <Empty title={error ? "Account records unavailable" : "Loading accounts…"} /> : <>
+        {!data.accounts.length ? <Empty title="No accounts on this page" /> :
+          <div className="od-table-scroll" role="region" aria-label="Account directory" tabIndex="0">
+            <table className="od-users-table"><thead><tr><th>Account</th><th>Plan</th><th>Verification</th><th>Joined</th><th>Last recorded use</th></tr></thead>
+              <tbody>{data.accounts.map(account => <tr key={account.id}>
+                <td><button className="od-account-button" onClick={() => setSelected(account)}>
+                  <span className="od-avatar">{isGuest(account) ? "G" : (account.name || account.email || "?")[0].toUpperCase()}</span>
+                  <span><strong>{isGuest(account) ? "Guest account" : account.name || "Unnamed account"}</strong>
+                    <small>{isGuest(account) ? "Guest #" + account.id : account.email}</small></span>
+                </button></td>
+                <td><span className={"od-badge " + (account.plan === "pro" ? "is-pro" : "")}>{account.plan || "Unknown"}</span></td>
+                <td><span className="od-verification-label">{account.email_verified_at ? "Verified" : isGuest(account) ? "Guest" : "Unverified"}</span></td>
+                <td>{utc(account.created_at, true)}</td><td>{utc(account.last_session_used_at, true)}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>}
+        <div className="od-pagination"><span>{data.total ? "Showing " + ((data.page - 1) * data.per_page + 1) + "–" + Math.min(data.page * data.per_page, data.total) + " of " + data.total : "0 accounts"}</span>
+          {data.last_page > 1 && <div><button className="od-button" disabled={busy || data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</button>
+            <span>Page {data.page} of {data.last_page}</span><button className="od-button" disabled={busy || data.page >= data.last_page} onClick={() => setPage(data.page + 1)}>Next</button></div>}
+        </div>
+      </>}
+    </Panel>
+    <p className="od-note">Last recorded use means an authenticated session was used, not that the person is online. Open an account for its exact times and login records.</p>
+    <Details title="Account totals and recent use"><Facts rows={[
+      ["All accounts · registered and guest", formatCount(report?.overview?.accounts?.total)],
+      ["Accounts used · last 24 hours", formatCount(report?.overview?.operations?.accounts_used_24h)],
+      ["Accounts used · last 7 days", formatCount(report?.overview?.operations?.accounts_used_7d)],
+      ["Accounts used · last 30 days", formatCount(report?.overview?.accounts?.active_30d)],
+    ]} /><p>These fixed windows count authenticated token use. They do not establish that someone is online.</p></Details>
+    {selected && <AccountDetails account={selected} onClose={() => setSelected(null)} />}
+  </div>;
 }

@@ -1,0 +1,60 @@
+.owner-dashboard .owner-panel {
+  background: var(--od-surface); border: 1px solid var(--od-border); border-radius: 10px; padding: 22px; min-width: 0;
+}
+.owner-dashboard .owner-flow { display: grid; gap: 22px; }
+.owner-dashboard .owner-panel p { color: var(--od-muted); font-size: 13px; line-height: 1.7; }
+.owner-dashboard .owner-kicker { display: none; }
+.owner-dashboard .owner-panel__heading { margin-bottom: 18px; }
+.owner-dashboard .owner-panel h2 { margin-bottom: 12px; }
+.owner-dashboard form label { display: grid; gap: 7px; font-size: 12px; font-weight: 550; }
+.owner-dashboard form input, .owner-dashboard form select, .owner-dashboard .license-search input {
+  width: 100%; min-height: 40px; padding: 10px 12px; border: 1px solid var(--od-border); border-radius: 7px;
+  background: var(--od-surface); color: var(--od-text); font: inherit;
+}
+.owner-dashboard .license-search { font-size: 12px; margin: 0 0 22px; max-width: 360px; }
+.owner-dashboard .portal-button, .owner-dashboard .owner-setup button {
+  min-height: 38px; padding: 9px 14px; border: 1px solid var(--od-border); border-radius: 7px;
+  background: var(--od-surface); color: var(--od-text); font-size: 12px; line-height: 1.4;
+}
+.owner-dashboard .portal-button--primary { background: #315bd8; color: #fff; border-color: #315bd8; }
+.owner-dashboard .portal-link-button { background: transparent; border: 0; color: var(--od-accent); text-decoration: none; font-size: 12px; }
+.owner-dashboard .owner-setup, .od-verification { max-width: 580px; }
+.owner-dashboard .owner-setup form, .od-verification form { display: grid; gap: 16px; margin: 20px 0; }
+.owner-dashboard .owner-setup__secret, .owner-dashboard .owner-setup__codes { display: grid; gap: 10px; overflow-wrap: anywhere; padding: 16px; border: 1px solid var(--od-border); background: var(--od-elevated); border-radius: 7px; }
+.owner-dashboard .owner-accounts-error { color: var(--od-error); }
+.owner-dashboard .license-form { max-width: none; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(240px, 1fr); gap: 30px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--od-border); }
+.od-license-fields { display: grid; gap: 20px; }
+.od-license-fields fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 14px; min-width: 0; }
+.od-license-fields legend { font-size: 13px; font-weight: 650; margin-bottom: 12px; }
+.od-license-summary { background: var(--od-elevated); border-radius: 8px; padding: 20px; align-self: start; }
+.od-license-summary h3 { margin: 0 0 16px; }
+.od-license-summary .portal-button { width: 100%; margin-top: 16px; }
+.owner-dashboard .license-review { background: var(--od-elevated); }
+.owner-dashboard .license-issued { border-color: var(--od-accent); padding: 20px; }
+.owner-dashboard .license-issued code { font-size: 15px; background: var(--od-elevated); padding: 12px; border-radius: 6px; }
+.owner-dashboard .license-pages { align-items: center; font-size: 12px; }
+.owner-dashboard .license-table td:first-child { max-width: 180px; overflow-wrap: anywhere; }
+.owner-dashboard .license-form .license-beta { display: flex; font-weight: 400; line-height: 1.6; }
+.owner-dashboard .license-form .license-beta input { width: 16px; height: 16px; min-height: 16px; flex-shrink: 0; }
+.owner-auth { background: var(--od-canvas); color: var(--od-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.owner-auth { --auth-text: var(--od-text); --auth-soft: var(--od-muted); --auth-muted: var(--od-muted); --auth-line: var(--od-border); --auth-fill: var(--od-elevated); --auth-fill-hover: var(--od-soft); }
+.owner-auth .auth-backdrop { display: none; }
+.owner-auth .auth-card { background: var(--od-surface); border: 1px solid var(--od-border); border-radius: 12px; box-shadow: none; backdrop-filter: none; }
+.owner-auth .auth-brand { color: var(--od-text); }
+.owner-auth .auth-heading h1 { color: var(--od-text); font-size: 28px; letter-spacing: -.6px; }
+.owner-auth .auth-heading p, .owner-auth .auth-foot, .owner-auth .auth-footer { color: var(--od-muted); }
+.owner-auth .auth-field, .owner-auth .auth-password button { color: var(--od-text); }
+.owner-auth input, .owner-auth .auth-password { background: var(--od-surface); color: var(--od-text); border-color: var(--od-border); }
+.owner-auth .auth-pill--light { background: #315bd8; color: #fff; border-color: #315bd8; }
+.owner-auth .auth-pill { border-radius: 8px; }
+.owner-auth .auth-footer a { color: var(--od-muted); }
+.owner-auth .auth-card .portal-notice--error { color: var(--od-error); background: color-mix(in srgb, var(--od-error) 12%, var(--od-surface)); }
+.owner-auth .auth-field input:hover { border-color: var(--od-accent); }
+.owner-auth .auth-field input:-webkit-autofill { -webkit-text-fill-color: var(--od-text); -webkit-box-shadow: 0 0 0 40px var(--od-surface) inset; }
+.owner-auth .auth-provider { background: var(--od-surface); color: var(--od-text); border-color: var(--od-border); }
+.owner-auth .auth-divider { color: var(--od-muted); }
+.owner-auth .auth-divider::before, .owner-auth .auth-divider::after { background: var(--od-border); }
+@media (max-width: 650px) {
+  .owner-dashboard .license-form { grid-template-columns: 1fr; gap: 20px; }
+  .owner-dashboard .owner-panel { padding: 18px; }
+}

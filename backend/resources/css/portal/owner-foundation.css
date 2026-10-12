@@ -1,0 +1,85 @@
+.owner-dashboard, .owner-auth {
+  --od-canvas: #f4f5f7;
+  --od-surface: #fff;
+  --od-rail: #fafafb;
+  --od-elevated: #f0f2f5;
+  --od-border: #d9dde4;
+  --od-text: #171a21;
+  --od-muted: #626a78;
+  --od-accent: #315bd8;
+  --od-soft: #eaf0ff;
+  --od-error: #b52c42;
+  --od-warning: #885415;
+  --portal-canvas: var(--od-canvas);
+  --portal-surface: var(--od-surface);
+  --portal-elevated: var(--od-elevated);
+  --portal-border: var(--od-border);
+  --portal-text: var(--od-text);
+  --portal-muted: var(--od-muted);
+  --portal-accent: var(--od-accent);
+  --portal-action: #315bd8;
+  min-height: 100vh;
+  background: var(--od-canvas);
+  color: var(--od-text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color-scheme: light;
+}
+.owner-dashboard[data-theme="dark"], .owner-auth[data-theme="dark"] {
+  --od-canvas: #0e0f12;
+  --od-surface: #181a20;
+  --od-rail: #13151a;
+  --od-elevated: #20232a;
+  --od-border: #2b2f38;
+  --od-text: #f5f7fa;
+  --od-muted: #a6adba;
+  --od-accent: #8ca5ff;
+  --od-soft: #222d49;
+  --od-error: #ff8c98;
+  --od-warning: #efbc72;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  .owner-dashboard[data-theme="auto"], .owner-auth[data-theme="auto"] {
+    --od-canvas: #0e0f12; --od-surface: #181a20; --od-rail: #13151a;
+    --od-elevated: #20232a; --od-border: #2b2f38; --od-text: #f5f7fa;
+    --od-muted: #a6adba; --od-accent: #8ca5ff; --od-soft: #222d49;
+    --od-error: #ff8c98; --od-warning: #efbc72; color-scheme: dark;
+  }
+}
+.owner-dashboard * { box-sizing: border-box; }
+.owner-dashboard h1, .owner-dashboard h2, .owner-dashboard h3, .owner-dashboard p { margin-top: 0; }
+.owner-dashboard h1 { font-size: 28px; line-height: 1.2; letter-spacing: -.7px; margin-bottom: 8px; font-weight: 650; }
+.owner-dashboard h2 { font-size: 16px; line-height: 1.4; font-weight: 650; margin-bottom: 0; letter-spacing: -.2px; }
+.owner-dashboard h3 { font-size: 14px; font-weight: 650; }
+.owner-dashboard button, .owner-dashboard select, .owner-dashboard input { font: inherit; }
+.owner-dashboard button { cursor: pointer; }
+.owner-dashboard button:disabled { cursor: default; opacity: .55; }
+.owner-dashboard :focus-visible { outline: 2px solid var(--od-accent); outline-offset: 3px; }
+.owner-dashboard svg { width: 18px; height: 18px; flex-shrink: 0; }
+.owner-dashboard a { text-decoration: none; }
+.od-muted, .od-note { color: var(--od-muted); }
+.od-note { font-size: 12px; line-height: 1.6; margin: 16px 0 0; }
+.od-button, .od-icon-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 38px; padding: 8px 13px; border: 1px solid var(--od-border);
+  border-radius: 7px; color: var(--od-text); background: var(--od-surface); font-weight: 550;
+}
+.od-button:hover, .od-icon-button:hover { background: var(--od-elevated); }
+.od-primary, .od-primary:hover { background: #315bd8; color: #fff; border-color: #315bd8; }
+.od-icon-button { width: 38px; padding: 8px; }
+.od-link {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 0;
+  background: transparent; color: var(--od-accent); font-size: 12px; font-weight: 600;
+}
+.od-link:hover { text-decoration: underline; }
+.od-link svg { width: 15px; height: 15px; }
+.od-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.od-skip { position: fixed; top: -70px; left: 16px; padding: 12px; z-index: 50; background: var(--od-surface); }
+.od-skip:focus { top: 8px; }
+.od-flow { display: grid; gap: 22px; }
+.od-grid-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.od-overview-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr); gap: 22px; }
+@media (max-width: 1050px) { .od-overview-grid { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .od-grid-two { grid-template-columns: 1fr; } .od-flow, .od-grid-two { gap: 16px; } }

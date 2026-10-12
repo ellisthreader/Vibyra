@@ -1,0 +1,33 @@
+name: Owner dashboard frontend
+
+on:
+  pull_request:
+    paths:
+      - 'backend/resources/js/portal/**'
+      - 'backend/resources/css/portal/**'
+      - 'backend/resources/css/portal.css'
+      - 'backend/preview/**'
+      - 'backend/package*.json'
+      - '.github/workflows/owner-dashboard.yml'
+  push:
+    branches: ['codex/owner-dashboard-redesign-20261012']
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run check:owner
+      - run: npm run build

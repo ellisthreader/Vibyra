@@ -1,10 +1,13 @@
 import React from "react";
+import useOwnerTheme from "../owner/useOwnerTheme.js";
 
 // Log in, sign up, two-factor and owner access: one frosted card floating on
 // the painted blue-hour river from the homepage's ecosystem section.
 export default function AuthShell({ switchTo, children }) {
+  const owner = window.location.pathname === "/owner/login";
+  const [theme] = useOwnerTheme(owner);
   return (
-    <div className="auth-page">
+    <div className={owner ? "auth-page owner-auth" : "auth-page"} data-theme={owner ? theme : undefined}>
       <div className="auth-backdrop" aria-hidden="true">
         <img src="/media/marketing/ecosystem/safe.webp" alt="" />
       </div>

@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "check:owner": "node preview/checkOwnerSource.mjs && node --test preview/ownerData.test.mjs preview/ownerRendering.test.mjs",
+    "preview:owner": "node preview/ownerPreview.mjs"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

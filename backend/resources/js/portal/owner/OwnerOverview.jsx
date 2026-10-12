@@ -1,76 +1,42 @@
 import React from "react";
-import OwnerMetric, { OwnerBars } from "./OwnerMetric.jsx";
+import { Metric, Panel, Facts } from "./OwnerPrimitives.jsx";
 import OwnerTrend from "./OwnerTrend.jsx";
-import { formatCount, formatMoney } from "./format.js";
+import OwnerIcon from "./OwnerIcon.jsx";
+import { formatCount } from "./format.js";
+import { planCount, downloadCoverage, recent } from "./ownerData.js";
 
-export default function OwnerOverview({ data, onSelect }) {
-  const overview = data.overview ?? {};
-  const accounts = overview.accounts ?? {};
-  const website = overview.website ?? {};
-  const desktop = overview.desktop ?? {};
-  const mobile = overview.mobile ?? {};
-  const ai = overview.ai ?? {};
-  const operations = overview.operations ?? {};
-  const series = data.series ?? {};
-  const memberships = (data.breakdowns?.memberships ?? []).map((row) => ({ ...row, plan: row.plan?.replace(/^./, (letter) => letter.toUpperCase()) }));
-  const cloudModels = data.breakdowns?.prompt_models ?? [];
-
-  return <div className="owner-flow">
-    <div className="owner-metrics owner-metrics--hero">
-      <OwnerMetric label="Total accounts" value={accounts.total} note="Registered and guest" accent />
-      <OwnerMetric label="New registrations" value={operations.new_registered} note="Registered in this period" />
-      <OwnerMetric label="Cloud AI users" value={operations.cloud_users} note="Distinct accounts this period" />
-      <OwnerMetric label="Cloud AI turns" value={ai.vibes_turns} note="Recorded in this period" />
+export default function OwnerOverview({ data, navigate }) {
+  const { accounts = {}, operations = {}, website = {}, ai = {} } = data.overview || {};
+  const plans = data.breakdowns?.memberships;
+  return <div className="od-flow">
+    <div className="od-metrics">
+      <Metric label="New registrations" value={operations.new_registered} scope="In this period" note="Across Vibyra" onClick={() => navigate("users")} />
+      <Metric label="Downloads" value={website.downloads} scope="In this period" note="Download responses" onClick={() => navigate("downloads")} />
+      <Metric label="Website checkouts" value={website.verified_purchases} scope="In this period" note="Recorded completions" onClick={() => navigate("memberships")} />
+      <Metric label="Pro accounts" value={planCount(plans, "pro")} scope="Current total" note="All Pro account types" onClick={() => navigate("memberships")} />
     </div>
-
-    <div className="owner-section-heading"><div><p className="owner-kicker">Production records</p><h2>Activity we can verify now</h2></div><span>Cloud service · UTC</span></div>
-    <div className="owner-duo">
-      <section className="owner-panel"><div className="owner-panel__heading"><p className="owner-kicker">Authenticated use</p><h3>Accounts with recent token use</h3></div>
-        <div className="owner-fact-list"><div><span>Last 24 hours</span><strong>{formatCount(operations.accounts_used_24h)}</strong></div>
-          <div><span>Last 7 days</span><strong>{formatCount(operations.accounts_used_7d)}</strong></div></div>
-        <p className="owner-footnote">A token was used in that window. This does not identify the device or prove the account is online.</p>
-      </section>
-      <OwnerTrend rows={series.cloud ?? []} primary={{ key: "turns", label: "Turns" }}
-        secondary={{ key: "users", label: "Accounts" }} title="Vibes cloud activity" />
+    <div className="od-overview-grid">
+      <OwnerTrend title="Download activity" rows={data.series?.website} primary={{ key: "downloads", label: "Downloads" }} note={downloadCoverage(data)} />
+      <Panel title="Your accounts" subtitle="Current account records" action={<button className="od-link" onClick={() => navigate("users")}>View users <OwnerIcon name="arrow" /></button>}>
+        <div className="od-account-total"><strong>{formatCount(accounts.registered)}</strong><span>registered accounts</span></div>
+        <Facts rows={[["Free accounts", formatCount(planCount(plans, "free"))], ["Pro accounts", formatCount(planCount(plans, "pro"))], ["Guest accounts", formatCount(accounts.guests)]]} />
+        <p className="od-note">Pro is an account status. It does not establish a paid subscription.</p>
+      </Panel>
     </div>
-
-    <div className="owner-section-heading"><div><p className="owner-kicker">Product pulse</p><h2>Where people are active</h2></div><span>Selected period · UTC</span></div>
-    <div className="owner-pulse-grid">
-      <div className="owner-pulse"><button type="button" onClick={() => onSelect("website")}><span>01 / Website</span><span aria-hidden="true">↗</span></button>
-        <strong>{formatCount(website.unique_visitors)}</strong><small>Consented sessions</small>
-        <OwnerTrend rows={series.website ?? []} primary={{ key: "unique_visitors", label: "Sessions" }} title="Website activity" compact />
-      </div>
-      <div className="owner-pulse"><button type="button" onClick={() => onSelect("desktop")}><span>02 / Desktop</span><span aria-hidden="true">↗</span></button>
-        <strong>{formatCount(desktop.active_users)}</strong><small>Active app sessions</small>
-        <OwnerTrend rows={series.desktop ?? []} primary={{ key: "prompts_submitted", label: "Prompts" }} title="Desktop activity" color="violet" compact />
-      </div>
-      <div className="owner-pulse"><button type="button" onClick={() => onSelect("mobile")}><span>03 / Mobile</span><span aria-hidden="true">↗</span></button>
-        <strong>{formatCount(mobile.active_users)}</strong><small>Active app sessions</small>
-        <OwnerTrend rows={series.mobile ?? []} primary={{ key: "chat_prompts", label: "Chat prompts" }} title="Mobile activity" color="green" compact />
-      </div>
-    </div>
-
-    <div className="owner-section-heading"><div><p className="owner-kicker">Business and AI</p><h2>Account health</h2></div></div>
-    <div className="owner-duo">
-      <section className="owner-panel"><div className="owner-panel__heading"><p className="owner-kicker">Accounts</p><h3>Membership and reach</h3></div>
-        <div className="owner-fact-list">
-          <div><span>Accounts with token use · 30d</span><strong>{formatCount(accounts.active_30d)}</strong></div>
-          <div><span>Registered</span><strong>{formatCount(accounts.registered)}</strong></div>
-          {accounts.guests !== null && accounts.guests !== undefined && <div><span>Guest accounts</span><strong>{formatCount(accounts.guests)}</strong></div>}
-        </div>
-      </section>
-      <section className="owner-panel"><div className="owner-panel__heading"><p className="owner-kicker">AI service</p><h3>Recorded turns</h3></div>
-        <div className="owner-fact-list">
-          <div><span>Submitted</span><strong>{formatCount(ai.vibes_turns)}</strong></div>
-          <div><span>Completed</span><strong>{formatCount(ai.completed_turns)}</strong></div>
-          <div><span>Failed</span><strong>{formatCount(ai.failed_turns)}</strong></div>
-          <div><span>Recorded model spend</span><strong>{formatMoney(ai.spend_micro_usd)}</strong></div>
-        </div>
-      </section>
-    </div>
-    <div className="owner-duo">
-      <OwnerBars title="Membership mix" rows={memberships} labelKey="plan" empty="Membership data is not available yet." />
-      <OwnerBars title="Cloud chat models" rows={cloudModels} labelKey="model" empty={data.data_quality?.cloud_turns_available ? "No cloud chat prompts in this period." : "Cloud turn data is unavailable on this deployment."} />
+    <div className="od-grid-two">
+      <Panel title="App activity" subtitle="Recorded sessions and cloud use">
+        <div className="od-activity-list">{[["desktop", "Desktop"], ["mobile", "Mobile"], ["cloud", "Cloud AI"]].map(([key, label]) =>
+          <button key={key} onClick={() => navigate("usage", key)}><span className="od-app-icon"><OwnerIcon name="usage" /></span>
+            <span><strong>{label}</strong><small>{key === "cloud" ? "Distinct accounts in this period" : "Consented accounts or sessions"}</small></span>
+            <b>{formatCount(key === "cloud" ? operations.cloud_users : data.overview?.[key]?.active_users)}</b><OwnerIcon name="arrow" /></button>)}</div>
+      </Panel>
+      <Panel title="Worth knowing" action={<button className="od-link" onClick={() => navigate("tracking")}>Tracking details <OwnerIcon name="arrow" /></button>}>
+        <ul className="od-notes">
+          {["website", "desktop", "mobile"].map(surface => <li key={surface}><span>{surface[0].toUpperCase() + surface.slice(1)}</span><strong>{recent(data.data_quality?.last_event_by_surface?.[surface])}</strong></li>)}
+          {Number(ai.failed_turns) > 0 && <li><span>Cloud AI</span><strong>{formatCount(ai.failed_turns)} failed requests in this period</strong></li>}
+        </ul>
+        <p className="od-note">Last received activity is separate from the report refresh time.</p>
+      </Panel>
     </div>
   </div>;
 }
