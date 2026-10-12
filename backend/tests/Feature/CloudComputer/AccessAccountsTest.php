@@ -21,7 +21,7 @@ class AccessAccountsTest extends SyncTestCase
     public function test_everything_is_on_by_default_in_the_access_payload(): void
     {
         $r = $this->access()->assertOk()->json();
-        $this->assertSame(['enabled' => true, 'carryOver' => 'unsupported', 'cloudLogin' => ['appliedAt' => null, 'pending' => false]], $r['providers']['claude']);
+        $this->assertSame(['enabled' => true, 'carryOver' => 'unsupported', 'cloudLogin' => ['appliedAt' => null, 'pending' => false, 'seq' => 0, 'appliedSeq' => 0, 'failedAt' => null, 'error' => null]], $r['providers']['claude']);
         $this->assertSame([true, 'allowed'], [$r['providers']['codex']['enabled'], $r['providers']['codex']['carryOver']]);
         $this->assertSame(['github' => ['enabled' => true]], $r['integrations']);
     }

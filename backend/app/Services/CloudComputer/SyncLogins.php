@@ -26,7 +26,9 @@ class SyncLogins
         foreach (self::PROVIDERS as $p) {
             $r = $rows[$p] ?? null;
             $out[$p] = ['seq' => (int) ($r->seq ?? 0), 'appliedSeq' => (int) ($r->applied_seq ?? 0), 'pending' => (bool) ($r->blob_id ?? false),
-                'appliedAt' => ($r->applied_at ?? null) ? Carbon::parse($r->applied_at)->toIso8601String() : null, 'origin' => $r->origin ?? null];
+                'appliedAt' => ($r->applied_at ?? null) ? Carbon::parse($r->applied_at)->toIso8601String() : null, 'origin' => $r->origin ?? null,
+                'failedAt' => ($r->failed_at ?? null) ? Carbon::parse($r->failed_at)->toIso8601String() : null,
+                'error' => ($r->failed_at ?? null) ? SyncLoginFailure::message($r->error ?? null) : null];
         }
         return $out;
     }

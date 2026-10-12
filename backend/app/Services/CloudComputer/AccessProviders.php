@@ -87,7 +87,10 @@ class AccessProviders
     public function payload(int $user): array
     {
         $logins = app(SyncLogins::class)->payload($user); $codex = $logins['codex'];
-        $own = fn (array $l) => ['appliedAt' => $l['origin'] === 'cloud' ? $l['appliedAt'] : null, 'pending' => $l['origin'] === 'cloud' && $l['pending']];
+        $own = fn (array $l) => $l['origin'] === 'cloud'
+            ? ['appliedAt' => !$l['pending'] && !$l['failedAt'] && $l['seq'] > 0 && $l['appliedSeq'] >= $l['seq'] ? $l['appliedAt'] : null,
+                'pending' => $l['pending'], 'seq' => $l['seq'], 'appliedSeq' => $l['appliedSeq'], 'failedAt' => $l['failedAt'], 'error' => $l['error']]
+            : ['appliedAt' => null, 'pending' => false, 'seq' => 0, 'appliedSeq' => 0, 'failedAt' => null, 'error' => null];
         return ['codex' => ['enabled' => $this->enabled($user, 'codex'), 'carryOver' => $this->codexCarryOver($user), 'sent' => $codex['seq'] > 0,
                 'appliedAt' => $codex['appliedAt'], 'cloudLogin' => $own($codex)],
             'claude' => ['enabled' => $this->enabled($user, 'claude'), 'carryOver' => 'unsupported', 'cloudLogin' => $own($logins['claude'])]];

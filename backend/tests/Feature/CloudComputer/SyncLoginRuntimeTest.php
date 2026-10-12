@@ -127,6 +127,6 @@ class SyncLoginRuntimeTest extends SyncTestCase
         $this->send(2)->assertOk();
         $this->asRuntime($this->token, 'post', 'sync/key', ['publicKey' => str_repeat('d4', 32)])->assertOk();
         $this->assertSame([], $this->files());
-        $this->assertSame(['seq' => 2, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null], $this->sync('get', '/')->json('logins.codex'));
+        $this->assertSame(['seq' => 2, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null, 'failedAt' => null, 'error' => null], $this->sync('get', '/')->json('logins.codex'));
     }
 }

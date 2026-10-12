@@ -63,8 +63,8 @@ class SyncCloudLoginTest extends SyncTestCase
     {
         $this->upload('claude', 1)->assertOk();
         $r = $this->access()->assertOk()->json('providers');
-        $this->assertSame(['appliedAt' => null, 'pending' => true], $r['claude']['cloudLogin']);
-        $this->assertSame(['appliedAt' => null, 'pending' => false], $r['codex']['cloudLogin']);
+        $this->assertSame(['appliedAt' => null, 'pending' => true, 'seq' => 1, 'appliedSeq' => 0, 'failedAt' => null, 'error' => null], $r['claude']['cloudLogin']);
+        $this->assertSame(['appliedAt' => null, 'pending' => false, 'seq' => 0, 'appliedSeq' => 0, 'failedAt' => null, 'error' => null], $r['codex']['cloudLogin']);
         $id = $this->pending()[0]['id'];
         $this->asRuntime($this->vm, 'post', 'sync/blobs/'.$id.'/applied', ['ok' => true])->assertOk();
         $r = $this->access()->json('providers.claude.cloudLogin');

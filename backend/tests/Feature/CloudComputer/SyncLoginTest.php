@@ -19,9 +19,9 @@ class SyncLoginTest extends SyncTestCase
 
     public function test_index_reports_empty_logins_then_an_accepted_upload(): void
     {
-        $this->assertSame(['codex' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null], 'claude' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null]], $this->sync('get', '/')->assertOk()->json('logins'));
+        $this->assertSame(['codex' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null, 'failedAt' => null, 'error' => null], 'claude' => ['seq' => 0, 'appliedSeq' => 0, 'pending' => false, 'appliedAt' => null, 'origin' => null, 'failedAt' => null, 'error' => null]], $this->sync('get', '/')->assertOk()->json('logins'));
         $this->login(['seq' => 3])->assertOk()->assertJsonPath('ok', true)->assertJsonPath('logins.codex.seq', 3);
-        $this->assertSame(['seq' => 3, 'appliedSeq' => 0, 'pending' => true, 'appliedAt' => null, 'origin' => null], $this->sync('get', '/')->json('logins.codex'));
+        $this->assertSame(['seq' => 3, 'appliedSeq' => 0, 'pending' => true, 'appliedAt' => null, 'origin' => null, 'failedAt' => null, 'error' => null], $this->sync('get', '/')->json('logins.codex'));
         $this->assertCount(1, $this->files());
         $this->assertStringContainsString('/logins/', $this->files()[0]);
     }
