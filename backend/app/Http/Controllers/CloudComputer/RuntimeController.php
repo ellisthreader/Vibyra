@@ -29,11 +29,11 @@ final class RuntimeController extends Controller
 
     public function activity(Request $request, string $workspace, HostActivity $activity)
     {
-        $w = $this->computer($request, $workspace);
+        $w = $this->computer($request, $workspace, true);
         $data = $request->validate(['running' => 'required|integer|min:0|max:50', 'waitingApproval' => 'required|integer|min:0|max:50', 'login' => 'sometimes|array',
             'login.claude' => 'sometimes|nullable|boolean', 'login.codex' => 'sometimes|nullable|boolean', 'projects' => 'sometimes|array|max:100',
             'providerPolicyVersion' => 'sometimes|integer|in:1']);
-        app(Runtime::class)->withCurrent($w, fn ($current) => $activity->record($current, $data));
+        app(Runtime::class)->withCurrent($w, fn ($current) => $activity->record($current, $data), true);
         return response()->json(['ok' => true, 'disabledProviders' => app(AccessProviders::class)->disabledProviders((int) $w->user_id)]);
     }
 
@@ -45,14 +45,14 @@ final class RuntimeController extends Controller
     public function done(Request $request, string $workspace, string $id, Projects $projects)
     {
         $data = $request->validate(['ok' => 'sometimes|boolean', 'error' => 'sometimes|nullable|string|max:300']);
-        $w = $this->computer($request, $workspace);
-        app(Runtime::class)->withCurrent($w, fn ($current) => $projects->done($current, $id, (bool) ($data['ok'] ?? true), $data['error'] ?? null));
+        $w = $this->computer($request, $workspace, true);
+        app(Runtime::class)->withCurrent($w, fn ($current) => $projects->done($current, $id, (bool) ($data['ok'] ?? true), $data['error'] ?? null), true);
         return response()->json(['ok' => true]);
     }
 
-    private function computer(Request $request, string $workspace): object
+    private function computer(Request $request, string $workspace, bool $cleanup = false): object
     {
-        $w = app(Runtime::class)->authenticate($workspace, (string) $request->bearerToken());
+        $w = app(Runtime::class)->authenticate($workspace, (string) $request->bearerToken(), $cleanup);
         abort_unless(($w->kind ?? 'project') === 'computer', 403, 'This workspace is not a cloud computer.');
         return $w;
     }

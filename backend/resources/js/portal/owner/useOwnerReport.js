@@ -14,11 +14,13 @@ export default function useOwnerReport(days, user) {
     if (userId == null) return;
     let cancelled = false;
     let inFlight = false;
+    let attempted = false;
     let timer;
     let controller;
     const load = async () => {
       if (cancelled || inFlight) return;
-      if (document.hidden) { timer = window.setTimeout(load, 60_000); return; }
+      if (document.hidden && attempted) { timer = window.setTimeout(load, 60_000); return; }
+      attempted = true;
       inFlight = true;
       setPending(true);
       controller = new AbortController();
@@ -26,11 +28,11 @@ export default function useOwnerReport(days, user) {
       let delay = 60_000;
       try {
         const payload = await apiRequest(`/web-api/owner/analytics?days=${days}`, { signal: controller.signal });
-        if (!cancelled) { setSnapshot({ userId, data: payload, updatedAt: new Date() }); setError(""); }
+        if (!cancelled) { setSnapshot({ userId, days, data: payload, updatedAt: new Date() }); setError(""); }
       } catch (caught) {
         if (cancelled) return;
         if (caught.status === 401) { window.location.assign("/owner/login"); return; }
-        if (caught.status === 403) setSnapshot(null);
+        if ([401, 403, 419, 428].includes(caught.status)) setSnapshot(null);
         setError(caught.status === 403 ? "This account does not have access to the owner workspace."
           : "The latest figures could not load. We’ll retry automatically; you can also refresh now.");
         delay = caught.status === 403 ? 60_000 : 15_000;
@@ -45,6 +47,7 @@ export default function useOwnerReport(days, user) {
     document.addEventListener("visibilitychange", visible);
     return () => { cancelled = true; controller?.abort(); window.clearTimeout(timer); document.removeEventListener("visibilitychange", visible); };
   }, [days, userId, attempt]);
-  const report = reportForIdentity(snapshot, userId);
+  const identityReport = reportForIdentity(snapshot, userId);
+  const report = identityReport?.days === days ? identityReport : null;
   return { data: report?.data ?? null, pending, error, updatedAt: report?.updatedAt ?? null, refresh: () => setAttempt(value => value + 1) };
 }

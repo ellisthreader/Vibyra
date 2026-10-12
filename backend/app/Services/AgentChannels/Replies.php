@@ -19,7 +19,7 @@ final class Replies
             $run=Run::whereKey($run->id)->lockForUpdate()->firstOrFail();$a=ToolAction::whereKey($initial->id)->lockForUpdate()->firstOrFail();
             if($a->state!=='approved'||$a->dispatched_at!==null||($strandedBefore&&$a->updated_at->gt($strandedBefore)))return null;
             $c=RunContext::context($run);
-            if(!$authority||!$c||$run->cancel_requested_at||RunStates::terminal($run->state)||($a->expires_at&&$a->expires_at->isPast())
+            if(!\App\Services\Account\AccountAccess::allowed($run->user_id)||!$authority||!$c||$run->cancel_requested_at||RunStates::terminal($run->state)||($a->expires_at&&$a->expires_at->isPast())
                 ||!hash_equals((string)$a->fingerprint,Approvals::fingerprint($a,$run->user_id))){
                 app(Executor::class)->finish($a,'refused','failed','refused',['reason'=>'channel_authority_changed','error'=>'The reviewed channel reply is no longer authorised.'],'Channel reply refused');return ['refused'=>true];
             }
@@ -29,6 +29,7 @@ final class Replies
         // Dispatch intent is committed before either provider call. An outer caller transaction would break that guarantee.
         $action=$prepared['action'];$c=$prepared['context'];$identity=app(Identities::class)->find($action->user_id,$c['identityId']);
         try{
+            if(!\App\Services\Account\AccountAccess::allowed($action->user_id))throw ToolFailure::refused('account_banned','Account access was revoked.');
             if(!app(Identities::class)->current($identity))throw ToolFailure::refused('access_changed','The channel account changed before dispatch.');
             $result=app(Providers\ReplySender::class)->send($identity,$c['destination'],$action);
             $this->record($action,'completed','confirmed',$result);return 'claimed';

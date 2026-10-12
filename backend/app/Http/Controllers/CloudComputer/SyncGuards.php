@@ -26,9 +26,9 @@ trait SyncGuards
     }
 
     /** The runtime bearer names the workspace; a workspace that is not a cloud computer is refused. */
-    private function computerFor(Request $request, string $workspace): object
+    private function computerFor(Request $request, string $workspace, bool $cleanup = false): object
     {
-        $w = app(Runtime::class)->authenticate($workspace, (string) $request->bearerToken());
+        $w = app(Runtime::class)->authenticate($workspace, (string) $request->bearerToken(), $cleanup);
         abort_unless(($w->kind ?? 'project') === 'computer', 403, 'This workspace is not a cloud computer.');
         return $w;
     }

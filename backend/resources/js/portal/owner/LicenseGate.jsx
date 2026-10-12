@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import OwnerTwoFactorSetup from "./OwnerTwoFactorSetup.jsx";
 import { apiRequest } from "../api.js";
 
-export default function LicenseGate({ challenge, onVerified }) {
+export default function LicenseGate({ challenge, onVerified, title = "Verify to manage licenses" }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -14,7 +14,7 @@ export default function LicenseGate({ challenge, onVerified }) {
     catch (caught) { setError(caught.message); }
     finally { setCode(""); setBusy(false); }
   };
-  return <section className="owner-panel"><h2>Verify to manage licenses</h2>
+  return <section className="owner-panel"><h2>{title}</h2>
     <p>{challenge.enabled ? "Enter an authenticator or recovery code. Access lasts 10 minutes." : "Enable two-factor authentication in account settings first."}</p>
     {challenge.enabled && <form className="portal-form" onSubmit={verify}><label>Verification code<input value={code} onChange={e => setCode(e.target.value)} autoComplete="one-time-code" maxLength={32} required /></label>
       <button className="portal-button" disabled={busy || !code.trim()}>Verify</button></form>}

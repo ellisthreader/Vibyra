@@ -17,7 +17,10 @@ class AgentToolApprovalFlowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_everyday_github_issue_task_needs_one_approval_and_runs_once(): void
+    public static function accountStates(): array { return [[false], [true]]; }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('accountStates')]
+    public function test_everyday_github_issue_task_needs_one_approval_and_runs_once(bool $banAtDispatch): void
     {
         config(['vibes.enabled' => true, 'agents.enabled' => true, 'chat_connectors.enabled' => true,
             'services.openrouter.key' => 'test-only', 'app.key' => 'base64:'.base64_encode(str_repeat('x', 32))]);
@@ -56,7 +59,22 @@ class AgentToolApprovalFlowTest extends TestCase
         try { app(ToolActions::class)->decide($user->id, $tool->id, $tool->action_hash, 'maybe'); $this->fail(); }
         catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame(422, $e->getStatusCode()); }
         app(ToolActions::class)->decide($user->id, $tool->id, $tool->action_hash, 'allow');
+        $armed = $banAtDispatch;
+        DB::listen(function ($query) use (&$armed, $user) {
+            if (!$armed || !str_starts_with($query->sql, 'update "vibes_tools"') || !in_array('dispatching', $query->bindings, true)) return;
+            $armed = false;
+            $user->forceFill(['owner_banned_at' => now()])->save();
+        });
         app(ToolActions::class)->execute($tool->id);
+        if ($banAtDispatch) {
+            $row = DB::table('vibes_tools')->where('id', $tool->id)->first();
+            $this->assertSame('expired', $row->action_state);
+            $result = json_decode($row->result, true);
+            $this->assertSame('refused', $result['outcome']);
+            $this->assertArrayNotHasKey('notice', $result);
+            Http::assertNotSent(fn ($request) => $request->method() === 'POST' && str_contains($request->url(), 'api.github.com'));
+            return;
+        }
         app(ToolActions::class)->execute($tool->id);
         app()->call([new RunVibesTurn($turnId), 'handle']);
         $this->assertDatabaseHas('vibes_tools', ['id' => $tool->id, 'action_state' => 'completed', 'action_answer' => 'allow']);

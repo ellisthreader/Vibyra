@@ -24,6 +24,7 @@ final class AuthenticateApiKey
         $key = $this->keys->authenticate((string) $request->bearerToken());
         $user = $key ? User::query()->find($key->user_id) : null;
         if (!$key || !$user) ApiError::throw(401, 'invalid_api_key', 'This API key is missing, wrong or revoked.');
+        \App\Services\Account\AccountAccess::require($user->id);
         if (array_diff($scopes, $key->scopes ?? []) !== [])
             ApiError::throw(403, 'insufficient_scope', 'This key does not have the '.implode(', ', $scopes).' scope.');
         if ($wait = $this->keys->throttle($key)) {

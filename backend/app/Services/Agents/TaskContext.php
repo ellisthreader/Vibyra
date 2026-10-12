@@ -69,6 +69,7 @@ final class TaskContext
 
     public static function validate(int $user, array $meta): void
     {
+        abort_unless(\App\Services\Account\AccountAccess::allowed($user), 403, 'Account access was revoked. No new action was started.');
         \App\Services\AgentOrganizations\Instances::personalOnly($meta['id'] ?? '');
         abort_unless(config('agents.enabled'), 409, 'Teammate tasks are paused.');
         $a = DB::table('agent_teammates')->where('id', $meta['id'] ?? '')->where('user_id', $user)->first();

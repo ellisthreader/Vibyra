@@ -10,6 +10,7 @@ final class Eligibility
 {
     public function authorize(int $user, bool $start = false): void
     {
+        \App\Services\Account\AccountAccess::require($user);
         $account = User::findOrFail($user);
         abort_if($account->isGuest() || !$account->hasVerifiedEmail(), 403, 'Verify your account before using a cloud computer.');
         abort_unless(config('cloud_workspaces.enabled'), 503, 'Hosted computers are not available yet.');

@@ -72,8 +72,7 @@ class WebsiteProviderAuthController extends Controller
         // Policy can change after the provider callback but before browser collection.
         $session->delete();
         \App\Services\Teams\Sso\Policy::assertMaySignIn($user, $request);
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
+        \App\Services\Account\WebAccountSession::start($request, $user);
         app(AuthLoginRecorder::class)->record($user, 'website', strtolower($provider));
         if (($result['isNewUser'] ?? false) === true) {
             app(Recorder::class)->signup($request);

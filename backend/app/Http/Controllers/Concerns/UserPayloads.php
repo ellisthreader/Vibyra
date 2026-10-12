@@ -15,6 +15,7 @@ trait UserPayloads
 
     private function sessionPayload(Request $request, User $user): array
     {
+        \App\Services\Account\AccountAccess::require($user->id);
         \App\Services\Teams\Sso\Policy::assertMaySignIn($user, $request);
         if (method_exists($this, 'recordDailyLogin')) {
             $this->recordDailyLogin($user);
@@ -28,20 +29,22 @@ trait UserPayloads
     }
     private function createSession(Request $request, User $user): string
     {
-        $token = Str::random(72);
-        VibyraSession::create([
-            'user_id' => $user->id,
-            'token_hash' => hash('sha256', $token),
-            'device_name' => (string) $request->input('deviceName', 'Vibyra App'),
-            'device_identifier' => $this->sessionDeviceIdentifier($request),
-            'ip_address' => $this->sessionRequestIp($request),
-            'user_agent' => (string) $request->userAgent(),
-            'last_used_at' => now(),
-            'idle_expires_at' => now()->addMinutes(max(1, (int) config('session_security.idle_minutes', 20160))),
-            'absolute_expires_at' => now()->addMinutes(max(1, (int) config('session_security.absolute_minutes', 129600))),
-        ]);
+        return \App\Services\Account\AccountAccess::withActive($user->id, function () use ($request, $user) {
+            $token = Str::random(72);
+            VibyraSession::create([
+                'user_id' => $user->id,
+                'token_hash' => hash('sha256', $token),
+                'device_name' => (string) $request->input('deviceName', 'Vibyra App'),
+                'device_identifier' => $this->sessionDeviceIdentifier($request),
+                'ip_address' => $this->sessionRequestIp($request),
+                'user_agent' => (string) $request->userAgent(),
+                'last_used_at' => now(),
+                'idle_expires_at' => now()->addMinutes(max(1, (int) config('session_security.idle_minutes', 20160))),
+                'absolute_expires_at' => now()->addMinutes(max(1, (int) config('session_security.absolute_minutes', 129600))),
+            ]);
 
-        return $token;
+            return $token;
+        });
     }
     private function sessionDeviceIdentifier(Request $request): ?string
     {

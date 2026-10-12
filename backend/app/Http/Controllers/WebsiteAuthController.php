@@ -144,8 +144,7 @@ class WebsiteAuthController extends Controller
     private function establishSession(Request $request, User $user): void
     {
         \App\Services\Teams\Sso\Policy::assertMaySignIn($user);
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
+        \App\Services\Account\WebAccountSession::start($request, $user);
     }
 
     private function normalizedEmail(mixed $value): ?string

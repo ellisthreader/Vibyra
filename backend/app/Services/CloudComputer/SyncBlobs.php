@@ -31,7 +31,7 @@ class SyncBlobs
                 // Quota spans every project. Serialize the final admission,
                 // then check the project after taking the account lock.
                 app(\App\Services\Vibes\Wallet::class)->lock((int) $project->user_id);
-                if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime);
+                if ($runtime) app(\App\Services\CloudWorkspaces\Runtime::class)->current($runtime, true);
                 $this->checkQuota($project, $spooled['bytes'], false);
                 $p = DB::table('cloud_sync_projects')->where('id', $project->id)->lockForUpdate()->first();
                 if (!$p || $p->removed_at) Computers::fail('unknown_project', 'This project is not synced.', 404);

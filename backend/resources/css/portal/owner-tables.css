@@ -1,0 +1,32 @@
+.od-table-scroll { overflow-x: auto; min-width: 0; }
+.owner-dashboard table { border-collapse: collapse; width: 100%; text-align: left; font-size: 12px; }
+.owner-dashboard th { color: var(--od-muted); font-size: 11px; font-weight: 550; }
+.owner-dashboard th, .owner-dashboard td { padding: 13px 12px; border-bottom: 1px solid var(--od-border); vertical-align: middle; }
+.owner-dashboard th:first-child, .owner-dashboard td:first-child { padding-left: 0; }
+.owner-dashboard td { color: var(--od-text); }
+.owner-dashboard table small { display: block; margin-top: 4px; font-size: 11px; color: var(--od-muted); }
+.owner-dashboard tbody tr:last-child td, .owner-dashboard tbody tr:last-child th { border-bottom: 0; }
+.od-account-button { display: flex; align-items: center; gap: 10px; background: transparent; border: 0; color: var(--od-text); text-align: left; padding: 0; }
+.od-account-button strong { display: block; font-size: 12px; font-weight: 550; }
+.od-account-button small { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.od-account-button:hover strong { color: var(--od-accent); text-decoration: underline; }
+.od-users-table { min-width: 690px; }
+.od-badge { display: inline-flex; padding: 3px 8px; border: 1px solid var(--od-border); border-radius: 5px; background: var(--od-elevated); text-transform: capitalize; font-size: 10px; }
+.od-badge.is-pro { background: var(--od-soft); border-color: transparent; color: var(--od-accent); }
+.od-verification-label { font-size: 11px; color: var(--od-muted); }
+.od-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--od-border); padding-top: 16px; margin-top: 6px; font-size: 11px; color: var(--od-muted); }
+.od-pagination > div { display: flex; align-items: center; gap: 12px; }
+.od-pagination .od-button { font-size: 12px; }
+.od-dialog { width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 40px); padding: 24px; border: 1px solid var(--od-border); border-radius: 12px; background: var(--od-surface); color: var(--od-text); }
+.od-dialog::backdrop { background: rgb(0 0 0 / .38); }
+.od-dialog header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.od-dialog header .od-note { margin: 0 0 5px; }
+.od-dialog .od-button { margin-top: 18px; }
+.od-account-email { font-size: 13px; color: var(--od-muted); overflow-wrap: anywhere; margin: 14px 0; }
+@media (max-width: 650px) {
+  .od-users-table { min-width: 480px; }
+  .od-users-table th:nth-child(3), .od-users-table td:nth-child(3) { display: none; }
+  .od-account-button small { max-width: 155px; }
+  .od-pagination { flex-direction: column; align-items: flex-start; }
+  .od-pagination > div { width: 100%; justify-content: space-between; }
+}

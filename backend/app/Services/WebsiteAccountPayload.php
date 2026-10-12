@@ -14,6 +14,8 @@ class WebsiteAccountPayload
         if (\App\Services\Membership\NewAccounts::eligible($user)) app(\App\Services\Vibes\Wallet::class)->ensure($user);
         return [
             'id' => $user->id,
+            'ownerAccess' => \App\Services\Owner\AccountNotices::owner($user),
+            'accountWarnings' => \App\Services\Owner\AccountNotices::warnings($user->id),
             'name' => $user->name,
             'email' => $user->email,
             'provider' => $user->provider ?: 'email',

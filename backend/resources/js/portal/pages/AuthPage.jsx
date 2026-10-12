@@ -17,7 +17,8 @@ export default function AuthPage({ mode }) {
   const [fields, setFields] = useState({ name: "", email: "", password: "" });
   const [licenseKey, setLicenseKey] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => new URLSearchParams(window.location.search).get("account") === "banned"
+    ? "This account has been banned. Contact support if you believe this is a mistake." : "");
   const [providerStatus, setProviderStatus] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [challenge, setChallenge] = useState(null);
@@ -27,7 +28,7 @@ export default function AuthPage({ mode }) {
   const intent = purchaseIntent();
   const ownerLogin = window.location.pathname === "/owner/login";
   const localOwnerAvailable = ownerLogin && document.querySelector('meta[name="local-owner-access"]')?.content === "1";
-  const next = ownerLogin ? "/owner" : safeNext(window.location.search, "/account");
+  const next = ownerLogin ? safeNext(window.location.search, "/owner") : safeNext(window.location.search, "/account");
 
   useEffect(() => {
     if (!loading && user && !busy && !welcome) go(withIntent(next, intent));

@@ -95,7 +95,7 @@ final class Approvals
         $claimed = DB::transaction(function () use ($actionId, $strandedBefore, &$refused) {
             $runId = ToolAction::query()->whereKey($actionId)->value('run_id'); // run → action, like cancel (see decide)
             if (!$runId) return null;
-            \App\Services\AgentRuns\Jobs\ActionAuthority::beforeRun($runId);
+            $active = \App\Services\AgentRuns\Jobs\ActionAuthority::beforeRun($runId, true, true);
             $run = Run::query()->whereKey($runId)->lockForUpdate()->firstOrFail();
             $action = ToolAction::query()->whereKey($actionId)->lockForUpdate()->first();
             if (!$action || $action->state !== 'approved' || $action->dispatched_at !== null) return null;
@@ -103,7 +103,7 @@ final class Approvals
             LegacyInstalls::sync($run->user_id);
             $grant = Grant::query()->whereKey($action->grant_id)->whereNull('revoked_at')->first();
             $connection = Connection::query()->whereKey($action->connection_id)->whereNull('revoked_at')->first();
-            $stale = $run->cancel_requested_at || RunStates::terminal($run->state)
+            $stale = !$active || $run->cancel_requested_at || RunStates::terminal($run->state)
                 || !$grant || $grant->revision !== $action->grant_revision || !in_array($action->tool, $grant->operations ?? [], true)
                 || !$connection || !\App\Services\AgentOrganizations\Authority::allows($run, $connection->provider) || !\App\Services\AgentCapabilities\Authority::allows($run, $connection) || $connection->generation !== $action->connection_generation || $connection->health !== 'healthy'
                 || ($action->expires_at && $action->expires_at->isPast())

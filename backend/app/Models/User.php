@@ -50,7 +50,7 @@ use Illuminate\Notifications\Notifiable;
     'remembered_desktops',
     'app_state',
 ])]
-#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_slot', 'two_factor_destination'])]
+#[Hidden(['owner_banned_at', 'owner_action_revision', 'account_session_epoch', 'password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_last_slot', 'two_factor_destination'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -75,6 +75,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'guest_at' => 'datetime',
+            'owner_banned_at' => 'datetime',
+            'owner_action_revision' => 'integer',
+            'account_session_epoch' => 'integer',
             'phone_verified_at' => 'datetime',
             'password' => 'hashed',
             'credits_balance' => 'integer',

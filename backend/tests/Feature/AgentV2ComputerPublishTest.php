@@ -145,4 +145,17 @@ class AgentV2ComputerPublishTest extends TestCase
             'head' => ['sha' => $this->head, 'ref' => $r->data()['head'], 'repo' => ['full_name' => 'octo/app']],
             'base' => ['sha' => self::BASE, 'ref' => 'main', 'repo' => ['full_name' => 'octo/app']]], 201));
     }
+
+    public function test_an_uploaded_publication_is_refused_if_the_owner_bans_the_account_before_the_worker_runs(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+        $action = $this->publish("fixed\n", 'ban-publish', null);
+        $this->macClaim($this->claimed, $action)->assertOk();
+        $this->macReceipt($this->claimed, $action['id'], $this->upload("fixed\n"))->assertOk();
+        $this->assertDatabaseHas('agent_tool_actions', ['id' => $action['id'], 'phase' => 'uploaded']);
+        $this->user->forceFill(['owner_banned_at' => now()])->save();
+        app(\App\Services\AgentRuns\Computer\ComputerPublish::class)->run($action['id'], $this->upload("fixed\n")['upload']);
+        $this->assertSame(0, $this->sent('POST', '#/git/#'));
+        $this->assertDatabaseHas('agent_receipts', ['action_id' => $action['id'], 'outcome' => 'refused']);
+    }
 }
