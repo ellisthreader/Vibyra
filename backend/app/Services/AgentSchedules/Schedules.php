@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class Schedules
 {
-    private const EDITABLE = ['title', 'prompt', 'timezone', 'recurrence', 'runtimeId', 'catchUpMinutes', 'overlap'];
+    private const EDITABLE = ['title', 'prompt', 'timezone', 'recurrence', 'runtimeId', 'catchUpMinutes', 'overlap', 'funding'];
 
     public function __construct(private readonly Grants $grants) {}
 
@@ -42,7 +42,7 @@ final class Schedules
                 ApiError::throw(409, 'stale_revision', 'This routine changed elsewhere. Reload it and try again.');
             $current = ['title' => $schedule->title, 'prompt' => $schedule->prompt, 'timezone' => $schedule->timezone,
                 'recurrence' => $schedule->recurrence, 'runtimeId' => $schedule->runtime_binding_id,
-                'catchUpMinutes' => $schedule->catch_up_minutes, 'overlap' => $schedule->overlap];
+                'catchUpMinutes' => $schedule->catch_up_minutes, 'overlap' => $schedule->overlap, 'funding' => $schedule->funding ?? 'account'];
             $values = $this->values($userId, [...$current, ...array_intersect_key($data, array_flip(self::EDITABLE))]);
             $next = Recurrence::next($values['recurrence'], $values['timezone'], CarbonImmutable::now());
             if (!$next && $values['recurrence']['type'] === 'once') ApiError::throw(422, 'no_future_run', 'That time has already passed.');
@@ -104,7 +104,7 @@ final class Schedules
             'description' => Recurrence::describe($s->recurrence), 'revision' => $s->revision,
             'runtimeId' => $s->runtime_binding_id, 'executionTarget' => $runtime?->execution_target ?? 'local',
             'accountLabel' => $runtime?->execution_target === 'cloud' ? 'Claude Cloud account' : null,
-            'catchUpMinutes' => $s->catch_up_minutes, 'overlap' => $s->overlap,
+            'catchUpMinutes' => $s->catch_up_minutes, 'overlap' => $s->overlap, 'funding' => $s->funding ?? 'account',
             'paused' => $s->paused_at !== null, 'nextRunAt' => $s->next_run_at?->toIso8601String(),
             'nextRunLocal' => $s->next_run_at?->setTimezone($s->timezone)->toIso8601String(),
             'createdAt' => $s->created_at?->toIso8601String(), 'updatedAt' => $s->updated_at?->toIso8601String()];
@@ -115,7 +115,7 @@ final class Schedules
         $run = $o->run_id ? Run::query()->whereKey($o->run_id)->first(['id', 'state']) : null;
         return ['id' => $o->id, 'scheduleId' => $o->schedule_id, 'revision' => $o->revision,
             'intendedAt' => $o->intended_at?->toIso8601String(), 'state' => $o->state, 'reason' => $o->reason,
-            'runId' => $o->run_id, 'runState' => $run?->state, 'createdAt' => $o->created_at?->toIso8601String()];
+            'runId' => $o->run_id, 'turnId' => $o->turn_id ?? null, 'runState' => $run?->state, 'createdAt' => $o->created_at?->toIso8601String()];
     }
 
     private function values(int $userId, array $data): array
@@ -129,6 +129,7 @@ final class Schedules
             ApiError::throw(404, 'runtime_not_found', 'That AI account binding does not exist.');
         return ['title' => $data['title'] ?? null, 'prompt' => $prompt, 'timezone' => $timezone, 'recurrence' => $recurrence,
             'runtime_binding_id' => $runtime, 'overlap' => $data['overlap'] ?? 'skip',
+            'funding' => ($data['funding'] ?? 'account') === 'tokens' ? 'tokens' : 'account',
             'catch_up_minutes' => (int) ($data['catchUpMinutes'] ?? config('agents_v2.schedule_catch_up_minutes', 60))];
     }
 }

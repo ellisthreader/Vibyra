@@ -10,6 +10,7 @@ use App\Services\AgentRuns\RunStates;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * One scheduler tick (every minute, one server). A due schedule is claimed with a
@@ -79,6 +80,7 @@ final class Scheduler
             default => null,
         };
         if ($stop) return $this->mark($o, $stop === 'missed_window' ? 'expired' : 'skipped', $stop);
+        if (($s->funding ?? 'account') === 'tokens') return $this->admitWithTokens($o, $s);
         if ($reason = \App\Services\AgentWork\Routines::refusal($s)) return $this->mark($o, 'failed', $reason);
         $key = 'sched:'.$s->id.':'.$o->revision.':'.CarbonImmutable::parse($o->intended_at)->getTimestamp();
         $result = $this->admission->admit($s->user_id, $s->agent_id, $key, $s->prompt, $s->runtime_binding_id);
@@ -87,6 +89,59 @@ final class Scheduler
         $o->forceFill(['run_id' => $result['run']->id])->save();
         return $this->mark($o, $result['run']->state === RunStates::WAITING_COMPUTER ? 'waiting' : 'admitted', null);
         });
+    }
+
+    /**
+     * A token-funded routine starts an ordinary Vibes turn in the teammate's conversation: the same quote,
+     * consent, wallet, plan window and the person's own spend caps as a typed message, with the model chosen by
+     * the teammate's engine. The turn id is derived from the occurrence, so a retried tick never starts a second.
+     * A busy conversation or a passing service error leaves the occurrence pending: the next tick retries it
+     * until its catch-up window closes. Everything else ends it with a short, wordable reason.
+     */
+    private function admitWithTokens(Occurrence $o, Schedule $s): string
+    {
+        if (!config('vibes.enabled') || trim((string) config('services.openrouter.key')) === '' || !$s->conversation_id)
+            return $this->mark($o, 'failed', 'tokens_unavailable');
+        $user = \App\Models\User::query()->find($s->user_id);
+        if (!$user || !app(\App\Services\Membership\PlanLimits::class)->allows($user, 'agents')) return $this->mark($o, 'failed', 'plan_required');
+        $turnId = \Ramsey\Uuid\Uuid::uuid5(\Ramsey\Uuid\Uuid::NAMESPACE_URL, 'vibyra:routine-turn:'.$o->id)->toString();
+        // A tick that died after the turn was stored finds it here instead of quoting a second time.
+        if (!DB::table('vibes_turns')->where('id', $turnId)->exists()) {
+            try {
+                $quotes = app(\App\Services\Vibes\Quotes::class);
+                $quote = $quotes->create((int) $s->user_id, $s->conversation_id, $this->routineText($s), 'auto');
+                $turn = app(\App\Services\Vibes\Turns::class)->submit((int) $s->user_id, $turnId, $quotes->decode($quote['quote'], (int) $s->user_id));
+                if ($turn->status === 'queued') \App\Jobs\RunVibesTurn::dispatch($turn->id);
+            } catch (HttpExceptionInterface $e) {
+                $code = $e->getStatusCode();
+                if ($code === 409 || $code >= 500 && $code !== 503) return 'pending';
+                return $this->mark($o, 'failed', $this->tokenReason($code));
+            } catch (\Throwable $e) {
+                report($e);
+                return $this->mark($o, 'failed', 'tokens_refused');
+            }
+        }
+        $o->forceFill(['turn_id' => $turnId])->save();
+        return $this->mark($o, 'admitted', null);
+    }
+
+    /**
+     * What the model is asked on a scheduled run. It is told this is the routine firing, so it does the work
+     * now instead of explaining that it cannot schedule things; the person's own words follow unchanged.
+     */
+    private function routineText(Schedule $s): string
+    {
+        $intro = "This is one of the user's scheduled routines, running now on its own. Do the task below right away with the tools you have and report the result. Do not offer to schedule it or ask whether to proceed.\n\nTask: ";
+        return $intro.mb_substr($s->prompt, 0, 4000 - mb_strlen($intro));
+    }
+
+    /** A short, stable reason the routines list can word: never the raw refusal text. */
+    private function tokenReason(int $status): string
+    {
+        return match ($status) {
+            402 => 'insufficient_tokens', 403 => 'consent_required', 429 => 'spend_cap', 503 => 'tokens_unavailable',
+            default => 'tokens_refused',
+        };
     }
 
     /** True when the waiting occurrence expired (its run is failed with a reason, never left hanging). */

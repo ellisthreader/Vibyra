@@ -17,7 +17,7 @@ final class SchedulesController extends Controller
 
     private const FIELDS = ['title' => 'sometimes|nullable|string|max:120', 'prompt' => 'sometimes|string|max:20000',
         'timezone' => 'sometimes|string|max:64', 'recurrence' => 'sometimes|array', 'runtimeId' => 'sometimes|nullable|uuid',
-        'catchUpMinutes' => 'sometimes|integer|min:0|max:1440', 'overlap' => 'sometimes|in:skip,queue'];
+        'catchUpMinutes' => 'sometimes|integer|min:0|max:1440', 'overlap' => 'sometimes|in:skip,queue', 'funding' => 'sometimes|in:account,tokens'];
 
     public function index(Request $request, Schedules $schedules)
     {
