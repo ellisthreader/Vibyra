@@ -5,6 +5,10 @@ namespace App\Providers;
 use App\Contracts\RuntimeDeploymentProvider;
 use App\Services\Deployments\RailwayRuntimeDeploymentService;
 use Illuminate\Support\ServiceProvider;
+use App\Services\Legal\TrustedClientIp;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,6 +54,21 @@ class AppServiceProvider extends ServiceProvider
                 return \Illuminate\Cache\RateLimiting\Limit::perMinute($perMinute)->by($name.':'.($token !== '' ? hash('sha256', $token) : 'ip:'.$request->ip()));
             });
         }
+        RateLimiter::for('public-requests', function (Request $request): array {
+            $client = app(TrustedClientIp::class)->forRequest($request)
+                ?? (string) $request->server('REMOTE_ADDR', 'unknown');
+            $ipKey = hash('sha256', $client);
+            $email = mb_strtolower(trim((string) $request->input('email', '')));
+            $limits = [
+                Limit::perMinute(5)->by('ip-minute:'.$ipKey),
+                Limit::perHour(30)->by('ip-hour:'.$ipKey),
+            ];
+            if ($email !== '') {
+                $limits[] = Limit::perHour(10)->by('email-hour:'.hash('sha256', $email));
+            }
+
+            return $limits;
+        });
         // A GitHub token is minted here: bucket by the workspace and its bearer, not by a shared (NAT/relay) IP.
         \Illuminate\Support\Facades\RateLimiter::for('cloud-git-credential', fn (\Illuminate\Http\Request $request) => [
             \Illuminate\Cache\RateLimiting\Limit::perMinute(30)->by('git-cred:'.$request->route('workspace').':'.hash('sha256', (string) $request->bearerToken())),

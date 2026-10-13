@@ -65,3 +65,5 @@ Schedule::command('vibyra:agent-channels')->everyMinute()->when(fn()=>(bool)conf
 // Revocation and retention still run when the rollout flag is switched off.
 Schedule::command('vibyra:agent-organisations')->everyMinute()->withoutOverlapping(5)->onOneServer();
 Schedule::command('vibyra:agent-organisations --retention')->dailyAt('03:40')->withoutOverlapping()->onOneServer();
+
+\Illuminate\Support\Facades\Schedule::command('model:prune', ['--model' => [\App\Models\PublicRequest::class]])->dailyAt('02:40')->withoutOverlapping(30)->onOneServer();

@@ -35,6 +35,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => view('marketing'))->middleware(RecordWebsiteView::class);
 Route::view('/legal/privacy', 'legal.privacy')->middleware(RecordWebsiteView::class)->name('legal.privacy');
 Route::view('/legal/terms', 'legal.terms')->middleware(RecordWebsiteView::class)->name('legal.terms');
+Route::get('/privacy/requests', fn () => response()->view('legal.requests')
+    ->header('Cache-Control', 'private, no-store'))
+    ->middleware(RecordWebsiteView::class)->name('privacy.requests');
+Route::post('/privacy/requests', [\App\Http\Controllers\PublicRequestController::class, 'store'])
+    ->middleware('throttle:public-requests')->name('privacy.requests.store');
+Route::get('/account/delete', fn () => response()->view('legal.account-deletion')
+    ->header('Cache-Control', 'private, no-store'))->name('account.deletion.help');
 Route::view('/login', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class])->name('login');
 Route::view('/signup', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
 Route::get('/forgot-password', fn () => response()->view('portal')->header('Cache-Control', 'private, no-store'))->middleware(VerifyHuman::class);

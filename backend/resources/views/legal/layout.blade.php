@@ -104,6 +104,22 @@
             border-left: 4px solid var(--accent);
             padding: 16px 18px;
         }
+        .request-form { display: grid; gap: 10px; margin: 24px 0; }
+        .request-form label { font-weight: 650; margin-top: 8px; }
+        .request-form input, .request-form select, .request-form textarea {
+            width: 100%; max-width: 100%; min-height: 48px; border: 1px solid var(--line);
+            border-radius: 8px; background: #fff; color: var(--ink); padding: 12px;
+            font: inherit;
+        }
+        .request-form textarea { resize: vertical; }
+        .request-form button {
+            min-height: 48px; justify-self: start; padding: 12px 22px; border: 0;
+            border-radius: 8px; background: var(--accent); color: #fff; font: inherit;
+            font-weight: 700; cursor: pointer;
+        }
+        .request-form :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+        .optional, .form-help { color: var(--muted); font-size: 14px; font-weight: 400; }
+        .form-error { border-left: 4px solid #b42318; padding: 12px 18px; background: #fff; }
         footer {
             border-top: 1px solid var(--line);
             color: var(--muted);
