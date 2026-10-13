@@ -1432,7 +1432,9 @@
       },
       "evaluator": "Mercor",
       "family": "epoch-apex-agents",
-      "models": 18
+      "models": 18,
+      "consensus": false,
+      "consensusReason": "Historical Epoch mirror superseded by direct Mercor APEX-Agents 1.1; retained for inspection, not a second vote."
     },
     {
       "id": "vals-terminal-bench-4",
@@ -1985,11 +1987,49 @@
               "taskTimeBasis": "Vals published latency per test"
             }
           ]
+        },
+        "gemini-4-argon": {
+          "measurements": [
+            {
+              "value": 57.576,
+              "variant": "google/gemini-4-argon [high, fallback unspecified]",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Mini-SWE-agent",
+              "costPerTask": 17.63994,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 3214.793,
+              "taskTimeBasis": "Vals published latency per test",
+              "standardError": 2.314
+            }
+          ],
+          "value": 57.576,
+          "variant": "google/gemini-4-argon [high, fallback unspecified]"
         }
       },
       "evaluator": "Vals.ai",
       "family": "terminal_bench",
-      "models": 21
+      "models": 21,
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "vals-terminal-bench-4",
+          "name": "Terminal-Bench 4.0",
+          "org": "Vals.ai",
+          "url": "https://www.vals.ai/_astro/benchmark_view_terminal_bench_4.C00bTJ4n.json",
+          "updated": "2026-10-12",
+          "metric": "Accuracy % (avg@3)",
+          "category": "agents",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "notes": "Argon-only delta from the full official raw Astro JSON fetched October 13. Board metadata updated October 12. Exact Google Gemini 4 Argon run; reasoning_effort explicitly high. Fallback unspecified and no fallback-as-failure adjustment for Argon is published. Preserve all pre-existing peer measurements when merging. Mini-SWE-agent is explicitly published in board metadata; per-row harness is null.",
+          "evaluator": "Vals.ai",
+          "family": "terminal_bench"
+        }
+      }
     },
     {
       "id": "vals-vibe-code-bench",
@@ -2540,11 +2580,49 @@
               "taskTimeBasis": "Vals published latency per test"
             }
           ]
+        },
+        "gemini-4-argon": {
+          "measurements": [
+            {
+              "value": 91.906,
+              "variant": "google/gemini-4-argon [high, fallback unspecified]",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "OpenHands",
+              "costPerTask": 8.10797,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 2247.675,
+              "taskTimeBasis": "Vals published latency per test",
+              "standardError": 1.899
+            }
+          ],
+          "value": 91.906,
+          "variant": "google/gemini-4-argon [high, fallback unspecified]"
         }
       },
       "evaluator": "Vals.ai",
       "family": "vibe_code_bench",
-      "models": 23
+      "models": 23,
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "vals-vibe-code-bench",
+          "name": "Vibe Code Bench v1.1",
+          "org": "Vals.ai",
+          "url": "https://www.vals.ai/_astro/benchmark_view_vibe_code_bench.CKPIW2G5.json",
+          "updated": "2026-10-12",
+          "metric": "Accuracy %",
+          "category": "coding",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "notes": "Argon-only delta from the full official raw Astro JSON fetched October 13. Board metadata updated October 12. Exact Google Gemini 4 Argon run; reasoning_effort explicitly high. Fallback unspecified and no fallback-as-failure adjustment for Argon is published. Preserve all pre-existing peer measurements when merging. ",
+          "evaluator": "Vals.ai",
+          "family": "vibe_code_bench"
+        }
+      }
     },
     {
       "id": "vals-proofbench",
@@ -3055,11 +3133,49 @@
               "taskTimeBasis": "Vals published latency per test"
             }
           ]
+        },
+        "gemini-4-argon": {
+          "measurements": [
+            {
+              "value": 99.0,
+              "variant": "google/gemini-4-argon [high, fallback unspecified]",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "costPerTask": 0.782978,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 380.246,
+              "taskTimeBasis": "Vals published latency per test",
+              "standardError": 1.0
+            }
+          ],
+          "value": 99.0,
+          "variant": "google/gemini-4-argon [high, fallback unspecified]"
         }
       },
       "evaluator": "Vals.ai",
       "family": "proof_bench",
-      "models": 22
+      "models": 22,
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "vals-proofbench",
+          "name": "ProofBench v1.1",
+          "org": "Vals.ai",
+          "url": "https://www.vals.ai/_astro/benchmark_view_proof_bench.i3Hwh8rW.json",
+          "updated": "2026-10-12",
+          "metric": "Accuracy %",
+          "category": "reasoning",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "notes": "Argon-only delta from the full official raw Astro JSON fetched October 13. Board metadata updated October 12. Exact Google Gemini 4 Argon run; reasoning_effort explicitly high. Fallback unspecified and no fallback-as-failure adjustment for Argon is published. Preserve all pre-existing peer measurements when merging. ",
+          "evaluator": "Vals.ai",
+          "family": "proof_bench"
+        }
+      }
     },
     {
       "id": "scale-swe-bench-pro-v2-hard",
@@ -4340,7 +4456,8 @@
     "scale-multichallenge": "Current linked owner page returns404.",
     "scale-hle-diamond-copy": "Scale mirror remains older high scores and no requested new versions; use current CAIS+Scale lastexam.ai article, one shared evaluator group.",
     "glm-5-3-flash": "Explicit Flash checkpoint is distinct from roster GLM5.3; excluded everywhere.",
-    "epoch-frontiermath-t4-legacy": "Old Tier4 replaced by current Tier4v2; do not reintroduce floor-bound old version."
+    "epoch-frontiermath-t4-legacy": "Old Tier4 replaced by current Tier4v2; do not reintroduce floor-bound old version.",
+    "epoch-apex-agents": "Historical Epoch mirror superseded by direct Mercor APEX-Agents 1.1; retained for inspection, not a second vote."
   },
   "collectionRollout": {
     "model": "claude-haiku-5-5",

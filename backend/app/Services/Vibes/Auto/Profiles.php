@@ -26,6 +26,7 @@ final class Profiles
 {
     private const PROFILES = [
         // Conservative routing preferences for current families, not measured rankings.
+        'google/gemini-4-argon' => ['r' => 0.90, 'c' => 0.92, 'x' => 0.99, 'a' => ['analysis' => 0.10, 'code' => 0.06]],
         'openai/gpt-5.6-sol' => ['r' => 0.85, 'c' => 0.88, 'x' => 0.80, 'a' => ['code' => 0.08]],
         'openai/gpt-5.6-terra' => ['r' => 0.84, 'c' => 0.89, 'x' => 0.80, 'a' => ['code' => 0.10]],
         'anthropic/claude-fable-5.1' => ['r' => 0.90, 'c' => 0.92, 'x' => 0.85, 'a' => ['code' => 0.10, 'frontend' => 0.08]],

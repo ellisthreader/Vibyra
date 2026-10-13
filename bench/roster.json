@@ -232,6 +232,15 @@
       "openrouter": null,
       "released": "2026-10",
       "openWeights": false
+    },
+    {
+      "id": "gemini-4-argon",
+      "name": "Gemini 4 Argon",
+      "provider": "google",
+      "openrouter": "google/gemini-4-argon",
+      "effort": "medium",
+      "released": "2026-10",
+      "openWeights": false
     }
   ]
 }

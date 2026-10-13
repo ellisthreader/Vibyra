@@ -478,6 +478,29 @@
           "value": 1414.0297937889663,
           "variant": "claude-haiku-4-5-20251001",
           "rank": 142
+        },
+        "gemini-4-argon": {
+          "value": 1525.3956435571818,
+          "variant": "gemini-4-argon-high",
+          "rank": 1,
+          "measurements": [
+            {
+              "value": 1525.3956435571818,
+              "variant": "gemini-4-argon-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 1,
+              "confidenceInterval": [
+                1516.548029444045,
+                1534.2432576703181
+              ],
+              "voteCount": 4892.0,
+              "preliminary": true
+            }
+          ]
         }
       },
       "notes": "Fresh raw evaluator-owned HF Parquet fetched 2026-10-13; all 414 overall rows inspected. updated is the dataset leaderboard_publish_date, corroborated against official rendered board. Full raw precision retained. Exact-version effort variants remain distinct; unreported mode, fallback and harness stay unspecified/null. Undated Qwen3.8 Max and original/preview DeepSeek V4 Pro omitted because they do not establish 0902/0813 checkpoints. No exact Muse Wonder or Muse Wonder Full row is published in these datasets or the checked official board pages. ",
@@ -489,7 +512,34 @@
           "fetched": "2026-10-13",
           "localFile": "/tmp/vibyra-model-release-20261013/general-raw/hf-text.raw"
         }
-      ]
+      ],
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "lmarena-text",
+          "name": "LMArena Text (style control, default view)",
+          "org": "LMArena",
+          "url": "https://arena.ai/leaderboard/chat/text",
+          "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/text_style_control/latest-00000-of-00001.parquet",
+          "updated": "2026-10-08",
+          "fetched": "2026-10-13",
+          "metric": "Arena score (Bradley-Terry, style control)",
+          "category": "preference",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "evaluator": "LMArena",
+          "family": "arena-text-preference",
+          "notes": "Additive exact-version Gemini 4 Argon collection. Fresh evaluator-owned HF Parquet fetched 2026-10-13; all 414 overall rows and all exact Argon variants inspected. updated is leaderboard_publish_date. Full raw precision retained; high is explicit in model name. Mode, fallback and harness are unreported. Correlated text/webdev subcategories are omitted. Official rendered board marks this Argon result preliminary.",
+          "rawEvidence": [
+            {
+              "url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/text_style_control/latest-00000-of-00001.parquet",
+              "sha256": "e8190c6b4654297e74aa0c41ef2a7eef366b4708b9dbd2292a74977a4ca51c47",
+              "bytes": 608613,
+              "fetched": "2026-10-13",
+              "localFile": "/tmp/argon-arena-text.raw"
+            }
+          ]
+        }
+      }
     },
     {
       "id": "lmarena-webdev",
@@ -1043,6 +1093,29 @@
           "value": 1263.4997368997563,
           "variant": "mistral-medium-3.5",
           "rank": 125
+        },
+        "gemini-4-argon": {
+          "value": 1677.8058895588372,
+          "variant": "gemini-4-argon-high",
+          "rank": 9,
+          "measurements": [
+            {
+              "value": 1677.8058895588372,
+              "variant": "gemini-4-argon-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 9,
+              "confidenceInterval": [
+                1662.4156003311741,
+                1693.1961787865002
+              ],
+              "voteCount": 1771,
+              "preliminary": true
+            }
+          ]
         }
       },
       "notes": "Fresh raw evaluator-owned HF Parquet fetched 2026-10-13; all 141 overall rows inspected. updated is the dataset leaderboard_publish_date, corroborated against official rendered board. Full raw precision retained. Exact-version effort variants remain distinct; unreported mode, fallback and harness stay unspecified/null. Undated Qwen3.8 Max and original/preview DeepSeek V4 Pro omitted because they do not establish 0902/0813 checkpoints. No exact Muse Wonder or Muse Wonder Full row is published in these datasets or the checked official board pages. Official rendered board reports 142 models while the latest raw overall Parquet has 141; matching requested models use the exact raw dataset, not rounded page values. ",
@@ -1054,7 +1127,34 @@
           "fetched": "2026-10-13",
           "localFile": "/tmp/vibyra-model-release-20261013/general-raw/hf-webdev.raw"
         }
-      ]
+      ],
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "lmarena-webdev",
+          "name": "LMArena WebDev (Code Arena)",
+          "org": "LMArena",
+          "url": "https://arena.ai/leaderboard/code/webdev",
+          "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/webdev/latest-00000-of-00001.parquet",
+          "updated": "2026-10-08",
+          "fetched": "2026-10-13",
+          "metric": "Arena score (Bradley-Terry)",
+          "category": "coding",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "evaluator": "LMArena",
+          "family": "arena-webdev",
+          "notes": "Additive exact-version Gemini 4 Argon collection. Fresh evaluator-owned HF Parquet fetched 2026-10-13; all 141 overall rows and all exact Argon variants inspected. updated is leaderboard_publish_date. Full raw precision retained; high is explicit in model name. Mode, fallback and harness are unreported. Correlated text/webdev subcategories are omitted. Official rendered board marks this Argon result preliminary.",
+          "rawEvidence": [
+            {
+              "url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/webdev/latest-00000-of-00001.parquet",
+              "sha256": "ee3d8f9a552756d7e9f18e30a0b255e6faeeec5a65260eba94f0932f89964de9",
+              "bytes": 29086,
+              "fetched": "2026-10-13",
+              "localFile": "/tmp/argon-arena-code.raw"
+            }
+          ]
+        }
+      }
     },
     {
       "id": "lmarena-agent",
@@ -1551,6 +1651,29 @@
           "value": -10.808630587104616,
           "variant": "Mistral Medium 3.5",
           "rank": 49
+        },
+        "gemini-4-argon": {
+          "value": 12.369989300115153,
+          "variant": "Gemini 4 Argon (High)",
+          "rank": 4,
+          "measurements": [
+            {
+              "value": 12.369989300115153,
+              "variant": "Gemini 4 Argon (High)",
+              "effort": "high",
+              "rawEffort": "High",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 4,
+              "confidenceInterval": [
+                10.431347521694518,
+                14.308631078535788
+              ],
+              "sessionCount": 24314.0,
+              "observationCount": 1844841.0
+            }
+          ]
         }
       },
       "notes": "Fresh raw evaluator-owned HF Parquet fetched 2026-10-13; all 52 overall rows inspected. updated is the dataset leaderboard_publish_date, corroborated against official rendered board. Full raw precision retained. Exact-version effort variants remain distinct; unreported mode, fallback and harness stay unspecified/null. Undated Qwen3.8 Max and original/preview DeepSeek V4 Pro omitted because they do not establish 0902/0813 checkpoints. No exact Muse Wonder or Muse Wonder Full row is published in these datasets or the checked official board pages. Raw score multiplied by 100 to match net-improvement percent display, preserving negative values; underlying submetrics are not counted separately.",
@@ -1562,7 +1685,34 @@
           "fetched": "2026-10-13",
           "localFile": "/tmp/vibyra-model-release-20261013/general-raw/hf-agent.raw"
         }
-      ]
+      ],
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "lmarena-agent",
+          "name": "LMArena Agent Arena",
+          "org": "LMArena",
+          "url": "https://arena.ai/leaderboard/agent",
+          "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/agent/latest-00000-of-00001.parquet",
+          "updated": "2026-10-12",
+          "fetched": "2026-10-13",
+          "metric": "Net improvement (%)",
+          "category": "agents",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "evaluator": "LMArena",
+          "family": "arena-agent",
+          "notes": "Additive exact-version Gemini 4 Argon collection. Fresh evaluator-owned HF Parquet fetched 2026-10-13; all 52 overall rows and all exact Argon variants inspected. updated is leaderboard_publish_date. Full raw precision retained; high is explicit in model name. Mode, fallback and harness are unreported. Correlated text/webdev subcategories are omitted. Agent score and confidence interval multiplied by 100 to match published net-improvement percent.",
+          "rawEvidence": [
+            {
+              "url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/agent/latest-00000-of-00001.parquet",
+              "sha256": "c7f962277c0a26df50985a7547b9a93312e83c714013591182ca0f54572fc671",
+              "bytes": 8188,
+              "fetched": "2026-10-13",
+              "localFile": "/tmp/argon-arena-agent.raw"
+            }
+          ]
+        }
+      }
     },
     {
       "id": "livebench-global",
@@ -2290,7 +2440,9 @@
           "fetched": "2026-10-13",
           "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-js.raw"
         }
-      ]
+      ],
+      "consensus": false,
+      "consensusReason": "Historical LiveBench v1; superseded by published LiveBench 2.0 Coding on 2026-10-13."
     },
     {
       "id": "livebench-agentic-coding",
@@ -2653,7 +2805,9 @@
           "fetched": "2026-10-13",
           "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-js.raw"
         }
-      ]
+      ],
+      "consensus": false,
+      "consensusReason": "Historical LiveBench v1; superseded by published LiveBench 2.0 Long-Horizon on 2026-10-13."
     }
   ],
   "staleOrSkipped": [
@@ -2709,6 +2863,8 @@
     "lmarena-text-subcategories": "Retain only overall style-controlled Text preference. Occupational and task subsets overlap; not extra capability votes.",
     "lmarena-webdev-subcategories": "Retain overall WebDev only; HTML/React/image-to-WebDev subsets overlap.",
     "lmarena-agent-submetrics": "Retain net-improvement overall board only; correlated component signals are not additional votes.",
-    "dated-checkpoint-mismatches": "Undated/original/preview Qwen3.8 Max and DeepSeek V4 Pro rows omitted; roster requires 0902/0813."
+    "dated-checkpoint-mismatches": "Undated/original/preview Qwen3.8 Max and DeepSeek V4 Pro rows omitted; roster requires 0902/0813.",
+    "livebench-coding": "Historical LiveBench v1; superseded by published LiveBench 2.0 Coding on 2026-10-13.",
+    "livebench-agentic-coding": "Historical LiveBench v1; superseded by published LiveBench 2.0 Long-Horizon on 2026-10-13."
   }
 }

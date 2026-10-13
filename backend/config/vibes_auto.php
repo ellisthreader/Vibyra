@@ -12,6 +12,7 @@ return ['models' => [
     'anthropic/claude-sonnet-5',
     'anthropic/claude-haiku-4.5',
     'google/gemini-3.8-flash',
+    'google/gemini-4-argon',
     'google/gemini-3.5-flash-lite',
     'x-ai/grok-4.6',
     'deepseek/deepseek-v4.1-flash',

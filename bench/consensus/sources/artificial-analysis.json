@@ -6,7 +6,7 @@
       "org": "Artificial Analysis",
       "url": "https://artificialanalysis.ai/leaderboards/models",
       "updated": "2026-10-13",
-      "metric": "Intelligence Index v4.3.2 (0\u2013100)",
+      "metric": "Intelligence Index v4.3.2 (0–100)",
       "category": "overall",
       "higherIsBetter": true,
       "confidence": "high",
@@ -1590,13 +1590,134 @@
           ],
           "value": 52.393894697293,
           "variant": "Muse Wonder (Max)"
+        },
+        "gemini-4-argon": {
+          "measurements": [
+            {
+              "value": 52.5605655745982,
+              "variant": "Gemini 4 Argon (High)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "thinking",
+              "fallback": null,
+              "harness": null,
+              "checkpoint": "gemini-4-argon",
+              "publishedRelease": "gemini-4-argon",
+              "metadataUrl": "https://artificialanalysis.ai/models/gemini-4-argon",
+              "effortSourceBasis": "Current owner model metadata effort.slug; exact canonical release.slug is gemini-4-argon.",
+              "effortSourceUpdated": "2026-10-13",
+              "costPerTask": 1.990322379299008,
+              "costBasis": "AA published Intelligence Index v4.3.2 weighted mean API USD per task",
+              "costUpdated": "2026-10-13",
+              "costEligible": true,
+              "costUrl": "https://artificialanalysis.ai/models/gemini-4-argon",
+              "costBreakdown": {
+                "cost": {
+                  "total": 1.990322379299008,
+                  "input": 1.3747461172225273,
+                  "nonCacheInput": 0.0799742092330141,
+                  "cacheRead": 0.3193438792795405,
+                  "cacheWrite": 0.9754280287099728,
+                  "output": 0.6155762620764799,
+                  "reasoning": 0.3554644081471556,
+                  "answer": 0.2601118539293244
+                },
+                "evaluations": [
+                  {
+                    "slug": "aa-briefcase",
+                    "weightedCostPerTask": 0.8741624070672435
+                  },
+                  {
+                    "slug": "gdpval-aa",
+                    "weightedCostPerTask": 0.18192251097173667
+                  },
+                  {
+                    "slug": "automationbench-aa",
+                    "weightedCostPerTask": 0.030432821951646247
+                  },
+                  {
+                    "slug": "terminalbench-4-0",
+                    "weightedCostPerTask": 0.6780140181187823
+                  },
+                  {
+                    "slug": "scicode",
+                    "weightedCostPerTask": 0.010567819444444446
+                  },
+                  {
+                    "slug": "humanitys-last-exam",
+                    "weightedCostPerTask": 0.01764291362372567
+                  },
+                  {
+                    "slug": "gdp-pdf",
+                    "weightedCostPerTask": 0.025933138
+                  },
+                  {
+                    "slug": "critpt",
+                    "weightedCostPerTask": 0.15838644857142858
+                  },
+                  {
+                    "slug": "omniscience",
+                    "weightedCostPerTask": 0.0014424765499999998
+                  },
+                  {
+                    "slug": "artificial-analysis-long-context-reasoning",
+                    "weightedCostPerTask": 0.011817825
+                  }
+                ]
+              },
+              "tokenPricing": {
+                "inputPerMillion": 2,
+                "outputPerMillion": 10,
+                "cacheHitPerMillion": 0.1,
+                "cacheWritePerMillion": 2
+              },
+              "speedUnavailableReason": "No medianOutputTokensPerSecond in raw table or detail metadata; owner detail page explicitly reports N/A."
+            }
+          ],
+          "value": 52.5605655745982,
+          "variant": "Gemini 4 Argon (High)"
         }
       },
       "notes": "Fresh raw Next.js React Flight owner data fetched2026-10-13 (fetch date; no board-wide update timestamp). Complete exact-version collection preserves every published measured effort at full precision, exact-run speed, costs and original fallback telemetry. Canonical release metadata plus explicit effort.slug is read from owner model detail catalog; older versions, estimated indexes and multi-model coding agents are excluded. No synthetic fallback-adjusted score. Muse Wonder and Full each publish max only; Full has no USD/task, token pricing or output-speed evidence. Host checkpoint and canonical modelRelease are preserved, including null canonical mappings with explicit owner release display. Prior same-variant/value effort metadata dates remain visible when reused. Source snapshot dates do not claim models were rerun on fetch day.",
       "evaluator": "Artificial Analysis",
       "costUpdated": "2026-10-13",
       "costDateBasis": "Fetch date; no board-wide timestamp published",
-      "family": "aa-intelligence"
+      "family": "aa-intelligence",
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "aa-intelligence",
+          "name": "Artificial Analysis Intelligence Index",
+          "org": "Artificial Analysis",
+          "url": "https://artificialanalysis.ai/leaderboards/models",
+          "updated": "2026-10-13",
+          "metric": "Intelligence Index v4.3.2 (0–100)",
+          "category": "overall",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "notes": "Additive exact-version Gemini 4 Argon collection from raw owner Next.js React Flight fetched 2026-10-13. updated is fetch date, not a claim of rerunning models. All 699 Intelligence/detail catalog models and 39 coding agent rows inspected; exactly one measured high effort run per board. Full raw precision, cost and safety telemetry retained. Canonical Intelligence model release is gemini-4-argon; owner model metadata releaseDate is 2026-09-30. No median output speed is published. Coding explicitly displays Gemini 4 Argon but modelRelease remains barium-bb and host google_barium-bb_ai-studio, with unavailable flag true; mapping is based on the evaluator explicit released-name display and raw identifiers remain visible. Coding fallbackAttemptCount is 0 of 905; no fallback-adjusted score is synthesized. Individual Intelligence components stay inside the composite and are not additional consensus boards.",
+          "evaluator": "Artificial Analysis",
+          "costUpdated": "2026-10-13",
+          "costDateBasis": "Fetch date; no board-wide timestamp published",
+          "family": "aa-intelligence",
+          "fetched": "2026-10-13",
+          "rawEvidence": [
+            {
+              "url": "https://artificialanalysis.ai/leaderboards/models",
+              "fetched": "2026-10-13",
+              "localFile": "/Users/ellis/Desktop/Vibyra/output/gemini-4-argon-20261013/aa-intelligence.html",
+              "sha256": "85c89fe541509a9bad29a1645d23aa07cb3b09aac3f0a4c6d91806c13422bf05",
+              "bytes": 2464267
+            },
+            {
+              "url": "https://artificialanalysis.ai/models/gemini-4-argon",
+              "fetched": "2026-10-13",
+              "localFile": "/Users/ellis/Desktop/Vibyra/output/gemini-4-argon-20261013/aa-detail.html",
+              "sha256": "bc91eb8b71d49d7ecedf1e4095ed2bb582ee66234f5990786bf668cf86fad20d",
+              "bytes": 4004459
+            }
+          ]
+        }
+      }
     },
     {
       "id": "aa-coding-agent",
@@ -1604,7 +1725,7 @@
       "org": "Artificial Analysis",
       "url": "https://artificialanalysis.ai/agents/coding-agents",
       "updated": "2026-10-13",
-      "metric": "Coding Agent Index v1.5 (0\u2013100)",
+      "metric": "Coding Agent Index v1.5 (0–100)",
       "category": "coding",
       "higherIsBetter": true,
       "confidence": "high",
@@ -7736,13 +7857,138 @@
           ],
           "value": 53.55484140097326,
           "variant": "Opencode - GLM-5.3 ({'reasoning_effort': 'max'})"
+        },
+        "gemini-4-argon": {
+          "measurements": [
+            {
+              "value": 63.7577603035782,
+              "variant": "Antigravity CLI - Gemini 4 Argon (high)",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": false,
+              "harness": "Antigravity CLI",
+              "checkpoint": "google_barium-bb_ai-studio",
+              "publishedRelease": "barium-bb",
+              "fallbackModels": [],
+              "rowId": "ef63fafa9b4a635522183c879ae8435b",
+              "mappingBasis": "AA own display.model and displayLabel explicitly identify released Gemini 4 Argon; canonical modelRelease remains barium-bb and host google_barium-bb_ai-studio. These raw identifiers are retained rather than relabeled as an updated canonical mapping.",
+              "harnessVersions": {
+                "deep-swe-v1.1": {
+                  "min": {
+                    "version": "1.2.10",
+                    "dateReleased": null
+                  },
+                  "max": {
+                    "version": "1.2.10",
+                    "dateReleased": null
+                  }
+                },
+                "swe-atlas-qna": {
+                  "min": {
+                    "version": "1.2.10",
+                    "dateReleased": null
+                  },
+                  "max": {
+                    "version": "1.2.10",
+                    "dateReleased": null
+                  }
+                },
+                "terminal-bench-v4": {
+                  "min": {
+                    "version": "1.2.10",
+                    "dateReleased": null
+                  },
+                  "max": {
+                    "version": "1.2.10",
+                    "dateReleased": null
+                  }
+                }
+              },
+              "safetyTelemetry": {
+                "attemptCount": 905,
+                "refusedAttemptCount": 0,
+                "hardStopAttemptCount": 0,
+                "recoveredAttemptCount": 0,
+                "fallbackAttemptCount": 0,
+                "refusals": [],
+                "rate": 0
+              },
+              "costFallbackAttempts": 0,
+              "costAttemptCount": 905,
+              "costFallbackDefinition": "Published recovery telemetry; fallbackModels lists explicitly named checkpoints.",
+              "costPerTask": 5.8439053894448145,
+              "costBasis": "AA published current-price API USD per retained task attempt; original published run, no synthetic fallback adjustment",
+              "costUpdated": "2026-10-13",
+              "costEligible": true,
+              "taskTimeSeconds": 2070.1686032008843,
+              "taskTimeBasis": "Published mean agent wall time per attempt",
+              "rawMeanTelemetry": {
+                "reward": 0.637577603035782,
+                "costUsd": 5.8439053894448145,
+                "agentWallTimeSec": 2070.1686032008843,
+                "steps": 149.1832229580574,
+                "inputTokens": 13621672.650110375,
+                "outputTokens": 112121.13134657839,
+                "cacheTokens": 11850855.205596028,
+                "cacheHitRate": 0.8700000000000004,
+                "totalTokens": 13733793.781456953
+              },
+              "rawCostPercentiles": {
+                "p05": 1.3165824554546348,
+                "p25": 2.7006862521677717,
+                "p50": 4.259847111864239,
+                "p75": 6.94478139742605,
+                "p95": 15.23551975602052
+              },
+              "isUnavailable": true,
+              "rawIndexScore": 0.637577603035782
+            }
+          ],
+          "value": 63.7577603035782,
+          "variant": "Antigravity CLI - Gemini 4 Argon (high)"
         }
       },
       "notes": "Fresh raw Next.js React Flight owner data fetched2026-10-13 (fetch date; no board-wide update timestamp). Complete exact-version collection preserves every published measured effort at full precision, exact-run speed, costs and original fallback telemetry. Canonical release metadata plus explicit effort.slug is read from owner model detail catalog; older versions, estimated indexes and multi-model coding agents are excluded. No synthetic fallback-adjusted score. Muse Wonder and Full each publish max only; Full has no USD/task, token pricing or output-speed evidence. Host checkpoint and canonical modelRelease are preserved, including null canonical mappings with explicit owner release display. Prior same-variant/value effort metadata dates remain visible when reused. Source snapshot dates do not claim models were rerun on fetch day.",
       "evaluator": "Artificial Analysis",
       "costUpdated": "2026-10-13",
       "costDateBasis": "Fetch date; no board-wide timestamp published",
-      "family": "aa-coding-agent"
+      "family": "aa-coding-agent",
+      "releaseUpdates": {
+        "gemini-4-argon": {
+          "id": "aa-coding-agent",
+          "name": "Artificial Analysis Coding Agent Index",
+          "org": "Artificial Analysis",
+          "url": "https://artificialanalysis.ai/agents/coding-agents",
+          "updated": "2026-10-13",
+          "metric": "Coding Agent Index v1.5 (0–100)",
+          "category": "coding",
+          "higherIsBetter": true,
+          "confidence": "high",
+          "notes": "Additive exact-version Gemini 4 Argon collection from raw owner Next.js React Flight fetched 2026-10-13. updated is fetch date, not a claim of rerunning models. All 699 Intelligence/detail catalog models and 39 coding agent rows inspected; exactly one measured high effort run per board. Full raw precision, cost and safety telemetry retained. Canonical Intelligence model release is gemini-4-argon; owner model metadata releaseDate is 2026-09-30. No median output speed is published. Coding explicitly displays Gemini 4 Argon but modelRelease remains barium-bb and host google_barium-bb_ai-studio, with unavailable flag true; mapping is based on the evaluator explicit released-name display and raw identifiers remain visible. Coding fallbackAttemptCount is 0 of 905; no fallback-adjusted score is synthesized. Individual Intelligence components stay inside the composite and are not additional consensus boards.",
+          "evaluator": "Artificial Analysis",
+          "costUpdated": "2026-10-13",
+          "costDateBasis": "Fetch date; no board-wide timestamp published",
+          "family": "aa-coding-agent",
+          "fetched": "2026-10-13",
+          "rawEvidence": [
+            {
+              "url": "https://artificialanalysis.ai/agents/coding-agents",
+              "fetched": "2026-10-13",
+              "localFile": "/Users/ellis/Desktop/Vibyra/output/gemini-4-argon-20261013/aa-coding.html",
+              "sha256": "080500866833ca18016190f893faade2bf73c3af99953fc5b149d52bb1a7891c",
+              "bytes": 944064
+            },
+            {
+              "url": "https://artificialanalysis.ai/models/gemini-4-argon",
+              "fetched": "2026-10-13",
+              "localFile": "/Users/ellis/Desktop/Vibyra/output/gemini-4-argon-20261013/aa-detail.html",
+              "sha256": "bc91eb8b71d49d7ecedf1e4095ed2bb582ee66234f5990786bf668cf86fad20d",
+              "bytes": 4004459
+            }
+          ]
+        }
+      }
     }
   ],
   "excluded": {

@@ -38,7 +38,7 @@ return [
     // here when it ships. VIBES_TERMINAL_MODELS (comma-separated) overrides it; empty offers all.
     'terminal_models' => env('VIBES_TERMINAL_MODELS') !== null
         ? array_values(array_filter(explode(',', (string) env('VIBES_TERMINAL_MODELS'))))
-        : ['openai/gpt-6.1-sol', 'openai/gpt-6-astra', 'openai/gpt-6-luna', 'anthropic/claude-opus-5.5', 'anthropic/claude-sonnet-5.5', 'anthropic/claude-fable-5.1', 'google/gemini-3.1-pro-preview', 'google/gemini-3.8-flash', 'x-ai/grok-4.7', 'deepseek/deepseek-v4-pro-0813', 'deepseek/deepseek-v4.1-flash', 'qwen/qwen3.8-max-prime', 'qwen/qwen3.8-flash', 'z-ai/glm-5.3', 'z-ai/glm-5.3-prime', 'moonshotai/kimi-k3', 'bytedance-seed/seed-2.0-code'],
+        : ['openai/gpt-6.1-sol', 'openai/gpt-6-astra', 'openai/gpt-6-luna', 'anthropic/claude-opus-5.5', 'anthropic/claude-sonnet-5.5', 'anthropic/claude-fable-5.1', 'google/gemini-4-argon', 'google/gemini-3.8-flash', 'x-ai/grok-4.7', 'deepseek/deepseek-v4-pro-0813', 'deepseek/deepseek-v4.1-flash', 'qwen/qwen3.8-max-prime', 'qwen/qwen3.8-flash', 'z-ai/glm-5.3', 'z-ai/glm-5.3-prime', 'moonshotai/kimi-k3', 'bytedance-seed/seed-2.0-code'],
     'terminal_unavailable' => [
         'mistralai/mistral-nemo', 'meta-llama/llama-3.1-8b-instruct', 'google/gemma-4-31b-it',
         'meta-llama/llama-4-scout', 'qwen/qwen3-14b', 'xiaomi/mimo-v2.5-pro', 'deepseek/deepseek-r1-0528',
@@ -192,6 +192,8 @@ return [
         'anthropic/claude-opus-5.5' => ['family' => 'Claude', 'name' => 'Claude Opus 5.5', 'trial' => false,
             'tier' => 'best', 'released' => '2026-09-22', 'blurb' => 'Long-running coding and careful project changes.'],
         // Best for building.
+        'google/gemini-4-argon' => ['family' => 'Gemini', 'name' => 'Gemini 4 Argon', 'trial' => false,
+            'tier' => 'best', 'released' => '2026-10-13', 'blurb' => 'Coding, reasoning and long project context.'],
         'openai/gpt-6-astra' => ['family' => 'OpenAI', 'name' => 'GPT-6 Astra', 'trial' => false,
             'tier' => 'best', 'released' => '2026-09-03', 'blurb' => 'Deepest reasoning for hard, multi-file work.'],
         'anthropic/claude-opus-5' => ['family' => 'Claude', 'name' => 'Opus 5', 'trial' => false,
