@@ -38,6 +38,7 @@ Schedule::command('vibyra:membership-replay')->everyTenMinutes()
     ->when(fn () => filled(config('services.stripe.secret')))->withoutOverlapping()->onOneServer();
 Schedule::command('vibyra:remote-revocations')->everyMinute()->withoutOverlapping();
 Schedule::command('vibyra:security-notifications')->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::command('vibyra:notify-public-requests')->everyMinute()->withoutOverlapping(5)->onOneServer();
 // A run killed mid-way (e.g. by a deploy) must not hold the overlap lock for the default 24 h: computers would stay "stopping".
 Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping(2)->onOneServer();
 Schedule::command('vibyra:cloud-sync-prune')->hourly()->withoutOverlapping(55)->onOneServer();

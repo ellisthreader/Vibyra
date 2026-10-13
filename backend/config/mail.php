@@ -16,6 +16,8 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    'public_requests_to' => env('PUBLIC_REQUEST_NOTIFY_TO', 'support@vibyra.net'),
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\NotifyPublicRequest;
 use App\Models\PublicRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class PublicRequestController extends Controller
@@ -24,6 +26,13 @@ class PublicRequestController extends Controller
             'topic' => $validated['topic'],
             'details' => isset($validated['details']) ? trim($validated['details']) : null,
         ]);
+
+        try {
+            NotifyPublicRequest::dispatch($record->id)->afterCommit();
+        } catch (\Throwable) {
+            // The scheduled sweep retries persisted requests even if queueing fails.
+            Log::warning('Public request notification pending', ['reference' => $record->reference]);
+        }
 
         return to_route('privacy.requests')->with('request_reference', $record->reference);
     }

@@ -28,6 +28,10 @@ class PublicRequest extends Model
 
     protected function casts(): array
     {
-        return ['closed_at' => 'datetime'];
+        return [
+            'closed_at' => 'datetime',
+            'owner_notified_at' => 'datetime',
+            'owner_notification_attempted_at' => 'datetime',
+        ];
     }
 }
