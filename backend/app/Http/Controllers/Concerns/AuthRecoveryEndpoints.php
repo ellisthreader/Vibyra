@@ -88,6 +88,7 @@ trait AuthRecoveryEndpoints
 
     public function forgotPassword(Request $request): JsonResponse
     {
+        $request->validate(['email' => ['nullable', 'string', 'max:254']]);
         $email = $this->normalizeEmail($request->input('email'));
         $user = $email ? User::where('email', $email)->where('provider', 'email')->first() : null;
         if ($user) {
@@ -106,6 +107,12 @@ trait AuthRecoveryEndpoints
 
     public function resetPassword(Request $request): JsonResponse
     {
+        $request->validate([
+            'email' => ['required', 'string', 'max:254'],
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string'],
+            'passwordConfirmation' => ['required', 'string'],
+        ]);
         $email = $this->normalizeEmail($request->input('email'));
         $password = (string) $request->input('password', '');
         $token = trim((string) $request->input('token', ''));

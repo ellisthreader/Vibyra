@@ -176,35 +176,12 @@ trait AccountEndpoints
     {
         $user = $this->authenticatedUser($request);
 
-        if (($user->provider ?: 'email') === 'email') {
-            $password = (string) $request->input('password', '');
-            if ($password === '' || ! Hash::check($password, $user->password)) {
-                return $this->json(['ok' => false, 'error' => 'Password is incorrect.'], 401);
-            }
-        } else {
-            try {
-                $nonce = $user->provider === 'apple'
-                    ? app(ProviderChallengeService::class)->consume(
-                        (string) $user->provider,
-                        trim((string) $request->input('challengeId', ''))
-                    )
-                    : null;
-                $identity = app(ProviderIdentityVerifier::class)->verify(
-                    (string) $user->provider,
-                    trim((string) $request->input('identityToken', '')),
-                    $nonce,
-                );
-            } catch (ProviderIdentityException) {
-                return $this->json(['ok' => false, 'error' => 'Reauthenticate with your provider before deleting this account.'], 401);
-            }
-            if (! hash_equals((string) $user->provider_id, $identity['subject'])) {
-                return $this->json(['ok' => false, 'error' => 'The provider account does not match this Vibyra account.'], 403);
-            }
-        }
-
-        app(\App\Services\Account\AccountDeletion::class)->delete($user);
-
-        return $this->json(['ok' => true]);
+        $error = app(\App\Services\Account\DeletionVerification::class)->error($user, $request);
+        if ($error) return $this->json(['ok' => false, 'error' => $error['error']], $error['status']);
+        app(\App\Services\Account\AccountDeletion::class)->delete($user, $request->attributes->get('appleRevocation'));
+        $apple = $user->provider === 'apple' ? app(\App\Services\Account\AppleRevocationQueue::class)->status((int) $user->id) : null;
+        return $this->json(['ok' => true, ...($apple !== null
+            ? ['appleRevocation' => $apple, 'cleanupPending' => $apple !== 'complete'] : [])]);
     }
 
     public function accountSessions(Request $request): JsonResponse

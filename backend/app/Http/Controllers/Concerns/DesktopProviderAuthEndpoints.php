@@ -89,14 +89,17 @@ trait DesktopProviderAuthEndpoints
                 $flow['nonce']
             );
             if (($flow['purpose'] ?? null) === 'deletion') {
-                $this->deleteVerifiedProviderAccount($provider, $flow, $identity);
+                $this->deleteVerifiedProviderAccount($provider, $flow, $identity, $tokens);
+                $apple = $provider === 'apple' ? app(\App\Services\Account\AppleRevocationQueue::class)
+                    ->status((int) $flow['accountId']) : null;
                 app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
                     'ok' => true,
                     'status' => 'complete',
                     'deleted' => true,
+                    ...($apple !== null ? ['appleRevocation' => $apple, 'cleanupPending' => $apple !== 'complete'] : []),
                 ]);
 
-                return $this->desktopProviderResultPage(true, '', true);
+                return $this->desktopProviderResultPage(true, '', true, false, $apple);
             }
             if (($flow['purpose'] ?? null) === 'two_factor_enrollment') {
                 $proof = app(ProviderEnrollmentProof::class)->issue($flow, $provider, $identity);
@@ -217,7 +220,7 @@ trait DesktopProviderAuthEndpoints
         return trim("{$first} {$last}");
     }
 
-    private function deleteVerifiedProviderAccount(string $provider, array $flow, array $identity): void
+    private function deleteVerifiedProviderAccount(string $provider, array $flow, array $identity, array $tokens = []): void
     {
         $expectedSubject = (string) ($flow['providerSubject'] ?? '');
         $returnedSubject = (string) ($identity['subject'] ?? '');
@@ -232,7 +235,9 @@ trait DesktopProviderAuthEndpoints
             throw new ProviderIdentityException('The Vibyra account is no longer valid for this deletion.');
         }
 
-        app(\App\Services\Account\AccountDeletion::class)->delete($user);
+        $apple = $provider === 'apple' ? app(\App\Services\Account\AppleAccountRevocation::class)
+            ->desktop($tokens, $expectedSubject, (string) $flow['nonce']) : null;
+        app(\App\Services\Account\AccountDeletion::class)->delete($user, $apple);
     }
 
     private function desktopProviderResultPage(
@@ -240,6 +245,7 @@ trait DesktopProviderAuthEndpoints
         string $error = '',
         bool $deleted = false,
         bool $enrollment = false,
+        ?string $appleRevocation = null,
     ): Response
     {
         $title = $success
@@ -249,6 +255,10 @@ trait DesktopProviderAuthEndpoints
             ? ($enrollment ? 'Return to Vibyra to finish authenticator setup.'
                 : 'You can close this browser tab and return to Vibyra Desktop.')
             : $error;
+        if ($success && $deleted && in_array($appleRevocation, ['pending', 'manual'], true)) {
+            $message = $appleRevocation === 'pending' ? \App\Services\Account\AppleAccountRevocation::PENDING
+                : \App\Services\Account\AppleAccountRevocation::MANUAL;
+        }
         $html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
             .'<title>'.e($title).'</title></head><body style="margin:0;background:#07070a;color:#fff;'
             .'font-family:Inter,system-ui,sans-serif;display:grid;min-height:100vh;place-items:center">'

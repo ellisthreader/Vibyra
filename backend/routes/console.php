@@ -68,3 +68,5 @@ Schedule::command('vibyra:agent-organisations')->everyMinute()->withoutOverlappi
 Schedule::command('vibyra:agent-organisations --retention')->dailyAt('03:40')->withoutOverlapping()->onOneServer();
 
 \Illuminate\Support\Facades\Schedule::command('model:prune', ['--model' => [\App\Models\PublicRequest::class]])->dailyAt('02:40')->withoutOverlapping(30)->onOneServer();
+
+Schedule::command('vibyra:revoke-deleted-apple-accounts')->everyFiveMinutes()->withoutOverlapping(4)->onOneServer();

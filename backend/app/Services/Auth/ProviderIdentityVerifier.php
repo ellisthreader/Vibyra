@@ -10,7 +10,20 @@ class ProviderIdentityVerifier
 
     public function verify(string $provider, string $token, ?string $nonce = null): array
     {
+        return $this->identity($provider, $token, $nonce, null);
+    }
+
+    public function verifyForAudience(string $provider, string $token, ?string $nonce, string $audience): array
+    {
+        return $this->identity($provider, $token, $nonce, $audience);
+    }
+
+    private function identity(string $provider, string $token, ?string $nonce, ?string $audience): array
+    {
         $settings = $this->settings($provider);
+        if ($audience !== null) {
+            $settings['audiences'] = array_values(array_intersect($settings['audiences'], [$audience]));
+        }
         if ($token === '' || $settings['audiences'] === []) {
             throw new ProviderIdentityException('The identity provider is not configured.');
         }

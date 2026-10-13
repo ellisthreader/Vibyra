@@ -7,7 +7,7 @@
     <div class="eyebrow">Legal</div>
     <h1>Privacy Policy</h1>
     <p class="lead">This policy explains what information Vibyra handles when you use the website, mobile app, desktop app, connected services, and community features.</p>
-    <p class="updated">Effective and last updated: 4 October 2026</p>
+    <p class="updated">Effective and last updated: 13 October 2026</p>
 
     <section>
         <h2>1. Who is responsible</h2>
@@ -23,7 +23,7 @@
             <li><strong>Community content:</strong> published app details, previews, comments, reactions, moderation results, and private report evidence such as notes or screenshots.</li>
             <li><strong>Billing and usage information:</strong> plan, credit balance and usage, purchase identifiers, and subscription status. Payment providers process full payment credentials; Vibyra does not store complete card numbers.</li>
             <li><strong>Service analytics:</strong> if allowed, page views, named links and downloads, form starts and successful outcomes, bounded active time, and supported app actions. Website events may include a short campaign label, referring domain, device and browser category, approximate country and region derived on the server, page speed, and broad browser error category. They exclude form answers, prompt text, typing, terminal output, project names, file paths, raw IP addresses, full URLs, and error messages or stack traces. We retain a protected pseudonymous choice identifier so withdrawal can erase its events. A separate account-link option allows events to be associated with your account.</li>
-            <li><strong>Diagnostics:</strong> service logs, failure details, performance and security events, and optional anonymous improvement signals when enabled.</li>
+            <li><strong>Diagnostics:</strong> service logs, failure details, performance and security events, and optional improvement signals when enabled. When you choose to send an in-app problem report, it includes your account name and email, report text, app and operating-system version, device model, screen dimensions, request IP, and the selected project name and folder, agent and pane when available. Screenshots are included only when you attach them.</li>
         </ul>
     </section>
 
@@ -43,6 +43,7 @@
     <section>
         <h2>5. Service providers and sharing</h2>
         <p>We share only the information needed with infrastructure and email providers, identity providers, payment platforms such as Stripe, Apple, or Google, and AI gateway or model providers used to process a request. Their own terms and privacy notices may also apply.</p>
+        <p>The connected-computer details screen uses GeoJS to look up an approximate city and country from a public IP address. That request shares the public address being looked up and the requesting device’s public IP with GeoJS; it does not use GPS or precise device location. In-app problem reports you choose to send are delivered to Vibyra’s private Discord support channel, including the report details and optional screenshot described above.</p>
         <p>Public community listings, comments, and profile attribution are visible to other people. Reports and their evidence are private to authorized moderation and support workflows. We may disclose information when required by law, to protect users or the service, or as part of a business transfer subject to appropriate safeguards.</p>
     </section>
 
@@ -62,6 +63,7 @@
         <h2>7. Retention and security</h2>
         <p>We retain information while your account is active and as needed for the purposes above, dispute resolution, security, and legal obligations. Retention varies by data type. Deleted accounts and expired sessions may leave limited records where necessary for fraud prevention, billing, backups, or law.</p>
         <p>Optional event records are kept for up to 90 days and removed by scheduled cleanup. Suppressed, non-identifying daily totals and anonymous collection-health counts may be kept for up to 13 months. Consent decisions and their history are retained as needed to honor and demonstrate your choices. Account, billing, and security records follow their own retention needs.</p>
+        <p>When an Apple account is deleted, an encrypted Apple revocation token may be retained only until Apple confirms revocation. Failed revocation requests are retried separately from deleting the Vibyra account. If no usable token is available, the deletion confirmation explains how to remove Vibyra manually from Sign in with Apple in your Apple Account settings.</p>
         <p>We use access controls, encrypted transport for public services, protected credential storage, rate limits, and session revocation. No system is completely secure, so keep devices and account credentials protected and report suspected misuse promptly.</p>
     </section>
 

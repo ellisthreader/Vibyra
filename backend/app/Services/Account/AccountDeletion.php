@@ -10,10 +10,11 @@ use RuntimeException;
 /** Preserve remote disconnect evidence before user foreign keys cascade. */
 final class AccountDeletion
 {
-    public function delete(User $user): bool
+    public function delete(User $user, ?array $appleRevocation = null): bool
     {
         $security = app(RemoteAccountSecurity::class);
-        return $security->updateIdentity((int) $user->id, function (User $locked) use ($security): bool {
+        return $security->updateIdentity((int) $user->id, function (User $locked) use ($security, $appleRevocation): bool {
+            if ($locked->provider === 'apple') app(AppleRevocationQueue::class)->stage((int) $locked->id, $appleRevocation);
             $security->revokeHostsForDeletion((int) $locked->id);
             if (config('session.driver') === 'database') {
                 DB::connection(config('session.connection'))->table((string) config('session.table', 'sessions'))

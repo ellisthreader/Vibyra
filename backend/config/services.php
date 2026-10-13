@@ -129,6 +129,14 @@ return [
         'token_url' => env('GOOGLE_DESKTOP_TOKEN_URL', 'https://oauth2.googleapis.com/token'),
     ],
 
+    'apple_native_oauth' => [
+        'client_id' => env('APPLE_NATIVE_CLIENT_ID', 'app.vibyra.mobile'),
+        'client_secret' => env('APPLE_NATIVE_CLIENT_SECRET'),
+        'team_id' => env('APPLE_NATIVE_TEAM_ID', env('APPLE_DESKTOP_TEAM_ID')),
+        'key_id' => env('APPLE_NATIVE_KEY_ID', env('APPLE_DESKTOP_KEY_ID')),
+        'private_key' => env('APPLE_NATIVE_PRIVATE_KEY', env('APPLE_DESKTOP_PRIVATE_KEY')),
+    ],
+
     'apple_desktop_oauth' => [
         'client_id' => env('APPLE_DESKTOP_CLIENT_ID'),
         'client_secret' => env('APPLE_DESKTOP_CLIENT_SECRET'),
