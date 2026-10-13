@@ -14,7 +14,7 @@ final class CanonicalWebsiteHost
     private const LEGACY_HOSTS = ['vibyra-production.up.railway.app', 'www.vibyra.net'];
     private const CANONICAL_ORIGIN = 'https://vibyra.net';
     private const PAGES = ['/', 'legal/*', 'login', 'signup', 'forgot-password', 'billing', 'billing/*', 'checkout',
-        'downloads', 'benchmarks', 'account', 'account/downloads', 'owner', 'owner/login'];
+        'downloads', 'benchmarks', 'account', 'account/downloads', 'account/delete', 'privacy/requests', 'owner', 'owner/login'];
 
     public function handle(Request $request, Closure $next)
     {

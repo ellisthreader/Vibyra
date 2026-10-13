@@ -48,4 +48,14 @@ class PublicSupportLinksTest extends TestCase
         $this->get('/privacy/requests?topic='.urlencode('<script>alert(1)</script>'))->assertOk()
             ->assertDontSee('<script>alert(1)</script>', false);
     }
+
+    public function test_legacy_app_hosts_redirect_before_the_form_creates_a_session(): void
+    {
+        foreach (['vibyra-production.up.railway.app', 'www.vibyra.net'] as $host) {
+            foreach (['/privacy/requests?topic=support', '/account/delete'] as $path) {
+                $this->get('https://'.$host.$path)->assertStatus(301)
+                    ->assertRedirect('https://vibyra.net'.$path);
+            }
+        }
+    }
 }
