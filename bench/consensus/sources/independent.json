@@ -5,459 +5,872 @@
       "name": "Epoch Capabilities Index",
       "org": "Epoch AI",
       "url": "https://epoch.ai/data/eci_scores.csv",
-      "updated": "2026-09-29",
+      "updated": "2026-10-13",
       "metric": "ECI score (IRT-fitted capabilities composite)",
       "category": "overall",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw current ECI CSV; hub update Sep 29. CSV dates denote checkpoint release, not effort or board date. Corrected Qwen mapping to explicit 0902 155.28; generic older Aug 2 Qwen 156.69 excluded. ECI cannot be labeled max. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Official raw ECI CSV fetched October 13; hub explicitly updated October 13. CSV date is model release date. ECI mixes model-version runs and does not declare an effort. Generic earlier Qwen/DeepSeek checkpoints are excluded. Reference-only composite overlaps retained Epoch parts.",
       "scores": {
-        "gpt-6-astra": {
+        "claude-opus-5-5": {
           "measurements": [
             {
-              "value": 166.6,
-              "variant": "GPT-6 Astra",
+              "value": 167.33,
+              "variant": "Claude Opus 5.5",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                164.06,
+                171.68
+              ]
             }
           ],
-          "value": 166.6,
+          "value": 167.33,
+          "variant": "Claude Opus 5.5"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 166.45,
+              "variant": "GPT-6 Astra",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                163.34,
+                171.46
+              ]
+            }
+          ],
+          "value": 166.45,
           "variant": "GPT-6 Astra"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 166.09,
+              "variant": "GPT-6.1 Sol",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                162.89,
+                170.63
+              ]
+            }
+          ],
+          "value": 166.09,
+          "variant": "GPT-6.1 Sol"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 165.03,
+              "variant": "Claude Sonnet 5.5",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                161.68,
+                169.06
+              ]
+            }
+          ],
+          "value": 165.03,
+          "variant": "Claude Sonnet 5.5"
         },
         "claude-fable-5-1": {
           "measurements": [
             {
-              "value": 165,
+              "value": 164.7,
               "variant": "Claude Fable 5.1",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                161.63,
+                168.81
+              ]
             }
           ],
-          "value": 165,
+          "value": 164.7,
           "variant": "Claude Fable 5.1"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 162.72,
+              "variant": "GPT-6 Sol",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                160.07,
+                166.57
+              ]
+            }
+          ],
+          "value": 162.72,
+          "variant": "GPT-6 Sol"
         },
         "kimi-k3": {
           "measurements": [
             {
-              "value": 157.68,
+              "value": 157.45,
               "variant": "Kimi K3",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                155.15,
+                160.03
+              ]
             }
           ],
-          "value": 157.68,
+          "value": 157.45,
           "variant": "Kimi K3"
-        },
-        "gemini-3-8-flash": {
-          "measurements": [
-            {
-              "value": 157.13,
-              "variant": "Gemini 3.8 Flash",
-              "effort": "unspecified",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rawEffort": null
-            }
-          ],
-          "value": 157.13,
-          "variant": "Gemini 3.8 Flash"
         },
         "muse-spark-1-3": {
           "measurements": [
             {
-              "value": 156.89,
+              "value": 156.75,
               "variant": "Muse Spark 1.3",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                154.78,
+                159.34
+              ]
             }
           ],
-          "value": 156.89,
+          "value": 156.75,
           "variant": "Muse Spark 1.3"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 156.71,
+              "variant": "Gemini 3.8 Flash",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                154.41,
+                160.26
+              ]
+            }
+          ],
+          "value": 156.71,
+          "variant": "Gemini 3.8 Flash"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 156.28,
+              "variant": "GPT-6 Luna",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                153.67,
+                158.75
+              ]
+            }
+          ],
+          "value": 156.28,
+          "variant": "GPT-6 Luna"
         },
         "claude-sonnet-5": {
           "measurements": [
             {
-              "value": 156.34,
+              "value": 156.21,
               "variant": "Claude Sonnet 5",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                153.48,
+                158.79
+              ]
             }
           ],
-          "value": 156.34,
+          "value": 156.21,
           "variant": "Claude Sonnet 5"
         },
         "glm-5-3": {
           "measurements": [
             {
-              "value": 155.56,
+              "value": 155.61,
               "variant": "GLM-5.3",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                153.6,
+                157.92
+              ]
             }
           ],
-          "value": 155.56,
+          "value": 155.61,
           "variant": "GLM-5.3"
         },
         "deepseek-v4-pro": {
           "measurements": [
             {
-              "value": 155.39,
+              "value": 155.31,
               "variant": "DeepSeek V4 Pro 0813",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                153.48,
+                157.45
+              ]
             }
           ],
-          "value": 155.39,
+          "value": 155.31,
           "variant": "DeepSeek V4 Pro 0813"
         },
         "qwen3-8-max": {
           "measurements": [
             {
-              "value": 155.28,
+              "value": 155.05,
               "variant": "Qwen3.8 Max (0902)",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                153.29,
+                157.19
+              ]
             }
           ],
-          "value": 155.28,
+          "value": 155.05,
           "variant": "Qwen3.8 Max (0902)"
         },
         "deepseek-v4-1-flash": {
           "measurements": [
             {
-              "value": 155.01,
+              "value": 154.9,
               "variant": "DeepSeek V4.1 Flash",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                148.49,
+                157.33
+              ]
             }
           ],
-          "value": 155.01,
+          "value": 154.9,
           "variant": "DeepSeek V4.1 Flash"
         },
         "gemini-3-1-pro": {
           "measurements": [
             {
-              "value": 154.92,
+              "value": 154.77,
               "variant": "Gemini 3.1 Pro",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                152.44,
+                157.27
+              ]
             }
           ],
-          "value": 154.92,
+          "value": 154.77,
           "variant": "Gemini 3.1 Pro"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 153.53,
+              "variant": "Grok 4.7",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "eciConfidenceInterval": [
+                151.84,
+                155.85
+              ]
+            }
+          ],
+          "value": 153.53,
+          "variant": "Grok 4.7"
         },
         "minimax-m3": {
           "measurements": [
             {
-              "value": 147,
+              "value": 146.95,
               "variant": "MiniMax-M3",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                142.59,
+                149.44
+              ]
             }
           ],
-          "value": 147,
+          "value": 146.95,
           "variant": "MiniMax-M3"
         },
         "claude-haiku-4-5": {
           "measurements": [
             {
-              "value": 142.42,
+              "value": 142.41,
               "variant": "Claude Haiku 4.5",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                139.4,
+                144.07
+              ]
             }
           ],
-          "value": 142.42,
+          "value": 142.41,
           "variant": "Claude Haiku 4.5"
         },
         "mistral-medium-3-5": {
           "measurements": [
             {
-              "value": 141.42,
+              "value": 141.35,
               "variant": "Mistral Medium 3.5",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "eciConfidenceInterval": [
+                138.56,
+                143.2
+              ]
             }
           ],
-          "value": 141.42,
+          "value": 141.35,
           "variant": "Mistral Medium 3.5"
         }
       },
       "consensus": false,
       "consensusReason": "Composite overlaps the Epoch benchmark results shown separately; reference only to avoid double counting.",
-      "evaluator": "Epoch AI"
+      "evaluator": "Epoch AI",
+      "family": "epoch-eci",
+      "models": 20
     },
     {
       "id": "epoch-frontiermath-t1-3",
       "name": "FrontierMath Tiers 1-3 (v2, private)",
       "org": "Epoch AI",
       "url": "https://epoch.ai/data/benchmark_data.zip#frontiermath_tiers_1_3_v2.csv",
-      "updated": "2026-09-29",
-      "metric": "Accuracy % (Best score across scorers \u00d7100)",
+      "updated": "2026-10-13",
+      "metric": "Accuracy % (Best score across scorers ×100)",
       "category": "reasoning",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw current archive frontiermath_tiers_1_3_v2.csv; all effort rows retained. No effort column: only explicit model-version suffix mapped; 32K budget stays effort unspecified. Exact 0902 Qwen and 0813 DeepSeek rows only. Generic older checkpoints excluded. Sonnet 5.5 has one explicitly max row. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Raw frontiermath_tiers_1_3_v2.csv from official Epoch archive, fetched 2026-10-13; hub explicitly updated October 13. Every exact checkpoint and effort row retained. Board scores use Best score (across scorers) ×100, not a rounded plot. Explicit model-version suffix supplies effort; token budgets alone remain unspecified. Generic Qwen3.8 Max and DeepSeek V4 Pro aliases omitted unless 0902/0813 appears.",
       "scores": {
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 67.36842105263158,
+              "variant": "deepseek-v4.1-flash_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "b6dXtaGSwvfRYADKYnj9Ci",
+              "evaluatedAt": "2026-10-08T19:02:32.000Z",
+              "stderr": 2.7821981570324446
+            }
+          ],
+          "value": 67.36842105263158,
+          "variant": "deepseek-v4.1-flash_max"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 75.08771929824562,
+              "variant": "claude-haiku-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "2QAt4ptgGkLtcbVL3hdAvL",
+              "evaluatedAt": "2026-10-07T20:42:31.000Z",
+              "stderr": 2.566445410232946
+            }
+          ],
+          "value": 75.08771929824562,
+          "variant": "claude-haiku-5-5_max"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 93.6842105263158,
+              "variant": "gpt-6.1-sol_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "aBoQLaqnXsLPrsbN8wYgUp",
+              "evaluatedAt": "2026-09-29T22:00:34.000Z",
+              "stderr": 1.4434038295343787
+            }
+          ],
+          "value": 93.6842105263158,
+          "variant": "gpt-6.1-sol_max"
+        },
         "claude-sonnet-5-5": {
           "measurements": [
             {
-              "value": 88.771929825,
+              "value": 88.7719298245614,
               "variant": "claude-sonnet-5-5_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "4tZWwV9tqEgsCaKeSuSoG4",
+              "evaluatedAt": "2026-09-29T15:15:14.000Z",
+              "stderr": 1.8734030360524248
             }
           ],
-          "value": 88.771929825,
+          "value": 88.7719298245614,
           "variant": "claude-sonnet-5-5_max"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 78.94736842105263,
+              "variant": "gpt-6-luna_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "iBQxysYR7zPxB6hxvJyTLc",
+              "evaluatedAt": "2026-09-22T22:14:05.000Z",
+              "stderr": 2.4191503146153774
+            }
+          ],
+          "value": 78.94736842105263,
+          "variant": "gpt-6-luna_max"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 52.98245614035088,
+              "variant": "grok-4.7_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "F4unBbW5M4VJogzCq4vGAb",
+              "evaluatedAt": "2026-09-22T21:49:22.000Z",
+              "stderr": 2.9616712041900364
+            }
+          ],
+          "value": 52.98245614035088,
+          "variant": "grok-4.7_xhigh"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 89.82456140350877,
+              "variant": "gpt-6-sol_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "RHjHEPHEsWZqFuMjBTeC6r",
+              "evaluatedAt": "2026-09-22T19:59:24.000Z",
+              "stderr": 1.7939690721286368
+            }
+          ],
+          "value": 89.82456140350877,
+          "variant": "gpt-6-sol_max"
         },
         "claude-opus-5-5": {
           "measurements": [
             {
-              "value": 91.228070175,
+              "value": 91.22807017543859,
               "variant": "claude-opus-5-5_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "LPxhvBNEn7S3xkRZUgcvc9",
+              "evaluatedAt": "2026-09-22T18:27:39.000Z",
+              "stderr": 1.6786209858442096
             }
           ],
-          "value": 91.228070175,
+          "value": 91.22807017543859,
           "variant": "claude-opus-5-5_max"
         },
         "muse-spark-1-3": {
           "measurements": [
             {
-              "value": 74.035087719,
+              "value": 74.03508771929825,
               "variant": "muse-spark-1.3_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "6735DShGR4Zu5KZ2U6n4pC",
+              "evaluatedAt": "2026-09-18T16:34:54.000Z",
+              "stderr": 2.6016750822385526
             },
             {
-              "value": 74.385964912,
+              "value": 74.3859649122807,
               "variant": "muse-spark-1.3_xhigh",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "xhigh"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "JeYksd3f2RkegmxCcZyBMQ",
+              "evaluatedAt": "2026-09-16T22:00:25.000Z",
+              "stderr": 2.590152474777329
             }
           ],
-          "value": 74.035087719,
+          "value": 74.03508771929825,
           "variant": "muse-spark-1.3_max"
         },
         "qwen3-8-max": {
           "measurements": [
             {
-              "value": 65.614035088,
+              "value": 65.6140350877193,
               "variant": "qwen3.8-max-0902_xhigh",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "xhigh"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "FpQf5xBwJPb4ZEo6SgdKWq",
+              "evaluatedAt": "2026-09-02T18:04:58.000Z",
+              "stderr": 2.818576398907258
             }
           ],
-          "value": 65.614035088,
+          "value": 65.6140350877193,
           "variant": "qwen3.8-max-0902_xhigh"
         },
         "gemini-3-8-flash": {
           "measurements": [
             {
-              "value": 68.421052632,
+              "value": 68.42105263157895,
               "variant": "gemini-3.8-flash_high",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "high"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "Utgs6DuaQDDdi98ZWH22qL",
+              "evaluatedAt": "2026-09-02T17:15:36.000Z",
+              "stderr": 2.7582557383453006
             }
           ],
-          "value": 68.421052632,
+          "value": 68.42105263157895,
           "variant": "gemini-3.8-flash_high"
         },
         "claude-fable-5-1": {
           "measurements": [
             {
-              "value": 90.175438596,
+              "value": 90.17543859649123,
               "variant": "claude-fable-5-1_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "g7dXwZH2tWvqLg3X5idGs2",
+              "evaluatedAt": "2026-09-01T18:38:24.000Z",
+              "stderr": 1.7662067789031757
             }
           ],
-          "value": 90.175438596,
+          "value": 90.17543859649123,
           "variant": "claude-fable-5-1_max"
         },
         "gpt-6-astra": {
           "measurements": [
             {
-              "value": 93.684210526,
+              "value": 93.6842105263158,
               "variant": "gpt-6-astra_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "csK2fe5T8p2R7WgoJUu6bZ",
+              "evaluatedAt": "2026-08-30T14:57:43.000Z",
+              "stderr": 1.4434038295343787
             }
           ],
-          "value": 93.684210526,
+          "value": 93.6842105263158,
           "variant": "gpt-6-astra_max"
         },
         "glm-5-3": {
           "measurements": [
             {
-              "value": 68.771929825,
+              "value": 68.77192982456141,
               "variant": "glm-5.3_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "iXvqUzwxAiA3Rg3dwnutFs",
+              "evaluatedAt": "2026-08-25T14:20:20.000Z",
+              "stderr": 2.7499133473298816
             }
           ],
-          "value": 68.771929825,
+          "value": 68.77192982456141,
           "variant": "glm-5.3_max"
         },
         "deepseek-v4-pro": {
           "measurements": [
             {
-              "value": 64.561403509,
+              "value": 64.56140350877193,
               "variant": "deepseek-v4-pro-0813_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "b6yWmeFgsWeEiG9Qzs3NSf",
+              "evaluatedAt": "2026-08-19T13:35:48.000Z",
+              "stderr": 2.8383475205435627
             }
           ],
-          "value": 64.561403509,
+          "value": 64.56140350877193,
           "variant": "deepseek-v4-pro-0813_max"
         },
         "kimi-k3": {
           "measurements": [
             {
-              "value": 72.183098592,
+              "value": 72.1830985915493,
               "variant": "kimi-k3_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "bcntamvGsSH6QgETdoaSph",
+              "evaluatedAt": "2026-07-17T01:48:42.000Z",
+              "stderr": 2.6636607935112644
             }
           ],
-          "value": 72.183098592,
+          "value": 72.1830985915493,
           "variant": "kimi-k3_max"
         },
         "claude-sonnet-5": {
           "measurements": [
             {
-              "value": 65.614035088,
+              "value": 65.6140350877193,
               "variant": "claude-sonnet-5_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "V6YuGpcu8MCbJNXKoJMA6b",
+              "evaluatedAt": "2026-06-30T21:54:08.000Z",
+              "stderr": 2.818576398907258
             }
           ],
-          "value": 65.614035088,
+          "value": 65.6140350877193,
           "variant": "claude-sonnet-5_max"
         },
         "gemini-3-1-pro": {
           "measurements": [
             {
-              "value": 59.649122807,
+              "value": 59.64912280701754,
               "variant": "gemini-3.1-pro-preview",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": null
+              "harness": "Epoch FrontierMath",
+              "sourceRowId": "hVifTUdQZrFEYabgCRu8Qq",
+              "evaluatedAt": "2026-06-11T23:35:57.000Z",
+              "stderr": 2.911181956525014
             }
           ],
-          "value": 59.649122807,
+          "value": 59.64912280701754,
           "variant": "gemini-3.1-pro-preview"
         }
       },
       "family": "frontiermath",
-      "evaluator": "Epoch AI"
+      "evaluator": "Epoch AI",
+      "models": 18
     },
     {
       "id": "epoch-simpleqa-verified",
       "name": "SimpleQA Verified (Epoch-run)",
       "org": "Epoch AI",
       "url": "https://epoch.ai/data/benchmark_data.zip#simpleqa_verified.csv",
-      "updated": "2026-09-29",
-      "metric": "Accuracy % (Best score across scorers \u00d7100)",
+      "updated": "2026-10-13",
+      "metric": "Accuracy % (Best score across scorers ×100)",
       "category": "knowledge",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw current archive simpleqa_verified.csv; all effort rows retained. No effort column: only explicit model-version suffix mapped; 32K budget stays effort unspecified. Exact 0902 Qwen and 0813 DeepSeek rows only. Generic older checkpoints excluded. Sonnet 5.5 has one explicitly max row. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Raw simpleqa_verified.csv from official Epoch archive, fetched 2026-10-13; hub explicitly updated October 13. Every exact checkpoint and effort row retained. Board scores use Best score (across scorers) ×100, not a rounded plot. Explicit model-version suffix supplies effort; token budgets alone remain unspecified. Generic Qwen3.8 Max and DeepSeek V4 Pro aliases omitted unless 0902/0813 appears.",
       "scores": {
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 23.8,
+              "variant": "claude-haiku-5-5_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "NwnrUMtveqHDYB2Um4ycmA",
+              "evaluatedAt": "2026-10-09T14:36:06.000Z",
+              "stderr": 1.3473586661967094
+            }
+          ],
+          "value": 23.8,
+          "variant": "claude-haiku-5-5_max"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 73.9,
+              "variant": "gpt-6.1-sol_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "dfT5VD7cQug8XW6GQHyJUF",
+              "evaluatedAt": "2026-09-29T22:00:34.000Z",
+              "stderr": 1.3895037677965185
+            }
+          ],
+          "value": 73.9,
+          "variant": "gpt-6.1-sol_max"
+        },
         "claude-sonnet-5-5": {
           "measurements": [
             {
               "value": 46.5,
               "variant": "claude-sonnet-5-5_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "GtJ5yd3ZPQ7HVcm6Q9ssQz",
+              "evaluatedAt": "2026-09-29T15:15:14.000Z",
+              "stderr": 1.5780495050030086
             }
           ],
           "value": 46.5,
           "variant": "claude-sonnet-5-5_max"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 41.4,
+              "variant": "gpt-6-luna_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "HX9sRVWJtZiNvneALnVzs8",
+              "evaluatedAt": "2026-09-22T22:14:05.000Z",
+              "stderr": 1.5583544104177554
+            }
+          ],
+          "value": 41.4,
+          "variant": "gpt-6-luna_max"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 56.0,
+              "variant": "grok-4.7_xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "6izDCw5ygCLZJEKPS8jV5T",
+              "evaluatedAt": "2026-09-22T21:49:22.000Z",
+              "stderr": 1.5704987954361718
+            }
+          ],
+          "value": 56.0,
+          "variant": "grok-4.7_xhigh"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 60.7,
+              "variant": "gpt-6-sol_max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "donMeEKBZZdqpQsojKWJEm",
+              "evaluatedAt": "2026-09-22T19:59:24.000Z",
+              "stderr": 1.5452824654081525
+            }
+          ],
+          "value": 60.7,
+          "variant": "gpt-6-sol_max"
         },
         "claude-opus-5-5": {
           "measurements": [
@@ -465,10 +878,13 @@
               "value": 72.2,
               "variant": "claude-opus-5-5_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "CgLfiGcNwMPVzxr8GdNUAK",
+              "evaluatedAt": "2026-09-22T18:27:39.000Z",
+              "stderr": 1.4174516461485274
             }
           ],
           "value": 72.2,
@@ -480,10 +896,13 @@
               "value": 47.3,
               "variant": "qwen3.8-max-0902_xhigh",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "xhigh"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "nBcLJJomVoeg2zh5F8Mnsu",
+              "evaluatedAt": "2026-09-02T18:04:58.000Z",
+              "stderr": 1.579621855130273
             }
           ],
           "value": 47.3,
@@ -495,10 +914,13 @@
               "value": 69.7,
               "variant": "gemini-3.8-flash_high",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "high"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "gZ4bwozTKtpmZTqnqX3a33",
+              "evaluatedAt": "2026-09-02T17:15:36.000Z",
+              "stderr": 1.4539683710535192
             }
           ],
           "value": 69.7,
@@ -510,10 +932,13 @@
               "value": 70.8,
               "variant": "claude-fable-5-1_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "ExyL3GN8s34tizrXV3VmS3",
+              "evaluatedAt": "2026-09-01T18:31:59.000Z",
+              "stderr": 1.4385511563477433
             }
           ],
           "value": 70.8,
@@ -525,10 +950,13 @@
               "value": 75.6,
               "variant": "gpt-6-astra_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "PppwnX7EjXx2SeTcFN8Ujn",
+              "evaluatedAt": "2026-08-30T14:57:43.000Z",
+              "stderr": 1.3588548437881387
             }
           ],
           "value": 75.6,
@@ -537,16 +965,19 @@
         "glm-5-3": {
           "measurements": [
             {
-              "value": 41,
+              "value": 41.0,
               "variant": "glm-5.3_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "TY8R8FV7zCwByEipkqyg2P",
+              "evaluatedAt": "2026-08-28T17:00:06.000Z",
+              "stderr": 1.556091713692166
             }
           ],
-          "value": 41,
+          "value": 41.0,
           "variant": "glm-5.3_max"
         },
         "kimi-k3": {
@@ -555,10 +986,13 @@
               "value": 50.6,
               "variant": "kimi-k3_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "mZLWt2JSYvJyGhMvji7CT8",
+              "evaluatedAt": "2026-08-27T19:36:12.000Z",
+              "stderr": 1.5818160898606837
             }
           ],
           "value": 50.6,
@@ -567,16 +1001,19 @@
         "deepseek-v4-pro": {
           "measurements": [
             {
-              "value": 52.905811623,
+              "value": 52.90581162324649,
               "variant": "deepseek-v4-pro-0813_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "2xfFf6KZAp2gUWYhHGkFgs",
+              "evaluatedAt": "2026-08-27T19:30:20.000Z",
+              "stderr": 1.5808394665706598
             }
           ],
-          "value": 52.905811623,
+          "value": 52.90581162324649,
           "variant": "deepseek-v4-pro-0813_max"
         },
         "claude-sonnet-5": {
@@ -585,19 +1022,25 @@
               "value": 32.9,
               "variant": "claude-sonnet-5_xhigh",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "xhigh"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "Qw4tGw38pk4sdsEehhrLSR",
+              "evaluatedAt": "2026-08-27T19:28:11.000Z",
+              "stderr": 1.4865395385928355
             },
             {
               "value": 33.7,
               "variant": "claude-sonnet-5_max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "max"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "LPo74T9L3CawnKX5LLUrSZ",
+              "evaluatedAt": "2026-08-27T19:27:42.000Z",
+              "stderr": 1.495508791865346
             }
           ],
           "value": 33.7,
@@ -609,19 +1052,25 @@
               "value": 12.6,
               "variant": "claude-haiku-4-5-20251001_32K",
               "effort": "unspecified",
+              "rawEffort": "32K",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "32K"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "VhBM9HgJ2RuSVwXriRXMVJ",
+              "evaluatedAt": "2026-08-27T19:27:58.000Z",
+              "stderr": 1.0499249222407965
             },
             {
               "value": 13.2,
               "variant": "claude-haiku-4-5-20251001",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": null
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "J2kUEjR9r6Spd594qDNTTf",
+              "evaluatedAt": "2026-08-10T21:26:22.000Z",
+              "stderr": 1.0709373963527966
             }
           ],
           "value": 13.2,
@@ -633,29 +1082,34 @@
               "value": 73.5,
               "variant": "gemini-3.1-pro-preview_high",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
-              "harness": null,
-              "rawEffort": "high"
+              "harness": "Epoch SimpleQA Verified",
+              "sourceRowId": "VGeF8Xac4WcSAGgSXVdEBi",
+              "evaluatedAt": "2026-08-10T21:35:39.000Z",
+              "stderr": 1.3963164754810065
             }
           ],
           "value": 73.5,
           "variant": "gemini-3.1-pro-preview_high"
         }
       },
-      "evaluator": "Epoch AI"
+      "evaluator": "Epoch AI",
+      "family": "epoch-simpleqa-verified",
+      "models": 17
     },
     {
       "id": "epoch-apex-agents",
       "name": "APEX-Agents (via Epoch hub)",
       "org": "Epoch AI",
       "url": "https://epoch.ai/data/benchmark_data.zip#apex_agents_external.csv",
-      "updated": "2026-09-29",
+      "updated": "2026-10-13",
       "metric": "Pass@1 %",
       "category": "agents",
       "higherIsBetter": true,
       "confidence": "medium",
-      "notes": "Raw current archive apex_agents_external.csv; all effort rows retained. No effort column: only explicit model-version suffix mapped; 32K budget stays effort unspecified. Exact 0902 Qwen and 0813 DeepSeek rows only. Generic older checkpoints excluded. APEX is Mercor data mirrored by Epoch; unknown effort stays unspecified. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Raw apex_agents_external.csv from official Epoch archive, fetched 2026-10-13; hub explicitly updated October 13. Every exact checkpoint and effort row retained. Board scores use Best score (across scorers) ×100, not a rounded plot. Explicit model-version suffix supplies effort; token budgets alone remain unspecified. Generic Qwen3.8 Max and DeepSeek V4 Pro aliases omitted unless 0902/0813 appears. APEX-Agents is Mercor evidence mirrored by Epoch, not an independent Epoch run; Pass@1 score ×100. Evaluator grouping corrected from prior Epoch AI label.",
       "scores": {
         "claude-sonnet-5-5": {
           "measurements": [
@@ -663,19 +1117,21 @@
               "value": 75.5,
               "variant": "claude-sonnet-5-5_max [Sonnet 5.5 [claude-sonnet-5-5]]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max"
+              "sourceRowId": "recwsmBXqLEgJjkrE"
             },
             {
               "value": 44.6,
               "variant": "claude-sonnet-5-5_medium [Sonnet 5.5 (Medium)]",
               "effort": "medium",
+              "rawEffort": "medium",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "medium"
+              "sourceRowId": "recWY8vFxRRaVvJK3"
             }
           ],
           "value": 75.5,
@@ -687,10 +1143,21 @@
               "value": 73.5,
               "variant": "claude-opus-5-5_max [Opus 5.5 [claude-opus-5-5]]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max"
+              "sourceRowId": "rec6TErVzXnuNRUoV"
+            },
+            {
+              "value": 52.5,
+              "variant": "claude-opus-5-5_medium [Opus 5.5 [opus-5.5]]",
+              "effort": "medium",
+              "rawEffort": "medium",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "recjdN7zdajrdYE2h"
             }
           ],
           "value": 73.5,
@@ -702,22 +1169,24 @@
               "value": 68.6,
               "variant": "claude-fable-5-1_unknown [Fable 5.1 [claude-fable-5.1]]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "reciHu2R0cgIa9tz3"
             },
             {
-              "value": 59.7,
+              "value": 59.70000000000001,
               "variant": "claude-fable-5-1_high [Fable 5.1 (High)]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "high"
+              "sourceRowId": "recNL6V1sB2zRy2vL"
             }
           ],
-          "value": 59.7,
+          "value": 59.70000000000001,
           "variant": "claude-fable-5-1_high [Fable 5.1 (High)]"
         },
         "gpt-6-astra": {
@@ -726,10 +1195,11 @@
               "value": 64.7,
               "variant": "gpt-6-astra_unknown [GPT-6 Astra]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "rec8tVCWwIBymY5yY"
             }
           ],
           "value": 64.7,
@@ -741,14 +1211,47 @@
               "value": 64.3,
               "variant": "gemini-3.8-flash_unknown [Gemini 3.8 Flash]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "recsEbJSODxwEhWql"
             }
           ],
           "value": 64.3,
           "variant": "gemini-3.8-flash_unknown [Gemini 3.8 Flash]"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 60.0,
+              "variant": "gpt-6.1-sol_max [GPT-6.1 Sol]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "reciOAOiuYHbbtCcU"
+            }
+          ],
+          "value": 60.0,
+          "variant": "gpt-6.1-sol_max [GPT-6.1 Sol]"
+        },
+        "mimo-v2-6-pro": {
+          "measurements": [
+            {
+              "value": 59.5,
+              "variant": "mimo-v2.6-pro [MiMo V2.6 Pro]",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "recXC689WvlAiyNVG"
+            }
+          ],
+          "value": 59.5,
+          "variant": "mimo-v2.6-pro [MiMo V2.6 Pro]"
         },
         "muse-spark-1-3": {
           "measurements": [
@@ -756,10 +1259,11 @@
               "value": 57.8,
               "variant": "muse-spark-1.3_unknown [Muse Spark 1.3]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "reczj4OgICoiocuwT"
             }
           ],
           "value": 57.8,
@@ -768,17 +1272,34 @@
         "glm-5-3": {
           "measurements": [
             {
-              "value": 56.6,
+              "value": 56.60000000000001,
               "variant": "glm-5.3_unknown [GLM-5.3]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "recXcmZluX6NVmdiN"
             }
           ],
-          "value": 56.6,
+          "value": 56.60000000000001,
           "variant": "glm-5.3_unknown [GLM-5.3]"
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 54.6,
+              "variant": "grok-4.7_unknown [Grok 4.7]",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "recMu2uHBeJH8IVe8"
+            }
+          ],
+          "value": 54.6,
+          "variant": "grok-4.7_unknown [Grok 4.7]"
         },
         "claude-sonnet-5": {
           "measurements": [
@@ -786,14 +1307,31 @@
               "value": 54.5,
               "variant": "claude-sonnet-5_unknown [Sonnet 5]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "recDITjv4rt440qU6"
             }
           ],
           "value": 54.5,
           "variant": "claude-sonnet-5_unknown [Sonnet 5]"
+        },
+        "gpt-6-sol": {
+          "measurements": [
+            {
+              "value": 54.3,
+              "variant": "gpt-6-sol_max [GPT-6 Sol]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "recLBjIuBBmwMbz6o"
+            }
+          ],
+          "value": 54.3,
+          "variant": "gpt-6-sol_max [GPT-6 Sol]"
         },
         "kimi-k3": {
           "measurements": [
@@ -801,10 +1339,11 @@
               "value": 50.6,
               "variant": "kimi-k3_unknown [Kimi K3]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "rec69p8O5WoeewHzP"
             }
           ],
           "value": 50.6,
@@ -816,14 +1355,47 @@
               "value": 47.3,
               "variant": "deepseek-v4-pro-0813_unknown [DeepSeek-V4-Pro-0813]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "unknown"
+              "sourceRowId": "recZWJ893wBDvmzR7"
             }
           ],
           "value": 47.3,
           "variant": "deepseek-v4-pro-0813_unknown [DeepSeek-V4-Pro-0813]"
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 44.3,
+              "variant": "gpt-6-luna_max [GPT-6 Luna]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "rec1U23OkfwoEOepV"
+            }
+          ],
+          "value": 44.3,
+          "variant": "gpt-6-luna_max [GPT-6 Luna]"
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 39.5,
+              "variant": "deepseek-v4.1-flash_unknown [DeepSeek-V4.1-Flash]",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "sourceRowId": "recnwdMkLlog5SyR5"
+            }
+          ],
+          "value": 39.5,
+          "variant": "deepseek-v4.1-flash_unknown [DeepSeek-V4.1-Flash]"
         },
         "minimax-m3": {
           "measurements": [
@@ -831,10 +1403,11 @@
               "value": 37.7,
               "variant": "MiniMax-M3 [MiniMax-M3]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "sourceRowId": "recddMEKJx52F4GnA"
             }
           ],
           "value": 37.7,
@@ -846,29 +1419,32 @@
               "value": 35.3,
               "variant": "gemini-3.1-pro-preview [Gemini 3.1 Pro]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "sourceRowId": "recPuGr6uc4AJrsxK"
             }
           ],
           "value": 35.3,
           "variant": "gemini-3.1-pro-preview [Gemini 3.1 Pro]"
         }
       },
-      "evaluator": "Epoch AI"
+      "evaluator": "Mercor",
+      "family": "epoch-apex-agents",
+      "models": 18
     },
     {
       "id": "vals-terminal-bench-4",
       "name": "Terminal-Bench 4.0",
       "org": "Vals.ai",
-      "url": "https://www.vals.ai/_astro/benchmark_view_terminal_bench_4.CP6-_fta.json",
-      "updated": "2026-10-07",
+      "url": "https://www.vals.ai/_astro/benchmark_view_terminal_bench_4.C00bTJ4n.json",
+      "updated": "2026-10-12",
       "metric": "Accuracy % (avg@3)",
       "category": "agents",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw full table default payload; effort from compute_effort/reasoning_effort columns, mode only from explicit metadata. Table publishes one effort per named row, not a complete sweep. Preserve both fallback-enabled scores and page-published fallback-as-failure adjusted scores; original fallbacks used older checkpoints. Same max effort, distinct fallback attribution. Summary selects adjusted values. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified. Refreshed directly from the full raw Astro JSON on 2026-10-08; the board metadata updated date is 2026-10-07. Haiku 5.5 is explicitly max effort. Existing named measurements, fallback-as-failure adjustments, and absent older roster data are preserved for this narrow model rollout. Raw values have full published precision; the model overview may lag the benchmark table (ProofBench overview 84 versus current table 86).",
+      "notes": "Raw full Astro JSON overall task table, fetched October 13; actual metadata update October 12. All exact checkpoint/effort rows retained; effort only from compute_effort/reasoning_effort. Published API cost and latency belong to that exact run. Generic Qwen3.8 Max omitted because current payload does not confirm roster checkpoint 0902. Unknown fallback policy remains null. Current page explicitly publishes fallback-as-failure adjustment for Opus5.5, Fable5.1 and Sonnet5.5; originals and adjusted scores are retained at the same effort. No adjusted score is fabricated for Muse.",
       "scores": {
         "claude-opus-5-5": {
           "measurements": [
@@ -876,37 +1452,37 @@
               "value": 65.152,
               "variant": "anthropic/claude-opus-5-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": true,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 13.198632,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
+              "taskTimeSeconds": 3810.852,
+              "taskTimeBasis": "Vals published latency per test",
               "costFallbackAttempts": 22,
               "costAttemptCount": 198,
-              "costFallbackDefinition": "Published fallback attempt count",
-              "taskTimeSeconds": 3810.852,
-              "taskTimeBasis": "Vals published latency per test"
+              "costFallbackDefinition": "Published fallback attempt count"
             },
             {
               "value": 58.08,
               "variant": "anthropic/claude-opus-5-5 [max, default] (fallback attempts as failures; published adjusted)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 13.198632,
-              "costBasis": "Vals published API USD per test; Same original run, includes fallback attempts; score counts fallback as failures. This is not a separately rerun no-fallback cost.",
-              "costUpdated": "2026-09-30",
+              "costBasis": "Vals original evaluated-run API cost includes fallback attempts; published score counts fallback attempts as failures. Not a separately rerun no-fallback cost.",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
+              "taskTimeSeconds": 3810.852,
+              "taskTimeBasis": "Vals published latency per test",
               "costFallbackAttempts": 22,
               "costAttemptCount": 198,
-              "costFallbackDefinition": "Published fallback attempt count",
-              "taskTimeSeconds": 3810.852,
-              "taskTimeBasis": "Vals published latency per test"
+              "costFallbackDefinition": "Published fallback attempt count"
             }
           ],
           "value": 58.08,
@@ -918,37 +1494,37 @@
               "value": 64.141,
               "variant": "anthropic/claude-sonnet-5-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": true,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 16.513006,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
+              "taskTimeSeconds": 4928.927,
+              "taskTimeBasis": "Vals published latency per test",
               "costFallbackAttempts": 4,
               "costAttemptCount": 198,
-              "costFallbackDefinition": "Published fallback attempt count",
-              "taskTimeSeconds": 4928.927,
-              "taskTimeBasis": "Vals published latency per test"
+              "costFallbackDefinition": "Published fallback attempt count"
             },
             {
               "value": 62.63,
               "variant": "anthropic/claude-sonnet-5-5 [max, default] (fallback attempts as failures; published adjusted)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 16.513006,
-              "costBasis": "Vals published API USD per test; Same original run, includes fallback attempts; score counts fallback as failures. This is not a separately rerun no-fallback cost.",
-              "costUpdated": "2026-09-30",
+              "costBasis": "Vals original evaluated-run API cost includes fallback attempts; published score counts fallback attempts as failures. Not a separately rerun no-fallback cost.",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
+              "taskTimeSeconds": 4928.927,
+              "taskTimeBasis": "Vals published latency per test",
               "costFallbackAttempts": 4,
               "costAttemptCount": 198,
-              "costFallbackDefinition": "Published fallback attempt count",
-              "taskTimeSeconds": 4928.927,
-              "taskTimeBasis": "Vals published latency per test"
+              "costFallbackDefinition": "Published fallback attempt count"
             }
           ],
           "value": 62.63,
@@ -960,13 +1536,13 @@
               "value": 59.596,
               "variant": "openai/gpt-6-astra [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 9.584259,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2142.082,
               "taskTimeBasis": "Vals published latency per test"
@@ -981,41 +1557,104 @@
               "value": 58.081,
               "variant": "anthropic/claude-fable-5-1 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": true,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 17.175337,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
+              "taskTimeSeconds": 3623.762,
+              "taskTimeBasis": "Vals published latency per test",
               "costFallbackAttempts": 22,
               "costAttemptCount": 198,
-              "costFallbackDefinition": "Published fallback attempt count",
-              "taskTimeSeconds": 3623.762,
-              "taskTimeBasis": "Vals published latency per test"
+              "costFallbackDefinition": "Published fallback attempt count"
             },
             {
-              "value": 50,
+              "value": 50.0,
               "variant": "anthropic/claude-fable-5-1 [max, default] (fallback attempts as failures; published adjusted)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 17.175337,
-              "costBasis": "Vals published API USD per test; Same original run, includes fallback attempts; score counts fallback as failures. This is not a separately rerun no-fallback cost.",
-              "costUpdated": "2026-09-30",
+              "costBasis": "Vals original evaluated-run API cost includes fallback attempts; published score counts fallback attempts as failures. Not a separately rerun no-fallback cost.",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
+              "taskTimeSeconds": 3623.762,
+              "taskTimeBasis": "Vals published latency per test",
               "costFallbackAttempts": 22,
               "costAttemptCount": 198,
-              "costFallbackDefinition": "Published fallback attempt count",
-              "taskTimeSeconds": 3623.762,
+              "costFallbackDefinition": "Published fallback attempt count"
+            }
+          ],
+          "value": 50.0,
+          "variant": "anthropic/claude-fable-5-1 [max, default] (fallback attempts as failures; published adjusted)"
+        },
+        "muse-wonder-full": {
+          "measurements": [
+            {
+              "value": 58.081,
+              "variant": "meta/muse-wonder-full [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Mini-SWE-agent",
+              "costPerTask": 10.528007,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 4330.665,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
-          "value": 50,
-          "variant": "anthropic/claude-fable-5-1 [max, default] (fallback attempts as failures; published adjusted)"
+          "value": 58.081,
+          "variant": "meta/muse-wonder-full [max, default]"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 55.051,
+              "variant": "openai/gpt-6.1-sol [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": false,
+              "harness": "Mini-SWE-agent",
+              "costPerTask": 1.72496,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 2711.667,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 55.051,
+          "variant": "openai/gpt-6.1-sol [max, default]"
+        },
+        "muse-wonder": {
+          "measurements": [
+            {
+              "value": 49.495,
+              "variant": "meta/muse-wonder [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Mini-SWE-agent",
+              "costPerTask": 14.657694,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 3280.687,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 49.495,
+          "variant": "meta/muse-wonder [max, default]"
         },
         "gpt-6-sol": {
           "measurements": [
@@ -1023,13 +1662,13 @@
               "value": 44.444,
               "variant": "openai/gpt-6-sol [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 5.79322,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2096.128,
               "taskTimeBasis": "Vals published latency per test"
@@ -1044,13 +1683,13 @@
               "value": 38.889,
               "variant": "zai/glm-5.3 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 9.37436,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 4952.947,
               "taskTimeBasis": "Vals published latency per test"
@@ -1059,26 +1698,26 @@
           "value": 38.889,
           "variant": "zai/glm-5.3 [max, default]"
         },
-        "qwen3-8-max": {
+        "claude-haiku-5-5": {
           "measurements": [
             {
-              "value": 34.343,
-              "variant": "alibaba/qwen3.8-max [unspecified, default]",
-              "effort": "unspecified",
+              "value": 35.354,
+              "variant": "anthropic/claude-haiku-5-5 [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": null,
-              "costPerTask": 10.633329,
-              "costBasis": "Owner published API USD per test on this exact benchmark and fixed harness",
-              "costUpdated": "2026-10-07",
+              "costPerTask": 3.048418,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 8900.152,
+              "taskTimeSeconds": 3059.553,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
-          "value": 34.343,
-          "variant": "alibaba/qwen3.8-max [unspecified, default]"
+          "value": 35.354,
+          "variant": "anthropic/claude-haiku-5-5 [max, default]"
         },
         "mimo-v2-6-pro": {
           "measurements": [
@@ -1086,13 +1725,13 @@
               "value": 31.313,
               "variant": "xiaomi/mimo-v2.6-pro [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": null,
               "costPerTask": 0.497505,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 9720.048,
               "taskTimeBasis": "Vals published latency per test"
@@ -1107,15 +1746,15 @@
               "value": 28.788,
               "variant": "grok/grok-4.7 [xhigh, default]",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "xhigh",
-              "costPerTask": 18.091599,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costPerTask": 18.011582,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 3020.945,
+              "taskTimeSeconds": 3007.523,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
@@ -1128,13 +1767,13 @@
               "value": 24.747,
               "variant": "meta/muse_spark_1_3_max [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 6.654565,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3176.371,
               "taskTimeBasis": "Vals published latency per test"
@@ -1143,13 +1782,13 @@
               "value": 10.606,
               "variant": "meta/muse_spark_1_3 [xhigh, default]",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "xhigh",
               "costPerTask": 7.036467,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 7112.43,
               "taskTimeBasis": "Vals published latency per test"
@@ -1164,13 +1803,13 @@
               "value": 24.242,
               "variant": "xiaomi/mimo-v2.6-flash [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": null,
               "costPerTask": 0.216275,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 8712.24,
               "taskTimeBasis": "Vals published latency per test"
@@ -1185,13 +1824,13 @@
               "value": 19.697,
               "variant": "deepseek/deepseek-v4.1-flash [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "high",
               "costPerTask": 0.499473,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2902.323,
               "taskTimeBasis": "Vals published latency per test"
@@ -1200,47 +1839,47 @@
           "value": 19.697,
           "variant": "deepseek/deepseek-v4.1-flash [high, default]"
         },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 19.697,
+              "variant": "google/gemini-3.8-flash [high, default]",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Mini-SWE-agent",
+              "costPerTask": 8.64749,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 6427.575,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 19.697,
+          "variant": "google/gemini-3.8-flash [high, default]"
+        },
         "kimi-k3": {
           "measurements": [
             {
               "value": 17.172,
               "variant": "kimi/kimi-k3 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
-              "costPerTask": 12.020926,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costPerTask": 12.478176,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 11339.786,
+              "taskTimeSeconds": 11353.52,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
           "value": 17.172,
           "variant": "kimi/kimi-k3 [max, default]"
-        },
-        "gemini-3-8-flash": {
-          "measurements": [
-            {
-              "value": 19.192,
-              "variant": "google/gemini-3.8-flash [high, default]",
-              "effort": "high",
-              "mode": "unspecified",
-              "fallback": false,
-              "harness": "Mini-SWE-agent",
-              "rawEffort": "high",
-              "costPerTask": 8.774327,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 6464.939,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 19.192,
-          "variant": "google/gemini-3.8-flash [high, default]"
         },
         "deepseek-v4-pro": {
           "measurements": [
@@ -1248,15 +1887,15 @@
               "value": 14.141,
               "variant": "deepseek/deepseek-v4-pro-0813 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
-              "costPerTask": 3.31413,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costPerTask": 3.311817,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 5538.07,
+              "taskTimeSeconds": 5493.603,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
@@ -1269,13 +1908,13 @@
               "value": 13.636,
               "variant": "openai/gpt-6-luna [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "max",
               "costPerTask": 0.354726,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 1965.568,
               "taskTimeBasis": "Vals published latency per test"
@@ -1287,22 +1926,22 @@
         "claude-sonnet-5": {
           "measurements": [
             {
-              "value": 9.596,
+              "value": 10.606,
               "variant": "anthropic/claude-sonnet-5 [max, default]",
               "effort": "max",
-              "mode": "unspecified",
-              "fallback": false,
-              "harness": "Mini-SWE-agent",
               "rawEffort": "max",
-              "costPerTask": 26.325556,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Mini-SWE-agent",
+              "costPerTask": 26.04996,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 6299.956,
+              "taskTimeSeconds": 6297.51,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
-          "value": 9.596,
+          "value": 10.606,
           "variant": "anthropic/claude-sonnet-5 [max, default]"
         },
         "gemini-3-1-pro": {
@@ -1311,13 +1950,13 @@
               "value": 2.525,
               "variant": "google/gemini-3.1-pro-preview [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": "high",
               "costPerTask": 4.111957,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 1124.176,
               "taskTimeBasis": "Vals published latency per test"
@@ -1327,83 +1966,42 @@
           "variant": "google/gemini-3.1-pro-preview [high, default]"
         },
         "minimax-m3": {
+          "value": 1.01,
+          "variant": "minimax/MiniMax-M3 [unspecified, default]",
           "measurements": [
             {
               "value": 1.01,
               "variant": "minimax/MiniMax-M3 [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": false,
               "harness": "Mini-SWE-agent",
-              "rawEffort": null,
               "costPerTask": 7.229497,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 4582.924,
               "taskTimeBasis": "Vals published latency per test"
             }
-          ],
-          "value": 1.01,
-          "variant": "minimax/MiniMax-M3 [unspecified, default]"
-        },
-        "gpt-6-1-sol": {
-          "value": 55.051,
-          "variant": "openai/gpt-6.1-sol [max, default]",
-          "measurements": [
-            {
-              "value": 55.051,
-              "variant": "openai/gpt-6.1-sol [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": false,
-              "harness": "Mini-SWE-agent",
-              "costPerTask": 1.72496,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 2711.667,
-              "taskTimeBasis": "Vals published latency per test"
-            }
           ]
-        },
-        "claude-haiku-5-5": {
-          "measurements": [
-            {
-              "value": 35.354,
-              "variant": "anthropic/claude-haiku-5-5 [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "harness": "Mini-SWE-agent",
-              "fallback": false,
-              "costPerTask": 3.048418,
-              "costBasis": "Vals published API USD per test; published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 3059.553,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 35.354,
-          "variant": "anthropic/claude-haiku-5-5 [max, default]"
         }
       },
       "evaluator": "Vals.ai",
-      "costUpdated": "2026-09-30"
+      "family": "terminal_bench",
+      "models": 21
     },
     {
       "id": "vals-vibe-code-bench",
       "name": "Vibe Code Bench v1.1",
       "org": "Vals.ai",
-      "url": "https://www.vals.ai/_astro/benchmark_view_vibe_code_bench.BNpZMKl6.json",
-      "updated": "2026-10-07",
+      "url": "https://www.vals.ai/_astro/benchmark_view_vibe_code_bench.CKPIW2G5.json",
+      "updated": "2026-10-12",
       "metric": "Accuracy %",
       "category": "coding",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw full table default payload; effort from compute_effort/reasoning_effort columns, mode only from explicit metadata. Table publishes one effort per named row, not a complete sweep. All named variants retained. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified. Refreshed directly from the full raw Astro JSON on 2026-10-08; the board metadata updated date is 2026-10-07. Haiku 5.5 is explicitly max effort. Existing named measurements, fallback-as-failure adjustments, and absent older roster data are preserved for this narrow model rollout. Raw values have full published precision; the model overview may lag the benchmark table (ProofBench overview 84 versus current table 86).",
+      "notes": "Raw full Astro JSON overall task table, fetched October 13; actual metadata update October 12. All exact checkpoint/effort rows retained; effort only from compute_effort/reasoning_effort. Published API cost and latency belong to that exact run. Generic Qwen3.8 Max omitted because current payload does not confirm roster checkpoint 0902. Unknown fallback policy remains null.",
       "scores": {
         "claude-sonnet-5-5": {
           "measurements": [
@@ -1411,13 +2009,13 @@
               "value": 92.392,
               "variant": "anthropic/claude-sonnet-5-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 31.250578,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3672.106,
               "taskTimeBasis": "Vals published latency per test"
@@ -1426,19 +2024,40 @@
           "value": 92.392,
           "variant": "anthropic/claude-sonnet-5-5 [max, default]"
         },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 90.444,
+              "variant": "anthropic/claude-haiku-5-5 [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "OpenHands",
+              "costPerTask": 6.071856,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 2075.723,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 90.444,
+          "variant": "anthropic/claude-haiku-5-5 [max, default]"
+        },
         "claude-opus-5-5": {
           "measurements": [
             {
               "value": 90.294,
               "variant": "anthropic/claude-opus-5-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 57.922811,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 5766.524,
               "taskTimeBasis": "Vals published latency per test"
@@ -1453,13 +2072,13 @@
               "value": 90.263,
               "variant": "anthropic/claude-fable-5-1 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 33.367507,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3459.994,
               "taskTimeBasis": "Vals published latency per test"
@@ -1474,13 +2093,13 @@
               "value": 89.594,
               "variant": "openai/gpt-6-astra [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 38.512323,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2344.127,
               "taskTimeBasis": "Vals published latency per test"
@@ -1489,19 +2108,40 @@
           "value": 89.594,
           "variant": "openai/gpt-6-astra [max, default]"
         },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 88.931,
+              "variant": "openai/gpt-6.1-sol [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "OpenHands",
+              "costPerTask": 6.234794,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 4489.755,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 88.931,
+          "variant": "openai/gpt-6.1-sol [max, default]"
+        },
         "gpt-6-sol": {
           "measurements": [
             {
               "value": 87.824,
               "variant": "openai/gpt-6-sol [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 26.356012,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2336.393,
               "taskTimeBasis": "Vals published latency per test"
@@ -1516,13 +2156,13 @@
               "value": 86.175,
               "variant": "grok/grok-4.7 [xhigh, default]",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "xhigh",
               "costPerTask": 15.82706,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2147.065,
               "taskTimeBasis": "Vals published latency per test"
@@ -1531,19 +2171,40 @@
           "value": 86.175,
           "variant": "grok/grok-4.7 [xhigh, default]"
         },
+        "muse-wonder-full": {
+          "measurements": [
+            {
+              "value": 85.996,
+              "variant": "meta/muse-wonder-full [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "OpenHands",
+              "costPerTask": 2.293448,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 648.336,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 85.996,
+          "variant": "meta/muse-wonder-full [max, default]"
+        },
         "muse-spark-1-3": {
           "measurements": [
             {
               "value": 85.856,
               "variant": "meta/muse_spark_1_3_max [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 2.543084,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 977.668,
               "taskTimeBasis": "Vals published latency per test"
@@ -1552,13 +2213,13 @@
               "value": 82.859,
               "variant": "meta/muse_spark_1_3 [xhigh, default]",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "xhigh",
               "costPerTask": 2.101762,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 773.797,
               "taskTimeBasis": "Vals published latency per test"
@@ -1573,13 +2234,13 @@
               "value": 85.223,
               "variant": "xiaomi/mimo-v2.6-pro [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": null,
               "costPerTask": 1.043846,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3646.574,
               "taskTimeBasis": "Vals published latency per test"
@@ -1590,6 +2251,21 @@
         },
         "kimi-k3": {
           "measurements": [
+            {
+              "value": 84.968,
+              "variant": "kimi/kimi-k3 [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "OpenHands",
+              "costPerTask": 10.007576,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 999.021,
+              "taskTimeBasis": "Vals published latency per test"
+            },
             {
               "value": 84.963,
               "variant": "kimi/kimi-k3 [unspecified, default]",
@@ -1603,26 +2279,15 @@
               "costUpdated": "2026-09-30",
               "costEligible": true,
               "taskTimeSeconds": 5202.941,
-              "taskTimeBasis": "Vals published latency per test"
-            },
-            {
-              "value": 84.968,
-              "variant": "kimi/kimi-k3 [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "harness": "OpenHands",
-              "fallback": null,
-              "costPerTask": 10.007576,
-              "costBasis": "Vals published API USD per test; published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 999.021,
-              "taskTimeBasis": "Vals published latency per test"
+              "taskTimeBasis": "Vals published latency per test",
+              "published": "2026-10-07",
+              "historical": true,
+              "historicalReason": "Previous exact KimiK3 observation published without effort metadata. October12 table publishes max84.968; no owner correction mapping supplied, so historical unspecified effort stays separate.",
+              "rawSource": "https://www.vals.ai/_astro/benchmark_view_vibe_code_bench.BNpZMKl6.json"
             }
           ],
-          "value": 84.963,
-          "variant": "kimi/kimi-k3 [unspecified, default]"
+          "value": 84.968,
+          "variant": "kimi/kimi-k3 [max, default]"
         },
         "deepseek-v4-1-flash": {
           "measurements": [
@@ -1630,13 +2295,13 @@
               "value": 84.739,
               "variant": "deepseek/deepseek-v4.1-flash [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "high",
               "costPerTask": 0.407445,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 928.101,
               "taskTimeBasis": "Vals published latency per test"
@@ -1645,19 +2310,40 @@
           "value": 84.739,
           "variant": "deepseek/deepseek-v4.1-flash [high, default]"
         },
+        "muse-wonder": {
+          "measurements": [
+            {
+              "value": 83.089,
+              "variant": "meta/muse-wonder [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "OpenHands",
+              "costPerTask": 1.802723,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 350.076,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 83.089,
+          "variant": "meta/muse-wonder [max, default]"
+        },
         "deepseek-v4-pro": {
           "measurements": [
             {
               "value": 82.297,
               "variant": "deepseek/deepseek-v4-pro-0813 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 0.356023,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3982.6,
               "taskTimeBasis": "Vals published latency per test"
@@ -1672,13 +2358,13 @@
               "value": 81.649,
               "variant": "openai/gpt-6-luna [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 1.345703,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2219.515,
               "taskTimeBasis": "Vals published latency per test"
@@ -1693,13 +2379,13 @@
               "value": 81.325,
               "variant": "anthropic/claude-sonnet-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 25.38542,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 4001.424,
               "taskTimeBasis": "Vals published latency per test"
@@ -1714,13 +2400,13 @@
               "value": 78.96,
               "variant": "xiaomi/mimo-v2.6-flash [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": null,
               "costPerTask": 0.563041,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3013.012,
               "taskTimeBasis": "Vals published latency per test"
@@ -1735,13 +2421,13 @@
               "value": 78.651,
               "variant": "google/gemini-3.8-flash [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "high",
               "costPerTask": 6.865141,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 519.104,
               "taskTimeBasis": "Vals published latency per test"
@@ -1756,13 +2442,13 @@
               "value": 78.125,
               "variant": "zai/glm-5.3 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "max",
               "costPerTask": 12.450185,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3847.197,
               "taskTimeBasis": "Vals published latency per test"
@@ -1771,61 +2457,19 @@
           "value": 78.125,
           "variant": "zai/glm-5.3 [max, default]"
         },
-        "qwen3-8-max": {
-          "measurements": [
-            {
-              "value": 64.696,
-              "variant": "alibaba/qwen3.8-max [unspecified, default]",
-              "effort": "unspecified",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": "OpenHands",
-              "rawEffort": null,
-              "costPerTask": 8.238852,
-              "costBasis": "Owner published API USD per test on this exact benchmark and fixed harness",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 10135.139,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 64.696,
-          "variant": "alibaba/qwen3.8-max [unspecified, default]"
-        },
-        "minimax-m3": {
-          "measurements": [
-            {
-              "value": 47.566,
-              "variant": "minimax/MiniMax-M3 [unspecified, default]",
-              "effort": "unspecified",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": "OpenHands",
-              "rawEffort": null,
-              "costPerTask": 6.453899,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 5073.23,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 47.566,
-          "variant": "minimax/MiniMax-M3 [unspecified, default]"
-        },
         "gemini-3-1-pro": {
           "measurements": [
             {
               "value": 32.034,
               "variant": "google/gemini-3.1-pro-preview [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "high",
               "costPerTask": 3.825202,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 1211.906,
               "taskTimeBasis": "Vals published latency per test"
@@ -1840,13 +2484,13 @@
               "value": 11.393,
               "variant": "anthropic/claude-haiku-4-5-20251001-thinking [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "thinking",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": null,
               "costPerTask": 1.306474,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 775.882,
               "taskTimeBasis": "Vals published latency per test"
@@ -1861,13 +2505,13 @@
               "value": 2.888,
               "variant": "mistralai/mistral-medium-3.5 [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "rawEffort": "high",
               "costPerTask": 16.735503,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-09-30",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2470.533,
               "taskTimeBasis": "Vals published latency per test"
@@ -1876,63 +2520,43 @@
           "value": 2.888,
           "variant": "mistralai/mistral-medium-3.5 [high, default]"
         },
-        "gpt-6-1-sol": {
-          "value": 88.931,
-          "variant": "openai/gpt-6.1-sol [max, default]",
+        "minimax-m3": {
+          "value": 47.566,
+          "variant": "minimax/MiniMax-M3 [unspecified, default]",
           "measurements": [
             {
-              "value": 88.931,
-              "variant": "openai/gpt-6.1-sol [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
+              "value": 47.566,
+              "variant": "minimax/MiniMax-M3 [unspecified, default]",
+              "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": "OpenHands",
-              "costPerTask": 6.234794,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costPerTask": 6.453899,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 4489.755,
+              "taskTimeSeconds": 5073.23,
               "taskTimeBasis": "Vals published latency per test"
             }
           ]
-        },
-        "claude-haiku-5-5": {
-          "measurements": [
-            {
-              "value": 90.444,
-              "variant": "anthropic/claude-haiku-5-5 [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "harness": "OpenHands",
-              "fallback": null,
-              "costPerTask": 6.071856,
-              "costBasis": "Vals published API USD per test; published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 2075.723,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 90.444,
-          "variant": "anthropic/claude-haiku-5-5 [max, default]"
         }
       },
       "evaluator": "Vals.ai",
-      "costUpdated": "2026-09-30"
+      "family": "vibe_code_bench",
+      "models": 23
     },
     {
       "id": "vals-proofbench",
       "name": "ProofBench v1.1",
       "org": "Vals.ai",
-      "url": "https://www.vals.ai/_astro/benchmark_view_proof_bench.e0grFQIt.json",
-      "updated": "2026-10-07",
+      "url": "https://www.vals.ai/_astro/benchmark_view_proof_bench.i3Hwh8rW.json",
+      "updated": "2026-10-12",
       "metric": "Accuracy %",
       "category": "reasoning",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw full table default payload; effort from compute_effort/reasoning_effort columns, mode only from explicit metadata. Table publishes one effort per named row, not a complete sweep. All named variants retained. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified. Refreshed directly from the full raw Astro JSON on 2026-10-08; the board metadata updated date is 2026-10-07. Haiku 5.5 is explicitly max effort. Existing named measurements, fallback-as-failure adjustments, and absent older roster data are preserved for this narrow model rollout. Raw values have full published precision; the model overview may lag the benchmark table (ProofBench overview 84 versus current table 86).",
+      "notes": "Raw full Astro JSON overall task table, fetched October 13; actual metadata update October 12. All exact checkpoint/effort rows retained; effort only from compute_effort/reasoning_effort. Published API cost and latency belong to that exact run. Generic Qwen3.8 Max omitted because current payload does not confirm roster checkpoint 0902. Unknown fallback policy remains null.",
       "scores": {
         "claude-sonnet-5-5": {
           "measurements": [
@@ -1940,13 +2564,13 @@
               "value": 100.0,
               "variant": "anthropic/claude-sonnet-5-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 0.558327,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 347.583,
               "taskTimeBasis": "Vals published latency per test"
@@ -1961,13 +2585,13 @@
               "value": 100.0,
               "variant": "anthropic/claude-opus-5-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 0.961648,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 351.035,
               "taskTimeBasis": "Vals published latency per test"
@@ -1982,13 +2606,13 @@
               "value": 100.0,
               "variant": "anthropic/claude-fable-5-1 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 2.70347,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 478.303,
               "taskTimeBasis": "Vals published latency per test"
@@ -1997,19 +2621,40 @@
           "value": 100.0,
           "variant": "anthropic/claude-fable-5-1 [max, default]"
         },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 99.0,
+              "variant": "openai/gpt-6.1-sol [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "costPerTask": 0.233057,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 284.697,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 99.0,
+          "variant": "openai/gpt-6.1-sol [max, default]"
+        },
         "gpt-6-astra": {
           "measurements": [
             {
               "value": 99.0,
               "variant": "openai/gpt-6-astra [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 1.71238,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 307.867,
               "taskTimeBasis": "Vals published latency per test"
@@ -2018,19 +2663,61 @@
           "value": 99.0,
           "variant": "openai/gpt-6-astra [max, default]"
         },
+        "muse-wonder-full": {
+          "measurements": [
+            {
+              "value": 94.0,
+              "variant": "meta/muse-wonder-full [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "costPerTask": 0.856208,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 695.558,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 94.0,
+          "variant": "meta/muse-wonder-full [max, default]"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 89.0,
+              "variant": "anthropic/claude-haiku-5-5 [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "costPerTask": 0.173874,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 418.047,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 89.0,
+          "variant": "anthropic/claude-haiku-5-5 [max, default]"
+        },
         "kimi-k3": {
           "measurements": [
             {
               "value": 87.0,
               "variant": "kimi/kimi-k3 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 1.646802,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2070.511,
               "taskTimeBasis": "Vals published latency per test"
@@ -2039,19 +2726,40 @@
           "value": 87.0,
           "variant": "kimi/kimi-k3 [max, default]"
         },
+        "muse-wonder": {
+          "measurements": [
+            {
+              "value": 84.0,
+              "variant": "meta/muse-wonder [max, default]",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "costPerTask": 1.313345,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
+              "costEligible": true,
+              "taskTimeSeconds": 929.053,
+              "taskTimeBasis": "Vals published latency per test"
+            }
+          ],
+          "value": 84.0,
+          "variant": "meta/muse-wonder [max, default]"
+        },
         "gpt-6-sol": {
           "measurements": [
             {
               "value": 83.0,
               "variant": "openai/gpt-6-sol [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 0.476321,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 304.509,
               "taskTimeBasis": "Vals published latency per test"
@@ -2066,13 +2774,13 @@
               "value": 77.0,
               "variant": "anthropic/claude-sonnet-5 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 1.373684,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 898.079,
               "taskTimeBasis": "Vals published latency per test"
@@ -2087,13 +2795,13 @@
               "value": 70.0,
               "variant": "xiaomi/mimo-v2.6-pro [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null,
               "costPerTask": 0.24535,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3693.469,
               "taskTimeBasis": "Vals published latency per test"
@@ -2108,13 +2816,13 @@
               "value": 64.0,
               "variant": "openai/gpt-6-luna [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 0.041637,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 451.481,
               "taskTimeBasis": "Vals published latency per test"
@@ -2129,13 +2837,13 @@
               "value": 63.0,
               "variant": "xiaomi/mimo-v2.6-flash [unspecified, default]",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null,
               "costPerTask": 0.123277,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 3769.808,
               "taskTimeBasis": "Vals published latency per test"
@@ -2150,13 +2858,13 @@
               "value": 58.0,
               "variant": "meta/muse_spark_1_3_max [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 0.479019,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 568.696,
               "taskTimeBasis": "Vals published latency per test"
@@ -2165,13 +2873,13 @@
               "value": 55.0,
               "variant": "meta/muse_spark_1_3 [xhigh, default]",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "xhigh",
               "costPerTask": 0.433712,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 534.06,
               "taskTimeBasis": "Vals published latency per test"
@@ -2180,40 +2888,19 @@
           "value": 58.0,
           "variant": "meta/muse_spark_1_3_max [max, default]"
         },
-        "qwen3-8-max": {
-          "measurements": [
-            {
-              "value": 58.0,
-              "variant": "alibaba/qwen3.8-max [unspecified, default]",
-              "effort": "unspecified",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rawEffort": null,
-              "costPerTask": 1.503984,
-              "costBasis": "Vals published API USD per test; published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 1867.622,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 58.0,
-          "variant": "alibaba/qwen3.8-max [unspecified, default]"
-        },
         "deepseek-v4-1-flash": {
           "measurements": [
             {
               "value": 54.0,
               "variant": "deepseek/deepseek-v4.1-flash [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "high",
               "costPerTask": 0.126437,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 546.595,
               "taskTimeBasis": "Vals published latency per test"
@@ -2228,13 +2915,13 @@
               "value": 50.0,
               "variant": "deepseek/deepseek-v4-pro-0813 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 0.062191,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 732.365,
               "taskTimeBasis": "Vals published latency per test"
@@ -2249,13 +2936,13 @@
               "value": 49.0,
               "variant": "zai/glm-5.3 [max, default]",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max",
               "costPerTask": 2.081538,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 2542.672,
               "taskTimeBasis": "Vals published latency per test"
@@ -2270,13 +2957,13 @@
               "value": 48.0,
               "variant": "google/gemini-3.8-flash [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "high",
               "costPerTask": 0.602872,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 368.648,
               "taskTimeBasis": "Vals published latency per test"
@@ -2291,13 +2978,13 @@
               "value": 26.0,
               "variant": "grok/grok-4.7 [xhigh, default]",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "xhigh",
               "costPerTask": 0.787951,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 767.177,
               "taskTimeBasis": "Vals published latency per test"
@@ -2312,13 +2999,13 @@
               "value": 26.0,
               "variant": "google/gemini-3.1-pro-preview [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "high",
               "costPerTask": 0.784253,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 889.059,
               "taskTimeBasis": "Vals published latency per test"
@@ -2327,105 +3014,64 @@
           "value": 26.0,
           "variant": "google/gemini-3.1-pro-preview [high, default]"
         },
-        "minimax-m3": {
-          "measurements": [
-            {
-              "value": 18.0,
-              "variant": "minimax/MiniMax-M3 [unspecified, default]",
-              "effort": "unspecified",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rawEffort": null,
-              "costPerTask": 0.419224,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 718.66,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 18.0,
-          "variant": "minimax/MiniMax-M3 [unspecified, default]"
-        },
         "mistral-medium-3-5": {
           "measurements": [
             {
-              "value": 9,
+              "value": 9.0,
               "variant": "mistralai/mistral-medium-3.5 [high, default]",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "high",
               "costPerTask": 1.302032,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-09-30",
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
               "taskTimeSeconds": 479.048,
               "taskTimeBasis": "Vals published latency per test"
             }
           ],
-          "value": 9,
+          "value": 9.0,
           "variant": "mistralai/mistral-medium-3.5 [high, default]"
         },
-        "gpt-6-1-sol": {
-          "value": 99.0,
-          "variant": "openai/gpt-6.1-sol [max, default]",
+        "minimax-m3": {
+          "value": 18.0,
+          "variant": "minimax/MiniMax-M3 [unspecified, default]",
           "measurements": [
             {
-              "value": 99.0,
-              "variant": "openai/gpt-6.1-sol [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
+              "value": 18.0,
+              "variant": "minimax/MiniMax-M3 [unspecified, default]",
+              "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "costPerTask": 0.233057,
-              "costBasis": "Vals published API USD per test; none: published evaluated-run cost",
-              "costUpdated": "2026-10-07",
+              "costPerTask": 0.419224,
+              "costBasis": "Vals published API USD per test for this evaluated run",
+              "costUpdated": "2026-10-12",
               "costEligible": true,
-              "taskTimeSeconds": 284.697,
+              "taskTimeSeconds": 718.66,
               "taskTimeBasis": "Vals published latency per test"
             }
           ]
-        },
-        "claude-haiku-5-5": {
-          "measurements": [
-            {
-              "value": 86.0,
-              "variant": "anthropic/claude-haiku-5-5 [max, default]",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "harness": null,
-              "fallback": null,
-              "costPerTask": 0.155656,
-              "costBasis": "Vals published API USD per test; published evaluated-run cost",
-              "costUpdated": "2026-10-07",
-              "costEligible": true,
-              "taskTimeSeconds": 408.787,
-              "taskTimeBasis": "Vals published latency per test"
-            }
-          ],
-          "value": 86.0,
-          "variant": "anthropic/claude-haiku-5-5 [max, default]"
         }
       },
       "evaluator": "Vals.ai",
-      "costUpdated": "2026-09-30"
+      "family": "proof_bench",
+      "models": 22
     },
     {
       "id": "scale-swe-bench-pro-v2-hard",
       "name": "SWE-Bench Pro V2 HARD",
       "org": "Scale AI (SEAL)",
       "url": "https://labs.scale.com/leaderboard/swe_bench_pro_public_v2?tab=hard",
-      "updated": "2026-09-22",
+      "updated": "2026-10-12",
       "metric": "Resolve rate % (HARD split)",
       "category": "coding",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Raw flight variants[hard]; all rows retained. Effort and harness explicitly declared in row names; no structured effort field. Official full/hard split preserved. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Raw official Flight variants table, fetched October13. Updated is latest row createdAt, not fetch-time page SEO dateModified. Model names explicitly declare effort/harness. Full and HARD remain separate. GPT-6.1 Sol appears only on FULL; no HARD score is inferred.",
       "scores": {
         "claude-fable-5-1": {
           "measurements": [
@@ -2433,10 +3079,12 @@
               "value": 92.2,
               "variant": "Fable 5.1 (Claude Code) high",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
-              "rawEffort": "high"
+              "evaluatedAt": "2026-09-22T15:34:45.000Z",
+              "checkpoint": null
             }
           ],
           "value": 92.2,
@@ -2446,31 +3094,18 @@
           "measurements": [
             {
               "value": 90.2,
-              "variant": "GPT-6 Astra (Codex) high",
+              "variant": "GPT-6 Astra (Codex) high ",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Codex",
-              "rawEffort": "high"
+              "evaluatedAt": "2026-09-22T15:35:13.000Z",
+              "checkpoint": null
             }
           ],
           "value": 90.2,
-          "variant": "GPT-6 Astra (Codex) high"
-        },
-        "claude-sonnet-5": {
-          "measurements": [
-            {
-              "value": 88.2,
-              "variant": "Sonnet 5 (Claude Code) xhigh",
-              "effort": "xhigh",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": "Claude Code",
-              "rawEffort": "xhigh"
-            }
-          ],
-          "value": 88.2,
-          "variant": "Sonnet 5 (Claude Code) xhigh"
+          "variant": "GPT-6 Astra (Codex) high "
         },
         "kimi-k3": {
           "measurements": [
@@ -2478,14 +3113,33 @@
               "value": 88.2,
               "variant": "Kimi-K3 (mini-swe-agent) max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "mini-swe-agent",
-              "rawEffort": "max"
+              "evaluatedAt": "2026-09-22T03:41:35.000Z",
+              "checkpoint": null
             }
           ],
           "value": 88.2,
           "variant": "Kimi-K3 (mini-swe-agent) max"
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 88.2,
+              "variant": "Sonnet 5 (Claude Code) xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Claude Code",
+              "evaluatedAt": "2026-09-22T03:41:34.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 88.2,
+          "variant": "Sonnet 5 (Claude Code) xhigh"
         },
         "glm-5-3": {
           "measurements": [
@@ -2493,14 +3147,33 @@
               "value": 84.3,
               "variant": "GLM-5.3 (mini-swe-agent) max",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "mini-swe-agent",
-              "rawEffort": "max"
+              "evaluatedAt": "2026-09-22T03:41:36.000Z",
+              "checkpoint": null
             }
           ],
           "value": 84.3,
           "variant": "GLM-5.3 (mini-swe-agent) max"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 70.59,
+              "variant": "Sonnet 5.5 (mini-swe-agent) xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-12T23:21:32.000Z",
+              "checkpoint": "anthropic/claude-sonnet-5-5"
+            }
+          ],
+          "value": 70.59,
+          "variant": "Sonnet 5.5 (mini-swe-agent) xhigh"
         },
         "gemini-3-8-flash": {
           "measurements": [
@@ -2508,14 +3181,33 @@
               "value": 58.8,
               "variant": "Gemini 3.8 Flash (mini-swe-agent) high",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "mini-swe-agent",
-              "rawEffort": "high"
+              "evaluatedAt": "2026-09-22T03:41:37.000Z",
+              "checkpoint": null
             }
           ],
           "value": 58.8,
           "variant": "Gemini 3.8 Flash (mini-swe-agent) high"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 52.94,
+              "variant": "Haiku 5.5 (mini-swe-agent) high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-08T20:32:34.000Z",
+              "checkpoint": "claude-haiku-5-5"
+            }
+          ],
+          "value": 52.94,
+          "variant": "Haiku 5.5 (mini-swe-agent) high"
         },
         "claude-haiku-4-5": {
           "measurements": [
@@ -2523,17 +3215,21 @@
               "value": 25.5,
               "variant": "Haiku 4.5 (Claude Code) xhigh",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
-              "rawEffort": "xhigh"
+              "evaluatedAt": "2026-09-22T04:26:34.000Z",
+              "checkpoint": null
             }
           ],
           "value": 25.5,
           "variant": "Haiku 4.5 (Claude Code) xhigh"
         }
       },
-      "evaluator": "Scale AI (SEAL)"
+      "evaluator": "Scale AI (SEAL)",
+      "family": "swe-bench-pro-v2",
+      "models": 9
     },
     {
       "id": "scale-mcp-atlas",
@@ -2545,7 +3241,7 @@
       "category": "agents",
       "higherIsBetter": true,
       "confidence": "medium",
-      "notes": "Raw flight rows. Latest published createdAt 2026-09-17 used as row publication date; stale April update blurb retained as limitation. No inferred effort when absent. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Raw official Flight entries, fetched October13. Updated is latest row createdAt, not generated SEO timestamp. Explicit efforts retained; no Muse Wonder or GPT6.1 Sol listed. Architecture-only Qwen label does not establish checkpoint0902 and is excluded.",
       "scores": {
         "claude-fable-5-1": {
           "measurements": [
@@ -2553,10 +3249,11 @@
               "value": 87.2,
               "variant": "Fable 5.1",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "evaluatedAt": "2026-09-04T16:47:29.000Z"
             }
           ],
           "value": 87.2,
@@ -2568,10 +3265,11 @@
               "value": 84.2,
               "variant": "GLM 5.3",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "evaluatedAt": "2026-09-17T14:59:54.000Z"
             }
           ],
           "value": 84.2,
@@ -2583,10 +3281,11 @@
               "value": 82.3,
               "variant": "kimi-k3 (max)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "max"
+              "evaluatedAt": "2026-07-20T17:00:18.000Z"
             }
           ],
           "value": 82.3,
@@ -2598,10 +3297,11 @@
               "value": 78.2,
               "variant": "gemini-3.1-pro-preview (high)",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": "high"
+              "evaluatedAt": "2025-11-24T18:59:59.000Z"
             }
           ],
           "value": 78.2,
@@ -2613,17 +3313,20 @@
               "value": 40.2,
               "variant": "claude-haiku-4-5",
               "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rawEffort": null
+              "evaluatedAt": "2025-09-10T15:38:26.000Z"
             }
           ],
           "value": 40.2,
           "variant": "claude-haiku-4-5"
         }
       },
-      "evaluator": "Scale AI (SEAL)"
+      "evaluator": "Scale AI (SEAL)",
+      "family": "scale-mcp-atlas",
+      "models": 5
     },
     {
       "id": "cais-hle",
@@ -2635,7 +3338,7 @@
       "category": "knowledge",
       "higherIsBetter": true,
       "confidence": "medium",
-      "notes": "Raw official API; all exact roster rows retained. Effort/mode declared in IDs only, no structured columns. No board timestamp; date is fetch date Sep 29. Dataset version undocumented; no Sonnet 5.5. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified.",
+      "notes": "Raw official API; all exact roster rows retained. Effort/mode declared in IDs only, no structured columns. No board timestamp; date is fetch date Sep 29. Dataset version undocumented; no Sonnet 5.5. Every published variant is retained in measurements; compatible summary is not an effort-comparison result. Missing effort/mode metadata stays unspecified. October13 direct owner API fetch returned403; preserved historical September29 values without a freshness claim. Cleaned HLE Diamond is the current exam.",
       "scores": {
         "gemini-3-1-pro": {
           "measurements": [
@@ -2760,7 +3463,180 @@
       },
       "consensus": false,
       "consensusReason": "Legacy dataset differs from the newer cleaned HLE Diamond exam; retained for reference, replaced in the capability score.",
-      "evaluator": "Center for AI Safety"
+      "evaluator": "Center for AI Safety",
+      "family": "hle"
+    },
+    {
+      "id": "scale-swe-bench-pro-v2-full",
+      "name": "SWE-Bench Pro V2 Full",
+      "org": "Scale AI (SEAL)",
+      "url": "https://labs.scale.com/leaderboard/swe_bench_pro_public_v2?tab=full",
+      "updated": "2026-10-12",
+      "metric": "Resolve rate % (FULL split)",
+      "category": "coding",
+      "higherIsBetter": true,
+      "confidence": "high",
+      "notes": "Raw official Flight variants table, fetched October13. Updated is latest row createdAt, not fetch-time page SEO dateModified. Model names explicitly declare effort/harness. Full and HARD remain separate. GPT-6.1 Sol appears only on FULL; no HARD score is inferred.",
+      "scores": {
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 99.1,
+              "variant": "Fable 5.1 (Claude Code) high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Claude Code",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 99.1,
+          "variant": "Fable 5.1 (Claude Code) high"
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 97.7,
+              "variant": "Kimi-K3 (mini-swe-agent) max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 97.7,
+          "variant": "Kimi-K3 (mini-swe-agent) max"
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 96.9,
+              "variant": "GPT-6-Astra (Codex) high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Codex",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 96.9,
+          "variant": "GPT-6-Astra (Codex) high"
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 96.11,
+              "variant": "GPT-6.1-Sol (mini-swe-agent) xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": "gpt-6.1-sol"
+            }
+          ],
+          "value": 96.11,
+          "variant": "GPT-6.1-Sol (mini-swe-agent) xhigh"
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 95.79,
+              "variant": "Sonnet 5.5 (mini-swe-agent) xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-12T23:21:32.000Z",
+              "checkpoint": "anthropic/claude-sonnet-5-5"
+            }
+          ],
+          "value": 95.79,
+          "variant": "Sonnet 5.5 (mini-swe-agent) xhigh"
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 95.6,
+              "variant": "GLM-5.3 (mini-swe-agent) max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 95.6,
+          "variant": "GLM-5.3 (mini-swe-agent) max"
+        },
+        "gemini-3-8-flash": {
+          "measurements": [
+            {
+              "value": 94.86,
+              "variant": "Gemini 3.8 Flash (mini-swe-agent) high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 94.86,
+          "variant": "Gemini 3.8 Flash (mini-swe-agent) high"
+        },
+        "claude-sonnet-5": {
+          "measurements": [
+            {
+              "value": 93.15,
+              "variant": "Sonnet 5 (Claude Code) xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Claude Code",
+              "evaluatedAt": "2026-10-07T01:44:58.000Z",
+              "checkpoint": null
+            }
+          ],
+          "value": 93.15,
+          "variant": "Sonnet 5 (Claude Code) xhigh"
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 87.23,
+              "variant": "Haiku 5.5 (mini-swe-agent) high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "mini-swe-agent",
+              "evaluatedAt": "2026-10-08T20:32:00.000Z",
+              "checkpoint": "claude-haiku-5-5"
+            }
+          ],
+          "value": 87.23,
+          "variant": "Haiku 5.5 (mini-swe-agent) high"
+        }
+      },
+      "evaluator": "Scale AI (SEAL)",
+      "family": "swe-bench-pro-v2",
+      "consensus": false,
+      "consensusReason": "Overlaps the retained HARD split and most current roster scores cluster near the Full ceiling; useful raw reference, no extra score vote.",
+      "models": 9
     }
   ],
   "excludedSources": [
@@ -3361,76 +4237,80 @@
   ],
   "staleOrSkipped": [
     {
-      "board": "vals-terminal-bench-2-1",
-      "reason": "Replaced by current Terminal-Bench 4.0; preserve one current Vals version."
+      "board": "Muse Wonder family / Epoch",
+      "reason": "October13 raw archive and ECI have no Muse Wonder or Full score; no release number copied."
     },
     {
-      "board": "scale-swe-bench-pro-v2-full",
-      "reason": "Six roster entries all 93.15\u201399.10: nearly saturated. Keep the distinct HARD split instead."
+      "board": "Muse Wonder family / Scale SWE and MCP",
+      "reason": "Neither exact version is listed in current raw owner tables."
     },
     {
-      "board": "scale-hle",
-      "reason": "Only four exact roster model versions; below five-model minimum."
+      "board": "Muse Wonder family / ARC2 and ARC3",
+      "reason": "Not listed in current official verified exports."
+    },
+    {
+      "board": "Muse Wonder Full / HLE Diamond",
+      "reason": "No exact Full result published; Wonder high/max results cannot be copied to Full."
+    },
+    {
+      "board": "GPT6.1 Sol / SWE Pro HARD",
+      "reason": "Only FULL96.11 xhigh is published; no HARD measurement."
+    },
+    {
+      "board": "CAIS legacy API",
+      "reason": "October13 API returns403; prior reference data preserved at old date."
+    },
+    {
+      "board": "Epoch GPQA/AIME",
+      "reason": "Saturated; excluded from capability votes."
+    },
+    {
+      "board": "Vals Index and mirrored Epoch ProofBench/HLE/ARC",
+      "reason": "Composite/republished duplicates; retained direct evaluator boards instead."
     },
     {
       "board": "scale-swe-atlas-qna",
-      "reason": "Only four exact roster model versions; base DeepSeek V4 Pro does not establish 0813 equivalence. Sister Atlas boards have similarly narrow coverage."
+      "reason": "Four exact roster models on current owner table; generic DeepSeek V4 Pro does not establish0813. No GPT6.1 Sol or Muse Wonder family."
     },
     {
-      "board": "vals-index",
-      "reason": "Composite of Vals boards; keep individual boards instead."
+      "board": "scale-swe-atlas-refactoring",
+      "reason": "Four exact roster models; below five-model threshold; no requested new versions."
     },
     {
-      "board": "epoch-hle-external",
-      "reason": "Copy of Scale SEAL HLE; avoid double counting."
+      "board": "scale-swe-atlas-test-writing",
+      "reason": "Four exact roster models; below threshold; no requested new versions."
     },
     {
-      "board": "epoch-proofbench-external",
-      "reason": "Copy of Vals ProofBench, which is collected directly."
+      "board": "scale-enigma-eval",
+      "reason": "Only Gemini3.1Pro matches current roster exactly; insufficient coverage."
     },
     {
-      "board": "epoch-gpqa-diamond",
-      "reason": "Saturated test excluded by curation."
+      "board": "scale-rli",
+      "reason": "Four exact roster models; below threshold."
     },
     {
-      "board": "epoch-frontiermath-t4",
-      "reason": "Floor-bound: most models near zero."
+      "board": "scale-multichallenge",
+      "reason": "Current linked owner page returns404."
+    },
+    {
+      "board": "scale-hle-diamond-copy",
+      "reason": "Scale mirror remains older high scores and no requested new versions; use current CAIS+Scale lastexam.ai article, one shared evaluator group."
+    },
+    {
+      "board": "glm-5-3-flash",
+      "reason": "Explicit Flash checkpoint is distinct from roster GLM5.3; excluded everywhere."
+    },
+    {
+      "board": "epoch-frontiermath-t4-legacy",
+      "reason": "Old Tier4 replaced by current Tier4v2; do not reintroduce floor-bound old version."
     },
     {
       "board": "scale-prbench-finance",
-      "reason": "Niche professional domain."
+      "reason": "Niche professional-domain board excluded by skill curation."
     },
     {
       "board": "scale-prbench-legal",
-      "reason": "Niche professional domain."
-    },
-    {
-      "board": "haiku-5-5-epoch-eci",
-      "reason": "2026-10-08 direct eci_scores.csv fetch contains no Claude Haiku 5.5 result. Existing ECI scores preserved."
-    },
-    {
-      "board": "haiku-5-5-epoch-hub",
-      "reason": "2026-10-08 direct benchmark_data.zip contains Haiku 5.5 high/xhigh/max in model_metadata.csv but no Haiku 5.5 score in any score CSV, including FrontierMath Tiers 1-3 v2/Tier4 v2, SimpleQA Verified, APEX-Agents, Chess, Mystery, and Furniture. Metadata is not a score."
-    },
-    {
-      "board": "haiku-5-5-scale-swe-pro-v2-hard",
-      "reason": "2026-10-08 direct Scale raw Flight page has Haiku 4.5 only; no Haiku 5.5 exact version. Existing HARD/Full rows preserved."
-    },
-    {
-      "board": "haiku-5-5-scale-mcp-atlas",
-      "reason": "2026-10-08 direct Scale raw Flight page has no Haiku 5.5 exact version. Existing MCP Atlas rows preserved."
-    },
-    {
-      "board": "haiku-5-5-hle-diamond",
-      "reason": "2026-10-08 direct lastexam.ai/blog/hle-diamond fetch contains no Haiku 5.5. Existing current HLE Diamond data in other source files remains authoritative."
-    },
-    {
-      "board": "haiku-5-5-arc2",
-      "reason": "2026-10-08 direct arcprize.org/leaderboard page contains no Haiku 5.5 exact-version run. Existing verified ARC2 evidence preserved."
-    },
-    {
-      "board": "haiku-5-5-cais-hle",
-      "reason": "Current dashboard.safe.ai/api/models returns HTTP403 on 2026-10-08, including escalated network fetch. No new CAIS score inferred; preserve existing data. Cleaned HLE Diamond supersedes legacy HLE for votes."
+      "reason": "Niche professional-domain board excluded by skill curation."
     }
   ],
   "collectionErrorsCorrected": [
@@ -3442,16 +4322,25 @@
   ],
   "excluded": {
     "vals-terminal-bench-2-1": "Replaced by current Terminal-Bench 4.0; preserve one current Vals version.",
-    "scale-swe-bench-pro-v2-full": "Six roster entries all 93.15\u201399.10: nearly saturated. Keep the distinct HARD split instead.",
+    "scale-swe-bench-pro-v2-full": "Retained reference-only: overlapping HARD split and high-end clustering. GPT6.1 Sol Full score must never be used as HARD.",
     "scale-hle": "Only four exact roster model versions; below five-model minimum.",
-    "scale-swe-atlas-qna": "Only four exact roster model versions; base DeepSeek V4 Pro does not establish 0813 equivalence. Sister Atlas boards have similarly narrow coverage.",
+    "scale-swe-atlas-qna": "Four exact roster models on current owner table; generic DeepSeek V4 Pro does not establish0813. No GPT6.1 Sol or Muse Wonder family.",
     "vals-index": "Composite of Vals boards; keep individual boards instead.",
     "epoch-hle-external": "Copy of Scale SEAL HLE; avoid double counting.",
     "epoch-proofbench-external": "Copy of Vals ProofBench, which is collected directly.",
     "epoch-gpqa-diamond": "Saturated test excluded by curation.",
     "epoch-frontiermath-t4": "Floor-bound: most models near zero.",
-    "scale-prbench-finance": "Niche professional domain.",
-    "scale-prbench-legal": "Niche professional domain."
+    "scale-prbench-finance": "Niche professional-domain board excluded by skill curation.",
+    "scale-prbench-legal": "Niche professional-domain board excluded by skill curation.",
+    "vals-qwen3-8-max-ambiguous-checkpoint": "Current Vals alias has no0902 checkpoint metadata; cannot establish exact roster version, so excluded from refreshed Vals sources.",
+    "scale-swe-atlas-refactoring": "Four exact roster models; below five-model threshold; no requested new versions.",
+    "scale-swe-atlas-test-writing": "Four exact roster models; below threshold; no requested new versions.",
+    "scale-enigma-eval": "Only Gemini3.1Pro matches current roster exactly; insufficient coverage.",
+    "scale-rli": "Four exact roster models; below threshold.",
+    "scale-multichallenge": "Current linked owner page returns404.",
+    "scale-hle-diamond-copy": "Scale mirror remains older high scores and no requested new versions; use current CAIS+Scale lastexam.ai article, one shared evaluator group.",
+    "glm-5-3-flash": "Explicit Flash checkpoint is distinct from roster GLM5.3; excluded everywhere.",
+    "epoch-frontiermath-t4-legacy": "Old Tier4 replaced by current Tier4v2; do not reintroduce floor-bound old version."
   },
   "collectionRollout": {
     "model": "claude-haiku-5-5",
@@ -3463,5 +4352,13 @@
     ],
     "sourcePolicy": "Published independent evidence only; no paid runs or vendor launch scores.",
     "haikuMeasurements": 3
-  }
+  },
+  "collectionNotes": [
+    "Only evaluator-published evidence, no paid runs or vendor launch scores.",
+    "This output includes existing additional-independent sources; merge by ID into its existing file rather than duplicating across source files.",
+    "MCP effort must only be parsed from explicit annotation; family words Max and Medium are never effort.",
+    "APEX evaluator corrected to Mercor because Epoch republishes its run.",
+    "No new Meta score from Epoch/Scale MCP/ARC; Vals and HLE have exact Muse evidence."
+  ],
+  "collected": "2026-10-13"
 }

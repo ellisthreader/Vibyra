@@ -5,285 +5,575 @@
       "name": "Terminal-Bench 4.0",
       "org": "Stanford / Laude Institute (Harbor)",
       "url": "https://www.tbench.ai/leaderboard",
-      "updated": "2026-09-21",
+      "updated": "2026-10-06",
       "metric": "% tasks resolved (resolution rate, agent+model)",
       "category": "agents",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Fresh fetch 2026-09-29. Official RSC JSON has 27 rows; all 14 exact-roster effort/harness rows preserved across 6 models. Board updated_at supplies actual date. No Sonnet 5.5 at any effort: Sonnet 5 max is a different model. No source-declared thinking mode or checkpoint-fallback policy, so those fields remain unspecified/null. Summary value/variant exists only for legacy compatibility; effort-aware analysis must use measurements.",
+      "evaluator": "Stanford / Laude Institute (Harbor)",
+      "family": "terminal-bench",
+      "consensus": false,
+      "consensusReason": "Official board includes agent-team submissions; uniform independent evaluation is not established. Independently run Vals Terminal-Bench remains eligible.",
       "scores": {
+        "claude-opus-5-5": {
+          "value": 64.85,
+          "variant": "Opus 5.5 (max) + Claude Code, 2026-09-22",
+          "measurements": [
+            {
+              "value": 64.85,
+              "variant": "Opus 5.5 (max) + Claude Code, 2026-09-22",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Claude Code",
+              "rowId": "7b805dbb-e77a-4d0a-892e-165f922f786c",
+              "published": "2026-09-22",
+              "ownerReportedRunDate": "2026-09-22",
+              "submissionCreatedAt": "2026-10-06T06:44:27.436479+00:00",
+              "submissionUpdatedAt": "2026-10-06T17:56:36.322737+00:00",
+              "modelUrl": "https://www.anthropic.com/claude-opus-5-5",
+              "trials": 330,
+              "costPerTask": 14.298939393939392,
+              "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
+              "costUpdated": "2026-10-13",
+              "costEligible": true
+            }
+          ]
+        },
+        "claude-sonnet-5-5": {
+          "value": 61.82,
+          "variant": "Sonnet 5.5 (max) + Claude Code, 2026-09-28",
+          "measurements": [
+            {
+              "value": 61.82,
+              "variant": "Sonnet 5.5 (max) + Claude Code, 2026-09-28",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Claude Code",
+              "rowId": "723c6609-fe18-46d9-a1a3-dd4b6b0e0d00",
+              "published": "2026-09-28",
+              "ownerReportedRunDate": "2026-09-28",
+              "submissionCreatedAt": "2026-10-06T06:40:48.939078+00:00",
+              "submissionUpdatedAt": "2026-10-06T17:46:38.322523+00:00",
+              "modelUrl": "https://www.anthropic.com/claude-sonnet-5-5",
+              "trials": 330,
+              "costPerTask": 22.223151515151518,
+              "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
+              "costUpdated": "2026-10-13",
+              "costEligible": true
+            }
+          ]
+        },
         "gpt-6-astra": {
+          "value": 58.18,
+          "variant": "GPT-6 Astra (max) + Codex, 2026-09-03",
           "measurements": [
             {
               "value": 58.18,
               "variant": "GPT-6 Astra (max) + Codex, 2026-09-03",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Codex",
               "rowId": "5c537be4-7fc3-449b-8bfc-ceb9061c2535",
               "published": "2026-09-03",
+              "ownerReportedRunDate": "2026-09-03",
+              "submissionCreatedAt": "2026-09-03T20:53:40.128995+00:00",
+              "submissionUpdatedAt": "2026-09-10T21:58:00.001022+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "trials": 330,
               "costPerTask": 9.900545454545455,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 57.88,
               "variant": "GPT-6 Astra (xhigh) + Codex, 2026-09-03",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Codex",
               "rowId": "16db8ad5-84aa-4588-b660-1ce68c0d45e2",
               "published": "2026-09-03",
+              "ownerReportedRunDate": "2026-09-03",
+              "submissionCreatedAt": "2026-09-03T20:53:40.128995+00:00",
+              "submissionUpdatedAt": "2026-09-10T21:57:57.437008+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "trials": 330,
               "costPerTask": 7.122757575757577,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 57.88,
               "variant": "GPT-6 Astra (high) + Codex, 2026-09-03",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Codex",
               "rowId": "3475050c-bf5e-4261-a3f6-0af5350af13f",
               "published": "2026-09-03",
+              "ownerReportedRunDate": "2026-09-03",
+              "submissionCreatedAt": "2026-09-03T20:53:40.128995+00:00",
+              "submissionUpdatedAt": "2026-09-10T21:57:54.867871+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "trials": 330,
               "costPerTask": 6.8770303030303035,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 54.24,
               "variant": "GPT-6 Astra (medium) + Codex, 2026-09-03",
               "effort": "medium",
+              "rawEffort": "medium",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Codex",
               "rowId": "f3c3d5a6-6424-4acb-bfcc-615c3f79f6dd",
               "published": "2026-09-03",
+              "ownerReportedRunDate": "2026-09-03",
+              "submissionCreatedAt": "2026-09-03T20:53:40.128995+00:00",
+              "submissionUpdatedAt": "2026-09-10T21:57:52.562258+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "trials": 330,
               "costPerTask": 5.802424242424243,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 50.61,
               "variant": "GPT-6 Astra (low) + Codex, 2026-09-03",
               "effort": "low",
+              "rawEffort": "low",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Codex",
               "rowId": "b3ad58f3-b311-4d4d-875b-3158cf0309d6",
               "published": "2026-09-03",
+              "ownerReportedRunDate": "2026-09-03",
+              "submissionCreatedAt": "2026-09-03T20:53:40.128995+00:00",
+              "submissionUpdatedAt": "2026-09-10T21:57:49.894535+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+              "trials": 330,
               "costPerTask": 4.719090909090909,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             }
-          ],
+          ]
+        },
+        "gpt-6-1-sol": {
           "value": 58.18,
-          "variant": "GPT-6 Astra (max) + Codex, 2026-09-03"
+          "variant": "GPT-6.1 Sol (max) + Codex, 2026-09-29",
+          "measurements": [
+            {
+              "value": 58.18,
+              "variant": "GPT-6.1 Sol (max) + Codex, 2026-09-29",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Codex",
+              "rowId": "79aafc20-6776-4411-a5a5-0640562496d0",
+              "published": "2026-09-29",
+              "ownerReportedRunDate": "2026-09-29",
+              "submissionCreatedAt": "2026-10-06T06:44:11.170456+00:00",
+              "submissionUpdatedAt": "2026-10-06T17:56:38.691746+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+              "trials": 330,
+              "costPerTask": 1.921939393939394,
+              "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
+              "costUpdated": "2026-10-13",
+              "costEligible": true
+            }
+          ]
         },
         "claude-fable-5-1": {
+          "value": 57.88,
+          "variant": "Fable 5.1 (max) + Claude Code, 2026-09-01",
           "measurements": [
             {
               "value": 57.88,
               "variant": "Fable 5.1 (max) + Claude Code, 2026-09-01",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "c741608e-c94e-417d-b7a8-e67111a0c887",
               "published": "2026-09-01",
+              "ownerReportedRunDate": "2026-09-01",
+              "submissionCreatedAt": "2026-09-03T01:51:14.437314+00:00",
+              "submissionUpdatedAt": "2026-09-03T02:56:08.149542+00:00",
+              "modelUrl": "https://docs.anthropic.com/en/docs/about-claude/models/all-models",
+              "trials": 330,
               "costPerTask": 18.919696969696968,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 57.88,
               "variant": "Fable 5.1 (xhigh) + Claude Code, 2026-09-01",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "9e1c5e11-748f-4f2e-911a-070a396d5bf8",
               "published": "2026-09-01",
+              "ownerReportedRunDate": "2026-09-01",
+              "submissionCreatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "submissionUpdatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "modelUrl": "https://docs.anthropic.com/en/docs/about-claude/models/all-models",
+              "trials": 330,
               "costPerTask": 14.763757575757575,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 54.55,
               "variant": "Fable 5.1 (high) + Claude Code, 2026-09-01",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "4643b23c-53e8-47ae-a3bd-9abc900e9588",
               "published": "2026-09-01",
+              "ownerReportedRunDate": "2026-09-01",
+              "submissionCreatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "submissionUpdatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "modelUrl": "https://docs.anthropic.com/en/docs/about-claude/models/all-models",
+              "trials": 330,
               "costPerTask": 12.07690909090909,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 53.94,
               "variant": "Fable 5.1 (medium) + Claude Code, 2026-09-01",
               "effort": "medium",
+              "rawEffort": "medium",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "83e6bf7e-aeb4-4116-9f30-ca8de96603fb",
               "published": "2026-09-01",
+              "ownerReportedRunDate": "2026-09-01",
+              "submissionCreatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "submissionUpdatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "modelUrl": "https://docs.anthropic.com/en/docs/about-claude/models/all-models",
+              "trials": 330,
               "costPerTask": 8.584545454545454,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             },
             {
               "value": 43.33,
               "variant": "Fable 5.1 (low) + Claude Code, 2026-09-01",
               "effort": "low",
+              "rawEffort": "low",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "e18d02ab-0973-4d86-872f-a353c8a7f344",
               "published": "2026-09-01",
+              "ownerReportedRunDate": "2026-09-01",
+              "submissionCreatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "submissionUpdatedAt": "2026-09-17T23:52:40.302826+00:00",
+              "modelUrl": "https://docs.anthropic.com/en/docs/about-claude/models/all-models",
+              "trials": 330,
               "costPerTask": 7.147636363636363,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             }
-          ],
-          "value": 57.88,
-          "variant": "Fable 5.1 (max) + Claude Code, 2026-09-01"
+          ]
+        },
+        "gpt-6-sol": {
+          "value": 49.39,
+          "variant": "GPT-6 Sol (max) + Codex, 2026-09-22",
+          "measurements": [
+            {
+              "value": 49.39,
+              "variant": "GPT-6 Sol (max) + Codex, 2026-09-22",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Codex",
+              "rowId": "a29d2361-9d5b-4a95-a56d-707070bd6c88",
+              "published": "2026-09-22",
+              "ownerReportedRunDate": "2026-09-22",
+              "submissionCreatedAt": "2026-10-06T06:54:27.975039+00:00",
+              "submissionUpdatedAt": "2026-10-06T17:56:40.82402+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-sol",
+              "trials": 330,
+              "costPerTask": 4.397939393939394,
+              "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
+              "costUpdated": "2026-10-13",
+              "costEligible": true
+            }
+          ]
         },
         "glm-5-3": {
+          "value": 41.82,
+          "variant": "GLM-5.3 (max) + Claude Code, 2026-08-14",
           "measurements": [
             {
               "value": 41.82,
               "variant": "GLM-5.3 (max) + Claude Code, 2026-08-14",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "d72e8775-f4f1-4313-99e7-35b1cb499f24",
               "published": "2026-08-14",
+              "ownerReportedRunDate": "2026-08-14",
+              "submissionCreatedAt": "2026-08-27T18:30:27.559933+00:00",
+              "submissionUpdatedAt": "2026-09-03T00:08:03.780431+00:00",
+              "modelUrl": "https://docs.z.ai/guides/llm/glm-5.3",
+              "trials": 330,
               "costPerTask": 8.265545454545455,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             }
-          ],
-          "value": 41.82,
-          "variant": "GLM-5.3 (max) + Claude Code, 2026-08-14"
+          ]
         },
         "grok-4-7": {
+          "value": 37.58,
+          "variant": "Grok 4.7 (xhigh) + Grok Build, 2026-09-21",
           "measurements": [
             {
               "value": 37.58,
               "variant": "Grok 4.7 (xhigh) + Grok Build, 2026-09-21",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Grok Build",
               "rowId": "84b39f56-fe3c-46c3-919f-3b67b73f9b49",
               "published": "2026-09-21",
+              "ownerReportedRunDate": "2026-09-21",
+              "submissionCreatedAt": "2026-09-21T21:28:10.802412+00:00",
+              "submissionUpdatedAt": "2026-09-21T21:28:10.802412+00:00",
+              "modelUrl": "https://docs.x.ai/developers/models/grok-4.7",
+              "trials": 330,
               "costPerTask": 11.161476200000001,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             }
-          ],
-          "value": 37.58,
-          "variant": "Grok 4.7 (xhigh) + Grok Build, 2026-09-21"
+          ]
+        },
+        "qwen3-8-max": {
+          "value": 26.97,
+          "variant": "Qwen3.8-Max-0902 (max) + Claude Code, 2026-09-02",
+          "measurements": [
+            {
+              "value": 26.97,
+              "variant": "Qwen3.8-Max-0902 (max) + Claude Code, 2026-09-02",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Claude Code",
+              "rowId": "1f7ed2b4-3a4e-41d9-a1e1-0d9dcdc3667a",
+              "published": "2026-09-02",
+              "ownerReportedRunDate": "2026-09-02",
+              "submissionCreatedAt": "2026-10-06T23:15:23.253274+00:00",
+              "submissionUpdatedAt": "2026-10-06T23:15:23.253274+00:00",
+              "modelUrl": "https://www.alibabacloud.com/en/notice/model_studio_update_notice_for_qwen38max_models_863",
+              "trials": 330,
+              "costPerTask": 14.04748484848485,
+              "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
+              "costUpdated": "2026-10-13",
+              "costEligible": true
+            }
+          ]
         },
         "gemini-3-8-flash": {
+          "value": 19.09,
+          "variant": "Gemini 3.8 Flash (high) + mini-SWE-agent, 2026-09-02",
           "measurements": [
             {
               "value": 19.09,
               "variant": "Gemini 3.8 Flash (high) + mini-SWE-agent, 2026-09-02",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "mini-SWE-agent",
               "rowId": "06850434-507d-4dbd-b74a-09d52519ee35",
               "published": "2026-09-02",
+              "ownerReportedRunDate": "2026-09-02",
+              "submissionCreatedAt": "2026-09-03T02:56:12.472078+00:00",
+              "submissionUpdatedAt": "2026-09-03T18:03:18.272136+00:00",
+              "modelUrl": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash",
+              "trials": 330,
               "costPerTask": 5.541727272727273,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             }
-          ],
-          "value": 19.09,
-          "variant": "Gemini 3.8 Flash (high) + mini-SWE-agent, 2026-09-02"
+          ]
+        },
+        "gpt-6-luna": {
+          "value": 16.36,
+          "variant": "GPT-6 Luna (max) + Codex, 2026-09-22",
+          "measurements": [
+            {
+              "value": 16.36,
+              "variant": "GPT-6 Luna (max) + Codex, 2026-09-22",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Codex",
+              "rowId": "5bd8ac99-7353-4210-bdc5-153029e660d5",
+              "published": "2026-09-22",
+              "ownerReportedRunDate": "2026-09-22",
+              "submissionCreatedAt": "2026-10-06T06:58:36.496276+00:00",
+              "submissionUpdatedAt": "2026-10-06T17:56:42.977045+00:00",
+              "modelUrl": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+              "trials": 330,
+              "costPerTask": 0.2186060606060606,
+              "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
+              "costUpdated": "2026-10-13",
+              "costEligible": true
+            }
+          ]
+        },
+        "muse-spark-1-3": {
+          "value": 14.55,
+          "variant": "Muse Spark 1.3 (xhigh) + Muse Code, 2026-09-02",
+          "measurements": [
+            {
+              "value": 14.55,
+              "variant": "Muse Spark 1.3 (xhigh) + Muse Code, 2026-09-02",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "Muse Code",
+              "rowId": "c76c9ec8-b770-41ad-b0d2-e64db28bd478",
+              "published": "2026-09-02",
+              "ownerReportedRunDate": "2026-09-02",
+              "submissionCreatedAt": "2026-10-06T23:20:25.572485+00:00",
+              "submissionUpdatedAt": "2026-10-06T23:20:25.572485+00:00",
+              "modelUrl": "https://ai.meta.com/tools/muse/",
+              "trials": 330,
+              "costEligible": false,
+              "costUpdated": "2026-10-13",
+              "costReportedTotalUsd": 0,
+              "costUnavailableReason": "Owner-submitted total_cost_usd is zero or unavailable. This does not establish a comparable paid cost per task; excluded from cost/value comparisons without estimating a replacement."
+            }
+          ]
         },
         "claude-sonnet-5": {
+          "value": 12.42,
+          "variant": "Sonnet 5 (max) + Claude Code, 2026-06-30",
           "measurements": [
             {
               "value": 12.42,
               "variant": "Sonnet 5 (max) + Claude Code, 2026-06-30",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "Claude Code",
               "rowId": "8180b9e4-4990-43d0-b906-cd8b43adaaa2",
               "published": "2026-06-30",
+              "ownerReportedRunDate": "2026-06-30",
+              "submissionCreatedAt": "2026-08-27T18:30:27.559933+00:00",
+              "submissionUpdatedAt": "2026-09-03T00:09:50.318045+00:00",
+              "modelUrl": "https://www.anthropic.com/news/claude-sonnet-5",
+              "trials": 330,
               "costPerTask": 29.102606060606064,
               "costBasis": "Owner-submitted total_cost_usd / published n_trials; no inference-token pricing recomputation",
-              "costUpdated": "2026-09-30",
+              "costUpdated": "2026-10-13",
               "costEligible": true
             }
-          ],
-          "value": 12.42,
-          "variant": "Sonnet 5 (max) + Claude Code, 2026-06-30"
+          ]
         }
       },
-      "consensus": false,
-      "consensusReason": "Official board includes agent-team submissions; uniform independent evaluation is not established. Independently run Vals Terminal-Bench remains eligible.",
-      "evaluator": "Stanford / Laude Institute (Harbor)",
-      "costUpdated": "2026-09-30"
+      "costUpdated": "2026-10-13",
+      "notes": "Fresh raw React Flight fetch 2026-10-13; board updated_at gives 2026-10-06. Preserves all 21 exact-roster effort/harness runs across 13 models out of 35 displayed submissions. GPT-6.1 Sol max is 58.18 with Codex; owner metadata date 2026-09-29, submission created/updated 2026-10-06. Added newer exact submissions for Opus 5.5, Sonnet 5.5, GPT-6 Sol/Luna, Muse Spark 1.3 and Qwen3.8-Max-0902 missing from the prior September29 source snapshot. No Muse Wonder/Full or Haiku5.5. Mixed vendor/agent-team submissions are reference-only. No source-declared mode or older-checkpoint fallback policy: unspecified/null is intentional. Metadata dates are owner-reported run dates, not fetch dates. Summary value/variant is compatibility only; measurements are authoritative."
     },
     {
       "id": "matharena-arxivmath",
       "name": "MathArena ArXivMath (08/2026 round)",
       "org": "MathArena (ETH Zurich SRI Lab)",
       "url": "https://matharena.ai/competition_tables/arxiv--august",
-      "updated": "2026-09-24",
+      "updated": "2026-09-30",
       "metric": "% accuracy on the August 2026 ArXivMath questions",
       "category": "reasoning",
       "higherIsBetter": true,
       "confidence": "high",
-      "notes": "Fresh fetch 2026-09-29 of latest August ArXivMath round. All 11 published rows across 9 exact-roster models preserved, including Astra max/low and Fable high/low. Every model detail page was fetched for exact reasoning_effort, thinking type, harness and version; labels alone omit Muse max, Kimi max, Gemini high. Kimi max comes from explicit config, not from its Think name. September 24 homepage announcement gives board update date. MathArena Qwen3.8-Max is August 2 checkpoint, not roster September 2 checkpoint; omitted. Fable max model page has May/June results but no August run. No Sonnet 5.5 results. Most selected variants carry released-after-competition warnings (all except Kimi); this is chronology, not demonstrated training contamination. Provider routing allow_fallbacks:false does not prove absence of an older-checkpoint harness fallback, so fallback remains null. Legacy summary fields must not select an effort for effort-aware analysis. Do not count overall or older monthly rounds again.",
+      "evaluator": "MathArena (ETH Zurich SRI Lab)",
+      "family": "matharena-arxivmath",
       "scores": {
+        "gpt-6-1-sol": {
+          "value": 96.49,
+          "variant": "GPT-6.1 Sol (max)",
+          "measurements": [
+            {
+              "value": 96.49,
+              "variant": "GPT-6.1 Sol (max)",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": "codex 0.159.0",
+              "metadataUrl": "https://matharena.ai/models/openai_gpt_61_sol",
+              "contaminationWarning": true,
+              "published": "2026-09-30"
+            }
+          ]
+        },
         "gpt-6-sol": {
+          "value": 92.98,
+          "variant": "GPT-6 Sol (max)",
           "measurements": [
             {
               "value": 92.98,
               "variant": "GPT-6 Sol (max)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "codex 0.153.3",
               "metadataUrl": "https://matharena.ai/models/openai_gpt_6_sol",
               "contaminationWarning": true
             }
-          ],
-          "value": 92.98,
-          "variant": "GPT-6 Sol (max)"
+          ]
         },
         "gpt-6-astra": {
+          "value": 88.6,
+          "variant": "GPT-6 Astra (max)",
           "measurements": [
             {
               "value": 88.6,
               "variant": "GPT-6 Astra (max)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "codex 0.153.3",
@@ -294,22 +584,24 @@
               "value": 85.09,
               "variant": "GPT-6 Astra (low)",
               "effort": "low",
+              "rawEffort": "low",
               "mode": "unspecified",
               "fallback": null,
               "harness": "codex 0.153.3",
               "metadataUrl": "https://matharena.ai/models/openai_gpt_6_astra_low",
               "contaminationWarning": true
             }
-          ],
-          "value": 88.6,
-          "variant": "GPT-6 Astra (max)"
+          ]
         },
         "claude-fable-5-1": {
+          "value": 87.72,
+          "variant": "Claude-Fable-5.1 (high)",
           "measurements": [
             {
               "value": 87.72,
               "variant": "Claude-Fable-5.1 (high)",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "adaptive",
               "fallback": null,
               "harness": "claude 2.1.267",
@@ -320,461 +612,432 @@
               "value": 78.95,
               "variant": "Claude-Fable-5.1 (low)",
               "effort": "low",
+              "rawEffort": "low",
               "mode": "unspecified",
               "fallback": null,
               "harness": "claude 2.1.267",
               "metadataUrl": "https://matharena.ai/models/anthropic_fable_51_low",
               "contaminationWarning": true
             }
-          ],
-          "value": 87.72,
-          "variant": "Claude-Fable-5.1 (high)"
+          ]
         },
         "claude-opus-5-5": {
+          "value": 85.96,
+          "variant": "Claude-Opus-5.5 (high)",
           "measurements": [
             {
               "value": 85.96,
               "variant": "Claude-Opus-5.5 (high)",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "claude 2.1.280",
               "metadataUrl": "https://matharena.ai/models/anthropic_opus_55_high",
               "contaminationWarning": true
             }
-          ],
-          "value": 85.96,
-          "variant": "Claude-Opus-5.5 (high)"
+          ]
         },
         "grok-4-7": {
+          "value": 46.49,
+          "variant": "Grok 4.7 (xhigh)",
           "measurements": [
             {
               "value": 46.49,
               "variant": "Grok 4.7 (xhigh)",
               "effort": "xhigh",
+              "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": "grok 1.0.40",
               "metadataUrl": "https://matharena.ai/models/xai_grok_47",
               "contaminationWarning": true
             }
-          ],
-          "value": 46.49,
-          "variant": "Grok 4.7 (xhigh)"
+          ]
         },
         "muse-spark-1-3": {
+          "value": 45.61,
+          "variant": "Muse Spark 1.3",
           "measurements": [
             {
               "value": 45.61,
               "variant": "Muse Spark 1.3",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "muse 1.0.3-R2198.1",
               "metadataUrl": "https://matharena.ai/models/meta_muse_spark_13",
               "contaminationWarning": true
             }
-          ],
-          "value": 45.61,
-          "variant": "Muse Spark 1.3"
+          ]
         },
         "deepseek-v4-1-flash": {
+          "value": 43.86,
+          "variant": "DeepSeek-V4.1-Flash (Max)",
           "measurements": [
             {
               "value": 43.86,
               "variant": "DeepSeek-V4.1-Flash (Max)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": "deepcode 0.3.1",
               "metadataUrl": "https://matharena.ai/models/deepseek_deepseek_v41_flash",
               "contaminationWarning": true
             }
-          ],
-          "value": 43.86,
-          "variant": "DeepSeek-V4.1-Flash (Max)"
+          ]
         },
         "gemini-3-8-flash": {
+          "value": 40.35,
+          "variant": "Gemini 3.8 Flash",
           "measurements": [
             {
               "value": 40.35,
               "variant": "Gemini 3.8 Flash",
               "effort": "high",
+              "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": "gravity 1.1.26",
               "metadataUrl": "https://matharena.ai/models/gemini_gemini_38_flash",
               "contaminationWarning": true
             }
-          ],
-          "value": 40.35,
-          "variant": "Gemini 3.8 Flash"
+          ]
         },
         "kimi-k3": {
+          "value": 38.6,
+          "variant": "Kimi K3 (Think)",
           "measurements": [
             {
               "value": 38.6,
               "variant": "Kimi K3 (Think)",
               "effort": "max",
+              "rawEffort": "max",
               "mode": "thinking",
               "fallback": null,
               "harness": "kimi 0.43.1",
               "metadataUrl": "https://matharena.ai/models/moonshot_k3",
               "contaminationWarning": false
             }
-          ],
-          "value": 38.6,
-          "variant": "Kimi K3 (Think)"
+          ]
         }
       },
-      "evaluator": "MathArena (ETH Zurich SRI Lab)"
+      "notes": "Fresh 2026-10-13 owner table JSON and all 13 model-detail pages. Homepage still selects August2026 as latest ArXivMath round. Board update 2026-09-30 is the explicit homepage announcement of GPT-6.1 Sol max results (model date 2026-09-29), not the fetch date; no later score-update date shown. 12 exact runs across 10 roster models; GPT-6.1 Sol max=96.49%, codex0.159.0, config reasoning_effort=max. All other rows rechecked; effort comes from config, including Muse/Kimi max and Gemini high. Provider routing allow_fallbacks:false does not establish absence of an older-checkpoint harness fallback, so fallback remains null. Most variants carry released-after-competition warnings (all except Kimi); chronology warning is not proof of contamination. Qwen3.8-Max is August2 checkpoint, not roster0902; omitted. No Muse Wonder/Full, Sonnet5.5 or Haiku5.5. Do not count aggregate or older rounds again."
     }
   ],
   "staleOrSkipped": [
     {
       "board": "SWE-bench Verified",
       "url": "https://www.swebench.com/",
-      "lastEntry": "2026-02-26",
-      "reason": "Only one exact roster model, Claude Haiku 4.5. Also excluded under curation for contamination and faulty-test concerns: OpenAI stopped reporting Verified on 2026-02-23 (https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/). This does not imply the SWE-bench maintainers removed the board."
+      "checked": "2026-10-13",
+      "reason": "Fresh raw embedded leaderboard JSON unchanged from September29. No GPT-6.1 Sol or Muse Wonder/Full. Only Claude Haiku4.5 exact roster coverage. Also excluded for contamination/faulty-test concerns: OpenAI withdrew Verified reporting February23,2026; this does not imply maintainers retired the board.",
+      "lastEntry": "2026-02-26"
     },
     {
       "board": "SWE-bench Multilingual / Lite / Full / Multimodal",
       "url": "https://www.swebench.com/",
-      "lastEntry": "2026-02-20 (Multilingual); 2025-09-11 (Lite); 2025-12-19 (Full/Test); 2025-11-17 (Multimodal)",
-      "reason": "Official embedded leaderboard JSON refreshed on fetch. Only Claude Haiku 4.5 matches roster on Multilingual; other boards have zero roster models. Stale and all below five-model coverage."
+      "checked": "2026-10-13",
+      "reason": "Fresh raw embedded JSON; no GPT-6.1 Sol or Muse Wonder/Full. Only Claude Haiku4.5 matches roster on Multilingual; other boards have no exact roster coverage. All below five-model threshold."
     },
     {
       "board": "Aider polyglot",
       "url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml",
-      "lastEntry": "2025-10-03",
-      "reason": "Raw YAML has no 2026 dated entries and no exact roster model; unofficial third-party estimates excluded."
+      "checked": "2026-10-13",
+      "reason": "Fresh raw YAML unchanged from September29; no 2026 dated entries and no exact current roster model. GPT-6.1 Sol/Muse Wonder absent; third-party estimates not substituted."
     },
     {
       "board": "LiveCodeBench",
       "url": "https://livecodebench.github.io/performances_generation.json",
-      "lastEntry": "2025-04-07 (latest problem date in published data)",
-      "reason": "Fetched the exact default dataset referenced by current official leaderboard.html. Models stop at 2025-era generations; zero roster models and no 2026 questions. Problem date is not board update date. Third-party pages with 2026 update labels do not establish current official runs."
+      "checked": "2026-10-13",
+      "reason": "Fresh exact default JSON referenced by official leaderboard.html unchanged from September29. Models stop at 2025-era generations; zero exact roster models and no 2026 questions. GPT-6.1 Sol/Muse Wonder absent; problem date is not board update date."
     },
     {
       "board": "SWE-rebench",
       "url": "https://swe-rebench.com/",
-      "lastEntry": "default task window 2026-05-15..2026-07-01",
-      "reason": "Raw HTML plus RSC model data contain only two roster models with scores in default window: Claude Sonnet 5 high 56.8% and MiniMax M3 47.2%. Gemini 3.1 Pro shows N/A in that window; DeepSeek-V4 Pro is April release, not roster 0813. Below required five-model coverage, and no newest model versions."
+      "checked": "2026-10-13",
+      "reason": "Fresh raw HTML/RSC unchanged from September29; no GPT-6.1 Sol or Muse Wonder/Full. Only Sonnet5 high56.8 and MiniMaxM3 47.2 have current-window scores; Gemini3.1Pro N/A, DeepSeekV4Pro April is not0813. Existing narrow reference retained in additional-coding.json; do not duplicate here."
     },
     {
       "board": "METR time horizons",
       "url": "https://metr.org/assets/benchmark_results_1_1.yaml",
-      "lastEntry": "page dated 2026-05-08",
-      "reason": "Official YAML contains only one exact roster model (Gemini 3.1 Pro), so below five-model coverage. Other model versions are older; no latest September roster models. Raw YAML saved."
+      "checked": "2026-10-13",
+      "reason": "Fresh official YAML unchanged from September29; only Gemini3.1Pro is exact roster version, below five-model threshold. No GPT-6.1 Sol or Muse Wonder/Full."
+    },
+    {
+      "board": "Senior SWE-Bench",
+      "url": "https://senior-swe-bench.snorkel.ai/agents",
+      "checked": "2026-10-13",
+      "reason": "Fresh owner HTML/embedded model data has no GPT-6.1 Sol or Muse Wonder/Full. Existing canonical-task-filtered Senior source is owned by additional-coding.json; no duplicate added. Current Fable5.1 medium metadata must remain distinct from branded EAP preview runs; no newly targeted score inferred."
+    },
+    {
+      "board": "Sierra tau-bench",
+      "url": "https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/manifest.json",
+      "checked": "2026-10-13",
+      "reason": "Fresh official site submission manifest unchanged from October8; no GPT-6.1 Sol or Muse Wonder/Full. Contains older Opus/Fable generations and AugustQwen checkpoint. Existing tau banking knowledge reference in additional-coding.json is not another source here."
+    },
+    {
+      "board": "OSWorld2.1",
+      "url": "https://osworld-v2.xlang.ai/static/data/leaderboard/official-results.json?v=leaderboard-sai-v4",
+      "checked": "2026-10-13",
+      "reason": "Fresh official results unchanged from October8; updatedAt October5. Distinct release versions and full/offline scopes retained by owner; no GPT-6.1 Sol or Muse Wonder/Full. Vendor launch offline-partial figures are not independent replication; existing OSWorld2 full reference not duplicated.",
+      "lastEntry": "2026-10-05"
     },
     {
       "board": "Older Terminal-Bench versions",
       "url": "https://www.tbench.ai/leaderboard",
-      "reason": "Current official site serves 4.0; retain only current version as requested, without mixing older-version scores."
+      "checked": "2026-10-13",
+      "reason": "Current owner board is4.0; no older-version scores mixed."
     },
     {
       "board": "MathArena retired final-answer competitions / aggregate ArXivMath",
       "url": "https://matharena.ai/",
-      "reason": "Site marks legacy final-answer competition family deprecated. Latest single August round provides same-round comparisons; aggregate would duplicate August and mixes varying model month coverage."
+      "checked": "2026-10-13",
+      "reason": "Legacy final-answer family deprecated. Current latest single August round avoids correlated monthly rounds and aggregate duplication."
     },
     {
       "board": "MathArena Qwen3.8-Max",
       "url": "https://matharena.ai/models/qwen_qwen3_8_max",
-      "reason": "Homepage source metadata says released 2026-08-02; endpoint qwen/qwen3.8-max has no September checkpoint suffix. Roster explicitly qwen3.8-max-0902 released September. Prior refresh matched generic version, but exact checkpoint cannot be established; its 57.89 August score is excluded pending evidence."
+      "checked": "2026-10-13",
+      "reason": "Fresh metadata release_date2026-08-02 and generic endpoint/config do not establish September0902 checkpoint; 57.89% August result omitted for roster qwen3-8-max."
     },
     {
-      "board": "Sonnet 5.5 on official Terminal-Bench / MathArena",
-      "reason": "Absent from all 27 current TB rows and latest MathArena August table. MathArena guessed max detail route returns 404. Published Sonnet 5 max is not Sonnet 5.5 max. No score inferred."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 official Terminal-Bench 4.0",
-      "url": "https://www.tbench.ai/leaderboard",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-06",
-      "reason": "Raw React Flight board has 35 published rows and no exact Haiku 5.5 entry. Existing Terminal-Bench source retained without relabelling its measurement date; vendor launch 39.2 is not an independent evaluator replication."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 MathArena August ArXivMath",
-      "url": "https://matharena.ai/competition_tables/arxiv--august",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-09-24",
-      "reason": "Current homepage still selects August 2026 as latest ArXivMath round. Both current raw homepage model metadata and August table have no Haiku 5.5. Existing source retained; no older Haiku score or another version borrowed."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 SWE-bench official boards",
-      "url": "https://www.swebench.com/",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh raw embedded leaderboard JSON has no Haiku 5.5, even while Haiku 4.5 remains present. Fetch date stated, not inferred board date. Verified contamination/faulty-test exclusion remains."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 Aider polyglot",
-      "url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh raw YAML has no Haiku 5.5 or current released model checkpoint; fetch date stated. Existing stale-board exclusion remains."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 LiveCodeBench",
-      "url": "https://livecodebench.github.io/performances_generation.json",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh exact default JSON referenced by official leaderboard.html has no Haiku 5.5; fetch date stated. Existing old-generation coverage exclusion remains."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 SWE-rebench",
-      "url": "https://swe-rebench.com/",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh raw HTML and embedded React Flight data have no Haiku 5.5. Fetch date stated; old model versions and Haiku auxiliary-model mentions are not released Haiku 5.5 runs."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 METR time horizons",
-      "url": "https://metr.org/assets/benchmark_results_1_1.yaml",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh official YAML has no Haiku 5.5, so no new numeric measurement. Fetch date stated; preserve existing narrow roster-coverage exclusion."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 Senior SWE-Bench",
-      "url": "https://senior-swe-bench.snorkel.ai/agents",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh raw HTML and embedded model data have no Haiku 5.5. Fetch date stated. Current Fable 5.1 medium row must not be converted into Haiku, and EAP preview exclusions remain."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 Sierra tau-bench",
-      "url": "https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/manifest.json",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-08",
-      "reason": "Fresh official site submission manifest, linked by current JS, has no Haiku 5.5. It lists older Opus/Fable generations and August Qwen checkpoint; no released Haiku run. Fetch date stated."
-    },
-    {
-      "board": "Haiku 5.5 \u2014 OSWorld 2.1",
-      "url": "https://osworld-v2.xlang.ai/static/data/leaderboard/official-results.json?v=leaderboard-sai-v4",
-      "checked": "2026-10-08",
-      "lastEntry": "2026-10-05",
-      "reason": "Current official raw results expose distinct release versions and full/offline scopes, updatedAt 2026-10-05, with no Haiku 5.5. Anthropic launch offline-partial vendor table is excluded from independent consensus; no OSWorld 2.0 score borrowed."
+      "board": "Muse Wonder / Muse Wonder Full on coding and maths boards",
+      "url": "https://matharena.ai/",
+      "checked": "2026-10-13",
+      "reason": "No exact-version entries in fresh TB4.0, MathArena latest August, SWE-bench, Aider, LiveCodeBench, SWE-rebench, METR, Senior, tau-bench or OSWorld owner data. No older Muse Spark score copied. Current absence checks are fetch-date evidence, not score dates."
     }
   ],
-  "collectionErrors": [
-    {
-      "url": "https://raw.githubusercontent.com/eth-sri/matharena/main/configs/qwen/qwen3_8_max.yaml",
-      "error": "404 guessed legacy config path; recovered using official model-detail config"
-    },
-    {
-      "url": "https://matharena.ai/models/anthropic_sonnet_55_max",
-      "error": "404; model also absent from official latest table, no measurements fabricated"
-    }
-  ],
+  "excluded": {
+    "SWE-bench Verified": "Fresh raw embedded leaderboard JSON unchanged from September29. No GPT-6.1 Sol or Muse Wonder/Full. Only Claude Haiku4.5 exact roster coverage. Also excluded for contamination/faulty-test concerns: OpenAI withdrew Verified reporting February23,2026; this does not imply maintainers retired the board.",
+    "SWE-bench Multilingual / Lite / Full / Multimodal": "Fresh raw embedded JSON; no GPT-6.1 Sol or Muse Wonder/Full. Only Claude Haiku4.5 matches roster on Multilingual; other boards have no exact roster coverage. All below five-model threshold.",
+    "Aider polyglot": "Fresh raw YAML unchanged from September29; no 2026 dated entries and no exact current roster model. GPT-6.1 Sol/Muse Wonder absent; third-party estimates not substituted.",
+    "LiveCodeBench": "Fresh exact default JSON referenced by official leaderboard.html unchanged from September29. Models stop at 2025-era generations; zero exact roster models and no 2026 questions. GPT-6.1 Sol/Muse Wonder absent; problem date is not board update date.",
+    "SWE-rebench": "Fresh raw HTML/RSC unchanged from September29; no GPT-6.1 Sol or Muse Wonder/Full. Only Sonnet5 high56.8 and MiniMaxM3 47.2 have current-window scores; Gemini3.1Pro N/A, DeepSeekV4Pro April is not0813. Existing narrow reference retained in additional-coding.json; do not duplicate here.",
+    "METR time horizons": "Fresh official YAML unchanged from September29; only Gemini3.1Pro is exact roster version, below five-model threshold. No GPT-6.1 Sol or Muse Wonder/Full.",
+    "Senior SWE-Bench": "Fresh owner HTML/embedded model data has no GPT-6.1 Sol or Muse Wonder/Full. Existing canonical-task-filtered Senior source is owned by additional-coding.json; no duplicate added. Current Fable5.1 medium metadata must remain distinct from branded EAP preview runs; no newly targeted score inferred.",
+    "Sierra tau-bench": "Fresh official site submission manifest unchanged from October8; no GPT-6.1 Sol or Muse Wonder/Full. Contains older Opus/Fable generations and AugustQwen checkpoint. Existing tau banking knowledge reference in additional-coding.json is not another source here.",
+    "OSWorld2.1": "Fresh official results unchanged from October8; updatedAt October5. Distinct release versions and full/offline scopes retained by owner; no GPT-6.1 Sol or Muse Wonder/Full. Vendor launch offline-partial figures are not independent replication; existing OSWorld2 full reference not duplicated.",
+    "Older Terminal-Bench versions": "Current owner board is4.0; no older-version scores mixed.",
+    "MathArena retired final-answer competitions / aggregate ArXivMath": "Legacy final-answer family deprecated. Current latest single August round avoids correlated monthly rounds and aggregate duplication.",
+    "MathArena Qwen3.8-Max": "Fresh metadata release_date2026-08-02 and generic endpoint/config do not establish September0902 checkpoint; 57.89% August result omitted for roster qwen3-8-max.",
+    "Muse Wonder / Muse Wonder Full on coding and maths boards": "No exact-version entries in fresh TB4.0, MathArena latest August, SWE-bench, Aider, LiveCodeBench, SWE-rebench, METR, Senior, tau-bench or OSWorld owner data. No older Muse Spark score copied. Current absence checks are fetch-date evidence, not score dates."
+  },
   "provenance": {
-    "fetched": "2026-09-29",
-    "script": "/private/tmp/vibyra-bench-effort/collect-coding.py",
+    "fetched": "2026-10-13",
+    "script": "/tmp/vibyra-model-release-20261013/coding-raw/collect-coding.py",
     "raw": [
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/tbench.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/tbench.html",
         "url": "https://www.tbench.ai/leaderboard",
-        "sha256": "2ecc89525fa5f4a5eeeaf2c7ca3ed9eebf7aa8bb653c9e6c8078cfd7433d5e84"
+        "sha256": "a04b52b37a82eadbb5d10a13cb22f4795a7989bbb0d5ab55239c3fe9aa2e17d4",
+        "bytes": 145339,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena.html",
         "url": "https://matharena.ai/",
-        "sha256": "27c7011f647da47f10c14722ee3ea795f802757763b47de334711ed605aa4e8e"
+        "sha256": "5dcc811009cb0bf40386c07fd96a1cfe67d563fec81e084dc1dd42141c91222c",
+        "bytes": 180302,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-august.json",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-august.json",
         "url": "https://matharena.ai/competition_tables/arxiv--august",
-        "sha256": "c3a3d8ee321140aa05d74e8bca83300491483290b2a305db3bb538efbaf47fc7"
+        "sha256": "e86f7d42c9a94cca182764a199ad1d369217f3fd1fcc5d6d242172e33ecf0ec6",
+        "bytes": 810362,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/swebench.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-gpt61.html",
+        "url": "https://matharena.ai/models/openai_gpt_61_sol",
+        "sha256": "dad5d3497603c233991a417da4df070e78da9ce8991ba41eb7ddd06a4ad820fa",
+        "bytes": 76319,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/swebench.html",
         "url": "https://www.swebench.com/",
-        "sha256": "c862011a4ee1d1a7199fad6ca0905fa5c64f58216f7217ac1eddf37f28788433"
+        "sha256": "c862011a4ee1d1a7199fad6ca0905fa5c64f58216f7217ac1eddf37f28788433",
+        "bytes": 2392125,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/swe-rebench.html",
-        "url": "https://swe-rebench.com/",
-        "sha256": "fbb1b659562843da266aa20ec2295253d727ccd9b9469c78ab32df6fad1fffed"
-      },
-      {
-        "file": "/private/tmp/vibyra-bench-effort/raw/aider.yml",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/aider.yml",
         "url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml",
-        "sha256": "85a50b25953512d18ba4bb0c23c0b8e626fcf9a5b52d287644b8a0b44b9535de"
+        "sha256": "85a50b25953512d18ba4bb0c23c0b8e626fcf9a5b52d287644b8a0b44b9535de",
+        "bytes": 45725,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/lcb-leaderboard.html",
-        "url": "https://livecodebench.github.io/leaderboard.html",
-        "sha256": "bc0135e58e08353fadee95924ed40aa61a2a5056a5002a1b51654d2bebf45182"
-      },
-      {
-        "file": "/private/tmp/vibyra-bench-effort/raw/livecodebench.json",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/livecodebench.json",
         "url": "https://livecodebench.github.io/performances_generation.json",
-        "sha256": "17f9a1d69e3f6290fc8b967a4dd13fbb46e34dd05716fdee793780a1cfadd0c1"
+        "sha256": "17f9a1d69e3f6290fc8b967a4dd13fbb46e34dd05716fdee793780a1cfadd0c1",
+        "bytes": 6950346,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/metr.html",
-        "url": "https://metr.org/time-horizons/",
-        "sha256": "6b778a1d39464fc9a3741a6881c968dd2d66607b6517f1e160b1db065f0c6afd"
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/lcb.html",
+        "url": "https://livecodebench.github.io/leaderboard.html",
+        "sha256": "bc0135e58e08353fadee95924ed40aa61a2a5056a5002a1b51654d2bebf45182",
+        "bytes": 36734,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/metr.yaml",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/swe-rebench.html",
+        "url": "https://swe-rebench.com/",
+        "sha256": "fbb1b659562843da266aa20ec2295253d727ccd9b9469c78ab32df6fad1fffed",
+        "bytes": 7789901,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/metr.yaml",
         "url": "https://metr.org/assets/benchmark_results_1_1.yaml",
-        "sha256": "aae31902b0519a4da73e16643915e5e8aca13cd3315c3aac893ce3d6dfe92ad9"
+        "sha256": "aae31902b0519a4da73e16643915e5e8aca13cd3315c3aac893ce3d6dfe92ad9",
+        "bytes": 16255,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-openai_gpt_6_sol.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/senior.html",
+        "url": "https://senior-swe-bench.snorkel.ai/agents",
+        "sha256": "17725e8e9e2480f63bcdc92bf990fd80babc6107b7514e2302c47f362dcb4114",
+        "bytes": 6818693,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/tau-manifest.json",
+        "url": "https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/manifest.json",
+        "sha256": "f3bab122c445192eb77773fb1b5560c841ba4c4377834140472d16aab0c8f7db",
+        "bytes": 2952,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/tau.html",
+        "url": "https://taubench.com/",
+        "sha256": "c0363c09b5f3f90e5fe5533ef7808c12b34c7c97ea82e1462b19408aa5efc46e",
+        "bytes": 15696,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/osworld.html",
+        "url": "https://osworld-v2.xlang.ai/",
+        "sha256": "91138b5d752d7d5242bfc147c6a1bd6430e81f89f36eb9ffe0af3a40feca6b5b",
+        "bytes": 88325,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/osworld.json",
+        "url": "https://osworld-v2.xlang.ai/static/data/leaderboard/official-results.json?v=leaderboard-sai-v4",
+        "sha256": "35a0ed7cfe2e9981c4976ea326ee3a21d77e4a80b7e44adcad55316d83cc2cec",
+        "bytes": 18545,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-openai_gpt_61_sol.html",
+        "url": "https://matharena.ai/models/openai_gpt_61_sol",
+        "sha256": "dad5d3497603c233991a417da4df070e78da9ce8991ba41eb7ddd06a4ad820fa",
+        "bytes": 76319,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-openai_gpt_6_sol.html",
         "url": "https://matharena.ai/models/openai_gpt_6_sol",
-        "sha256": "c5cdf5bdd3a77351cfb19876423a32ddf3330da5d59ea6aa49750975b5991655"
+        "sha256": "50ce0ec286f40990efbc2cb852563d09da08cec0e4d32f896ac0c86eb847f577",
+        "bytes": 76227,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-openai_gpt_6_astra.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-openai_gpt_6_astra.html",
         "url": "https://matharena.ai/models/openai_gpt_6_astra",
-        "sha256": "67088aaa4fdadfc5eadd18c39a474e91a38df313eed8afe71f522edb2609a0a6"
+        "sha256": "cfb3a7112881119b523bf916088965e3f4d861cca8d4c913cbc30668835668fc",
+        "bytes": 90139,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-anthropic_fable_51_high.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-anthropic_fable_51_high.html",
         "url": "https://matharena.ai/models/anthropic_fable_51_high",
-        "sha256": "5b799dd170eeaf6695a0e51f7fa14177cbc43ab3d25b337bee21a6d3286fdb5b"
+        "sha256": "4cd2fcbb50f7ac75d4dde0966d5df3a1d54c78123f848f223cb1fd30a053a2e9",
+        "bytes": 56673,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-anthropic_opus_55_high.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-anthropic_opus_55_high.html",
         "url": "https://matharena.ai/models/anthropic_opus_55_high",
-        "sha256": "350d214ef82d4aa6f3112af651fd576e80309b5803f3463234052ef2126aa233"
+        "sha256": "e669719ee159ca30b6d3aa28448239bc40c806fe402faa88431b72af183ba97b",
+        "bytes": 76989,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-openai_gpt_6_astra_low.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-openai_gpt_6_astra_low.html",
         "url": "https://matharena.ai/models/openai_gpt_6_astra_low",
-        "sha256": "ed7974ce10c2d806aa50d988c16fe080aced5e014bb0998b937f865149f3d939"
+        "sha256": "61200514ce823301cda0240fc7712c00ce239d9e847b9434979ecf0c85e1408b",
+        "bytes": 76197,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-anthropic_fable_51_low.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-anthropic_fable_51_low.html",
         "url": "https://matharena.ai/models/anthropic_fable_51_low",
-        "sha256": "179e94c340c2d4eb52a0782aa3f803a9211ce420a031e0945cd29c4351cb3698"
+        "sha256": "6790c0cb6d26345059956f201c24f94a2ea9028eafe6682bbd4c723e6d191970",
+        "bytes": 76623,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-xai_grok_47.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-qwen_qwen3_8_max.html",
+        "url": "https://matharena.ai/models/qwen_qwen3_8_max",
+        "sha256": "4c42e533cc80d5e43396648bd6a2a21b2df84b4ba56e321a894f9a39d3b335e1",
+        "bytes": 91227,
+        "error": null
+      },
+      {
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-xai_grok_47.html",
         "url": "https://matharena.ai/models/xai_grok_47",
-        "sha256": "7b73ebf8f6b59455ece12ab3e807503e3d2608fcfc4ccfd7119f58426f9a272b"
+        "sha256": "8446bf08e19e7dbe90d0bf904c935198f1bbb70457817a62c0b28dce75a03657",
+        "bytes": 76458,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-meta_muse_spark_13.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-meta_muse_spark_13.html",
         "url": "https://matharena.ai/models/meta_muse_spark_13",
-        "sha256": "d250ebf97f11f247f81ff2f27c4ac19434fe3ed4ea15d4c84e942ed263b4fa16"
+        "sha256": "69ddba8d50eca5422fba92250be5bbdf5524686e9b76dcb8308dc30500cc7c6d",
+        "bytes": 90528,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-deepseek_deepseek_v41_flash.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-deepseek_deepseek_v41_flash.html",
         "url": "https://matharena.ai/models/deepseek_deepseek_v41_flash",
-        "sha256": "1bab5d85c06b31d09c038e01adb290cd319bede5742c9481b1bcec7e2cea19e8"
+        "sha256": "670a5c36e142889516ecd9865b0ad80dacbc5e63ad448a7550cb3b0dc591bbf8",
+        "bytes": 81922,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-gemini_gemini_38_flash.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-gemini_gemini_38_flash.html",
         "url": "https://matharena.ai/models/gemini_gemini_38_flash",
-        "sha256": "be41ee131f828bebcf389ded907d8b4bd59c0adaa69f5afb3fe9af4d5033923b"
+        "sha256": "1cfd0bc18fab6cab8338a787b9d3daff78156afd63851db90f414fb55465a21c",
+        "bytes": 90666,
+        "error": null
       },
       {
-        "file": "/private/tmp/vibyra-bench-effort/raw/matharena-moonshot_k3.html",
+        "file": "/tmp/vibyra-model-release-20261013/coding-raw/matharena-moonshot_k3.html",
         "url": "https://matharena.ai/models/moonshot_k3",
-        "sha256": "bb6ad97dae9076c12b668fddd24fc749bcd2e8e5846425d63955c8f51a0d523a"
+        "sha256": "69c900ff3a93a82c210bbd4eddf1d64c6804351c9ecd18ea44251dad64f59f93",
+        "bytes": 140171,
+        "error": null
       }
     ]
-  },
-  "excluded": {
-    "SWE-bench Verified": "Only one exact roster model, Claude Haiku 4.5. Also excluded under curation for contamination and faulty-test concerns: OpenAI stopped reporting Verified on 2026-02-23 (https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/). This does not imply the SWE-bench maintainers removed the board.",
-    "SWE-bench Multilingual / Lite / Full / Multimodal": "Official embedded leaderboard JSON refreshed on fetch. Only Claude Haiku 4.5 matches roster on Multilingual; other boards have zero roster models. Stale and all below five-model coverage.",
-    "Aider polyglot": "Raw YAML has no 2026 dated entries and no exact roster model; unofficial third-party estimates excluded.",
-    "LiveCodeBench": "Fetched the exact default dataset referenced by current official leaderboard.html. Models stop at 2025-era generations; zero roster models and no 2026 questions. Problem date is not board update date. Third-party pages with 2026 update labels do not establish current official runs.",
-    "SWE-rebench": "Raw HTML plus RSC model data contain only two roster models with scores in default window: Claude Sonnet 5 high 56.8% and MiniMax M3 47.2%. Gemini 3.1 Pro shows N/A in that window; DeepSeek-V4 Pro is April release, not roster 0813. Below required five-model coverage, and no newest model versions.",
-    "METR time horizons": "Official YAML contains only one exact roster model (Gemini 3.1 Pro), so below five-model coverage. Other model versions are older; no latest September roster models. Raw YAML saved.",
-    "Older Terminal-Bench versions": "Current official site serves 4.0; retain only current version as requested, without mixing older-version scores.",
-    "MathArena retired final-answer competitions / aggregate ArXivMath": "Site marks legacy final-answer competition family deprecated. Latest single August round provides same-round comparisons; aggregate would duplicate August and mixes varying model month coverage.",
-    "MathArena Qwen3.8-Max": "Homepage source metadata says released 2026-08-02; endpoint qwen/qwen3.8-max has no September checkpoint suffix. Roster explicitly qwen3.8-max-0902 released September. Prior refresh matched generic version, but exact checkpoint cannot be established; its 57.89 August score is excluded pending evidence.",
-    "Sonnet 5.5 on official Terminal-Bench / MathArena": "Absent from all 27 current TB rows and latest MathArena August table. MathArena guessed max detail route returns 404. Published Sonnet 5 max is not Sonnet 5.5 max. No score inferred.",
-    "Haiku 5.5 \u2014 official Terminal-Bench 4.0": "Raw React Flight board has 35 published rows and no exact Haiku 5.5 entry. Existing Terminal-Bench source retained without relabelling its measurement date; vendor launch 39.2 is not an independent evaluator replication.",
-    "Haiku 5.5 \u2014 MathArena August ArXivMath": "Current homepage still selects August 2026 as latest ArXivMath round. Both current raw homepage model metadata and August table have no Haiku 5.5. Existing source retained; no older Haiku score or another version borrowed.",
-    "Haiku 5.5 \u2014 SWE-bench official boards": "Fresh raw embedded leaderboard JSON has no Haiku 5.5, even while Haiku 4.5 remains present. Fetch date stated, not inferred board date. Verified contamination/faulty-test exclusion remains.",
-    "Haiku 5.5 \u2014 Aider polyglot": "Fresh raw YAML has no Haiku 5.5 or current released model checkpoint; fetch date stated. Existing stale-board exclusion remains.",
-    "Haiku 5.5 \u2014 LiveCodeBench": "Fresh exact default JSON referenced by official leaderboard.html has no Haiku 5.5; fetch date stated. Existing old-generation coverage exclusion remains.",
-    "Haiku 5.5 \u2014 SWE-rebench": "Fresh raw HTML and embedded React Flight data have no Haiku 5.5. Fetch date stated; old model versions and Haiku auxiliary-model mentions are not released Haiku 5.5 runs.",
-    "Haiku 5.5 \u2014 METR time horizons": "Fresh official YAML has no Haiku 5.5, so no new numeric measurement. Fetch date stated; preserve existing narrow roster-coverage exclusion.",
-    "Haiku 5.5 \u2014 Senior SWE-Bench": "Fresh raw HTML and embedded model data have no Haiku 5.5. Fetch date stated. Current Fable 5.1 medium row must not be converted into Haiku, and EAP preview exclusions remain.",
-    "Haiku 5.5 \u2014 Sierra tau-bench": "Fresh official site submission manifest, linked by current JS, has no Haiku 5.5. It lists older Opus/Fable generations and August Qwen checkpoint; no released Haiku run. Fetch date stated.",
-    "Haiku 5.5 \u2014 OSWorld 2.1": "Current official raw results expose distinct release versions and full/offline scopes, updatedAt 2026-10-05, with no Haiku 5.5. Anthropic launch offline-partial vendor table is excluded from independent consensus; no OSWorld 2.0 score borrowed."
   },
   "releaseCollection": {
-    "model": "claude-haiku-5-5",
-    "fetched": "2026-10-08",
-    "haikuMeasurements": 0,
-    "preservedSourceIds": [
-      "terminal-bench",
-      "matharena-arxivmath"
+    "models": [
+      "gpt-6-1-sol",
+      "muse-wonder",
+      "muse-wonder-full"
     ],
-    "notes": "Narrow release collection: existing source rows and their original evidence dates preserved because no exact Haiku 5.5 run exists on these boards. Do not treat the current absence check as new score collection or score-date refresh. Vals Haiku model page belongs to independent collector, not this file.",
-    "raw": [
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/tbench.html",
-        "url": "https://www.tbench.ai/leaderboard",
-        "sha256": "b2a7e7ec9b4329419fd66fb6dff20fb87d5bd944f23b6d590c05d23a2717dff9"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/matharena.html",
-        "url": "https://matharena.ai/",
-        "sha256": "6815e5a1bd93bb2780937c309bea1ba284d26eedd42d0abf4eb49cc64403e0c1"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/matharena-august.json",
-        "url": "https://matharena.ai/competition_tables/arxiv--august",
-        "sha256": "e86f7d42c9a94cca182764a199ad1d369217f3fd1fcc5d6d242172e33ecf0ec6"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/swebench.html",
-        "url": "https://www.swebench.com/",
-        "sha256": "c862011a4ee1d1a7199fad6ca0905fa5c64f58216f7217ac1eddf37f28788433"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/aider.yml",
-        "url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml",
-        "sha256": "85a50b25953512d18ba4bb0c23c0b8e626fcf9a5b52d287644b8a0b44b9535de"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/lcb.html",
-        "url": "https://livecodebench.github.io/leaderboard.html",
-        "sha256": "bc0135e58e08353fadee95924ed40aa61a2a5056a5002a1b51654d2bebf45182"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/livecodebench.json",
-        "url": "https://livecodebench.github.io/performances_generation.json",
-        "sha256": "17f9a1d69e3f6290fc8b967a4dd13fbb46e34dd05716fdee793780a1cfadd0c1"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/swe-rebench.html",
-        "url": "https://swe-rebench.com/",
-        "sha256": "fbb1b659562843da266aa20ec2295253d727ccd9b9469c78ab32df6fad1fffed"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/metr.yaml",
-        "url": "https://metr.org/assets/benchmark_results_1_1.yaml",
-        "sha256": "aae31902b0519a4da73e16643915e5e8aca13cd3315c3aac893ce3d6dfe92ad9"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/senior.html",
-        "url": "https://senior-swe-bench.snorkel.ai/agents",
-        "sha256": "0d9ec6a8734ef48129de439d91b9d38d0b11852ef11a28395c5eaba3be4e3df8"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/tau.js",
-        "url": "https://taubench.com/assets/index-DiyUZzz_.js",
-        "sha256": "710200e47c1d4641384b89c09de27d1c0ca7323b03ab107195487e8efb59669e"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/tau-manifest.json",
-        "url": "https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/manifest.json",
-        "sha256": "f3bab122c445192eb77773fb1b5560c841ba4c4377834140472d16aab0c8f7db"
-      },
-      {
-        "file": "/private/tmp/vibyra-haiku-coding-raw/osworld-v2-results.json",
-        "url": "https://osworld-v2.xlang.ai/static/data/leaderboard/official-results.json?v=leaderboard-sai-v4",
-        "sha256": "35a0ed7cfe2e9981c4976ea326ee3a21d77e4a80b7e44adcad55316d83cc2cec"
-      }
-    ]
+    "fetched": "2026-10-13",
+    "exactMeasurementCounts": {
+      "gpt-6-1-sol": 2,
+      "muse-wonder": 0,
+      "muse-wonder-full": 0
+    },
+    "notes": "Full fresh refresh of the two coding-maths sources. Separate additional-coding sources are not overwritten or duplicated. MathArena is eligible independent reasoning evidence; official Terminal-Bench is a submission reference only."
   }
 }

@@ -216,6 +216,22 @@
       "effort": "medium",
       "released": "2026-10",
       "openWeights": false
+    },
+    {
+      "id": "muse-wonder",
+      "name": "Muse Wonder",
+      "provider": "meta",
+      "openrouter": "meta/muse-wonder",
+      "released": "2026-10",
+      "openWeights": false
+    },
+    {
+      "id": "muse-wonder-full",
+      "name": "Muse Wonder Full",
+      "provider": "meta",
+      "openrouter": null,
+      "released": "2026-10",
+      "openWeights": false
     }
   ]
 }

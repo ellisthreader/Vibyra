@@ -8,7 +8,7 @@ test("every model has the fields the charts read", () => {
         assert.ok(m.id && m.name && m.provider, m.id);
         assert.ok(m.intelligence == null || Number.isFinite(m.intelligence), m.id);
         if (m.sourceCount != null && m.sourceCount < 3) assert.equal(m.intelligence, null, m.id);
-        assert.ok(blended(m) > 0, m.id);
+        assert.ok(blended(m) == null || (Number.isFinite(blended(m)) && blended(m) > 0), m.id);
     }
 });
 
@@ -47,6 +47,16 @@ test("models awaiting sufficient scores stay available without entering rankings
     for (const model of pending) {
         assert.ok(!ranking.some((m) => m.id === model.id), model.id);
         assert.equal(display("intelligence", model), "–");
-        assert.ok(blended(model) > 0, "Unranked models still have published prices");
+
     }
+});
+
+
+test("models without published prices remain visible without entering price comparisons", () => {
+    const unknown = { id: "unpriced", name: "Unpriced model", intelligence: 99, priceIn: null, priceOut: null };
+    const priced = { id: "priced", intelligence: 50, priceIn: 1, priceOut: 2 };
+    assert.equal(blended(unknown), null);
+    assert.equal(display("price", unknown), "–");
+    assert.deepEqual(ranked([unknown, priced], "price"), [priced]);
+    assert.deepEqual(frontier([unknown, priced], "price", "intelligence"), [priced]);
 });

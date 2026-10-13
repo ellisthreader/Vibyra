@@ -1,696 +1,1060 @@
 {
-  "generated": "2026-10-08",
+  "generated": "2026-10-13",
   "sources": [
     {
       "id": "lmarena-text",
       "name": "LMArena Text (style control, default view)",
       "org": "LMArena",
-      "url": "https://arena.ai/leaderboard/text",
+      "url": "https://arena.ai/leaderboard/chat/text",
       "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/text_style_control/latest-00000-of-00001.parquet",
-      "updated": "2026-09-25",
+      "updated": "2026-10-08",
+      "fetched": "2026-10-13",
       "metric": "Arena score (Bradley-Terry, style control)",
       "category": "preference",
       "higherIsBetter": true,
       "confidence": "high",
+      "evaluator": "LMArena",
+      "family": "arena-text-preference",
       "scores": {
         "claude-opus-5-5": {
           "measurements": [
             {
-              "value": 1508.5538218355593,
+              "value": 1507.0758687407206,
               "variant": "claude-opus-5.5-high",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 1
+              "rank": 2,
+              "confidenceInterval": [
+                1498.9693855369774,
+                1515.1823519444638
+              ],
+              "voteCount": 6272.0
             }
           ],
-          "value": 1508.5538218355593,
+          "value": 1507.0758687407206,
           "variant": "claude-opus-5.5-high",
-          "rank": 1
+          "rank": 2
         },
         "claude-fable-5-1": {
           "measurements": [
             {
-              "value": 1501.293611997489,
+              "value": 1500.7290291564887,
               "variant": "claude-fable-5.1-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 5
+              "rank": 6,
+              "confidenceInterval": [
+                1494.4912153006644,
+                1506.9668430123133
+              ],
+              "voteCount": 13063.0
             }
           ],
-          "value": 1501.293611997489,
+          "value": 1500.7290291564887,
           "variant": "claude-fable-5.1-max",
-          "rank": 5
-        },
-        "muse-spark-1-3": {
-          "measurements": [
-            {
-              "value": 1494.0967431517377,
-              "variant": "muse-spark-1.3-max",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 9
-            }
-          ],
-          "value": 1494.0967431517377,
-          "variant": "muse-spark-1.3-max",
-          "rank": 9
+          "rank": 6
         },
         "gemini-3-8-flash": {
           "measurements": [
             {
-              "value": 1492.3909065738185,
+              "value": 1496.5039548814862,
               "variant": "gemini-3.8-flash-high",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 10
+              "rank": 8,
+              "confidenceInterval": [
+                1491.7566639636461,
+                1501.2512457993262
+              ],
+              "voteCount": 31437.0
             }
           ],
-          "value": 1492.3909065738185,
+          "value": 1496.5039548814862,
           "variant": "gemini-3.8-flash-high",
-          "rank": 10
+          "rank": 8
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 1494.1854645692001,
+              "variant": "muse-spark-1.3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 9,
+              "confidenceInterval": [
+                1488.2978272576747,
+                1500.073101880725
+              ],
+              "voteCount": 14694.0
+            }
+          ],
+          "value": 1494.1854645692001,
+          "variant": "muse-spark-1.3-max",
+          "rank": 9
         },
         "kimi-k3": {
           "measurements": [
             {
-              "value": 1487.9637997404498,
+              "value": 1488.0769526460258,
               "variant": "kimi-k3-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 16
+              "rank": 16,
+              "confidenceInterval": [
+                1483.3888416837704,
+                1492.7650636082808
+              ],
+              "voteCount": 30351.0
             }
           ],
-          "value": 1487.9637997404498,
+          "value": 1488.0769526460258,
           "variant": "kimi-k3-max",
           "rank": 16
         },
         "gemini-3-1-pro": {
           "measurements": [
             {
-              "value": 1486.6776290065297,
+              "value": 1487.3024091972857,
               "variant": "gemini-3.1-pro-preview",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 17
+              "rank": 17,
+              "confidenceInterval": [
+                1484.3175903387964,
+                1490.287228055775
+              ],
+              "voteCount": 124675.0
             }
           ],
-          "value": 1486.6776290065297,
+          "value": 1487.3024091972857,
           "variant": "gemini-3.1-pro-preview",
           "rank": 17
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 1483.7195023675959,
+              "variant": "gpt-6.1-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 21,
+              "confidenceInterval": [
+                1474.561418093093,
+                1492.8775866420983
+              ],
+              "voteCount": 4512.0
+            }
+          ],
+          "value": 1483.7195023675959,
+          "variant": "gpt-6.1-sol-max",
+          "rank": 21
         },
         "mimo-v2-6-pro": {
           "measurements": [
             {
-              "value": 1479.7396239199584,
+              "value": 1480.4041987980277,
               "variant": "mimo-v2.6-pro",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 23
+              "rank": 26,
+              "confidenceInterval": [
+                1471.023337093583,
+                1489.7850605024728
+              ],
+              "voteCount": 4069.0
             }
           ],
-          "value": 1479.7396239199584,
+          "value": 1480.4041987980277,
           "variant": "mimo-v2.6-pro",
-          "rank": 23
+          "rank": 26
         },
         "glm-5-3": {
           "measurements": [
             {
-              "value": 1479.6000693617252,
+              "value": 1478.3952277118137,
               "variant": "glm-5.3-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 24
+              "rank": 27,
+              "confidenceInterval": [
+                1472.992607478483,
+                1483.7978479451444
+              ],
+              "voteCount": 20049.0
             }
           ],
-          "value": 1479.6000693617252,
+          "value": 1478.3952277118137,
           "variant": "glm-5.3-max",
-          "rank": 24
+          "rank": 27
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 1475.7943962344698,
+              "variant": "claude-sonnet-5.5-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 32,
+              "confidenceInterval": [
+                1466.9710170964004,
+                1484.6177753725397
+              ],
+              "voteCount": 4838.0
+            }
+          ],
+          "value": 1475.7943962344698,
+          "variant": "claude-sonnet-5.5-xhigh",
+          "rank": 32
         },
         "gpt-6-astra": {
           "measurements": [
             {
-              "value": 1477.7238481553331,
+              "value": 1475.1091383205744,
               "variant": "gpt-6-astra-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 26
+              "rank": 35,
+              "confidenceInterval": [
+                1468.5200409022696,
+                1481.6982357388792
+              ],
+              "voteCount": 10536.0
             }
           ],
-          "value": 1477.7238481553331,
+          "value": 1475.1091383205744,
           "variant": "gpt-6-astra-max",
-          "rank": 26
+          "rank": 35
         },
         "deepseek-v4-1-flash": {
           "measurements": [
             {
-              "value": 1476.5072608045655,
+              "value": 1474.5389720399148,
               "variant": "deepseek-v4.1-flash-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 29
+              "rank": 39,
+              "confidenceInterval": [
+                1468.0148677629154,
+                1481.0630763169138
+              ],
+              "voteCount": 10872.0
             }
           ],
-          "value": 1476.5072608045655,
+          "value": 1474.5389720399148,
           "variant": "deepseek-v4.1-flash-max",
-          "rank": 29
+          "rank": 39
         },
         "deepseek-v4-pro": {
           "measurements": [
             {
-              "value": 1464.358629793212,
+              "value": 1464.5265422556727,
               "variant": "deepseek-v4-pro-high-20260813",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 53,
-              "snapshot": "0813"
+              "snapshot": "0813",
+              "rank": 55,
+              "confidenceInterval": [
+                1457.9124995967131,
+                1471.1405849146322
+              ],
+              "voteCount": 9815.0
             }
           ],
-          "value": 1464.358629793212,
+          "value": 1464.5265422556727,
           "variant": "deepseek-v4-pro-high-20260813",
-          "rank": 53
+          "rank": 55
         },
         "claude-sonnet-5": {
           "measurements": [
             {
-              "value": 1461.5259908728863,
+              "value": 1461.0157895896127,
               "variant": "claude-sonnet-5-high",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 54
+              "rank": 57,
+              "confidenceInterval": [
+                1456.8384649383975,
+                1465.193114240828
+              ],
+              "voteCount": 47576.0
             }
           ],
-          "value": 1461.5259908728863,
+          "value": 1461.0157895896127,
           "variant": "claude-sonnet-5-high",
-          "rank": 54
+          "rank": 57
         },
         "gpt-6-sol": {
           "measurements": [
             {
-              "value": 1457.482176999627,
+              "value": 1455.9029603251292,
               "variant": "gpt-6-sol-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 60
+              "rank": 67,
+              "confidenceInterval": [
+                1449.247763105574,
+                1462.558157544685
+              ],
+              "voteCount": 10469.0
             }
           ],
-          "value": 1457.482176999627,
+          "value": 1455.9029603251292,
           "variant": "gpt-6-sol-max",
-          "rank": 60
+          "rank": 67
         },
         "mimo-v2-6-flash": {
           "measurements": [
             {
-              "value": 1453.6669198282275,
+              "value": 1450.6535680477245,
               "variant": "mimo-v2.6-flash",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 71
+              "rank": 76,
+              "confidenceInterval": [
+                1443.5755920535926,
+                1457.731544041857
+              ],
+              "voteCount": 8226.0
             }
           ],
-          "value": 1453.6669198282275,
+          "value": 1450.6535680477245,
           "variant": "mimo-v2.6-flash",
-          "rank": 71
-        },
-        "gpt-6-luna": {
-          "measurements": [
-            {
-              "value": 1442.4231003499538,
-              "variant": "gpt-6-luna-max",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 86
-            }
-          ],
-          "value": 1442.4231003499538,
-          "variant": "gpt-6-luna-max",
-          "rank": 86
-        },
-        "minimax-m3": {
-          "measurements": [
-            {
-              "value": 1440.4553191574714,
-              "variant": "minimax-m3",
-              "effort": "unspecified",
-              "rawEffort": null,
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 91
-            }
-          ],
-          "value": 1440.4553191574714,
-          "variant": "minimax-m3",
-          "rank": 91
+          "rank": 76
         },
         "grok-4-7": {
           "measurements": [
             {
-              "value": 1439.0692302796642,
+              "value": 1442.6743665728386,
               "variant": "grok-4.7-xhigh",
               "effort": "xhigh",
               "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 92
+              "rank": 90,
+              "confidenceInterval": [
+                1435.6844217652688,
+                1449.664311380408
+              ],
+              "voteCount": 8780.0
             }
           ],
-          "value": 1439.0692302796642,
+          "value": 1442.6743665728386,
           "variant": "grok-4.7-xhigh",
-          "rank": 92
+          "rank": 90
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 1442.579993410533,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 91,
+              "confidenceInterval": [
+                1437.6014897324712,
+                1447.5584970885943
+              ],
+              "voteCount": 28632.0
+            }
+          ],
+          "value": 1442.579993410533,
+          "variant": "gpt-6-luna-max",
+          "rank": 91
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": 1440.4601846954656,
+              "variant": "minimax-m3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 96,
+              "confidenceInterval": [
+                1436.5679099049798,
+                1444.3524594859514
+              ],
+              "voteCount": 61220.0
+            }
+          ],
+          "value": 1440.4601846954656,
+          "variant": "minimax-m3",
+          "rank": 96
         },
         "mistral-medium-3-5": {
           "measurements": [
             {
-              "value": 1426.1283068837586,
+              "value": 1426.3584817822698,
               "variant": "mistral-medium-3.5",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 113
+              "rank": 117,
+              "confidenceInterval": [
+                1419.9609378720988,
+                1432.7560256924412
+              ],
+              "voteCount": 11803.0
             }
           ],
-          "value": 1426.1283068837586,
+          "value": 1426.3584817822698,
           "variant": "mistral-medium-3.5",
-          "rank": 113
+          "rank": 117
         },
         "claude-haiku-4-5": {
           "measurements": [
             {
-              "value": 1413.9274399763758,
+              "value": 1414.0297937889663,
               "variant": "claude-haiku-4-5-20251001",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 137
+              "rank": 142,
+              "confidenceInterval": [
+                1411.6128854879626,
+                1416.4467020899706
+              ],
+              "voteCount": 146351.0
             }
           ],
-          "value": 1413.9274399763758,
+          "value": 1414.0297937889663,
           "variant": "claude-haiku-4-5-20251001",
-          "rank": 137
+          "rank": 142
         }
       },
-      "notes": "Fresh raw HF dataset, complete overall category (409 rows); full raw precision preserved. All same-checkpoint effort/thinking variants remain separate in measurements; compatible top-level score is best published value only, not an effort-specific score. Source-declared effort comes from the suffix after the model name: the Max in Qwen3.8 Max is part of its name, not effort. Missing effort/mode/fallback/harness metadata stays unspecified/null. DeepSeek original/preview excluded because roster is 0813. Qwen Max undated rows excluded because they cannot establish roster 0902 checkpoint. updated is the dataset leaderboard_publish_date, corroborated by source page.",
-      "evaluator": "LMArena"
+      "notes": "Fresh raw evaluator-owned HF Parquet fetched 2026-10-13; all 414 overall rows inspected. updated is the dataset leaderboard_publish_date, corroborated against official rendered board. Full raw precision retained. Exact-version effort variants remain distinct; unreported mode, fallback and harness stay unspecified/null. Undated Qwen3.8 Max and original/preview DeepSeek V4 Pro omitted because they do not establish 0902/0813 checkpoints. No exact Muse Wonder or Muse Wonder Full row is published in these datasets or the checked official board pages. ",
+      "rawEvidence": [
+        {
+          "url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/text_style_control/latest-00000-of-00001.parquet",
+          "sha256": "e8190c6b4654297e74aa0c41ef2a7eef366b4708b9dbd2292a74977a4ca51c47",
+          "bytes": 608613,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/hf-text.raw"
+        }
+      ]
     },
     {
       "id": "lmarena-webdev",
       "name": "LMArena WebDev (Code Arena)",
       "org": "LMArena",
-      "url": "https://arena.ai/leaderboard/code",
+      "url": "https://arena.ai/leaderboard/code/webdev",
       "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/webdev/latest-00000-of-00001.parquet",
-      "updated": "2026-09-25",
+      "updated": "2026-10-08",
+      "fetched": "2026-10-13",
       "metric": "Arena score (Bradley-Terry)",
       "category": "coding",
       "higherIsBetter": true,
       "confidence": "high",
+      "evaluator": "LMArena",
+      "family": "arena-webdev",
       "scores": {
         "claude-opus-5-5": {
           "measurements": [
             {
-              "value": 1826.7306745084245,
+              "value": 1813.028149728328,
               "variant": "claude-opus-5.5-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 1
+              "rank": 1,
+              "confidenceInterval": [
+                1797.6878347988331,
+                1828.3684646578226
+              ],
+              "voteCount": 2294
             }
           ],
-          "value": 1826.7306745084245,
+          "value": 1813.028149728328,
           "variant": "claude-opus-5.5-max",
           "rank": 1
         },
         "gpt-6-astra": {
           "measurements": [
             {
-              "value": 1791.6525596749589,
+              "value": 1786.1141116447413,
               "variant": "gpt-6-astra-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 2
+              "rank": 2,
+              "confidenceInterval": [
+                1775.150833631382,
+                1797.0773896581004
+              ],
+              "voteCount": 5189
             }
           ],
-          "value": 1791.6525596749589,
+          "value": 1786.1141116447413,
           "variant": "gpt-6-astra-max",
           "rank": 2
+        },
+        "claude-sonnet-5-5": {
+          "measurements": [
+            {
+              "value": 1774.2855361868098,
+              "variant": "claude-sonnet-5.5-xhigh",
+              "effort": "xhigh",
+              "rawEffort": "xhigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 3,
+              "confidenceInterval": [
+                1759.327195074526,
+                1789.243877299094
+              ],
+              "voteCount": 2323
+            },
+            {
+              "value": 1714.8840737505025,
+              "variant": "claude-sonnet-5.5-high",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 6,
+              "confidenceInterval": [
+                1703.9168599440084,
+                1725.8512875569963
+              ],
+              "voteCount": 3984
+            }
+          ],
+          "value": 1774.2855361868098,
+          "variant": "claude-sonnet-5.5-xhigh",
+          "rank": 3
+        },
+        "gpt-6-1-sol": {
+          "measurements": [
+            {
+              "value": 1755.3982673326393,
+              "variant": "gpt-6.1-sol-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 4,
+              "confidenceInterval": [
+                1740.3947847977402,
+                1770.4017498675385
+              ],
+              "voteCount": 2102
+            }
+          ],
+          "value": 1755.3982673326393,
+          "variant": "gpt-6.1-sol-max",
+          "rank": 4
         },
         "claude-fable-5-1": {
           "measurements": [
             {
-              "value": 1751.4867509630722,
+              "value": 1743.7093865265408,
               "variant": "claude-fable-5.1-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 3
+              "rank": 5,
+              "confidenceInterval": [
+                1734.3381516715676,
+                1753.080621381514
+              ],
+              "voteCount": 6663
             }
           ],
-          "value": 1751.4867509630722,
+          "value": 1743.7093865265408,
           "variant": "claude-fable-5.1-max",
-          "rank": 3
+          "rank": 5
         },
         "gpt-6-sol": {
           "measurements": [
             {
-              "value": 1680.9724563881532,
+              "value": 1688.1815937715994,
               "variant": "gpt-6-sol-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 5
+              "rank": 8,
+              "confidenceInterval": [
+                1676.4927574119213,
+                1699.8704301312778
+              ],
+              "voteCount": 3407
             }
           ],
-          "value": 1680.9724563881532,
+          "value": 1688.1815937715994,
           "variant": "gpt-6-sol-max",
-          "rank": 5
+          "rank": 8
         },
         "qwen3-8-max": {
           "measurements": [
             {
-              "value": 1661.6148024691886,
+              "value": 1673.5014803771517,
               "variant": "qwen3.8-max-0902",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 8,
-              "snapshot": "0902"
+              "snapshot": "0902",
+              "rank": 10,
+              "confidenceInterval": [
+                1665.9836911875118,
+                1681.0192695667915
+              ],
+              "voteCount": 11182
             }
           ],
-          "value": 1661.6148024691886,
+          "value": 1673.5014803771517,
           "variant": "qwen3.8-max-0902",
-          "rank": 8
-        },
-        "kimi-k3": {
-          "measurements": [
-            {
-              "value": 1659.8729180873972,
-              "variant": "kimi-k3-max",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 9
-            }
-          ],
-          "value": 1659.8729180873972,
-          "variant": "kimi-k3-max",
-          "rank": 9
+          "rank": 10
         },
         "muse-spark-1-3": {
           "measurements": [
             {
-              "value": 1626.4699243598252,
-              "variant": "muse-spark-1.3 (xHigh)",
-              "effort": "xhigh",
-              "rawEffort": "xhigh",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 15
-            },
-            {
-              "value": 1655.5032259545446,
+              "value": 1656.8554034202887,
               "variant": "muse-spark-1.3-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 10
+              "rank": 13,
+              "confidenceInterval": [
+                1648.5612749995373,
+                1665.14953184104
+              ],
+              "voteCount": 7886
+            },
+            {
+              "value": 1625.855490570557,
+              "variant": "muse-spark-1.3 (xHigh)",
+              "effort": "xhigh",
+              "rawEffort": "xHigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 20,
+              "confidenceInterval": [
+                1617.4403756064094,
+                1634.2706055347048
+              ],
+              "voteCount": 7123
             }
           ],
-          "value": 1655.5032259545446,
+          "value": 1656.8554034202887,
           "variant": "muse-spark-1.3-max",
-          "rank": 10
+          "rank": 13
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 1654.354241193575,
+              "variant": "kimi-k3-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 14,
+              "confidenceInterval": [
+                1648.1501102434586,
+                1660.5583721436915
+              ],
+              "voteCount": 17412
+            }
+          ],
+          "value": 1654.354241193575,
+          "variant": "kimi-k3-max",
+          "rank": 14
         },
         "grok-4-7": {
           "measurements": [
             {
-              "value": 1629.266689991658,
+              "value": 1639.090984165512,
               "variant": "grok-4.7-xhigh",
               "effort": "xhigh",
               "rawEffort": "xhigh",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 13
+              "rank": 15,
+              "confidenceInterval": [
+                1628.323109371836,
+                1649.8588589591882
+              ],
+              "voteCount": 3936
             }
           ],
-          "value": 1629.266689991658,
+          "value": 1639.090984165512,
           "variant": "grok-4.7-xhigh",
-          "rank": 13
+          "rank": 15
         },
-        "deepseek-v4-1-flash": {
+        "mimo-v2-6-flash": {
           "measurements": [
             {
-              "value": 1620.706058061411,
-              "variant": "deepseek-v4.1-flash-max",
-              "effort": "max",
-              "rawEffort": "max",
+              "value": 1636.8087536674434,
+              "variant": "mimo-v2.6-flash",
+              "effort": "unspecified",
+              "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 16
+              "rank": 16,
+              "confidenceInterval": [
+                1626.4133336246573,
+                1647.20417371023
+              ],
+              "voteCount": 4058
             }
           ],
-          "value": 1620.706058061411,
-          "variant": "deepseek-v4.1-flash-max",
+          "value": 1636.8087536674434,
+          "variant": "mimo-v2.6-flash",
           "rank": 16
-        },
-        "glm-5-3": {
-          "measurements": [
-            {
-              "value": 1619.078984091177,
-              "variant": "glm-5.3-max",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 18
-            }
-          ],
-          "value": 1619.078984091177,
-          "variant": "glm-5.3-max",
-          "rank": 18
         },
         "mimo-v2-6-pro": {
           "measurements": [
             {
-              "value": 1618.0515859954373,
+              "value": 1628.955286116617,
               "variant": "mimo-v2.6-pro",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 19
+              "rank": 19,
+              "confidenceInterval": [
+                1617.9484367371565,
+                1639.962135496077
+              ],
+              "voteCount": 3649
             }
           ],
-          "value": 1618.0515859954373,
+          "value": 1628.955286116617,
           "variant": "mimo-v2.6-pro",
           "rank": 19
         },
-        "gpt-6-luna": {
+        "glm-5-3": {
           "measurements": [
             {
-              "value": 1592.646721210178,
-              "variant": "gpt-6-luna-max",
+              "value": 1622.2236327051407,
+              "variant": "glm-5.3-max",
               "effort": "max",
               "rawEffort": "max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 24
+              "rank": 22,
+              "confidenceInterval": [
+                1614.254799000305,
+                1630.1924664099765
+              ],
+              "voteCount": 8382
             }
           ],
-          "value": 1592.646721210178,
-          "variant": "gpt-6-luna-max",
-          "rank": 24
+          "value": 1622.2236327051407,
+          "variant": "glm-5.3-max",
+          "rank": 22
         },
-        "deepseek-v4-pro": {
+        "deepseek-v4-1-flash": {
           "measurements": [
             {
-              "value": 1582.041653732348,
-              "variant": "deepseek-v4-pro-high-20260813",
+              "value": 1618.6045504684441,
+              "variant": "deepseek-v4.1-flash-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 23,
+              "confidenceInterval": [
+                1607.6558083105247,
+                1629.5532926263638
+              ],
+              "voteCount": 3542
+            }
+          ],
+          "value": 1618.6045504684441,
+          "variant": "deepseek-v4.1-flash-max",
+          "rank": 23
+        },
+        "claude-haiku-5-5": {
+          "measurements": [
+            {
+              "value": 1586.9446989146388,
+              "variant": "claude-haiku-5.5-high",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 26,
-              "snapshot": "0813"
+              "rank": 30,
+              "confidenceInterval": [
+                1567.342845314121,
+                1606.546552515157
+              ],
+              "voteCount": 978
             }
           ],
-          "value": 1582.041653732348,
-          "variant": "deepseek-v4-pro-high-20260813",
-          "rank": 26
+          "value": 1586.9446989146388,
+          "variant": "claude-haiku-5.5-high",
+          "rank": 30
         },
         "gemini-3-8-flash": {
           "measurements": [
             {
-              "value": 1579.9571506411203,
+              "value": 1583.462059363355,
               "variant": "gemini-3.8-flash-high",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 28
+              "rank": 31,
+              "confidenceInterval": [
+                1575.7226836323698,
+                1591.2014350943398
+              ],
+              "voteCount": 9225
             }
           ],
-          "value": 1579.9571506411203,
+          "value": 1583.462059363355,
           "variant": "gemini-3.8-flash-high",
-          "rank": 28
+          "rank": 31
+        },
+        "deepseek-v4-pro": {
+          "measurements": [
+            {
+              "value": 1582.0360983441306,
+              "variant": "deepseek-v4-pro-high-20260813",
+              "effort": "high",
+              "rawEffort": "high",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "snapshot": "0813",
+              "rank": 32,
+              "confidenceInterval": [
+                1572.587477143928,
+                1591.484719544333
+              ],
+              "voteCount": 4740
+            }
+          ],
+          "value": 1582.0360983441306,
+          "variant": "deepseek-v4-pro-high-20260813",
+          "rank": 32
+        },
+        "gpt-6-luna": {
+          "measurements": [
+            {
+              "value": 1580.896017410467,
+              "variant": "gpt-6-luna-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 34,
+              "confidenceInterval": [
+                1573.9738186269017,
+                1587.8182161940324
+              ],
+              "voteCount": 12332
+            }
+          ],
+          "value": 1580.896017410467,
+          "variant": "gpt-6-luna-max",
+          "rank": 34
         },
         "claude-sonnet-5": {
           "measurements": [
             {
-              "value": 1538.9131567383743,
+              "value": 1540.791873559744,
               "variant": "claude-sonnet-5-high",
               "effort": "high",
               "rawEffort": "high",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 36
+              "rank": 43,
+              "confidenceInterval": [
+                1534.6421782999464,
+                1546.9415688195418
+              ],
+              "voteCount": 14574
             }
           ],
-          "value": 1538.9131567383743,
+          "value": 1540.791873559744,
           "variant": "claude-sonnet-5-high",
-          "rank": 36
+          "rank": 43
         },
         "minimax-m3": {
           "measurements": [
             {
-              "value": 1483.4066915845285,
+              "value": 1481.6981364670619,
               "variant": "minimax-m3",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 54
+              "rank": 62,
+              "confidenceInterval": [
+                1476.0522019254827,
+                1487.3440710086413
+              ],
+              "voteCount": 18288
             }
           ],
-          "value": 1483.4066915845285,
+          "value": 1481.6981364670619,
           "variant": "minimax-m3",
-          "rank": 54
+          "rank": 62
         },
         "gemini-3-1-pro": {
           "measurements": [
             {
-              "value": 1446.3145134914955,
+              "value": 1446.7086676853123,
               "variant": "gemini-3.1-pro-preview",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 63
+              "rank": 71,
+              "confidenceInterval": [
+                1441.6559017792729,
+                1451.7614335913515
+              ],
+              "voteCount": 24249
             }
           ],
-          "value": 1446.3145134914955,
+          "value": 1446.7086676853123,
           "variant": "gemini-3.1-pro-preview",
-          "rank": 63
+          "rank": 71
         },
         "claude-haiku-4-5": {
           "measurements": [
             {
-              "value": 1329.545619927862,
+              "value": 1329.675338004281,
               "variant": "claude-haiku-4-5-20251001",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 110
+              "rank": 117,
+              "confidenceInterval": [
+                1324.7726189556101,
+                1334.578057052952
+              ],
+              "voteCount": 29113
             }
           ],
-          "value": 1329.545619927862,
+          "value": 1329.675338004281,
           "variant": "claude-haiku-4-5-20251001",
-          "rank": 110
+          "rank": 117
         },
         "mistral-medium-3-5": {
           "measurements": [
             {
-              "value": 1263.4464280022278,
+              "value": 1263.4997368997563,
               "variant": "mistral-medium-3.5",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 118
+              "rank": 125,
+              "confidenceInterval": [
+                1248.7454976476397,
+                1278.2539761518726
+              ],
+              "voteCount": 2322
             }
           ],
-          "value": 1263.4464280022278,
+          "value": 1263.4997368997563,
           "variant": "mistral-medium-3.5",
-          "rank": 118
+          "rank": 125
         }
       },
-      "notes": "Fresh raw HF dataset, complete overall category (134 rows); full raw precision preserved. All same-checkpoint effort/thinking variants remain separate in measurements; compatible top-level score is best published value only, not an effort-specific score. Source-declared effort comes from the suffix after the model name: the Max in Qwen3.8 Max is part of its name, not effort. Missing effort/mode/fallback/harness metadata stays unspecified/null. DeepSeek original/preview excluded because roster is 0813. Qwen Max undated rows excluded because they cannot establish roster 0902 checkpoint. updated is the dataset leaderboard_publish_date, corroborated by source page.",
-      "evaluator": "LMArena"
+      "notes": "Fresh raw evaluator-owned HF Parquet fetched 2026-10-13; all 141 overall rows inspected. updated is the dataset leaderboard_publish_date, corroborated against official rendered board. Full raw precision retained. Exact-version effort variants remain distinct; unreported mode, fallback and harness stay unspecified/null. Undated Qwen3.8 Max and original/preview DeepSeek V4 Pro omitted because they do not establish 0902/0813 checkpoints. No exact Muse Wonder or Muse Wonder Full row is published in these datasets or the checked official board pages. Official rendered board reports 142 models while the latest raw overall Parquet has 141; matching requested models use the exact raw dataset, not rounded page values. ",
+      "rawEvidence": [
+        {
+          "url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/webdev/latest-00000-of-00001.parquet",
+          "sha256": "ee3d8f9a552756d7e9f18e30a0b255e6faeeec5a65260eba94f0932f89964de9",
+          "bytes": 29086,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/hf-webdev.raw"
+        }
+      ]
     },
     {
       "id": "lmarena-agent",
@@ -698,300 +1062,522 @@
       "org": "LMArena",
       "url": "https://arena.ai/leaderboard/agent",
       "dataUrl": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/agent/latest-00000-of-00001.parquet",
-      "updated": "2026-09-28",
-      "metric": "Net Improvement (relative agent score, percent; can be negative)",
+      "updated": "2026-10-12",
+      "fetched": "2026-10-13",
+      "metric": "Net improvement (%)",
       "category": "agents",
       "higherIsBetter": true,
-      "confidence": "medium",
+      "confidence": "high",
+      "evaluator": "LMArena",
+      "family": "arena-agent",
       "scores": {
-        "claude-fable-5-1": {
-          "measurements": [
-            {
-              "value": 14.0647128827409,
-              "variant": "Claude Fable 5.1 (Max)",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 1
-            }
-          ],
-          "value": 14.0647128827409,
-          "variant": "Claude Fable 5.1 (Max)",
-          "rank": 1
-        },
         "claude-opus-5-5": {
           "measurements": [
             {
-              "value": 11.843427629578219,
+              "value": 17.88935175401255,
+              "variant": "Claude Opus 5.5 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 1,
+              "confidenceInterval": [
+                13.65030883744939,
+                22.128394670575716
+              ],
+              "sessionCount": 5686.0,
+              "observationCount": 612411.0
+            },
+            {
+              "value": 14.331280058415052,
               "variant": "Claude Opus 5.5 (High)",
               "effort": "high",
-              "rawEffort": "high",
+              "rawEffort": "High",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 2
+              "confidenceInterval": [
+                12.150663912969831,
+                16.511896203860275
+              ],
+              "published": "2026-10-08",
+              "historical": true,
+              "historicalReason": "Latest owner-published High snapshot; current leaderboard default switched to a distinct Max run on October12, without correction or reattribution.",
+              "rawSource": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset",
+              "rank": 1,
+              "sessionCount": 6103.0,
+              "observationCount": 940970.0
             }
           ],
-          "value": 11.843427629578219,
-          "variant": "Claude Opus 5.5 (High)",
-          "rank": 2
+          "value": 17.88935175401255,
+          "variant": "Claude Opus 5.5 (Max)",
+          "rank": 1
         },
-        "gpt-6-astra": {
+        "gpt-6-1-sol": {
           "measurements": [
             {
-              "value": 10.363131353613044,
-              "variant": "GPT 6 Astra (Max)",
+              "value": 13.812202762814014,
+              "variant": "GPT 6.1 Sol (Max)",
               "effort": "max",
-              "rawEffort": "max",
+              "rawEffort": "Max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 3
+              "rank": 2,
+              "confidenceInterval": [
+                11.477014787615648,
+                16.14739073801238
+              ],
+              "sessionCount": 11376.0,
+              "observationCount": 834051.0
             }
           ],
-          "value": 10.363131353613044,
-          "variant": "GPT 6 Astra (Max)",
-          "rank": 3
+          "value": 13.812202762814014,
+          "variant": "GPT 6.1 Sol (Max)",
+          "rank": 2
         },
         "gpt-6-sol": {
           "measurements": [
             {
-              "value": 8.799784916674689,
+              "value": 12.598858835439133,
               "variant": "GPT 6 Sol (Max)",
               "effort": "max",
-              "rawEffort": "max",
+              "rawEffort": "Max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 6
+              "rank": 3,
+              "confidenceInterval": [
+                10.003522161353343,
+                15.194195509524924
+              ],
+              "sessionCount": 6148.0,
+              "observationCount": 1033315.0
             }
           ],
-          "value": 8.799784916674689,
+          "value": 12.598858835439133,
           "variant": "GPT 6 Sol (Max)",
+          "rank": 3
+        },
+        "gpt-6-astra": {
+          "measurements": [
+            {
+              "value": 12.344570538868377,
+              "variant": "GPT 6 Astra (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 5,
+              "confidenceInterval": [
+                9.87824124467071,
+                14.810899833066044
+              ],
+              "sessionCount": 12483.0,
+              "observationCount": 937832.0
+            }
+          ],
+          "value": 12.344570538868377,
+          "variant": "GPT 6 Astra (Max)",
+          "rank": 5
+        },
+        "claude-fable-5-1": {
+          "measurements": [
+            {
+              "value": 11.738099112033968,
+              "variant": "Claude Fable 5.1 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 6,
+              "confidenceInterval": [
+                9.64182466920685,
+                13.834373554861088
+              ],
+              "sessionCount": 16099.0,
+              "observationCount": 1838325.0
+            }
+          ],
+          "value": 11.738099112033968,
+          "variant": "Claude Fable 5.1 (Max)",
           "rank": 6
         },
-        "claude-sonnet-5": {
+        "claude-sonnet-5-5": {
           "measurements": [
             {
-              "value": 4.801650404212376,
-              "variant": "Claude Sonnet 5 (High)",
-              "effort": "high",
-              "rawEffort": "high",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 10
-            }
-          ],
-          "value": 4.801650404212376,
-          "variant": "Claude Sonnet 5 (High)",
-          "rank": 10
-        },
-        "kimi-k3": {
-          "measurements": [
-            {
-              "value": 4.034997607721866,
-              "variant": "Kimi K3 (Max)",
+              "value": 10.752128098351243,
+              "variant": "Claude Sonnet 5.5 (Max)",
               "effort": "max",
-              "rawEffort": "max",
+              "rawEffort": "Max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 13
+              "rank": 7,
+              "confidenceInterval": [
+                7.465565845776487,
+                14.038690350925997
+              ],
+              "sessionCount": 7352.0,
+              "observationCount": 875482.0
             }
           ],
-          "value": 4.034997607721866,
-          "variant": "Kimi K3 (Max)",
-          "rank": 13
-        },
-        "grok-4-7": {
-          "measurements": [
-            {
-              "value": 4.0205615666081576,
-              "variant": "Grok 4.7 (xHigh)",
-              "effort": "xhigh",
-              "rawEffort": "xhigh",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 14
-            }
-          ],
-          "value": 4.0205615666081576,
-          "variant": "Grok 4.7 (xHigh)",
-          "rank": 14
-        },
-        "deepseek-v4-1-flash": {
-          "measurements": [
-            {
-              "value": 3.857651731346263,
-              "variant": "Deepseek V4.1 Flash (Max)",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 15
-            }
-          ],
-          "value": 3.857651731346263,
-          "variant": "Deepseek V4.1 Flash (Max)",
-          "rank": 15
-        },
-        "muse-spark-1-3": {
-          "measurements": [
-            {
-              "value": 3.8290704943740415,
-              "variant": "Muse Spark 1.3 (Max)",
-              "effort": "max",
-              "rawEffort": "max",
-              "mode": "unspecified",
-              "fallback": null,
-              "harness": null,
-              "rank": 17
-            }
-          ],
-          "value": 3.8290704943740415,
-          "variant": "Muse Spark 1.3 (Max)",
-          "rank": 17
+          "value": 10.752128098351243,
+          "variant": "Claude Sonnet 5.5 (Max)",
+          "rank": 7
         },
         "gemini-3-8-flash": {
           "measurements": [
             {
-              "value": 3.7541249524181475,
+              "value": 5.179444790609109,
               "variant": "Gemini 3.8 Flash (High)",
               "effort": "high",
-              "rawEffort": "high",
+              "rawEffort": "High",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 18
+              "rank": 12,
+              "confidenceInterval": [
+                4.106864530157693,
+                6.252025051060525
+              ],
+              "sessionCount": 37393.0,
+              "observationCount": 5121119.0
             }
           ],
-          "value": 3.7541249524181475,
+          "value": 5.179444790609109,
           "variant": "Gemini 3.8 Flash (High)",
-          "rank": 18
+          "rank": 12
         },
-        "glm-5-3": {
+        "claude-sonnet-5": {
           "measurements": [
             {
-              "value": 2.781504921470527,
-              "variant": "GLM 5.3 (Max)",
-              "effort": "max",
-              "rawEffort": "max",
+              "value": 4.347680966174179,
+              "variant": "Claude Sonnet 5 (High)",
+              "effort": "high",
+              "rawEffort": "High",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 19
+              "rank": 14,
+              "confidenceInterval": [
+                2.5618930626869507,
+                6.1334688696614075
+              ],
+              "sessionCount": 32993.0,
+              "observationCount": 3617061.0
             }
           ],
-          "value": 2.781504921470527,
-          "variant": "GLM 5.3 (Max)",
-          "rank": 19
+          "value": 4.347680966174179,
+          "variant": "Claude Sonnet 5 (High)",
+          "rank": 14
+        },
+        "grok-4-7": {
+          "measurements": [
+            {
+              "value": 3.5877263230832734,
+              "variant": "Grok 4.7 (xHigh)",
+              "effort": "xhigh",
+              "rawEffort": "xHigh",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 15,
+              "confidenceInterval": [
+                1.8324061209509481,
+                5.343046525215598
+              ],
+              "sessionCount": 14522.0,
+              "observationCount": 2271918.0
+            }
+          ],
+          "value": 3.5877263230832734,
+          "variant": "Grok 4.7 (xHigh)",
+          "rank": 15
+        },
+        "deepseek-v4-1-flash": {
+          "measurements": [
+            {
+              "value": 3.343270585253232,
+              "variant": "Deepseek V4.1 Flash (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 16,
+              "confidenceInterval": [
+                2.937871617232057,
+                3.7486695532744077
+              ],
+              "sessionCount": 210741.0,
+              "observationCount": 31940567.0
+            }
+          ],
+          "value": 3.343270585253232,
+          "variant": "Deepseek V4.1 Flash (Max)",
+          "rank": 16
+        },
+        "muse-spark-1-3": {
+          "measurements": [
+            {
+              "value": 3.2618986971227106,
+              "variant": "Muse Spark 1.3 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 17,
+              "confidenceInterval": [
+                2.4271071053173356,
+                4.096690288928086
+              ],
+              "sessionCount": 73262.0,
+              "observationCount": 7203460.0
+            }
+          ],
+          "value": 3.2618986971227106,
+          "variant": "Muse Spark 1.3 (Max)",
+          "rank": 17
+        },
+        "mimo-v2-6-pro": {
+          "measurements": [
+            {
+              "value": 3.0845067030929796,
+              "variant": "MiMo V2.6 Pro",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 18,
+              "confidenceInterval": [
+                1.7441476699096323,
+                4.424865736276326
+              ],
+              "sessionCount": 20697.0,
+              "observationCount": 1860855.0
+            }
+          ],
+          "value": 3.0845067030929796,
+          "variant": "MiMo V2.6 Pro",
+          "rank": 18
+        },
+        "kimi-k3": {
+          "measurements": [
+            {
+              "value": 2.993453661153842,
+              "variant": "Kimi K3 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 20,
+              "confidenceInterval": [
+                2.295521494112521,
+                3.691385828195163
+              ],
+              "sessionCount": 134700.0,
+              "observationCount": 12619869.0
+            }
+          ],
+          "value": 2.993453661153842,
+          "variant": "Kimi K3 (Max)",
+          "rank": 20
         },
         "deepseek-v4-pro": {
           "measurements": [
             {
-              "value": 1.7427578243678723,
+              "value": 2.967935962156529,
               "variant": "DeepSeek V4 Pro (High) (0813)",
               "effort": "high",
-              "rawEffort": "high",
+              "rawEffort": "High",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
+              "snapshot": "0813",
               "rank": 21,
-              "snapshot": "0813"
+              "confidenceInterval": [
+                1.1442000596787338,
+                4.791671864634324
+              ],
+              "sessionCount": 7163.0,
+              "observationCount": 847500.0
             }
           ],
-          "value": 1.7427578243678723,
+          "value": 2.967935962156529,
           "variant": "DeepSeek V4 Pro (High) (0813)",
           "rank": 21
         },
         "gpt-6-luna": {
           "measurements": [
             {
-              "value": 1.591221339609086,
+              "value": 2.762404824776701,
               "variant": "GPT 6 Luna (Max)",
               "effort": "max",
-              "rawEffort": "max",
+              "rawEffort": "Max",
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 23
+              "rank": 22,
+              "confidenceInterval": [
+                2.2195359101509147,
+                3.3052737394024865
+              ],
+              "sessionCount": 144508.0,
+              "observationCount": 19586989.0
             }
           ],
-          "value": 1.591221339609086,
+          "value": 2.762404824776701,
           "variant": "GPT 6 Luna (Max)",
-          "rank": 23
+          "rank": 22
         },
-        "minimax-m3": {
+        "mimo-v2-6-flash": {
           "measurements": [
             {
-              "value": -6.805126769980034,
-              "variant": "Minimax M3",
+              "value": 2.3184493512765734,
+              "variant": "MiMo V2.6 Flash",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 39
+              "rank": 25,
+              "confidenceInterval": [
+                0.7153143255319138,
+                3.9215843770212326
+              ],
+              "sessionCount": 18238.0,
+              "observationCount": 2021162.0
             }
           ],
-          "value": -6.805126769980034,
-          "variant": "Minimax M3",
-          "rank": 39
+          "value": 2.3184493512765734,
+          "variant": "MiMo V2.6 Flash",
+          "rank": 25
+        },
+        "glm-5-3": {
+          "measurements": [
+            {
+              "value": 1.8173417505576404,
+              "variant": "GLM 5.3 (Max)",
+              "effort": "max",
+              "rawEffort": "Max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 27,
+              "confidenceInterval": [
+                0.9887275028650829,
+                2.645955998250198
+              ],
+              "sessionCount": 86466.0,
+              "observationCount": 9341372.0
+            }
+          ],
+          "value": 1.8173417505576404,
+          "variant": "GLM 5.3 (Max)",
+          "rank": 27
         },
         "gemini-3-1-pro": {
           "measurements": [
             {
-              "value": -7.2196207321710375,
+              "value": -2.78458154710469,
               "variant": "Gemini 3.1 Pro Preview",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 41
+              "rank": 37,
+              "confidenceInterval": [
+                -4.000259079251841,
+                -1.5689040149575384
+              ],
+              "sessionCount": 87070.0,
+              "observationCount": 3285357.0
             }
           ],
-          "value": -7.2196207321710375,
+          "value": -2.78458154710469,
           "variant": "Gemini 3.1 Pro Preview",
-          "rank": 41
+          "rank": 37
+        },
+        "minimax-m3": {
+          "measurements": [
+            {
+              "value": -7.43679724569975,
+              "variant": "Minimax M3",
+              "effort": "unspecified",
+              "rawEffort": null,
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null,
+              "rank": 47,
+              "confidenceInterval": [
+                -8.471237978369071,
+                -6.402356513030429
+              ],
+              "sessionCount": 42663.0,
+              "observationCount": 3425731.0
+            }
+          ],
+          "value": -7.43679724569975,
+          "variant": "Minimax M3",
+          "rank": 47
         },
         "mistral-medium-3-5": {
           "measurements": [
             {
-              "value": -11.94976013612434,
+              "value": -10.808630587104616,
               "variant": "Mistral Medium 3.5",
               "effort": "unspecified",
               "rawEffort": null,
               "mode": "unspecified",
               "fallback": null,
               "harness": null,
-              "rank": 45
+              "rank": 49,
+              "confidenceInterval": [
+                -12.656662027351123,
+                -8.960599146858112
+              ],
+              "sessionCount": 12492.0,
+              "observationCount": 513388.0
             }
           ],
-          "value": -11.94976013612434,
+          "value": -10.808630587104616,
           "variant": "Mistral Medium 3.5",
-          "rank": 45
+          "rank": 49
         }
       },
-      "notes": "Fresh raw HF dataset, complete overall category (46 rows); full raw precision preserved. All same-checkpoint effort/thinking variants remain separate in measurements; compatible top-level score is best published value only, not an effort-specific score. Source-declared effort comes from the suffix after the model name: the Max in Qwen3.8 Max is part of its name, not effort. Missing effort/mode/fallback/harness metadata stays unspecified/null. DeepSeek original/preview excluded because roster is 0813. Qwen Max undated rows excluded because they cannot establish roster 0902 checkpoint. Agent raw score multiplied by 100 to match the percent display, preserving negative values. updated is the dataset leaderboard_publish_date, corroborated by source page.",
-      "evaluator": "LMArena"
+      "notes": "Fresh raw evaluator-owned HF Parquet fetched 2026-10-13; all 52 overall rows inspected. updated is the dataset leaderboard_publish_date, corroborated against official rendered board. Full raw precision retained. Exact-version effort variants remain distinct; unreported mode, fallback and harness stay unspecified/null. Undated Qwen3.8 Max and original/preview DeepSeek V4 Pro omitted because they do not establish 0902/0813 checkpoints. No exact Muse Wonder or Muse Wonder Full row is published in these datasets or the checked official board pages. Raw score multiplied by 100 to match net-improvement percent display, preserving negative values; underlying submetrics are not counted separately.",
+      "rawEvidence": [
+        {
+          "url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/main/agent/latest-00000-of-00001.parquet",
+          "sha256": "c7f962277c0a26df50985a7547b9a93312e83c714013591182ca0f54572fc671",
+          "bytes": 8188,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/hf-agent.raw"
+        }
+      ]
     },
     {
       "id": "livebench-global",
-      "name": "LiveBench Global Average",
+      "name": "LiveBench Global",
       "org": "LiveBench",
       "url": "https://livebench.ai/",
       "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
-      "updated": "2026-10-07",
-      "metric": "Global average (mean of 7 category means)",
+      "updated": "2026-10-13",
+      "fetched": "2026-10-13",
+      "metric": "Score (%)",
       "category": "overall",
       "higherIsBetter": true,
       "confidence": "high",
+      "evaluator": "LiveBench",
+      "family": "livebench",
       "scores": {
         "claude-sonnet-5": {
           "measurements": [
@@ -1249,8 +1835,8 @@
               "harness": null
             }
           ],
-          "value": 75.67214285714286,
-          "variant": "claude-sonnet-5-5-max-effort"
+          "value": 77.75469047619048,
+          "variant": "claude-sonnet-5-5-xhigh-effort"
         },
         "gpt-6-1-sol": {
           "measurements": [
@@ -1299,13 +1885,49 @@
           ],
           "value": 72.06791666666666,
           "variant": "claude-haiku-5-5-xhigh-effort"
+        },
+        "muse-wonder": {
+          "measurements": [
+            {
+              "value": 81.15589285714286,
+              "variant": "muse-wonder-1.0-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 81.15589285714286,
+          "variant": "muse-wonder-1.0-max"
         }
       },
-      "notes": "Current raw CSV and categories JSON verified on 2026-10-08, including Claude Haiku 5.5 xHigh and Max Effort rows. Benchmark release remains LiveBench-2026-06-25; models are appended afterward. updated = CSV Last-Modified HTTP header (2026-10-07), not benchmark release date. Mean of task scores per category, then mean of all 7 category means for global, matching the site; unrounded arithmetic retained. Every exact-checkpoint explicitly named effort variant remains separate; effort does not imply thinking mode, fallback policy or harness. Existing exact-version variants are retained; DeepSeek original/preview and undated Qwen Max cannot establish roster 0813/0902 checkpoints and remain excluded. Global is reference-only because it overlaps its retained category components.",
+      "notes": "Current raw CSV and categories JSON fetched 2026-10-13; all 70 rows inspected. Benchmark release is LiveBench-2026-06-25, verified as current default in fetched site JavaScript. updated = CSV Last-Modified HTTP header (2026-10-13), not a claim about evaluation/publication time. Mean of task values in each category, then mean of 7 categories for Global, following current source code before display rounding. Includes separate GPT-6.1 Sol Max and xHigh, and exact released Muse Wonder 1.0 Max; no Muse Wonder Full row. Unreported fallback policy/mode/harness stays unspecified/null. Qwen3.8 Max undated row excluded as not establishing 0902. Global overlaps its category parts and remains reference-only.",
+      "rawEvidence": [
+        {
+          "url": "https://livebench.ai/table_2026_06_25.csv",
+          "sha256": "bf9ce6130134893d61157c214865de13d265a5e30790ff6cd4e3142a25113799",
+          "bytes": 11736,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-table.raw"
+        },
+        {
+          "url": "https://livebench.ai/categories_2026_06_25.json",
+          "sha256": "dad300ad18655b69db720e1b88fc5a5eac06c5b2f0e52c2bf50f10ff057674f3",
+          "bytes": 725,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-categories.raw"
+        },
+        {
+          "url": "https://livebench.ai/static/js/main.ce1e731f.js",
+          "sha256": "2a2b1023aebc9e0ae24aae3976d30ced4ced039f2d7843c6c59c560e436bd7b0",
+          "bytes": 321314,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-js.raw"
+        }
+      ],
       "consensus": false,
-      "consensusReason": "Global average overlaps its coding and agent categories; reference only rather than counting the same tasks again.",
-      "evaluator": "LiveBench",
-      "family": "livebench-global"
+      "consensusReason": "Composite of category boards; reference only to avoid double-counting the retained Coding and Agentic Coding components."
     },
     {
       "id": "livebench-coding",
@@ -1313,11 +1935,14 @@
       "org": "LiveBench",
       "url": "https://livebench.ai/",
       "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
-      "updated": "2026-10-07",
-      "metric": "Coding category average (code_generation, code_completion)",
+      "updated": "2026-10-13",
+      "fetched": "2026-10-13",
+      "metric": "Score (%)",
       "category": "coding",
       "higherIsBetter": true,
       "confidence": "high",
+      "evaluator": "LiveBench",
+      "family": "livebench",
       "scores": {
         "claude-sonnet-5": {
           "measurements": [
@@ -1599,8 +2224,8 @@
               "harness": null
             }
           ],
-          "value": 80.35849999999999,
-          "variant": "gpt-6.1-sol-max"
+          "value": 80.741,
+          "variant": "gpt-6.1-sol-xhigh"
         },
         "claude-haiku-5-5": {
           "measurements": [
@@ -1625,11 +2250,47 @@
           ],
           "value": 77.863,
           "variant": "claude-haiku-5-5-max-effort"
+        },
+        "muse-wonder": {
+          "measurements": [
+            {
+              "value": 80.68,
+              "variant": "muse-wonder-1.0-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 80.68,
+          "variant": "muse-wonder-1.0-max"
         }
       },
-      "notes": "Current raw CSV and categories JSON verified on 2026-10-08, including Claude Haiku 5.5 xHigh and Max Effort rows. Benchmark release remains LiveBench-2026-06-25; models are appended afterward. updated = CSV Last-Modified HTTP header (2026-10-07), not benchmark release date. Mean of task scores per category, then mean of all 7 category means for global, matching the site; unrounded arithmetic retained. Every exact-checkpoint explicitly named effort variant remains separate; effort does not imply thinking mode, fallback policy or harness. Existing exact-version variants are retained; DeepSeek original/preview and undated Qwen Max cannot establish roster 0813/0902 checkpoints and remain excluded. Global is reference-only because it overlaps its retained category components.",
-      "evaluator": "LiveBench",
-      "family": "livebench-coding"
+      "notes": "Current raw CSV and categories JSON fetched 2026-10-13; all 70 rows inspected. Benchmark release is LiveBench-2026-06-25, verified as current default in fetched site JavaScript. updated = CSV Last-Modified HTTP header (2026-10-13), not a claim about evaluation/publication time. Mean of task values in each category, then mean of 7 categories for Global, following current source code before display rounding. Includes separate GPT-6.1 Sol Max and xHigh, and exact released Muse Wonder 1.0 Max; no Muse Wonder Full row. Unreported fallback policy/mode/harness stays unspecified/null. Qwen3.8 Max undated row excluded as not establishing 0902. Global overlaps its category parts and remains reference-only.",
+      "rawEvidence": [
+        {
+          "url": "https://livebench.ai/table_2026_06_25.csv",
+          "sha256": "bf9ce6130134893d61157c214865de13d265a5e30790ff6cd4e3142a25113799",
+          "bytes": 11736,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-table.raw"
+        },
+        {
+          "url": "https://livebench.ai/categories_2026_06_25.json",
+          "sha256": "dad300ad18655b69db720e1b88fc5a5eac06c5b2f0e52c2bf50f10ff057674f3",
+          "bytes": 725,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-categories.raw"
+        },
+        {
+          "url": "https://livebench.ai/static/js/main.ce1e731f.js",
+          "sha256": "2a2b1023aebc9e0ae24aae3976d30ced4ced039f2d7843c6c59c560e436bd7b0",
+          "bytes": 321314,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-js.raw"
+        }
+      ]
     },
     {
       "id": "livebench-agentic-coding",
@@ -1637,11 +2298,14 @@
       "org": "LiveBench",
       "url": "https://livebench.ai/",
       "dataUrl": "https://livebench.ai/table_2026_06_25.csv + https://livebench.ai/categories_2026_06_25.json",
-      "updated": "2026-10-07",
-      "metric": "Agentic Coding category average (python, javascript, typescript; agentic v2)",
+      "updated": "2026-10-13",
+      "fetched": "2026-10-13",
+      "metric": "Score (%)",
       "category": "agents",
       "higherIsBetter": true,
       "confidence": "high",
+      "evaluator": "LiveBench",
+      "family": "livebench",
       "scores": {
         "claude-sonnet-5": {
           "measurements": [
@@ -1923,8 +2587,8 @@
               "harness": null
             }
           ],
-          "value": 54.54533333333333,
-          "variant": "gpt-6.1-sol-max"
+          "value": 56.76766666666667,
+          "variant": "gpt-6.1-sol-xhigh"
         },
         "claude-haiku-5-5": {
           "measurements": [
@@ -1949,54 +2613,102 @@
           ],
           "value": 57.17166666666667,
           "variant": "claude-haiku-5-5-max-effort"
+        },
+        "muse-wonder": {
+          "measurements": [
+            {
+              "value": 62.727333333333334,
+              "variant": "muse-wonder-1.0-max",
+              "effort": "max",
+              "rawEffort": "max",
+              "mode": "unspecified",
+              "fallback": null,
+              "harness": null
+            }
+          ],
+          "value": 62.727333333333334,
+          "variant": "muse-wonder-1.0-max"
         }
       },
-      "notes": "Current raw CSV and categories JSON verified on 2026-10-08, including Claude Haiku 5.5 xHigh and Max Effort rows. Benchmark release remains LiveBench-2026-06-25; models are appended afterward. updated = CSV Last-Modified HTTP header (2026-10-07), not benchmark release date. Mean of task scores per category, then mean of all 7 category means for global, matching the site; unrounded arithmetic retained. Every exact-checkpoint explicitly named effort variant remains separate; effort does not imply thinking mode, fallback policy or harness. Existing exact-version variants are retained; DeepSeek original/preview and undated Qwen Max cannot establish roster 0813/0902 checkpoints and remain excluded. Global is reference-only because it overlaps its retained category components.",
-      "evaluator": "LiveBench",
-      "family": "livebench-agentic-coding"
+      "notes": "Current raw CSV and categories JSON fetched 2026-10-13; all 70 rows inspected. Benchmark release is LiveBench-2026-06-25, verified as current default in fetched site JavaScript. updated = CSV Last-Modified HTTP header (2026-10-13), not a claim about evaluation/publication time. Mean of task values in each category, then mean of 7 categories for Global, following current source code before display rounding. Includes separate GPT-6.1 Sol Max and xHigh, and exact released Muse Wonder 1.0 Max; no Muse Wonder Full row. Unreported fallback policy/mode/harness stays unspecified/null. Qwen3.8 Max undated row excluded as not establishing 0902. Global overlaps its category parts and remains reference-only.",
+      "rawEvidence": [
+        {
+          "url": "https://livebench.ai/table_2026_06_25.csv",
+          "sha256": "bf9ce6130134893d61157c214865de13d265a5e30790ff6cd4e3142a25113799",
+          "bytes": 11736,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-table.raw"
+        },
+        {
+          "url": "https://livebench.ai/categories_2026_06_25.json",
+          "sha256": "dad300ad18655b69db720e1b88fc5a5eac06c5b2f0e52c2bf50f10ff057674f3",
+          "bytes": 725,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-categories.raw"
+        },
+        {
+          "url": "https://livebench.ai/static/js/main.ce1e731f.js",
+          "sha256": "2a2b1023aebc9e0ae24aae3976d30ced4ced039f2d7843c6c59c560e436bd7b0",
+          "bytes": 321314,
+          "fetched": "2026-10-13",
+          "localFile": "/tmp/vibyra-model-release-20261013/general-raw/livebench-js.raw"
+        }
+      ]
     }
   ],
   "staleOrSkipped": [
     {
-      "board": "dated roster match",
-      "variant": "qwen3.8-max",
-      "reason": "Qwen3.8 Max roster checkpoint is 0902; undated rows cannot establish this snapshot and may be the earlier Aug 2 checkpoint."
-    },
-    {
-      "board": "dated roster match",
+      "board": "exact checkpoint match",
       "variant": "deepseek-v4-pro",
-      "reason": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot."
+      "reason": "Undated/original/preview row cannot establish the roster 0813 DeepSeek V4 Pro or 0902 Qwen3.8 Max checkpoint."
     },
     {
-      "board": "dated roster match",
+      "board": "exact checkpoint match",
       "variant": "deepseek-v4-pro-high-preview",
-      "reason": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot."
+      "reason": "Undated/original/preview row cannot establish the roster 0813 DeepSeek V4 Pro or 0902 Qwen3.8 Max checkpoint."
     },
     {
-      "board": "dated roster match",
-      "variant": "Qwen3.8 Max",
-      "reason": "Qwen3.8 Max roster checkpoint is 0902; undated rows cannot establish this snapshot and may be the earlier Aug 2 checkpoint."
+      "board": "lmarena-text — muse-wonder",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
     },
     {
-      "board": "dated roster match",
-      "variant": "DeepSeek V4 Pro",
-      "reason": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot."
+      "board": "lmarena-webdev — muse-wonder",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
     },
     {
-      "board": "LMArena Text style-control \u2014 Haiku 5.5",
-      "reason": "Checked all 413 model keys in current raw embedded Text page (board date 2026-10-02), plus raw HF metadata. No exact Haiku 5.5 result; older Haiku 4.5/3.5/3 remain distinct. Existing source retained for narrow rollout."
+      "board": "lmarena-agent — muse-wonder",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
     },
     {
-      "board": "LMArena WebDev \u2014 Haiku 5.5",
-      "reason": "Checked all 141 model keys in current raw embedded WebDev overall page (board date 2026-10-07), plus full HF filtered Haiku rows (dataset date 2026-10-06). Only Haiku 4.5 is present; no exact Haiku 5.5 row. Existing source retained. Canonical page: https://arena.ai/leaderboard/code/webdev/overall."
+      "board": "lmarena-text — muse-wonder-full",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
     },
     {
-      "board": "LMArena Agent \u2014 Haiku 5.5",
-      "reason": "Checked all 50 rows of latest raw HF agent dataset, board date 2026-10-02. No Haiku model is present, so no exact Haiku 5.5 result. Existing source retained with no guessed new result."
+      "board": "lmarena-webdev — muse-wonder-full",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
+    },
+    {
+      "board": "lmarena-agent — muse-wonder-full",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
+    },
+    {
+      "board": "livebench-global — muse-wonder-full",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
+    },
+    {
+      "board": "livebench-coding — muse-wonder-full",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
+    },
+    {
+      "board": "livebench-agentic-coding — muse-wonder-full",
+      "reason": "No exact-version result in the fresh raw evaluator table; no score inferred or copied from another Muse checkpoint."
     }
   ],
   "excluded": {
-    "dated roster match": "DeepSeek V4 Pro roster is the 0813 checkpoint; original/preview/undated rows cannot establish that snapshot.",
-    "livebench-global": "Reference-only: global overlaps retained Coding and Agentic Coding category components; no extra capability vote."
+    "livebench-global": "Retained as reference-only composite; category components contribute instead.",
+    "lmarena-text-subcategories": "Retain only overall style-controlled Text preference. Occupational and task subsets overlap; not extra capability votes.",
+    "lmarena-webdev-subcategories": "Retain overall WebDev only; HTML/React/image-to-WebDev subsets overlap.",
+    "lmarena-agent-submetrics": "Retain net-improvement overall board only; correlated component signals are not additional votes.",
+    "dated-checkpoint-mismatches": "Undated/original/preview Qwen3.8 Max and DeepSeek V4 Pro rows omitted; roster requires 0902/0813."
   }
 }
