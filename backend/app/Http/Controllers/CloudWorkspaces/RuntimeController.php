@@ -21,9 +21,10 @@ final class RuntimeController extends Controller
     }
     public function heartbeat(Request $request, string $workspace, Runtime $runtime)
     {
-        $data = $request->validate(['ready' => 'required|boolean']);
+        $data = $request->validate(['ready' => 'required|boolean', 'egressBytes' => 'sometimes|integer|min:0|max:9007199254740991']);
         $w = $runtime->authenticate($workspace, (string) $request->bearerToken());
-        $result = $runtime->heartbeat($w, $data['ready']);
+        abort_if(($w->compute_profile ?? null) && !isset($data['egressBytes']), 422, 'Root network counter required.');
+        $result = $runtime->heartbeat($w, $data['ready'], (int)($data['egressBytes'] ?? 0));
         $cancelled = DB::table('cloud_actions')->where('workspace_id', $workspace)->where('generation', $w->generation)
             ->whereIn('state', ['cancelled', 'expired'])->where('claimed_at', '>=', now()->subMinutes(5))->pluck('id');
         return response()->json(['ok' => true, ...$result, 'cancelled' => $cancelled]);

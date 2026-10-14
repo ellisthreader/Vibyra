@@ -77,6 +77,7 @@ final class Allowance
     /** Meter's view of one window: seconds from the allowance and seconds to charge in tokens. */
     public function split(object $workspace, int $seconds): array
     {
+        if ($workspace->compute_trial ?? false) return ['allowance' => app(\App\Services\CloudComputer\PreviewTrial::class)->consume($workspace, $seconds), 'tokens' => 0];
         $covered = $this->consume($workspace, $seconds);
         $blocked = $this->overage() === 'blocked' && $this->allowanceSeconds($workspace->user_id) > 0;
         return ['allowance' => $covered, 'tokens' => $blocked ? 0 : max(0, $seconds - $covered)];
@@ -105,6 +106,7 @@ final class Allowance
     /** Token units to hold for a runway of $amount units, after the allowance covers what it can. */
     public function uncoveredUnits(object $workspace, int $amount): int
     {
+        if ($workspace->compute_trial ?? false) return 0;
         if ($this->allowanceSeconds($workspace->user_id) <= 0) return $amount;
         $remaining = $this->remainingSeconds($workspace->user_id);
         if ($remaining <= 0 && $this->overage() === 'blocked') {

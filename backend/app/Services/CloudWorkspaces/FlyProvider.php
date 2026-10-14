@@ -53,7 +53,7 @@ final class FlyProvider implements CloudWorkspaceProvider
             && !in_array($v['state'] ?? '', ['pending_destroy', 'destroying', 'destroyed'], true)));
         $volume = $this->projectVolume($w, $path, $matching) ?? $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region,
             'size_gb' => config('cloud_workspaces.volume_gib'), 'encrypted' => true, 'snapshot_retention' => 5,
-            'compute' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096]]);
+            'compute' => app(\App\Services\CloudComputer\ComputeProfiles::class)->guest($w)]);
         abort_unless(is_string($volume['id'] ?? null) && ($volume['encrypted'] ?? false) === true
             && ($volume['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib'), 503, 'Fly project disk could not be verified.');
         $machines = $this->call('GET', $path.'/machines');
@@ -68,7 +68,7 @@ final class FlyProvider implements CloudWorkspaceProvider
             if ($machine['state'] !== 'destroyed') $this->call('DELETE', $path.'/machines/'.$machine['id']);
         }
         $r = $this->send('POST', $path.'/machines', ['name' => 'workspace-'.$w->generation, 'region' => $w->region,
-            'config' => ['image' => config('cloud_workspaces.image'), 'guest' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096],
+            'config' => ['image' => config('cloud_workspaces.image'), 'guest' => app(\App\Services\CloudComputer\ComputeProfiles::class)->guest($w),
                 'restart' => ['policy' => 'no'], 'auto_destroy' => false, 'services' => [],
                 'mounts' => [['volume' => $volume['id'], 'path' => '/data']],
                 'metadata' => ['vibyra_workspace' => $w->id, 'vibyra_operation' => $w->operation_id, 'vibyra_generation' => (string) $w->generation],
@@ -126,7 +126,7 @@ final class FlyProvider implements CloudWorkspaceProvider
         $intent = ['from' => $volume['id'], 'to' => null, 'at' => now()->getTimestamp()];
         Cache::put(self::MOVE.$w->id, $intent, now()->addDays(7));
         $copy = $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region, 'source_volume_id' => $volume['id'],
-            'require_unique_zone' => true, 'compute' => ['cpu_kind' => 'performance', 'cpus' => 2, 'memory_mb' => 4096]], timeout: self::COPY_TIMEOUT);
+            'require_unique_zone' => true, 'compute' => app(\App\Services\CloudComputer\ComputeProfiles::class)->guest($w)], timeout: self::COPY_TIMEOUT);
         abort_unless(is_string($copy['id'] ?? null) && ($copy['encrypted'] ?? false) === true
             && ($copy['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib'), 503, 'The moved project disk could not be verified.');
         Cache::put(self::MOVE.$w->id, ['to' => $copy['id']] + $intent, now()->addDays(7));
@@ -191,6 +191,9 @@ final class FlyProvider implements CloudWorkspaceProvider
     private function verifyMachine(object $w, array $m, bool $current = true): void
     {
         $meta = $m['config']['metadata'] ?? [];
+        if ($current && ($w->compute_profile ?? null)) {
+            abort_unless(app(\App\Services\CloudComputer\ComputeProfiles::class)->matches($w, $m['config']['guest'] ?? []), 503, 'Fly machine resources differ from the accepted profile.');
+        }
         ProviderReview::unless(($meta['vibyra_workspace'] ?? null) === $w->id && (!$current
             || (($meta['vibyra_operation'] ?? null) === $w->operation_id && (string) ($meta['vibyra_generation'] ?? '') === (string) $w->generation)),
             'Fly machine ownership could not be verified.');

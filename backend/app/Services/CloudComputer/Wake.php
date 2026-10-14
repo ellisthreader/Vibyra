@@ -90,7 +90,14 @@ class Wake
             if (!$w) Computers::fail('computer_missing', 'Create your cloud computer first.', 404);
             // A computer made before the phone agreement, or after the agreement was withdrawn or outdated, stays asleep.
             if (!app(ConnectConsent::class)->connected($user)) Computers::fail('connect_required', 'Connect to the cloud from your iPhone first.', 409);
-            if ($w->state === 'starting') return $w->id;
+            // A Preview start carries a quote this phone session approved. Every other start (Mac sync, Agents, an app without
+            // Preview, or any start while Cloud Preview is switched off) is an ordinary start, so the switch never strands a Cloud.
+            $preview = !$agentGrant && $sessionId !== null && isset($o['quoteId']) && config('cloud_preview.enabled');
+            if ($w->state === 'starting') {
+                // An exact repeat of the accepted start is idempotent; another request cannot reuse the quote.
+                if ($preview) app(ComputeQuotes::class)->accept(VibyraSession::findOrFail($sessionId), $w, $o);
+                return $w->id;
+            }
             if ($w->state === 'ready') Computers::fail('already_running', 'Your cloud computer is already running.', 409);
             if (!in_array($w->state, ['stopped', 'archived', 'expired'], true)) Computers::fail('not_stopped', 'Your cloud computer is still stopping. Try again shortly.', 409);
             app(Eligibility::class)->authorize($user, true);
@@ -100,6 +107,8 @@ class Wake
             DB::table('cloud_workspace_control')->where('id', 1)->lockForUpdate()->firstOrFail();
             $accepted = fn (string $since, ?int $only = null) => DB::table('cloud_computer_wakes')->when($only, fn ($q) => $q->where('user_id', $only))->where('created_at', '>=', $since)->count()
                 + DB::table('cloud_quotes')->when($only, fn ($q) => $q->where('user_id', $only))->where('accepted_at', '>=', $since)->count();
+            if ($preview) abort_if($accepted(now()->subDay()->toDateTimeString(), $user) >= config('cloud_preview.starts_per_account_day')
+                || $accepted(now()->subDays(30)->toDateTimeString(), $user) >= config('cloud_preview.starts_per_account_month'), 429, 'Cloud Preview startup allowance is reached. Keep the VM running for your work or try again later.');
             abort_if($accepted(now()->subHour()->toDateTimeString(), $user) >= config('cloud_workspaces.starts_per_account_hour')
                 || $accepted(now()->subDay()->toDateTimeString(), $user) >= config('cloud_workspaces.starts_per_account_day'), 429, 'Too many cloud starts. Try again later.');
             abort_if($accepted(now()->subDay()->toDateTimeString()) >= config('cloud_workspaces.starts_per_global_day'), 503, 'Hosted startup capacity is reached for today.');
@@ -107,23 +116,30 @@ class Wake
             abort_if(DB::table('cloud_workspaces')->whereIn('state', Workspaces::ACTIVE)->count() >= config('cloud_workspaces.global_running_limit'), 503, 'Cloud computers are at capacity.');
             $max = (int) config('cloud_workspaces.max_background_seconds');
             $agent = $agentGrant?->accept(VibyraSession::findOrFail($sessionId), $w);
-            $seconds = max($agent ? 1 : 60, min($max, (int) ($agent['deadlineSeconds'] ?? $o['deadlineSeconds'] ?? $max)));
-            $budget = app(Budgets::class)->committed($w) + min((int) ($agent['budgetUnits'] ?? config('cloud_workspaces.max_budget_units')), (int) config('cloud_workspaces.account_daily_units'));
-            DB::table('cloud_workspaces')->where('id', $w->id)->update(['state' => 'starting', 'operation_id' => (string) Str::uuid(),
+            $profile = $preview ? app(ComputeQuotes::class)->accept(VibyraSession::findOrFail($sessionId), $w, $o) : null;
+            $seconds = max(($agent || $profile) ? 1 : 60, min($max, (int) ($agent['deadlineSeconds'] ?? $profile['deadlineSeconds'] ?? $o['deadlineSeconds'] ?? $max)));
+            $committed = $profile ? app(Budgets::class)->runtime($w) : app(Budgets::class)->committed($w);
+            $budget = $committed + min((int) ($agent['budgetUnits'] ?? $profile['budgetUnits'] ?? config('cloud_workspaces.max_budget_units')), (int) config('cloud_workspaces.account_daily_units'));
+            $compute = $profile
+                ? ['compute_profile' => $profile['profile'], 'accepted_compute_quote' => $o['quoteId'], 'compute_trial' => $profile['trial'], 'compute_budget_start' => $committed, 'preview_active_until' => null]
+                : ['compute_profile' => null, 'accepted_compute_quote' => null, 'compute_trial' => false, 'preview_active_until' => null];
+            DB::table('cloud_workspaces')->where('id', $w->id)->update($compute + ['state' => 'starting', 'operation_id' => (string) Str::uuid(),
                 'generation' => $w->generation + 1, 'revision' => $w->revision + 1, 'app_session_id' => $sessionId, 'device_id' => null, 'device_generation' => null,
-                'region' => $w->region ?: config('cloud_workspaces.region'), 'tariff_version' => $agent['tariffVersion'] ?? config('cloud_workspaces.tariff_version'),
-                'units_per_hour' => $agent['unitsPerHour'] ?? config('cloud_workspaces.units_per_hour'), 'provider_micro_per_hour' => $agent['providerMicroPerHour'] ?? config('cloud_workspaces.provider_micro_per_hour'),
+                'region' => $w->region ?: config('cloud_workspaces.region'), 'tariff_version' => $agent['tariffVersion'] ?? $profile['tariffVersion'] ?? config('cloud_workspaces.tariff_version'),
+                'units_per_hour' => $agent['unitsPerHour'] ?? $profile['unitsPerHour'] ?? config('cloud_workspaces.units_per_hour'), 'provider_micro_per_hour' => $agent['providerMicroPerHour'] ?? $profile['providerMicroPerHour'] ?? config('cloud_workspaces.provider_micro_per_hour'),
                 'budget_units' => $budget, 'ready_at' => null, 'metered_at' => null, 'lease_until' => null, 'heartbeat_at' => null,
                 'bootstrap_secret' => Crypt::encryptString(Str::random(64)), 'bootstrapped_at' => null, 'runtime_token_hash' => null,
                 'stop_requested_at' => null, 'stop_reason' => null, 'retention_warned_at' => null, 'retention_deleted_at' => null, 'unsaved_possible' => false, 'deadline_at' => now()->addSeconds($seconds),
                 'last_activity_at' => now(), 'host_running' => 0, 'host_waiting' => 0, 'host_activity_at' => null, 'host_provider_policy_version' => 0,
                 'terms_accepted_at' => $w->terms_accepted_at ?? now(), 'updated_at' => now()]);
+            DB::table('cloud_preview_viewers')->where('workspace_id', $w->id)->delete();
             $fresh = DB::table('cloud_workspaces')->where('id', $w->id)->first();
             try { app(Reservations::class)->reserve($fresh, Quotes::runway((int) $fresh->units_per_hour)); }
             catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
                 if ($e->getStatusCode() === 402) Computers::fail('allowance_exhausted', 'Your included cloud hours are used up and you need more tokens to keep going.', 402);
                 throw $e;
             }
+            app(PreviewCosts::class)->startup($fresh);
             DB::table('cloud_computer_wakes')->insert(['workspace_id' => $w->id, 'user_id' => $user, 'created_at' => now()]);
             \App\Jobs\ReconcileCloudWorkspace::dispatch($w->id)->afterCommit();
             return $w->id;

@@ -16,6 +16,7 @@ final class Leases
     public function issue(object $w): array
     {
         $payload = base64_encode(json_encode(['workspace' => $w->id, 'generation' => $w->generation,
+            'network' => ($w->compute_profile ?? null) ? app(\App\Services\CloudComputer\PreviewEgress::class)->remaining($w) : null,
             'machine' => $w->machine_id, 'expires' => strtotime($w->lease_until.' UTC'), 'state' => $w->state], JSON_THROW_ON_ERROR));
         return ['payload' => $payload, 'signature' => base64_encode(sodium_crypto_sign_detached($payload, $this->privateKey()))];
     }

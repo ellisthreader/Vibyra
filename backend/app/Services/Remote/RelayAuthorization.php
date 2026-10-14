@@ -30,7 +30,7 @@ class RelayAuthorization
         if ($claims['role'] === 'host') return true;
         $until = $claims['accessUntil'] ?? null;
         if ($until !== null && (! is_int($until) || $until <= time())) return false;
-        if (! app(RemoteAccess::class)->availability($host->user)['entitled']) return false;
+        if (! app(RemoteAccess::class)->availability($host->user)['entitled'] && !app(RemoteAccess::class)->cloudTrialHost($host->user, $host->host_id)) return false;
         return app(RemoteSessionAuthorization::class)->allows($host, $claims, $renewal, $activityAt);
     }
 }

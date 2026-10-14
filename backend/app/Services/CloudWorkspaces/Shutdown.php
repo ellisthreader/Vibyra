@@ -29,6 +29,8 @@ final class Shutdown
             $w = DB::table('cloud_workspaces')->where('id', $original->id)->lockForUpdate()->firstOrFail();
             if ($w->generation !== $original->generation || !in_array($w->state, Workspaces::ACTIVE, true)) return;
             app(Meter::class)->settle($w, true);
+            app(\App\Services\CloudComputer\PreviewEgress::class)->close($w);
+            DB::table('cloud_preview_viewers')->where('workspace_id',$w->id)->delete();
             DB::table('cloud_actions')->where('workspace_id', $w->id)->where('state', 'running')
                 ->update(['state' => 'unknown', 'updated_at' => now()]);
             DB::table('cloud_workspaces')->where('id', $w->id)->update(['state' => 'stopped', 'bootstrap_secret' => null,

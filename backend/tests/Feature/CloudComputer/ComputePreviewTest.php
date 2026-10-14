@@ -8,10 +8,37 @@ use Illuminate\Support\Str;
 
 class ComputePreviewTest extends ComputeTestCase
 {
-    public function test_enabled_feature_requires_an_explicit_quote_and_legacy_flag_off_still_wakes(): void
+    public function test_only_an_approved_quote_starts_preview_and_every_other_start_stays_ordinary(): void
     {
-        $this->wake()->assertStatus(409);
-        config(['cloud_preview.enabled' => false]); $this->wake()->assertStatus(202);
+        // Preview on, no quote (an app without Preview, or the person chose an ordinary start): a normal start, no Preview.
+        $this->wake()->assertStatus(202);
+        $row = $this->row();
+        $this->assertSame([null, (int) config('cloud_workspaces.units_per_hour')], [$row->compute_profile, (int) $row->units_per_hour]);
+        $this->getJson('/api/cloud-computer')->assertOk()->assertJsonPath('computer.compute.previewAvailable', false)
+            ->assertJsonPath('computer.compute.quoteRequired', true);
+        // Mac sync wakes Cloud with no phone session: never asked for a quote, never Preview.
+        app(Meter::class)->settle($this->row(), true);
+        DB::table('cloud_workspaces')->where('id', $this->cid)->update(['state' => 'stopped']);
+        app(\App\Services\CloudComputer\Wake::class)->forSync($this->user->id, true);
+        $this->assertSame(['starting', null], [$this->row()->state, $this->row()->compute_profile]);
+        // A quote this session approved: a Preview start at the quoted machine and rate.
+        app(Meter::class)->settle($this->row(), true);
+        DB::table('cloud_workspaces')->where('id', $this->cid)->update(['state' => 'stopped']);
+        $this->postJson('/api/cloud-computer/wake', $this->accept($this->quote()))->assertStatus(202);
+        $this->assertSame(['standard', 250000], [$this->row()->compute_profile, (int) $this->row()->units_per_hour]);
+    }
+    public function test_kill_switch_wakes_a_former_preview_cloud_as_an_ordinary_start(): void
+    {
+        $this->postJson('/api/cloud-computer/wake', $this->accept($this->quote()))->assertStatus(202);
+        $this->assertSame('standard', $this->row()->compute_profile);
+        app(Meter::class)->settle($this->row(), true); // the stop's final settlement
+        DB::table('cloud_workspaces')->where('id', $this->cid)->update(['state' => 'stopped']);
+        config(['cloud_preview.enabled' => false]);
+        $this->wake()->assertStatus(202);
+        $row = $this->row();
+        $this->assertSame([null, null, false], [$row->compute_profile, $row->accepted_compute_quote, (bool) $row->compute_trial]);
+        $this->assertSame((int) config('cloud_workspaces.units_per_hour'), (int) $row->units_per_hour, 'the ordinary tariff, not the Preview one');
+        $this->getJson('/api/cloud-computer')->assertOk()->assertJsonPath('computer.compute.previewAvailable', false);
     }
     public function test_rates_and_resources_are_snapshotted_with_no_automatic_upgrade(): void
     {

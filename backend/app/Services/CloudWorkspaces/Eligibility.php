@@ -16,7 +16,9 @@ final class Eligibility
         $cohort = config('cloud_workspaces.pilot_users');
         abort_if($cohort && !in_array((string) $user, $cohort, true), 403, 'Hosted computers are currently in a limited pilot.');
         abort_unless(Units::modern($user), 409, 'This account needs the versioned token wallet before hosted computing.');
-        abort_unless(app(Wallet::class)->planFor($user) === 'pro_v2', 402, 'An active Pro membership is needed for a cloud computer.');
+        abort_unless(config('cloud_preview.enabled')
+            ? (app(\App\Services\CloudComputer\PreviewTrial::class)->paidPro($user) || app(\App\Services\CloudComputer\PreviewTrial::class)->remaining($user) > 0)
+            : app(Wallet::class)->planFor($user) === 'pro_v2', 402, 'An active Pro membership is needed for a cloud computer.');
         abort_if(DB::table('membership_periods')->where('user_id', $user)->where('disputed', true)->exists(), 402, 'Resolve your payment dispute before continuing.');
         abort_if(DB::table('membership_periods')->where('user_id', $user)->whereColumn('refund_requested', '>', 'refunded_minor')->exists()
             || DB::table('membership_orders')->where('user_id', $user)->where('refund_pending', true)->exists(), 503, 'A refund is waiting for usage reconciliation.');
@@ -30,7 +32,7 @@ final class Eligibility
             app(SpendGuard::class)->admitStart();
             abort_unless(config('cloud_workspaces.units_per_hour') > 0 && config('cloud_workspaces.provider_micro_per_hour') > 0
                 && config('cloud_workspaces.tariff_version') && config('cloud_workspaces.daily_micro_limit') > 0, 503, 'Hosted pricing has not been configured.');
-            abort_unless(config('cloud_workspaces.units_per_hour') >= config('cloud_workspaces.provider_micro_per_hour'), 503, 'Hosted pricing needs review.');
+            if (!config('cloud_preview.enabled')) abort_unless(config('cloud_workspaces.units_per_hour') >= config('cloud_workspaces.provider_micro_per_hour'), 503, 'Hosted pricing needs review.');
         }
     }
 }

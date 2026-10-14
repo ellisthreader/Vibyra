@@ -29,6 +29,14 @@ class RemoteAccess
         return ['live' => $live, 'entitled' => $entitled];
     }
 
+    /** A Free trial authorizes only its own running cloud Host, never a personal computer. */
+    public function cloudTrialHost(User $user, string $hostId): bool
+    {
+        return config('cloud_preview.enabled') && app(\App\Services\CloudComputer\PreviewTrial::class)->remaining($user->id) > 0
+            && DB::table('cloud_workspaces as w')->join('remote_hosts as h', 'h.id', '=', 'w.remote_host_id')
+                ->where('w.user_id', $user->id)->where('w.kind', 'computer')->whereIn('w.state', ['starting', 'ready'])
+                ->where('h.host_id', $hostId)->whereNull('h.revoked_at')->exists();
+    }
     /** A computer signing in: upserts its row and hands it a registration token. */
     public function register(User $user, string $hostId, string $name, ?string $platform, ?string $version, ?int $appSessionId = null, ?string $challengeId = null, ?string $proof = null): array
     {
@@ -85,7 +93,7 @@ class RemoteAccess
         if (! $availability['live']) {
             throw new RemoteAccessException('Remote access is not available yet.', 503);
         }
-        if (! $availability['entitled']) {
+        if (! $availability['entitled'] && !$this->cloudTrialHost($user, $hostId)) {
             throw new RemoteAccessException('Connecting from anywhere is part of Pro. Your computer still works on the same Wi-Fi.', 403);
         }
         return app(RemoteSessionCreation::class)->create($user, $hostId, $clientName, $appSessionId, $authorization);

@@ -2,7 +2,7 @@
 
 namespace App\Services\Vibes;
 
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\{Http, Cache};
 use Illuminate\Support\Str;
 
 /**
@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
  * and clearing every byte the app owns, which is exactly what is needed to answer
  * "has this device already had its free Vibes?".
  *
- * We use bit0 for that and leave bit1 alone. Nothing here identifies a person: a
+ * We use bit0 for guest credits and bit1 for the Cloud Preview trial. Nothing here identifies a person: a
  * device token is single-use, opaque, and is never stored — only Apple can map it
  * back to hardware, and only within our own team's namespace.
  *
@@ -48,7 +48,34 @@ class DeviceCheck
     public function markGranted(string $deviceToken): bool
     {
         if (!$this->configured()) return false;
-        return $this->post('update_two_bits', $deviceToken, ['bit0' => true, 'bit1' => false]) !== null;
+        // Read first and keep bit1: it is the Cloud Preview trial, and a guest grant must never reset it.
+        try {
+            return (bool) Cache::lock('apple-devicecheck-bits', 60)->block(10, function () use ($deviceToken) {
+                $bits = $this->bits($deviceToken);
+                return $bits !== null && $this->post('update_two_bits', $deviceToken, ['bit0' => true, 'bit1' => $bits['bit1']]) !== null;
+            });
+        } catch (\Throwable) {return false;}
+    }
+
+    /** Bit 1 is reserved for the once-per-physical-device Cloud Preview trial. */
+    public function claimCloudTrial(string $deviceToken): bool
+    {
+        if (!$this->configured()) return false;
+        try {
+            return (bool) Cache::lock('apple-devicecheck-bits', 60)->block(10, function () use ($deviceToken) {
+                $bits = $this->bits($deviceToken);
+                return $bits !== null && !$bits['bit1'] && $this->post('update_two_bits', $deviceToken, ['bit0' => $bits['bit0'], 'bit1' => true]) !== null;
+            });
+        } catch (\Throwable) {return false;}
+    }
+
+    private function bits(string $token): ?array
+    {
+        $response = $this->post('query_two_bits', $token);
+        if ($response === null) return null;
+        if (str_contains($response['body'], 'Failed to find bit state')) return ['bit0' => false, 'bit1' => false];
+        $bits = json_decode($response['body'], true);
+        return is_array($bits) && is_bool($bits['bit0'] ?? null) && is_bool($bits['bit1'] ?? null) ? $bits : null;
     }
 
     /** @return array{body: string}|null Null on any failure to reach or satisfy Apple. */

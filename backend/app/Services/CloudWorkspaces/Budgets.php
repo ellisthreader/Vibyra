@@ -7,11 +7,22 @@ final class Budgets
 {
     public function committed(object $w): int
     {
-        $runtime = (int) DB::table('cloud_reservations')->where('workspace_id', $w->id)
-            ->selectRaw('COALESCE(SUM(CASE WHEN settled_at IS NULL THEN reserved ELSE charged END), 0) AS units')->value('units');
+        $runtime = $this->runtime($w);
+        // A Preview session's cap covers its runtime and every Vibyra-funded AI turn since the quote was accepted.
+        if ($w->compute_profile ?? null) {
+            $since = DB::table('cloud_compute_quotes')->where('id', $w->accepted_compute_quote)->value('accepted_at');
+            $ai = $since ? (int) DB::table('vibes_turns')->where('user_id', $w->user_id)->where('created_at', '>=', $since)
+                ->selectRaw('COALESCE(SUM(CASE WHEN settled_at IS NULL THEN reserved ELSE charged END), 0) AS units')->value('units') : 0;
+            return $runtime + $ai;
+        }
         $ai = $w->chat_id ? (int) DB::table('vibes_turns')->where('chat_id', $w->chat_id)
             ->selectRaw('COALESCE(SUM(CASE WHEN settled_at IS NULL THEN reserved ELSE charged END), 0) AS units')->value('units') : 0;
         return $runtime + $ai;
+    }
+    public function runtime(object $w): int
+    {
+        return (int) DB::table('cloud_reservations')->where('workspace_id', $w->id)
+            ->selectRaw('COALESCE(SUM(CASE WHEN settled_at IS NULL THEN reserved ELSE charged END), 0) AS units')->value('units');
     }
     public function guard(object $w, int $next): void
     {
@@ -35,6 +46,9 @@ final class Budgets
     }
     public function guardAi(object $chat, int $next): void
     {
+        $active = DB::table('cloud_workspaces')->where('user_id', $chat->user_id)->where('kind', 'computer')
+            ->whereNotNull('compute_profile')->whereIn('state', Workspaces::ACTIVE)->first();
+        if ($active) $this->guard($active, $next);
         $w = $this->forChat($chat);
         if (!$w) {
             if (Holds::available() && DB::table('cloud_workspaces')->where('user_id', $chat->user_id)->where('state', '!=', 'deleted')->exists()) $this->accountGuard($chat->user_id, $next);

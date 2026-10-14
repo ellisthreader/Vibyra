@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\CloudComputer\{AccessController, ComputerController, ConnectController, FaceController, MacConnectController, RepoController, RuntimeController, SyncBlobController, SyncController, SyncLoginController, SyncPartController, SyncRuntimeController};
+use App\Http\Controllers\CloudComputer\{AccessController, ComputeController, ComputerController, ConnectController, FaceController, MacConnectController, RepoController, RuntimeController, SyncBlobController, SyncController, SyncLoginController, SyncPartController, SyncRuntimeController};
 use App\Http\Middleware\RequireApprovedMarket;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +14,11 @@ Route::prefix('api/cloud-computer')->middleware(['throttle:cloud-account-ip', 't
     Route::post('face-key', [FaceController::class, 'enroll'])->middleware('throttle:cloud-computer-face-key');
     Route::post('face-challenge', [FaceController::class, 'challenge'])->middleware('throttle:cloud-computer-face-challenge');
     Route::delete('connect', [ConnectController::class, 'revoke'])->middleware('throttle:cloud-computer-connect');
+    // Cloud Preview (config/cloud_preview.php): a priced, device-bound quote for a Preview start, the trial, usage, viewer leases.
+    Route::post('compute/quote', [ComputeController::class, 'quote'])->middleware([RequireApprovedMarket::class, 'throttle:cloud-compute-quote']);
+    Route::post('compute/trial', [ComputeController::class, 'trial'])->middleware([RequireApprovedMarket::class, 'throttle:cloud-compute-trial']);
+    Route::get('compute/usage', [ComputeController::class, 'usage']);
+    Route::post('preview/activity', [ComputeController::class, 'activity'])->middleware('throttle:cloud-preview-activity');
     Route::post('wake', [ComputerController::class, 'wake'])->middleware([RequireApprovedMarket::class, 'throttle:cloud-computer-wake']);
     Route::post('stop', [ComputerController::class, 'stop']);
     Route::get('repos', [RepoController::class, 'index'])->middleware('throttle:cloud-computer-repos');

@@ -36,6 +36,9 @@ final class ProviderAudit
                             $issues[] = 'unknown_machine'; continue;
                         }
                         $current = $w->operation_id === ($meta['vibyra_operation'] ?? null) && (int) $w->generation === (int) $policy['generation'];
+                        if ($current && ($w->compute_profile ?? null) && !app(\App\Services\CloudComputer\ComputeProfiles::class)->matches($w, $m['config']['guest'] ?? [])) {
+                            $provider->stopResource($w, $m); $issues[] = 'profile_resource_mismatch'; continue;
+                        }
                         if ($current && ++$currentCount > 1) $issues[] = 'duplicate_generation';
                         $extra = $current && $w->machine_id && $w->machine_id !== $m['id'];
                         if (!$current || $extra || !in_array($w->state, Workspaces::ACTIVE, true)) {

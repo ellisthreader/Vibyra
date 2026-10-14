@@ -22,6 +22,8 @@ class Idle
         if (!DB::table('vibyra_sessions')->where('user_id', $w->user_id)->whereNull('revoked_at')->where('absolute_expires_at', '>', now())->exists()) return 'authority_revoked';
         // Included hours are spent and overage is blocked: stop rather than run unpaid.
         if (app(\App\Services\CloudWorkspaces\Allowance::class)->exhaustedAndBlocked((int) $w->user_id)) return 'allowance_exhausted';
+        // A phone looking at Preview in the foreground keeps Cloud up (30 s viewer leases, PreviewActivity).
+        if (config('cloud_preview.enabled') && $w->preview_active_until && now()->lt($w->preview_active_until)) return null;
         if (app(Computers::class)->active($w) > 0) return null;
         if (config('agents_v2.cloud_enabled') && \App\Models\AgentV2\Run::whereIn('runtime_binding_id',
             \App\Models\AgentV2\RuntimeBinding::where('cloud_workspace_id', $w->id)->where('cloud_generation', $w->generation)->whereNull('revoked_at')->select('id'))

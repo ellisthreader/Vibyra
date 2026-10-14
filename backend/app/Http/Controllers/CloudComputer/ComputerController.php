@@ -32,7 +32,8 @@ final class ComputerController extends Controller
     public function wake(Request $request, Computers $computers, Wake $wake)
     {
         $session = $this->authenticatedSession($request); $this->authenticatedUser($request);
-        $data = $request->validate(['acceptTerms' => 'sometimes|boolean', 'deadlineSeconds' => 'sometimes|integer|min:60|max:'.config('cloud_workspaces.max_background_seconds')]);
+        $data = $request->validate(['acceptTerms' => 'sometimes|boolean', 'deadlineSeconds' => 'sometimes|integer|min:60|max:'.config('cloud_workspaces.max_background_seconds'),
+            'quoteId' => 'sometimes|uuid', 'requestId' => 'sometimes|uuid', 'deviceId' => 'sometimes|string|max:128']);
         $wake->wake($session, $data);
         return $this->state($session->user_id, $computers, 202);
     }

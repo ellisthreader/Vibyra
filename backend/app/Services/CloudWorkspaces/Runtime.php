@@ -54,21 +54,25 @@ final class Runtime
                 $project = ['files' => $saved['files'], 'base' => $saved['base'] ?? []];
             } else { $source = ['type' => 'upload']; $project = app(Artifacts::class)->read($w); }
             return ['cloudAgents' => ['enabled' => (bool) config('agents_v2.cloud_enabled') && ($w->kind ?? 'project') === 'computer'], 'mode' => ($w->kind ?? 'project') === 'computer' ? 'computer' : 'project', 'token' => $token, 'checkpoint' => $w->checkpoint, 'source' => $source, 'project' => $project,
+                'preview' => ['enabled' => (bool) config('cloud_preview.enabled') && (bool) ($w->compute_profile ?? null),
+                    'native' => app(\App\Services\CloudComputer\ComputeProfiles::class)->native($w)],
                 'limits' => ['files' => config('cloud_workspaces.max_files'), 'fileBytes' => config('cloud_workspaces.max_file_bytes'),
                     'projectBytes' => config('cloud_workspaces.max_project_bytes')]];
         }, 5);
     }
-    public function heartbeat(object $initial, bool $ready): array
+    public function heartbeat(object $initial, bool $ready, int $egressBytes = 0): array
     {
-        return DB::transaction(function () use ($initial, $ready) {
+        return DB::transaction(function () use ($initial, $ready, $egressBytes) {
             app(Wallet::class)->lock($initial->user_id);
             $w = DB::table('cloud_workspaces')->where('id', $initial->id)->lockForUpdate()->firstOrFail();
             abort_unless($w->generation === $initial->generation && $w->runtime_token_hash === $initial->runtime_token_hash, 401, 'Runtime generation changed.');
+            $network = ($w->compute_profile ?? null) ? app(\App\Services\CloudComputer\PreviewEgress::class)->record($w,$egressBytes) : null;
+            if ($network && $network['bytes'] === 0) {app(Shutdown::class)->request($w->user_id,$w->id,'network_limit'); $w=DB::table('cloud_workspaces')->where('id',$w->id)->firstOrFail();}
             if ($w->state === 'starting') {
                 abort_unless($ready && ($w->checkpoint_at || $w->kind === 'computer') && now()->lt($w->deadline_at), 409, 'Complete verified project setup before readiness.');
                 app(Eligibility::class)->authorize($w->user_id);
                 DB::table('cloud_workspaces')->where('id', $w->id)->update(['state' => 'ready', 'ready_at' => now(), 'metered_at' => now(),
-                    'bootstrap_secret' => null, 'runtime_secret' => null, 'last_activity_at' => $w->kind === 'computer' ? now() : $w->last_activity_at, 'lease_until' => min(now()->addSeconds(config('cloud_workspaces.lease_seconds')), \Illuminate\Support\Carbon::parse($w->deadline_at))]);
+                    'bootstrap_secret' => null, 'runtime_secret' => null, 'last_activity_at' => $w->kind === 'computer' ? now() : $w->last_activity_at, 'lease_until' => $this->leaseEnd($w)]);
             } elseif ($w->state === 'ready') {
                 $reason = app(Lifecycle::class)->stopReason($w);
                 if ($reason) app(Shutdown::class)->request($w->user_id, $w->id, $reason);
@@ -80,7 +84,7 @@ final class Runtime
                             $fresh = DB::table('cloud_workspaces')->where('id', $w->id)->first();
                             app(Reservations::class)->reserve($fresh, Quotes::runway($w->units_per_hour));
                         });
-                        DB::table('cloud_workspaces')->where('id', $w->id)->update(['lease_until' => min(now()->addSeconds(config('cloud_workspaces.lease_seconds')), \Illuminate\Support\Carbon::parse($w->deadline_at))]);
+                        DB::table('cloud_workspaces')->where('id', $w->id)->update(['lease_until' => $this->leaseEnd(DB::table('cloud_workspaces')->where('id', $w->id)->firstOrFail())]);
                     } catch (\Symfony\Component\HttpKernel\Exception\HttpException) {
                         app(Shutdown::class)->request($w->user_id, $w->id, 'budget_or_balance');
                     }
@@ -91,6 +95,19 @@ final class Runtime
             return ['state' => $w->state, 'lease' => $w->lease_until ? app(Leases::class)->issue($w) : null,
                 'stop' => $w->state !== 'ready', 'checkpoint' => $w->checkpoint];
         }, 5);
+    }
+    /** The signed lease: the usual length, clipped for a Preview session to the time its hold or trial can fund. */
+    private function leaseEnd(object $w): \Illuminate\Support\Carbon
+    {
+        $seconds = (int) config('cloud_workspaces.lease_seconds');
+        if ($w->compute_profile ?? null) {
+            $hold = DB::table('cloud_reservations')->where('workspace_id', $w->id)->whereNull('settled_at')->value('reserved');
+            $seconds = min($seconds, ($w->compute_trial ?? false)
+                ? app(\App\Services\CloudComputer\PreviewTrial::class)->remaining($w->user_id)
+                : app(Allowance::class)->remainingSeconds($w->user_id) + intdiv((int) $hold * 3600, (int) $w->units_per_hour));
+            abort_unless($seconds > 0, 402, 'Cloud token limit reached.');
+        }
+        return min(now()->addSeconds($seconds), \Illuminate\Support\Carbon::parse($w->deadline_at));
     }
     public function checkpoint(object $initial, array $files, ?array $base = null, ?string $baseCommit = null): array
     {

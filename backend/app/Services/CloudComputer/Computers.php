@@ -95,7 +95,8 @@ class Computers
         $enabled = true;
         try { app(Eligibility::class)->authorize($user); } catch (\Symfony\Component\HttpKernel\Exception\HttpException) { $enabled = false; }
         $w = $this->find($user); $consent = app(ConnectConsent::class);
-        $link = ['connected' => $consent->connected($user), 'consentVersion' => $consent->current(), 'capacity' => app(AccessCapacity::class)->payload($user)];
+        $trialOffer = app(PreviewTrial::class)->canClaim($user); $enabled = $enabled || $trialOffer;
+        $link = ['trialOffer' => $trialOffer, 'connected' => $consent->connected($user), 'consentVersion' => $consent->current(), 'capacity' => app(AccessCapacity::class)->payload($user)];
         if (!$w) return ['enabled' => $enabled] + $link + ['computer' => null];
         $host = $w->remote_host_id ? DB::table('remote_hosts')->where('id', $w->remote_host_id)->first() : null;
         $online = $host && !$host->revoked_at && $host->online_until && now()->lt($host->online_until);
@@ -104,6 +105,7 @@ class Computers
         $fresh = $this->isFresh($w);
         $flag = fn ($v) => $up && $v !== null ? (bool) $v : null;
         return ['enabled' => $enabled] + $link + ['computer' => [
+            'compute' => app(ComputeUsage::class)->current($w), 'computeGeneration' => (int) $w->generation,
             'workspaceId' => $w->id, 'hostId' => $host && !$host->revoked_at ? $host->host_id : null, 'state' => $state, 'online' => (bool) $online,
             'lastActiveAt' => $w->last_activity_at ? \Illuminate\Support\Carbon::parse($w->last_activity_at)->toIso8601String() : null,
             'error' => $state === 'error' ? $this->error($w) : null,
