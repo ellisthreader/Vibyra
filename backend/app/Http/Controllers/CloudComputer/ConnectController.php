@@ -34,7 +34,7 @@ final class ConnectController extends Controller
 
     private function keepsAnything(int $user): bool
     {
-        foreach (['cloud_sync_projects', 'cloud_sync_macs', 'cloud_sync_vm_keys', 'cloud_sync_logins', 'cloud_project_access'] as $table) {
+        foreach (['cloud_sync_projects', 'cloud_sync_macs', 'cloud_sync_vm_keys', 'cloud_sync_logins', 'cloud_project_access', 'cloud_conversation_owners', 'cloud_host_events'] as $table) {
             if (DB::table($table)->where('user_id', $user)->exists()) return true;
         }
         $w = app(Computers::class)->find($user);
@@ -63,6 +63,8 @@ final class ConnectController extends Controller
             if ($w) app(Wake::class)->stop($user->id);
             app(SyncRetention::class)->purgeUser($user->id);
             app(AccessProjects::class)->purge($user->id);
+            app(\App\Services\CloudComputer\Owners\ConversationOwners::class)->purge($user->id);
+            app(\App\Services\CloudComputer\Activity\ActivityRetention::class)->purgeUser($user->id);
         }, 5);
         return $this->json(['ok' => true] + $computers->payload($user->id))->header('Cache-Control', 'private, no-store');
     }

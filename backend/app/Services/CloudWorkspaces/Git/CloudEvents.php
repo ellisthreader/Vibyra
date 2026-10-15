@@ -20,28 +20,31 @@ final class CloudEvents
         'task.finished' => ['cloud_finished', 'replies', 'Your cloud computer finished', 60, 1440],
         'approval.needed' => ['cloud_approval', 'attention', 'Your cloud computer needs approval', 30, 60],
         'login.needed' => ['cloud_login', 'attention', 'Your cloud computer needs you to sign in', 900, 360],
+        'task.failed' => ['cloud_task_failed', 'attention', 'A task on your cloud computer failed', 60, 1440],
         // Backend-only (Retention); the VM cannot send it.
         'retention.warning' => ['cloud_retention', 'attention', 'Your cloud computer will be removed soon', 86400, 4320],
     ];
 
     /** @return array{sent:bool, reason:?string, devices?:int} */
-    public function send(object $workspace, string $type, string $title, string $body, ?string $sessionId = null): array
+    public function send(object $workspace, string $type, string $title, string $body, ?string $sessionId = null, array $extra = [], ?string $scope = null): array
     {
         [$phase, $category, $lock, $throttle, $minutes] = self::TYPES[$type];
         if (!config('intelligence.inbox')) return ['sent' => false, 'reason' => 'disabled'];
         $user = (int) $workspace->user_id;
-        if (!(bool) app(Preferences::class)->get($user)->{$category}) return ['sent' => false, 'reason' => 'preference_off'];
-        if (!Cache::add('cloud-git:event:'.$workspace->id.':'.$type, 1, $throttle)) return ['sent' => false, 'reason' => 'throttled'];
+        $preferences = app(Preferences::class);
+        if (!$preferences->allows($preferences->get($user), $category, $phase)) return ['sent' => false, 'reason' => 'preference_off'];
+        if (!Cache::add('cloud-git:event:'.$workspace->id.':'.$type.($scope !== null ? ':'.$scope : ''), 1, $throttle)) return ['sent' => false, 'reason' => 'throttled'];
         $ids = [];
         $hostId = $this->hostKey($workspace);
-        DB::transaction(function () use ($workspace, $type, $title, $body, $sessionId, $hostId, $phase, $category, $lock, $minutes, $user, &$ids) {
+        DB::transaction(function () use ($workspace, $type, $title, $body, $sessionId, $extra, $hostId, $phase, $category, $lock, $minutes, $user, &$ids) {
             $eventId = DB::table('work_events')->insertGetId(['user_id' => $user, 'source' => 'cloud_computer', 'run_id' => $workspace->id,
                 'fingerprint' => hash('sha256', 'cloud_computer:'.$workspace->id.':'.$type.':'.Str::uuid()), 'phase' => $phase,
-                'metadata' => json_encode(['workspaceId' => $workspace->id, 'type' => $type]), 'created_at' => now(), 'published_at' => now()]);
+                'metadata' => json_encode(['workspaceId' => $workspace->id, 'type' => $type,
+                    ...(isset($extra['agentSession']) ? ['runtimeGeneration' => (int) $workspace->generation] : [])]), 'created_at' => now(), 'published_at' => now()]);
             $itemId = (string) Str::uuid();
             DB::table('notification_items')->insert(['id' => $itemId, 'user_id' => $user, 'event_id' => $eventId, 'category' => $category,
                 'title' => $lock, 'created_at' => now(), 'expires_at' => now()->addMinutes($minutes),
-                'destination' => json_encode(['source' => 'cloud_computer', 'kind' => 'cloud_computer', 'runId' => $workspace->id, 'workspaceId' => $workspace->id,
+                'destination' => json_encode([...$extra, 'source' => 'cloud_computer', 'kind' => 'cloud_computer', 'runId' => $workspace->id, 'workspaceId' => $workspace->id,
                     'hostId' => $hostId, ...($sessionId !== null ? ['sessionId' => $sessionId] : []), 'event' => $type, 'detail' => ['title' => self::clip($title, 80), 'body' => self::clip($body, 240)]])]);
             foreach (DB::table('notification_devices')->where('user_id', $user)->whereNull('revoked_at')->get() as $d) {
                 DB::table('notification_deliveries')->insertOrIgnore(['item_id' => $itemId, 'device_id' => $d->id, 'generation' => $d->generation,
@@ -62,7 +65,17 @@ final class CloudEvents
     /** Still true while the computer exists for its owner; the item's own expiry does the rest. */
     public function current(object $item, object $event): bool
     {
-        return DB::table('cloud_workspaces')->where('id', $event->run_id)->where('user_id', $item->user_id)->exists();
+        if (!DB::table('cloud_workspaces')->where('id', $event->run_id)->where('user_id', $item->user_id)->exists()) return false;
+        $destination = json_decode((string) $item->destination, true) ?: [];
+        if (!array_key_exists('agentSession', $destination)) return true; // Existing non-conversation Cloud notifications keep their contract.
+        $session = $destination['agentSession'];
+        if (!is_array($session) || !is_string($session['provider'] ?? null) || !is_string($session['id'] ?? null)) return false;
+        $metadata = json_decode((string) $event->metadata, true) ?: [];
+        $source = (object) ['workspace_id' => $event->run_id, 'user_id' => $item->user_id,
+            'runtime_generation' => $metadata['runtimeGeneration'] ?? null, 'project' => $destination['project'] ?? ''];
+        if (!app(\App\Services\CloudComputer\Activity\EventAuthority::class)->deliveryCurrent($source)) return false;
+        if ($event->phase !== 'cloud_approval') return true;
+        return app(\App\Services\CloudComputer\Activity\ActivityFeed::class)->latestPhase((int) $item->user_id, $session['provider'], $session['id']) === 'waiting';
     }
 
     private static function clip(string $s, int $n): string

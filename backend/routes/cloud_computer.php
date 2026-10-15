@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\CloudComputer\{AccessController, ComputeController, ComputerController, ConnectController, FaceController, MacConnectController, RepoController, RuntimeController, SyncBlobController, SyncController, SyncLoginController, SyncPartController, SyncRuntimeController};
+use App\Http\Controllers\CloudComputer\{AccessController, ActivityController, HostEventsController, OwnerController, ComputeController, ComputerController, ConnectController, FaceController, MacConnectController, RepoController, RuntimeController, SyncBlobController, SyncController, SyncLoginController, SyncPartController, SyncRuntimeController};
 use App\Http\Middleware\RequireApprovedMarket;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +23,9 @@ Route::prefix('api/cloud-computer')->middleware(['throttle:cloud-account-ip', 't
     Route::post('stop', [ComputerController::class, 'stop']);
     Route::get('repos', [RepoController::class, 'index'])->middleware('throttle:cloud-computer-repos');
     Route::post('projects', [ComputerController::class, 'projects'])->middleware('throttle:cloud-computer-projects');
+    Route::get('owners', [OwnerController::class, 'index']);
+    Route::put('owners/{provider}/{id}', [OwnerController::class, 'update'])->middleware('throttle:cloud-conversation-owner');
+    Route::get('activity', [ActivityController::class, 'show']);
     // What Vibyra Cloud may use (docs/cloud-access-contract.md).
     Route::get('access', [AccessController::class, 'show']);
     Route::put('access/projects', [AccessController::class, 'projects'])->middleware('throttle:cloud-access-projects');
@@ -31,11 +34,15 @@ Route::prefix('api/cloud-computer')->middleware(['throttle:cloud-account-ip', 't
     Route::put('access/integrations/github', [AccessController::class, 'github'])->middleware('throttle:cloud-access-accounts');
 });
 
+// Cloud Host phase events use runtime authority, never an account bearer.
+Route::post('api/cloud-computer/host-events', [HostEventsController::class, 'store'])->middleware('throttle:cloud-runtime');
+
 // VM side. Same runtime bearer as the hosted workspace runtime (Runtime::authenticate).
 Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->group(function () {
     Route::post('{workspace}/host/challenge', [RuntimeController::class, 'challenge']);
     Route::post('{workspace}/host/register', [RuntimeController::class, 'register']);
     Route::post('{workspace}/host/activity', [RuntimeController::class, 'activity']);
+    Route::post('{workspace}/host-events', [HostEventsController::class, 'store']);
     Route::get('{workspace}/projects/pending', [RuntimeController::class, 'pending']);
     Route::post('{workspace}/projects/{id}/done', [RuntimeController::class, 'done']);
 })->whereUuid(['workspace', 'id']);

@@ -10,6 +10,8 @@ final class AccountCleanup
     {
         // Sealed sync bundles live on disk, outside the cascade that removes their rows with the account.
         app(\App\Services\CloudComputer\SyncRetention::class)->purgeUser($user);
+        app(\App\Services\CloudComputer\Owners\ConversationOwners::class)->purge($user);
+        app(\App\Services\CloudComputer\Activity\ActivityRetention::class)->purgeUser($user);
         if (!Holds::available()) return;
         foreach (DB::table('cloud_workspaces')->where('user_id', $user)->where('state', '!=', 'deleted')->get() as $w) {
             if (in_array($w->state, Workspaces::ACTIVE, true)) {

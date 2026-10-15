@@ -69,6 +69,7 @@ class SyncProjects
         app(SyncRetention::class)->dropProject($p->id);
         DB::table('cloud_sync_projects')->where('id', $p->id)->update(['removed_at' => now(), 'removed_seen_at' => null, 'up_applied_seq' => 0,
             'transcripts_applied_seq' => 0, 'applied_at' => null, 'up_applied_head' => null, 'resync' => true, 'updated_at' => now()]);
+        app(Owners\ConversationOwners::class)->dropForProjects($user, [$name]);
     }
 
     /**

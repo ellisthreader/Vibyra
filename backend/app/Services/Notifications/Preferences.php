@@ -32,7 +32,7 @@ final class Preferences
     {
         if (!\App\Services\AgentWork\Signals\NotificationPolicy::allowed($p, (string) $phase)) return false;
         if ($phase === 'agent_digest') return true; // Source categories were checked before aggregation.
-        $key = $category === 'attention' && in_array($phase, ['failed', 'agent_failed', 'cloud_failed'], true)
+        $key = $category === 'attention' && in_array($phase, ['failed', 'agent_failed', 'cloud_failed', 'cloud_task_failed'], true)
             ? 'failures' : $category;
         return (bool) ($p->{$key} ?? true);
     }

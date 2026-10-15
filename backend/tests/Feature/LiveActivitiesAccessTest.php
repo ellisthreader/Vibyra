@@ -101,4 +101,17 @@ class LiveActivitiesAccessTest extends TestCase
         app(Dispatcher::class)->deliver($run);
         $this->assertCount(0, $this->sentApns());
     }
+
+    public function test_another_account_cannot_revoke_a_devices_activity_tokens(): void
+    {
+        $run = $this->runInState();
+        $this->register($run)->assertOk();
+        $other = User::factory()->create();
+        VibyraSession::create(['user_id' => $other->id, 'token_hash' => hash('sha256', 'other-device-owner')]);
+        $this->withToken('other-device-owner')->deleteJson('/api/notifications/v1/devices/'.$this->deviceId)->assertOk();
+        $this->assertDatabaseHas('notification_devices', ['id' => $this->deviceId, 'user_id' => $this->user->id, 'revoked_at' => null]);
+        $this->assertDatabaseCount('live_activity_tokens', 1);
+        app(Dispatcher::class)->deliver($run);
+        $this->assertCount(1, $this->sentApns());
+    }
 }

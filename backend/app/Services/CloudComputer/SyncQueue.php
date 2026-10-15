@@ -97,11 +97,22 @@ class SyncQueue
                 'createdAt' => Carbon::parse($b->created_at)->toIso8601String()])->all();
     }
 
-    public function ack(int $user, string $id, bool $applied, ?string $error): void
+    public function ack(int $user, string $id, bool $applied, ?string $error, array $returned = []): void
     {
         $b = DB::table('cloud_sync_blobs')->where('id', $id)->where('user_id', $user)->where('direction', 'down')->first() ?? Computers::fail('unknown_blob', 'Unknown download.', 404);
         if ($b->applied_at || $b->failed_at) return;
         DB::table('cloud_sync_blobs')->where('id', $id)->update($applied ? ['applied_at' => now(), 'updated_at' => now()]
             : ['failed_at' => now(), 'error' => $error !== null ? mb_substr($error, 0, 300) : null, 'updated_at' => now()]);
+        if ($applied && $b->kind === 'transcripts' && $returned) $this->fileReturned($user, $b->project_id, $returned);
+    }
+
+    private function fileReturned(int $user, int $projectId, array $returned): void
+    {
+        $name = DB::table('cloud_sync_projects')->where('id', $projectId)->where('user_id', $user)->value('name');
+        if (!is_string($name)) return;
+        $events = app(\App\Services\CloudComputer\Activity\HostEvents::class);
+        foreach (array_slice($returned, 0, 50) as $r) {
+            if (is_array($r) && is_string($r['provider'] ?? null) && is_string($r['id'] ?? null)) $events->returned($user, $r['provider'], $r['id'], $name);
+        }
     }
 }

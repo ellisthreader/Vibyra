@@ -8,4 +8,5 @@ return [
     AppServiceProvider::class,
     AuthRateLimitServiceProvider::class,
     AgentRunNotificationsServiceProvider::class,
+    \App\Providers\LiveActivitiesServiceProvider::class,
 ];

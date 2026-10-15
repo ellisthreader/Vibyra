@@ -24,3 +24,5 @@ Route::prefix('api/live-status/v1')->group(function () {
     Route::post('mac', [\App\Http\Controllers\LiveStatusController::class, 'mac'])->middleware('throttle:30,1,live-status-mac');
     Route::match(['put', 'delete'], 'phone', [\App\Http\Controllers\LiveStatusController::class, 'phone'])->middleware('throttle:30,1,live-status-phone');
 });
+
+require __DIR__.'/live-activities.php';

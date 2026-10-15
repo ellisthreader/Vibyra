@@ -34,7 +34,11 @@ final class PhoneNotificationsController extends Controller
     public function revoke(Request $r, string $id)
     {
         $user = $this->authenticatedUser($r);
-        DB::table('notification_devices')->where('id', $id)->where('user_id', $user->id)->update(['revoked_at' => now()]);
+        $owned = DB::table('notification_devices')->where('id', $id)->where('user_id', $user->id)->exists();
+        if ($owned) {
+            DB::table('notification_devices')->where('id', $id)->where('user_id', $user->id)->update(['revoked_at' => now()]);
+            app(\App\Services\LiveActivities\Tokens::class)->revokeDevice($id);
+        }
         return $this->privateJson(['ok' => true]);
     }
     public function presence(Request $r)

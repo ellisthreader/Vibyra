@@ -42,6 +42,7 @@ Schedule::command('vibyra:notify-public-requests')->everyMinute()->withoutOverla
 // A run killed mid-way (e.g. by a deploy) must not hold the overlap lock for the default 24 h: computers would stay "stopping".
 Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping(2)->onOneServer();
 Schedule::command('vibyra:cloud-sync-prune')->hourly()->withoutOverlapping(55)->onOneServer();
+Schedule::command('vibyra:cloud-activity-prune')->hourly()->withoutOverlapping(55)->onOneServer();
 Schedule::command('vibyra:cloud-provider-audit')->everyMinute()->when(fn () => config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org'))->withoutOverlapping()->onOneServer();
 
 Schedule::command('vibyra:agent-v2-routines')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
@@ -70,3 +71,5 @@ Schedule::command('vibyra:agent-organisations --retention')->dailyAt('03:40')->w
 \Illuminate\Support\Facades\Schedule::command('model:prune', ['--model' => [\App\Models\PublicRequest::class]])->dailyAt('02:40')->withoutOverlapping(30)->onOneServer();
 
 Schedule::command('vibyra:revoke-deleted-apple-accounts')->everyFiveMinutes()->withoutOverlapping(4)->onOneServer();
+
+Schedule::command('vibyra:prune-account-exports')->hourly()->withoutOverlapping(30)->onOneServer();

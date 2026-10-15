@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             require __DIR__.'/../routes/teams.php';
             require __DIR__.'/../routes/spend_caps.php';
             require __DIR__.'/../routes/notifications.php';
+            require __DIR__.'/../routes/privacy.php';
             require __DIR__.'/../routes/cloud_workspaces.php';
             require __DIR__.'/../routes/cloud_computer.php';
             require __DIR__.'/../routes/cloud_git.php';

@@ -53,9 +53,27 @@ class AccessProjects
         });
         if (!$denied) return;
         $projects = app(SyncProjects::class);
-        foreach (DB::table('cloud_sync_projects')->where('user_id', $user)->whereIn('project_key', $denied)->whereNull('removed_at')->pluck('name') as $name) {
-            $projects->remove($user, $name);
-        }
+        // Taken before the removals: the keys that had a live copy, by the sync name its conversations are filed under.
+        $live = DB::table('cloud_sync_projects')->where('user_id', $user)->whereIn('project_key', $denied)->whereNull('removed_at')->pluck('name', 'project_key');
+        foreach ($live as $name) $projects->remove($user, $name); // remove() puts that sync name's conversations back on the PC
+        // Owner rows are keyed by the SYNC name (suffixed when two projects share a name), never by this decision's display name.
+        app(\App\Services\CloudComputer\Owners\ConversationOwners::class)->dropForProjects($user, $this->unsyncedNames($user, $denied, $live->keys()->all()));
+    }
+
+    /**
+     * Denied keys that never had a live copy have only their tick's name to go by (a conversation moved before the first
+     * sync is filed under it). A name another project still owns, a live sync row or a still-ticked decision, is theirs.
+     * @param list<string> $denied @param list<string> $synced denied keys that had a live sync row
+     * @return list<string>
+     */
+    private function unsyncedNames(int $user, array $denied, array $synced): array
+    {
+        $keys = array_values(array_diff($denied, $synced));
+        $names = $keys ? DB::table('cloud_project_access')->where('user_id', $user)->whereIn('project_key', $keys)->pluck('name')->unique()->values()->all() : [];
+        if (!$names) return [];
+        $owned = DB::table('cloud_sync_projects')->where('user_id', $user)->whereNull('removed_at')->whereIn('name', $names)->pluck('name')
+            ->merge(DB::table('cloud_project_access')->where('user_id', $user)->where('allowed', true)->whereIn('name', $names)->pluck('name'));
+        return array_values(array_diff($names, $owned->all()));
     }
 
     /**
