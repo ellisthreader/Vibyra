@@ -137,7 +137,7 @@ class WebsiteAuthSessionTest extends TestCase
         $this->getJson('/web-api/auth/providers')->assertOk()
             ->assertJsonPath('providers.google', false)
             ->assertJsonPath('providers.apple', true)
-            ->assertJsonPath('providers.microsoft', false);
+            ->assertJsonMissingPath('providers.microsoft'); // This released catalogue supports Apple and Google.
     }
 
     public function test_microsoft_email_verification_returns_to_web_account(): void

@@ -73,6 +73,7 @@ final class Runtime
                 app(Eligibility::class)->authorize($w->user_id);
                 DB::table('cloud_workspaces')->where('id', $w->id)->update(['state' => 'ready', 'ready_at' => now(), 'metered_at' => now(),
                     'bootstrap_secret' => null, 'runtime_secret' => null, 'last_activity_at' => $w->kind === 'computer' ? now() : $w->last_activity_at, 'lease_until' => $this->leaseEnd($w)]);
+                DB::afterCommit(fn () => app(Git\CloudEvents::class)->lifecycle($w->id, 'cloud.ready', (int) $w->generation));
             } elseif ($w->state === 'ready') {
                 $reason = app(Lifecycle::class)->stopReason($w);
                 if ($reason) app(Shutdown::class)->request($w->user_id, $w->id, $reason);

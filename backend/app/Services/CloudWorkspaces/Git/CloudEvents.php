@@ -23,7 +23,11 @@ final class CloudEvents
         'task.failed' => ['cloud_task_failed', 'attention', 'A task on your cloud computer failed', 60, 1440],
         // Backend-only (Retention); the VM cannot send it.
         'retention.warning' => ['cloud_retention', 'attention', 'Your cloud computer will be removed soon', 86400, 4320],
+        'cloud.ready' => ['cloud_ready', 'replies', 'Your cloud computer is ready', 60, 30],
+        'cloud.failed' => ['cloud_failed', 'attention', 'Your cloud computer couldn\'t start', 300, 360],
     ];
+
+    public const BACKEND_ONLY = ['retention.warning', 'task.failed', 'cloud.ready', 'cloud.failed'];
 
     /** @return array{sent:bool, reason:?string, devices?:int} */
     public function send(object $workspace, string $type, string $title, string $body, ?string $sessionId = null, array $extra = [], ?string $scope = null): array
@@ -40,7 +44,7 @@ final class CloudEvents
             $eventId = DB::table('work_events')->insertGetId(['user_id' => $user, 'source' => 'cloud_computer', 'run_id' => $workspace->id,
                 'fingerprint' => hash('sha256', 'cloud_computer:'.$workspace->id.':'.$type.':'.Str::uuid()), 'phase' => $phase,
                 'metadata' => json_encode(['workspaceId' => $workspace->id, 'type' => $type,
-                    ...(isset($extra['agentSession']) ? ['runtimeGeneration' => (int) $workspace->generation] : [])]), 'created_at' => now(), 'published_at' => now()]);
+                    ...((isset($extra['agentSession']) || in_array($type, ['cloud.ready', 'cloud.failed'], true)) ? ['runtimeGeneration' => (int) $workspace->generation] : [])]), 'created_at' => now(), 'published_at' => now()]);
             $itemId = (string) Str::uuid();
             DB::table('notification_items')->insert(['id' => $itemId, 'user_id' => $user, 'event_id' => $eventId, 'category' => $category,
                 'title' => $lock, 'created_at' => now(), 'expires_at' => now()->addMinutes($minutes),
@@ -56,6 +60,31 @@ final class CloudEvents
         return ['sent' => true, 'reason' => null, 'devices' => count($ids)];
     }
 
+    /** A committed wake transition, fenced to its original boot and current agreement. */
+    public function lifecycle(string $workspaceId, string $type, ?int $generation = null): void
+    {
+        if (!in_array($type, ['cloud.ready', 'cloud.failed'], true)) return;
+        try {
+            $initial = DB::table('cloud_workspaces')->where('id', $workspaceId)->first();
+            if (!$initial || ($initial->kind ?? 'project') !== 'computer') return;
+            DB::transaction(function () use ($initial, $type, $generation) {
+                app(\App\Services\Vibes\Wallet::class)->lock((int) $initial->user_id);
+               $w = DB::table('cloud_workspaces')->where('id', $initial->id)->lockForUpdate()->first();
+                if (!$w || ($generation !== null && (int) $w->generation !== $generation)) return;
+                DB::table('users')->where('id', $w->user_id)->lockForUpdate()->first();
+                if (!app(\App\Services\CloudComputer\ConnectConsent::class)->connected((int) $w->user_id)) return;
+                if ($type === 'cloud.ready' ? $w->state !== 'ready'
+                    : (!in_array($w->state, ['stopping', 'stopped'], true) || !in_array($w->stop_reason, ['boot_timeout', 'provider_review'], true))) return;
+                [$title, $body] = $type === 'cloud.ready' ? ['Your cloud computer is ready', 'Tap to open it.']
+                    : ['Your cloud computer couldn\'t start', 'Open Vibyra to try again.'];
+                $this->send($w, $type, $title, $body, null, [], 'boot:'.$w->generation);
+            });
+        } catch (\Throwable $error) {
+            // Notification failure cannot roll back or fail the Cloud state transition.
+            report($error);
+        }
+    }
+
     /** The computer's Noise key (what the phone connects by) while its host row is live. */
     private function hostKey(object $w): ?string
     {
@@ -65,7 +94,15 @@ final class CloudEvents
     /** Still true while the computer exists for its owner; the item's own expiry does the rest. */
     public function current(object $item, object $event): bool
     {
-        if (!DB::table('cloud_workspaces')->where('id', $event->run_id)->where('user_id', $item->user_id)->exists()) return false;
+        $w = DB::table('cloud_workspaces')->where('id', $event->run_id)->where('user_id', $item->user_id)->first();
+        if (!$w) return false;
+        if (in_array($event->phase, ['cloud_ready', 'cloud_failed'], true)) {
+            $metadata = json_decode((string) $event->metadata, true) ?: [];
+            if (!isset($metadata['runtimeGeneration']) || (int) $metadata['runtimeGeneration'] !== (int) $w->generation
+                || !app(\App\Services\CloudComputer\ConnectConsent::class)->connected((int) $w->user_id)) return false;
+            return $event->phase === 'cloud_ready' ? $w->state === 'ready'
+                : in_array($w->state, ['stopping', 'stopped'], true) && in_array($w->stop_reason, ['boot_timeout', 'provider_review'], true);
+        }
         $destination = json_decode((string) $item->destination, true) ?: [];
         if (!array_key_exists('agentSession', $destination)) return true; // Existing non-conversation Cloud notifications keep their contract.
         $session = $destination['agentSession'];

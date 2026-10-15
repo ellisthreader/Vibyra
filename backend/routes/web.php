@@ -100,7 +100,13 @@ Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProvider
 Route::get('/web-api/auth/providers', [WebsiteProviderAuthController::class, 'providers'])
     ->middleware('throttle:60,1');
 
+Route::get('/web-api/account/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'deletionStatus'])
+    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:120,1,web-account-provider-delete-status');
+
 Route::middleware('auth')->group(function (): void {
+    Route::delete('/web-api/account', [WebsiteAuthController::class, 'deleteAccount'])->middleware('throttle:5,1,web-account-delete');
+    Route::post('/web-api/account/provider/{provider}/start', [WebsiteProviderAuthController::class, 'startDeletion'])
+        ->whereIn('provider', ['apple', 'google'])->middleware('throttle:5,1,web-account-provider-delete');
     Route::view('/account', 'portal')->middleware([VerifyHuman::class, RecordWebsiteView::class]);
     Route::get('/owner', fn () => response()->view('portal')
         ->header('Cache-Control', 'private, no-store')

@@ -89,14 +89,14 @@ trait DesktopProviderAuthEndpoints
                 $flow['nonce']
             );
             if (($flow['purpose'] ?? null) === 'deletion') {
-                $this->deleteVerifiedProviderAccount($provider, $flow, $identity, $tokens);
+                $cleaned = $this->deleteVerifiedProviderAccount($provider, $flow, $identity, $tokens);
                 $apple = $provider === 'apple' ? app(\App\Services\Account\AppleRevocationQueue::class)
                     ->status((int) $flow['accountId']) : null;
                 app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
                     'ok' => true,
                     'status' => 'complete',
-                    'deleted' => true,
-                    ...($apple !== null ? ['appleRevocation' => $apple, 'cleanupPending' => $apple !== 'complete'] : []),
+                    'deleted' => true, 'cleanupPending' => !$cleaned,
+                    ...($apple !== null ? ['appleRevocation' => $apple] : []),
                 ]);
 
                 return $this->desktopProviderResultPage(true, '', true, false, $apple);
@@ -220,7 +220,7 @@ trait DesktopProviderAuthEndpoints
         return trim("{$first} {$last}");
     }
 
-    private function deleteVerifiedProviderAccount(string $provider, array $flow, array $identity, array $tokens = []): void
+    private function deleteVerifiedProviderAccount(string $provider, array $flow, array $identity, array $tokens = []): bool
     {
         $expectedSubject = (string) ($flow['providerSubject'] ?? '');
         $returnedSubject = (string) ($identity['subject'] ?? '');
@@ -237,7 +237,7 @@ trait DesktopProviderAuthEndpoints
 
         $apple = $provider === 'apple' ? app(\App\Services\Account\AppleAccountRevocation::class)
             ->desktop($tokens, $expectedSubject, (string) $flow['nonce']) : null;
-        app(\App\Services\Account\AccountDeletion::class)->delete($user, $apple);
+        return app(\App\Services\Account\AccountDeletion::class)->delete($user, $apple);
     }
 
     private function desktopProviderResultPage(

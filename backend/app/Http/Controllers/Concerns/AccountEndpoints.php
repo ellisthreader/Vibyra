@@ -178,10 +178,10 @@ trait AccountEndpoints
 
         $error = app(\App\Services\Account\DeletionVerification::class)->error($user, $request);
         if ($error) return $this->json(['ok' => false, 'error' => $error['error']], $error['status']);
-        app(\App\Services\Account\AccountDeletion::class)->delete($user, $request->attributes->get('appleRevocation'));
+        $cleaned = app(\App\Services\Account\AccountDeletion::class)->delete($user, $request->attributes->get('appleRevocation'));
         $apple = $user->provider === 'apple' ? app(\App\Services\Account\AppleRevocationQueue::class)->status((int) $user->id) : null;
-        return $this->json(['ok' => true, ...($apple !== null
-            ? ['appleRevocation' => $apple, 'cleanupPending' => $apple !== 'complete'] : [])]);
+        return $this->json(['ok' => true, 'cleanupPending' => !$cleaned, ...($apple !== null
+            ? ['appleRevocation' => $apple] : [])]);
     }
 
     public function accountSessions(Request $request): JsonResponse

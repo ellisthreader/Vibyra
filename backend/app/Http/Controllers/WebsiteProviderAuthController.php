@@ -89,6 +89,58 @@ class WebsiteProviderAuthController extends Controller
 
     // The browser that started a sign-in keeps a random key in its session;
     // only that browser can collect the result.
+    public function startDeletion(Request $request, string $provider): JsonResponse
+    {
+        $user = $request->user();
+        $provider = strtolower($provider);
+        if (! $user || ($user->provider ?: 'email') !== $provider
+            || trim((string) $user->provider_id) === '') {
+            return response()->json([
+                'ok' => false,
+                'error' => 'Sign in with the provider linked to this Vibyra account.',
+            ], 403);
+        }
+
+        try {
+            $flow = $this->flows->startDeletion($provider, (int) $user->id, (string) $user->provider_id);
+        } catch (ProviderIdentityException $error) {
+            return response()->json(['ok' => false, 'error' => $error->getMessage()], 422);
+        }
+        $request->session()->put('account_deletion_flow', [
+            'provider' => $provider,
+            'flow_id' => $flow['flowId'],
+            'user_id' => (int) $user->id,
+        ]);
+
+        return response()->json(['ok' => true, ...$flow]);
+    }
+
+    public function deletionStatus(Request $request, string $provider, string $flowId): JsonResponse
+    {
+        $bound = $request->session()->get('account_deletion_flow');
+        if (! is_array($bound) || ($bound['provider'] ?? null) !== strtolower($provider)
+            || ! hash_equals((string) ($bound['flow_id'] ?? ''), $flowId)) {
+            return response()->json(['ok' => false, 'status' => 'expired',
+                'error' => 'This account deletion attempt expired. Try again.'], 410);
+        }
+
+        $result = $this->flows->status(strtolower($provider), $flowId);
+        if (($result['status'] ?? null) === 'complete' && ($result['deleted'] ?? false) === true) {
+            $request->session()->forget('account_deletion_flow');
+            Auth::guard('web')->logoutCurrentDevice();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return response()->json(['ok' => true, 'status' => 'complete', 'deleted' => true,
+                'cleanupPending' => (bool) ($result['cleanupPending'] ?? false)]);
+        }
+        if (in_array($result['status'] ?? null, ['failed', 'expired'], true)) {
+            $request->session()->forget('account_deletion_flow');
+        }
+
+        return response()->json($result, ($result['status'] ?? null) === 'expired' ? 410 : 200);
+    }
+
     private function flowBinding(Request $request): string
     {
         $key = (string) $request->session()->get('provider_flow_binding', '');

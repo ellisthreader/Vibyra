@@ -73,3 +73,5 @@ Schedule::command('vibyra:agent-organisations --retention')->dailyAt('03:40')->w
 Schedule::command('vibyra:revoke-deleted-apple-accounts')->everyFiveMinutes()->withoutOverlapping(4)->onOneServer();
 
 Schedule::command('vibyra:prune-account-exports')->hourly()->withoutOverlapping(30)->onOneServer();
+
+Schedule::command('vibyra:cleanup-deleted-accounts')->everyFiveMinutes()->withoutOverlapping(4)->onOneServer();

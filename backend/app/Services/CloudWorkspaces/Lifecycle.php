@@ -17,6 +17,7 @@ final class Lifecycle
             if ($w->state === 'starting') {
                 if (now()->gte($w->deadline_at) || now()->gte(Carbon::parse($w->updated_at)->addSeconds(config('cloud_workspaces.boot_timeout_seconds')))) {
                     $w = app(Shutdown::class)->request($w->user_id, $id, 'boot_timeout');
+                    app(Git\CloudEvents::class)->lifecycle($id, 'cloud.failed', (int) $w->generation);
                 } else {
                     try { $resources = $provider->configure($w); }
                     catch (ProviderReview $review) {
@@ -24,6 +25,7 @@ final class Lifecycle
                         // The message is Vibyra's own fixed text, never a provider response.
                         Log::error('cloud.reconcile.review', ['workspace' => $id, 'reason' => $review->getMessage()]);
                         $w = app(Shutdown::class)->request($w->user_id, $id, 'provider_review');
+                    app(Git\CloudEvents::class)->lifecycle($id, 'cloud.failed', (int) $w->generation);
                         $resources = null;
                     }
                     if ($resources) {

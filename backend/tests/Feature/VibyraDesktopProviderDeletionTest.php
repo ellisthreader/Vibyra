@@ -90,7 +90,7 @@ class VibyraDesktopProviderDeletionTest extends TestCase
             ->assertExactJson([
                 'ok' => true,
                 'status' => 'complete',
-                'deleted' => true,
+                'deleted' => true, 'cleanupPending' => false,
             ])->json();
         $this->assertArrayNotHasKey('token', $status);
         $this->assertArrayNotHasKey('identityToken', $status);

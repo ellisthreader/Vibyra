@@ -141,6 +141,27 @@ class WebsiteAuthController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['ok' => false, 'error' => 'Please log in.'], 401);
+        }
+        if ($error = app(\App\Services\Account\DeletionVerification::class)->error($user, $request)) {
+            return response()->json(['ok' => false, 'error' => $error['error']], $error['status']);
+        }
+
+        $cleaned = app(\App\Services\Account\AccountDeletion::class)->delete($user, $request->attributes->get('appleRevocation'));
+        // A normal logout rotates the remember token by saving the User model.
+        // After deletion that save would insert the already-deleted row again.
+        Auth::guard('web')->logoutCurrentDevice();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json(['ok' => true, 'cleanupPending' => ! $cleaned,
+            ...($user->provider === 'apple' ? ['appleRevocation' => app(\App\Services\Account\AccountDeletion::class)->appleRevocationStatus($user->id)] : [])]);
+    }
+
     private function establishSession(Request $request, User $user): void
     {
         \App\Services\Teams\Sso\Policy::assertMaySignIn($user);

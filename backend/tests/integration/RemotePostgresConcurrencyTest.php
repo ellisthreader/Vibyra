@@ -28,6 +28,8 @@ class RemotePostgresConcurrencyTest extends TestCase
         $this->assertEmpty(DB::connection()->getConfig('url'));
         // Committed fixtures are visible across processes. Rebuild only the
         // explicitly named disposable database; no enclosing test transaction.
+        // Disposable PostgreSQL functions outlive migrate:fresh's table drops.
+        DB::statement('DROP SCHEMA public CASCADE'); DB::statement('CREATE SCHEMA public');
         $this->artisan('migrate:fresh', ['--force' => true])->assertExitCode(0);
         config(['remote.relay_url' => 'wss://relay.test', 'remote.relay_secret' => str_repeat('x', 40),
             'remote.relay_signing_secret' => str_repeat('x', 40), 'remote.relay_admin_secret' => str_repeat('x', 40),

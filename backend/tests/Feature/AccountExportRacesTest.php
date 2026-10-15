@@ -56,6 +56,8 @@ class AccountExportRacesTest extends TestCase
         $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
         $disk->shouldReceive('put')->once()->andReturn(false);
         $disk->shouldReceive('delete')->once()->andReturn(true);
+        $sync = Storage::fake((string) config('cloud_workspaces.sync_disk'));
+        Storage::shouldReceive('disk')->with((string) config('cloud_workspaces.sync_disk'))->andReturn($sync);
         Storage::shouldReceive('disk')->with('local')->andReturn($disk);
         app(AccountExports::class)->build($export->id);
         $this->assertSame('failed', $export->fresh()->status);
@@ -67,6 +69,8 @@ class AccountExportRacesTest extends TestCase
         $export = app(AccountExports::class)->request($this->user);
         $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
         $disk->shouldReceive('deleteDirectory')->once()->andReturn(false);
+        $sync = Storage::fake((string) config('cloud_workspaces.sync_disk'));
+        Storage::shouldReceive('disk')->with((string) config('cloud_workspaces.sync_disk'))->andReturn($sync);
         Storage::shouldReceive('disk')->with('local')->andReturn($disk);
         try { app(\App\Services\Account\AccountDeletion::class)->delete($this->user); $this->fail('Deletion ignored an archive cleanup failure'); }
         catch (\RuntimeException $e) { $this->assertSame('The account archive could not be removed.', $e->getMessage()); }

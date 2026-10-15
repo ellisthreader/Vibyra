@@ -25,7 +25,7 @@ class ComputerStartNotificationTest extends ComputerTestCase
         $item = DB::table('notification_items')->where('user_id', $this->user->id)->sole();
         $this->assertSame(['replies', 'Your cloud computer is ready'], [$item->category, $item->title]);
         $this->assertSame('cloud.ready', json_decode($item->destination, true)['event']);
-        $this->assertSame('Tap to open it.', app(Inbox::class)->body($item));
+        $this->assertSame('Tap to open it.', app(Inbox::class)->payload($item)['destination']['detail']['body']);
         $this->assertTrue(app(Inbox::class)->current($item));
         $this->sleepNow();
         $this->assertFalse(app(Inbox::class)->current($item));
@@ -42,8 +42,29 @@ class ComputerStartNotificationTest extends ComputerTestCase
         app(Lifecycle::class)->reconcile($this->cid);
         $item = DB::table('notification_items')->where('user_id', $this->user->id)->sole();
         $this->assertSame(['attention', "Your cloud computer couldn't start"], [$item->category, $item->title]);
-        $this->assertSame('Open Vibyra to try again.', app(Inbox::class)->body($item));
+        $this->assertSame('Open Vibyra to try again.', app(Inbox::class)->payload($item)['destination']['detail']['body']);
         $this->assertTrue(app(Inbox::class)->current($item));
+    }
+
+    public function test_runtime_cannot_claim_backend_startup_events(): void
+    {
+        $token = $this->computerReady();
+        foreach (['cloud.ready', 'cloud.failed'] as $type) {
+            $this->asRuntime($token, 'post', 'events', ['type' => $type, 'title' => 'Forged'])->assertStatus(422);
+        }
+        $this->assertSame(1, DB::table('notification_items')->where('user_id', $this->user->id)->count());
+    }
+
+    public function test_a_later_boot_or_withdrawn_consent_invalidates_queued_startup_attention(): void
+    {
+        $this->computerReady(); $item = $this->item(); $generation = (int) $this->row()->generation;
+        DB::table('cloud_workspaces')->where('id', $this->cid)->increment('generation');
+        $this->assertFalse(app(Inbox::class)->current($item));
+        app(\App\Services\CloudWorkspaces\Git\CloudEvents::class)->lifecycle($this->cid, 'cloud.ready', $generation);
+        $this->assertSame(1, DB::table('notification_items')->where('user_id', $this->user->id)->count());
+        DB::table('cloud_workspaces')->where('id', $this->cid)->update(['generation' => $generation]);
+        DB::table('cloud_connect_consents')->where('user_id', $this->user->id)->update(['revoked_at' => now()]);
+        $this->assertFalse(app(Inbox::class)->current($item));
     }
 
     public function test_the_failed_switch_silences_a_failed_start(): void
