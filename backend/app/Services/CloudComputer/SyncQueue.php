@@ -82,10 +82,34 @@ class SyncQueue
         app(SyncKeys::class)->touchComputer($user);
     }
 
+    /** How long a refused blob keeps the sender in "start over" mode (a Mac that never comes back must not hold it for ever). */
+    public const NEED_FULL_DAYS = 7;
+
+    /**
+     * What the cloud computer must know before choosing what to send: its own down seqs and, per kind, whether some Mac's newest
+     * blob was refused as unusable without what came before it (`downNeedFull` for code, `transcriptsNeedFull` for conversations).
+     * Then the next code bundle must be full (no prerequisite) and every conversation goes again. It clears itself the moment a
+     * newer blob for that Mac exists, so it never needs an explicit reset.
+     */
     public function state(int $user): array
     {
+        $flagged = $this->needFull($user);
         return DB::table('cloud_sync_projects')->where('user_id', $user)->whereNull('removed_at')->orderBy('name')->get()->map(fn ($p) => ['name' => $p->name,
-            'downSeq' => (int) $p->down_seq, 'transcriptsDownSeq' => (int) $p->transcripts_down_seq, 'upAppliedSeq' => (int) $p->up_applied_seq, 'upHead' => $p->up_applied_head])->all();
+            'downSeq' => (int) $p->down_seq, 'transcriptsDownSeq' => (int) $p->transcripts_down_seq, 'upAppliedSeq' => (int) $p->up_applied_seq, 'upHead' => $p->up_applied_head,
+            'downNeedFull' => isset($flagged[$p->id.'|code']), 'transcriptsNeedFull' => isset($flagged[$p->id.'|transcripts'])])->all();
+    }
+
+    /** `"<projectId>|<kind>" => true` for each (project, kind) whose newest blob to some Mac was refused with `needs_full`. */
+    private function needFull(int $user): array
+    {
+        $rows = DB::table('cloud_sync_blobs as b')->where('b.user_id', $user)->where('b.direction', 'down')->whereNotNull('b.failed_at')
+            ->where('b.failed_at', '>', now()->subDays(self::NEED_FULL_DAYS))->whereRaw('substr(b.error, 1, 10) = ?', ['needs_full'])
+            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('cloud_sync_blobs as n')->whereColumn('n.project_id', 'b.project_id')->whereColumn('n.kind', 'b.kind')
+                ->whereColumn('n.recipient_mac_id', 'b.recipient_mac_id')->where('n.direction', 'down')->whereColumn('n.seq', '>', 'b.seq'))
+            ->get(['b.project_id', 'b.kind']);
+        $out = [];
+        foreach ($rows as $r) $out[$r->project_id.'|'.$r->kind] = true;
+        return $out;
     }
 
     public function down(int $user, object $mac): array
@@ -97,13 +121,26 @@ class SyncQueue
                 'createdAt' => Carbon::parse($b->created_at)->toIso8601String()])->all();
     }
 
-    public function ack(int $user, string $id, bool $applied, ?string $error, array $returned = []): void
+    /**
+     * The Mac acknowledges a download. When it was a conversations upload and the Mac names the conversations it placed
+     * (`$returned`: [{provider, id}], metadata only), each becomes a `returned` activity event: "your PC picked this up".
+     *
+     * A refusal (`applied:false`) is stored as `needs_full` unless the Mac says `needFull:false` (older Macs refused on any error,
+     * transient ones included, and never said): the cloud computer's next state read then asks for a full bundle / all conversations
+     * instead of another increment the Mac cannot use. A Mac that could only not reach the account never acknowledges at all.
+     */
+    public function ack(int $user, string $id, bool $applied, ?string $error, array $returned = [], ?bool $needFull = null): void
     {
         $b = DB::table('cloud_sync_blobs')->where('id', $id)->where('user_id', $user)->where('direction', 'down')->first() ?? Computers::fail('unknown_blob', 'Unknown download.', 404);
         if ($b->applied_at || $b->failed_at) return;
-        DB::table('cloud_sync_blobs')->where('id', $id)->update($applied ? ['applied_at' => now(), 'updated_at' => now()]
-            : ['failed_at' => now(), 'error' => $error !== null ? mb_substr($error, 0, 300) : null, 'updated_at' => now()]);
-        if ($applied && $b->kind === 'transcripts' && $returned) $this->fileReturned($user, $b->project_id, $returned);
+        // The marker is reserved; explicit false cannot accidentally request a resend through its free-text error.
+        if ($needFull === false && str_starts_with((string) $error, 'needs_full')) $error = 'apply_failed: '.$error;
+        $reason = ($needFull ?? true) ? 'needs_full'.($error !== null && $error !== '' ? ': '.$error : '') : $error;
+        // Only one acknowledgement can settle the blob, even if another request read it before the winner committed.
+        $changed = DB::table('cloud_sync_blobs')->where('id', $id)->whereNull('applied_at')->whereNull('failed_at')
+            ->update($applied ? ['applied_at' => now(), 'updated_at' => now()]
+                : ['failed_at' => now(), 'error' => $reason !== null ? mb_substr($reason, 0, 300) : null, 'updated_at' => now()]);
+        if ($changed && $applied && $b->kind === 'transcripts' && $returned) $this->fileReturned($user, $b->project_id, $returned);
     }
 
     private function fileReturned(int $user, int $projectId, array $returned): void

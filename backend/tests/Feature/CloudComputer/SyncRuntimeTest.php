@@ -101,7 +101,7 @@ class SyncRuntimeTest extends SyncTestCase
         $p = $this->project();
         $this->assertSame([2, 'diverged'], [$p['upAppliedSeq'], $p['state']]);
         $this->assertSame([], $this->pending()['items']);
-        $this->assertSame([['name' => 'my-app', 'downSeq' => 0, 'transcriptsDownSeq' => 0, 'upAppliedSeq' => 2, 'upHead' => str_repeat('c', 40)]], $this->asRuntime($this->token, 'get', 'sync/state')->json('projects'));
+        $this->assertSame([['name' => 'my-app', 'downSeq' => 0, 'transcriptsDownSeq' => 0, 'upAppliedSeq' => 2, 'upHead' => str_repeat('c', 40), 'downNeedFull' => false, 'transcriptsNeedFull' => false]], $this->asRuntime($this->token, 'get', 'sync/state')->json('projects'));
         $this->applied('00000000-0000-4000-8000-000000000000', ['ok' => true])->assertStatus(404);
     }
 

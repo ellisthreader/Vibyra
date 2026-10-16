@@ -98,7 +98,8 @@ class SyncDownTest extends SyncTestCase
         $id = $this->list($this->deviceId)[0]['id'];
         $this->sync('post', '/down/'.$id.'/ack', ['applied' => false, 'error' => 'bad tag'])->assertOk();
         $this->assertSame([], $this->list($this->deviceId));
-        $this->assertSame('bad tag', DB::table('cloud_sync_blobs')->where('id', $id)->value('error'));
+        $this->assertSame('needs_full: bad tag', DB::table('cloud_sync_blobs')->where('id', $id)->value('error'));
+        $this->asRuntime($this->token, 'get', 'sync/state')->assertOk()->assertJsonPath('projects.0.downNeedFull', true);
     }
 
     public function test_other_accounts_cannot_list_fetch_or_ack_my_downloads(): void

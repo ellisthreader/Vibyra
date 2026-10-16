@@ -57,7 +57,11 @@ class SyncRetention
             $stale = $settled && $b->direction === 'down' && now()->gte(\Illuminate\Support\Carbon::parse($b->applied_at ?? $b->failed_at)->addHours(self::ACKED_HOURS));
             $key = $b->direction.'|'.$b->kind.'|'.($b->recipient_mac_id ?? '-');
             $seen[$key] = ($seen[$key] ?? 0) + 1;
-            if ($stale || ($settled && $seen[$key] > $keep)) $drop[] = $b;
+            // The newest blob a Mac refused as needing a full bundle IS the "send everything again" flag (SyncQueue::state):
+            // it stays until a newer blob replaces it, or the flag's own week is over.
+            $flag = $seen[$key] === 1 && $b->direction === 'down' && $b->failed_at && str_starts_with((string) $b->error, 'needs_full')
+                && now()->lt(\Illuminate\Support\Carbon::parse($b->failed_at)->addDays(SyncQueue::NEED_FULL_DAYS));
+            if (!$flag && ($stale || ($settled && $seen[$key] > $keep))) $drop[] = $b;
         }
         $this->deleteBlobs($drop);
     }

@@ -43,10 +43,10 @@ final class SyncBlobController extends Controller
     public function ack(Request $request, string $id, SyncQueue $queue)
     {
         $user = $this->authenticatedUser($request)->id; $this->eligible($user);
-        $d = $this->valid($request->all(), ['applied' => 'required|boolean', 'error' => 'sometimes|nullable|string|max:300',
+        $d = $this->valid($request->all(), ['applied' => 'required|boolean', 'error' => 'sometimes|nullable|string|max:300', 'needFull' => 'sometimes|boolean',
             'returned' => 'sometimes|array|max:50', 'returned.*.provider' => 'required|string|in:claude,codex,gemini',
             'returned.*.id' => ['required', 'string', 'regex:'.\App\Services\CloudComputer\Owners\OwnerInput::ID]]);
-        $queue->ack($user, $id, (bool) $d['applied'], $d['error'] ?? null, $d['returned'] ?? []);
+        $queue->ack($user, $id, (bool) $d['applied'], $d['error'] ?? null, $d['returned'] ?? [], array_key_exists('needFull', $d) ? (bool) $d['needFull'] : null);
         return response()->json(['ok' => true])->header('Cache-Control', 'private, no-store');
     }
 }

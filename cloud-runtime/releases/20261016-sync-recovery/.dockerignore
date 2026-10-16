@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!baseline.sha256
+!src/
+!src/sync-snapshot.mjs

@@ -119,7 +119,7 @@ class SyncStateAndCleanupTest extends SyncTestCase
         $this->registerMac(); $this->grant('mine'); $this->up('mine')->assertOk();
         $this->sync('put', '/macs/'.$this->deviceId, ['publicKey' => $this->macKey, 'name' => 'x']);
         DB::table('cloud_sync_vm_keys')->insert(['user_id' => $this->user->id, 'public_key' => str_repeat('b2', 32), 'created_at' => now(), 'updated_at' => now()]);
-        DB::statement('PRAGMA foreign_keys = ON');
+        if (DB::connection()->getDriverName() === 'sqlite') DB::statement('PRAGMA foreign_keys = ON');
         app(AccountCleanup::class)->prepare($this->user->id);
         foreach (['cloud_sync_blobs', 'cloud_sync_projects', 'cloud_sync_macs', 'cloud_sync_vm_keys'] as $t) $this->assertSame(0, DB::table($t)->count(), $t);
     }
