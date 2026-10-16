@@ -31,6 +31,20 @@ class HostUnreachableTest extends ComputerTestCase
         $this->wake(false)->assertStatus(202)->assertJsonPath('computer.state', 'starting');
     }
 
+    public function test_the_owner_is_told_when_the_host_never_connects(): void
+    {
+        config(['intelligence.inbox' => true]);
+        $token = $this->computerReady(); $this->hold();
+        $this->travel(151)->seconds(); $this->hold();
+        $this->asRuntime($token, 'post', 'heartbeat', ['ready' => true])->assertOk()->assertJsonPath('stop', true);
+        $this->assertSame('host_unreachable', $this->row()->stop_reason);
+        // "Ready" went out when the runtime came up; the failure notice follows, once.
+        $titles = DB::table('notification_items')->where('user_id', $this->user->id)->pluck('title')->sort()->values()->all();
+        $this->assertSame(["Your cloud computer couldn't start", 'Your cloud computer is ready'], $titles);
+        $this->asRuntime($token, 'post', 'heartbeat', ['ready' => true]);
+        $this->assertSame(2, DB::table('notification_items')->where('user_id', $this->user->id)->count());
+    }
+
     public function test_a_host_without_a_registration_also_counts_as_unreachable(): void
     {
         $this->computerReady(); $this->hold();

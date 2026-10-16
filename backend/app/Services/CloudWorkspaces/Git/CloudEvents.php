@@ -74,7 +74,7 @@ final class CloudEvents
                 DB::table('users')->where('id', $w->user_id)->lockForUpdate()->first();
                 if (!app(\App\Services\CloudComputer\ConnectConsent::class)->connected((int) $w->user_id)) return;
                 if ($type === 'cloud.ready' ? $w->state !== 'ready'
-                    : (!in_array($w->state, ['stopping', 'stopped'], true) || !in_array($w->stop_reason, ['boot_timeout', 'provider_review'], true))) return;
+                    : (!in_array($w->state, ['stopping', 'stopped'], true) || !in_array($w->stop_reason, ['boot_timeout', 'provider_review', 'host_unreachable'], true))) return;
                 [$title, $body] = $type === 'cloud.ready' ? ['Your cloud computer is ready', 'Tap to open it.']
                     : ['Your cloud computer couldn\'t start', 'Open Vibyra to try again.'];
                 $this->send($w, $type, $title, $body, null, [], 'boot:'.$w->generation);
@@ -101,7 +101,7 @@ final class CloudEvents
             if (!isset($metadata['runtimeGeneration']) || (int) $metadata['runtimeGeneration'] !== (int) $w->generation
                 || !app(\App\Services\CloudComputer\ConnectConsent::class)->connected((int) $w->user_id)) return false;
             return $event->phase === 'cloud_ready' ? $w->state === 'ready'
-                : in_array($w->state, ['stopping', 'stopped'], true) && in_array($w->stop_reason, ['boot_timeout', 'provider_review'], true);
+                : in_array($w->state, ['stopping', 'stopped'], true) && in_array($w->stop_reason, ['boot_timeout', 'provider_review', 'host_unreachable'], true);
         }
         $destination = json_decode((string) $item->destination, true) ?: [];
         if (!array_key_exists('agentSession', $destination)) return true; // Existing non-conversation Cloud notifications keep their contract.

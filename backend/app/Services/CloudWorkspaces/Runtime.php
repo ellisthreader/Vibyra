@@ -76,7 +76,11 @@ final class Runtime
                 DB::afterCommit(fn () => app(Git\CloudEvents::class)->lifecycle($w->id, 'cloud.ready', (int) $w->generation));
             } elseif ($w->state === 'ready') {
                 $reason = app(Lifecycle::class)->stopReason($w);
-                if ($reason) app(Shutdown::class)->request($w->user_id, $w->id, $reason);
+                if ($reason) {
+                    app(Shutdown::class)->request($w->user_id, $w->id, $reason);
+                    // "Ready" went out when the runtime came up; if the Host never reached Vibyra the person is told it did not work.
+                    if ($reason === 'host_unreachable') DB::afterCommit(fn () => app(Git\CloudEvents::class)->lifecycle($w->id, 'cloud.failed', (int) $w->generation));
+                }
                 else {
                     // Replace the old runway atomically. On failure it still covers shutdown.
                     try {
