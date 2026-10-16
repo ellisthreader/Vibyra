@@ -2,7 +2,6 @@
 namespace App\Services\CloudWorkspaces;
 
 use Illuminate\Support\Facades\{Cache, Crypt, Http};
-
 final class FlyProvider implements CloudWorkspaceProvider
 {
     /** Cache key (per workspace) of a project disk being copied to a Fly server with room: `{from, to, at}`, where `to` is
@@ -131,13 +130,14 @@ final class FlyProvider implements CloudWorkspaceProvider
             && ($copy['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib'), 503, 'The moved project disk could not be verified.');
         Cache::put(self::MOVE.$w->id, ['to' => $copy['id']] + $intent, now()->addDays(7));
     }
-    public function inspect(object $w): string
+    public function inspect(object $w): string { $m = $this->inspectedMachine($w); return $m === null ? 'absent' : ($m['state'] ?? 'unknown'); }
+    private function inspectedMachine(object $w): ?array
     {
-        if (!$w->machine_id) return 'absent';
+        if (!$w->machine_id) return null;
         $m = $this->call('GET', '/apps/'.$w->app_name.'/machines/'.$w->machine_id, missing: true);
         // A failed create leaves machine_id on the predecessor it already destroyed; a destroyed machine runs nothing.
-        if ($m && ($m['state'] ?? '') !== 'destroyed') $this->verifyMachine($w, $m);
-        return $m['state'] ?? 'absent';
+        if ($m !== null && ($m['state'] ?? '') !== 'destroyed') $this->verifyMachine($w, $m);
+        return $m;
     }
     public function recover(object $w): ?array
     {
@@ -153,10 +153,9 @@ final class FlyProvider implements CloudWorkspaceProvider
         }
         return null;
     }
-    public function stop(object $w): void
-    {
-        if ($w->machine_id && !in_array($this->inspect($w), ['stopped', 'destroyed', 'absent'], true)) {
-            $this->call('POST', '/apps/'.$w->app_name.'/machines/'.$w->machine_id.'/stop', ['signal' => 'SIGTERM', 'timeout' => '10s']);
+    public function stop(object $w): void {
+        if ($w->machine_id && ($timeout = FlyStopBudget::timeout($w, $this->inspectedMachine($w))) !== null) {
+            $this->call('POST', '/apps/'.$w->app_name.'/machines/'.$w->machine_id.'/stop', ['signal' => 'SIGTERM', 'timeout' => $timeout]);
         }
     }
     public function destroy(object $w): void

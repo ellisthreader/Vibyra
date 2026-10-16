@@ -1,0 +1,502 @@
+{
+  "frozenUtc": "2026-10-16T10:38:19.207033+00:00",
+  "base": "registry.fly.io/vibyra-cloud-runtime@sha256:c2923864f3a9f35d88e986b9e2c0f446429e66fe3729bf817db60c3f65c4b69d",
+  "image": "registry.fly.io/vibyra-cloud-runtime@sha256:9b3f4d71802436accc19d3633956f41c7216aeef2a81094f6b93edb2a0b2ba18",
+  "files": [
+    {
+      "path": "/opt/vibyra/src/agent-browser.mjs",
+      "sha256": "77051c8af819869163d6fc5b97f5e7db9b08536af36aa1931ecc738a60d9db67"
+    },
+    {
+      "path": "/opt/vibyra/src/agent-login.mjs",
+      "sha256": "b2424681953c59ea1c3718d32168ba053659dce566f9f892de41b976eb7a3155"
+    },
+    {
+      "path": "/opt/vibyra/src/agent-process.mjs",
+      "sha256": "e5c455cf647b0da468bd87aaa717f48768309a5e02e608ef5bfab4cb4ee9266b"
+    },
+    {
+      "path": "/opt/vibyra/src/agent-slots.mjs",
+      "sha256": "37230296afe16fab019f16d15a17ff056bf095c83170fdeb7dea29e5ee7d538a"
+    },
+    {
+      "path": "/opt/vibyra/src/agents.mjs",
+      "sha256": "32e61fe268aecdd2a5ff5624934a7123b916747eaae30c730e2faf920cad8bc6"
+    },
+    {
+      "path": "/opt/vibyra/src/client.mjs",
+      "sha256": "d076df1b5cb727a706b54775bd1ad88173c734dd3107fbeb7de953469c64f21b"
+    },
+    {
+      "path": "/opt/vibyra/src/commands.mjs",
+      "sha256": "97b4ded654bf476ffd34b59d422d80ad28b975cb272f6e812c4c113f8f9934f1"
+    },
+    {
+      "path": "/opt/vibyra/src/computer-paths.mjs",
+      "sha256": "8ece4c962a1e02bf0b7a076fddf05e4e041f4cc24f8866a9d5cb9923418d7c5e"
+    },
+    {
+      "path": "/opt/vibyra/src/computer.mjs",
+      "sha256": "ae991525d91a7bb1e7fd3913e01df8272837edf23d33155ad6f38b6046fd9dd0"
+    },
+    {
+      "path": "/opt/vibyra/src/credential-helper.mjs",
+      "sha256": "13a88e151cd9be89a965443eabe8f7f1b8da83259ff031d0dfcedb5f39de4fc9"
+    },
+    {
+      "path": "/opt/vibyra/src/credential-proxy.mjs",
+      "sha256": "fce6e526599d39539b593aaadd54eccaada8b0dd58c52e7973ecc0276e8c0294"
+    },
+    {
+      "path": "/opt/vibyra/src/egress-limit.mjs",
+      "sha256": "540032b1b2c79e861bb7de5211b313028619d74151a280bdbb0abbe4971b9bb4"
+    },
+    {
+      "path": "/opt/vibyra/src/files.mjs",
+      "sha256": "63319f076d8418e81ef64184e22987ffcda0f15736482f8ddf71b598f2080155"
+    },
+    {
+      "path": "/opt/vibyra/src/git.mjs",
+      "sha256": "129453b08432b364a93124f6feb29f9dba9e58da82300bdec994272679ea1dc0"
+    },
+    {
+      "path": "/opt/vibyra/src/graceful-stop.mjs",
+      "sha256": "103e63044196f3273bb73f4ed1e5d78aa37d755a68953b88b5240a1efa887358"
+    },
+    {
+      "path": "/opt/vibyra/src/graphical-session.mjs",
+      "sha256": "d2723ea75bda480c40a97a8d232e7d9c492e84abe850d32a5def8c327f800348"
+    },
+    {
+      "path": "/opt/vibyra/src/host-process.mjs",
+      "sha256": "a4be22ef919af5b315761cbbc3bdc6723978ee34265aae3d17d7df97af2228d3"
+    },
+    {
+      "path": "/opt/vibyra/src/lease.mjs",
+      "sha256": "d5b7bd6aa04ee058423dc497636e5c95a651bac59eab4099f46f889e05ad2237"
+    },
+    {
+      "path": "/opt/vibyra/src/main.mjs",
+      "sha256": "1f04ab1da7463b56bc266f077f713b08e8006e6acec90627771b250f5356afb4"
+    },
+    {
+      "path": "/opt/vibyra/src/preview.mjs",
+      "sha256": "03a13ff443b3b2c0f0e8c83fb3999fb78c4d5e1eb698b718c1173e49e4a9e242"
+    },
+    {
+      "path": "/opt/vibyra/src/projects.mjs",
+      "sha256": "a536ad1c5bcbf2b068154b149195fadb72e14413eaf3844eff580a9fbcb570af"
+    },
+    {
+      "path": "/opt/vibyra/src/push-guard.mjs",
+      "sha256": "bf048bbe8745bc9d120ca243dfdf76265f954d4f570a6c7edb5d29645312f55d"
+    },
+    {
+      "path": "/opt/vibyra/src/push-refs.mjs",
+      "sha256": "1833f14e04b8e8f73738f7dcf56e98ed1e1efe8d7b925fcbd0efac47dac9f4e5"
+    },
+    {
+      "path": "/opt/vibyra/src/safe-dirs.mjs",
+      "sha256": "fa818c591d032371c24106eadafacaa53bd8b4865c4d6a55acb308b044c98bdd"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-apply.mjs",
+      "sha256": "d7fcf2a537ec1bd5a52387915f38b925a32ee9504ed96da6f3659a7965dcf287"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-client.mjs",
+      "sha256": "cb40eedb8872fdef9dbbeb5c29694b8cbd115bc0daf6c1c98bf3a7a6fea8bd2e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-codes.mjs",
+      "sha256": "69c51751c25e78b3f0f3c44380a3f8851c251775a5f5d1d8eeaff1c730c403ab"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-crypto.mjs",
+      "sha256": "c3936b1b91889058978207d45390696bec96805fb8f17a6b9f07f1bf5202a383"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-git.mjs",
+      "sha256": "a4fca5dc4951853e84c65c7fb793a36ddb9da70c63b97046a9c59568f74219ad"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-key.mjs",
+      "sha256": "3feffa4fed94eed9d9430ed6e7a7ee659b8f4e5c820ce1c2244adcfd1dcc03bd"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-login-tar.mjs",
+      "sha256": "b47a5f9e2cdf39b4b0583888e9993f33746412ebe3695799f8672214e280aa5e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-login.mjs",
+      "sha256": "96e498b39311a7660ad05508f4b38d91d68f4df7a14fafe4fe43e1c8b0aea6e1"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-loop.mjs",
+      "sha256": "e8d6aa291b5d81a4c5c3a2da8792573bbaa846179e41fa3add5e515620b22663"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-process.mjs",
+      "sha256": "dd801df2370ff05699bc156cc9e9eab6768f8b6d87d9cfabf00ef241c94a8d49"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-snapshot.mjs",
+      "sha256": "3af7a1c8ed237c4148a8ec3e5bc964c90ec9f089024ec6af68be3ed5e77e90f5"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-state.mjs",
+      "sha256": "33cf5bdd68821c47ab7de5d975f47437f1b6c473c3c327b6f39c2254c464467e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-tar.mjs",
+      "sha256": "e3bd3a8e776fe60b7b8a2e3da185a8e22e96499fe930a5d7d60c15b6b29dbb75"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-transcripts.mjs",
+      "sha256": "4ac564a1c481482986654c76d0c2837be9e45026806f44c6beeabc472866ea29"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-trust.mjs",
+      "sha256": "306a607ff306e659f781e80a69ec51a7e1d53535bc97f0d833ae279d5eafb414"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-worker.mjs",
+      "sha256": "ba6fcd9463625406746dc972dc7d1f765ec8386c2ced6f9f7fb54ecb55d70f65"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-worktree.mjs",
+      "sha256": "4df3fb115574d97bd0e0b6dc1843c7eea3ec70f94b75c7ff4ee10cfdfff8b874"
+    },
+    {
+      "path": "/opt/vibyra/src/worker-client.mjs",
+      "sha256": "89c6a3b295ddd2e2ebf251f6a62e940958df3b5800339e55b618181d2151c85b"
+    },
+    {
+      "path": "/opt/vibyra/src/worker.mjs",
+      "sha256": "d4a77300e5a4e1292885a9fedbbc1ac9a53e224f7c3c47d0ba7c767282c2bcf0"
+    }
+  ],
+  "baselineFiles": [
+    {
+      "path": "/opt/vibyra/src/agent-browser.mjs",
+      "sha256": "77051c8af819869163d6fc5b97f5e7db9b08536af36aa1931ecc738a60d9db67"
+    },
+    {
+      "path": "/opt/vibyra/src/agent-login.mjs",
+      "sha256": "b2424681953c59ea1c3718d32168ba053659dce566f9f892de41b976eb7a3155"
+    },
+    {
+      "path": "/opt/vibyra/src/agent-process.mjs",
+      "sha256": "e5c455cf647b0da468bd87aaa717f48768309a5e02e608ef5bfab4cb4ee9266b"
+    },
+    {
+      "path": "/opt/vibyra/src/agent-slots.mjs",
+      "sha256": "37230296afe16fab019f16d15a17ff056bf095c83170fdeb7dea29e5ee7d538a"
+    },
+    {
+      "path": "/opt/vibyra/src/agents.mjs",
+      "sha256": "32e61fe268aecdd2a5ff5624934a7123b916747eaae30c730e2faf920cad8bc6"
+    },
+    {
+      "path": "/opt/vibyra/src/client.mjs",
+      "sha256": "d076df1b5cb727a706b54775bd1ad88173c734dd3107fbeb7de953469c64f21b"
+    },
+    {
+      "path": "/opt/vibyra/src/commands.mjs",
+      "sha256": "97b4ded654bf476ffd34b59d422d80ad28b975cb272f6e812c4c113f8f9934f1"
+    },
+    {
+      "path": "/opt/vibyra/src/computer-paths.mjs",
+      "sha256": "8ece4c962a1e02bf0b7a076fddf05e4e041f4cc24f8866a9d5cb9923418d7c5e"
+    },
+    {
+      "path": "/opt/vibyra/src/computer.mjs",
+      "sha256": "9b0517b93a6eed9293d1c1f2bd4842866c2026d2cb0d819be896fd08b43af46b"
+    },
+    {
+      "path": "/opt/vibyra/src/credential-helper.mjs",
+      "sha256": "13a88e151cd9be89a965443eabe8f7f1b8da83259ff031d0dfcedb5f39de4fc9"
+    },
+    {
+      "path": "/opt/vibyra/src/credential-proxy.mjs",
+      "sha256": "fce6e526599d39539b593aaadd54eccaada8b0dd58c52e7973ecc0276e8c0294"
+    },
+    {
+      "path": "/opt/vibyra/src/egress-limit.mjs",
+      "sha256": "540032b1b2c79e861bb7de5211b313028619d74151a280bdbb0abbe4971b9bb4"
+    },
+    {
+      "path": "/opt/vibyra/src/files.mjs",
+      "sha256": "63319f076d8418e81ef64184e22987ffcda0f15736482f8ddf71b598f2080155"
+    },
+    {
+      "path": "/opt/vibyra/src/git.mjs",
+      "sha256": "129453b08432b364a93124f6feb29f9dba9e58da82300bdec994272679ea1dc0"
+    },
+    {
+      "path": "/opt/vibyra/src/graceful-stop.mjs",
+      "sha256": "726dfc93b12ca71dce4ad8c3f31bffb5101273b611a311e9f74d5b0b2afc80cf"
+    },
+    {
+      "path": "/opt/vibyra/src/graphical-session.mjs",
+      "sha256": "d2723ea75bda480c40a97a8d232e7d9c492e84abe850d32a5def8c327f800348"
+    },
+    {
+      "path": "/opt/vibyra/src/host-process.mjs",
+      "sha256": "c6eefd10169a2b2e5f5194d240d14aabe84fcf8eb6c374e1e794e03be596a187"
+    },
+    {
+      "path": "/opt/vibyra/src/lease.mjs",
+      "sha256": "d5b7bd6aa04ee058423dc497636e5c95a651bac59eab4099f46f889e05ad2237"
+    },
+    {
+      "path": "/opt/vibyra/src/main.mjs",
+      "sha256": "7137f4667036cbec255714975c617aadb2c74c8fe4fa007f117120f45560d29e"
+    },
+    {
+      "path": "/opt/vibyra/src/preview.mjs",
+      "sha256": "03a13ff443b3b2c0f0e8c83fb3999fb78c4d5e1eb698b718c1173e49e4a9e242"
+    },
+    {
+      "path": "/opt/vibyra/src/projects.mjs",
+      "sha256": "a536ad1c5bcbf2b068154b149195fadb72e14413eaf3844eff580a9fbcb570af"
+    },
+    {
+      "path": "/opt/vibyra/src/push-guard.mjs",
+      "sha256": "bf048bbe8745bc9d120ca243dfdf76265f954d4f570a6c7edb5d29645312f55d"
+    },
+    {
+      "path": "/opt/vibyra/src/push-refs.mjs",
+      "sha256": "1833f14e04b8e8f73738f7dcf56e98ed1e1efe8d7b925fcbd0efac47dac9f4e5"
+    },
+    {
+      "path": "/opt/vibyra/src/safe-dirs.mjs",
+      "sha256": "fa818c591d032371c24106eadafacaa53bd8b4865c4d6a55acb308b044c98bdd"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-apply.mjs",
+      "sha256": "d7fcf2a537ec1bd5a52387915f38b925a32ee9504ed96da6f3659a7965dcf287"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-client.mjs",
+      "sha256": "cb40eedb8872fdef9dbbeb5c29694b8cbd115bc0daf6c1c98bf3a7a6fea8bd2e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-codes.mjs",
+      "sha256": "69c51751c25e78b3f0f3c44380a3f8851c251775a5f5d1d8eeaff1c730c403ab"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-crypto.mjs",
+      "sha256": "c3936b1b91889058978207d45390696bec96805fb8f17a6b9f07f1bf5202a383"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-git.mjs",
+      "sha256": "a4fca5dc4951853e84c65c7fb793a36ddb9da70c63b97046a9c59568f74219ad"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-key.mjs",
+      "sha256": "3feffa4fed94eed9d9430ed6e7a7ee659b8f4e5c820ce1c2244adcfd1dcc03bd"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-login-tar.mjs",
+      "sha256": "b47a5f9e2cdf39b4b0583888e9993f33746412ebe3695799f8672214e280aa5e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-login.mjs",
+      "sha256": "96e498b39311a7660ad05508f4b38d91d68f4df7a14fafe4fe43e1c8b0aea6e1"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-loop.mjs",
+      "sha256": "e8d6aa291b5d81a4c5c3a2da8792573bbaa846179e41fa3add5e515620b22663"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-process.mjs",
+      "sha256": "496fb72c010233123bf37c3e94813263b9130f8123b2a065a4974e4e3f2c1628"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-snapshot.mjs",
+      "sha256": "3af7a1c8ed237c4148a8ec3e5bc964c90ec9f089024ec6af68be3ed5e77e90f5"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-state.mjs",
+      "sha256": "33cf5bdd68821c47ab7de5d975f47437f1b6c473c3c327b6f39c2254c464467e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-tar.mjs",
+      "sha256": "e3bd3a8e776fe60b7b8a2e3da185a8e22e96499fe930a5d7d60c15b6b29dbb75"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-transcripts.mjs",
+      "sha256": "4ac564a1c481482986654c76d0c2837be9e45026806f44c6beeabc472866ea29"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-trust.mjs",
+      "sha256": "306a607ff306e659f781e80a69ec51a7e1d53535bc97f0d833ae279d5eafb414"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-worker.mjs",
+      "sha256": "ba6fcd9463625406746dc972dc7d1f765ec8386c2ced6f9f7fb54ecb55d70f65"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-worktree.mjs",
+      "sha256": "4df3fb115574d97bd0e0b6dc1843c7eea3ec70f94b75c7ff4ee10cfdfff8b874"
+    },
+    {
+      "path": "/opt/vibyra/src/worker-client.mjs",
+      "sha256": "89c6a3b295ddd2e2ebf251f6a62e940958df3b5800339e55b618181d2151c85b"
+    },
+    {
+      "path": "/opt/vibyra/src/worker.mjs",
+      "sha256": "d4a77300e5a4e1292885a9fedbbc1ac9a53e224f7c3c47d0ba7c767282c2bcf0"
+    }
+  ],
+  "changes": [
+    {
+      "path": "/opt/vibyra/src/computer.mjs",
+      "sha256": "ae991525d91a7bb1e7fd3913e01df8272837edf23d33155ad6f38b6046fd9dd0",
+      "beforeSha256": "9b0517b93a6eed9293d1c1f2bd4842866c2026d2cb0d819be896fd08b43af46b"
+    },
+    {
+      "path": "/opt/vibyra/src/graceful-stop.mjs",
+      "sha256": "103e63044196f3273bb73f4ed1e5d78aa37d755a68953b88b5240a1efa887358",
+      "beforeSha256": "726dfc93b12ca71dce4ad8c3f31bffb5101273b611a311e9f74d5b0b2afc80cf"
+    },
+    {
+      "path": "/opt/vibyra/src/host-process.mjs",
+      "sha256": "a4be22ef919af5b315761cbbc3bdc6723978ee34265aae3d17d7df97af2228d3",
+      "beforeSha256": "c6eefd10169a2b2e5f5194d240d14aabe84fcf8eb6c374e1e794e03be596a187"
+    },
+    {
+      "path": "/opt/vibyra/src/main.mjs",
+      "sha256": "1f04ab1da7463b56bc266f077f713b08e8006e6acec90627771b250f5356afb4",
+      "beforeSha256": "7137f4667036cbec255714975c617aadb2c74c8fe4fa007f117120f45560d29e"
+    },
+    {
+      "path": "/opt/vibyra/src/sync-process.mjs",
+      "sha256": "dd801df2370ff05699bc156cc9e9eab6768f8b6d87d9cfabf00ef241c94a8d49",
+      "beforeSha256": "496fb72c010233123bf37c3e94813263b9130f8123b2a065a4974e4e3f2c1628"
+    }
+  ],
+  "testInputs": [
+    {
+      "path": "tests/stop-quiescence.test.mjs",
+      "local": "tests/stop-quiescence.test.mjs",
+      "sha256": "e7872ad0d653fd91872427379348d5528552cbc197b685f9b56fe97166d1cbcd"
+    },
+    {
+      "path": "tests/computer-stop-escalation.test.mjs",
+      "local": "tests/computer-stop-escalation.test.mjs",
+      "sha256": "698d7bbed0b55608b893435a8e95c00168edea968c03e09ae7fedce8458f64bd"
+    },
+    {
+      "path": "tests/stop-escalation.test.mjs",
+      "local": "tests/stop-escalation.test.mjs",
+      "sha256": "ab718477db6a5ebabedc56b2ae99d87d95bb6fc55d0fcf8dfe1e928a7441fc02"
+    },
+    {
+      "path": "tests/sync-helpers.mjs",
+      "local": "tests/sync-helpers.mjs",
+      "sha256": "81a84d644fc8bd819ad78e1342fc9e6108a486cd592aada6b01ec32bcd109d69"
+    },
+    {
+      "path": "tests/sync-need-full.test.mjs",
+      "local": "tests/sync-need-full.test.mjs",
+      "sha256": "c988e37183c0bbd42dee113a8d40d8c5107b02c95d4d6579e80c862af0eac064"
+    },
+    {
+      "path": "tests/sync-partial-recovery.test.mjs",
+      "local": "tests/sync-partial-recovery.test.mjs",
+      "sha256": "896e32d8e655bb26a6883c01b5055a5bf283bcbdda2786dc9d40420426a556db"
+    },
+    {
+      "path": "tests/linux-uid-stop-proof.mjs",
+      "local": "tests/linux-uid-stop-proof.mjs",
+      "sha256": "b97c21ef55e6c52a4a17faf8a91aefc06d60f33d5ff94a97460256bf42cddcde"
+    },
+    {
+      "path": "tests/linux-uid-stop.test.mjs",
+      "local": "tests/linux-uid-stop.test.mjs",
+      "sha256": "b59d5090d37b893538ad7a6d832f28d3428231b6d14bcc804bf200e841a5ed7c"
+    },
+    {
+      "path": "tests/adversarial-stop-v2.test.mjs",
+      "local": "tests/adversarial-stop-v2.test.mjs",
+      "sha256": "73e7831306d4aa1af12155e72ea66db9aa6d75db6ec30a1c382c41a936b41f38"
+    },
+    {
+      "path": "tests/group-identity.test.mjs",
+      "local": "tests/group-identity.test.mjs",
+      "sha256": "4f6089e489f12a5098d08f8f4df26b969a734c3145a07f88bbf1e40c124b183e"
+    },
+    {
+      "path": "tests/command-bound.test.mjs",
+      "local": "tests/command-bound.test.mjs",
+      "sha256": "0ca54a29ec60c753a58d3886c0bedde92eb63b4ec332a53d264e562e5affe0d3"
+    },
+    {
+      "path": "tests/main-deadline.test.mjs",
+      "local": "tests/main-deadline.test.mjs",
+      "sha256": "ada938dd6200c0f74cf30f18fa533eeb1daafe226c720d4a1f26dc9b91df1b29"
+    }
+  ],
+  "suites": [
+    {
+      "label": "focused",
+      "uid": 1001,
+      "args": [
+        "--experimental-vm-modules",
+        "--test",
+        "--test-concurrency=1",
+        "tests/stop-quiescence.test.mjs",
+        "tests/computer-stop-escalation.test.mjs",
+        "tests/stop-escalation.test.mjs"
+      ],
+      "expectedTests": 19,
+      "env": {
+        "P06_RUNTIME_SOURCE": "/opt/vibyra/src"
+      }
+    },
+    {
+      "label": "independent",
+      "uid": 1001,
+      "args": [
+        "--experimental-vm-modules",
+        "--test",
+        "--test-concurrency=1",
+        "tests/adversarial-stop-v2.test.mjs",
+        "tests/group-identity.test.mjs",
+        "tests/command-bound.test.mjs",
+        "tests/main-deadline.test.mjs"
+      ],
+      "expectedTests": 18,
+      "env": {
+        "STOP_REVIEW_SOURCE": "/opt/vibyra/src"
+      }
+    },
+    {
+      "label": "recovery",
+      "uid": 1001,
+      "args": [
+        "--test",
+        "--test-concurrency=1",
+        "tests/sync-need-full.test.mjs",
+        "tests/sync-partial-recovery.test.mjs"
+      ],
+      "expectedTests": 8
+    },
+    {
+      "label": "linux-uid",
+      "uid": 0,
+      "args": [
+        "--test",
+        "--test-concurrency=1",
+        "tests/linux-uid-stop.test.mjs"
+      ],
+      "expectedTests": 1,
+      "env": {
+        "P06_PRIVATE_VM": "1",
+        "P06_RUNTIME_SOURCE": "/opt/vibyra/src"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const {runCommand}=await import(pathToFileURL(path.resolve(process.env.STOP_REVIEW_SOURCE,'graceful-stop.mjs')));
+test('actual command ignoring TERM is still bounded by its timeout',async t=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'vibyra-review-command-'));
+ const pidfile=path.join(dir,'pid');let pid=null,manual=false;
+ const reap=async()=>{if(pid===null)pid=Number(await fs.readFile(pidfile,'utf8').catch(()=>0));if(pid>1){try{process.kill(pid,'SIGKILL');}catch(e){if(e.code!=='ESRCH')throw e;}}};
+ t.after(async()=>{await reap();await fs.rm(dir,{recursive:true,force:true});});
+ const began=Date.now();
+ const result=runCommand(process.execPath,['-e',`const fs=require('node:fs');process.on('SIGTERM',()=>{});fs.writeFileSync(process.argv[1],String(process.pid));setInterval(()=>{},1000);`,pidfile],{timeoutMs:150});
+ const guard=setTimeout(()=>{manual=true;void reap();},1500);
+ const status=await result;clearTimeout(guard);
+ const elapsed=Date.now()-began;
+ assert.ok(Number(await fs.readFile(pidfile,'utf8').catch(()=>0))>1,'owned child installed its TERM handler before the timeout');
+ assert.equal(status,-1);
+ assert.equal(manual,false,`command required independent SIGKILL after ${elapsed}ms`);
+ assert.ok(elapsed<1200,`command exceeded bound (${elapsed}ms)`);
+});

@@ -53,6 +53,8 @@ return [
     // A booted cloud computer whose Host never shows up on the relay is stopped with an error after this long.
     'computer_connect_seconds' => (int) env('CLOUD_COMPUTER_CONNECT_SECONDS', 150),
     'stop_timeout_seconds' => 45,
+    // Only audited immutable images with bounded expiry escalation may use the full orderly-stop window.
+    'orderly_stop_images' => array_values(array_filter(array_map('trim', explode(',', (string) env('CLOUD_WORKSPACES_ORDERLY_STOP_IMAGES', ''))))),
     'stopped_days' => 7,
     // A stopped cloud computer's Fly volume is deleted after this many days (min 7); a warning goes out 3 days before.
     'computer_stopped_days' => max(7, (int) env('CLOUD_COMPUTER_STOPPED_DAYS', 30)),

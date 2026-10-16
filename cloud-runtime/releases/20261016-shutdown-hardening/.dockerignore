@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!baseline.sha256
+!src/
+!src/computer.mjs
+!src/graceful-stop.mjs
+!src/host-process.mjs
+!src/main.mjs
+!src/sync-process.mjs
