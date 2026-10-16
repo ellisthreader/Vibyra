@@ -43,7 +43,8 @@ Schedule::command('vibyra:notify-public-requests')->everyMinute()->withoutOverla
 Schedule::command('vibyra:cloud-workspaces')->everyTenSeconds()->withoutOverlapping(2)->onOneServer();
 Schedule::command('vibyra:cloud-sync-prune')->hourly()->withoutOverlapping(55)->onOneServer();
 Schedule::command('vibyra:cloud-activity-prune')->hourly()->withoutOverlapping(55)->onOneServer();
-Schedule::command('vibyra:cloud-provider-audit')->everyMinute()->when(fn () => config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org'))->withoutOverlapping()->onOneServer();
+// Same rule as cloud-workspaces: a run killed mid-way must not hold its lock for the default 24 h (the audit blocks admission while it runs).
+Schedule::command('vibyra:cloud-provider-audit')->everyMinute()->when(fn () => config('cloud_workspaces.fly_token') && config('cloud_workspaces.fly_org'))->withoutOverlapping(2)->onOneServer();
 
 Schedule::command('vibyra:agent-v2-routines')->everyMinute()->when(fn () => (bool) config('agents_v2.enabled'))->withoutOverlapping(5)->onOneServer();
 // An approved write stranded `dispatching` by a dead process is closed as unknown (never re-sent) so the task can finish or be cancelled.

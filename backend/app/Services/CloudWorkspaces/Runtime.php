@@ -86,7 +86,9 @@ final class Runtime
                             app(Reservations::class)->reserve($fresh, Quotes::runway($w->units_per_hour));
                         });
                         DB::table('cloud_workspaces')->where('id', $w->id)->update(['lease_until' => $this->leaseEnd(DB::table('cloud_workspaces')->where('id', $w->id)->firstOrFail())]);
-                    } catch (\Symfony\Component\HttpKernel\Exception\HttpException) {
+                    } catch (\Symfony\Component\HttpKernel\Exception\HttpException | \Illuminate\Http\Exceptions\HttpResponseException) {
+                        // HttpResponseException is how the included-hours check says "used up": it is not an HttpException, and
+                        // letting it escape rolled the whole heartbeat back so the computer only stopped when its lease ran out.
                         app(Shutdown::class)->request($w->user_id, $w->id, 'budget_or_balance');
                     }
                 }

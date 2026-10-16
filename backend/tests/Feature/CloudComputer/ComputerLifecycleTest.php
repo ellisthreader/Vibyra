@@ -128,6 +128,20 @@ class ComputerLifecycleTest extends ComputerTestCase
         $this->assertSame('stopped', $this->row()->state);
     }
 
+    public function test_a_heartbeat_after_the_hours_run_out_with_blocked_overage_stops_the_computer_cleanly(): void
+    {
+        config(['vibes.plans.pro_v2.cloudHours' => 10, 'cloud_workspaces.overage' => 'blocked']);
+        $vm = $this->computerReady();
+        app(\App\Services\CloudWorkspaces\Allowance::class)->consume($this->row(), 35995, 'test-window');
+        $this->travel(20)->seconds(); // the heartbeat's own metering window uses up the last seconds
+        // The refusal used to escape the heartbeat as an uncaught 402: nothing stopped it until its lease ran out.
+        $r = $this->asRuntime($vm, 'post', 'heartbeat', ['ready' => true]);
+        $this->assertNotSame(402, $r->getStatusCode());
+        $this->assertSame(true, $r->json('stop'));
+        $this->assertSame('stopping', $this->row()->state);
+        $this->assertSame('budget_or_balance', $this->row()->stop_reason);
+    }
+
     public function test_free_account_cannot_create_or_wake(): void
     {
         DB::table('membership_periods')->where('user_id', $this->user->id)->delete();

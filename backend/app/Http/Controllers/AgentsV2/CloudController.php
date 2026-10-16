@@ -52,7 +52,7 @@ final class CloudController extends Controller
         $w = $runtime->authenticate($workspace, (string) $r->bearerToken());
         return $runtime->withCurrent($w, function ($w) use ($registration) {
             $this->computer($w);
-            return $this->json(['selection' => $registration->next($w)]);
+            return $this->json(['ok' => true, 'selection' => $registration->next($w)]);
         });
     }
 
@@ -83,7 +83,7 @@ final class CloudController extends Controller
         $w = $runtime->authenticate($workspace, (string) $r->bearerToken());
         return $runtime->withCurrent($w, function ($w) use ($d, $registration) {
             $this->computer($w);
-            return $this->json($registration->register($w, $d));
+            return $this->json(['ok' => true] + $registration->register($w, $d));
         });
     }
 

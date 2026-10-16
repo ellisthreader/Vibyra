@@ -149,15 +149,15 @@ class ComputerRetentionTest extends ComputerTestCase
     {
         $this->stopped();
         $this->travel(26)->days(); $this->reconcile();
-        $this->assertSame(0, DB::table('notification_items')->count());
+        $this->assertSame(0, DB::table('notification_items')->where('title', '!=', 'Your cloud computer is ready')->count());
         $this->travel(2)->days(); $this->reconcile();
-        $item = DB::table('notification_items')->where('user_id', $this->user->id)->sole();
+        $item = DB::table('notification_items')->where('user_id', $this->user->id)->where('title', '!=', 'Your cloud computer is ready')->sole();
         $this->assertSame('Your cloud computer will be removed soon', $item->title);
         $d = json_decode($item->destination, true);
         $this->assertSame('cloud_computer', $d['kind']);
         $this->assertSame($this->cid, $d['workspaceId']);
         $this->reconcile(); $this->travel(1)->hours(); $this->reconcile();
-        $this->assertSame(1, DB::table('notification_items')->count());
+        $this->assertSame(1, DB::table('notification_items')->where('title', '!=', 'Your cloud computer is ready')->count());
         $this->assertNotNull($this->row()->retention_warned_at);
         $this->assertNull($this->row()->retention_deleted_at);
     }

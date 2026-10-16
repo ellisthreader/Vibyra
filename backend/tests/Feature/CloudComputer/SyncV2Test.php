@@ -53,6 +53,28 @@ class SyncV2Test extends SyncTestCase
         $this->assertSame('idle', app(Lifecycle::class)->stopReason($this->row()));
     }
 
+    public function test_conversations_alone_do_not_start_a_sleeping_computer(): void
+    {
+        $this->vmReady(); $this->registerMac(); $this->grant('my-app');
+        $this->asleep();
+        // An active chat re-sends its conversations every few minutes: that must not start (and bill) a VM each time.
+        $this->up('my-app', ['kind' => 'transcripts', 'head' => null])->assertOk();
+        $this->assertSame('stopped', $this->row()->state, 'conversations wait for the next start');
+        app(Wake::class)->forSync($this->user->id);
+        $this->assertSame('starting', $this->row()->state, 'a start for any other reason still applies them');
+        $this->assertGreaterThan(0, DB::table('cloud_sync_blobs')->where('kind', 'transcripts')->whereNull('applied_at')->count());
+    }
+
+    public function test_code_still_wakes_a_sleeping_computer_when_conversations_are_waiting_too(): void
+    {
+        $this->vmReady(); $this->registerMac(); $this->grant('my-app');
+        $this->asleep();
+        $this->up('my-app', ['kind' => 'transcripts', 'head' => null])->assertOk();
+        $this->assertSame('stopped', $this->row()->state);
+        $this->up('my-app', ['seq' => 1])->assertOk();
+        $this->assertSame('starting', $this->row()->state);
+    }
+
     public function test_work_that_stops_moving_no_longer_holds_the_computer(): void
     {
         $vm = $this->vmReady(); $this->hostUp($vm); $this->registerMac(); $this->grant('my-app');

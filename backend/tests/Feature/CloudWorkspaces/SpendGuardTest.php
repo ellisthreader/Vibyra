@@ -41,6 +41,24 @@ class SpendGuardTest extends CloudTestCase
             ->assertStatus(503)->assertSee("Hosted storage is at capacity");
     }
 
+    public function test_a_cloud_computer_without_a_disk_does_not_use_up_the_storage_cap(): void
+    {
+        config(['cloud_workspaces.max_retained_global' => 1]);
+        $id = $this->imported();
+        $guard = app(\App\Services\CloudWorkspaces\SpendGuard::class);
+        // A computer row whose disk is gone (withdrawn / never made) keeps its row but holds no storage.
+        DB::table('cloud_workspaces')->where('id', $id)->update(['kind' => 'computer', 'state' => 'stopped', 'volume_id' => null]);
+        $guard->admitCreate();
+        // With a disk it counts again.
+        DB::table('cloud_workspaces')->where('id', $id)->update(['volume_id' => 'vol_test']);
+        try { $guard->admitCreate(); $this->fail('a retained disk must count'); }
+        catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame(503, $e->getStatusCode()); }
+        // A computer that is running counts even before its disk is recorded.
+        DB::table('cloud_workspaces')->where('id', $id)->update(['volume_id' => null, 'state' => 'starting']);
+        try { $guard->admitCreate(); $this->fail('a starting computer must count'); }
+        catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) { $this->assertSame(503, $e->getStatusCode()); }
+    }
+
     public function test_a_spend_warning_is_raised_once_per_day_at_eighty_percent(): void
     {
         config(['cloud_workspaces.daily_micro_limit' => 1000, 'cloud_workspaces.soft_stop_percent' => 100]);

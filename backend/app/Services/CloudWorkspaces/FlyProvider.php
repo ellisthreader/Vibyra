@@ -7,6 +7,8 @@ final class FlyProvider implements CloudWorkspaceProvider
     /** Cache key (per workspace) of a project disk being copied to a Fly server with room: `{from, to, at}`, where `to` is
      *  null until Fly confirms the copy and `at` is when the copy was asked for. */
     private const MOVE = 'cloud-disk-move:';
+    /** How long the disk-move record is kept: past the 30-day stopped-computer retention, so a late wake still finds it (it was 7 days). */
+    private const MOVE_DAYS = 60;
     /** A disk copy can take longer than an ordinary request may wait. */
     private const COPY_TIMEOUT = 60;
     /** A copy asked for this long ago that never appeared is asked for again (Fly lists a new disk as soon as it makes it). */
@@ -103,7 +105,7 @@ final class FlyProvider implements CloudWorkspaceProvider
             // Fly stamps the copy after the request was sent; a minute of slack covers the two clocks.
             if (($other['encrypted'] ?? false) === true && ($other['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib')
                 && $made >= (int) ($move['at'] ?? PHP_INT_MAX) - 60) {
-                $move['to'] = $other['id']; Cache::put(self::MOVE.$w->id, $move, now()->addDays(7));
+                $move['to'] = $other['id']; Cache::put(self::MOVE.$w->id, $move, now()->addDays(self::MOVE_DAYS));
             }
         }
         ProviderReview::unless(count($live) === 2 && is_array($move) && isset($by[$move['from'] ?? ''], $by[$move['to'] ?? '']), 'Multiple project disks need reconciliation.');
@@ -123,12 +125,12 @@ final class FlyProvider implements CloudWorkspaceProvider
         $move = Cache::get(self::MOVE.$w->id);
         if (($move['from'] ?? null) === $volume['id'] && (!empty($move['to']) || now()->getTimestamp() - (int) ($move['at'] ?? 0) < self::COPY_RETRY_SECONDS)) return; // already moving
         $intent = ['from' => $volume['id'], 'to' => null, 'at' => now()->getTimestamp()];
-        Cache::put(self::MOVE.$w->id, $intent, now()->addDays(7));
+        Cache::put(self::MOVE.$w->id, $intent, now()->addDays(self::MOVE_DAYS));
         $copy = $this->call('POST', $path.'/volumes', ['name' => 'project', 'region' => $w->region, 'source_volume_id' => $volume['id'],
             'require_unique_zone' => true, 'compute' => app(\App\Services\CloudComputer\ComputeProfiles::class)->guest($w)], timeout: self::COPY_TIMEOUT);
         abort_unless(is_string($copy['id'] ?? null) && ($copy['encrypted'] ?? false) === true
             && ($copy['size_gb'] ?? 0) === config('cloud_workspaces.volume_gib'), 503, 'The moved project disk could not be verified.');
-        Cache::put(self::MOVE.$w->id, ['to' => $copy['id']] + $intent, now()->addDays(7));
+        Cache::put(self::MOVE.$w->id, ['to' => $copy['id']] + $intent, now()->addDays(self::MOVE_DAYS));
     }
     public function inspect(object $w): string { $m = $this->inspectedMachine($w); return $m === null ? 'absent' : ($m['state'] ?? 'unknown'); }
     private function inspectedMachine(object $w): ?array

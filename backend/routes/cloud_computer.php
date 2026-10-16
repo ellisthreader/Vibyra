@@ -38,14 +38,14 @@ Route::prefix('api/cloud-computer')->middleware(['throttle:cloud-account-ip', 't
 Route::post('api/cloud-computer/host-events', [HostEventsController::class, 'store'])->middleware('throttle:cloud-runtime');
 
 // VM side. Same runtime bearer as the hosted workspace runtime (Runtime::authenticate).
-Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->group(function () {
+Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->where(['workspace' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', 'id' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'])->group(function () {
     Route::post('{workspace}/host/challenge', [RuntimeController::class, 'challenge']);
     Route::post('{workspace}/host/register', [RuntimeController::class, 'register']);
     Route::post('{workspace}/host/activity', [RuntimeController::class, 'activity']);
     Route::post('{workspace}/host-events', [HostEventsController::class, 'store']);
     Route::get('{workspace}/projects/pending', [RuntimeController::class, 'pending']);
     Route::post('{workspace}/projects/{id}/done', [RuntimeController::class, 'done']);
-})->whereUuid(['workspace', 'id']);
+});
 
 // Cloud sync (docs/cloud-sync-contract.md), account side. Works while the computer is stopped; the account must be eligible.
 // Its `cloud-sync` rate limiter lives in AppServiceProvider (a cached route file never runs its own code).
@@ -67,7 +67,7 @@ Route::prefix('api/cloud-computer/sync')->middleware(['throttle:cloud-account-ip
 })->where(['name' => '[A-Za-z0-9._-]{1,64}']);
 
 // Cloud sync, VM side (runtime bearer; computer workspaces only).
-Route::prefix('api/cloud-runtime/{workspace}/sync')->middleware('throttle:cloud-runtime')->group(function () {
+Route::prefix('api/cloud-runtime/{workspace}/sync')->middleware('throttle:cloud-runtime')->where(['workspace' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', 'id' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'])->group(function () {
     Route::post('key', [SyncRuntimeController::class, 'key']);
     Route::get('macs', [SyncRuntimeController::class, 'macs']);
     Route::get('pending', [SyncRuntimeController::class, 'pending']);
@@ -76,4 +76,4 @@ Route::prefix('api/cloud-runtime/{workspace}/sync')->middleware('throttle:cloud-
     Route::get('blobs/{id}', [SyncRuntimeController::class, 'blob']);
     Route::post('blobs/{id}/applied', [SyncRuntimeController::class, 'applied']);
     Route::put('projects/{name}/down', [SyncRuntimeController::class, 'down']);
-})->whereUuid(['workspace', 'id'])->where(['name' => '[A-Za-z0-9._-]{1,64}']);
+})->where(['name' => '[A-Za-z0-9._-]{1,64}']);

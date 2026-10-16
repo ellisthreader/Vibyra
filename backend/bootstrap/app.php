@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::get('/ready', InfrastructureReadinessController::class);
             require __DIR__.'/../routes/remote.php';
             require __DIR__.'/../routes/remote_security.php';
+            require __DIR__.'/../routes/account_start.php';
             require __DIR__.'/../routes/agents.php';
             require __DIR__.'/../routes/assistant.php';
             require __DIR__.'/../routes/agents_v2.php';

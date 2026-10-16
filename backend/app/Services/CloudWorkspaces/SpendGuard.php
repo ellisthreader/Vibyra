@@ -43,8 +43,11 @@ final class SpendGuard
 
     public function admitCreate(): void
     {
-        abort_if(DB::table('cloud_workspaces')->where('state', '!=', 'deleted')->count() >= (int) config('cloud_workspaces.max_retained_global'),
-            503, 'Hosted storage is at capacity. Try again later.');
+        // Storage that is actually kept. A cloud computer whose disk was removed (or never made) holds nothing, but its row stays
+        // for the account's life, so counting it would fill the cap with accounts that cost nothing.
+        $retained = DB::table('cloud_workspaces')->where('state', '!=', 'deleted')->where(fn ($q) => $q->whereNull('kind')->orWhere('kind', '!=', 'computer')
+            ->orWhereNotNull('volume_id')->orWhereIn('state', Workspaces::ACTIVE))->count();
+        abort_if($retained >= (int) config('cloud_workspaces.max_retained_global'), 503, 'Hosted storage is at capacity. Try again later.');
     }
 
     private function warn(string $period, int $used, int $limit): void

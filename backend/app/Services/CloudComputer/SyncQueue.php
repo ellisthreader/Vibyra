@@ -36,9 +36,15 @@ class SyncQueue
         return ['items' => [...app(SyncLogins::class)->pending($user), ...$items], 'removed' => $removed, 'resync' => $resync];
     }
 
-    public function pendingCount(int $user): int
+    /**
+     * Uploads (and logins) the cloud computer has not applied yet. `$forWake` leaves out conversations: a sleeping computer
+     * picks those up whenever it next starts, so they never justify paying to start it (an active chat re-sends them every
+     * few minutes, which started a new VM each time).
+     */
+    public function pendingCount(int $user, bool $forWake = false): int
     {
-        return DB::table('cloud_sync_blobs')->where('user_id', $user)->where('direction', 'up')->whereNull('applied_at')->whereNull('failed_at')->count() + app(SyncLogins::class)->pendingCount($user);
+        return DB::table('cloud_sync_blobs')->where('user_id', $user)->where('direction', 'up')->whereNull('applied_at')->whereNull('failed_at')
+            ->when($forWake, fn ($q) => $q->where('kind', '!=', 'transcripts'))->count() + app(SyncLogins::class)->pendingCount($user);
     }
 
     public function upBlob(int $user, string $id): object

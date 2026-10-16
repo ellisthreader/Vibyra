@@ -22,10 +22,10 @@ Route::prefix('api/cloud-workspaces')->middleware('throttle:120,1,cloud-read')->
     Route::post('{workspace}/actions/{action}/cancel', [ActionController::class, 'cancel']);
 })->whereUuid(['workspace', 'action']);
 
-Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->group(function () {
+Route::prefix('api/cloud-runtime')->middleware('throttle:cloud-runtime')->where(['workspace' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', 'action' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'])->group(function () {
     Route::post('{workspace}/bootstrap', [RuntimeController::class, 'bootstrap']);
     Route::post('{workspace}/heartbeat', [RuntimeController::class, 'heartbeat']);
     Route::post('{workspace}/checkpoint', [RuntimeController::class, 'checkpoint']);
     Route::get('{workspace}/actions/next', [RuntimeController::class, 'next']);
     Route::post('{workspace}/actions/{action}/result', [RuntimeController::class, 'result']);
-})->whereUuid(['workspace', 'action']);
+});

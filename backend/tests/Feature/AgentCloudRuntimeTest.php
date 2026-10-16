@@ -50,7 +50,7 @@ final class AgentCloudRuntimeTest extends AgentCloudTestCase
 
     public function test_runtime_cannot_create_user_authority_or_use_other_workspace(): void
     {
-        $this->asRuntime($this->cloudToken, 'get', 'agents/next')->assertOk()->assertJsonPath('selection', null);
+        $this->asRuntime($this->cloudToken, 'get', 'agents/next')->assertOk()->assertJsonPath('ok', true)->assertJsonPath('selection', null);
         $this->asRuntime('wrong-token', 'get', 'agents/next')->assertStatus(401);
         $this->getJson('/api/agents/v2/cloud', ['X-Vibyra-Runner-Key' => str_repeat('a', 64)])->assertStatus(403);
     }

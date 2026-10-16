@@ -77,7 +77,7 @@ class Wake
     {
         $w = app(Computers::class)->find($user);
         if (!$w || !in_array($w->state, ['stopped', 'archived', 'expired'], true) || !app(ConnectConsent::class)->connected($user)) return false;
-        return app(SyncQueue::class)->pendingCount($user) > 0
+        return app(SyncQueue::class)->pendingCount($user, true) > 0
             || (app(SyncKeys::class)->vmKey($user) === null && app(AccessProjects::class)->allowedKeys($user) !== []);
     }
 
@@ -136,7 +136,8 @@ class Wake
             $fresh = DB::table('cloud_workspaces')->where('id', $w->id)->first();
             try { app(Reservations::class)->reserve($fresh, Quotes::runway((int) $fresh->units_per_hour)); }
             catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-                if ($e->getStatusCode() === 402) Computers::fail('allowance_exhausted', 'Your included cloud hours are used up and you need more tokens to keep going.', 402);
+                // The code stays (clients key on it); the words say what was actually refused (no tokens, a session or daily cap, or the hours).
+                if ($e->getStatusCode() === 402) Computers::fail('allowance_exhausted', $e->getMessage() !== '' ? $e->getMessage() : 'Your included cloud hours are used up and you need more tokens to keep going.', 402);
                 throw $e;
             }
             app(PreviewCosts::class)->startup($fresh);
